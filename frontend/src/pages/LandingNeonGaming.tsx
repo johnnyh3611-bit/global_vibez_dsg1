@@ -40,7 +40,7 @@ export default function LandingNeonGaming() {
   ];
 
   return (
-    <div className="min-h-screen bg-black overflow-hidden relative">
+    <div className="min-h-screen bg-black relative">
       {/* Platform Live Wins Ticker — sticky above everything */}
       <WinnerTicker className="sticky top-0 z-50" />
 
@@ -81,12 +81,14 @@ export default function LandingNeonGaming() {
         />
       </div>
 
-      {/* Header */}
+      {/* Header — sticky so the 🌐 language switcher stays visible while
+          scrolling (founder request, May 2026). Sits just below the
+          WinnerTicker (which is at top-0 z-50). */}
       <motion.header
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6 }}
-        className="relative z-20 px-6 py-6"
+        className="sticky top-10 z-40 px-6 py-4 bg-black/80 backdrop-blur-xl border-b border-purple-500/20"
       >
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/vibe-vault-admin')} data-testid="landing-logo">
@@ -393,20 +395,10 @@ export default function LandingNeonGaming() {
               </button>
             </motion.div>
 
-            {/* Feature Tags */}
-            <div className="flex flex-wrap gap-3">
-              {['34+ Games', 'Live Streaming', 'AI Matching', 'Safe Rides', 'VR Dating'].map((tag, i) => (
-                <motion.div
-                  key={`tag-${i}`}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.6 + i * 0.1 }}
-                  className="px-4 py-2 bg-purple-900/50 backdrop-blur-xl border border-purple-500/50 rounded-full"
-                >
-                  <span className="text-sm font-bold text-purple-300">{tag}</span>
-                </motion.div>
-              ))}
-            </div>
+            {/* (Removed May 2026 — these 5 pill tags duplicated content
+                already shown by the Utility Rooms Dock + DSG TV / Music
+                shortcut buttons further down. Kept the categories,
+                trimmed the wall of text per founder request.) */}
 
             {/* Public room shortcuts (Feb 2026 founder fix) — beta testers
                 were asking how to find DSG TV and DSG Music Group. Now they
@@ -535,91 +527,10 @@ export default function LandingNeonGaming() {
         </div>
       </section>
 
-      {/* Features Grid - Neon Style */}
-      <section className="relative z-10 px-6 py-20 max-w-7xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center mb-16"
-        >
-          <h3 className="text-5xl font-black text-white mb-4">
-            All-In-One{' '}
-            <span className="text-transparent bg-gradient-to-r from-fuchsia-500 to-purple-500 bg-clip-text">
-              Gaming Dating
-            </span>{' '}
-            Platform
-          </h3>
-          <p className="text-xl text-purple-400">Everything you need in one place</p>
-        </motion.div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[
-            {
-              icon: <Gamepad2 className="w-10 h-10" />,
-              title: '27+ Social Games',
-              desc: 'Poker, UNO, Chess, and more',
-              color: 'from-fuchsia-600 to-purple-600',
-            },
-            {
-              icon: <Video className="w-10 h-10" />,
-              title: 'Live Streaming',
-              desc: 'Broadcast your dates and gameplay',
-              color: 'from-purple-600 to-indigo-600',
-            },
-            {
-              icon: <Heart className="w-10 h-10" />,
-              title: 'Smart Matching',
-              desc: 'AI-powered compatibility',
-              color: 'from-pink-600 to-fuchsia-600',
-            },
-            {
-              icon: <MapPin className="w-10 h-10" />,
-              title: 'Vibez Rides',
-              desc: 'Safe transportation for dates',
-              color: 'from-green-600 to-emerald-600',
-            },
-            {
-              icon: <Sparkles className="w-10 h-10" />,
-              title: 'AI Dating Coach',
-              desc: 'Get personalized date ideas',
-              color: 'from-yellow-600 to-orange-600',
-            },
-            {
-              icon: <Shield className="w-10 h-10" />,
-              title: '100% Verified',
-              desc: 'ID verification for safety',
-              color: 'from-cyan-600 to-blue-600',
-            },
-          ].map((feature, i) => (
-            <motion.div
-              key={`item-${i}`}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              whileHover={{ scale: 1.05, y: -5 }}
-              className="group relative"
-            >
-              {/* Neon Glow */}
-              <div 
-                className={`absolute inset-0 bg-gradient-to-br ${feature.color} rounded-2xl blur-xl opacity-30 group-hover:opacity-60 transition-opacity`}
-              />
-              
-              {/* Card */}
-              <div className="relative bg-black/90 backdrop-blur-xl p-8 rounded-2xl border-2 border-purple-500/50 group-hover:border-fuchsia-500 transition-colors h-full">
-                <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center text-white mb-6 group-hover:scale-110 transition-transform`}>
-                  {feature.icon}
-                </div>
-                <h4 className="text-2xl font-black text-white mb-3 group-hover:text-fuchsia-400 transition-colors">
-                  {feature.title}
-                </h4>
-                <p className="text-gray-400 font-medium">{feature.desc}</p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </section>
+      {/* (Removed May 2026 per founder request — the "All-In-One Gaming
+           Dating Platform" 6-card grid duplicated content already shown
+           in the Utility Rooms Dock + Hero pills below. Removing it
+           lightens the page without losing any category.) */}
 
       {/* Utility Rooms Dock — one-click hub for every room. Replaces the
            cluttered top-nav strip the user explicitly asked us to remove. */}

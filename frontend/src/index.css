@@ -451,6 +451,11 @@ code {
 }
 
 html, body {
-  overflow-x: hidden;
+  /* Use `clip` instead of `hidden` — `overflow-x: hidden` on html/body
+     creates a scrolling context which silently breaks `position: sticky`
+     on descendants. `clip` keeps the same visual cap but doesn't create
+     a scroll container, so sticky headers (e.g. landing language
+     switcher) work correctly on every page. */
+  overflow-x: clip;
   width: 100%;
 }
