@@ -635,6 +635,13 @@ def register_all_routes(
         log.error(f"❌ IMMUTABLE CORE VIOLATION: {_e}")
         raise
 
+    # Cinematic Landing Video — Sora 2 generated walkthrough.
+    try:
+        from routes.landing_video import router as landing_video_router
+        api_router.include_router(landing_video_router)
+    except Exception as _e:
+        log.warning(f"Landing video routes not mounted: {_e}")
+
 
 
 # ─── Domain helpers (Feb 2026 polish split) ──────────────────────────
