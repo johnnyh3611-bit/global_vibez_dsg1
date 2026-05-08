@@ -1,22 +1,12 @@
 /**
- * CommHubDropdown — Universal Communications Hub (UDA §4)
- *
- *   "Move video/voice from the main screen to a Drop-down menu in the
- *   top nav."
- *
- * A single round button anchored in the top-right corner of every
- * authenticated route. Click it to expose:
- *   • Voice Mirror — open the live translation dock
- *   • Game Voice — toggle in-room voice chat (Agora)
- *   • Mute All — kill every comms surface in one tap
- *
- * The existing dock components (VoiceMirrorDock, GameVoiceDockMounter)
- * remain mounted so their state-management contracts stay intact; this
- * component just gives users a single discoverable entry-point in the
- * top nav, replacing the previous "two floating bubbles" layout.
+ * CommHubButton — in-line variant of the Comms Hub for use inside a
+ * RoomMenuBar's rightSlot. Renders the same dropdown menu as the
+ * floating CommHubDropdown, but anchored to its parent element instead
+ * of the viewport. Per founder directive (May 2026):
+ *   "Everything should be inside the menu bar inside the game.
+ *    That includes the communications tabs."
  */
-import React, { useState, useEffect, useRef } from "react";
-import { useLocation } from "react-router-dom";
+import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Headphones,
@@ -29,46 +19,24 @@ import {
 } from "lucide-react";
 import { useVoiceMirror } from "@/contexts/VoiceMirrorContext";
 
-// Hide on pre-auth routes — there's no comms to manage there.
-const HIDDEN_ROUTES = new Set([
-  "/",
-  "/login",
-  "/signup",
-  "/forgot-password",
-  "/reset-password",
-  "/auth-callback",
-]);
+interface Props {
+  /** Compact variant: shorter button copy on small screens. */
+  compact?: boolean;
+}
 
-export const CommHubDropdown: React.FC = () => {
-  const { pathname } = useLocation();
+export const CommHubButton: React.FC<Props> = ({ compact = false }) => {
   const [open, setOpen] = useState(false);
   const [muted, setMuted] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
-  // Auto-hide the floating CommHub when an in-game RoomMenuBar exists,
-  // since that bar already renders an inline CommHubButton (founder
-  // directive May 2026: comms must live INSIDE the game's menu bar).
-  const [hasRoomBar, setHasRoomBar] = useState(false);
 
-  useEffect(() => {
-    const check = () => {
-      setHasRoomBar(!!document.querySelector('[data-testid="room-menu-bar"]'));
-    };
-    check();
-    const obs = new MutationObserver(check);
-    obs.observe(document.body, { childList: true, subtree: true });
-    return () => obs.disconnect();
-  }, []);
-
-  // Read the live Voice Mirror state so the indicator reflects reality.
   let vmActive = false;
   try {
     const vm = useVoiceMirror();
     vmActive = !!vm?.enabled;
   } catch {
-    /* hook is safe in any tree but guard for unmount edge-cases */
+    /* hook is safe in any tree */
   }
 
-  // Click-outside to close.
   useEffect(() => {
     if (!open) return;
     const onDoc = (e: MouseEvent) => {
@@ -78,59 +46,38 @@ export const CommHubDropdown: React.FC = () => {
     return () => document.removeEventListener("mousedown", onDoc);
   }, [open]);
 
-  if (HIDDEN_ROUTES.has(pathname)) return null;
-  // Hide the floating button when an in-game menu bar already shows
-  // the inline CommHub — avoids a double-button.
-  if (hasRoomBar) return null;
-
-  const triggerVoiceMirror = () => {
-    // The existing VoiceMirrorDock listens for a custom event from the
-    // app — we re-use that contract instead of reaching into its state.
-    window.dispatchEvent(new CustomEvent("commhub:voice-mirror-toggle"));
+  const fire = (event: string, detail?: unknown) => {
+    window.dispatchEvent(new CustomEvent(event, { detail }));
     setOpen(false);
-  };
-
-  const triggerGameVoice = () => {
-    window.dispatchEvent(new CustomEvent("commhub:game-voice-toggle"));
-    setOpen(false);
-  };
-
-  const toggleMute = () => {
-    setMuted((m) => !m);
-    window.dispatchEvent(
-      new CustomEvent("commhub:mute-all", { detail: { muted: !muted } }),
-    );
   };
 
   return (
-    <div
-      ref={ref}
-      className="fixed top-3 right-3 z-[130] select-none"
-      data-testid="commhub-root"
-    >
+    <div ref={ref} className="relative" data-testid="commhub-inline-root">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        data-testid="commhub-trigger"
+        data-testid="commhub-inline-trigger"
         aria-haspopup="menu"
         aria-expanded={open}
-        className={`flex items-center gap-1.5 px-3 py-2 rounded-full backdrop-blur-xl border transition-all shadow-lg ${
+        title="Communications"
+        className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg backdrop-blur border transition-all ${
           open
             ? "bg-fuchsia-500/30 border-fuchsia-300 text-fuchsia-100"
-            : "bg-slate-950/70 border-white/15 text-slate-200 hover:border-fuchsia-400/50"
+            : "bg-black/40 border-white/10 hover:border-fuchsia-400/50 text-slate-200"
         }`}
       >
         <Headphones className="w-4 h-4" />
-        <span className="text-[10px] font-mono uppercase tracking-[0.2em] hidden sm:inline">
-          Comm Hub
-        </span>
-        {/* Live status dot — green when any comms surface is active */}
+        {!compact && (
+          <span className="text-[10px] font-mono uppercase tracking-[0.2em] hidden md:inline">
+            Comms
+          </span>
+        )}
         {(vmActive || muted) && (
           <span
             className={`w-1.5 h-1.5 rounded-full ${
               muted ? "bg-rose-400" : "bg-emerald-400 animate-pulse"
             }`}
-            data-testid="commhub-status-dot"
+            data-testid="commhub-inline-status-dot"
           />
         )}
         <ChevronDown
@@ -147,8 +94,8 @@ export const CommHubDropdown: React.FC = () => {
             exit={{ opacity: 0, y: -6, scale: 0.97 }}
             transition={{ duration: 0.16 }}
             role="menu"
-            data-testid="commhub-menu"
-            className="absolute right-0 top-full mt-2 w-64 rounded-2xl border border-fuchsia-500/30 bg-slate-950/95 backdrop-blur-xl shadow-[0_0_32px_rgba(168,85,247,0.25)] p-2"
+            data-testid="commhub-inline-menu"
+            className="absolute right-0 top-full mt-2 w-60 rounded-2xl border border-fuchsia-500/30 bg-slate-950/95 backdrop-blur-xl shadow-[0_0_32px_rgba(168,85,247,0.25)] p-2 z-[140]"
           >
             <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 mb-1">
               <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-fuchsia-300">
@@ -163,41 +110,41 @@ export const CommHubDropdown: React.FC = () => {
               </button>
             </div>
 
-            <MenuItem
-              testid="commhub-voice-mirror"
+            <Item
+              testid="commhub-inline-voice-mirror"
               icon={<Languages className="w-4 h-4" />}
               label="Voice Mirror"
               hint="Real-time speech translation"
               active={vmActive}
-              onClick={triggerVoiceMirror}
+              onClick={() => fire("commhub:voice-mirror-toggle")}
             />
-            <MenuItem
-              testid="commhub-game-voice"
+            <Item
+              testid="commhub-inline-game-voice"
               icon={<Mic className="w-4 h-4" />}
               label="Game Voice"
               hint="Talk to your table"
-              onClick={triggerGameVoice}
+              onClick={() => fire("commhub:game-voice-toggle")}
             />
-            <MenuItem
-              testid="commhub-video"
+            <Item
+              testid="commhub-inline-video"
               icon={<Video className="w-4 h-4" />}
               label="Video Call"
               hint="Hop into a video room"
-              onClick={() => {
-                window.dispatchEvent(new CustomEvent("commhub:video-toggle"));
-                setOpen(false);
-              }}
+              onClick={() => fire("commhub:video-toggle")}
             />
 
             <div className="my-1 h-px bg-white/10" />
 
-            <MenuItem
-              testid="commhub-mute"
+            <Item
+              testid="commhub-inline-mute"
               icon={muted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
               label={muted ? "Unmute everything" : "Mute everything"}
               hint="Kill every comms surface"
               danger
-              onClick={toggleMute}
+              onClick={() => {
+                setMuted((m) => !m);
+                fire("commhub:mute-all", { muted: !muted });
+              }}
             />
           </motion.div>
         )}
@@ -206,7 +153,7 @@ export const CommHubDropdown: React.FC = () => {
   );
 };
 
-const MenuItem: React.FC<{
+const Item: React.FC<{
   icon: React.ReactNode;
   label: string;
   hint?: string;
@@ -220,7 +167,7 @@ const MenuItem: React.FC<{
     role="menuitem"
     onClick={onClick}
     data-testid={testid}
-    className={`w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+    className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
       danger
         ? "text-rose-300 hover:bg-rose-500/10"
         : active
@@ -249,4 +196,4 @@ const MenuItem: React.FC<{
   </button>
 );
 
-export default CommHubDropdown;
+export default CommHubButton;

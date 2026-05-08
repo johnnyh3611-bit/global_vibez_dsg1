@@ -40,6 +40,7 @@ import SpadesTrickPile from "@/components/spades/SpadesTrickPile";
 import SpadesRoundModal from "@/components/spades/SpadesRoundModal";
 import SpadesDealingAnimation from "@/components/spades/SpadesDealingAnimation";
 import SpadesGameMenu from "@/components/spades/SpadesGameMenu";
+import CommHubButton from "@/components/common/CommHubButton";
 import SpadesPlayerProfile from "@/components/spades/SpadesPlayerProfile";
 import SpadesCommunityChat from "@/components/spades/SpadesCommunityChat";
 import TurnIndicator, { type TurnRole } from "@/components/games/TurnIndicator";
@@ -821,6 +822,10 @@ export default function BidWhistAAA() {
       />
 
       <div className="relative z-10 flex flex-col min-h-screen">
+        {/* Marker so the floating CommHubDropdown hides — its place is
+            inside this in-game menu bar (founder directive May 2026). */}
+        <div data-testid="room-menu-bar" className="hidden" aria-hidden="true" />
+
         {/* Top bar — matches SpadesAAA exactly */}
         <div className="flex flex-wrap items-start justify-between px-2 sm:px-3 md:px-5 pt-2 sm:pt-3 md:pt-4 gap-2">
           <div className="flex flex-col items-start gap-2">
@@ -831,10 +836,13 @@ export default function BidWhistAAA() {
             >
               <ArrowLeft className="w-4 h-4" /> Lobby
             </button>
-            <SpadesGameMenu
-              onExit={backToLobby}
-              onOpenMessages={() => setChatOpen(true)}
-            />
+            <div className="flex items-center gap-2">
+              <SpadesGameMenu
+                onExit={backToLobby}
+                onOpenMessages={() => setChatOpen(true)}
+              />
+              <CommHubButton compact />
+            </div>
           </div>
 
           <div className="flex flex-col items-center gap-1.5 order-3 w-full sm:order-none sm:w-auto">
@@ -877,6 +885,7 @@ export default function BidWhistAAA() {
               role={role}
               name={role === 'me' ? undefined : players[currentTurn]?.name}
               expiresAt={role === 'me' ? turnExpiresAt : null}
+              onExpire={role === 'me' ? handleShotClockExpire : undefined}
             />
           );
         })()}

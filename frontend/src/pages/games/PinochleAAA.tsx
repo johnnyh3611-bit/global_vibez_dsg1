@@ -26,6 +26,7 @@ import SpadesSeat from "@/components/spades/SpadesSeat";
 import SpadesTrickPile from "@/components/spades/SpadesTrickPile";
 import SpadesDealingAnimation from "@/components/spades/SpadesDealingAnimation";
 import SpadesGameMenu from "@/components/spades/SpadesGameMenu";
+import CommHubButton from "@/components/common/CommHubButton";
 import SpadesPlayerProfile from "@/components/spades/SpadesPlayerProfile";
 import SpadesCommunityChat from "@/components/spades/SpadesCommunityChat";
 import type {
@@ -431,6 +432,8 @@ export default function PinochleAAA() {
               <ArrowLeft className="w-4 h-4" /> Lobby
             </button>
             <SpadesGameMenu onExit={backToLobby} onOpenMessages={() => setChatOpen(true)} />
+            <CommHubButton compact />
+            <div data-testid="room-menu-bar" className="hidden" aria-hidden="true" />
           </div>
           <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 order-3 w-full sm:order-none sm:w-auto">
             <div className="px-2 py-0.5 rounded-full bg-cyan-700/20 border border-cyan-500/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-cyan-200 font-bold">Pinochle</div>

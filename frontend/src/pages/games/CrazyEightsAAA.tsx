@@ -19,6 +19,7 @@ import SpadesScoreBadge from "@/components/spades/SpadesScoreBadge";
 import SpadesSeat from "@/components/spades/SpadesSeat";
 import SpadesDealingAnimation from "@/components/spades/SpadesDealingAnimation";
 import SpadesGameMenu from "@/components/spades/SpadesGameMenu";
+import CommHubButton from "@/components/common/CommHubButton";
 import SpadesPlayerProfile from "@/components/spades/SpadesPlayerProfile";
 import SpadesCommunityChat from "@/components/spades/SpadesCommunityChat";
 import CrazyEightsWildModal from "@/components/crazy-eights-aaa/CrazyEightsWildModal";
@@ -411,6 +412,8 @@ export default function CrazyEightsAAA() {
               <ArrowLeft className="w-4 h-4" /> Lobby
             </button>
             <SpadesGameMenu onExit={backToLobby} onOpenMessages={() => setChatOpen(true)} />
+            <CommHubButton compact />
+            <div data-testid="room-menu-bar" className="hidden" aria-hidden="true" />
           </div>
           <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 order-3 w-full sm:order-none sm:w-auto">
             <div className="px-2 py-0.5 rounded-full bg-indigo-500/15 border border-indigo-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-indigo-300 font-bold">

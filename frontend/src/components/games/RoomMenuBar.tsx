@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
+import CommHubButton from '@/components/common/CommHubButton';
 
 export type RoomTheme =
   | 'spades'      // emerald + amber
@@ -257,9 +258,16 @@ export const RoomMenuBar: React.FC<RoomMenuBarProps> = ({
             </div>
           </div>
 
-          {rightSlot && (
-            <div className="shrink-0 flex items-center gap-2">{rightSlot}</div>
-          )}
+          {/* Per founder directive (May 2026): the Comms Hub belongs
+              inside the in-game menu bar, not floating top-right. The
+              CommHubButton is auto-injected here so every game room
+              picks it up without per-game wiring. The floating
+              CommHubDropdown auto-hides on routes where this bar is
+              mounted. */}
+          <div className="shrink-0 flex items-center gap-2">
+            <CommHubButton compact />
+            {rightSlot}
+          </div>
         </div>
       </div>
     </div>
