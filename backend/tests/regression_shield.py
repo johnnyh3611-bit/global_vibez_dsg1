@@ -3315,6 +3315,43 @@ def test_landscape_zoom_to_fit_locked():
         "Player hand must use z-index: 100 to stay on top"
 
 
+def test_trick_pile_offsets_tight_and_centered():
+    """May 2026 founder mandate: cards must land in the middle of the
+    table where the logo lives, not closer to the player's side. The
+    SpadesTrickPile SEAT_OFFSET values must stay tight (|y| <= 14, |x|
+    <= 24) so the centroid stays at the table center even on landscape
+    phone rotation."""
+    src = open("/app/frontend/src/components/spades/SpadesTrickPile.tsx").read()
+    import re
+    # Extract every numeric x: / y: value from the SEAT_OFFSET map.
+    pairs = re.findall(r"x:\s*(-?\d+).*?y:\s*(-?\d+)", src)
+    assert pairs, "Could not find SEAT_OFFSET in SpadesTrickPile.tsx"
+    for x_str, y_str in pairs:
+        x, y = int(x_str), int(y_str)
+        assert abs(x) <= 24, (
+            f"SpadesTrickPile seat-offset x={x} too wide — cards will drift "
+            "horizontally off table center. Keep |x| <= 24."
+        )
+        assert abs(y) <= 14, (
+            f"SpadesTrickPile seat-offset y={y} too tall — cards will drift "
+            "into the player's hand area on landscape. Keep |y| <= 14."
+        )
+
+
+def test_vigilant_agent_audits_pile_centering():
+    """The Vigilant Design Agent must check that trick piles stay at
+    the table centroid (within 8% tolerance). If the audit logic is
+    deleted, regressions like the SpadesTrickPile y=±32 drift go
+    silent again."""
+    src = open("/app/frontend/src/components/common/VigilantDesignAgent.tsx").read()
+    assert "auditTrickPileCentering" in src, \
+        "VigilantDesignAgent must include the trick-pile centering audit"
+    assert "data-vigilant-off-center" in src, \
+        "Off-center piles must be tagged with data-vigilant-off-center"
+    assert "PILE_SELECTORS" in src, \
+        "VigilantDesignAgent must enumerate trick-pile selectors"
+
+
 
 
 

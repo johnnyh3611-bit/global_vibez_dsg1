@@ -15,11 +15,23 @@ interface Props {
   trick: SpadesTrickPlay[];
 }
 
+/**
+ * Seat offsets — kept TIGHT and SYMMETRIC around the table's true
+ * center (where the logo lives) per founder mandate (May 2026):
+ *
+ *   "Cards must land in the middle of the table where the logo is at,
+ *    not closer to my side."
+ *
+ * Previous values (±32 / ±44) intruded on the player's hand area in
+ * portrait + completely overflowed in landscape. The new offsets are
+ * small enough that the GROUP CENTROID is the table center while
+ * still revealing which seat each card came from.
+ */
 const SEAT_OFFSET: Record<SpadesPosition, { x: number; y: number; r: number }> = {
-  north: { x: 0,    y: -32, r: 0 },
-  south: { x: 0,    y:  32, r: 0 },
-  east:  { x:  44,  y:   0, r: 8 },
-  west:  { x: -44,  y:   0, r: -8 },
+  north: { x: 0,   y: -10, r: 0 },
+  south: { x: 0,   y:  10, r: 0 },
+  east:  { x:  18, y:   0, r: 6 },
+  west:  { x: -18, y:   0, r: -6 },
 };
 
 export const SpadesTrickPile: React.FC<Props> = ({ trick }) => {

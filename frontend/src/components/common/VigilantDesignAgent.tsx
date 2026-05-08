@@ -53,6 +53,31 @@ const INTERACTIVE_SELECTORS = [
   '[data-testid^="point-"]',
 ];
 
+/**
+ * Trick-pile / center-pile selectors. Founder mandate (May 2026):
+ *   "Cards must land in the middle of the table where the logo is at,
+ *    not closer to my side."
+ *
+ * Whenever any of these elements is on screen, the agent verifies
+ * their bounding-box centroid is within 8% of their parent table's
+ * centroid. If a card pile drifts toward the player's hand area
+ * (which intrudes when the phone is rotated to landscape), the agent
+ * tags the pile with `data-vigilant-off-center="true"` + console
+ * warning so the regression is caught immediately.
+ */
+const PILE_SELECTORS = [
+  '[data-testid="spades-trick-pile"]',
+  '[data-testid="crazy-eights-center-pile"]',
+  '[data-testid$="-trick-pile"]',
+  '[data-testid$="-center-pile"]',
+];
+
+const PARENT_TABLE_SELECTORS = [
+  '[data-testid$="-table"]',
+  '[data-testid="spades-table"]',
+  '[class*="spades-table"]',
+];
+
 const REPOSITIONED_STYLE = {
   position: "fixed",
   top: "10px",
@@ -152,6 +177,83 @@ function auditClickBlockers(): void {
   }
 }
 
+/**
+ * Trick-pile centering audit (May 2026 founder mandate).
+ *
+ * For every center-pile element on the page, find the closest table
+ * ancestor (a SpadesTable / generic *-table data-testid) and compute
+ * the centroid offset between the pile and the table. If the offset
+ * exceeds 8% of the table's smaller dimension on EITHER axis, tag the
+ * pile with `data-vigilant-off-center="true"` and console-warn so the
+ * regression surfaces in DevTools immediately.
+ */
+function auditTrickPileCentering(): void {
+  // Find each pile.
+  const piles: HTMLElement[] = [];
+  for (const sel of PILE_SELECTORS) {
+    document.querySelectorAll<HTMLElement>(sel).forEach((el) => piles.push(el));
+  }
+  if (!piles.length) return;
+
+  for (const pile of piles) {
+    // Skip off-screen.
+    const pr = pile.getBoundingClientRect();
+    if (!pr.width || !pr.height) continue;
+    if (pr.top > window.innerHeight || pr.bottom < 0) continue;
+
+    // Find nearest table ancestor.
+    let table: HTMLElement | null = null;
+    for (const sel of PARENT_TABLE_SELECTORS) {
+      const found = pile.closest(sel);
+      if (found instanceof HTMLElement) {
+        table = found;
+        break;
+      }
+    }
+    if (!table) {
+      // No explicit table wrapper — fall back to the pile's first
+      // positioned ancestor that's at least 200px wide (heuristic).
+      let cursor: HTMLElement | null = pile.parentElement;
+      while (cursor) {
+        const cr = cursor.getBoundingClientRect();
+        if (cr.width >= 200 && cr.height >= 200) {
+          table = cursor;
+          break;
+        }
+        cursor = cursor.parentElement;
+      }
+    }
+    if (!table) continue;
+
+    const tr = table.getBoundingClientRect();
+    if (!tr.width || !tr.height) continue;
+
+    const tableCx = tr.left + tr.width / 2;
+    const tableCy = tr.top + tr.height / 2;
+    const pileCx = pr.left + pr.width / 2;
+    const pileCy = pr.top + pr.height / 2;
+
+    const tol = Math.min(tr.width, tr.height) * 0.08; // 8% of smaller dim
+    const dx = Math.abs(pileCx - tableCx);
+    const dy = Math.abs(pileCy - tableCy);
+
+    if (dx > tol || dy > tol) {
+      if (pile.getAttribute("data-vigilant-off-center") !== "true") {
+        pile.setAttribute("data-vigilant-off-center", "true");
+        // eslint-disable-next-line no-console
+        console.warn(
+          `[VigilantAgent] Trick pile drift: ${
+            pile.dataset.testid || pile.tagName
+          } centroid is ${dx.toFixed(0)}px,${dy.toFixed(0)}px off table center ` +
+            `(tolerance ${tol.toFixed(0)}px). Cards may intrude on the player's hand.`,
+        );
+      }
+    } else if (pile.hasAttribute("data-vigilant-off-center")) {
+      pile.removeAttribute("data-vigilant-off-center");
+    }
+  }
+}
+
 function audit(): void {
   // 1. Emergent-badge overlap check (original v3 §1 mandate).
   const badge = findBadge();
@@ -184,6 +286,11 @@ function audit(): void {
   // 2. Continuous click-blocker audit across every room (May 2026
   //    extension — directly catches the .player-hand class regression).
   auditClickBlockers();
+
+  // 3. Trick-pile centering audit — verifies card piles land at the
+  //    middle of the table where the logo lives, not closer to the
+  //    user's side (May 2026 founder mandate).
+  auditTrickPileCentering();
 }
 
 export function VigilantDesignAgent(): null {
