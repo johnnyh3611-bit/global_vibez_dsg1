@@ -1,0 +1,24 @@
+{
+  "short_name": "Global Vibez",
+  "name": "Global Vibez DSG - Gaming, Dating & Streaming",
+  "description": "The revolutionary social platform combining dating, live streaming, gaming, and real connections",
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/global-vibez-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#a855f7",
+  "background_color": "#000000",
+  "orientation": "portrait-primary"
+}

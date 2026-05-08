@@ -1,0 +1,44 @@
+{
+  "summary": "Founders Pass (Casino House Tiers / Scenario D) — backend + frontend smoke. 11 backend tests in TestFoundersPass + 49 full-file regression tests + 7 new extra coverage tests all pass. Frontend /founders-pass renders 4 tier cards with correct prices ($19/$99/$399/$1,499), multipliers (1.5×/4×/9×/20×), icons, gradient colors, Lock-In CTAs. Upsell card on /vibe-stakes (data-testid=vibe-stakes-house-tier-upsell) correctly navigates to /founders-pass. Stake-multiplier stacking confirmed (FP × Surge multiplicative in profit_share.accrue_stake). MongoDB indexes verified: founders_passes.payment_ref unique, founders_passes(user_id,status), founders_pass_pending.session_id unique. Test-mode endpoint correctly gated by FOUNDERS_PASS_TEST_MODE=1 and idempotent on payment_ref (replay returns idempotent_replay:true). Premium auto-bump for tiers ≥4× verified. /checkout returns 503 when STRIPE_API_KEY is absent (preview env) with helpful 'use test-activate' message; rejects unknown tier with 400; rejects equal-or-lower tier with 409. Admin /api/admin/founders-pass/stats returns full shape with active_passes/gross_revenue_usd/arpu_usd/tier_mix in fixed Scenario-D order with share_pct.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter_global_vibez_dsg_2026_01.py",
+    "/app/backend/tests/test_founders_pass_extra.py",
+    "/app/test_reports/pytest/founders_pass_results.xml",
+    "/app/test_reports/pytest/founders_extra_results.xml",
+    "/app/test_reports/pytest/full_iter_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Code is clean and well-documented. NOT-A-SECURITY rationale spelled out in module docstring with Howey-test analysis — solid legal posture.",
+    "MongoDB ObjectId properly excluded from all reads via {'_id': 0} projection. ✓",
+    "Idempotency on payment_ref correctly implemented in _activate_pass — short-circuit before insert with idempotent_replay:true flag. ✓",
+    "Multiplier stacking in profit_share.accrue_stake (lines 183-195) reads cached founders_pass_multiplier from users collection (not querying founders_passes on hot path) — good perf design.",
+    "Stripe 503 fallback messages are clear and direct users to the test-activate path for preview/dev. ✓",
+    "/me endpoint correctly returns has_pass=false / multiplier=1.0 default for users without a pass (no 404 leakage).",
+    "Admin stats endpoint depends on verify_admin_cookie — correctly gated; returns 401/403 without admin_session cookie. ✓",
+    "Minor enhancement (non-blocking): Consider also returning `tier_id` (not just `tier`) at top level of /me response for FE consistency — currently `tier` holds the id but field naming is slightly ambiguous.",
+    "Minor enhancement: /checkout-status currently gated by user_id ownership — if Stripe webhook activates first, the poll re-activate is short-circuited via the 'activated' status check on pending. Logic is sound."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_founders_pass_extra.py (new file — 7 additional coverage tests)"
+  ],
+  "success_rate": {
+    "backend": "100% (49/49 file-wide + 7/7 extra = 56/56)",
+    "frontend": "100% (page render, tier cards, prices, multipliers, CTAs, upsell navigation all verified)"
+  },
+  "test_credentials": "Demo login via POST /api/auth/demo-login (auto-provisioned). Admin: POST /api/admin/vault-auth {password:'GlobalVibez_Founder_2025!', code:'000000'} sets admin_session cookie.",
+  "seed_data_creation": "Tests create demo users via /api/auth/demo-login and activate test passes via POST /api/founders-pass/test-activate with TEST_/pytest_ prefixed payment_refs. No production data modified.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Founders Pass / House Tiers feature is fully working end-to-end in preview env. STRIPE_API_KEY is NOT set in this preview, so live Stripe checkout was not exercised — /checkout returns 503 as designed. The /test-activate endpoint (gated by FOUNDERS_PASS_TEST_MODE=1) is the bypass. Stake-multiplier integration (profit_share.accrue_stake lines 181-204) confirmed: founders_pass_multiplier is cached on users collection and applied BEFORE surge — multiplicatively. New regression file: /app/backend/tests/test_founders_pass_extra.py covering /me-after-activation, /checkout 400/409/503 branches, admin stats happy path, multiplier stacking, premium auto-bump for ≥4×.",
+  "rca of the issue": "No issues found — feature ships clean."
+}

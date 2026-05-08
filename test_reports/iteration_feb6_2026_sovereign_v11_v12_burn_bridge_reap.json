@@ -1,0 +1,42 @@
+{
+  "summary": "v11/v12 Sovereign Ops (Bridge Queue + Inactivity Reap + Burn-Slide) fully validated. 14/14 sovereign-ops backend tests pass. Regression shield stays 70/70 green. Frontend Founder Controls tab renders sovereign-ops-panel + all 3 subcards; burn card reads live 750M supply and 5.00% rate.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/admin/burn/execute (dry_run)", "issue": "Returned 500 PydanticSerializationError due to bson.ObjectId attached to doc after insert_one. FIXED in-place by popping _id before returning."},
+      {"endpoint": "POST /api/bridge/request", "issue": "Balance selection was 'token_balance' if key present in projection, which picks 0-balance field over a funded credits_balance. Users with both fields (legacy demo accounts) could never bridge. FIXED by preferring whichever wallet field satisfies the debit (token_balance first, else credits_balance) — mirrors the vibez_654 regression-locked pattern. Reject refund path hardened similarly."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_sovereign_ops_v11_v12.py",
+    "/app/test_reports/pytest/sovereign_ops_v11_v12.xml",
+    "/app/backend/tests/regression_shield.py"
+  ],
+  "action_items": [
+    "Consider adding a regression-shield lock for 'bridge request must prefer funded wallet field' so the dual-balance bug can never ship again (mirrors test_vibez_654_solo_accepts_credits_balance_wallet).",
+    "Consider moving `doc.pop('_id', None)` into a small helper `db_safe_return` since this pattern recurred twice already in v11 code."
+  ],
+  "critical_code_review_comments": [
+    "sovereign_ops_routes.py was returning raw Mongo-hydrated docs — always strip _id before JSON response. (Fixed.)",
+    "Wallet-field picking by key-presence is fragile whenever both fields exist; use value-based fallback. (Fixed.)",
+    "bridge_request + reject both depend on the same wallet-selection logic — extract into `_pick_wallet_field(u, need)` helper next iteration to DRY.",
+    "admin/inactivity/run live mode does not refresh the candidate list inside a transaction — a user that just logged in between the scan and the apply could still get reaped. Low probability but worth a re-fetch-inside-loop tightening.",
+    "Burn log dry-run rows are written but `burn_schedule` only aggregates where `dry_run: False` — correct by design but the field is not indexed; add index on `sovereign_ops_burn_log.dry_run` if volume grows."
+  ],
+  "updated_files": [
+    "/app/backend/routes/sovereign_ops_routes.py",
+    "/app/backend/tests/test_sovereign_ops_v11_v12.py"
+  ],
+  "success_rate": {"backend": "100% (14/14 sovereign-ops + 70/70 regression shield)", "frontend": "100% (panel + 3 cards + all burn widgets render)"},
+  "test_credentials": "Admin password GlobalVibez_Founder_2025! (2FA 000000) — both via /api/admin/vault-auth. Demo user via /api/auth/demo-login → Bearer.",
+  "seed_data_creation": "Tests create fresh bridge requests via demo user; dry-run burn and inactivity rows logged to sovereign_ops_burn_log and inactivity_reap_log. No destructive seed. Live inactivity_run(dry_run=false) executed with limit=1 as spec allows; no real users had stale enough timestamps to be reaped.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "SOVEREIGN_OPS_DRY_RUN stays armed (default '1'). Two small fixes shipped: (1) pop _id before returning burn doc; (2) wallet-field selection now value-based. Both fixes are ONLY in sovereign_ops_routes.py — burn_execute and bridge_request/reject. All 14 sovereign-ops tests + 70 regression-shield tests green. Frontend Founder Controls tab renders all data-testids as spec'd. Safe-phrase gate for live Solana writes verified (broadcast dry_run=false → 403, burn dry_run=false → 403).",
+  "rca of the issue": "PydanticSerializationError 500 on POST /api/admin/burn/execute dry_run=true: Motor's insert_one() mutates the input dict in-place to attach the generated _id (bson.ObjectId). The route returned `{**doc, ...}` post-insert, splatting the ObjectId into the response model which Pydantic cannot serialize. Fix: `doc.pop('_id', None)` between insert and return. Reproduction: any admin POST with dry_run=true. Mitigation: fixed; added assertion on tx_sig prefix + supply_before/after in the test suite so it can never silently regress."
+}

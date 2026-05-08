@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>body { margin: 0; background: #000; }</style>
+</head>
+<body>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(1000, 1000);
+    renderer.setClearColor(0x000000);
+    document.body.appendChild(renderer.domElement);
+
+    // Fortune wheel
+    const wheelGeometry = new THREE.CylinderGeometry(10, 10, 2, 12);
+    const wheelMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0x6600ff,
+      metalness: 0.9,
+      roughness: 0.1,
+      emissive: 0x6600ff,
+      emissiveIntensity: 0.5
+    });
+    const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+    scene.add(wheel);
+
+    // Segments
+    const colors = [0xff0055, 0x00ffff, 0xffff00, 0x00ff88, 0xff00ff, 0xff8800];
+    for (let i = 0; i < 12; i++) {
+      const segmentGeometry = new THREE.BoxGeometry(1, 11, 2.5);
+      const color = colors[i % colors.length];
+      const segmentMaterial = new THREE.MeshStandardMaterial({ 
+        color: color,
+        metalness: 0.8,
+        roughness: 0.2,
+        emissive: color,
+        emissiveIntensity: 1.0
+      });
+      const segment = new THREE.Mesh(segmentGeometry, segmentMaterial);
+      const angle = (i / 12) * Math.PI * 2;
+      segment.position.x = Math.cos(angle) * 9;
+      segment.position.z = Math.sin(angle) * 9;
+      segment.rotation.y = -angle;
+      wheel.add(segment);
+    }
+
+    // Center pointer
+    const pointerGeometry = new THREE.ConeGeometry(1.5, 4, 3);
+    const pointerMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0xffffff,
+      emissive: 0xff00ff,
+      emissiveIntensity: 2.0
+    });
+    const pointer = new THREE.Mesh(pointerGeometry, pointerMaterial);
+    pointer.position.y = 5;
+    pointer.rotation.z = Math.PI;
+    scene.add(pointer);
+
+    // Neon rings
+    for (let i = 0; i < 3; i++) {
+      const ringGeometry = new THREE.TorusGeometry(13 + i * 2, 0.3, 8, 50);
+      const ringMaterial = new THREE.MeshBasicMaterial({ 
+        color: i === 0 ? 0xff00ff : (i === 1 ? 0x00ffff : 0xff0055),
+        transparent: true,
+        opacity: 0.5
+      });
+      const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+      ring.rotation.x = Math.PI / 2;
+      scene.add(ring);
+    }
+
+    const ambientLight = new THREE.AmbientLight(0x440044, 1.5);
+    scene.add(ambientLight);
+    const pointLight1 = new THREE.PointLight(0xff00ff, 4, 100);
+    pointLight1.position.set(15, 15, 20);
+    scene.add(pointLight1);
+    const pointLight2 = new THREE.PointLight(0x00ffff, 4, 100);
+    pointLight2.position.set(-15, 15, 20);
+    scene.add(pointLight2);
+
+    camera.position.z = 35;
+    camera.position.y = 10;
+    camera.lookAt(0, 0, 0);
+
+    let time = 0;
+    function animate() {
+      requestAnimationFrame(animate);
+      time += 0.02;
+      wheel.rotation.y = time;
+      scene.children.forEach((child) => {
+        if (child.geometry && child.geometry.type === 'TorusGeometry') {
+          child.rotation.z += 0.005;
+        }
+      });
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+</html>

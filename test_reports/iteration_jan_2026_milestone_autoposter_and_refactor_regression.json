@@ -1,0 +1,47 @@
+{
+  "summary": "Backend-only regression for Phase Milestone Auto-Poster + 5 function refactors (complete_ad, rate_limit_middleware, get_dating_coach_suggestions, analyze_user_content, generate_date_plan) + server.py route-registry consolidation. 38/39 tests PASSED, 1 xfailed (rate_limit_middleware orphan finding). No 500s across broad-spectrum endpoint smoke (auth, casino, dating, vibe-ridez, profit-share, chairs, founders-pass, agora, economy, multiplayer, admin audit). Milestone queue endpoints fully functional; OG image renders at 41KB PNG; Genesis_25 verified queued with og_image_url + twitter_intent + share_text_short fields; all admin endpoints 401 without cookie.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "rate_limit_middleware (middleware/security.py)",
+        "issue": "Middleware is defined and was refactored (helpers _record_request + _exceeded_response extracted per spec), but it is NOT registered on the FastAPI app. config/middleware.py:setup_middleware only adds CORSMiddleware — there is no app.middleware('http')(rate_limit_middleware) or app.add_middleware registration anywhere. Result: X-RateLimit-Limit/Remaining/Reset headers never appear on any response, and NO rate limiting is actually enforced in production. This is orphan dead code. (Appears to be pre-existing — not introduced by this iteration's refactor, but still needs wiring.)"
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter_jan_2026_milestone_and_refactor_regression.py",
+    "/app/test_reports/pytest/pytest_milestone_regression.xml"
+  ],
+  "action_items": [
+    "Wire rate_limit_middleware on the FastAPI app via app.middleware('http')(rate_limit_middleware) inside config/middleware.py:setup_middleware — otherwise the recent refactor (helper extraction) is applied to dead code and no rate limiting is enforced.",
+    "Confirm with product whether rate limiting should be enforced in preview (headers are expected per spec but never emitted)."
+  ],
+  "critical_code_review_comments": [
+    "ORPHAN MIDDLEWARE: middleware/security.py::rate_limit_middleware (+ newly extracted _record_request / _exceeded_response) is not registered on the app. The refactor preserved behavior of dead code. Register via `app.middleware('http')(rate_limit_middleware)` in config/middleware.py.",
+    "MilestoneQueue admin endpoints are solid: queue filter, check-now idempotency, mark-posted/skip 404 on unknown, 401 without admin cookie — all green.",
+    "OG image generation (PIL) works cleanly on preview (41KB PNG, content-type image/png, 5-min cache header). No font fallback issues observed.",
+    "Route-registry refactor is safe: smoke-tested 17 endpoints across auth/casino/dating/vibe-ridez/profit-share/chairs/founders-pass/agora/economy/multiplayer/admin — zero 500s, all expected auth gates (401) preserved.",
+    "complete_ad refactor: endpoint still reachable; auth gate returns 401 without cookie; unknown impression returns 404 for authed user. Full success-path (30s≤elapsed≤120s, +50 vibe_credits, impression.completed=true) not executed in this run because no ad impression fixture exists in preview DB — endpoint shapes verified.",
+    "AI endpoint refactors: /api/ai/dating-coach returned fallback-shape {suggestions, current_tip} successfully (LLM live or fallback — both paths return 200). /api/ai-content-matching/analyze-content does not 500 for unknown user.",
+    "Chairs: /api/chairs/phase returns Genesis @ $5, weight 3.0, remaining_in_phase 18985 — matches spec. /api/chairs/test-buy validates quantity (not 'chairs') — payload shape is `{quantity, payment_ref, invite_code?}`."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter_jan_2026_milestone_and_refactor_regression.py (new)"
+  ],
+  "success_rate": {
+    "backend": "97% (38/39 pass, 1 xfail documented as orphan code)",
+    "frontend": "skipped per request"
+  },
+  "test_credentials": "Admin vault: password=GlobalVibez_Founder_2025! code=000000. Demo login: POST /api/auth/demo-login (no body).",
+  "seed_data_creation": "No new seed data created. Pre-existing Genesis_25 milestone used. During flip test the status was toggled to posted→skipped, then RESET to 'queued' at end of run so subsequent iterations see the same fixture.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Regression suite at /app/backend/tests/test_iter_jan_2026_milestone_and_refactor_regression.py covers milestone queue, OG image, complete_ad shape, AI fallback paths, rate-limit xfail, chairs phase + test-buy. Use demo_user_client fixture for authed user calls and admin_client for vault-protected admin calls. Genesis_25 should be in queued state — if a prior run left it posted/skipped, reset via: mongosh test_database --eval 'db.phase_milestones.updateOne({_id:\"Genesis_25\"},{$set:{status:\"queued\"}})'. test-buy requires FOUNDERS_PASS_TEST_MODE=1 or CHAIRS_TEST_MODE=1 in backend/.env (confirmed set in preview).",
+  "rca_of_the_issue": "N/A — refactor regression-only iteration. Only finding is a pre-existing orphan middleware (rate_limit_middleware), not a regression from this iteration's changes."
+}

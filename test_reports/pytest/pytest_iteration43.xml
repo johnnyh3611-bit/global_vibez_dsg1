@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="12" skipped="0" tests="27" time="5.214" timestamp="2026-04-01T12:58:01.092640+00:00" hostname="agent-env-d18ffc68-6865-4910-bcea-395826c8d1cd"><testcase classname="tests.test_iteration43_comprehensive.TestAuth" name="test_demo_login" time="0.278" /><testcase classname="tests.test_iteration43_comprehensive.TestAuth" name="test_create_test_user" time="0.136" /><testcase classname="tests.test_iteration43_comprehensive.TestVibeRidez" name="test_search_rides_empty" time="0.124" /><testcase classname="tests.test_iteration43_comprehensive.TestVibeRidez" name="test_search_rides_with_filters" time="0.153" /><testcase classname="tests.test_iteration43_comprehensive.TestVibeRidez" name="test_driver_registration" time="0.296" /><testcase classname="tests.test_iteration43_comprehensive.TestVibeRidez" name="test_get_driver_profile" time="0.401" /><testcase classname="tests.test_iteration43_comprehensive.TestVibeRidez" name="test_driver_not_found" time="0.106" /><testcase classname="tests.test_iteration43_comprehensive.TestMyVibez" name="test_trending_feed" time="0.138" /><testcase classname="tests.test_iteration43_comprehensive.TestMyVibez" name="test_for_you_feed" time="0.124" /><testcase classname="tests.test_iteration43_comprehensive.TestMyVibez" name="test_following_feed" time="0.105" /><testcase classname="tests.test_iteration43_comprehensive.TestMyVibez" name="test_user_stats" time="0.103" /><testcase classname="tests.test_iteration43_comprehensive.TestPracticeGames" name="test_start_blackjack" time="0.297"><failure message="assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code">tests/test_iteration43_comprehensive.py:203: in test_start_blackjack
+    assert response.status_code == 200
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</failure></testcase><testcase classname="tests.test_iteration43_comprehensive.TestPracticeGames" name="test_blackjack_hit" time="0.214"><failure message="KeyError: 'game_id'">tests/test_iteration43_comprehensive.py:221: in test_blackjack_hit
+    game_id = game_data["game_id"]
+              ^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'game_id'</failure></testcase><testcase classname="tests.test_iteration43_comprehensive.TestPracticeGames" name="test_start_poker" time="0.287"><failure message="assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code">tests/test_iteration43_comprehensive.py:242: in test_start_poker
+    assert response.status_code == 200
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</failure></testcase><testcase classname="tests.test_iteration43_comprehensive.TestPracticeGames" name="test_start_uno" time="0.231"><failure message="assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code">tests/test_iteration43_comprehensive.py:256: in test_start_uno
+    assert response.status_code == 200
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</failure></testcase><testcase classname="tests.test_iteration43_comprehensive.TestPracticeGames" name="test_start_tictactoe" time="0.218"><failure message="assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code">tests/test_iteration43_comprehensive.py:270: in test_start_tictactoe
+    assert response.status_code == 200
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</failure></testcase><testcase classname="tests.test_iteration43_comprehensive.TestPracticeGames" name="test_start_connect4" time="0.230"><failure message="assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code">tests/test_iteration43_comprehensive.py:284: in test_start_connect4
+    assert response.status_code == 200
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</failure></testcase><testcase classname="tests.test_iteration43_comprehensive.TestPracticeGames" name="test_start_chess" time="0.216"><failure message="assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code">tests/test_iteration43_comprehensive.py:298: in test_start_chess
+    assert response.status_code == 200
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</failure></testcase><testcase classname="tests.test_iteration43_comprehensive.TestPracticeGames" name="test_start_checkers" time="0.237"><failure message="assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code">tests/test_iteration43_comprehensive.py:312: in test_start_checkers
+    assert response.status_code == 200
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</failure></testcase><testcase classname="tests.test_iteration43_comprehensive.TestLeaderboard" name="test_global_stats" time="0.194" /><testcase classname="tests.test_iteration43_comprehensive.TestLeaderboard" name="test_blackjack_leaderboard" time="0.107" /><testcase classname="tests.test_iteration43_comprehensive.TestHttpMultiplayer" name="test_create_lobby" time="0.225"><failure message="assert 404 in [200, 201]&#10; +  where 404 = &lt;Response [404]&gt;.status_code">tests/test_iteration43_comprehensive.py:358: in test_create_lobby
+    assert response.status_code in [200, 201]
+E   assert 404 in [200, 201]
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="tests.test_iteration43_comprehensive.TestHttpMultiplayer" name="test_list_lobbies" time="0.098"><failure message="assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">tests/test_iteration43_comprehensive.py:366: in test_list_lobbies
+    assert response.status_code == 200
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="tests.test_iteration43_comprehensive.TestCasinoFeatures" name="test_get_table_styles" time="0.097"><failure message="assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">tests/test_iteration43_comprehensive.py:377: in test_get_table_styles
+    assert response.status_code == 200
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="tests.test_iteration43_comprehensive.TestCasinoFeatures" name="test_get_user_tables" time="0.095"><failure message="assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">tests/test_iteration43_comprehensive.py:384: in test_get_user_tables
+    assert response.status_code == 200
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="tests.test_iteration43_comprehensive.TestDating" name="test_get_discovery" time="0.220" /><testcase classname="tests.test_iteration43_comprehensive.TestWebSocketConnection" name="test_socket_endpoint_exists" time="0.129" /></testsuite></testsuites>

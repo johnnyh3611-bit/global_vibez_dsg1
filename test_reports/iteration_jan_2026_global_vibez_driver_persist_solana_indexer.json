@@ -1,0 +1,41 @@
+{
+  "summary": "Backend regression for Jan-2026 Global Vibez DSG iteration: driver onboarding, driver-state persistence across backend restart, hydrate idempotence, and Solana indexer admin endpoints. New 9-test suite at /app/backend/tests/test_iter_global_vibez_dsg_2026_01_part2.py — 9/9 PASS. Existing 21-test regression suite (test_iter_global_vibez_dsg_2026_01.py) still 21/21 PASS. Total 30/30. Exercised against the public preview URL.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter_global_vibez_dsg_2026_01_part2.py",
+    "/app/backend/tests/test_iter_global_vibez_dsg_2026_01.py",
+    "/app/test_reports/pytest/iter_global_vibez_dsg_2026_01_part2.xml",
+    "/app/test_reports/pytest/iter_global_vibez_dsg_2026_01.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "/app/backend/routes/solana_indexer.py — `MEMO_PROGRAMS` set has duplicates and one obvious placeholder (`Memo1QSn8Tn9Q1y9Hfba9b6n8R6yJ8TQjY9Q4q3iX2P`); the on-chain memo extractor only matches by `program == 'spl-memo'` anyway, so the constant is dead code and misleading. Trim to just the canonical Memo v1/v2 program ids OR drop the set and rely on the parsed-program check.",
+    "/app/backend/routes/solana_indexer.py — admin endpoints (`/api/admin/solana-indexer/status`, `/api/admin/solana-indexer/manual-credit/{id}`) have NO auth gate. Anyone with the URL can mark any pending SOL deposit confirmed and credit ₵ Vibez Coins to the deposit's user_id. This is acknowledged as 'flagged for a future iteration' but is a money-printing exploit until gated — recommend gating with the existing admin_session cookie before merging to prod.",
+    "/app/backend/routes/solana_indexer.py — `manual_credit` passes `lamports=0` to `_credit_deposit`, so `confirmed_lamports=0` is recorded for manual credits. That's accurate (no on-chain transfer) but consider also stamping `confirmed_method='manual_admin'` (or similar) on the deposit row so audits can distinguish indexer-confirmed vs admin-confirmed.",
+    "/app/backend/routes/solana_indexer.py — `manual_credit` accepts `signature` as a query string param (default 'MANUAL_ADMIN') with no validation; once auth is added, also bound this to a small alphanumeric pattern to keep the audit field clean.",
+    "/app/backend/routes/vibe_ridez_dispatch.py — `complete_ride` still uses `max(0, ...)` when deducting `pending_earned`. Same comment as previous iteration: this masks accounting drift; replace with an explicit assert + log when the bucket is short.",
+    "/app/backend/routes/vibe_ridez.py — local `client = AsyncIOMotorClient(MONGO_URL)` and `db = client[...]` at module load time means each route module opens its own pool. Centralize via `utils.database.get_database()` (already used by solana_indexer). Minor — same pattern across several route modules.",
+    "/app/backend/routes/vibe_ridez.py — `DB_NAME` defaults to 'global_vibez_dsg' inline, but backend/.env actually uses 'test_database'. The default never fires here, but inconsistent defaults across modules invite drift; pin one default in utils/database.py and remove inline fallbacks."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter_global_vibez_dsg_2026_01_part2.py"
+  ],
+  "success_rate": {
+    "backend": "100% (30/30 — 9/9 new + 21/21 regression)",
+    "frontend": "skipped per E1 instruction (preview ingress 502s on 38MB webpack-dev bundle)"
+  },
+  "test_credentials": "Used /api/auth/demo-login for cookie+bearer session. johnnyh3611@gmail.com / FreshStart2026! is on file in /app/memory/test_credentials.md but was not needed for these endpoints.",
+  "seed_data_creation": "Created TEST_-prefixed crypto_deposits (SOL), TEST_drv_persist_*/TEST_drv_auth_* in-memory drivers + persisted rows in `vibe_ridez_drivers_state`, and inserted/cleaned a vibe_ridez_drivers row for the demo user during onboarding test. All TEST_-prefixed for easy cleanup. Backend was restarted twice during testing (sudo supervisorctl restart backend) to validate hydrate flow.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Re-run all 30 backend tests with: pytest /app/backend/tests/test_iter_global_vibez_dsg_2026_01.py /app/backend/tests/test_iter_global_vibez_dsg_2026_01_part2.py -v. Note: the part2 suite restarts the backend twice via sudo supervisorctl during the persistence tests — expect ~25-30s wall time. Frontend remains explicitly out-of-scope (BecomeDriverLanding + eligibility self-check + status pill not exercised). The Solana indexer poll loop is dormant in this env (HELIUS_RPC_URL unset) — only the admin status + manual-credit endpoints were tested; on-chain memo matching is not covered by automated tests yet.",
+  "rca of the issue": "First run failed 2 tests in TestDriverMeOnboarding because (a) /vibe-ridez/driver/me reads auth from a session_token Cookie, not the Bearer header — fixed by switching to the cookie_session, and (b) the demo-login user already had a leftover `vibe_ridez_drivers` row from prior testing on this account, so {driver: null} could not be observed. Fixed by deleting the row directly via pymongo at the start of that test (using DB_NAME=test_database from /app/backend/.env). Final result: 9/9 part-2 tests + 21/21 regression = 30/30 PASS."
+}

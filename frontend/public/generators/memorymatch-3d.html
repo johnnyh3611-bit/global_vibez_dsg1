@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><style>body{margin:0;background:#000;}</style></head><body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(75,1,0.1,1000),renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(1000,1000);renderer.setClearColor(0x000000);document.body.appendChild(renderer.domElement);
+const cards=[];
+for(let i=0;i<8;i++){
+  const cardGeometry=new THREE.BoxGeometry(2.5,3.5,0.1);
+  const cardMaterial=new THREE.MeshStandardMaterial({color:0x8800ff,metalness:0.8,roughness:0.2,emissive:0x8800ff,emissiveIntensity:0.8});
+  const card=new THREE.Mesh(cardGeometry,cardMaterial);
+  const angle=(i/8)*Math.PI*2;
+  card.position.x=Math.cos(angle)*6;card.position.z=Math.sin(angle)*6;card.rotation.y=-angle;
+  scene.add(card);cards.push(card);
+}
+const brainGeometry=new THREE.SphereGeometry(2.5,32,32);
+const brainMaterial=new THREE.MeshStandardMaterial({color:0xff00ff,metalness:0.7,roughness:0.3,emissive:0xff00ff,emissiveIntensity:1.5});
+const brain=new THREE.Mesh(brainGeometry,brainMaterial);
+scene.add(brain);
+for(let i=0;i<3;i++){
+  const ringGeometry=new THREE.TorusGeometry(10+i*2,0.3,8,50);
+  const ringMaterial=new THREE.MeshBasicMaterial({color:i%2===0?0xff00ff:0x00ffff,transparent:true,opacity:0.5});
+  const ring=new THREE.Mesh(ringGeometry,ringMaterial);
+  scene.add(ring);
+}
+const ambientLight=new THREE.AmbientLight(0x440044,1.5);scene.add(ambientLight);
+const pointLight1=new THREE.PointLight(0xff00ff,4,100);pointLight1.position.set(15,15,20);scene.add(pointLight1);
+const pointLight2=new THREE.PointLight(0x00ffff,3,100);pointLight2.position.set(-15,15,20);scene.add(pointLight2);
+camera.position.set(0,5,20);camera.lookAt(0,0,0);let time=0,matched=false;
+function animate(){requestAnimationFrame(animate);time+=0.03;cards.forEach((card,i)=>{if(time%4<2&&i%2===0){card.rotation.y+=0.1;if(!matched&&Math.abs(card.rotation.y%(Math.PI*2))>Math.PI)matched=true;}});brain.rotation.y=time*0.5;brain.scale.set(1+Math.sin(time*2)*0.1,1+Math.sin(time*2)*0.1,1+Math.sin(time*2)*0.1);scene.children.forEach(child=>{if(child.geometry&&child.geometry.type==='TorusGeometry')child.rotation.z+=0.01;});renderer.render(scene,camera);}
+animate();
+</script></body></html>

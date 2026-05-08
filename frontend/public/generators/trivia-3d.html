@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><style>body{margin:0;background:#000;}</style></head><body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(75,1,0.1,1000),renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(1000,1000);renderer.setClearColor(0x000000);document.body.appendChild(renderer.domElement);
+const qmarkGeometry=new THREE.TorusGeometry(4,1.5,16,100,Math.PI*1.5);
+const qmarkMaterial=new THREE.MeshStandardMaterial({color:0x00ffff,metalness:0.9,roughness:0.1,emissive:0x00ffff,emissiveIntensity:1.5});
+const qmark=new THREE.Mesh(qmarkGeometry,qmarkMaterial);
+qmark.rotation.z=-Math.PI/4;scene.add(qmark);
+const dotGeometry=new THREE.SphereGeometry(1,32,32);
+const dotMaterial=new THREE.MeshStandardMaterial({color:0x00ffff,metalness:1.0,roughness:0.1,emissive:0x00ffff,emissiveIntensity:2.0});
+const dot=new THREE.Mesh(dotGeometry,dotMaterial);
+dot.position.y=-6;scene.add(dot);
+const brainGeometry=new THREE.SphereGeometry(3,32,32);
+const brainMaterial=new THREE.MeshStandardMaterial({color:0xff00ff,metalness:0.7,roughness:0.3,emissive:0xff00ff,emissiveIntensity:1.2,wireframe:true});
+const brain=new THREE.Mesh(brainGeometry,brainMaterial);
+brain.position.set(6,6,0);scene.add(brain);
+for(let i=0;i<3;i++){
+  const ringGeometry=new THREE.TorusGeometry(12+i*2,0.3,8,50);
+  const ringMaterial=new THREE.MeshBasicMaterial({color:i===0?0x00ffff:0xff00ff,transparent:true,opacity:0.5});
+  const ring=new THREE.Mesh(ringGeometry,ringMaterial);
+  scene.add(ring);
+}
+const ambientLight=new THREE.AmbientLight(0x004444,1.5);scene.add(ambientLight);
+const pointLight1=new THREE.PointLight(0x00ffff,4,100);pointLight1.position.set(15,15,20);scene.add(pointLight1);
+const pointLight2=new THREE.PointLight(0xff00ff,4,100);pointLight2.position.set(-15,15,20);scene.add(pointLight2);
+camera.position.set(0,3,25);camera.lookAt(0,0,0);let time=0;
+function animate(){requestAnimationFrame(animate);time+=0.02;qmark.rotation.y=time;brain.rotation.y=time*1.5;scene.children.forEach(child=>{if(child.geometry&&child.geometry.type==='TorusGeometry')child.rotation.z+=0.01;});renderer.render(scene,camera);}
+animate();
+</script></body></html>

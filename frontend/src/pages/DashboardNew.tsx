@@ -1,0 +1,474 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import {
+  Globe, Heart, LogOut, Settings, Sparkles, Crown, MessageCircle, Gamepad2,
+  Trophy, Utensils, Car, Wallet, TrendingUp, Moon, Music, Film, Pizza,
+  Languages, Mic, MapPin, BookMarked,
+} from 'lucide-react';
+import { RoomLayout } from '@/components/RoomLayout';
+import { GlassCard } from '@/components/GlassCard';
+import { NeonButton } from '@/components/NeonButton';
+import Logo from '@/components/Logo';
+import CreditBalance from '@/components/CreditBalance';
+import AppFooter from '@/components/AppFooter';
+import NotificationBanner from '@/components/NotificationBanner';
+import ChairHolderVoteBanner from '@/components/dashboard/ChairHolderVoteBanner';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = `${BACKEND_URL}/api`;
+
+export default function Dashboard() {
+  const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        // Use Bearer token from localStorage (the auth flow stores it on
+        // login/demo-login). Sending credentials:'include' would be blocked
+        // by the edge gateway's Allow-Origin:* CORS header.
+        const token = localStorage.getItem('auth_token');
+        if (!token) throw new Error('No auth token');
+        const response = await fetch(`${API}/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!response.ok) throw new Error('Not authenticated');
+
+        const userData = await response.json();
+        setUser(userData);
+      } catch (error) {
+        navigate('/');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, [navigate]);
+
+  const handleLogout = async () => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      await fetch(`${API}/api/auth/logout`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      // Clear local Bearer fallback so we don't re-auth with a stale token
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user_id');
+      localStorage.removeItem('username');
+      navigate('/');
+    } catch (error) {
+      // console.error('Logout error:', error);
+    }
+  };
+
+  const rooms = [
+    {
+      id: 'dating',
+      name: 'Dating Universe',
+      description: 'Find your perfect match with AI-powered compatibility',
+      icon: Heart,
+      gradient: 'from-pink-600 via-rose-500 to-purple-600',
+      glow: 'rgba(225,29,72,0.5)',
+      image: 'https://images.unsplash.com/photo-1567888818654-8e77698cdd4d?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzJ8MHwxfHNlYXJjaHwzfHxkaXZlcnNlJTIwaGFwcHklMjBjb3VwbGUlMjBkYXRpbmclMjByb29tYW50aWMlMjBsaWdodGluZyUyMHRhYmxlfGVufDB8fHx8MTc3MzY5OTMxN3ww&ixlib=rb-4.1.0&q=85',
+      path: '/discover',
+      stats: { count: user?.match_count || 0, label: 'Matches' }
+    },
+    {
+      id: 'gamer_dating',
+      name: 'Find Your Player 2',
+      description: 'Match with gamers and play together - dating through gaming',
+      icon: Heart,
+      gradient: 'from-pink-500 via-fuchsia-500 to-purple-600',
+      glow: 'rgba(236,72,153,0.5)',
+      image: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1OTN8MHwxfHNlYXJjaHw2fHxjb3VwbGUlMjBkYXRpbmd8ZW58MHx8fHwxNzM5NTU2MDE2fDA&ixlib=rb-4.1.0&q=85',
+      path: '/dating/profile/setup',
+      stats: { count: 'NEW', label: 'Feature' }
+    },
+    {
+      id: 'myvibez',
+      name: 'MY VIBEZ',
+      description: 'TikTok-style viral content - watch & create trending videos',
+      icon: TrendingUp,
+      gradient: 'from-cyan-400 via-blue-500 to-purple-600',
+      glow: 'rgba(34,211,238,0.6)',
+      image: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?crop=entropy&cs=srgb&fm=jpg&ixid=M3w0NDExMzZ8MHwxfHNlYXJjaHwxfHx0aWt0b2slMjB2aXJhbCUyMHZpZGVvJTIwY29udGVudCUyMGNyZWF0b3J8ZW58MHx8fHwxNzQxNTczNTkzfDA&ixlib=rb-4.1.0&q=85',
+      path: '/my-vibez',
+      stats: { count: '🔥', label: 'Trending' }
+    },
+    {
+      id: 'games',
+      name: 'Game Arena',
+      description: 'Play 34+ games including Casino, Arcade, Board & Card games',
+      icon: Gamepad2,
+      gradient: 'from-cyan-500 via-blue-500 to-indigo-600',
+      glow: 'rgba(14,165,233,0.5)',
+      image: 'https://images.unsplash.com/photo-1672224745017-a9b54ad9188f?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1OTN8MHwxfHNlYXJjaHw0fHxuZW9uJTIwZnV0dXJpc3RpYyUyMGdhbWUlMjByb29tJTIwM2R8ZW58MHx8fHwxNzczNjk5MzE2fDA&ixlib=rb-4.1.0&q=85',
+      path: '/practice',
+      stats: { count: '34', label: 'Games' }
+    },
+    {
+      id: 'tournaments',
+      name: 'Tournament Hall',
+      description: 'Compete in couples & friends tournaments for prizes',
+      icon: Trophy,
+      gradient: 'from-amber-400 via-orange-500 to-purple-700',
+      glow: 'rgba(245,158,11,0.5)',
+      image: 'https://images.unsplash.com/photo-1728488447889-13f95adcf5a0?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1MDV8MHwxfHNlYXJjaHwyfHxsdXh1cnklMjBnb2xkJTIwZGFyayUyMHZpcCUyMGxvdW5nZSUyMGludGVyaW9yfGVufDB8fHx8MTc3MzY5OTMyOXww&ixlib=rb-4.1.0&q=85',
+      path: '/tournaments',
+      stats: { count: '$', label: 'Win Credits' }
+    },
+    {
+      id: 'social',
+      name: 'Social Lounge',
+      description: 'Connect with matches and make new friends',
+      icon: MessageCircle,
+      gradient: 'from-orange-500 via-pink-500 to-rose-500',
+      glow: 'rgba(249,115,22,0.5)',
+      image: 'https://images.unsplash.com/photo-1753674693617-0d5beec33f28?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzJ8MHwxfHNlYXJjaHw0fHxkaXZlcnNlJTIwaGFwcHklMjBjb3VwbGUlMjBkYXRpbmclMjByb21hbnRpYyUyMGxpZ2h0aW5nfGVufDB8fHx8MTc3MzY5OTMxN3ww&ixlib=rb-4.1.0&q=85',
+      path: '/matches',
+      stats: { count: user?.message_count || 0, label: 'Messages' }
+    },
+    {
+      id: 'datespot',
+      name: 'Date Spot Finder',
+      description: 'AI-powered restaurant recommendations',
+      icon: Utensils,
+      gradient: 'from-orange-400 via-red-500 to-pink-600',
+      glow: 'rgba(251,146,60,0.5)',
+      image: 'https://images.unsplash.com/photo-1760662503661-5f3781cd2a87?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA2MTJ8MHwxfHNlYXJjaHwzfHxyZXN0YXVyYW50JTIwZGlubmVyJTIwcm9tYW50aWMlMjBsaWdodGluZyUyMHRhYmxlfGVufDB8fHx8MTc3MzY5OTMzMXww&ixlib=rb-4.1.0&q=85',
+      // FIXED 2026-02-16: was '/date-spots' (404). Real route is '/date-spot-finder'.
+      path: '/date-spot-finder',
+      stats: { count: '500+', label: 'Venues' }
+    },
+    // ─────── New tiles surfaced 2026-02-16 (founder asked: "I don't see none of the stuff we added") ───────
+    {
+      id: 'just_for_the_night',
+      name: 'Just For The Night',
+      description: 'Live now-or-never connections — vanish at sunrise',
+      icon: Moon,
+      gradient: 'from-purple-500 via-fuchsia-500 to-pink-600',
+      glow: 'rgba(168,85,247,0.5)',
+      image: 'https://images.unsplash.com/photo-1518837695005-2083093ee35b?crop=entropy&cs=srgb&fm=jpg',
+      path: '/just-for-the-night',
+      stats: { count: 'NEW', label: 'After 9PM' }
+    },
+    {
+      id: 'hungry_vibez',
+      name: 'Hungry Vibez',
+      description: 'Food delivery on the same fleet as VibeRidez',
+      icon: Pizza,
+      gradient: 'from-orange-500 via-red-500 to-fuchsia-600',
+      glow: 'rgba(249,115,22,0.5)',
+      image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?crop=entropy&cs=srgb&fm=jpg',
+      path: '/hungry-vibez',
+      stats: { count: '24/7', label: 'Delivery' }
+    },
+    {
+      id: 'vibez_tv',
+      name: 'Global Vibez DSG TV',
+      description: 'Your 24/7 personal network — 30-min episodes',
+      icon: Film,
+      gradient: 'from-indigo-500 via-blue-600 to-cyan-500',
+      glow: 'rgba(99,102,241,0.5)',
+      image: 'https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?crop=entropy&cs=srgb&fm=jpg',
+      path: '/vibe-tv',
+      stats: { count: 'LIVE', label: 'Streaming' }
+    },
+    {
+      id: 'dsg_music_group',
+      name: 'DSG Music Group',
+      description: '70/30 Revolution — beats, battles, collab matchmaker',
+      icon: Music,
+      gradient: 'from-yellow-400 via-amber-500 to-orange-600',
+      glow: 'rgba(251,191,36,0.5)',
+      image: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?crop=entropy&cs=srgb&fm=jpg',
+      path: '/dsg/music-group',
+      stats: { count: '70/30', label: 'Pillar 01' }
+    },
+    {
+      id: 'yellow_pages',
+      name: 'Vibe Yellow Pages',
+      description: 'Mom & Pop directory — DSG Guard verified · hyper-local',
+      icon: BookMarked,
+      gradient: 'from-yellow-400 via-yellow-500 to-orange-500',
+      glow: 'rgba(253,224,71,0.5)',
+      image: 'https://images.unsplash.com/photo-1556745757-8d76bdb6984b?crop=entropy&cs=srgb&fm=jpg',
+      path: '/yellow-pages',
+      stats: { count: 'NEW', label: 'Pillar 04' }
+    },
+    {
+      id: 'beat_vault',
+      name: 'Beat Vault',
+      description: 'Auction & buy beats — artists keep 70% forever',
+      icon: Music,
+      gradient: 'from-yellow-400 via-amber-500 to-orange-600',
+      glow: 'rgba(251,191,36,0.5)',
+      image: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?crop=entropy&cs=srgb&fm=jpg',
+      path: '/dsg/beat-vault',
+      stats: { count: '70/30', label: 'Revolution' }
+    },
+    {
+      id: 'memory_bank',
+      name: 'Memory Bank',
+      description: 'Sync-watch movies on Cinema Dates with your match',
+      icon: Heart,
+      gradient: 'from-rose-500 via-pink-600 to-purple-700',
+      glow: 'rgba(244,63,94,0.5)',
+      image: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?crop=entropy&cs=srgb&fm=jpg',
+      path: '/dsg/memory-bank',
+      stats: { count: '∞', label: 'Date Nights' }
+    },
+    {
+      id: 'vigilant_matchmaking',
+      name: 'Vigilant Matchmaking',
+      description: '98% synergy logic — find your true Player 2',
+      icon: Sparkles,
+      gradient: 'from-cyan-400 via-teal-500 to-emerald-500',
+      glow: 'rgba(34,211,238,0.5)',
+      image: 'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?crop=entropy&cs=srgb&fm=jpg',
+      path: '/dsg/matchmaking',
+      stats: { count: '98%', label: 'Synergy' }
+    },
+    {
+      id: 'cultural_onboarding',
+      name: 'Cultural Profile',
+      description: 'Set your home, dialect & cultural values for 200% global fit',
+      icon: Languages,
+      gradient: 'from-emerald-400 via-cyan-500 to-blue-600',
+      glow: 'rgba(20,184,166,0.5)',
+      image: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?crop=entropy&cs=srgb&fm=jpg',
+      path: '/dating/cultural-onboarding',
+      stats: { count: '4', label: 'Steps' }
+    },
+    {
+      id: 'voice_mirror',
+      name: 'Voice Mirror',
+      description: 'Pair your voice with a partner — chat hands-free',
+      icon: Mic,
+      gradient: 'from-fuchsia-500 via-purple-600 to-indigo-700',
+      glow: 'rgba(217,70,239,0.5)',
+      image: 'https://images.unsplash.com/photo-1590602847861-f357a9332bbc?crop=entropy&cs=srgb&fm=jpg',
+      path: '/voice-mirror',
+      stats: { count: '🎙', label: 'Pair Up' }
+    },
+    {
+      id: 'rides',
+      name: 'Vibes Rides',
+      description: 'Safe, verified transportation for dates',
+      icon: Car,
+      gradient: 'from-blue-600 via-sky-500 to-cyan-400',
+      glow: 'rgba(59,130,246,0.5)',
+      image: 'https://images.unsplash.com/photo-1673293964910-1a7dc4d5aa47?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1NzZ8MHwxfHNlYXJjaHwxfHx0cnVzdHdvcnRoeSUyMHNhZmUlMjBkcml2ZXIlMjBjYXIlMjBpbnRlcmlvciUyMG1vZGVybnxlbnwwfHx8fDE3NzM2OTkzMTl8MA&ixlib=rb-4.1.0&q=85',
+      path: '/rides',
+      stats: { count: '100%', label: 'Verified' }
+    }
+  ];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-slate-950">
+        <motion.div 
+          className="text-white text-xl"
+          animate={{ opacity: [0.5, 1, 0.5] }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+        >
+          Loading your universe...
+        </motion.div>
+      </div>
+    );
+  }
+
+  return (
+    <RoomLayout theme="games" showStars={true}>
+      {/* Notification Banner - Only shows after login */}
+      <NotificationBanner />
+      
+
+      {/* Header */}
+      <header className="relative z-50 bg-black/20 backdrop-blur-lg border-b border-white/10">
+        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <Logo size="lg" />
+            <div>
+              <h1 className="text-2xl font-bold text-white">Global Vibez DSG</h1>
+              <p className="text-xs text-slate-300">The Social Multiverse</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <CreditBalance />
+            
+            <GlassCard className="px-4 py-2" hoverable={false}>
+              <div className="text-white text-sm">
+                <span className="font-semibold">{user?.name}</span>
+                {user?.membership_type !== 'free' && (
+                  <Crown className="w-4 h-4 inline-block ml-2 text-yellow-400" />
+                )}
+              </div>
+            </GlassCard>
+            
+            <Button 
+              variant="ghost" 
+              size="icon"
+              className="text-white hover:bg-white/10"
+              onClick={() => navigate('/profile/edit')}
+              aria-label="Settings"
+              title="Settings"
+              data-testid="dashboard-settings-btn"
+            >
+              <Settings className="w-5 h-5" />
+            </Button>
+            
+            <Button 
+              variant="ghost" 
+              size="icon"
+              className="text-white hover:bg-white/10"
+              onClick={handleLogout}
+              aria-label="Log out"
+              title="Log out"
+              data-testid="dashboard-logout-btn"
+            >
+              <LogOut className="w-5 h-5" />
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <div className="container mx-auto px-4 py-12">
+        {/* Welcome Section */}
+        <motion.div
+          className="text-center mb-12"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <h2 className="text-5xl md:text-6xl font-bold text-white mb-4">
+            Welcome Back, <span className="bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">{user?.name?.split(' ')[0]}</span>
+          </h2>
+          <p className="text-xl text-slate-300">
+            Choose your destination in the Global Vibez DSG universe
+          </p>
+        </motion.div>
+
+        {/* Chair-holder vote banner — chair holders only, auto-hides if no open polls */}
+        <ChairHolderVoteBanner />
+
+        {/* Room Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+          {rooms.map((room, index) => {
+            const Icon = room.icon;
+            
+            return (
+              <motion.div
+                key={room.id}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+              >
+                <GlassCard
+                  hoverable={true}
+                  onClick={() => navigate(room.path)}
+                  glow={true}
+                  glowColor={room.glow}
+                  className="group overflow-hidden h-full"
+                >
+                  {/* Background Image */}
+                  <div className="relative h-48 overflow-hidden">
+                    <div 
+                      className="absolute inset-0 bg-cover bg-center transform group-hover:scale-110 transition-transform duration-500"
+                      style={{ backgroundImage: `url(${room.image})` }}
+                    />
+                    <div className={`absolute inset-0 bg-gradient-to-br ${room.gradient} opacity-60 group-hover:opacity-40 transition-opacity duration-300`} />
+                    
+                    {/* Icon */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <motion.div
+                        whileHover={{ scale: 1.2, rotate: 5 }}
+                        transition={{ type: "spring", stiffness: 400 }}
+                      >
+                        <Icon className="w-20 h-20 text-white drop-shadow-2xl" />
+                      </motion.div>
+                    </div>
+
+                    {/* Stats Badge */}
+                    <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full">
+                      <span className="text-white font-mono font-bold">{room.stats.count}</span>
+                      <span className="text-slate-300 text-sm ml-1">{room.stats.label}</span>
+                    </div>
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-6">
+                    <h3 className="text-2xl font-bold text-white mb-2">
+                      {room.name}
+                    </h3>
+                    <p className="text-slate-300 mb-4">
+                      {room.description}
+                    </p>
+                    
+                    <div className={`inline-flex items-center gap-2 text-white font-semibold px-4 py-2 rounded-full bg-gradient-to-r ${room.gradient}`}>
+                      <span>Enter</span>
+                      <Sparkles className="w-4 h-4" />
+                    </div>
+                  </div>
+                </GlassCard>
+              </motion.div>
+            );
+          })}
+        </div>
+
+        {/* Quick Actions */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.8 }}
+        >
+          <GlassCard className="p-8">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+              <div>
+                <h3 className="text-2xl font-bold text-white mb-2">
+                  {user?.membership_type === 'free' ? 'Unlock Premium Features' : 'Your Premium Status'}
+                </h3>
+                <p className="text-slate-300">
+                  {user?.membership_type === 'free' 
+                    ? 'Get unlimited access to all rooms, games, and exclusive features'
+                    : 'You have access to all premium features across the universe'
+                  }
+                </p>
+              </div>
+              
+              <div className="flex gap-4">
+                {user?.membership_type === 'free' && (
+                  <NeonButton
+                    variant="gradient"
+                    onClick={() => navigate('/pricing')}
+                  >
+                    <Crown className="w-5 h-5 inline-block mr-2" />
+                    Upgrade Now
+                  </NeonButton>
+                )}
+                
+                <NeonButton
+                  variant="ghost"
+                  onClick={() => navigate('/practice')}
+                >
+                  <Gamepad2 className="w-5 h-5 inline-block mr-2" />
+                  Practice Mode
+                </NeonButton>
+              </div>
+            </div>
+          </GlassCard>
+        </motion.div>
+      </div>
+
+      <AppFooter />
+    </RoomLayout>
+  );
+}

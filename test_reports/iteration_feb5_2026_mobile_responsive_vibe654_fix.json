@@ -1,0 +1,37 @@
+{
+  "summary": "Feb 5, 2026 verification of (1) Vibe 654 /play wallet-highest-balance backend fix, (2) mobile responsiveness across ALL 12 AAA card-game lobbies + Solo Vault + Standalone Dice, (3) new SideDockDecision + RoomMenuBar components. Backend regression shield 45/45 PASS (all 5 new locks green). Live backend curl probe: demo-login -> POST /api/games/vibe654/play main_bet=25 -> success=true, credits debited 96945 -> 96920 (exact 25 debit verified via /api/auth/me). Frontend mobile (375px/390px): ZERO horizontal overflow on /vibe-654/solo, /dice, and ALL 12 AAA lobbies (/spades, /hearts, /pinochle, /euchre, /rummy, /gin-rummy, /crazy-eights, /go-fish, /war, /uno, /dominoes, /bid-whist). NovaDealerHeader on /dice confirmed position:static (inline, no longer absolute — fix verified). Spades 13-card hand fan at 390px renders at 62x78 per card, fits viewport, no right-edge overflow. Solo Vault desktop 1280 screenshot shows the new sticky RoomMenuBar with 'High Roller · Solo Vault' title + Back button. Redeploy-ready for all items in scope.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "RoomMenuBar container testid", "issue": "Parent wrapper has no [data-testid=\"room-menu-bar\"] attribute — only children (room-menu-bar-back, room-menu-bar-title) carry testids. Not a functional bug but weakens lock: `test_room_menu_bar_component_with_themes` greps source, not runtime DOM. Consider adding data-testid=\"room-menu-bar\" on the outer <nav>/<header>.", "selector": "[data-testid=\"room-menu-bar\"]", "priority": "LOW"},
+      {"component": "PrivyLoginButton (carry-over from prior 2 iterations)", "issue": "Privy SDK keeps throwing 'TypeError: e is not a function' + CSP frame-ancestors 403 + dozens of postMessage warnings on EVERY page load because PrivyProvider mounts globally. Not a regression but pollutes every console session; potential user-facing if Privy ever gates a real flow.", "selector": "[data-testid=\"login-privy-btn\"]", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/regression_shield.py",
+    "/app/test_reports/pytest/iter_feb5_2026_mobile_regression.xml"
+  ],
+  "action_items": [
+    "(LOW) Add data-testid=\"room-menu-bar\" to the outer container of RoomMenuBar.tsx so the regression lock can assert runtime presence, not just source-grep.",
+    "(LOW carry-over) Tighten PrivyLoginButton self-hide guard on preview domain — Privy iframe still throws on every page load and floods console."
+  ],
+  "critical_code_review_comments": [
+    "Backend /api/games/vibe654/play wallet-highest-balance fix is verified end-to-end: demo user (96,945 credits on users doc + 0-balance wallets row) now correctly debits from credits_balance instead of being blocked by the 0-balance row. Balance moved 96945 -> 96920 (exact 25 debit, success=true, dice + all_rolls payload sane).",
+    "All 45 regression_shield tests PASS, including the 5 newly-added locks (test_vibe654_play_picks_highest_balance_wallet, test_solo_vault_decision_dock_is_side_mounted, test_room_menu_bar_component_with_themes, test_spades_hand_fan_scales_on_mobile, test_aaa_top_bars_wrap_on_mobile).",
+    "Mobile smoke clean: zero horizontal overflow across 12 AAA lobbies at 390px AND Solo Vault + Standalone Dice at 375px. NovaDealerHeader position is confirmed 'static' at runtime — the absolute-positioned overlay-clipping regression is gone.",
+    "Consider a runtime e2e lock for side-dock visibility AFTER ante-in (not just import-grep), since current lock only asserts source contains SideDockDecision. The live dock appears only after POST /api/games/vibe654/play, so a real Playwright probe would catch layout regressions."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (45/45 pytest + live play endpoint debits correctly)", "frontend": "100% on mobile layout checks in scope"},
+  "test_credentials": "POST /api/auth/demo-login (no body) — returns token + user_id (demo_xxxxx). Note: the review_request described GET but actual route is POST only (GET returns 405). Demo user seeded with credits_balance ~96k on users doc + 0-balance wallets row (the exact regression scenario).",
+  "seed_data_creation": "None. One demo session (user_id demo_23970ac9) was exercised via /play to prove the wallet fix — left in place, harmless.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "The wallet-highest-balance bug on /api/games/vibe654/play is VERIFIED FIXED on live preview — do NOT regress the sorted-candidates list in /app/backend/routes/vibez_654_prescription.py around lines 398-438 (/play) and ~770 (/stand). Regression shield at /app/backend/tests/regression_shield.py is now at 45 tests (was 40) and must stay 45/45. For deeper Solo Vault runtime testing, start a game via POST /api/games/vibe654/play then inspect the SideDockDecision — it lives on right-4 top-1/2 on lg breakpoint and bottom-sticky on mobile. Standalone /dice uses theme='vibe654' (violet/fuchsia RoomMenuBar) + static NovaDealerHeader. All 12 AAA top bars use `flex flex-wrap items-start justify-between` + `order-3 w-full sm:order-none sm:w-auto` pill container. SpadesHandFan computes card size from window.innerWidth when N>=10 on <640px. Privy console spam is a long-standing cosmetic issue — do NOT let it mask real errors in future runs.",
+  "rca of the issue": "Root cause of the original /play 'Insufficient balance' bug: the vibez_654_prescription /play handler pulled the FIRST wallet row for the user from the wallets collection and debited it, without checking balance. Demo users ended up with a 0-balance wallets row AND a funded credits_balance on the users doc. Fix: build a sorted candidates list by balance desc (credits_balance on users doc vs any wallets rows) and debit from the highest-balance candidate. Verified: before=96945, after=96920, delta=25 = main_bet."
+}

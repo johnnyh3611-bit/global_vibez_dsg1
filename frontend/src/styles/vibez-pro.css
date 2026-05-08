@@ -1,0 +1,368 @@
+/**
+ * GLOBAL VIBEZ PRO - PREMIUM METAL/GLASS AESTHETIC
+ * The "Prescription" Stylesheet for High-Fidelity Casino Experience
+ * Designed for Nova (Lead), Ace, Ruby, and Jade MetaHuman dealers
+ */
+
+:root {
+  /* === DEALER SIGNATURE PALETTES === */
+  /* Nova - Professional/Confident (Gold) */
+  --nova-primary: #ffd700;
+  --nova-secondary: #bf953f;
+  --nova-glow: rgba(255, 215, 0, 0.3);
+  
+  /* Jade - Cool/Strategic (Mint) */
+  --jade-primary: #00ff7f;
+  --jade-secondary: #20c997;
+  --jade-glow: rgba(0, 255, 127, 0.3);
+  
+  /* Ace - Analytical/Precise (Ice Blue) */
+  --ace-primary: #00d4ff;
+  --ace-secondary: #0891b2;
+  --ace-glow: rgba(0, 212, 255, 0.3);
+  
+  /* Ruby - Warm/Encouraging (Rose) */
+  --ruby-primary: #ff006e;
+  --ruby-secondary: #c9184a;
+  --ruby-glow: rgba(255, 0, 110, 0.3);
+
+  /* === METAL & GLASS PHYSICS === */
+  --metal-shine: rgba(255, 255, 255, 0.15);
+  --glass-bg: rgba(0, 0, 0, 0.75);
+  --table-dark: #0a0a0a;
+  --chrome-light: #2c2c2c;
+  --chrome-dark: #000000;
+  --chrome-border: #444;
+  
+  /* === DEPTH & SHADOW === */
+  --depth-xl: 0 50px 100px rgba(0, 0, 0, 0.9);
+  --inset-depth: inset 0 0 50px rgba(0, 0, 0, 0.5);
+  --glow-ambient: 0 0 25px;
+}
+
+/* ========================================
+   1. THE "PRESCRIPTION" GLASS EFFECT
+   ======================================== */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(15px) saturate(150%);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+}
+
+.glass-card {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem;
+}
+
+/* ========================================
+   2. HIGH-FIDELITY METAL BUTTONS
+   ======================================== */
+.metal-button {
+  background: linear-gradient(145deg, var(--chrome-light), var(--chrome-dark));
+  border: 1.5px solid var(--chrome-border);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: inset 2px 2px 5px #444, 5px 5px 15px rgba(0, 0, 0, 0.8);
+}
+
+/* The 'Specular Glint' that moves when you hover */
+.metal-button::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg, 
+    transparent, 
+    var(--metal-shine), 
+    transparent
+  );
+  transform: rotate(45deg);
+  transition: 0.5s;
+  pointer-events: none;
+}
+
+.metal-button:hover::after {
+  left: 120%;
+}
+
+.metal-button:active {
+  transform: scale(0.95);
+  filter: brightness(1.5);
+}
+
+/* ========================================
+   3. DEALER-SPECIFIC ACTIVATION STATES
+   ======================================== */
+
+/* Nova's Gold Activation Pulse */
+.action-ready-nova {
+  background: linear-gradient(to right, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c) !important;
+  color: #000 !important;
+  font-weight: 900;
+  box-shadow: var(--glow-ambient) var(--nova-glow);
+  animation: nova-shimmer 2s infinite linear;
+  border: none;
+}
+
+@keyframes nova-shimmer {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.4); }
+}
+
+/* Jade's Mint Activation */
+.action-ready-jade {
+  background: linear-gradient(to right, #00ff7f, #7fffd4, #20c997) !important;
+  color: #000 !important;
+  font-weight: 900;
+  box-shadow: var(--glow-ambient) var(--jade-glow);
+  animation: jade-pulse 2s infinite ease-in-out;
+}
+
+@keyframes jade-pulse {
+  0%, 100% { box-shadow: 0 0 20px var(--jade-glow); }
+  50% { box-shadow: 0 0 40px var(--jade-glow); }
+}
+
+/* Ace's Ice Blue Activation */
+.action-ready-ace {
+  background: linear-gradient(to right, #00d4ff, #7dd3fc, #0891b2) !important;
+  color: #000 !important;
+  font-weight: 900;
+  box-shadow: var(--glow-ambient) var(--ace-glow);
+  animation: ace-flicker 1.5s infinite steps(2);
+}
+
+@keyframes ace-flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.95; }
+}
+
+/* Ruby's Rose Activation */
+.action-ready-ruby {
+  background: linear-gradient(to right, #ff006e, #ff4d8d, #c9184a) !important;
+  color: #fff !important;
+  font-weight: 900;
+  box-shadow: var(--glow-ambient) var(--ruby-glow);
+  animation: ruby-heartbeat 1.2s infinite ease-in-out;
+}
+
+@keyframes ruby-heartbeat {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* ========================================
+   4. THE 3D TABLE DEPTH
+   ======================================== */
+.game-table-container {
+  perspective: 1200px;
+}
+
+.game-table-surface {
+  transform: rotateX(12deg);
+  background: radial-gradient(circle at center, #1a1a1a 0%, #050505 100%);
+  border-radius: 100px;
+  border: 6px solid #222;
+  box-shadow: var(--depth-xl), var(--inset-depth);
+  transform-style: preserve-3d;
+}
+
+/* Betting Zone with Glow */
+.betting-zone {
+  border: 2px solid rgba(255, 215, 0, 0.5);
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.betting-zone:hover {
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.4);
+  border-color: rgba(255, 215, 0, 0.8);
+}
+
+/* ========================================
+   5. METAHUMAN DEALER FRAMES
+   ======================================== */
+.dealer-broadcast-frame {
+  position: relative;
+  padding: 2px;
+  border-radius: 1rem;
+  background: linear-gradient(to bottom, var(--nova-primary), transparent);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
+}
+
+.dealer-broadcast-frame.jade {
+  background: linear-gradient(to bottom, var(--jade-primary), transparent);
+}
+
+.dealer-broadcast-frame.ace {
+  background: linear-gradient(to bottom, var(--ace-primary), transparent);
+}
+
+.dealer-broadcast-frame.ruby {
+  background: linear-gradient(to bottom, var(--ruby-primary), transparent);
+}
+
+.dealer-avatar-circle {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 2px solid var(--nova-primary);
+  overflow: hidden;
+  box-shadow: 0 0 15px var(--nova-glow);
+  transition: all 0.3s ease;
+}
+
+.dealer-avatar-circle:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 30px var(--nova-glow);
+}
+
+/* ========================================
+   6. CHIP & TOKEN ANIMATIONS
+   ======================================== */
+.chip-drop {
+  animation: chip-fall 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes chip-fall {
+  0% {
+    transform: translateY(-100px) scale(0.5);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.chip-stack {
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+  transition: transform 0.2s ease;
+}
+
+.chip-stack:hover {
+  transform: scale(1.1) translateY(-5px);
+}
+
+/* ========================================
+   7. DICE & CARD PHYSICS
+   ======================================== */
+.dice-rolling {
+  animation: dice-tumble 1.5s cubic-bezier(0.36, 0, 0.66, -0.56) infinite;
+}
+
+@keyframes dice-tumble {
+  0%, 100% { transform: rotate(0deg) translateY(0); }
+  25% { transform: rotate(90deg) translateY(-10px); }
+  50% { transform: rotate(180deg) translateY(0); }
+  75% { transform: rotate(270deg) translateY(-10px); }
+}
+
+.card-deal {
+  animation: card-slide 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes card-slide {
+  0% {
+    transform: translateX(-200px) rotate(-45deg);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+/* ========================================
+   8. RESPONSIVE OPTIMIZATIONS
+   ======================================== */
+@media (max-width: 1024px) {
+  .game-table-surface {
+    transform: rotateX(8deg);
+  }
+  
+  .dealer-broadcast-frame {
+    transform: scale(0.9);
+  }
+}
+
+@media (max-width: 768px) {
+  .game-table-surface {
+    transform: rotateX(5deg);
+    border-radius: 50px;
+  }
+  
+  .metal-button {
+    font-size: 0.875rem;
+  }
+}
+
+/* ========================================
+   9. UTILITY CLASSES
+   ======================================== */
+.text-metal {
+  background: linear-gradient(to bottom, #fff, #aaa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-nova {
+  color: var(--nova-primary);
+  text-shadow: 0 0 10px var(--nova-glow);
+}
+
+.text-jade {
+  color: var(--jade-primary);
+  text-shadow: 0 0 10px var(--jade-glow);
+}
+
+.text-ace {
+  color: var(--ace-primary);
+  text-shadow: 0 0 10px var(--ace-glow);
+}
+
+.text-ruby {
+  color: var(--ruby-primary);
+  text-shadow: 0 0 10px var(--ruby-glow);
+}
+
+/* ========================================
+   10. DEALER MOOD STATES
+   ======================================== */
+.dealer-celebrating {
+  animation: celebrate-bounce 0.6s ease-in-out 3;
+}
+
+@keyframes celebrate-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
+
+.dealer-sympathetic {
+  animation: sympathetic-sway 1s ease-in-out infinite;
+}
+
+@keyframes sympathetic-sway {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(-5px); }
+}
+
+.dealer-professional {
+  animation: professional-subtle 3s ease-in-out infinite;
+}
+
+@keyframes professional-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.95; }
+}

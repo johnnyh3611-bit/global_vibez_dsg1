@@ -1,0 +1,49 @@
+{
+  "summary": "Tested Genius Phase per-user cap (PDF spec). Backend: 9/10 tests pass — one regression bug found in /api/chairs/genius-cap aggregation that incorrectly filters by status:'active' (a field _grant_chairs never writes), causing genius_sold to always return 0. Cap enforcement (HTTP 400) and admin toggle work correctly. Frontend: GeniusPhaseProgress renders perfectly on /how-chairs-work for both anon and authed users; pill/bar/user-cap-block testids all wired correctly.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "GET /api/chairs/genius-cap",
+        "issue": "genius_sold always returns 0 because aggregation filters by {phase_at_purchase:'Genius', status:'active'} but _grant_chairs() at chairs.py:333-346 never writes a `status` field on chair_purchases docs. DB has 5 Genius chairs purchased (verified), API returns genius_sold=0 and the public progress bar reads '0 / 50,000 · 0.00%'. Affects the user-facing Genius Phase Progress card AND the genius_remaining_total field used by the cap endpoint downstream consumers.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Genius Phase Progress card",
+        "issue": "Bar always shows 0% filled because backend `genius_sold` is always 0 (see backend critical bug). Component itself is correct — it just faithfully reflects the broken backend value.",
+        "affected_selectors": ["genius-phase-bar"]
+      }
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter_jan_2026_genius_cap.py",
+    "/app/backend/tests/test_iter_jan_2026_genius_cap_enforcement.py",
+    "/app/test_reports/pytest/genius_cap_full.xml"
+  ],
+  "action_items": [
+    "Fix /app/backend/routes/chairs.py line ~531-534: remove `status: 'active'` from the genius_sold aggregation match clause (or alternatively, write status='active' in _grant_chairs purchase_doc — but the simpler fix is to drop the filter since refunds/voids aren't currently a concept). After fix, GET /api/chairs/genius-cap should report genius_sold=5 (or whatever the DB sum is)."
+  ],
+  "critical_code_review_comments": [
+    "chairs.py:531-534 — aggregation match filters by `status: 'active'` but `_grant_chairs()` never writes a status field. Either remove the filter OR add `status: 'active'` to purchase_doc at line ~333-346 to make the intent explicit.",
+    "chairs.py:576-580 `db_from_request()` helper sits in the middle of route handlers; minor code-smell but functional. Consider moving below all routes or inlining `get_database()` in admin_toggle_genius_cap.",
+    "_genius_cap_remaining (line 144-152) uses `user_id_lookup` 8-char prefix — collision risk acknowledged as negligible in code comments elsewhere; OK.",
+    "Frontend GeniusPhaseProgress.tsx — clean, well-documented, polls every 30s; error state has data-testid; loading skeleton present. No issues."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter_jan_2026_genius_cap.py (new)",
+    "/app/backend/tests/test_iter_jan_2026_genius_cap_enforcement.py (new)"
+  ],
+  "success_rate": {"backend": "90%", "frontend": "100%"},
+  "test_credentials": "Demo: POST /api/auth/demo-login (no body). Admin: POST /api/admin/vault-auth {password:'GlobalVibez_Founder_2025!', code:'000000'}.",
+  "seed_data_creation": "Seeded 95 chair Genius purchase for demo user via direct pymongo insert into chair_purchases with _test_seed=true marker; cleaned up in fixture teardown. Also rolled back a real 2-chair test-buy that ran via /api/chairs/test-buy when cap was lifted (decrement counter + balance + delete purchase). Final DB state verified: 1 Genius purchase, counter=5, demo balance=5 chairs, cap state lifted=false (production-ready).",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "The genius_sold=0 bug is a one-line fix in chairs.py at the aggregation around line 531-534. After fix, re-run /app/backend/tests/test_iter_jan_2026_genius_cap.py::TestGeniusCapPublic::test_genius_sold_matches_db to confirm. Cap enforcement test file (test_iter_jan_2026_genius_cap_enforcement.py) seeds 95 chairs to push demo user to 100 total — be sure cleanup ran by checking `db.chair_purchases.count_documents({'_test_seed': True})` returns 0. Also verify db.platform_state.find_one({'_id':'chair_genius_cap'}) shows lifted=false at the end of every test session.",
+  "rca of the issue": "RCA: In the recent Genius cap implementation, the developer added a sum-by-quantity aggregation at /api/chairs/genius-cap to compute system-wide genius_sold. The match stage includes `{status: 'active'}` likely copied from another module that DOES carry a status lifecycle (e.g. founders_pass). However, the chair purchase write path `_grant_chairs()` (chairs.py:333-346) never adds a `status` field. Result: the match never returns a row, sum is empty, genius_sold=0 always. Reproduction: GET /api/chairs/genius-cap → genius_sold=0; pymongo count_documents({'phase_at_purchase':'Genius'}) > 0. Mitigation: drop the `status: 'active'` filter from the aggregation pipeline, OR backfill status='active' on existing rows + add it to purchase_doc going forward. Recommended fix: drop the filter (single-line change) since chair purchases are immutable today (no refund/void concept exists in the schema)."
+}

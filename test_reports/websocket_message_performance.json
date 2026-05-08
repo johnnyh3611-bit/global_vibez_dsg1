@@ -1,0 +1,78 @@
+{
+  "test_timestamp": "2026-04-01T14:25:03.674343",
+  "server": "https://social-connect-953.preview.emergentagent.com",
+  "tests": {
+    "round_trip_latency": {
+      "samples": 90,
+      "min_ms": 27.55,
+      "avg_ms": 35.12,
+      "p50_ms": 33.78,
+      "p95_ms": 46.26,
+      "p99_ms": 47.31,
+      "max_ms": 47.31,
+      "target_met": true
+    },
+    "broadcast_latency": {
+      "samples": 47,
+      "avg_ms": 34.65,
+      "p95_ms": 46.48,
+      "target_met": true
+    },
+    "message_ordering": {
+      "sent": 100,
+      "received": 100,
+      "lost": 0,
+      "lost_percent": 0.0,
+      "duplicates": 0,
+      "ordering_accuracy": 100.0
+    },
+    "throughput": {
+      "clients": 10,
+      "messages_sent": 1000,
+      "messages_received": 1000,
+      "duration_seconds": 1.55,
+      "throughput_msg_per_sec": 643.3,
+      "target_met": true
+    },
+    "burst_traffic": {
+      "messages_sent": 200,
+      "messages_received": 200,
+      "burst_duration_ms": 1.55,
+      "send_rate_msg_per_sec": 128996.0,
+      "response_rate_percent": 100.0,
+      "avg_latency_ms": 57.76,
+      "p95_latency_ms": 68.69
+    },
+    "sustained_load": {
+      "messages_sent": 722,
+      "messages_received": 722,
+      "response_rate_percent": 100.0,
+      "avg_latency_ms": 51.35,
+      "p95_latency_ms": 60.1,
+      "first_half_avg_ms": 51.45,
+      "second_half_avg_ms": 51.25,
+      "latency_degradation_ms": -0.21
+    },
+    "payload_size_impact": {
+      "100B": {
+        "avg_ms": 27.5,
+        "p95_ms": 30.52
+      },
+      "1000B": {
+        "avg_ms": 27.95,
+        "p95_ms": 31.68
+      },
+      "5000B": {
+        "avg_ms": 28.29,
+        "p95_ms": 30.9
+      }
+    }
+  },
+  "overall_assessment": {
+    "passed": true,
+    "round_trip_latency_passed": true,
+    "broadcast_latency_passed": true,
+    "message_ordering_passed": true,
+    "throughput_passed": true
+  }
+}

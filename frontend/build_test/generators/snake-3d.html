@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, device-height=1000, initial-scale=1.0">
+  <title>3D Snake Card</title>
+  <style>
+    body { margin: 0; overflow: hidden; background: #000; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setSize(1000, 1000);
+    renderer.setClearColor(0x000000);
+    document.body.appendChild(renderer.domElement);
+
+    // Create snake body
+    const snakeSegments = [];
+    const segmentCount = 15;
+    
+    for (let i = 0; i < segmentCount; i++) {
+      const size = 2 - (i * 0.08);
+      const segmentGeometry = new THREE.SphereGeometry(size, 16, 16);
+      const hue = (i / segmentCount) * 0.3 + 0.3; // Green to cyan
+      const segmentMaterial = new THREE.MeshStandardMaterial({ 
+        color: new THREE.Color().setHSL(hue, 1, 0.5),
+        metalness: 0.6,
+        roughness: 0.2,
+        emissive: new THREE.Color().setHSL(hue, 1, 0.5),
+        emissiveIntensity: 0.8
+      });
+      const segment = new THREE.Mesh(segmentGeometry, segmentMaterial);
+      scene.add(segment);
+      snakeSegments.push(segment);
+    }
+
+    // Snake head (larger, with eyes)
+    const headGeometry = new THREE.SphereGeometry(2.5, 32, 32);
+    const headMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0x00ff88,
+      metalness: 0.7,
+      roughness: 0.2,
+      emissive: 0x00ff88,
+      emissiveIntensity: 1.0
+    });
+    const head = new THREE.Mesh(headGeometry, headMaterial);
+    scene.add(head);
+
+    // Eyes
+    const eyeGeometry = new THREE.SphereGeometry(0.4, 16, 16);
+    const eyeMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0xff0055,
+      emissive: 0xff0055,
+      emissiveIntensity: 2.0
+    });
+    const eye1 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+    const eye2 = new THREE.Mesh(eyeGeometry, eyeMaterial);
+    eye1.position.set(1, 0.8, 1.8);
+    eye2.position.set(-1, 0.8, 1.8);
+    head.add(eye1);
+    head.add(eye2);
+
+    // Grid floor
+    const gridHelper = new THREE.GridHelper(40, 20, 0x00ff88, 0x004422);
+    gridHelper.position.y = -10;
+    scene.add(gridHelper);
+
+    // Neon trail particles
+    const particleGeometry = new THREE.BufferGeometry();
+    const particleCount = 100;
+    const positions = new Float32Array(particleCount * 3);
+    
+    for (let i = 0; i < particleCount * 3; i++) {
+      positions[i] = (Math.random() - 0.5) * 50;
+    }
+    
+    particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const particleMaterial = new THREE.PointsMaterial({ 
+      color: 0x00ffff,
+      size: 0.3,
+      transparent: true,
+      opacity: 0.6
+    });
+    const particles = new THREE.Points(particleGeometry, particleMaterial);
+    scene.add(particles);
+
+    // Lights
+    const ambientLight = new THREE.AmbientLight(0x002200, 1.0);
+    scene.add(ambientLight);
+
+    const pointLight1 = new THREE.PointLight(0x00ff88, 3, 100);
+    pointLight1.position.set(10, 10, 10);
+    scene.add(pointLight1);
+
+    const pointLight2 = new THREE.PointLight(0x00ffff, 2, 100);
+    pointLight2.position.set(-10, 10, 10);
+    scene.add(pointLight2);
+
+    camera.position.set(0, 5, 25);
+    camera.lookAt(0, 0, 0);
+
+    // Animation
+    let time = 0;
+    function animate() {
+      requestAnimationFrame(animate);
+      time += 0.05;
+      
+      // Animate snake in S-curve
+      const pathRadius = 8;
+      const headAngle = time;
+      head.position.x = Math.cos(headAngle) * pathRadius;
+      head.position.z = Math.sin(headAngle) * pathRadius;
+      head.position.y = Math.sin(time * 2) * 2;
+      head.rotation.y = headAngle + Math.PI / 2;
+      
+      // Follow segments
+      snakeSegments.forEach((segment, index) => {
+        const delay = (index + 1) * 0.3;
+        const angle = time - delay;
+        segment.position.x = Math.cos(angle) * pathRadius;
+        segment.position.z = Math.sin(angle) * pathRadius;
+        segment.position.y = Math.sin((time - delay) * 2) * 2;
+      });
+      
+      // Animate particles
+      particles.rotation.y += 0.002;
+      
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+</html>

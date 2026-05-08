@@ -1,0 +1,482 @@
+/**
+ * Revenue Dashboard Styles
+ * 
+ * Styling for admin treasury widgets:
+ * - Revenue Tracker
+ * - Payout Queue Manager
+ */
+
+/* === REVENUE WIDGET === */
+
+.revenue-widget {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95));
+  border: 2px solid rgba(34, 211, 238, 0.3);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.revenue-widget.loading,
+.payout-queue-widget.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}
+
+.loader-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(34, 211, 238, 0.2);
+  border-top-color: #22d3ee;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.widget-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.widget-header h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #22d3ee;
+  margin: 0;
+  text-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+}
+
+.refresh-btn {
+  background: rgba(34, 211, 238, 0.1);
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 18px;
+  transition: all 0.3s;
+}
+
+.refresh-btn:hover {
+  background: rgba(34, 211, 238, 0.2);
+  transform: rotate(180deg);
+}
+
+.error-banner {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid #ef4444;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+  color: #fca5a5;
+  font-size: 14px;
+}
+
+/* === STAT GRID === */
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: rgba(15, 23, 42, 0.6);
+  border: 2px solid rgba(100, 116, 139, 0.3);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  transition: all 0.3s;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.stat-card.profit {
+  border-color: rgba(34, 197, 94, 0.5);
+}
+
+.stat-card.pending {
+  border-color: rgba(251, 191, 36, 0.5);
+}
+
+.stat-card.circulation {
+  border-color: rgba(34, 211, 238, 0.5);
+}
+
+.stat-card.users {
+  border-color: rgba(168, 85, 247, 0.5);
+}
+
+.stat-icon {
+  font-size: 32px;
+  line-height: 1;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-label {
+  display: block;
+  font-size: 12px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.stat-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 6px 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-value.profit-text {
+  color: #22c55e;
+  text-shadow: 0 0 15px rgba(34, 197, 94, 0.5);
+}
+
+.stat-value.pending-text {
+  color: #fbbf24;
+  text-shadow: 0 0 15px rgba(251, 191, 36, 0.5);
+}
+
+.stat-value.coins-text {
+  color: #22d3ee;
+  text-shadow: 0 0 15px rgba(34, 211, 238, 0.5);
+}
+
+.stat-value.users-text {
+  color: #a855f7;
+  text-shadow: 0 0 15px rgba(168, 85, 247, 0.5);
+}
+
+.stat-subtitle {
+  font-size: 12px;
+  color: #cbd5e1;
+}
+
+/* === FEE INFO === */
+
+.fee-info {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  gap: 24px;
+}
+
+.info-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.info-label {
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.info-value {
+  color: #22d3ee;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+/* === PAYOUT QUEUE WIDGET === */
+
+.payout-queue-widget {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95));
+  border: 2px solid rgba(251, 191, 36, 0.3);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* === FILTER TABS === */
+
+.filter-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  border-bottom: 2px solid rgba(100, 116, 139, 0.2);
+}
+
+.filter-tab {
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  padding: 12px 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: #94a3b8;
+  transition: all 0.3s;
+}
+
+.filter-tab:hover {
+  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.filter-tab.active {
+  color: #fbbf24;
+  border-bottom-color: #fbbf24;
+}
+
+/* === PAYOUT TABLE === */
+
+.payout-table-container {
+  overflow-x: auto;
+  margin-bottom: 20px;
+}
+
+.payout-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.payout-table thead {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.payout-table th {
+  padding: 12px 16px;
+  text-align: left;
+  color: #cbd5e1;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid rgba(100, 116, 139, 0.3);
+}
+
+.payout-table tbody tr {
+  border-bottom: 1px solid rgba(100, 116, 139, 0.1);
+  transition: all 0.2s;
+}
+
+.payout-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.payout-table tbody tr.ready-row {
+  background: rgba(34, 197, 94, 0.05);
+}
+
+.payout-table tbody tr.waiting-row {
+  background: rgba(251, 191, 36, 0.03);
+}
+
+.payout-table td {
+  padding: 16px;
+  color: #e2e8f0;
+}
+
+.user-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.user-cell strong {
+  color: #22d3ee;
+}
+
+.user-cell small {
+  color: #64748b;
+  font-size: 11px;
+}
+
+.coins-cell {
+  color: #22d3ee;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+}
+
+.usd-cell,
+.fee-cell,
+.net-cell {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.net-cell strong {
+  color: #22c55e;
+  font-size: 15px;
+}
+
+.date-cell {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.date-cell small {
+  color: #64748b;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-badge.ready {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+}
+
+.status-badge.waiting {
+  background: rgba(251, 191, 36, 0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.4);
+}
+
+/* === ACTION BUTTONS === */
+
+.actions-cell {
+  text-align: right;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.approve-btn,
+.reject-btn,
+.reject-btn-small {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+.approve-btn {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+}
+
+.approve-btn:hover {
+  background: rgba(34, 197, 94, 0.3);
+  transform: scale(1.05);
+}
+
+.reject-btn,
+.reject-btn-small {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.reject-btn:hover,
+.reject-btn-small:hover {
+  background: rgba(239, 68, 68, 0.3);
+  transform: scale(1.05);
+}
+
+.reject-btn-small {
+  padding: 6px 10px;
+}
+
+/* === EMPTY STATE === */
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #64748b;
+}
+
+.empty-state p {
+  font-size: 16px;
+}
+
+/* === QUEUE SUMMARY === */
+
+.queue-summary {
+  display: flex;
+  gap: 24px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.summary-item {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.summary-item span {
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.summary-item strong {
+  color: #e2e8f0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.summary-item .ready-count {
+  color: #22c55e;
+}
+
+.summary-item .waiting-count {
+  color: #fbbf24;
+}
+
+/* === RESPONSIVE === */
+
+@media (max-width: 768px) {
+  .stat-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .fee-info {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .filter-tabs {
+    overflow-x: auto;
+  }
+  
+  .payout-table {
+    font-size: 11px;
+  }
+  
+  .payout-table th,
+  .payout-table td {
+    padding: 8px;
+  }
+  
+  .queue-summary {
+    flex-direction: column;
+    gap: 12px;
+  }
+}

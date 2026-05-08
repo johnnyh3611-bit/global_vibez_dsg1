@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><style>body{margin:0;background:#000;}</style></head><body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(75,1,0.1,1000),renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(1000,1000);renderer.setClearColor(0x000000);document.body.appendChild(renderer.domElement);
+const cardGeometry=new THREE.BoxGeometry(4,6,0.2);
+const cardMaterial=new THREE.MeshPhysicalMaterial({color:0x000000,metalness:1.0,roughness:0.0,clearcoat:1.0,clearcoatRoughness:0.1,emissive:0xff00ff,emissiveIntensity:0.8});
+const card=new THREE.Mesh(cardGeometry,cardMaterial);
+scene.add(card);
+const spadeGeometry=new THREE.SphereGeometry(1.5,32,32);
+const spadeMaterial=new THREE.MeshStandardMaterial({color:0xffd700,metalness:1.0,roughness:0.1,emissive:0xffd700,emissiveIntensity:1.5});
+const spade1=new THREE.Mesh(spadeGeometry,spadeMaterial);
+spade1.position.set(-1,1,0.3);spade1.scale.set(0.8,1,1);scene.add(spade1);
+const spade2=new THREE.Mesh(spadeGeometry,spadeMaterial);
+spade2.position.set(1,1,0.3);spade2.scale.set(0.8,1,1);scene.add(spade2);
+const tipGeometry=new THREE.ConeGeometry(1.2,2,32);
+const tip=new THREE.Mesh(tipGeometry,spadeMaterial);
+tip.position.set(0,-0.5,0.3);tip.rotation.z=Math.PI;scene.add(tip);
+for(let i=0;i<4;i++){
+  const chipGeometry=new THREE.CylinderGeometry(1.5,1.5,0.3,32);
+  const chipMaterial=new THREE.MeshStandardMaterial({color:i%2===0?0xff0055:0x00ffff,metalness:0.9,roughness:0.1,emissive:i%2===0?0xff0055:0x00ffff,emissiveIntensity:1.2});
+  const chip=new THREE.Mesh(chipGeometry,chipMaterial);
+  const angle=(i/4)*Math.PI*2;
+  chip.position.x=Math.cos(angle)*6;chip.position.z=Math.sin(angle)*6;chip.position.y=-3;chip.rotation.x=Math.PI/2;
+  scene.add(chip);
+}
+for(let i=0;i<3;i++){
+  const ringGeometry=new THREE.TorusGeometry(10+i*2,0.3,8,50);
+  const ringMaterial=new THREE.MeshBasicMaterial({color:i===0?0xffd700:(i===1?0xff00ff:0x00ffff),transparent:true,opacity:0.5});
+  const ring=new THREE.Mesh(ringGeometry,ringMaterial);
+  scene.add(ring);
+}
+const ambientLight=new THREE.AmbientLight(0x442200,1.5);scene.add(ambientLight);
+const pointLight1=new THREE.PointLight(0xffd700,4,100);pointLight1.position.set(0,15,20);scene.add(pointLight1);
+const pointLight2=new THREE.PointLight(0xff00ff,3,100);pointLight2.position.set(15,10,15);scene.add(pointLight2);
+const pointLight3=new THREE.PointLight(0x00ffff,3,100);pointLight3.position.set(-15,10,15);scene.add(pointLight3);
+camera.position.set(0,3,25);camera.lookAt(0,0,0);let time=0;
+function animate(){requestAnimationFrame(animate);time+=0.02;card.rotation.y=Math.sin(time)*0.2;scene.children.forEach((child,i)=>{if(child.geometry&&child.geometry.type==='CylinderGeometry'){child.rotation.z+=0.02;}if(child.geometry&&child.geometry.type==='TorusGeometry')child.rotation.z+=0.01;});renderer.render(scene,camera);}
+animate();
+</script></body></html>

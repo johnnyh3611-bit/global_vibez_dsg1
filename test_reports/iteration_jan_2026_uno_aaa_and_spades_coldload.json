@@ -1,0 +1,23 @@
+{
+  "summary": "UNO AAA backend + frontend regression PASSED. 6/6 backend tests (start shape, state, illegal play 400, draw, wild_pending + declare, spades reachable). Frontend: /spades cold-load exposes spades-aaa-lobby + spades-aaa-lobby-start-btn + legacy id; /uno renders lobby (uno-aaa-lobby, -start-btn, -back) with '108' + '500' house rules; /uno-aaa, /practice/play/uno, /multiplayer-uno, /multiplayer-uno/abc123 all redirect to /uno; game view shows spades-table[data-variant=neon, data-density=4p], uno-top-card, uno-draw-btn, uno-hand-strip, cards prefixed uno-card-<color>-<value> (e.g. uno-card-yellow-7); seat pills N/E/W=7 each, south hidden by design.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_iter_jan_2026_uno_aaa.py",
+    "/app/test_reports/pytest/uno_aaa_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "uno_game.is_legal treats wild4 identically to plain wild (always playable). Official UNO requires the 'no-legal-color' challenge rule for wild4; this is a known simplification documented in the engine header and is fine for practice mode — mention in roadmap.",
+    "uno_practice.py uses an in-process _MATCHES: Dict — state is lost on server restart and is not horizontally scalable. Acceptable for single-pod practice mode; migrate to Mongo/Redis if multiplayer UNO ships.",
+    "start endpoint draw_pile_count can range 77-79 (not the reviewer-advertised 79-80) because a starter Draw2 forces south to draw 2 from the pile during start_new_hand. Updated assertion range in test to 77-79. No code change needed — behavior is correct.",
+    "Note: Playwright detected 8 elements matching uno-card-*; 7 are hand cards + 1 is the top discard card (both use the uno-card-<color>-<value> prefix). Consider scoping to '[data-testid=\"uno-hand-strip\"] [data-testid^=\"uno-card-\"]' if strict hand-count tests are added."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter_jan_2026_uno_aaa.py (new)"],
+  "success_rate": {"backend": "100% (6/6)", "frontend": "100% on validated selectors"},
+  "test_credentials": "POST /api/auth/demo-login (no account needed)",
+  "seed_data_creation": "None — demo-login auto-provisions guest; UNO matches are in-memory.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend: /api/uno-practice/{start,state,play,declare,draw,new-hand} all work. Deck=108, starter reshuffled if wild4, pending_color always valid. Illegal plays → HTTP 400 'Illegal play'. Wild requires declared_color (or 200 with wild_pending=true + follow-up /declare). Frontend: /uno is canonical; legacy /uno-aaa, /practice/play/uno, /multiplayer-uno, /multiplayer-uno/:code all Navigate replace. /spades page wrapper carries both data-testid='spades-aaa-lobby' (primary) and the legacy id for back-compat; start button has data-testid='spades-aaa-lobby-start-btn'. Full 9-AAA-room regression (bid-whist/hearts/crazy-eights/go-fish/gin-rummy/rummy/war) not re-run here — previously green in iteration_jan_2026_final_aaa_ginrummy_rummy_war.json and no routes/code touching those rooms in this diff."
+}

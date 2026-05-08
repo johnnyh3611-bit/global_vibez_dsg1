@@ -1,0 +1,48 @@
+{
+  "summary": "Beta-readiness redeploy verification sweep. Backend: regression_shield 117/117 PASS (incl. all 4 new polish tests test_vibe_tv_channel_player_live_room_exists, test_memory_bank_cinema_room_exists, test_ball_spin_audio_wired, test_poker_practice_chip_toss_wired); v8 13/13 PASS; my-vibez streaming upload 3/3 PASS (multipart auth-gated). GISA /api/gisa/run mode=full_audit users=500 returns vectors {stress:pass, isolation:pass, visual:warn(94.71% vs 95% target), tx_velocity:pass via solana_tx_per_sec=1782 / ws_p95=66ms} — overall_status='warn' (oscillation flagged in previous report; main agent action item already documented). Frontend live-URL verification: Vibe TV /vibe-tv/main 5/5 testids present (vibe-tv-channel-player, vibe-tv-player-frame, vibe-tv-on-air, vibe-tv-viewer-count, vibe-tv-up-next, Back-to-Hub) — up-next strip renders 2 children (spec asked for 3, see issue below). Memory Bank Cinema /dsg/memory-bank/room/test-room-1 4/4 testids present (memory-bank-cinema-room, cinema-player-frame, cinema-play-toggle, cinema-voice-hint='Voice on'). Poker ChipToss source-wiring confirmed in PokerPractice.tsx (raise/allin/call all dispatch ChipToss via setChipTossKey); regression_shield test passes. BallSpin source-wiring confirmed (CasinoCinematics.tsx exports component + audio cues; cardSoundManager has playRouletteWhoosh/playRouletteClick); regression_shield test passes. Smoke: /dashboard loads, /games lobby renders 16+ tiles in viewport, /chair-hall renders 3D Infinity Table canvas with 6 chair seats visible. Two LIVE-UI gaps to flag for main agent (NOT blocking, see below).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/gisa/run", "issue": "visual.average_parity = 94.71% — 0.29 pp below the 95% target → vector status 'warn' → summary.overall_status='warn'. 3 of 4 vectors PASS (stress/isolation/tx_velocity). Same statistical-oscillation flagged in iteration_feb16_2026_beta_readiness_sweep.json. Recommend widening tolerance to 94% or surfacing a 'pass_with_warnings' label."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "VibeTvChannelPlayer", "issue": "vibe-tv-up-next strip renders only 2 child items in the live DOM (spec asked for 3 upcoming items). Container testid is present but the upcoming list is short by one entry — verify the static seed/array length in VibeTvChannelPlayer.tsx.", "selector": "[data-testid='vibe-tv-up-next'] > *", "priority": "LOW"},
+      {"component": "EuropeanRoulette page (/european-roulette)", "issue": "This route uses _GenericCasinoGame (a thin form: bet-type dropdown + Play button) and does NOT mount the BallSpin cinematic. BallSpin only renders on the AAA practice variant (e.g. RouletteGameAAA / PracticeRoulette / vibes-wheel). The regression_shield test test_ball_spin_audio_wired passes at the source level; the cinematic IS wired, just not on this minimal lobby page. If the founder spec wants BallSpin on /european-roulette specifically, swap _GenericCasinoGame for the AAA renderer.", "selector": "[data-testid='ball-spin']", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/regression_shield.py",
+    "/app/backend/tests/test_v8_api_endpoints.py",
+    "/app/backend/tests/test_my_vibez_streaming_upload.py",
+    "/app/test_reports/pytest/iter_feb17_regression_shield.xml",
+    "/app/test_reports/pytest/iter_feb17_v8_streaming.xml"
+  ],
+  "action_items": [
+    "[FRONTEND - LOW] VibeTvChannelPlayer.tsx — vibe-tv-up-next list renders 2 items live; seed/extend the upcoming list to 3 (founder spec).",
+    "[FRONTEND - MEDIUM] /european-roulette page does not mount BallSpin (uses _GenericCasinoGame). If founder wants the cinematic on this lobby route, swap to the AAA renderer or import BallSpin into _GenericCasinoGame on roulette endpoints. As of now, BallSpin only fires on AAA practice / vibes-wheel routes. Source wiring is correct — purely a route-wiring choice.",
+    "[BACKEND - OPTIONAL] /api/gisa/run — widen visual-parity tolerance to 94% OR introduce 'pass_with_warnings' status so founder reports stop oscillating between pass/warn.",
+    "[CARRYOVER from feb16] SettingsPage tab-strip testids (settings-ai-dealer-tab / settings-language-tab) still only on content panels — re-verify after main agent fix.",
+    "[CARRYOVER from feb16] /poker-3d & /poker-css3d still need a redirect in App.js."
+  ],
+  "critical_code_review_comments": [
+    "All 4 new polish-item regression tests are correctly anchored to source files (VibeTvChannelPlayer.tsx, MemoryBankCinemaRoom.tsx, CasinoCinematics.tsx::BallSpin, PokerPractice.tsx::ChipToss wiring). Source-of-truth verified.",
+    "GISA full_audit completes in ~3ms (statistical model, not real Locust harness) — fine for preview, but production beta should swap in the locustfile.py harness for true contention testing.",
+    "Streaming upload route /api/my-vibez/upload uses FastAPI Annotated[UploadFile, File()] streaming — test_multipart_streaming_upload_uses_streaming_form confirms no SpooledTemporaryFile blocking. Good.",
+    "/vibe-tv/main + /dsg/memory-bank/room/* both render iframes pointed at YouTube — note the 400 errors in console are YouTube embed-domain rejections in headless mode (not a code bug; will resolve in a real browser w/ correct referrer)."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "100% (117 regression_shield + 13 v8 + 3 streaming = 133/133)",
+    "frontend": "92% (4 polish items: Vibe TV 5/5 testids ✓, Memory Bank 4/4 testids ✓, Poker ChipToss source-wired ✓, BallSpin source-wired ✓ but only renders on AAA route; smoke ✓)"
+  },
+  "test_credentials": "Demo login via [data-testid='login-demo-btn'] → POST /api/auth/demo-login (auto-provisions demo_<hex>). God-Mode admin not exercised this sweep.",
+  "seed_data_creation": "None new — all writes use TEST_-prefixed UIDs from existing fixtures.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Redeploy is GREEN at the engine/API/source-wiring layer. Two surface-level frontend deltas: (a) vibe-tv-up-next has 2 items live (spec wants 3) — bump the upcoming array in VibeTvChannelPlayer.tsx; (b) /european-roulette uses _GenericCasinoGame so BallSpin does NOT mount on that specific URL — BallSpin DOES mount on the AAA practice / vibes-wheel routes. Regression_shield + v8 + streaming all pass on both server-import and live-URL paths. Run command: `cd /app/backend && PYTHONPATH=/app/backend pytest tests/regression_shield.py tests/test_v8_api_endpoints.py tests/test_my_vibez_streaming_upload.py -q`. GISA: vectors structure is {stress, isolation, visual, [tx velocity inside stress.solana_tx_per_sec]} — visual oscillates around 95%.",
+  "rca of the issue": "(1) vibe-tv-up-next short-by-one: VibeTvChannelPlayer.tsx static seed array likely has 2 entries; bump to 3 to match founder spec. (2) BallSpin missing on /european-roulette: route renders <_GenericCasinoGame /> which is a minimal bet-form with no cinematic mount-point. The cinematic IS correctly wired in CasinoCinematics.tsx and DOES fire on AAA practice / vibes-wheel routes. To satisfy 'BallSpin must render with the wheel on /european-roulette', either swap the route's renderer to RouletteGameAAA or inject BallSpin into _GenericCasinoGame's roulette branch. Audio wiring (cardSoundManager.playRouletteWhoosh + playRouletteClick) is correct."
+}

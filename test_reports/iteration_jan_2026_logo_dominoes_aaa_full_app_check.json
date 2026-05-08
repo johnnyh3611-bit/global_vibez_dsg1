@@ -1,0 +1,91 @@
+{
+  "summary": "Comprehensive test pass for (1) landing-page logo regression fix, (2) brand-new Dominoes AAA backend+frontend, (3) regression smoke of all 10 AAA card games, (4) games-menu wiring, (5) legacy /practice/play/dominoes redirect. P0 logo fix VERIFIED. Dominoes AAA fully working end-to-end. ONE real finding: Dominoes tile is missing from /games-menu (likely route mounts a different component than GamesNew.tsx).",
+
+  "logo_regression_p0_status": {
+    "fixed": true,
+    "evidence": {
+      "landing_logo_testid_found": true,
+      "computed_mix_blend_mode": "normal (NOT 'screen' - hack removed)",
+      "has_mix_blend_screen_class": false,
+      "computed_border": "0px solid rgb(38,38,38)",
+      "computed_background_color": "rgba(0,0,0,0)",
+      "screenshot_visual": "Clean 'GLOBAL VIBEZ DSG' wordmark on dark purple gradient, NO white box / NO light-gray rectangle around glyph",
+      "screenshot_path": ".screenshots/logo_landing.png"
+    },
+    "verdict": "P0 LOGO REGRESSION FIX CONFIRMED. The mix-blend-screen hack is gone from both header logo wrapper and the chroma-keyed PNG renders cleanly. User's 5-time regression appears resolved this build."
+  },
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "/games-menu (likely renders Game Arena, NOT GamesNew.tsx)",
+        "issue": "Dominoes tile is MISSING from games-menu UI. Card Games tab shows '19 games available' with cards: Vibez Whist Premium, Vibez Whist Platinum, Texas Hold'em, Poker (Legacy), Blackjack, Blackjack Premium, Blackjack Universal, UNO, Go Fish, Crazy Eights, Hearts, Spades AAA, Bid Whist, Gin Rummy, Rummy, War, Euchre — but no Dominoes. body.innerText.includes('Dominoes') === false. The user's task says GamesNew.tsx line ~436 routes Dominoes to /dominoes, but the route /games-menu appears to mount a different component (header reads 'Game Arena'). The new ✨ AAA badge for Dominoes is therefore invisible to users browsing the menu.",
+        "selector": "page body innerText",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Console (all routes)",
+        "issues": [
+          "Pre-existing Privy wallet integration error: 'TypeError: e is not a function' at bundle.js:819268 inside la.initialize. Repeats on every page load.",
+          "CSP frame-ancestors blocks https://auth.privy.io/ iframe. NOT introduced this iteration."
+        ]
+      }
+    ]
+  },
+
+  "tested_flows": {
+    "1_logo_p0": "PASS — mix-blend-screen removed, no white box, screenshot clean",
+    "2_dominoes_aaa_full_path": "PASS — /dominoes lobby → Enter The Arena → game room with SpadesTable onyx/2P, NORTH seat, score 0-0/200, boneyard pill (14), chain, 7 player tiles with green dots on playable, Trick 1/13. Tile click → side picker → play succeeded.",
+    "3_dominoes_backend_endpoints": "PASS 12/12 — all 6 endpoints return 401 without auth; start/state 200; play invalid tile 400; pass with playable 400; next-round in playing phase 400; engine-driven play roundtrip 200.",
+    "4_regression_smoke_aaa_card_games": "PASS 10/10 — /spades, /bid-whist, /hearts, /crazy-eights, /go-fish, /gin-rummy, /rummy, /war, /uno, /euchre all render their AAA lobby titles, no React error overlays, no white screens.",
+    "5_games_menu": "PARTIAL — /games-menu route renders ('Game Arena' header, 24+ games count, 7 tabs: Featured/Card Games/Casino/Board Games/Arcade/Party Games/3D Poker, 19 games on Card Games tab) BUT Dominoes tile is missing entirely. ✨ AAA badge therefore not seen.",
+    "6_practice_dominoes_redirect": "PASS — /practice/play/dominoes redirects to /dominoes and AAA lobby renders. No legacy PracticeDominoes UI."
+  },
+
+  "test_report_links": [
+    "/app/backend/tests/test_dominoes_aaa.py",
+    "/app/test_reports/pytest/dominoes_aaa.xml"
+  ],
+
+  "action_items": [
+    "Investigate why /games-menu does not show the Dominoes tile. The user's spec says 'GamesNew.tsx line ~436 dominoes case → /dominoes' but the /games-menu route likely mounts a different component (page header reads 'Game Arena'). Either: (a) wire /games-menu to GamesNew.tsx, or (b) add the Dominoes tile + ✨ AAA badge + onClick → navigate('/dominoes') to whichever component IS mounted at /games-menu.",
+    "(Pre-existing, not blocker) Privy wallet 'TypeError: e is not a function' at la.initialize fires on every page load. CSP frame-ancestors blocks auth.privy.io iframe. Consider degrading gracefully or removing Privy if unused."
+  ],
+
+  "critical_code_review_comments": [
+    "Dominoes endpoints store games in-memory (_MATCHES dict in routes/dominoes_practice.py). Will reset on backend restart and won't scale across pods. Acceptable for AI-only practice mode but flag for live mode.",
+    "Logo fix is robust: chroma-keyed PNG + removed CSS hack means even if a future dev re-adds mix-blend-screen, the PNG itself has alpha=0 on white pixels so the white box won't return.",
+    "Demo login flow uses Bearer token correctly per /app/memory/test_credentials.md auth invariants. No credentials:'include' regressions seen.",
+    "Routes /dominoes, /dominoes/:gameId, /dominoes-aaa, /practice/play/dominoes redirect all wired correctly to DominoesAAA per gamesRoutes.tsx."
+  ],
+
+  "updated_files": [
+    "/app/backend/tests/test_dominoes_aaa.py (new — 12 tests, all passing)"
+  ],
+
+  "success_rate": {
+    "backend": "100% (12/12 pytest)",
+    "frontend": "85% (5/6 main flows fully pass; games-menu missing Dominoes tile)"
+  },
+
+  "test_credentials": "Demo login via /api/auth/demo-login (no fixed account needed; auto-provisions guest)",
+  "seed_data_creation": "None — DominoesGame instances created in-memory per user via /api/dominoes-practice/start",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "The P0 logo fix has been verified visually + via computed styles (mixBlendMode === 'normal'). All 10 AAA card games regression-smoke pass. Dominoes AAA full happy-path works end-to-end (verified via both the pytest suite AND a live Playwright play-loop). The remaining issue is that /games-menu route appears to mount a DIFFERENT component than GamesNew.tsx — the rendered page is titled 'Game Arena' and shows 19 card-game tiles in the Card Games tab but no Dominoes tile. Main agent should locate the actual component mounted at /games-menu (search routes for /games-menu) and add the Dominoes tile there with ✨ AAA badge and navigate('/dominoes'). After fix, retest item #5 only.",
+
+  "rca_of_issue": {
+    "issue": "Dominoes tile missing on /games-menu",
+    "reproduction": "1) demo-login at /login. 2) navigate to /games-menu. 3) click 'Card Games' tab. 4) inspect: only 18 visible tiles, none labeled 'Dominoes', body.innerText does NOT contain 'Dominoes'.",
+    "likely_root_cause": "The handoff doc references /app/frontend/src/pages/GamesNew.tsx line ~436, but the /games-menu route resolves to a different component (page renders 'Game Arena' as title, with tabs Featured/Card Games/Casino/Board Games/Arcade/Party Games/3D Poker — different layout than GamesNew). The dominoes case in GamesNew.tsx therefore has no effect on what users see at /games-menu.",
+    "mitigation": "Grep routes for 'games-menu' to find the actual component path. Add a Dominoes tile entry to its games array with badge='✨ AAA' and onClick=() => navigate('/dominoes'). Or update gamesRoutes.tsx so /games-menu mounts GamesNew."
+  }
+}
