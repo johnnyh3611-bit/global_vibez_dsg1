@@ -11,7 +11,7 @@ import PricingPage from "@/pages/PricingPage";
 import PaymentSuccess from "@/pages/PaymentSuccess";
 import PaymentCancel from "@/pages/PaymentCancel";
 import CelebrationDemo from "@/pages/CelebrationDemo";
-import Dashboard from "@/pages/Dashboard";
+import Dashboard from "@/pages/DashboardNew";
 import DiscoverPage from "@/pages/DiscoverPage";
 import LiveStreamingPage from "@/pages/LiveStreamingPage";
 import TournamentDemo from "@/pages/TournamentDemo";
