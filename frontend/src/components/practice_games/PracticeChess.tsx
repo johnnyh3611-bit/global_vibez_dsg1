@@ -9,6 +9,8 @@ import { BoardGameLayout, BoardStatBadge } from './BoardGameLayout';
 import { AIOpponentCard } from '@/components/AIOpponentCard';
 import { getRandomOpponent } from '@/data/aiOpponents';
 import HoloPiece from '@/components/games/HoloBoard/HoloPiece';
+import VoiceCoachButton from '@/components/games/VoiceCoachButton';
+import RogueliteTrialBadge from '@/components/games/RogueliteTrialBadge';
 
 import cardSoundManager from '@/utils/cardSoundManager';
 import ParticleEffectsOverlay from '@/components/ParticleEffectsOverlay';
@@ -38,6 +40,13 @@ export function PracticeChess({ game, onMove, makingMove, aiThinking }: { game?:
   });
   const battleMode = viewMode === 'battle';
   const chessRef = useRef(null);
+  // Cyber-Casino Roguelite Trial — caller-supplied ref the badge
+  // populates with a `recordOutcome` impl. We invoke it once per
+  // completed game so the daily ladder updates.
+  const trialRecordRef = useRef<(o: 'win' | 'loss' | 'draw', d?: number) => Promise<void>>(
+    async () => undefined,
+  );
+  const trialReportedRef = useRef<string | null>(null);
 
   // Initialize chess instance
   useEffect(() => {
@@ -72,6 +81,20 @@ export function PracticeChess({ game, onMove, makingMove, aiThinking }: { game?:
   // Check for game completion
   useEffect(() => {
     if (game.status === 'completed' && chessRef.current) {
+      // Roguelite Trial: report the result exactly once per game id.
+      const gameKey = String(game.game_id || game.id || '');
+      if (gameKey && trialReportedRef.current !== gameKey) {
+        trialReportedRef.current = gameKey;
+        const outcome: 'win' | 'loss' | 'draw' =
+          chessRef.current.isDraw() || chessRef.current.isStalemate()
+            ? 'draw'
+            : game.winner === 'player'
+              ? 'win'
+              : 'loss';
+        // Fire-and-forget; the badge updates via its own state.
+        trialRecordRef.current?.(outcome, 0).catch(() => undefined);
+      }
+
       if (chessRef.current.isCheckmate()) {
         const winner = game.winner === 'player' ? 'You' : 'AI';
         if (game.winner === 'player') {
@@ -276,7 +299,10 @@ export function PracticeChess({ game, onMove, makingMove, aiThinking }: { game?:
         }
         
         topRightStat={
-          <AIOpponentCard opponent={aiOpponent} compact={true} />
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            <RogueliteTrialBadge outcomeRef={trialRecordRef} />
+            <AIOpponentCard opponent={aiOpponent} compact={true} />
+          </div>
         }
         
         gameTitle={
@@ -468,6 +494,16 @@ export function PracticeChess({ game, onMove, makingMove, aiThinking }: { game?:
       {/* AAA Card Juice - Particle Effects */}
 
       <ParticleEffectsOverlay />
+
+      {/* Cyber-Casino Voice Coach (Revolutionary Games Blueprint v1).
+          Auto-fetches a tip every move + opens a panel for voice Q&A. */}
+      <VoiceCoachButton
+        fen={fen === 'start' ? 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1' : fen}
+        lastMove={lastMove ? `${lastMove.from}${lastMove.to}` : null}
+        side={game.current_turn === 'player' ? 'white' : 'black'}
+        elo={1200}
+        disabled={gameOver}
+      />
 
     </>
   );

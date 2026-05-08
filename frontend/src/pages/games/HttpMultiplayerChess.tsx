@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Crown, ArrowLeft } from 'lucide-react';
 import Confetti from 'react-confetti';
+import HoloPiece from '@/components/games/HoloBoard/HoloPiece';
 import { useWindowSize } from 'react-use';
 
 export default function HttpMultiplayerChess() {
@@ -303,30 +304,66 @@ export default function HttpMultiplayerChess() {
               </Card>
             )}
 
-            {/* Board */}
-            <Card className="bg-amber-900/30 backdrop-blur-xl border-4 border-amber-700 p-2 sm:p-4">
-              <div className="grid grid-cols-8 gap-0 max-w-xl mx-auto">
-                {board.map((row, rowIdx) => 
+            {/* Cyber-Casino multiplayer chess board (Revolutionary
+                Games Blueprint v1) — anti-gravity glass shell, cyan
+                glow ring, Solid-Light Holo pieces. */}
+            <Card
+              className="backdrop-blur-xl p-2 sm:p-4"
+              style={{
+                background:
+                  'linear-gradient(135deg, rgba(40, 50, 90, 0.85) 0%, rgba(15, 20, 40, 0.95) 100%)',
+                border: '1px solid rgba(34, 211, 238, 0.3)',
+                boxShadow:
+                  '0 0 60px rgba(34, 211, 238, 0.25), inset 0 0 24px rgba(34, 211, 238, 0.15)',
+              }}
+            >
+              <div className="grid grid-cols-8 gap-0 max-w-xl mx-auto rounded-xl overflow-hidden">
+                {board.map((row, rowIdx) =>
                   row.map((piece, colIdx) => {
                     const isLight = (rowIdx + colIdx) % 2 === 0;
                     const isSelected = selectedPiece && selectedPiece[0] === rowIdx && selectedPiece[1] === colIdx;
                     const isValidMove = validMoves.some(([r, c]) => r === rowIdx && c === colIdx);
-                    
+                    const pieceColor = piece ? getPieceColor(piece) : null;
                     return (
                       <motion.button
                         key={`${rowIdx}-${colIdx}`}
-                        whileHover={{ scale: 1.05 }}
+                        whileHover={{ scale: 1.04 }}
+                        whileTap={{ scale: 0.96 }}
                         onClick={() => handleSquareClick(rowIdx, colIdx)}
-                        className={`aspect-square flex items-center justify-center text-3xl sm:text-4xl transition-all
-                          ${isLight ? 'bg-amber-200' : 'bg-amber-800'}
-                          ${isSelected ? 'ring-4 ring-green-400' : ''}
-                          ${isValidMove ? 'ring-4 ring-blue-400' : ''}
+                        className={`aspect-square flex items-center justify-center transition-all relative
+                          ${isSelected ? 'shadow-[inset_0_0_18px_rgba(255,215,0,0.6)]' : ''}
+                          ${isValidMove ? 'shadow-[inset_0_0_16px_rgba(34,211,238,0.55)]' : ''}
                         `}
+                        style={{
+                          background: isLight
+                            ? 'linear-gradient(135deg, rgba(220, 228, 255, 0.18) 0%, rgba(180, 200, 240, 0.10) 100%)'
+                            : 'linear-gradient(135deg, rgba(20, 30, 60, 0.92) 0%, rgba(40, 50, 90, 0.82) 100%)',
+                          boxShadow: isSelected
+                            ? 'inset 0 0 18px rgba(255,215,0,0.6), 0 0 12px rgba(255,215,0,0.4)'
+                            : isValidMove
+                              ? 'inset 0 0 16px rgba(34,211,238,0.55), 0 0 10px rgba(34,211,238,0.4)'
+                              : 'inset 0 1px 1px rgba(255,255,255,0.05), inset 0 -1px 2px rgba(0,0,0,0.5)',
+                        }}
                       >
-                        {piece}
+                        {/* Legal-move dot when square is empty */}
+                        {!piece && isValidMove && (
+                          <span
+                            aria-hidden="true"
+                            className="absolute w-3 h-3 rounded-full bg-cyan-300 animate-pulse"
+                            style={{ boxShadow: '0 0 12px rgba(34, 211, 238, 0.9)' }}
+                          />
+                        )}
+                        {piece && (
+                          <HoloPiece
+                            color={pieceColor === 'white' ? 'white' : 'black'}
+                            glyph={piece}
+                            selected={isSelected}
+                            size={42}
+                          />
+                        )}
                       </motion.button>
                     );
-                  })
+                  }),
                 )}
               </div>
             </Card>

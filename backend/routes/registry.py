@@ -610,6 +610,20 @@ def register_all_routes(
     except Exception as _e:
         log.warning(f"Coin stats routes not mounted: {_e}")
 
+    # Voice Coach — Cyber-Casino chess coach (Whisper STT + Claude).
+    try:
+        from routes.voice_coach import router as voice_coach_router
+        api_router.include_router(voice_coach_router)
+    except Exception as _e:
+        log.warning(f"Voice coach routes not mounted: {_e}")
+
+    # Roguelite Chess Trial — 24-hr permadeath ladder.
+    try:
+        from routes.roguelite_chess import router as roguelite_chess_router
+        api_router.include_router(roguelite_chess_router)
+    except Exception as _e:
+        log.warning(f"Roguelite chess routes not mounted: {_e}")
+
 
 
 # ─── Domain helpers (Feb 2026 polish split) ──────────────────────────

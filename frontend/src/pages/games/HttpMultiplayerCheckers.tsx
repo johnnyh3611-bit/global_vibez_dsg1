@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ArrowLeft, Crown, Zap } from 'lucide-react';
 import Confetti from 'react-confetti';
+import HoloPiece from '@/components/games/HoloBoard/HoloPiece';
 import { useWindowSize } from 'react-use';
 import { GameEngine } from '@/game-engine';
 import { Toaster, toast } from 'react-hot-toast';
@@ -48,25 +49,24 @@ const TowerStack = ({ stack, isKing, onClick, disabled, isSelected, animate = tr
           <motion.div
             key={`stack-${index}`}
             initial={animate && index > 0 ? { y: -50, opacity: 0 } : {}}
-            animate={{ y: yOffset, opacity: isTop ? 1 : 0.4 }}
+            animate={{ y: yOffset, opacity: isTop ? 1 : 0.45 }}
             transition={{ delay: index * 0.1 }}
             className={`absolute inset-0 flex items-center justify-center`}
-            style={{ 
+            style={{
               zIndex: 10 + zOffset,
-              transform: `translateY(${yOffset}px)`
+              transform: `translateY(${yOffset}px)`,
             }}
           >
-            <div
-              className={`w-[70%] h-[70%] rounded-full flex items-center justify-center shadow-2xl border-4 ${
-                color === 'red' 
-                  ? 'bg-gradient-to-br from-red-600 to-red-800 border-red-400' 
-                  : 'bg-gradient-to-br from-gray-800 to-black border-gray-600'
-              } ${isSelected && isTop ? 'ring-4 ring-yellow-400' : ''}`}
-            >
-              {isKing && isTop && (
-                <Crown className="w-6 h-6 text-yellow-400 drop-shadow-lg" />
-              )}
-            </div>
+            {/* Cyber-Casino Holographic piece (Revolutionary Games
+                Blueprint v1). Each tower layer is a Solid-Light glass
+                shell with neon energy core; only the top piece kings. */}
+            <HoloPiece
+              color={color === "red" ? "red" : "black"}
+              kinged={isKing && isTop}
+              selected={isSelected && isTop}
+              size={Math.round(48)}
+              testid={`tower-piece-${index}`}
+            />
           </motion.div>
         );
       })}
@@ -351,9 +351,11 @@ export default function HttpMultiplayerCheckers() {
           backgroundColor: ['#f59e0b', isDark ? '#92400e' : '#fef3c7', isDark ? '#92400e' : '#fef3c7']
         } : {}}
         transition={{ duration: 0.5 }}
-        className={`aspect-square flex items-center justify-center cursor-pointer relative ${
-          isDark ? 'bg-amber-800' : 'bg-amber-100'
-        } ${isSelected ? 'ring-4 ring-inset ring-yellow-400' : ''}`}
+        className={`aspect-square flex items-center justify-center cursor-pointer relative transition-all ${
+          isDark
+            ? 'bg-gradient-to-br from-[rgba(20,30,60,0.92)] to-[rgba(40,50,90,0.82)]'
+            : 'bg-gradient-to-br from-[rgba(220,228,255,0.18)] to-[rgba(180,200,240,0.10)]'
+        } ${isSelected ? 'ring-4 ring-inset ring-amber-400 shadow-[inset_0_0_18px_rgba(255,215,0,0.6)]' : ''}`}
       >
         {/* Valid move indicator */}
         {isValidMove && !piece && (
@@ -522,7 +524,20 @@ export default function HttpMultiplayerCheckers() {
 
         {/* Game Board */}
         <Card className="bg-amber-50 p-2 sm:p-4 mb-6 mx-auto shadow-2xl" style={{ maxWidth: '600px' }}>
-          <div className="grid grid-cols-8 gap-0 border-8 border-amber-900 rounded-lg overflow-hidden shadow-inner">
+          <div
+            className="grid grid-cols-8 gap-0 rounded-2xl overflow-hidden"
+            style={{
+              /* Cyber-Casino multiplayer board (Revolutionary Games
+                 Blueprint v1). Floating anti-gravity glass with cyan
+                 ring + glow — matches the practice room exactly. */
+              border: '1px solid rgba(34, 211, 238, 0.3)',
+              boxShadow:
+                '0 0 60px rgba(34, 211, 238, 0.25), inset 0 0 24px rgba(34, 211, 238, 0.15)',
+              background:
+                'linear-gradient(135deg, rgba(40, 50, 90, 0.85) 0%, rgba(15, 20, 40, 0.95) 100%)',
+              padding: '6px',
+            }}
+          >
             {Array.from({ length: 64 }).map((_, index) => {
               const row = Math.floor(index / 8);
               const col = index % 8;
