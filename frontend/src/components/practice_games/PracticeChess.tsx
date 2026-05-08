@@ -8,6 +8,7 @@ import { useWindowSize } from 'react-use';
 import { BoardGameLayout, BoardStatBadge } from './BoardGameLayout';
 import { AIOpponentCard } from '@/components/AIOpponentCard';
 import { getRandomOpponent } from '@/data/aiOpponents';
+import HoloPiece from '@/components/games/HoloBoard/HoloPiece';
 
 import cardSoundManager from '@/utils/cardSoundManager';
 import ParticleEffectsOverlay from '@/components/ParticleEffectsOverlay';
@@ -347,15 +348,53 @@ export function PracticeChess({ game, onMove, makingMove, aiThinking }: { game?:
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="rounded-2xl overflow-hidden shadow-2xl border-8 border-amber-900"
+            className="rounded-3xl overflow-hidden p-2"
             style={{
-              background: 'linear-gradient(135deg, #3e2723 0%, #5d4037 100%)',
-              padding: '20px'
+              /* Cyber-Casino chess room (Revolutionary Games Blueprint
+                 v1, May 2026). Translucent floating board with cyan
+                 glow + dark glass squares. */
+              background:
+                'linear-gradient(135deg, rgba(40, 50, 90, 0.85) 0%, rgba(15, 20, 40, 0.95) 100%)',
+              boxShadow:
+                '0 0 60px rgba(34, 211, 238, 0.25), inset 0 0 24px rgba(34, 211, 238, 0.15)',
+              border: '1px solid rgba(34, 211, 238, 0.3)',
+              padding: '18px',
             }}
           >
             {/* react-chessboard v5 tightened some style props to a Pick<>; cast to any during UI ship. */}
             {(() => {
               const ChessboardAny = Chessboard as any;
+              // Holographic Solid-Light piece set — every piece glows
+              // and pulses; uses HoloPiece glyphs for the unicode chess
+              // symbols. White pieces get warm gold glow, black pieces
+              // get cool cyan glow per the Revolutionary Games spec.
+              const HOLOPIECE_MAP: Record<string, string> = {
+                wK: '♚', wQ: '♛', wR: '♜', wB: '♝', wN: '♞', wP: '♟',
+                bK: '♚', bQ: '♛', bR: '♜', bB: '♝', bN: '♞', bP: '♟',
+              };
+              const customPieces: Record<string, (props: { squareWidth: number }) => React.ReactNode> = {};
+              Object.keys(HOLOPIECE_MAP).forEach((pieceKey) => {
+                const isWhite = pieceKey.startsWith('w');
+                const glyph = HOLOPIECE_MAP[pieceKey];
+                customPieces[pieceKey] = ({ squareWidth }: { squareWidth: number }) => (
+                  <div
+                    style={{
+                      width: squareWidth,
+                      height: squareWidth,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      pointerEvents: 'none',
+                    }}
+                  >
+                    <HoloPiece
+                      color={isWhite ? 'white' : 'black'}
+                      glyph={glyph}
+                      size={Math.round(squareWidth * 0.85)}
+                    />
+                  </div>
+                );
+              });
               return (
                 <ChessboardAny
                   position={fen}
@@ -363,23 +402,18 @@ export function PracticeChess({ game, onMove, makingMove, aiThinking }: { game?:
                   boardWidth={Math.min(600, window.innerWidth - 100)}
                   customBoardStyle={{
                     borderRadius: '8px',
-                    boxShadow: '0 10px 40px rgba(0,0,0,0.7), inset 0 2px 4px rgba(0,0,0,0.3)'
+                    boxShadow: '0 0 32px rgba(34, 211, 238, 0.25), inset 0 0 16px rgba(0,0,0,0.6)',
                   }}
-                  customDarkSquareStyle={{ 
-                    backgroundColor: '#b7926b',
-                    backgroundImage: 'linear-gradient(135deg, #8b7355 25%, transparent 25%), linear-gradient(225deg, #8b7355 25%, transparent 25%), linear-gradient(45deg, #8b7355 25%, transparent 25%), linear-gradient(315deg, #8b7355 25%, #b7926b 25%)',
-                    backgroundPosition: '2px 0, 2px 0, 0 0, 0 0',
-                    backgroundSize: '2px 2px',
-                    backgroundRepeat: 'repeat'
+                  customDarkSquareStyle={{
+                    background: 'linear-gradient(135deg, rgba(20, 30, 60, 0.92) 0%, rgba(40, 50, 90, 0.82) 100%)',
+                    boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.5), inset 0 -1px 1px rgba(255,255,255,0.05)',
                   }}
-                  customLightSquareStyle={{ 
-                    backgroundColor: '#f0d9b5',
-                    backgroundImage: 'linear-gradient(135deg, #e8d4b8 25%, transparent 25%), linear-gradient(225deg, #e8d4b8 25%, transparent 25%), linear-gradient(45deg, #e8d4b8 25%, transparent 25%), linear-gradient(315deg, #e8d4b8 25%, #f0d9b5 25%)',
-                    backgroundPosition: '2px 0, 2px 0, 0 0, 0 0',
-                    backgroundSize: '2px 2px',
-                    backgroundRepeat: 'repeat'
+                  customLightSquareStyle={{
+                    background: 'linear-gradient(135deg, rgba(220, 228, 255, 0.18) 0%, rgba(180, 200, 240, 0.10) 100%)',
+                    boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.18), inset 0 -1px 1px rgba(0,0,0,0.3)',
                   }}
                   customSquareStyles={getCustomSquareStyles()}
+                  customPieces={customPieces}
                   arePiecesDraggable={isDraggable}
                   boardOrientation="white"
                   customDarkSquareClassName="chess-dark-square"

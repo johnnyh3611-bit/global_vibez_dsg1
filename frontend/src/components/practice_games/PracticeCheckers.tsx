@@ -6,6 +6,8 @@ import { BoardGameLayout, BoardStatBadge } from './BoardGameLayout';
 import { TableSelectorButton } from './TableSelectorButton';
 import { AIOpponentCard } from '@/components/AIOpponentCard';
 import { getRandomOpponent } from '@/data/aiOpponents';
+import HoloPiece from '@/components/games/HoloBoard/HoloPiece';
+import HoloSquare from '@/components/games/HoloBoard/HoloSquare';
 
 import cardSoundManager from '@/utils/cardSoundManager';
 import ParticleEffectsOverlay from '@/components/ParticleEffectsOverlay';
@@ -144,52 +146,50 @@ export function PracticeCheckers({ game, onMove, makingMove, aiThinking }: { gam
         }
         
         gameBoard={
-          <div className="inline-block rounded-2xl overflow-hidden border-8 border-amber-800 shadow-2xl">
+          /* Cyber-Casino "FAT" 3D holographic board (Revolutionary
+             Games Blueprint v1, May 2026). Pieces are Solid-Light
+             glass shells with neon energy cores; squares pulse with a
+             shockwave when pieces land. */
+          <div
+            className="inline-block rounded-3xl overflow-hidden p-1.5"
+            style={{
+              background:
+                'linear-gradient(135deg, rgba(40, 50, 90, 0.85) 0%, rgba(15, 20, 40, 0.95) 100%)',
+              boxShadow:
+                '0 0 60px rgba(34, 211, 238, 0.25), inset 0 0 24px rgba(34, 211, 238, 0.15)',
+              border: '1px solid rgba(34, 211, 238, 0.3)',
+            }}
+          >
             <div className="grid grid-cols-8 gap-0">
-              {board.map((row, rowIndex) => (
+              {board.map((row, rowIndex) =>
                 row.map((cell, colIndex) => {
                   const isDark = (rowIndex + colIndex) % 2 === 1;
                   const piece = cell;
                   const pieceColor = getPieceColor(piece);
                   const isSelected = selectedPiece?.row === rowIndex && selectedPiece?.col === colIndex;
-                  
                   return (
-                    <motion.button
+                    <HoloSquare
                       key={`${rowIndex}-${colIndex}`}
-                      data-testid={`checkers-cell-${rowIndex}-${colIndex}`}
+                      dark={isDark}
+                      selected={isSelected}
                       onClick={() => handleCellClick(rowIndex, colIndex)}
                       disabled={gameOver || makingMove || aiThinking || game.current_turn !== 'player'}
-                      whileHover={isDark ? { scale: 1.02 } : {}}
-                      className={`w-16 h-16 flex items-center justify-center transition-all ${
-                        isDark ? 'bg-amber-900' : 'bg-amber-100'
-                      } ${
-                        isSelected ? 'ring-4 ring-cyan-400' : ''
-                      }`}
+                      testid={`checkers-cell-${rowIndex}-${colIndex}`}
+                      size={64}
                     >
-                      {piece && (
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          className={`w-12 h-12 rounded-full flex items-center justify-center border-4 ${
-                            pieceColor === 'red' 
-                              ? 'bg-gradient-to-br from-red-500 to-red-700 border-red-300' 
-                              : 'bg-gradient-to-br from-gray-800 to-black border-gray-600'
-                          }`}
-                          style={{
-                            boxShadow: `0 4px 12px ${
-                              pieceColor === 'red' ? 'rgba(220, 38, 38, 0.6)' : 'rgba(0, 0, 0, 0.8)'
-                            }`
-                          }}
-                        >
-                          {isKing(piece) && (
-                            <span className="text-yellow-400 text-2xl font-black">👑</span>
-                          )}
-                        </motion.div>
+                      {piece && pieceColor && (
+                        <HoloPiece
+                          color={pieceColor === 'red' ? 'red' : 'black'}
+                          kinged={isKing(piece)}
+                          selected={isSelected}
+                          testid={`checkers-piece-${rowIndex}-${colIndex}`}
+                          size={44}
+                        />
                       )}
-                    </motion.button>
+                    </HoloSquare>
                   );
-                })
-              ))}
+                }),
+              )}
             </div>
           </div>
         }
