@@ -168,6 +168,11 @@ export default function HeartsAAA() {
   const [dealing, setDealing] = useState(false);
   const [dealKey, setDealKey] = useState(0);
 
+  // Universal 10-second Shot Clock (Beta Specs §4 — same logic as Whist/Spades).
+  const SHOT_CLOCK_MS = 10_000;
+  const [turnExpiresAt, setTurnExpiresAt] = useState<number | null>(null);
+  const lastTurnKeyRef = useRef<string | null>(null);
+
   const [roundModalOpen, setRoundModalOpen] = useState(false);
   const [lastRoundSummary, setLastRoundSummary] = useState<{
     team1Score: number;
@@ -384,6 +389,44 @@ export default function HeartsAAA() {
     }
   }, [raw?.phase, raw?.pending_human_pass, dealing]);
 
+  // ── Universal 10s Shot Clock — reset on every turn change ─────────────
+  useEffect(() => {
+    if (!raw) {
+      setTurnExpiresAt(null);
+      lastTurnKeyRef.current = null;
+      return;
+    }
+    const activeKey = raw.turn ?? null;
+    const turnKey = activeKey
+      ? `${raw.phase}:${activeKey}:${raw.current_trick?.length ?? 0}`
+      : null;
+    if (turnKey !== lastTurnKeyRef.current) {
+      lastTurnKeyRef.current = turnKey;
+      setTurnExpiresAt(activeKey ? Date.now() + SHOT_CLOCK_MS : null);
+    }
+  }, [raw]);
+
+  // Auto-play lowest valid card on shot-clock expire (only when it's
+  // the user's turn — bots are paced server-side already).
+  const handleShotClockExpire = useCallback(() => {
+    if (!raw || busy) return;
+    if (raw.turn !== raw.your_position) return;
+    if (raw.phase !== "playing") return;
+    const candidates = raw.playable_cards?.length
+      ? raw.playable_cards
+      : raw.your_hand;
+    if (!candidates || candidates.length === 0) return;
+    const RANK_VALUES: Record<string, number> = {
+      "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7, "8": 8,
+      "9": 9, "10": 10, J: 11, Q: 12, K: 13, A: 14,
+    };
+    const lowest = [...candidates].sort(
+      (a, b) => (RANK_VALUES[a.rank] ?? 99) - (RANK_VALUES[b.rank] ?? 99),
+    )[0];
+    flashStatus("Shot clock — auto-played", "rose", 1500);
+    void playCard(lowest);
+  }, [raw, busy, flashStatus, playCard]);
+
   // ── Lobby ──────────────────────────────────────────────────────────
   if (phase === "lobby") {
     return (
@@ -545,7 +588,13 @@ export default function HeartsAAA() {
             : raw.turn === partnerOf[youPosition]
               ? 'partner'  // hearts is FFA scoring but partnership in some variants
               : 'opponent';
-          return <TurnIndicator role={role} name={role === 'me' ? undefined : players[raw.turn]?.name} />;
+          return (
+            <TurnIndicator
+              role={role}
+              name={role === 'me' ? undefined : players[raw.turn]?.name}
+              expiresAt={role === 'me' ? turnExpiresAt : null}
+            />
+          );
         })()}
 
         <div className="flex items-center justify-center py-2 md:py-3 relative">
@@ -557,6 +606,8 @@ export default function HeartsAAA() {
                 isTurn={raw.turn === "north"}
                 isYou={youPosition === "north"}
                 onClick={() => setProfileOpen("north")}
+                shotClockExpiresAt={raw.turn === "north" ? turnExpiresAt : null}
+                onShotClockExpire={handleShotClockExpire}
               />
               <SpadesSeat
                 position="east"
@@ -564,6 +615,8 @@ export default function HeartsAAA() {
                 isTurn={raw.turn === "east"}
                 isYou={youPosition === "east"}
                 onClick={() => setProfileOpen("east")}
+                shotClockExpiresAt={raw.turn === "east" ? turnExpiresAt : null}
+                onShotClockExpire={handleShotClockExpire}
               />
               <SpadesSeat
                 position="west"
@@ -571,6 +624,8 @@ export default function HeartsAAA() {
                 isTurn={raw.turn === "west"}
                 isYou={youPosition === "west"}
                 onClick={() => setProfileOpen("west")}
+                shotClockExpiresAt={raw.turn === "west" ? turnExpiresAt : null}
+                onShotClockExpire={handleShotClockExpire}
               />
               <SpadesTrickPile trick={trickPile} />
             </SpadesTable>

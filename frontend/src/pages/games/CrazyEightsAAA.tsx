@@ -6,7 +6,7 @@
  * Hearts had a pass phase; Crazy Eights has a wild-suit phase.
  * The seat progress pill shows cards remaining (lower = closer to victory).
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Bot, Loader2, Sparkles, Plus } from "lucide-react";
@@ -92,6 +92,12 @@ export default function CrazyEightsAAA() {
   const [dealing, setDealing] = useState(false);
   const [dealKey, setDealKey] = useState(0);
   const [pendingPlayCard, setPendingPlayCard] = useState<CardData | null>(null);
+
+  // Universal 10s Shot Clock (Beta Specs §4 + UDA §2). Auto-plays the
+  // lowest matching card or draws if no playable cards exist.
+  const SHOT_CLOCK_MS = 10_000;
+  const [turnExpiresAt, setTurnExpiresAt] = useState<number | null>(null);
+  const lastTurnKeyRef = useRef<string | null>(null);
 
   const flash = useCallback((text: string, tone: StatusMessage["tone"] = "indigo", ttl = 1800) => {
     setStatusMsg({ text, tone, id: Date.now() });
@@ -240,6 +246,48 @@ export default function CrazyEightsAAA() {
     }
   }, [raw, busy, flash, stagePlaySequence]);
 
+  // ── Universal 10s Shot Clock ─────────────────────────────────────────
+  useEffect(() => {
+    if (!raw) {
+      setTurnExpiresAt(null);
+      lastTurnKeyRef.current = null;
+      return;
+    }
+    const activeKey = raw.turn ?? null;
+    const turnKey = activeKey ? `${raw.phase}:${activeKey}` : null;
+    if (turnKey !== lastTurnKeyRef.current) {
+      lastTurnKeyRef.current = turnKey;
+      setTurnExpiresAt(activeKey ? Date.now() + SHOT_CLOCK_MS : null);
+    }
+  }, [raw]);
+
+  // Auto-action: play any matching card if one exists, else draw.
+  // (Crazy Eights — match suit OR rank OR play an 8 wild.)
+  const handleShotClockExpire = useCallback(() => {
+    if (!raw || busy) return;
+    if (raw.turn !== raw.user_position || raw.phase !== "playing") return;
+    if (raw.pending_wild) return; // wait for human suit pick — don't auto
+    const top = raw.discard_top;
+    const hand = raw.your_hand ?? [];
+    const RANK_VALUES: Record<string, number> = {
+      "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7, "8": 8,
+      "9": 9, "10": 10, J: 11, Q: 12, K: 13, A: 14,
+    };
+    // Prefer a non-eight match by suit/rank — saves the wild for later.
+    const matches = hand
+      .filter((c) => c.rank !== "8" && (c.suit === top?.suit || c.rank === top?.rank))
+      .sort((a, b) => (RANK_VALUES[a.rank] ?? 99) - (RANK_VALUES[b.rank] ?? 99));
+    const eights = hand.filter((c) => c.rank === "8");
+    const choice = matches[0] ?? eights[0];
+    if (choice) {
+      flash("Shot clock — auto-played", "indigo", 1500);
+      void playCard(choice);
+    } else {
+      flash("Shot clock — auto-drew", "indigo", 1500);
+      void draw();
+    }
+  }, [raw, busy, flash, playCard, draw]);
+
   const newHand = useCallback(async () => {
     if (!raw) return;
     setBusy(true);
@@ -382,9 +430,9 @@ export default function CrazyEightsAAA() {
         <div className="flex items-center justify-center py-2 md:py-3 relative">
           <div className="relative">
             <SpadesTable brandSubLabel="CRAZY 8S" variant="onyx" centreGlyph="8">
-              <SpadesSeat position="north" player={players.north} isTurn={raw.turn === "north"} isYou={youPosition === "north"} onClick={() => setProfileOpen("north")} />
-              <SpadesSeat position="east"  player={players.east}  isTurn={raw.turn === "east"}  isYou={youPosition === "east"}  onClick={() => setProfileOpen("east")} />
-              <SpadesSeat position="west"  player={players.west}  isTurn={raw.turn === "west"}  isYou={youPosition === "west"}  onClick={() => setProfileOpen("west")} />
+              <SpadesSeat position="north" player={players.north} isTurn={raw.turn === "north"} isYou={youPosition === "north"} onClick={() => setProfileOpen("north")} shotClockExpiresAt={raw.turn === "north" ? turnExpiresAt : null} onShotClockExpire={handleShotClockExpire} />
+              <SpadesSeat position="east"  player={players.east}  isTurn={raw.turn === "east"}  isYou={youPosition === "east"}  onClick={() => setProfileOpen("east")}  shotClockExpiresAt={raw.turn === "east" ? turnExpiresAt : null} onShotClockExpire={handleShotClockExpire} />
+              <SpadesSeat position="west"  player={players.west}  isTurn={raw.turn === "west"}  isYou={youPosition === "west"}  onClick={() => setProfileOpen("west")}  shotClockExpiresAt={raw.turn === "west" ? turnExpiresAt : null} onShotClockExpire={handleShotClockExpire} />
             </SpadesTable>
             <CrazyEightsCenterPile top={raw.top_card} declaredSuit={raw.declared_suit} drawCount={raw.draw_pile_count} />
             <SpadesDealingAnimation active={dealing} />

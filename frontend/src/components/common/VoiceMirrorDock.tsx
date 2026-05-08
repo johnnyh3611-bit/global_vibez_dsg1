@@ -254,6 +254,15 @@ export const VoiceMirrorDock: React.FC = () => {
     };
   }, []);
 
+  // CommHub bridge (UDA §4) — open this dock when the top-nav
+  // CommHub dropdown asks. Lets the floating dock stay invisible by
+  // default while still reachable through the unified hub button.
+  React.useEffect(() => {
+    const onToggle = () => setOpen((o) => !o);
+    window.addEventListener("commhub:voice-mirror-toggle", onToggle);
+    return () => window.removeEventListener("commhub:voice-mirror-toggle", onToggle);
+  }, []);
+
   const sendToChat = useCallback(() => {
     if (!lastResult || !activeTarget) return;
     // Re-trigger the active target's callback with the same result.

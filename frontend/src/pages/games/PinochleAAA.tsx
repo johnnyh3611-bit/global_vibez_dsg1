@@ -11,7 +11,7 @@
  * UI mirrors EuchreAAA structure but with Pinochle's auction panel
  * (raise / pass) instead of Euchre's order-up / name-trump duality.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Bot, Loader2, Sparkles, Diamond } from "lucide-react";
@@ -128,6 +128,11 @@ export default function PinochleAAA() {
   const [showMpLobby, setShowMpLobby] = useState(false);
   const [mode, setMode] = useState<"single" | "double">("single");
 
+  // Universal 10s Shot Clock (Beta Specs §4 / Universal Design Agent §2).
+  const SHOT_CLOCK_MS = 10_000;
+  const [turnExpiresAt, setTurnExpiresAt] = useState<number | null>(null);
+  const lastTurnKeyRef = useRef<string | null>(null);
+
   const flash = useCallback((text: string, tone: StatusMessage["tone"] = "indigo", ttl = 1800) => {
     setStatusMsg({ text, tone, id: Date.now() });
     window.setTimeout(() => setStatusMsg((p) => (p && p.text === text ? null : p)), ttl);
@@ -219,6 +224,66 @@ export default function PinochleAAA() {
       setRaw(next);
     } finally { setBusy(false); }
   }, [raw, busy, flash]);
+
+  // ── Universal 10s Shot Clock — reset on every turn change ─────────────
+  useEffect(() => {
+    if (!raw) {
+      setTurnExpiresAt(null);
+      lastTurnKeyRef.current = null;
+      return;
+    }
+    // Pinochle has TWO turn fields: bid_turn (during bidding/naming_trump)
+    // and turn (during play). Use whichever is active for this phase.
+    const activeKey =
+      raw.phase === "bidding" || raw.phase === "naming_trump"
+        ? raw.bid_turn
+        : raw.turn;
+    const turnKey = activeKey
+      ? `${raw.phase}:${activeKey}:${raw.current_trick?.length ?? 0}`
+      : null;
+    if (turnKey !== lastTurnKeyRef.current) {
+      lastTurnKeyRef.current = turnKey;
+      setTurnExpiresAt(activeKey ? Date.now() + SHOT_CLOCK_MS : null);
+    }
+  }, [raw]);
+
+  // Auto-action on shot-clock expire — only fires for the human seat.
+  // Bidding → auto-pass; naming_trump → pick the most-held suit;
+  // playing → lowest valid card. Bots are paced server-side already.
+  const handleShotClockExpire = useCallback(() => {
+    if (!raw || busy) return;
+    if (raw.phase === "playing") {
+      if (raw.turn !== raw.user_position) return;
+      const candidates = raw.playable_cards?.length
+        ? raw.playable_cards
+        : raw.your_hand;
+      if (!candidates || candidates.length === 0) return;
+      // Pinochle ranking: A > 10 > K > Q > J > 9
+      const RANK_VALUES: Record<string, number> = { "9": 1, J: 2, Q: 3, K: 4, "10": 5, A: 6 };
+      const lowest = [...candidates].sort(
+        (a, b) => (RANK_VALUES[a.rank] ?? 99) - (RANK_VALUES[b.rank] ?? 99),
+      )[0];
+      flash("Shot clock — auto-played", "indigo", 1500);
+      void playCard(lowest);
+    } else if (raw.phase === "bidding") {
+      if (raw.bid_turn !== raw.user_position) return;
+      flash("Shot clock — auto-passed", "indigo", 1500);
+      void passBid();
+    } else if (raw.phase === "naming_trump") {
+      if (raw.bid_turn !== raw.user_position) return;
+      // Pick the suit with the most cards in hand.
+      const counts: Record<string, number> = {};
+      for (const c of raw.your_hand ?? []) {
+        counts[c.suit] = (counts[c.suit] ?? 0) + 1;
+      }
+      const best = (Object.entries(counts) as [Suit, number][])
+        .sort(([, a], [, b]) => b - a)[0]?.[0];
+      if (best) {
+        flash("Shot clock — auto-named trump", "indigo", 1500);
+        void namedTrump(best);
+      }
+    }
+  }, [raw, busy, flash, playCard, passBid, namedTrump]);
 
   const newHand = useCallback(async () => {
     const next = await post("new-hand");
@@ -394,9 +459,9 @@ export default function PinochleAAA() {
         <div className="flex items-center justify-center py-2 md:py-3 relative">
           <div className="relative">
             <SpadesTable brandSubLabel="PINOCHLE" variant="pearl" centreGlyph="P">
-              <SpadesSeat position="north" player={players.north} isTurn={raw.turn === "north" || raw.bid_turn === "north"} isYou={youPosition === "north"} isDealer={raw.dealer === "north"} onClick={() => setProfileOpen("north")} />
-              <SpadesSeat position="east"  player={players.east}  isTurn={raw.turn === "east"  || raw.bid_turn === "east"}  isYou={youPosition === "east"}  isDealer={raw.dealer === "east"}  onClick={() => setProfileOpen("east")} />
-              <SpadesSeat position="west"  player={players.west}  isTurn={raw.turn === "west"  || raw.bid_turn === "west"}  isYou={youPosition === "west"}  isDealer={raw.dealer === "west"}  onClick={() => setProfileOpen("west")} />
+              <SpadesSeat position="north" player={players.north} isTurn={raw.turn === "north" || raw.bid_turn === "north"} isYou={youPosition === "north"} isDealer={raw.dealer === "north"} onClick={() => setProfileOpen("north")} shotClockExpiresAt={(raw.turn === "north" || raw.bid_turn === "north") ? turnExpiresAt : null} onShotClockExpire={handleShotClockExpire} />
+              <SpadesSeat position="east"  player={players.east}  isTurn={raw.turn === "east"  || raw.bid_turn === "east"}  isYou={youPosition === "east"}  isDealer={raw.dealer === "east"}  onClick={() => setProfileOpen("east")}  shotClockExpiresAt={(raw.turn === "east"  || raw.bid_turn === "east")  ? turnExpiresAt : null} onShotClockExpire={handleShotClockExpire} />
+              <SpadesSeat position="west"  player={players.west}  isTurn={raw.turn === "west"  || raw.bid_turn === "west"}  isYou={youPosition === "west"}  isDealer={raw.dealer === "west"}  onClick={() => setProfileOpen("west")}  shotClockExpiresAt={(raw.turn === "west"  || raw.bid_turn === "west")  ? turnExpiresAt : null} onShotClockExpire={handleShotClockExpire} />
               <SpadesTrickPile trick={raw.current_trick} />
             </SpadesTable>
             <SpadesDealingAnimation active={dealing} />
