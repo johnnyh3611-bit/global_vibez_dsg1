@@ -3236,6 +3236,83 @@ def test_18_rooms_present_in_hub():
     assert not missing, f"Dashboard hub missing rooms: {missing}"
 
 
+# ============================================================================
+# May 2026 — Ultimate Blueprint v3 (relaunch gate)
+# ============================================================================
+def test_immutable_core_constants_locked():
+    """Ultimate Blueprint v3 §4: Sovereign Tax 13.5% and Artist Split 70/30
+    are foundational economic locks. ANY drift must crash the boot."""
+    from routes.immutable_core import (
+        SOVEREIGN_TAX_RATE,
+        ARTIST_PRODUCER_SHARE,
+        PLATFORM_SHARE,
+    )
+    assert SOVEREIGN_TAX_RATE == 0.135, "Sovereign Tax drifted from 13.5%"
+    assert ARTIST_PRODUCER_SHARE == 0.70, "Artist share drifted from 70%"
+    assert PLATFORM_SHARE == 0.30, "Platform share drifted from 30%"
+    assert ARTIST_PRODUCER_SHARE + PLATFORM_SHARE == 1.0, \
+        "Artist + platform must sum to 100%"
+
+
+def test_immutable_core_router_registered():
+    """Public read endpoint is what the Legacy Vault page polls. Losing
+    it would silently break the investor-facing audit trail."""
+    from server import app
+    paths = {getattr(r, "path", "") for r in app.routes}
+    assert any("/immutable-core/constants" in p for p in paths), \
+        "Immutable Core: /api/immutable-core/constants missing"
+
+
+def test_immutable_core_verify_at_boot():
+    """`verify_locks()` must be called during route registration so the
+    server crashes if a downstream service drifts."""
+    src = open("/app/backend/routes/registry.py").read()
+    assert "verify_locks()" in src, \
+        "registry.py must call verify_locks() during route registration"
+
+
+def test_legacy_vault_page_exists_and_routes():
+    """Legacy Vault must be reachable at /legacy-vault and pull live
+    data from /api/immutable-core/constants."""
+    page = open("/app/frontend/src/pages/LegacyVaultPage.tsx").read()
+    assert "/api/immutable-core/constants" in page, \
+        "LegacyVaultPage must poll /api/immutable-core/constants"
+    routes = open("/app/frontend/src/routes/miscRoutes.tsx").read()
+    assert "/legacy-vault" in routes, \
+        "miscRoutes must register /legacy-vault"
+    assert "LegacyVaultPage" in routes, \
+        "miscRoutes must import LegacyVaultPage"
+
+
+def test_vigilant_design_agent_mounted():
+    """Ultimate Blueprint v3 §1: VigilantDesignAgent must be mounted in
+    App.js so the Emergent badge auto-repositions on overlap."""
+    src = open("/app/frontend/src/App.js").read()
+    assert "VigilantDesignAgent" in src, \
+        "App.js must import + mount VigilantDesignAgent"
+    agent = open("/app/frontend/src/components/common/VigilantDesignAgent.tsx").read()
+    assert "MutationObserver" in agent, \
+        "VigilantDesignAgent must observe DOM for badge injection"
+    assert "0.5" in agent and "top-right" not in agent.lower() or "right: \"10px\"" in agent or '"right": "10px"' in agent, \
+        "VigilantDesignAgent must reposition to top-right at 50% opacity"
+
+
+def test_landscape_zoom_to_fit_locked():
+    """Ultimate Blueprint v3 §2: `.gv-arena` must use the verbatim
+    spec — `max-height: 85vh` + `transform: scale(min(1, 0.85))` so
+    table fits one viewport on landscape."""
+    css = open("/app/frontend/src/styles/vibez-pro.css").read()
+    assert ".gv-arena" in css
+    assert "max-height: 85vh" in css, \
+        ".gv-arena must have `max-height: 85vh` per blueprint v3"
+    assert "scale(min(1, 0.85))" in css, \
+        ".gv-arena must zoom-to-fit via `scale(min(1, 0.85))`"
+    assert ".player-hand" in css or ".gv-player-hand" in css, \
+        "Player hand must have dedicated bottom-pinned class"
+    assert "z-index: 100" in css, \
+        "Player hand must use z-index: 100 to stay on top"
+
+
 
 
 

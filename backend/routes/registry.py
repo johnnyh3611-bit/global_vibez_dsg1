@@ -624,6 +624,17 @@ def register_all_routes(
     except Exception as _e:
         log.warning(f"Roguelite chess routes not mounted: {_e}")
 
+    # Immutable Core — locked economic constants (Ultimate Blueprint v3).
+    # Failure here is FATAL: if the Sovereign Tax or 70/30 split has
+    # drifted, the server refuses to start.
+    try:
+        from routes.immutable_core import router as immutable_core_router, verify_locks
+        verify_locks()
+        api_router.include_router(immutable_core_router)
+    except Exception as _e:
+        log.error(f"❌ IMMUTABLE CORE VIOLATION: {_e}")
+        raise
+
 
 
 # ─── Domain helpers (Feb 2026 polish split) ──────────────────────────

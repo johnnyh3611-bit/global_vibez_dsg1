@@ -45,6 +45,7 @@ import FreshDropsLauncher from "@/components/common/FreshDropsLauncher";
 import WhatsNewBanner from "@/components/common/WhatsNewBanner";
 import VoiceMirrorDock from "@/components/common/VoiceMirrorDock";
 import CommHubDropdown from "@/components/common/CommHubDropdown";
+import VigilantDesignAgent from "@/components/common/VigilantDesignAgent";
 import IncomingCallModal from "@/components/voice/IncomingCallModal";
 import BetaFeedbackButton from "@/components/common/BetaFeedbackButton";
 import FriendEventToaster from "@/components/common/FriendEventToaster";
@@ -131,6 +132,7 @@ function AppRouter() {
       <FreshDropsLauncher />
       <WhatsNewBanner />
       <CommHubDropdown />
+      <VigilantDesignAgent />
       <VoiceMirrorDock />
       <IncomingCallModal />
       <BetaFeedbackButton />

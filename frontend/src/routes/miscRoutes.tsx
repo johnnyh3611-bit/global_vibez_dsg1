@@ -25,6 +25,7 @@ import YellowPagesDirectory from "@/pages/yellow_pages/YellowPagesDirectory";
 import YellowPagesNewListing from "@/pages/yellow_pages/YellowPagesNewListing";
 import YellowPagesListingDetail from "@/pages/yellow_pages/YellowPagesListingDetail";
 import TopUpSuccess from "@/pages/wallet/TopUpSuccess";
+import LegacyVaultPage from "@/pages/LegacyVaultPage";
 
 export const miscRoutes = (ProtectedRoute) => (
   <>
@@ -70,5 +71,10 @@ export const miscRoutes = (ProtectedRoute) => (
     <Route path="/upgrade" element={<ProtectedRoute><PricingPage /></ProtectedRoute>} />
     <Route path="/payment/success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
     <Route path="/payment/cancel" element={<ProtectedRoute><PaymentCancel /></ProtectedRoute>} />
+
+    {/* Legacy Vault — Production Security & Phase Gating
+        (Ultimate Blueprint v3 §4). Read-only investor / brand
+        artifact viewer; locks 13.5% Sovereign Tax + 70/30 split. */}
+    <Route path="/legacy-vault" element={<ProtectedRoute><LegacyVaultPage /></ProtectedRoute>} />
   </>
 );

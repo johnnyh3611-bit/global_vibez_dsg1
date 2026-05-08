@@ -348,13 +348,32 @@
    Apply `.gv-arena` to a top-level game container; it locks the height
    to the viewport, hides overflow, and sets up a flex column so child
    elements get correctly distributed without ever introducing scroll.
+
+   ULTIMATE BLUEPRINT v3 §2 (May 2026 verbatim):
+     • `max-height: 85vh` so the table shrinks to fit on landscape.
+     • `transform: scale(min(1, 0.85))` to zoom-fit into one frame.
+     • `.player-hand` pinned to bottom edge with z-index: 100 so cards
+       are NEVER occluded by the board.
    ======================================== */
 .gv-arena {
+  max-height: 85vh;
   height: 100dvh;
-  max-height: 100dvh;
-  overflow: hidden;
+  transform: scale(min(1, 0.85));
+  transform-origin: center;
+  overflow: hidden !important;
   display: flex;
   flex-direction: column;
+}
+
+/* Player hand — fixed to bottom edge across every game arena per
+   Ultimate Blueprint v3 §2. Cards must stay visible in landscape. */
+.player-hand,
+.gv-player-hand {
+  position: fixed;
+  bottom: 8px;
+  left: 0;
+  right: 0;
+  z-index: 100;
 }
 
 @media (orientation: landscape) and (max-height: 480px) {
