@@ -413,10 +413,14 @@ export function PracticeChess({ game, onMove, makingMove, aiThinking }: { game?:
                       pointerEvents: 'none',
                     }}
                   >
+                    {/* `static` mode disables the entrance animation
+                        + hover handlers so react-chessboard's drag
+                        layer keeps natural piece pickup feel. */}
                     <HoloPiece
                       color={isWhite ? 'white' : 'black'}
                       glyph={glyph}
                       size={Math.round(squareWidth * 0.85)}
+                      static
                     />
                   </div>
                 );

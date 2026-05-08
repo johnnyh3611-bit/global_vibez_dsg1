@@ -66,6 +66,7 @@ const TowerStack = ({ stack, isKing, onClick, disabled, isSelected, animate = tr
               selected={isSelected && isTop}
               size={Math.round(48)}
               testid={`tower-piece-${index}`}
+              static
             />
           </motion.div>
         );

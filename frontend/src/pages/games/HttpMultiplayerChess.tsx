@@ -359,6 +359,7 @@ export default function HttpMultiplayerChess() {
                             glyph={piece}
                             selected={isSelected}
                             size={42}
+                            static
                           />
                         )}
                       </motion.button>

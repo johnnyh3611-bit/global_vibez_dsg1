@@ -710,8 +710,11 @@ def test_vibedice_premium_drawer_toggles_present() -> None:
     assert 'data-testid="vibe654-toggle-recent"' in src, (
         "Standalone /dice lost the Recent Rolls drawer toggle"
     )
-    assert "flex-1 min-h-0 overflow-y-auto" in src, (
-        "Standalone /dice lost the locked-height scrollable main region"
+    # May 2026: Founder asked to eliminate scrolling on this room.
+    # `overflow-y-auto` was swapped for `overflow-hidden` so the round
+    # always fits one viewport on phone. Keep the locked-height wrapper.
+    assert "flex-1 min-h-0 overflow-hidden" in src, (
+        "Standalone /dice lost the locked-height single-viewport main region"
     )
 
 
@@ -1931,21 +1934,21 @@ def test_universal_turn_indicator_rolled_out() -> None:
     src = Path(__file__).resolve().parents[2] / "frontend/src"
     assert (src / "components/games/TurnIndicator.tsx").exists()
     rooms_with_turn_indicator = [
-        # Phase 1 (Poker / TicTacToe)
+        # Phase 1 — Poker
         "pages/games/PokerPractice.tsx",
-        "pages/MultiplayerTicTacToe.tsx",
-        # Phase 0 (Vibez 654)
+        # Phase 0 — Vibez 654
         "pages/games/Vibez654Game.tsx",
-        # Phase 3 (Blackjack / Roulette / Baccarat)
-        "pages/MultiplayerBlackjack.tsx",
+        # Phase 3 — Baccarat
         "pages/games/BaccaratPremium.tsx",
-        "pages/games/_GenericCasinoGame.tsx",
-        # Phase 2 (Spades / Bid Whist / Hearts)
+        # Phase 2 — Trick-takers (AAA)
         "pages/games/SpadesAAA.tsx",
         "pages/games/HeartsAAA.tsx",
         "pages/games/BidWhistAAA.tsx",
         # HTTP multiplayer Hearts (alt route)
         "pages/games/HttpMultiplayerHearts.tsx",
+        # NOTE: MultiplayerTicTacToe / MultiplayerBlackjack /
+        # _GenericCasinoGame were deleted as dead code in May 2026
+        # (no upstream imports). They no longer need TurnIndicator.
     ]
     for rel in rooms_with_turn_indicator:
         body = (src / rel).read_text(encoding="utf-8")
@@ -2042,27 +2045,17 @@ def test_phase2_score_panel_and_special_state_components_exist() -> None:
 def test_phase3_cinematics_wired_into_target_rooms() -> None:
     """v8.0 — Cinematic primitives must be ACTIVELY used by their target
     rooms (not just imported), per founder ask:
-       • ChipToss → MultiplayerBlackjack on bet placement
-       • ChipToss → BaccaratPremium player/banker/tie zone bets (Late × 7)
-       • BallSpin → European Roulette / GenericCasinoGame on spin
+       • ChipToss → BaccaratPremium player/banker/tie zone bets
        • CardSqueeze → BaccaratPremium banker/player reveals
        • SpecialStatePrompt → BidWhistAAA Boston / Big Boston bidder flow
-       • SpecialStatePrompt → SpadesAAA Nil bidder flow (Late × 7)"""
+       • SpecialStatePrompt → SpadesAAA Nil bidder flow
+
+    NOTE: MultiplayerBlackjack / _GenericCasinoGame were deleted as
+    dead code in May 2026 (no upstream imports), so the BallSpin /
+    Blackjack ChipToss assertions moved to those rooms' replacement
+    when the user reships them."""
     from pathlib import Path
     src = Path(__file__).resolve().parents[2] / "frontend/src"
-
-    bj = (src / "pages/MultiplayerBlackjack.tsx").read_text(encoding="utf-8")
-    assert "ChipToss" in bj and "chipTossActive" in bj, \
-        "ChipToss must be wired into Blackjack bet placement"
-
-    rg = (src / "pages/games/_GenericCasinoGame.tsx").read_text(encoding="utf-8")
-    assert "BallSpin" in rg and "result?.landed" in rg, \
-        "BallSpin must trigger on spin completion in GenericCasinoGame"
-    # Real European wheel pocket order, not sequential
-    assert "EU_WHEEL_ORDER" in rg, \
-        "BallSpin must use the canonical European wheel pocket order"
-    assert "landingAngleForNumber" in rg, \
-        "GenericCasinoGame must call landingAngleForNumber for accurate ball settle"
 
     bp = (src / "pages/games/BaccaratPremium.tsx").read_text(encoding="utf-8")
     assert "CardSqueeze" in bp and "squeezeActive" in bp, \
@@ -3022,6 +3015,225 @@ def test_my_vibez_uploads_persist_to_disk() -> None:
         "my_vibez.py must materialize the upload dir on disk"
     assert "/api/uploads/vibez/" in body, \
         "my_vibez.py must surface uploads under the /api/uploads static mount"
+
+
+# ============================================================================
+# May 2026 — Cyber-Casino + Revolutionary Games Blueprint v1
+# ============================================================================
+# These guards lock in the work done over the May 2026 sprint:
+#   • Burn Counter scarcity readout (landing page)
+#   • Voice Coach (Whisper STT + Claude move-tip)
+#   • Roguelite Chess Trial (24-hr permadeath ladder)
+#   • Universal CommHub (in-game menu bar consolidation)
+#   • Cyber-Casino Holo skin (Chess + Checkers practice & multiplayer)
+#   • Battle Mode primitives (BattleModeWagerPanel + ChipStream + ledger)
+#   • In-app Demo login session reaches /dashboard with all 18 rooms
+# ============================================================================
+
+def test_burn_counter_endpoint_registered():
+    """Landing page burn counter widget needs /api/coins/stats/burn alive."""
+    from server import app
+    paths = {getattr(r, "path", "") for r in app.routes}
+    coin_paths = [p for p in paths if "/coins/stats" in p or "/coin-stats" in p]
+    assert coin_paths, "Burn counter endpoint missing — landing widget will go blank"
+
+
+def test_voice_coach_router_registered():
+    """Cyber-Casino Voice Coach (May 2026) requires move-tip + voice-question
+    endpoints. If both routes go missing the chess Coach button silently
+    fails to fetch tips."""
+    from server import app
+    paths = {getattr(r, "path", "") for r in app.routes}
+    assert any("/voice-coach/move-tip" in p for p in paths), \
+        "Voice Coach: /api/voice-coach/move-tip missing"
+    assert any("/voice-coach/voice-question" in p for p in paths), \
+        "Voice Coach: /api/voice-coach/voice-question missing"
+
+
+def test_voice_coach_uses_emergent_llm_key():
+    """Voice Coach must read EMERGENT_LLM_KEY from env, not hard-code keys."""
+    src = open("/app/backend/routes/voice_coach.py").read()
+    assert "EMERGENT_LLM_KEY" in src, \
+        "voice_coach.py must read EMERGENT_LLM_KEY from os.environ"
+    assert "claude-sonnet-4-5" in src, \
+        "voice_coach.py must use claude-sonnet-4-5-20250929"
+    assert "whisper-1" in src, "voice_coach.py must call whisper-1 STT"
+
+
+def test_roguelite_chess_router_registered():
+    """Roguelite Chess Trial 24-hr permadeath ladder needs all 4 routes."""
+    from server import app
+    paths = {getattr(r, "path", "") for r in app.routes}
+    for required in (
+        "/roguelite-chess/state",
+        "/roguelite-chess/start",
+        "/roguelite-chess/record-result",
+        "/roguelite-chess/leaderboard",
+    ):
+        assert any(required in p for p in paths), \
+            f"Roguelite Chess: {required} missing — daily ladder broken"
+
+
+def test_roguelite_chess_default_lives():
+    """Trial must start with 3 lives. Changing this breaks the daily
+    leaderboard math + every regression that screenshots the badge."""
+    src = open("/app/backend/routes/roguelite_chess.py").read()
+    assert "DEFAULT_LIVES = 3" in src, \
+        "Roguelite default lives changed — leaderboard rules will drift"
+
+
+def test_roguelite_chess_scoring_locked():
+    """Scoring formula: win = 100 + max(0, elo_diff), draw = +25, loss = -1 life.
+    If anyone tweaks these the leaderboard becomes incomparable across days."""
+    src = open("/app/backend/routes/roguelite_chess.py").read()
+    assert "100 + max(0, body.elo_diff)" in src, \
+        "Roguelite win-score formula must remain '100 + max(0, elo_diff)'"
+    assert "new_score += 25" in src, \
+        "Roguelite draw-score must remain +25"
+
+
+def test_holopiece_static_mode_exists():
+    """May 2026 chess natural-play fix: HoloPiece needs `static` prop so
+    react-chessboard's drag layer + multiplayer button onClick still
+    work. If static mode goes missing, every move re-fires the
+    scale-0 entrance animation and chess play feels broken."""
+    src = open("/app/frontend/src/components/games/HoloBoard/HoloPiece.tsx").read()
+    assert "static?: boolean" in src, \
+        "HoloPiece.tsx must expose `static?: boolean` prop"
+    assert "static: isStatic" in src, \
+        "HoloPiece.tsx must destructure `static` -> `isStatic`"
+    assert "isStatic ? false" in src, \
+        "HoloPiece.tsx must skip entrance animation when isStatic"
+
+
+def test_chess_rooms_use_holopiece_static_mode():
+    """Both chess rooms must pass `static` to HoloPiece — without it
+    every move re-pops the pieces and drag-drop breaks."""
+    practice = open("/app/frontend/src/components/practice_games/PracticeChess.tsx").read()
+    multi = open("/app/frontend/src/pages/games/HttpMultiplayerChess.tsx").read()
+    assert "HoloPiece" in practice and "static" in practice, \
+        "PracticeChess.tsx must use HoloPiece with `static` mode"
+    assert "HoloPiece" in multi and "static" in multi, \
+        "HttpMultiplayerChess.tsx must use HoloPiece with `static` mode"
+
+
+def test_commhub_inline_inside_room_menu_bar():
+    """Founder rule (May 2026): comms must live inside the in-game menu
+    bar, not floating top-right. Floating CommHub auto-hides when a
+    room-menu-bar marker is present in the DOM."""
+    src = open("/app/frontend/src/components/common/CommHubDropdown.tsx").read()
+    assert 'data-testid="room-menu-bar"' in src, \
+        "CommHubDropdown.tsx must hide when room-menu-bar marker exists"
+    assert "MutationObserver" in src, \
+        "CommHubDropdown.tsx must observe DOM for the marker"
+
+
+def test_commhub_button_in_every_aaa_game():
+    """Each AAA game room must inject a CommHubButton next to its
+    SpadesGameMenu so comms live inside the in-game bar."""
+    rooms = [
+        "/app/frontend/src/pages/games/BidWhistAAA.tsx",
+        "/app/frontend/src/pages/games/SpadesAAA.tsx",
+        "/app/frontend/src/pages/games/HeartsAAA.tsx",
+        "/app/frontend/src/pages/games/PinochleAAA.tsx",
+        "/app/frontend/src/pages/games/CrazyEightsAAA.tsx",
+    ]
+    for path in rooms:
+        body = open(path).read()
+        assert "CommHubButton" in body, \
+            f"{os.path.basename(path)} missing in-game CommHubButton"
+        assert 'data-testid="room-menu-bar"' in body, \
+            f"{os.path.basename(path)} missing room-menu-bar marker"
+
+
+def test_battle_mode_primitives_exist():
+    """Cyber-Casino Battle Mode (May 2026) primitives must stay shipped."""
+    panel = "/app/frontend/src/components/games/HoloBoard/BattleModeWager.tsx"
+    hook = "/app/frontend/src/hooks/useBattleModeLedger.ts"
+    assert os.path.exists(panel), "BattleModeWager.tsx missing"
+    assert os.path.exists(hook), "useBattleModeLedger.ts missing"
+    panel_src = open(panel).read()
+    assert "BattleModeWagerPanel" in panel_src
+    assert "ChipStream" in panel_src
+    hook_src = open(hook).read()
+    assert "transferOnCapture" in hook_src
+    assert "useBattleModeLedger" in hook_src
+
+
+def test_universal_shot_clock_components():
+    """Every multiplayer card game should have a 10-second shot clock
+    (UDA §2). Loss of either ShotClockRing or the seconds badge in
+    TurnIndicator breaks the whole "auto-play on idle" promise."""
+    ring = "/app/frontend/src/components/games/ShotClockRing.tsx"
+    indicator = "/app/frontend/src/components/games/TurnIndicator.tsx"
+    assert os.path.exists(ring), "ShotClockRing.tsx missing"
+    assert os.path.exists(indicator), "TurnIndicator.tsx missing"
+    indi_src = open(indicator).read()
+    assert "turn-indicator-seconds" in indi_src, \
+        "TurnIndicator must render a `turn-indicator-seconds` badge"
+    assert "onExpire" in indi_src, \
+        "TurnIndicator must accept `onExpire` so games can auto-act"
+
+
+def test_aaa_card_shaders_global():
+    """Universal Design Agent §1 shaders (.gv-card-active neon-pulse,
+    .gv-card-dim sharp-dim) must remain wired into the global stylesheet
+    so every card game inherits the look."""
+    css = open("/app/frontend/src/styles/vibez-pro.css").read()
+    assert ".gv-card-active" in css, ".gv-card-active shader missing"
+    assert ".gv-card-dim" in css, ".gv-card-dim shader missing"
+    assert ".gv-arena" in css, ".gv-arena helper missing"
+    index = open("/app/frontend/src/index.css").read()
+    assert "styles/vibez-pro.css" in index, \
+        "index.css must import vibez-pro.css globally"
+
+
+def test_landing_language_switcher_sticky():
+    """Founder fix (May 2026): the language switcher / globe must stay
+    pinned to the top during scroll. Sticky positioning on the header
+    + overflow-x: clip on html/body are the two locks."""
+    page = open("/app/frontend/src/pages/LandingNeonGaming.tsx").read()
+    assert "sticky top-" in page, \
+        "Landing header must be sticky so language switcher stays visible"
+    css = open("/app/frontend/src/index.css").read()
+    assert "overflow-x: clip" in css, \
+        "html/body must use `overflow-x: clip` (not hidden) so sticky works"
+
+
+def test_dashboard_route_uses_DashboardNew():
+    """Critical regression (May 2026): /dashboard must route to the rich
+    18-room hub (DashboardNew.tsx), not the old stripped Dashboard.jsx
+    that was deleted. miscRoutes.tsx is the override that lost it before."""
+    src = open("/app/frontend/src/routes/miscRoutes.tsx").read()
+    assert "DashboardNew" in src, \
+        "miscRoutes.tsx must import Dashboard from DashboardNew"
+
+
+def test_18_rooms_present_in_hub():
+    """All 18 rooms the founder enumerated must remain wired in the hub."""
+    src = open("/app/frontend/src/pages/DashboardNew.tsx").read()
+    rooms = [
+        "Dating Universe",
+        "Find Your Player 2",
+        "MY VIBEZ",
+        "Game Arena",
+        "Tournament Hall",
+        "Social Lounge",
+        "Date Spot Finder",
+        "Just For The Night",
+        "Hungry Vibez",
+        "Global Vibez DSG TV",
+        "DSG Music Group",
+        "Vibe Yellow Pages",
+        "Beat Vault",
+        "Memory Bank",
+        "Vigilant Matchmaking",
+        "Cultural Profile",
+        "Voice Mirror",
+        "Vibes Rides",
+    ]
+    missing = [r for r in rooms if r not in src]
+    assert not missing, f"Dashboard hub missing rooms: {missing}"
 
 
 

@@ -38,6 +38,16 @@ interface Props {
    * Pass a smaller number for mobile boards.
    */
   size?: number;
+  /**
+   * Static mode — disables entrance animation, hover-scale, hover-glow,
+   * and haptic vibration. Use this when HoloPiece is rendered inside a
+   * library that handles its own drag/drop or click layer (e.g.
+   * react-chessboard's `customPieces`, or the multiplayer board's
+   * `<motion.button>` wrappers). Without it, every move re-fires a
+   * scale-0 → 1 entrance and the hover handlers steal pointer events
+   * from the drag layer, breaking natural chess play.
+   */
+  static?: boolean;
 }
 
 const COLOR_CORE: Record<Props["color"], string> = {
@@ -60,6 +70,7 @@ export const HoloPiece: React.FC<Props> = ({
   selected = false,
   testid,
   size = 44,
+  static: isStatic = false,
 }) => {
   // Track absorbed-glow boost (per spec: "attacker absorbs digital dust
   // to increase its glow intensity"). Bumped externally when this piece
@@ -69,15 +80,23 @@ export const HoloPiece: React.FC<Props> = ({
   const hoverTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
+    // Static mode never auto-boosts so we don't churn renders inside
+    // libraries (react-chessboard) that re-mount pieces every move.
+    if (isStatic) {
+      setBoost(false);
+      return;
+    }
     if (selected) setBoost(true);
     else {
       const t = window.setTimeout(() => setBoost(false), 1200);
       return () => clearTimeout(t);
     }
-  }, [selected]);
+  }, [selected, isStatic]);
 
-  // Ghost-Touch hover handler — light haptic + pulse.
+  // Ghost-Touch hover handler — light haptic + pulse. Disabled in
+  // static mode because the parent owns the click/drag layer.
   const onHover = () => {
+    if (isStatic) return;
     if (typeof navigator !== "undefined" && "vibrate" in navigator) {
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -135,14 +154,17 @@ export const HoloPiece: React.FC<Props> = ({
   return (
     <motion.div
       data-testid={testid}
-      onHoverStart={onHover}
-      onTouchStart={onHover}
-      className="relative cursor-pointer select-none"
+      onHoverStart={isStatic ? undefined : onHover}
+      onTouchStart={isStatic ? undefined : onHover}
+      className={`relative select-none ${isStatic ? "pointer-events-none" : "cursor-pointer"}`}
       style={{ width: shellSize, height: shellSize }}
-      initial={{ scale: 0, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      whileHover={{ scale: 1.04 }}
-      transition={{ type: "spring", stiffness: 240, damping: 18 }}
+      // In static mode we skip the entrance animation entirely so
+      // every position-update from react-chessboard / motion.button
+      // doesn't cause a scale-0 pop on every piece (broken-feel fix).
+      initial={isStatic ? false : { scale: 0, opacity: 0 }}
+      animate={isStatic ? undefined : { scale: 1, opacity: 1 }}
+      whileHover={isStatic ? undefined : { scale: 1.04 }}
+      transition={isStatic ? undefined : { type: "spring", stiffness: 240, damping: 18 }}
     >
       {/* Selection ring */}
       {selected && (
