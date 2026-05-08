@@ -366,8 +366,10 @@
 }
 
 /* Player hand — fixed to bottom edge across every game arena per
-   Ultimate Blueprint v3 §2. Cards must stay visible in landscape. */
-.player-hand,
+   Ultimate Blueprint v3 §2. Cards must stay visible in landscape.
+   USE the namespaced `.gv-player-hand` class — the legacy `.player-hand`
+   class collides with existing markup (e.g. UniversalGameRoom) where a
+   fixed overlay would block clicks on the game beneath. */
 .gv-player-hand {
   position: fixed;
   bottom: 8px;

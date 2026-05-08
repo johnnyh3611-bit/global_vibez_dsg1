@@ -3307,8 +3307,10 @@ def test_landscape_zoom_to_fit_locked():
         ".gv-arena must have `max-height: 85vh` per blueprint v3"
     assert "scale(min(1, 0.85))" in css, \
         ".gv-arena must zoom-to-fit via `scale(min(1, 0.85))`"
-    assert ".player-hand" in css or ".gv-player-hand" in css, \
-        "Player hand must have dedicated bottom-pinned class"
+    assert ".gv-player-hand" in css, \
+        "Player hand must have dedicated bottom-pinned class (.gv-player-hand). " \
+        "The unnamespaced `.player-hand` was removed in May 2026 because it " \
+        "collided with existing markup and blocked clicks in UniversalGameRoom."
     assert "z-index: 100" in css, \
         "Player hand must use z-index: 100 to stay on top"
 
