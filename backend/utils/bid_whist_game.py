@@ -405,6 +405,22 @@ class BidWhistGame:
         bid_order = ['north', 'east', 'south', 'west']
         num_bids = len(self.bids)
         current_bidder = bid_order[num_bids] if num_bids < 4 else None
+
+        # Universal "whose_turn" — covers BOTH bidding and playing phases
+        # so the frontend Shot Clock and TurnIndicator have a single
+        # source of truth (Universal Design Agent v2 §2).
+        whose_turn = None
+        if self.game_phase == "bidding":
+            whose_turn = current_bidder
+        elif self.game_phase == "kitty_exchange":
+            whose_turn = self.bid_winner
+        elif self.game_phase == "playing":
+            if not self.current_trick:
+                whose_turn = getattr(self, 'trick_leader', None) or self.bid_winner
+            elif len(self.current_trick) < 4:
+                last_pos = self.current_trick[-1].get('player')
+                if last_pos in bid_order:
+                    whose_turn = bid_order[(bid_order.index(last_pos) + 1) % 4]
         
         # Get playable cards for current player (anti-cheat helper)
         playable_cards = []
@@ -433,8 +449,8 @@ class BidWhistGame:
             "players_data": players_data,
             "bids": self.bids,
             "current_bidder": current_bidder,
-            "whose_turn": current_bidder,
-            "is_your_turn": current_bidder == viewer_position,
+            "whose_turn": whose_turn,
+            "is_your_turn": whose_turn == viewer_position,
             "winner": self.winner
         }
 

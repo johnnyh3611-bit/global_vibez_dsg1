@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Trophy, Coins } from 'lucide-react';
@@ -90,6 +91,13 @@ export default function PokerPractice() {
   const [chipToss, setChipToss] = useState<{ id: number; amount: number } | null>(null);
   const tournament = useTournamentMode();
 
+  // Universal 10-second Shot Clock (Universal Design Agent v2 §2). On
+  // expire we play the safest auto-action: CHECK if it's free, otherwise
+  // FOLD. Never auto-raises or auto-calls real chips.
+  const SHOT_CLOCK_MS = 10_000;
+  const [turnExpiresAt, setTurnExpiresAt] = useState<number | null>(null);
+  const lastTurnKeyRef = React.useRef<string | null>(null);
+
   const startGame = useCallback(async () => {
     setLoading(true);
     try {
@@ -158,6 +166,46 @@ export default function PokerPractice() {
       setSubmitting(false);
     }
   };
+
+  // Reset the shot clock whenever the active seat changes.
+  useEffect(() => {
+    if (!state) {
+      setTurnExpiresAt(null);
+      lastTurnKeyRef.current = null;
+      return;
+    }
+    const userSeat = state.seats.find((s) => s.is_user);
+    const isMyTurn = !!userSeat && state.active_seat === userSeat.seat_id;
+    const turnKey = isMyTurn ? `${state.phase}:${state.active_seat}` : null;
+    if (turnKey !== lastTurnKeyRef.current) {
+      lastTurnKeyRef.current = turnKey;
+      setTurnExpiresAt(isMyTurn ? Date.now() + SHOT_CLOCK_MS : null);
+    }
+  }, [state]);
+
+  // Auto-action on shot-clock expire — safest path only.
+  useEffect(() => {
+    if (!turnExpiresAt) return;
+    const remaining = turnExpiresAt - Date.now();
+    if (remaining <= 0) return;
+    const t = setTimeout(() => {
+      if (!state || submitting) return;
+      const userSeat = state.seats.find((s) => s.is_user);
+      if (!userSeat || state.active_seat !== userSeat.seat_id) return;
+      const valid = state.valid_actions ?? [];
+      // Prefer check (free), otherwise fold. Never auto-call real chips.
+      const action = valid.includes("check")
+        ? "check"
+        : valid.includes("fold")
+          ? "fold"
+          : null;
+      if (action) {
+        toast(`Shot clock — auto-${action}`);
+        void doAction(action);
+      }
+    }, remaining);
+    return () => clearTimeout(t);
+  }, [turnExpiresAt, state, submitting]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const nextHand = async () => {
     if (!state) return;

@@ -1,5 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
+/* Universal Design Agent v2 — global card shaders + arena helpers
+   (.gv-card-active, .gv-card-dim, .gv-arena). Inheriting from a
+   single stylesheet means every game picks them up automatically. */
+@import './styles/vibez-pro.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

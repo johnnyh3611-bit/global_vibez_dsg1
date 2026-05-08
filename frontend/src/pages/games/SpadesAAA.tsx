@@ -97,6 +97,29 @@ export default function SpadesAAA() {
 
   // Overlay state
   const [profileOpen, setProfileOpen] = useState<SpadesPosition | null>(null);
+
+  // Universal 10-second Shot Clock (Beta Specs §6 — copy from Whist).
+  // Resets on every turn change; auto-plays the lowest valid card on
+  // expire so idle play doesn't stall the table.
+  const SHOT_CLOCK_MS = 10_000;
+  const [turnExpiresAt, setTurnExpiresAt] = useState<number | null>(null);
+  const lastTurnKeyRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!game) {
+      setTurnExpiresAt(null);
+      lastTurnKeyRef.current = null;
+      return;
+    }
+    const activeKey = game.turn_position ?? null;
+    const turnKey = activeKey
+      ? `${game.phase}:${activeKey}:${game.current_trick?.length ?? 0}`
+      : null;
+    if (turnKey !== lastTurnKeyRef.current) {
+      lastTurnKeyRef.current = turnKey;
+      setTurnExpiresAt(activeKey ? Date.now() + SHOT_CLOCK_MS : null);
+    }
+  }, [game]);
   const [chatOpen, setChatOpen] = useState(false);
 
   // Hand-review window between the deal animation and the bid modal.
@@ -421,6 +444,27 @@ export default function SpadesAAA() {
     [game, busy, flashStatus],
   );
 
+  // Shot-clock auto-play (Beta Specs §6 + Universal Design Agent §2):
+  // when the user's 10s expires, play their lowest valid card so the
+  // table never stalls. Bots are driven server-side already.
+  const handleShotClockExpire = useCallback(() => {
+    if (!game || busy) return;
+    if (game.turn_position !== "south") return;
+    const candidates = game.valid_plays?.length
+      ? game.valid_plays
+      : game.your_hand;
+    if (!candidates || candidates.length === 0) return;
+    const RANK_VALUES: Record<string, number> = {
+      "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7, "8": 8,
+      "9": 9, "10": 10, J: 11, Q: 12, K: 13, A: 14,
+    };
+    const lowest = [...candidates].sort(
+      (a, b) => (RANK_VALUES[a.rank] ?? 99) - (RANK_VALUES[b.rank] ?? 99),
+    )[0];
+    flashStatus("Shot clock — auto-played", "amber");
+    void playCard(lowest);
+  }, [game, busy, flashStatus, playCard]);
+
   // When the round modal closes AND we're in a new bidding phase, kick
   // off the deal animation for the next hand.
   const handleRoundModalClose = () => {
@@ -609,6 +653,7 @@ export default function SpadesAAA() {
             <TurnIndicator
               role={role}
               name={role === 'me' ? undefined : (turnPlayer?.name || (turnPos as string))}
+              expiresAt={role === 'me' ? turnExpiresAt : null}
             />
           );
         })()}
@@ -626,6 +671,8 @@ export default function SpadesAAA() {
                 isTurn={game.turn_position === "north"}
                 isYou={false}
                 onClick={() => setProfileOpen("north")}
+                shotClockExpiresAt={game.turn_position === "north" ? turnExpiresAt : null}
+                onShotClockExpire={handleShotClockExpire}
               />
               <SpadesSeat
                 position="east"
@@ -633,6 +680,8 @@ export default function SpadesAAA() {
                 isTurn={game.turn_position === "east"}
                 isYou={false}
                 onClick={() => setProfileOpen("east")}
+                shotClockExpiresAt={game.turn_position === "east" ? turnExpiresAt : null}
+                onShotClockExpire={handleShotClockExpire}
               />
               <SpadesSeat
                 position="west"
@@ -640,6 +689,8 @@ export default function SpadesAAA() {
                 isTurn={game.turn_position === "west"}
                 isYou={false}
                 onClick={() => setProfileOpen("west")}
+                shotClockExpiresAt={game.turn_position === "west" ? turnExpiresAt : null}
+                onShotClockExpire={handleShotClockExpire}
               />
               {/* South is YOU — we intentionally do NOT render your own
                   seat badge on your own screen. You know who you are;

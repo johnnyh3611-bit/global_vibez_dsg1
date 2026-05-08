@@ -284,6 +284,87 @@
 }
 
 /* ========================================
+   Universal Design Agent v2 §1 — Active / Inactive Card Shaders
+   ----------------------------------------------------------------------
+   "Active cards get a Neon Pulse, inactive cards get a Sharp-Dim shader.
+   Disable the global 'turning light' effect for inactive cards."
+   ----------------------------------------------------------------------
+   Apply by adding `.gv-card-active` to a playable card, or
+   `.gv-card-dim` to a card that should be sharp-dim (out of suit / not
+   the active player's turn). Falls back to no styling if neither class
+   is applied so existing components remain visually identical.
+   ======================================== */
+.gv-card-active {
+  position: relative;
+  isolation: isolate;
+  animation: gv-card-neon-pulse 1.6s ease-in-out infinite;
+  filter: drop-shadow(0 0 12px rgba(217, 70, 239, 0.55));
+  z-index: 2;
+  cursor: pointer;
+}
+
+@keyframes gv-card-neon-pulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 12px rgba(217, 70, 239, 0.55))
+            drop-shadow(0 0 22px rgba(168, 85, 247, 0.45));
+    transform: translateY(0);
+  }
+  50% {
+    filter: drop-shadow(0 0 18px rgba(217, 70, 239, 0.85))
+            drop-shadow(0 0 32px rgba(168, 85, 247, 0.7));
+    transform: translateY(-2px);
+  }
+}
+
+/* Sharp-dim shader — kills the wishy-washy "turning light" effect
+   from the older table CSS by clamping saturation and contrast. */
+.gv-card-dim {
+  filter: saturate(0.55) contrast(0.85) brightness(0.7);
+  opacity: 0.65;
+  transition: filter 200ms ease, opacity 200ms ease;
+}
+
+.gv-card-dim:hover {
+  /* Hover rev — give just enough lift so the user knows the card
+     exists, but never so much that it competes with active cards. */
+  filter: saturate(0.7) contrast(0.95) brightness(0.85);
+  opacity: 0.85;
+}
+
+/* Disable the legacy "turning light" wash on inactive cards by
+   suppressing any global `card-deal` re-trigger and the broad
+   per-card shimmer that some game components apply. */
+.gv-card-dim,
+.gv-card-dim * {
+  animation: none !important;
+}
+
+/* ========================================
+   Universal Design Agent v2 §3 — Landscape "Zoom-to-Fit"
+   ----------------------------------------------------------------------
+   "Eliminate vertical scrolling inside game arenas. Use Zoom-to-Fit so
+    the entire table is visible regardless of phone orientation."
+   ----------------------------------------------------------------------
+   Apply `.gv-arena` to a top-level game container; it locks the height
+   to the viewport, hides overflow, and sets up a flex column so child
+   elements get correctly distributed without ever introducing scroll.
+   ======================================== */
+.gv-arena {
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (orientation: landscape) and (max-height: 480px) {
+  .gv-arena {
+    /* Squeeze table down on short landscape so there's no scroll. */
+    font-size: 13px;
+  }
+}
+
+/* ========================================
    8. RESPONSIVE OPTIMIZATIONS
    ======================================== */
 @media (max-width: 1024px) {

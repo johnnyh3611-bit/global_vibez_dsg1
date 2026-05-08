@@ -558,10 +558,13 @@ export default function VibeDice654Premium() {
         </button>
       </div>
 
-      {/* MAIN — locked-height scrollable play area; only this region
-          scrolls if content overflows on very small phones. */}
-      <main className="flex-1 min-h-0 overflow-y-auto px-3 sm:px-5 lg:px-6 py-3">
-        <div className="max-w-3xl mx-auto space-y-3">
+      {/* MAIN — locked-height play area. Per Beta Specs §5 (Vibez 654)
+          the founder asked to *eliminate scrolling*: tightened spacing,
+          smaller padding, and overflow-clip so the round always fits in
+          one viewport on mobile. The drawer toggles + side panels keep
+          ancillary info accessible without growing the page. */}
+      <main className="flex-1 min-h-0 overflow-hidden px-3 sm:px-5 lg:px-6 py-2">
+        <div className="max-w-3xl mx-auto space-y-2">
           {gamePhase !== 'IDLE' && (
             <LockInProgress
               lockedDice={lockedDice}

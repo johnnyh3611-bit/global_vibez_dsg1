@@ -211,6 +211,20 @@ export default function BidWhistAAA() {
    */
   const [pendingBoston, setPendingBoston] = useState<{ bid: BidWhistBid; variant: SpecialStateVariant } | null>(null);
 
+  /**
+   * Universal 10-second Shot Clock (Universal Design Agent v2 §2 + Beta
+   * Specs §4). Resets every time the active turn rotates. When the
+   * countdown hits zero we auto-play the lowest valid card (or auto-pass
+   * during the bid phase) so the game never stalls on an idle player.
+   *
+   * `turnExpiresAt` is computed client-side off the *current* turn key
+   * since the practice backend doesn't ship a turn-deadline yet. The
+   * ring's drift-resistance logic wraps the seat (see ShotClockRing).
+   */
+  const SHOT_CLOCK_MS = 10_000;
+  const [turnExpiresAt, setTurnExpiresAt] = useState<number | null>(null);
+  const lastTurnKeyRef = useRef<string | null>(null);
+
   // 15-second review window (matches SpadesAAA exactly)
   const REVIEW_SECONDS = 10;
   const [reviewActive, setReviewActive] = useState(false);
@@ -592,6 +606,56 @@ export default function BidWhistAAA() {
     [raw, busy, flashStatus],
   );
 
+  // ─── Universal Shot Clock — reset on turn change, auto-play on expire ───
+  // Computes whose turn it actually is right now (mirrors the inline logic
+  // further down), then re-arms `turnExpiresAt` whenever that key changes.
+  // The ring drains client-side via ShotClockRing's RAF loop.
+  useEffect(() => {
+    if (!raw) {
+      setTurnExpiresAt(null);
+      lastTurnKeyRef.current = null;
+      return;
+    }
+    // Mirror the same `currentTurn` logic used down the page (line ~775)
+    // so the ring matches whatever the UI says is the active seat.
+    const activeKey: string | null =
+      raw.whose_turn ?? raw.current_bidder ?? null;
+    const turnKey = activeKey
+      ? `${raw.phase}:${activeKey}:${raw.bids?.length ?? 0}:${raw.current_trick?.length ?? 0}`
+      : null;
+    if (turnKey !== lastTurnKeyRef.current) {
+      lastTurnKeyRef.current = turnKey;
+      setTurnExpiresAt(activeKey ? Date.now() + SHOT_CLOCK_MS : null);
+    }
+  }, [raw]);
+
+  // Auto-action when the user's shot-clock hits 0. Lowest valid card,
+  // or auto-pass during bidding (Universal Design Agent §2).
+  const handleShotClockExpire = useCallback(() => {
+    if (!raw || busy) return;
+    const activeKey = raw.whose_turn ?? raw.current_bidder ?? null;
+    if (activeKey !== raw.your_position) return; // never auto-act for bots
+
+    if (raw.phase === "playing") {
+      const candidates = raw.playable_cards?.length
+        ? raw.playable_cards
+        : raw.your_hand;
+      if (!candidates || candidates.length === 0) return;
+      const RANK_VALUES: Record<string, number> = {
+        "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7, "8": 8,
+        "9": 9, "10": 10, J: 11, Q: 12, K: 13, A: 14,
+      };
+      const lowest = [...candidates].sort(
+        (a, b) => (RANK_VALUES[a.rank] ?? 99) - (RANK_VALUES[b.rank] ?? 99),
+      )[0];
+      flashStatus("Shot clock — auto-played", "amber", 1500);
+      void playCard(lowest);
+    } else if (raw.phase === "bidding") {
+      flashStatus("Shot clock — auto-passed", "amber", 1500);
+      void passBid();
+    }
+  }, [raw, busy, flashStatus, playCard, passBid]);
+
   const handleRoundModalClose = () => {
     setRoundModalOpen(false);
     if (raw?.phase === "bidding") {
@@ -714,6 +778,34 @@ export default function BidWhistAAA() {
     ? { amount: raw.winning_bid.amount, bidder: raw.winning_bid.player }
     : null;
 
+  // ─── Auto-bid-resort (Beta Specs §4): once the winning bid is set,
+  // re-sort the player's hand by high (uptown) or low (downtown) so they
+  // see the most valuable plays first without manually fanning. Trump
+  // suit also bubbles to the front so the player can lead it on demand.
+  const RANK_VAL: Record<string, number> = {
+    "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7, "8": 8,
+    "9": 9, "10": 10, J: 11, Q: 12, K: 13, A: 14,
+  };
+  const sortedHand = (() => {
+    const hand = raw.your_hand ?? [];
+    if (!raw.winning_bid) return hand;
+    const direction = raw.winning_bid.type ?? "uptown";
+    const trump = raw.trump_suit;
+    const highFirst = direction !== "downtown"; // uptown / no_trump => high
+    return [...hand].sort((a, b) => {
+      // Trump first
+      if (trump) {
+        const aT = a.suit === trump;
+        const bT = b.suit === trump;
+        if (aT !== bT) return aT ? -1 : 1;
+      }
+      // Then by rank in the bid direction
+      const av = RANK_VAL[a.rank] ?? 0;
+      const bv = RANK_VAL[b.rank] ?? 0;
+      return highFirst ? bv - av : av - bv;
+    });
+  })();
+
   return (
     <div
       className="min-h-screen bg-gradient-to-b from-[#05070d] via-[#081021] to-[#050507] text-white relative overflow-x-hidden"
@@ -778,7 +870,15 @@ export default function BidWhistAAA() {
           const partnerOf: Record<string, string> = { north: 'south', south: 'north', east: 'west', west: 'east' };
           const role: TurnRole = currentTurn === youPosition ? 'me'
             : currentTurn === partnerOf[youPosition] ? 'partner' : 'opponent';
-          return <TurnIndicator role={role} name={role === 'me' ? undefined : players[currentTurn]?.name} />;
+          // Show the 10s shot-clock countdown on the user's own turn so
+          // they can see it ticking even though they have no seat badge.
+          return (
+            <TurnIndicator
+              role={role}
+              name={role === 'me' ? undefined : players[currentTurn]?.name}
+              expiresAt={role === 'me' ? turnExpiresAt : null}
+            />
+          );
         })()}
 
         {/* Arena — identical to SpadesAAA */}
@@ -792,6 +892,8 @@ export default function BidWhistAAA() {
                 isYou={youPosition === "north"}
                 isDealer={raw.dealer === "north"}
                 onClick={() => setProfileOpen("north")}
+                shotClockExpiresAt={currentTurn === "north" ? turnExpiresAt : null}
+                onShotClockExpire={handleShotClockExpire}
               />
               <SpadesSeat
                 position="east"
@@ -800,6 +902,8 @@ export default function BidWhistAAA() {
                 isYou={youPosition === "east"}
                 isDealer={raw.dealer === "east"}
                 onClick={() => setProfileOpen("east")}
+                shotClockExpiresAt={currentTurn === "east" ? turnExpiresAt : null}
+                onShotClockExpire={handleShotClockExpire}
               />
               <SpadesSeat
                 position="west"
@@ -808,6 +912,8 @@ export default function BidWhistAAA() {
                 isYou={youPosition === "west"}
                 isDealer={raw.dealer === "west"}
                 onClick={() => setProfileOpen("west")}
+                shotClockExpiresAt={currentTurn === "west" ? turnExpiresAt : null}
+                onShotClockExpire={handleShotClockExpire}
               />
               <SpadesTrickPile trick={trickPile} />
             </SpadesTable>
@@ -820,7 +926,7 @@ export default function BidWhistAAA() {
           {uiPhase === "playing" ? (
             <SpadesHandFan
               key={dealKey}
-              hand={raw.your_hand}
+              hand={sortedHand}
               validPlays={raw.playable_cards ?? []}
               isYourTurn={currentTurn === youPosition}
               onPlay={playCard}

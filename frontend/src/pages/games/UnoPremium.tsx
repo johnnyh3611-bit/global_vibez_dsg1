@@ -612,7 +612,10 @@ export default function UnoPremium() {
   const [showChat, setShowChat] = useState(false);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [showStats, setShowStats] = useState(false);
-  const [turnTimeLeft, setTurnTimeLeft] = useState(20);
+  // Universal 10-second Shot Clock (Universal Design Agent v2 §2). UNO
+  // historically used 20s; the PDF mandates 10s across every multiplayer
+  // room so cadence matches Whist / Spades / 654.
+  const [turnTimeLeft, setTurnTimeLeft] = useState(10);
 
   const errorTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -678,17 +681,41 @@ export default function UnoPremium() {
     myPlayer?.is_current_turn && table?.game_state === "playing"
   );
 
-  // Reset/arm turn timer whenever it becomes my turn
+  // Reset/arm turn timer whenever it becomes my turn (10s shot clock)
   useEffect(() => {
-    if (isMyTurn) setTurnTimeLeft(20);
+    if (isMyTurn) setTurnTimeLeft(10);
   }, [isMyTurn, table?.players.find((p) => p.is_current_turn)?.session_id]);
 
   useEffect(() => {
     if (!isMyTurn) return;
-    if (turnTimeLeft <= 0) return;
+    if (turnTimeLeft <= 0) {
+      // Universal Design Agent §2 auto-action: try a valid play first,
+      // otherwise draw. Keeps the table moving on idle hand-stalls.
+      if (!socket || !myPlayer?.hand) return;
+      const top = table?.discard_top;
+      const findPlayable = (): number | null => {
+        if (!myPlayer.hand || !top) return null;
+        const wildIdx = myPlayer.hand.findIndex(
+          (c) => c.color === "wild" || c.value === "wild" || c.value === "wild_draw_four",
+        );
+        const matchIdx = myPlayer.hand.findIndex(
+          (c) => c.color === top.color || c.value === top.value,
+        );
+        if (matchIdx >= 0) return matchIdx;
+        if (wildIdx >= 0) return wildIdx;
+        return null;
+      };
+      const idx = findPlayable();
+      if (idx !== null) {
+        socket.emit("uno_play_card", { card_index: idx, color_choice: "red" });
+      } else {
+        socket.emit("uno_draw_card", {});
+      }
+      return;
+    }
     const t = setInterval(() => setTurnTimeLeft((v) => Math.max(0, v - 1)), 1000);
     return () => clearInterval(t);
-  }, [isMyTurn, turnTimeLeft]);
+  }, [isMyTurn, turnTimeLeft, socket, myPlayer, table?.discard_top]);
 
   // Seat mapping: me at SOUTH, opponents fill west → north → east in turn order.
   const opponentSeats: SeatPosition[] = useMemo(() => {

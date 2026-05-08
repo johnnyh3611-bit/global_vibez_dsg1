@@ -14,6 +14,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Bot, Crown } from "lucide-react";
+import ShotClockRing from "@/components/games/ShotClockRing";
 import type { SpadesPlayerView, SpadesPosition } from "./types";
 
 interface Props {
@@ -23,6 +24,10 @@ interface Props {
   isYou: boolean;
   isDealer?: boolean;
   onClick?: () => void;
+  /** Optional 10-second turn timer (Universal Design Agent §2). When
+      provided AND `isTurn`, draws the SVG ring around the badge. */
+  shotClockExpiresAt?: number | null;
+  onShotClockExpire?: () => void;
 }
 
 const TEAM: Record<"team1" | "team2", { border: string; ring: string; bg: string; text: string }> = {
@@ -58,11 +63,13 @@ export const SpadesSeat: React.FC<Props> = ({
   isYou,
   isDealer = false,
   onClick,
+  shotClockExpiresAt,
+  onShotClockExpire,
 }) => {
   const team = TEAM[player.team] ?? TEAM.team1;
   const rotation = ROTATION_BY_POSITION[position];
 
-  return (
+  const seatBody = (
     <div
       className={`flex items-center gap-1.5 md:gap-2 ${rotation}`}
       data-testid={`spades-seat-${position}`}
@@ -154,6 +161,23 @@ export const SpadesSeat: React.FC<Props> = ({
       </motion.button>
     </div>
   );
+
+  // Wrap with the universal 10-second Shot Clock ring when this seat
+  // is the active turn AND a deadline was supplied. Otherwise render
+  // the bare seat — zero overhead.
+  if (isTurn && shotClockExpiresAt) {
+    return (
+      <ShotClockRing
+        expiresAt={shotClockExpiresAt}
+        onExpire={onShotClockExpire}
+        size={130}
+        strokeWidth={4}
+      >
+        {seatBody}
+      </ShotClockRing>
+    );
+  }
+  return seatBody;
 };
 
 export default SpadesSeat;

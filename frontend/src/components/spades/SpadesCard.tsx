@@ -323,8 +323,8 @@ export const SpadesCard: React.FC<Props> = ({
       }
       style={{ width: dim.w, height: dim.h }}
       className={`relative rounded-lg bg-white overflow-hidden select-none transition-all duration-200 ${
-        isPlayable && onClick ? "cursor-pointer" : "cursor-default"
-      } ${isDimmed ? "opacity-40 grayscale" : ""} ${promotedRingClass} shadow-[0_3px_12px_rgba(0,0,0,0.5)] ${
+        isPlayable && onClick ? "cursor-pointer gv-card-active" : "cursor-default"
+      } ${isDimmed ? "opacity-40 grayscale gv-card-dim" : ""} ${promotedRingClass} shadow-[0_3px_12px_rgba(0,0,0,0.5)] ${
         isPlayable && onClick
           ? "hover:shadow-[0_6px_24px_rgba(34,211,238,0.45)] hover:ring-2 hover:ring-cyan-400/60"
           : ""
