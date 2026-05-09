@@ -20,7 +20,7 @@
  */
 import React, { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Play, Pause, Volume2, VolumeX, RotateCcw, Captions, Sparkles, Download } from "lucide-react";
+import { Play, Pause, Volume2, VolumeX, RotateCcw, Captions, Sparkles, Download, Globe } from "lucide-react";
 
 // 4 founder-uploaded promo clips, looped in this order.
 const CLIPS: string[] = [
@@ -30,12 +30,40 @@ const CLIPS: string[] = [
   "https://customer-assets.emergentagent.com/job_social-connect-953/artifacts/p21nztqq_mp_.mp4",
 ];
 
+const MANIFEST_URL = "/landing-tour-i18n.json";
+
+type Cue = { t: number; text: string };
+type LangTrack = {
+  label: string;
+  native: string;
+  rtl: boolean;
+  audio: string;
+  duration: number;
+  cues: Cue[];
+};
+type I18nManifest = {
+  default: string;
+  languages: Record<string, LangTrack>;
+};
+
+// Pick the best language match for the visitor's browser.
+const pickInitialLang = (manifest: I18nManifest): string => {
+  if (typeof navigator === "undefined") return manifest.default;
+  // Honour an explicit user choice first.
+  const stored = typeof window !== "undefined" ? localStorage.getItem("gv_tour_lang") : null;
+  if (stored && manifest.languages[stored]) return stored;
+  // Then try the browser's preferred language.
+  const browser = (navigator.languages || [navigator.language || "en"])[0] || "en";
+  const short = browser.toLowerCase().split("-")[0];
+  if (manifest.languages[short]) return short;
+  return manifest.default;
+};
+
 const NARRATION_SRC = "/landing-tour-narration.mp3";
 
-// Caption track synced to the narration timeline (Onyx · 1.0× · ~122s).
-// Times in seconds; tweak after the founder reviews the rendered MP3.
-type Cue = { t: number; text: string };
-const CAPTIONS: Cue[] = [
+// Static fallback caption track — used until the i18n manifest loads
+// (or if it fails to fetch). Mirrors the English entry in the JSON.
+const FALLBACK_CAPTIONS: Cue[] = [
   { t:   0.0, text: "GLOBAL VIBEZ DSG." },
   { t:   3.0, text: "The world's first sovereign infrastructure network — built on Solana — where every interaction earns." },
   { t:  13.0, text: "Six utility rooms · one currency · a real economy you actually own." },
@@ -68,6 +96,45 @@ const LandingTourVideo: React.FC<Props> = ({ onJoinBeta }) => {
   const [captionIdx, setCaptionIdx] = useState(0);
   const [hasStarted, setHasStarted] = useState(false);
 
+  // i18n state
+  const [manifest, setManifest] = useState<I18nManifest | null>(null);
+  const [langCode, setLangCode] = useState<string>("en");
+  const [langOpen, setLangOpen] = useState(false);
+
+  // Load the multi-language manifest once on mount.
+  useEffect(() => {
+    let cancelled = false;
+    fetch(MANIFEST_URL, { cache: "no-cache" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((m: I18nManifest | null) => {
+        if (cancelled || !m) return;
+        setManifest(m);
+        setLangCode(pickInitialLang(m));
+      })
+      .catch(() => undefined);
+    return () => { cancelled = true; };
+  }, []);
+
+  const track: LangTrack | null = manifest?.languages?.[langCode] || null;
+  const captions: Cue[] = track?.cues || FALLBACK_CAPTIONS;
+  const audioSrc: string = track?.audio || NARRATION_SRC;
+  const isRtl: boolean = !!track?.rtl;
+
+  const switchLang = (code: string) => {
+    if (!manifest?.languages?.[code]) return;
+    setLangCode(code);
+    setLangOpen(false);
+    try { localStorage.setItem("gv_tour_lang", code); } catch { /* ignore */ }
+    // Pause + reset so the new audio takes over cleanly. The user
+    // re-clicks Play to start the new language.
+    const a = audioRef.current;
+    if (a) { a.pause(); a.currentTime = 0; }
+    setPlaying(false);
+    setProgress(0);
+    setCaptionIdx(0);
+    setHasStarted(false);
+  };
+
   // Loop video clips one after the other.
   const handleClipEnded = () => {
     setClipIdx((prev) => (prev + 1) % CLIPS.length);
@@ -81,14 +148,13 @@ const LandingTourVideo: React.FC<Props> = ({ onJoinBeta }) => {
       setProgress(a.currentTime);
       // Find the latest cue whose `t` is <= currentTime.
       let i = 0;
-      for (let k = CAPTIONS.length - 1; k >= 0; k--) {
-        if (CAPTIONS[k].t <= a.currentTime) { i = k; break; }
+      for (let k = captions.length - 1; k >= 0; k--) {
+        if (captions[k].t <= a.currentTime) { i = k; break; }
       }
       setCaptionIdx(i);
     };
     const onEnded = () => {
       setPlaying(false);
-      // Keep the current frame; user can click Replay.
     };
     a.addEventListener("timeupdate", onTime);
     a.addEventListener("ended", onEnded);
@@ -96,7 +162,7 @@ const LandingTourVideo: React.FC<Props> = ({ onJoinBeta }) => {
       a.removeEventListener("timeupdate", onTime);
       a.removeEventListener("ended", onEnded);
     };
-  }, []);
+  }, [captions]);
 
   const start = () => {
     const a = audioRef.current;
@@ -146,9 +212,10 @@ const LandingTourVideo: React.FC<Props> = ({ onJoinBeta }) => {
     setHasStarted(true);
   };
 
-  const duration = audioRef.current?.duration || 122;
+  const duration = audioRef.current?.duration || track?.duration || 122;
   const pct = Math.min(100, (progress / duration) * 100);
-  const currentCaption = CAPTIONS[captionIdx]?.text || "";
+  const currentCaption = captions[captionIdx]?.text || "";
+  const langs = manifest?.languages ? Object.entries(manifest.languages) : [["en", { native: "English" } as LangTrack]];
 
   return (
     <section
@@ -194,8 +261,16 @@ const LandingTourVideo: React.FC<Props> = ({ onJoinBeta }) => {
             data-testid="landing-tour-video-clip"
           />
 
-          {/* Narration audio — master timeline */}
-          <audio ref={audioRef} src={NARRATION_SRC} preload="auto" data-testid="landing-tour-audio" />
+          {/* Narration audio — master timeline. Re-mounted whenever the
+              language changes by keying on audioSrc; otherwise the
+              audio element silently keeps the prior MP3. */}
+          <audio
+            key={audioSrc}
+            ref={audioRef}
+            src={audioSrc}
+            preload="auto"
+            data-testid="landing-tour-audio"
+          />
 
           {/* Vignette overlay so captions stay legible */}
           <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/85 via-black/20 to-black/40" />
@@ -225,6 +300,7 @@ const LandingTourVideo: React.FC<Props> = ({ onJoinBeta }) => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
+              dir={isRtl ? "rtl" : "ltr"}
               className="absolute left-4 right-4 bottom-20 md:bottom-24 max-w-3xl mx-auto px-4 py-2 rounded-lg bg-black/70 backdrop-blur-sm border border-white/10 text-center"
               data-testid="landing-tour-caption"
             >
@@ -232,6 +308,51 @@ const LandingTourVideo: React.FC<Props> = ({ onJoinBeta }) => {
                 {currentCaption}
               </p>
             </motion.div>
+          )}
+
+          {/* Language picker — bottom-right corner of the player. Tiny
+              globe pill that expands into a dropdown of every language
+              the manifest ships with. Founder directive 2026-05-09 —
+              "make it so the video can change to whatever language a
+              person speaks". */}
+          {hasStarted && manifest && langs.length > 1 && (
+            <div className="absolute top-3 right-3 z-30" data-testid="landing-tour-lang-picker">
+              <button
+                type="button"
+                onClick={() => setLangOpen((v) => !v)}
+                aria-haspopup="listbox"
+                aria-expanded={langOpen}
+                data-testid="landing-tour-lang-trigger"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/70 hover:bg-black/90 backdrop-blur border border-white/15 text-white text-[11px] font-black uppercase tracking-wider transition"
+              >
+                <Globe className="w-3.5 h-3.5 text-cyan-300" />
+                <span>{manifest.languages[langCode]?.native || langCode}</span>
+              </button>
+              {langOpen && (
+                <ul
+                  role="listbox"
+                  data-testid="landing-tour-lang-menu"
+                  className="absolute right-0 top-full mt-1.5 min-w-[160px] rounded-xl bg-black/90 backdrop-blur border border-white/15 shadow-xl py-1 max-h-64 overflow-auto"
+                >
+                  {langs.map(([code, info]) => (
+                    <li key={code}>
+                      <button
+                        type="button"
+                        onClick={() => switchLang(code)}
+                        data-testid={`landing-tour-lang-option-${code}`}
+                        aria-selected={code === langCode}
+                        className={`w-full text-left px-3 py-1.5 text-[11px] font-bold transition ${
+                          code === langCode ? "bg-fuchsia-500/30 text-fuchsia-100" : "text-white/80 hover:bg-white/10"
+                        }`}
+                      >
+                        <span className="block">{(info as LangTrack).native}</span>
+                        <span className="block text-[9px] text-white/40 uppercase tracking-widest">{code}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           )}
 
           {/* Bottom controls */}
@@ -309,7 +430,7 @@ const LandingTourVideo: React.FC<Props> = ({ onJoinBeta }) => {
         </motion.div>
 
         <p className="text-center text-[11px] text-white/30 mt-4 font-mono uppercase tracking-widest">
-          Voiceover: AI-narrated · Onyx · {CAPTIONS.length} cues · {CLIPS.length} clip loop
+          Voiceover: AI-narrated · Onyx · {captions.length} cues · {CLIPS.length} clip loop · {manifest ? Object.keys(manifest.languages).length : 1} language{manifest && Object.keys(manifest.languages).length > 1 ? "s" : ""}
         </p>
 
         {/* Social-export row — direct download of the pre-rendered 9:16

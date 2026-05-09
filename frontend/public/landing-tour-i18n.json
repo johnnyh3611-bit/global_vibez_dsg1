@@ -1,0 +1,29 @@
+{
+  "default": "en",
+  "languages": {
+    "en": {
+      "label": "English",
+      "native": "English",
+      "rtl": false,
+      "audio": "/landing-tour-narration.mp3",
+      "duration": 121.8,
+      "cues": [
+        { "t": 0.0,   "text": "GLOBAL VIBEZ DSG." },
+        { "t": 3.0,   "text": "The world's first sovereign infrastructure network — built on Solana — where every interaction earns." },
+        { "t": 13.0,  "text": "Six utility rooms · one currency · a real economy you actually own." },
+        { "t": 22.0,  "text": "30+ AAA card rooms — Spades, Bid Whist, Hearts, UNO, Pinochle, Euchre, Gin Rummy." },
+        { "t": 33.0,  "text": "Neon casino floor — chess, Vibez 6-5-4, baccarat, blackjack, three-card poker. Every win → $VIBEZ." },
+        { "t": 44.0,  "text": "Find your Player Two · 98% synergy-logic matchmaking · Cinema Dates · culturally-aware AI dealer." },
+        { "t": 56.0,  "text": "Drive VibeRidez · keep 70% · Hungry VIBEZ · Vibe Artisan · Vibe Venue · DSG TV 24/7." },
+        { "t": 70.0,  "text": "70/30 Music Revolution · Beat Vault · Freestyle Battles · Collab Matchmaker · Totem Pole." },
+        { "t": 80.0,  "text": "Vibe Yellow Pages · Mom & Pop · hyper-local · DSG Guard safety protocol." },
+        { "t": 88.0,  "text": "3 BILLION VIBEZ · hard-capped · 13.5% Sovereign Tax recirculates back to the players." },
+        { "t": 98.0,  "text": "5× mining multiplier for chair holders · $VIBEZ bridges to Solana 4:1." },
+        { "t": 105.0, "text": "Chair Hall is OPEN · Genius · Genesis · Apex · 1,000,000 seats · forever." },
+        { "t": 115.0, "text": "First cohort to sit at the table owns the network." },
+        { "t": 120.0, "text": "Right now is the best time to take your seat at the table." },
+        { "t": 127.0, "text": "GLOBAL VIBEZ DSG. Own the network. Feel the VIBEZ." }
+      ]
+    }
+  }
+}

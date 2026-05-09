@@ -4397,3 +4397,52 @@ def test_cinema_room_date_night_cross_link_to_dating():
     assert "synergy" in page.lower(), \
         "Cross-link copy must reference synergy match-ups"
 
+
+def test_landing_tour_supports_multilanguage_manifest():
+    """Founder directive 2026-05-09 — landing-page tour video must
+    auto-switch to whatever language the visitor speaks. Frontend
+    reads `/landing-tour-i18n.json` at runtime and exposes a globe
+    picker so users can override their browser's default. Backend
+    `generate_landing_tour_i18n.py` regenerates per-language MP3s
+    via OpenAI TTS Onyx (Onyx adapts pronunciation to the input
+    language natively — same voice across all locales)."""
+    import json
+    import os
+    # 1. Manifest exists + has at least 'en'.
+    manifest_path = "/app/frontend/public/landing-tour-i18n.json"
+    assert os.path.exists(manifest_path)
+    manifest = json.loads(open(manifest_path).read())
+    assert "default" in manifest and manifest["default"] in manifest["languages"]
+    en = manifest["languages"]["en"]
+    for k in ["label", "native", "rtl", "audio", "duration", "cues"]:
+        assert k in en, f"Manifest 'en' track missing key {k}"
+    assert isinstance(en["cues"], list) and len(en["cues"]) >= 10
+    for cue in en["cues"]:
+        assert "t" in cue and "text" in cue
+    # 2. Generation script preserves brand terms.
+    gen = open("/app/backend/scripts/generate_landing_tour_i18n.py").read()
+    assert "BRAND_TERMS" in gen
+    for brand in ["VIBEZ", "DSG", "$VIBEZ", "VibeRidez", "Solana", "Chair Hall"]:
+        assert brand in gen
+    assert 'voice="onyx"' in gen
+    assert 'tts-1-hd' in gen
+    # 3. Frontend wires the manifest + picker.
+    comp = open("/app/frontend/src/components/landing/LandingTourVideo.tsx").read()
+    assert "MANIFEST_URL" in comp
+    assert "/landing-tour-i18n.json" in comp
+    assert "pickInitialLang" in comp
+    for tid in [
+        "landing-tour-lang-picker",
+        "landing-tour-lang-trigger",
+        "landing-tour-lang-menu",
+    ]:
+        assert f'data-testid="{tid}"' in comp, \
+            f"LandingTourVideo must expose testid {tid}"
+    # Per-language option testids use a template literal — assert the pattern.
+    assert "landing-tour-lang-option-${code}" in comp, \
+        "Per-language options must use the landing-tour-lang-option-{code} testid pattern"
+    # Persists the user's pick across sessions.
+    assert "gv_tour_lang" in comp
+    # RTL captions for Arabic / Hebrew get `dir="rtl"`.
+    assert 'dir={isRtl ? "rtl" : "ltr"}' in comp
+
