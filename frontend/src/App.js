@@ -59,6 +59,27 @@ import FloatingFoodMenu from "@/components/common/FloatingFoodMenu";
 import PageActionStrip from "@/components/common/PageActionStrip";
 import NotFound from "@/pages/NotFound";
 
+// Routes that own the entire viewport (h-[100dvh] + overflow-hidden) —
+// e.g. card rooms, dice games, casino tables, full-screen tools. The
+// inline PageActionStrip MUST NOT mount on these because it eats vertical
+// space and pushes the game's bottom CTAs (Ante In / Roll / Bid Now) off
+// the visible viewport. Founder bug report 2026-02-09: "Vibe Dice 654
+// solo I can't make a bet, can't push a button, room is too compressed."
+const FULLSCREEN_GAME_ROUTES = [
+  "/spades", "/bid-whist", "/hearts", "/uno", "/euchre", "/pinochle",
+  "/gin-rummy", "/rummy", "/war", "/crazy-eights", "/go-fish", "/baccarat",
+  "/baccarat-aaa", "/blackjack", "/poker", "/three-card-poker",
+  "/vibe-654", "/vibez-654",
+  "/chess", "/checkers", "/connect4", "/practice/play",
+  "/card-mp",  // multiplayer card rooms
+];
+
+function useIsFullscreenGameRoute() {
+  const location = useLocation();
+  const p = location.pathname;
+  return FULLSCREEN_GAME_ROUTES.some((r) => p === r || p.startsWith(r + "/"));
+}
+
 // Import version manager for cache busting
 import { startVersionMonitoring } from "@/utils/versionManager";
 
@@ -132,7 +153,37 @@ function ProtectedRoute({ children }) {
   // `body.dataset.chromeBarActive="1"` so all 8 legacy floating FABs
   // (Beta Feedback / Voice Mirror / Orientation / Globe / Fresh Drops /
   // Floating Food / etc.) hide their triggers via useCornerDockTrigger.
+  //
+  // EXCEPTION (founder bug fix 2026-05-09): full-viewport game rooms
+  // (Vibe 654, Spades, Bid Whist, etc) use `h-[100dvh] + overflow-hidden`
+  // so their bottom CTAs (Ante In / Roll / Bid Now) stay reachable. The
+  // strip would push those CTAs off-screen, making the room "feel
+  // compressed and non-functional" (founder report). Skip the strip on
+  // those routes — the games already have their own RoomMenuBar.
   if (!isAuthenticated) return null;
+  return <ProtectedRouteContent>{children}</ProtectedRouteContent>;
+}
+
+function ProtectedRouteContent({ children }) {
+  const isFullscreenGame = useIsFullscreenGameRoute();
+
+  // Founder bug fix 2026-05-09 — Voice Mirror and Floating Food were
+  // leaking onto the Vibe 654 solo viewport even after we disabled the
+  // strip itself. Toggle `chromebar:active` here so the legacy FABs
+  // stay hidden via `useCornerDockTrigger`.
+  useEffect(() => {
+    if (!isFullscreenGame) return;
+    document.body.dataset.chromeBarActive = "1";
+    window.dispatchEvent(new CustomEvent("chromebar:active", { detail: true }));
+    return () => {
+      delete document.body.dataset.chromeBarActive;
+      window.dispatchEvent(new CustomEvent("chromebar:active", { detail: false }));
+    };
+  }, [isFullscreenGame]);
+
+  if (isFullscreenGame) {
+    return <>{children}</>;
+  }
   return (
     <>
       <div className="px-4 pt-3 max-w-7xl mx-auto" data-testid="protected-route-action-strip">

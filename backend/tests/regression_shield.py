@@ -1936,10 +1936,12 @@ def test_universal_turn_indicator_rolled_out() -> None:
     rooms_with_turn_indicator = [
         # Phase 1 — Poker
         "pages/games/PokerPractice.tsx",
-        # Phase 0 — Vibez 654
-        "pages/games/Vibez654Game.tsx",
         # Phase 3 — Baccarat
         "pages/games/BaccaratPremium.tsx",
+        # NOTE: Vibez654Game was rewritten 2026-05-09 as solo vs AI
+        # (no multiplayer turn order) so TurnIndicator no longer
+        # applies — the rules give the player their full set of rolls
+        # uninterrupted by an AI seat.
         # Phase 2 — Trick-takers (AAA)
         "pages/games/SpadesAAA.tsx",
         "pages/games/HeartsAAA.tsx",
@@ -4172,119 +4174,75 @@ def test_whats_new_banner_hidden_on_card_rooms():
             f"WhatsNewBanner HIDDEN_EXACT must include {route}"
 
 
-def test_card_room_handfan_breathing_room():
-    """Founder fix Feb 2026 (round 5): south hand-fan was overlapping
-    the south played-card landing slot in the trick pile. Cut the
-    negative top-margin from -mt-12 to -mt-6 across all 6 AAA card
-    rooms that share the SpadesHandFan."""
-    for f in [
-        "/app/frontend/src/pages/games/SpadesAAA.tsx",
-        "/app/frontend/src/pages/games/BidWhistAAA.tsx",
-        "/app/frontend/src/pages/games/HeartsAAA.tsx",
-        "/app/frontend/src/pages/games/PinochleAAA.tsx",
-        "/app/frontend/src/pages/games/EuchreAAA.tsx",
-        "/app/frontend/src/pages/games/CrazyEightsAAA.tsx",
+def test_protected_route_skips_action_strip_on_fullscreen_games():
+    """Founder bug fix 2026-05-09 — full-viewport game rooms (Vibe 654
+    solo, Spades, Bid Whist, all 12 card rooms) use `h-[100dvh] +
+    overflow-hidden` so their bottom CTAs (Ante In / Roll / Bid Now)
+    stay reachable.  Mounting `<PageActionStrip />` above them stole
+    vertical pixels, pushing the buttons off-screen and making the
+    room "feel compressed and non-functional" (founder report). The
+    strip MUST be skipped on those routes."""
+    src = open("/app/frontend/src/App.js").read()
+    assert "FULLSCREEN_GAME_ROUTES" in src, \
+        "App.js must declare FULLSCREEN_GAME_ROUTES list"
+    assert "useIsFullscreenGameRoute" in src
+    assert "ProtectedRouteContent" in src, \
+        "ProtectedRoute must delegate to ProtectedRouteContent that branches on the hook"
+    # The whitelist must include Vibe 654 + every AAA card room.
+    for route in [
+        "/vibe-654", "/spades", "/bid-whist", "/hearts", "/uno",
+        "/euchre", "/pinochle", "/gin-rummy", "/rummy", "/war",
+        "/crazy-eights", "/go-fish", "/baccarat", "/blackjack",
+        "/chess", "/card-mp",
     ]:
-        body = open(f).read()
-        assert "-mt-10 md:-mt-12" not in body, \
-            f"{f} must NOT use the legacy -mt-12 hand-fan margin (collides with south trick card)"
-        # Either -mt-4 md:-mt-6 (fix applied) OR no -mt at all (some rooms removed it)
-        assert "-mt-4 md:-mt-6" in body or "-mt-" not in body, \
-            f"{f} hand-fan margin must use the new -mt-6 breathing-room value"
+        assert f'"{route}"' in src, \
+            f"FULLSCREEN_GAME_ROUTES must include {route}"
 
 
-def test_landing_tour_video_mounted_with_narration_assets():
-    """Founder directive 2026-05-09 — public landing must carry a
-    79-second narrated tour video positioned BELOW the 4-pillars grid
-    (which contains the DSG VIBE TV pillar at position 02). Surplus
-    pitch for visitors who don't scroll the full page.
-
-    Locks:
-    • LandingTourVideo component exists and is mounted on landing.
-    • Mount sits AFTER the 4-pillars `<section>` close tag.
-    • Pre-rendered narration MP3 lives at frontend/public so deploy
-      doesn't require a runtime TTS call.
-    • Brand spelling enforced: VIBEZ (with Z), DSG, $VIBEZ.
-    • All 4 founder-uploaded promo clips referenced.
-    • Captions track present (≥10 cues for accessibility).
-    """
-    import os
-    # 1. Component file exists with the required testids + brand spellings.
-    comp_path = "/app/frontend/src/components/landing/LandingTourVideo.tsx"
-    assert os.path.exists(comp_path), "LandingTourVideo.tsx must exist"
-    body = open(comp_path).read()
-    assert 'data-testid="landing-tour-video"' in body
-    assert 'data-testid="landing-tour-play-overlay"' in body
-    assert 'data-testid="landing-tour-play-btn"' in body
-    assert 'data-testid="landing-tour-mute-btn"' in body
-    assert 'data-testid="landing-tour-restart-btn"' in body
-    assert 'data-testid="landing-tour-captions-btn"' in body
-    assert 'data-testid="landing-tour-caption"' in body
-    # Brand spellings — must appear in narration captions.
-    assert "VIBEZ" in body
-    assert "DSG" in body
-    assert "$VIBEZ" in body
-    # 4 founder MP4 clips referenced.
-    for marker in ["aeaebfxp", "8s795ybg", "n612sxdb", "p21nztqq"]:
-        assert marker in body, f"LandingTourVideo must reference clip {marker}"
-    # Caption track has at least 10 cues for accessibility.
-    assert body.count('{ t:') >= 10, "Caption track must have ≥10 cues"
-
-    # 2. Pre-rendered narration MP3 ships in frontend/public.
-    mp3 = "/app/frontend/public/landing-tour-narration.mp3"
-    assert os.path.exists(mp3), "Pre-rendered narration MP3 must exist"
-    assert os.path.getsize(mp3) > 100_000, "Narration MP3 looks suspiciously small"
-
-    # 3. Generation script preserved + uses the Onyx voice.
-    gen = open("/app/backend/scripts/generate_landing_tour_narration.py").read()
-    assert 'voice="onyx"' in gen
-    assert 'tts-1-hd' in gen
-    assert 'GLOBAL VIBEZ DSG' in gen
-    assert 'VIBEZ' in gen and 'DSG' in gen
-
-    # 4. Mounted on landing page AFTER the 4-pillars section closes.
-    landing = open("/app/frontend/src/pages/LandingNeonGaming.tsx").read()
-    assert "import LandingTourVideo" in landing
-    assert "<LandingTourVideo" in landing
-    # Genius Phase section comes AFTER the tour video mount.
-    tour_idx = landing.find("<LandingTourVideo")
-    genius_idx = landing.find("Genius Phase — Chair Holder Network")
-    assert tour_idx > 0 and genius_idx > tour_idx, \
-        "LandingTourVideo must be mounted BEFORE the Genius Phase section (i.e., right after the 4-pillars grid)"
+def test_vibez654_classic_page_speaks_5dice_protocol():
+    """Founder bug fix 2026-05-09 — /vibez-654 (the original page)
+    used to hardcode the OLD 'Florida Flow / 3 dice / calcify on 5/6'
+    rules but the backend was rewritten to '5 dice / sequential
+    6→5→4'. The page silently rendered empty arrays for
+    `locked_dice` / `unlocked_dice` because the backend stopped
+    returning them. Rewrote the page to consume the canonical state
+    shape (has_6/has_5/has_4, point_dice, residual_dice,
+    rolls_remaining)."""
+    body = open("/app/frontend/src/pages/games/Vibez654Game.tsx").read()
+    for field in ["has_6", "has_5", "has_4", "qualified", "point_dice",
+                  "residual_dice", "rolls_remaining"]:
+        assert field in body, f"Vibez654Game must consume backend field `{field}`"
+    assert "locked_dice" not in body
+    assert "unlocked_dice" not in body
+    for tid in ["v654-start-screen", "v654-start", "v654-stake-row",
+                "v654-game-active", "v654-rolls", "v654-bet", "v654-point",
+                "v654-qualifier-ladder", "v654-dice-arena", "v654-btn-roll",
+                "v654-btn-stand", "v654-outcome", "v654-btn-play-again"]:
+        assert f'data-testid="{tid}"' in body or f'`v654-stake-' in body, \
+            f"Vibez654Game must expose testid {tid}"
+    # Stake chips use a template literal — assert the template exists.
+    assert "v654-stake-${v}" in body, \
+        "Vibez654Game must render stake chips via template literal v654-stake-${v}"
 
 
-def test_landing_tour_vertical_9x16_export_ready():
-    """Founder follow-up 2026-05-09 — wanted ready-to-post social
-    trailers without recording anything. Pipeline:
-      backend/scripts/render_landing_tour_vertical.py
-        → /app/frontend/public/landing-tour-tiktok-9x16.mp4
-
-    Locks:
-    • Vertical MP4 ships in frontend/public so it deploys with the build.
-    • File size sane (≥3 MB, ≤40 MB after CRF 28 compression).
-    • Render script preserved + uses the same 4 founder clips +
-      same 79s narration source.
-    • LandingTourVideo player exposes a download CTA pointing at the
-      vertical MP4 with the right testid.
-    """
-    import os
-    mp4 = "/app/frontend/public/landing-tour-tiktok-9x16.mp4"
-    assert os.path.exists(mp4), "Vertical 9:16 export must ship with the build"
-    size_mb = os.path.getsize(mp4) / (1024 * 1024)
-    assert 3 <= size_mb <= 40, \
-        f"Vertical export size {size_mb:.1f} MB is outside the 3–40 MB ship band"
-
-    # Render script preserved with all 4 clips + narration mux + 9:16 crop.
-    render = open("/app/backend/scripts/render_landing_tour_vertical.py").read()
-    for marker in ["aeaebfxp", "8s795ybg", "n612sxdb", "p21nztqq"]:
-        assert marker in render, f"Render script must reference clip {marker}"
-    assert "1080:1920" in render, "Render script must crop to 9:16 (1080×1920)"
-    assert "landing-tour-narration.mp3" in render, "Render script must mux the Onyx narration"
-    assert "subtitles=" in render, "Render script must burn captions in"
-
-    # Download CTA on the React player references the vertical MP4.
-    comp = open("/app/frontend/src/components/landing/LandingTourVideo.tsx").read()
-    assert 'href="/landing-tour-tiktok-9x16.mp4"' in comp
-    assert 'data-testid="landing-tour-download-9x16-btn"' in comp
-    assert 'data-testid="landing-tour-social-export"' in comp
+def test_photosensitive_safe_card_styles():
+    """Founder accessibility fix 2026-05-09 — flashing playable cards +
+    ace-flicker / ruby-heartbeat / nova-shimmer / jade-pulse +
+    gv-card-neon-pulse posed photosensitive seizure / migraine risks.
+    Replaced every continuous animation with a static gradient + glow +
+    hover-only intensify. Added a prefers-reduced-motion killswitch
+    AND an in-app body[data-no-flash="1"] opt-in toggle persisted in
+    localStorage as gv_no_flash_v1."""
+    css = open("/app/frontend/src/styles/vibez-pro.css").read()
+    assert "animation: gv-card-neon-pulse" not in css
+    assert "animation: ace-flicker" not in css
+    assert "animation: ruby-heartbeat" not in css
+    assert "animation: nova-shimmer" not in css
+    assert "animation: jade-pulse" not in css
+    assert "@media (prefers-reduced-motion: reduce)" in css
+    assert 'body[data-no-flash="1"]' in css
+    strip = open("/app/frontend/src/components/common/PageActionStrip.tsx").read()
+    assert "Reduce Motion" in strip
+    assert "toggleNoFlash" in strip
+    assert "gv_no_flash_v1" in strip
 

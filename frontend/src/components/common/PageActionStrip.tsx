@@ -19,7 +19,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   MoreHorizontal, MessageSquare, Mic, RotateCcw, Globe, Utensils, Sparkles,
-  Headphones, X,
+  Headphones, X, ZapOff,
 } from "lucide-react";
 
 const fire = (id: string) => () => {
@@ -27,6 +27,29 @@ const fire = (id: string) => () => {
     window.dispatchEvent(new CustomEvent(`cdock:open:${id}`));
   }
 };
+
+/**
+ * Toggle the "Reduce Motion / No Flash" body flag — the global CSS
+ * killswitch in vibez-pro.css picks this up to freeze every continuous
+ * animation. Persists across reloads via localStorage so users never
+ * have to re-enable it. Founder accessibility directive 2026-05-09.
+ */
+const NO_FLASH_KEY = "gv_no_flash_v1";
+const isNoFlashActive = () => typeof window !== "undefined" && localStorage.getItem(NO_FLASH_KEY) === "1";
+const applyNoFlash = (enabled: boolean) => {
+  if (typeof document === "undefined") return;
+  if (enabled) {
+    document.body.dataset.noFlash = "1";
+    localStorage.setItem(NO_FLASH_KEY, "1");
+  } else {
+    delete document.body.dataset.noFlash;
+    localStorage.removeItem(NO_FLASH_KEY);
+  }
+};
+// Apply on initial module load so the flag is set BEFORE any
+// animation-bearing component mounts.
+if (typeof document !== "undefined") applyNoFlash(isNoFlashActive());
+const toggleNoFlash = () => applyNoFlash(!isNoFlashActive());
 
 interface SubItem {
   id: string;
@@ -53,6 +76,7 @@ const SECTIONS: { title: string; items: SubItem[] }[] = [
       { id: "voice_mirror",  label: "Voice Mirror",      hint: "Hold to speak in any language",  Icon: Mic,           color: "text-cyan-300",    onClick: fire("voice_mirror") },
       { id: "orientation",   label: "Auto-Rotate Lock",  hint: "Pin landscape or portrait",      Icon: RotateCcw,     color: "text-emerald-300", onClick: fire("orientation") },
       { id: "beta_feedback", label: "Beta Feedback",     hint: "Report a bug / request feature", Icon: MessageSquare, color: "text-amber-300",   onClick: fire("beta_feedback") },
+      { id: "no_flash",      label: "Reduce Motion",     hint: "Stop pulsing / flashing UI",     Icon: ZapOff,        color: "text-emerald-300", onClick: toggleNoFlash },
     ],
   },
   {

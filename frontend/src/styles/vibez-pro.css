@@ -108,7 +108,9 @@
   color: #000 !important;
   font-weight: 900;
   box-shadow: var(--glow-ambient) var(--nova-glow);
-  animation: nova-shimmer 2s infinite linear;
+  /* Founder accessibility fix 2026-05-09 — removed `nova-shimmer 2s`
+     brightness 1.0 → 1.4 strobe. Static gradient still reads "ready"
+     without flashing. */
   border: none;
 }
 
@@ -122,8 +124,10 @@
   background: linear-gradient(to right, #00ff7f, #7fffd4, #20c997) !important;
   color: #000 !important;
   font-weight: 900;
-  box-shadow: var(--glow-ambient) var(--jade-glow);
-  animation: jade-pulse 2s infinite ease-in-out;
+  box-shadow: 0 0 30px var(--jade-glow);
+  /* Founder accessibility fix 2026-05-09 — removed `jade-pulse 2s`
+     box-shadow 20px↔40px breath. Static glow gives the same affordance
+     without contributing to the on-table flicker problem. */
 }
 
 @keyframes jade-pulse {
@@ -137,7 +141,9 @@
   color: #000 !important;
   font-weight: 900;
   box-shadow: var(--glow-ambient) var(--ace-glow);
-  animation: ace-flicker 1.5s infinite steps(2);
+  /* Founder accessibility fix 2026-05-09 — removed `ace-flicker steps(2)`
+     animation (1.33Hz strobe) as a photosensitive hazard. Static gradient
+     communicates the same "ready" state without flickering. */
 }
 
 @keyframes ace-flicker {
@@ -151,7 +157,9 @@
   color: #fff !important;
   font-weight: 900;
   box-shadow: var(--glow-ambient) var(--ruby-glow);
-  animation: ruby-heartbeat 1.2s infinite ease-in-out;
+  /* Founder accessibility fix 2026-05-09 — removed `ruby-heartbeat 1.2s`
+     scale animation. Constant scale-pulsing on a high-contrast button
+     was visually fatiguing and a mild seizure trigger for some players. */
 }
 
 @keyframes ruby-heartbeat {
@@ -294,26 +302,40 @@
    the active player's turn). Falls back to no styling if neither class
    is applied so existing components remain visually identical.
    ======================================== */
+/* ========================================
+   GV-CARD ACTIVE / DIM SHADERS
+   ----------------------------------------------------------------------
+   "Make the active card the only animated thing on the table.
+   Disable the global 'turning light' effect for inactive cards."
+   ----------------------------------------------------------------------
+   Apply by adding `.gv-card-active` to a playable card, or
+   `.gv-card-dim` to a card that should be sharp-dim (out of suit / not
+   the active player's turn). Falls back to no styling if neither class
+   is applied so existing components remain visually identical.
+
+   Founder accessibility fix 2026-05-09: REPLACED the 1.6s neon-pulse
+   keyframe animation with a STATIC glow + smooth hover-only intensify.
+   Continuous flickering on every playable card was a documented
+   photosensitive seizure risk for some players. The static treatment
+   still highlights legal moves clearly (drop-shadow + slight lift)
+   without flashing. Hover gives the player a one-shot intensification
+   instead of constant pulsing.
+   ======================================== */
 .gv-card-active {
   position: relative;
   isolation: isolate;
-  animation: gv-card-neon-pulse 1.6s ease-in-out infinite;
-  filter: drop-shadow(0 0 12px rgba(217, 70, 239, 0.55));
+  filter: drop-shadow(0 0 10px rgba(217, 70, 239, 0.45))
+          drop-shadow(0 0 20px rgba(168, 85, 247, 0.30));
+  transform: translateY(-1px);
+  transition: filter 240ms ease, transform 240ms ease;
   z-index: 2;
   cursor: pointer;
 }
-
-@keyframes gv-card-neon-pulse {
-  0%, 100% {
-    filter: drop-shadow(0 0 12px rgba(217, 70, 239, 0.55))
-            drop-shadow(0 0 22px rgba(168, 85, 247, 0.45));
-    transform: translateY(0);
-  }
-  50% {
-    filter: drop-shadow(0 0 18px rgba(217, 70, 239, 0.85))
-            drop-shadow(0 0 32px rgba(168, 85, 247, 0.7));
-    transform: translateY(-2px);
-  }
+.gv-card-active:hover,
+.gv-card-active:focus-visible {
+  filter: drop-shadow(0 0 16px rgba(217, 70, 239, 0.75))
+          drop-shadow(0 0 28px rgba(168, 85, 247, 0.55));
+  transform: translateY(-3px);
 }
 
 /* Sharp-dim shader — kills the wishy-washy "turning light" effect
@@ -467,4 +489,42 @@
 @keyframes professional-subtle {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.95; }
+}
+
+/* ========================================
+   ACCESSIBILITY · PHOTOSENSITIVE-SAFE GLOBAL KILLSWITCH
+   ----------------------------------------------------------------------
+   Founder directive 2026-05-09 — flashing cards & buttons across the
+   app posed a documented seizure / migraine risk for some players.
+   This block respects the OS-level `prefers-reduced-motion` setting
+   AND opt-in `body[data-no-flash="1"]` flag from the in-app
+   "Reduce Motion" accessibility toggle.
+
+   When either is active, every continuous animation is frozen to its
+   first frame so the visual treatment stays intact (gradients, glow,
+   colors) but stops flickering. Hover/focus transitions are kept
+   because they're discrete user-driven events (not continuous
+   strobes) and never above the WCAG 3-flash-per-second threshold.
+   ======================================== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+body[data-no-flash="1"] *,
+body[data-no-flash="1"] *::before,
+body[data-no-flash="1"] *::after {
+  animation: none !important;
+}
+body[data-no-flash="1"] .gv-card-active {
+  /* Keep the static glow even when motion is killed so playable
+     cards remain identifiable. */
+  filter: drop-shadow(0 0 12px rgba(217, 70, 239, 0.55))
+          drop-shadow(0 0 22px rgba(168, 85, 247, 0.45));
 }
