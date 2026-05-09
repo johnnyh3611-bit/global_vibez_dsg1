@@ -1,7 +1,13 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
 
-> **2026-05-09 (Latest) — Multi-Language Tour Video — Resumable Generator Hardened 🌍🛠️.** Continuation of the i18n work post-pod-fork. Frontend infra was already shipped; backend script needed two fixes + the Emergent LLM Universal Key budget is at the cap so net-new MP3s remain blocked until the founder tops up.
+> **2026-05-09 (Latest) — Stripe Verified Live · i18n Awaiting LLM Top-Up 💳🌍.** Founder asked to "resume i18n + wire Stripe keys".
+>
+> 1. **Stripe is FULLY WIRED and LIVE** — was incorrectly flagged as "missing keys" in handoff. The pod env auto-provisions `STRIPE_API_KEY=sk_test_emergent`, both Stripe checkout flows tested end-to-end with curl + the betatester1 token: `POST /api/coins/topup/checkout` (auth-gated, ₵-pack vibez coin top-up · 4 packs $5/$9/$20/$35) and `POST /api/wallet/topup/create-session` (vibez wallet · 5 packs $10–$250) both return valid `cs_test_…` Stripe-hosted checkout URLs. `TopUpVibezCoinsModal` is auto-opened on 402/insufficient errors across JFTN, VibeRidez, YellowPages, RestaurantDetail, plus a manual "Buy" CTA inside `/wallet`. `/wallet/topup-success` polls `/api/coins/topup/status/{id}` until credited. **No further wiring required for beta.**
+> 2. **i18n script re-attempted** — same `budget_exceeded` (cap is still $0.40, current $0.4232). Generator is resumable; English (`en`) ships today, the other 7 languages auto-generate when the cap is raised. Founder must hit Profile → Universal Key → Add Balance.
+> 3. **Regression Shield: 232/232 GREEN.**
+>
+> **REMAINING ACTION: only the LLM key budget top-up.** Once topped up: `cd /app/backend && python scripts/generate_landing_tour_i18n.py` → 7 languages generate (~3 min, ~$0.20) → picker auto-shows.
 >
 > 1. **API drift fixed** — the script was calling `LlmChat.with_max_tokens(2048)`, an attribute that no longer exists in `emergentintegrations`. Switched to `with_params(max_tokens=2048)` (verified via `dir(LlmChat)`).
 > 2. **Resumable + budget-aware** — `generate_landing_tour_i18n.py` now (a) loads any existing `landing-tour-i18n.json` and skips fully-completed languages, (b) seeds `landing-tour-narration-en.mp3` from the legacy `landing-tour-narration.mp3` so English ships without spending TTS budget, (c) writes the manifest after EVERY successful language so partial runs persist across crashes/budget caps, (d) on `Budget`/`budget_exceeded` errors stops gracefully with a clear top-up message instead of nuking partial progress.
