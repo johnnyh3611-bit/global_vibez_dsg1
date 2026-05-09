@@ -32,9 +32,9 @@ import React, { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Headphones, Wrench, Sparkles, Zap,
+  Headphones, Wrench, Sparkles,
   MessageSquare, Mic, RotateCcw, Globe, Utensils,
-  ChevronUp, X,
+  ChevronUp,
 } from "lucide-react";
 
 const HIDE_PATTERNS: RegExp[] = [
@@ -85,6 +85,46 @@ const SlotMenu: React.FC<{
   <div
     role="menu"
     className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 min-w-[260px] rounded-2xl border border-white/15 bg-slate-950/95 backdrop-blur-xl shadow-2xl shadow-black/50 p-2"
+  >
+    {items.map(({ id, label, hint, Icon, color, href, onClick }) => {
+      const Tag: any = href ? "a" : "button";
+      return (
+        <Tag
+          key={id}
+          {...(href ? { href } : { type: "button" })}
+          onClick={(e: any) => {
+            if (onClick) {
+              if (!href) e.preventDefault?.();
+              onClick();
+            }
+            onItemClick();
+          }}
+          data-testid={`chrome-bar-item-${id}`}
+          className="block w-full text-left flex items-start gap-3 px-3 py-2.5 rounded-xl hover:bg-white/8 transition group"
+        >
+          <span
+            className={`flex-shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white/5 border border-white/10 ${color} group-hover:bg-white/10`}
+          >
+            <Icon className="w-4 h-4" />
+          </span>
+          <span className="flex-1 min-w-0">
+            <span className="block text-sm font-bold text-white/95 leading-tight">{label}</span>
+            {hint && <span className="block text-[11px] text-white/50 leading-snug mt-0.5">{hint}</span>}
+          </span>
+        </Tag>
+      );
+    })}
+  </div>
+);
+
+// Top-anchored variant — menu drops DOWN instead of popping up.
+const SlotMenuTop: React.FC<{
+  items: SubItem[];
+  onItemClick: () => void;
+}> = ({ items, onItemClick }) => (
+  <div
+    role="menu"
+    className="absolute top-full mt-2 left-1/2 -translate-x-1/2 min-w-[260px] rounded-2xl border border-white/15 bg-slate-950/95 backdrop-blur-xl shadow-2xl shadow-black/50 p-2"
   >
     {items.map(({ id, label, hint, Icon, color, href, onClick }) => {
       const Tag: any = href ? "a" : "button";
@@ -177,17 +217,16 @@ const UnifiedChromeBar: React.FC = () => {
   return (
     <motion.div
       ref={ref}
-      initial={{ y: 60, opacity: 0 }}
+      initial={{ y: -40, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
       data-testid="unified-chrome-bar"
-      // Bottom-center anchored. left-4 right-[230px] keeps the bar
-      // inside a corridor that ends well before the platform's
-      // bottom-right "Made with Emergent" badge — they coexist
-      // peacefully on the same row.
-      className="fixed z-[9994] left-1/2 -translate-x-1/2 bottom-3 sm:bottom-4 max-w-[calc(100vw-260px)] sm:max-w-none"
+      // Founder fix Feb 2026: top-center anchored, in the empty space
+      // below page headers. Bottom was a battle with the platform's
+      // "Made with Emergent" badge — top is reserved real-estate.
+      className="fixed z-[9994] left-1/2 -translate-x-1/2 top-2 sm:top-3"
     >
-      <div className="flex items-stretch gap-1.5 rounded-2xl border border-white/15 bg-slate-950/85 backdrop-blur-xl shadow-2xl shadow-black/50 p-1.5">
+      <div className="flex items-stretch gap-1 rounded-full border border-white/15 bg-slate-950/90 backdrop-blur-xl shadow-2xl shadow-black/50 p-1">
         {slots.map(({ key, label, Icon, accent, items }) => {
           const isOpen = openSlot === key;
           return (
@@ -198,52 +237,39 @@ const UnifiedChromeBar: React.FC = () => {
                 data-testid={`chrome-bar-${key}-trigger`}
                 aria-expanded={isOpen}
                 aria-haspopup="menu"
-                className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition ${
+                className={`flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest transition ${
                   isOpen
                     ? "bg-white text-slate-900 shadow-inner"
                     : `bg-gradient-to-br ${accent} text-black hover:scale-105`
                 }`}
               >
                 <Icon className="w-3.5 h-3.5" />
-                <span>{label}</span>
+                <span className="hidden sm:inline">{label}</span>
                 <span
-                  className={`inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full px-1 text-[10px] font-black ${
+                  className={`inline-flex items-center justify-center min-w-[16px] h-[16px] rounded-full px-1 text-[9px] font-black ${
                     isOpen ? "bg-slate-900 text-white" : "bg-black/40 text-white"
                   }`}
                 >
                   {items.length}
                 </span>
-                <ChevronUp className={`w-3 h-3 transition-transform ${isOpen ? "" : "rotate-180"}`} />
+                <ChevronUp className={`w-3 h-3 transition-transform ${isOpen ? "rotate-180" : ""}`} />
               </button>
               <AnimatePresence>
                 {isOpen && (
                   <motion.div
-                    initial={{ opacity: 0, y: 6 }}
+                    initial={{ opacity: 0, y: -6 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 6 }}
+                    exit={{ opacity: 0, y: -6 }}
                     transition={{ duration: 0.15 }}
                     data-testid={`chrome-bar-${key}-menu`}
                   >
-                    <SlotMenu items={items} onItemClick={() => setOpenSlot(null)} />
+                    <SlotMenuTop items={items} onItemClick={() => setOpenSlot(null)} />
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
           );
         })}
-        {/* Static info pill — acknowledges the platform-injected
-            "Made with Emergent" badge so the user knows what's there. */}
-        <a
-          href="https://emergent.sh"
-          target="_blank"
-          rel="noopener noreferrer"
-          data-testid="chrome-bar-emergent-info"
-          title="Built on Emergent — visit emergent.sh"
-          className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-bold uppercase tracking-widest border border-white/15 bg-black/40 text-white/70 hover:text-white hover:border-white/30 transition"
-        >
-          <Zap className="w-3 h-3 text-cyan-300" />
-          <span>Emergent</span>
-        </a>
       </div>
     </motion.div>
   );

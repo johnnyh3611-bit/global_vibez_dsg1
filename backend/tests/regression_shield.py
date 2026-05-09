@@ -4048,21 +4048,25 @@ def test_unified_chrome_bar_owns_corner_real_estate():
     for chrome buttons. UnifiedChromeBar must:
     • mount globally in App.js
     • expose `chrome-bar-{comms,tools,more}-trigger` testids
-    • acknowledge the platform Emergent badge with a labeled link
     • dispatch `chromebar:active` on mount so legacy floating FABs
       (CornerDock + CommHubDropdown free pill + 6 corner FABs) all
       collapse their triggers
     • hide on game pages (room-menu-bar present)
     • hide on auth + streamer overlay routes
+    • be top-anchored (founder override 2026-02-09: bottom was
+      colliding with the platform Made-with-Emergent badge)
     """
     src = open("/app/frontend/src/components/common/UnifiedChromeBar.tsx").read()
-    for tid in ("chrome-bar-comms-trigger", "chrome-bar-tools-trigger",
-                "chrome-bar-more-trigger", "chrome-bar-emergent-info"):
-        assert 'chrome-bar-${key}-trigger' in src or tid in src, f"{tid} must be in UnifiedChromeBar"
+    assert 'chrome-bar-${key}-trigger' in src
     assert "chromebar:active" in src and "chromebar:inactive" in src
-    assert "data-testid=\"unified-chrome-bar\"" in src or 'data-testid="unified-chrome-bar"' in src
+    assert 'data-testid="unified-chrome-bar"' in src
     assert 'document.querySelector(\'[data-testid="room-menu-bar"]\')' in src, \
         "Bar must hide when RoomMenuBar is mounted (room owns chrome inside games)"
+    # Top-anchored, NOT bottom (founder override).
+    assert "top-2 sm:top-3" in src, \
+        "Chrome bar must be top-anchored (top-2 sm:top-3) per founder directive 2026-02-09"
+    assert "bottom-3" not in src and "bottom-4" not in src, \
+        "Chrome bar must NOT use bottom anchoring — collides with Emergent badge"
     # App.js must mount it.
     appsrc = open("/app/frontend/src/App.js").read()
     assert "UnifiedChromeBar" in appsrc
