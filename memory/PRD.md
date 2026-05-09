@@ -1,6 +1,15 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
 
+> **2026-05-09 (Latest) — TikTok/Shorts/Reels Export Pipeline 🎬📲.** Founder asked for ready-to-post social trailers without filming. Shipped:
+>
+> 1. **`render_landing_tour_vertical.py`** ffmpeg pipeline (`/app/backend/scripts/`) — downloads the 4 founder MP4s → re-encodes to 9:16 (1080×1920 center-crop) → concats + loops to 79s → burns in subtitles (white-on-black, 58px Inter Bold, MarginV=220) → muxes the Onyx narration → final encode at CRF 28 / 2.5 Mbps for shippable file size.
+> 2. **Pre-rendered output** ships with the build at `/app/frontend/public/landing-tour-tiktok-9x16.mp4` (23.6 MB). Drag-and-drop ready for TikTok / Reels / Shorts uploaders. Confirmed reachable via `https://social-connect-953.preview.emergentagent.com/landing-tour-tiktok-9x16.mp4` (status 200).
+> 3. **"Want to share this?" social-export row** added below the LandingTourVideo player frame — fuchsia/violet glass card with `<Sparkles />` icon · copy "Same script, same Onyx narration, vertical 9:16 with burned-in captions — ready for TikTok, Reels & Shorts." · white "DOWNLOAD MP4" CTA with `download="GlobalVibezDSG-Tour-9x16.mp4"` filename. Testids: `landing-tour-social-export`, `landing-tour-download-9x16-btn`.
+> 4. **Caption-timing tuning still pending** — founder will send "X word lands at Y seconds" notes after listening to the rendered MP3. Cue array lives in two places: `LandingTourVideo.tsx` (`CAPTIONS` const, line ~30) and `render_landing_tour_vertical.py` (`CUES` const). Edit both + re-run render script when timings get fine-tuned.
+> 5. **Regression Shield: 226/226 GREEN** (+1 lock `test_landing_tour_vertical_9x16_export_ready` enforces: file exists, size 3-40 MB, render script preserved with all 4 clip URLs + 1080×1920 crop + narration mux + subtitle burn-in, React download CTA testid + href).
+
+
 > **2026-05-09 (Late) — 79-Second Narrated Landing Tour 🎬🎙️.** Founder requested a "voice + pictures" surplus video for visitors who don't scroll the landing page. Shipped:
 >
 > 1. **Onyx-narrated MP3** — 79.0s, 1.58 MB, generated via OpenAI TTS HD (`tts-1-hd · onyx · 1.0×`) using `EMERGENT_LLM_KEY`. Pre-rendered to `/app/frontend/public/landing-tour-narration.mp3` so deploy doesn't need a runtime TTS call. Re-generation script at `/app/backend/scripts/generate_landing_tour_narration.py` — edit the `SCRIPT` constant + run.

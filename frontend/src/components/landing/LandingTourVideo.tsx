@@ -20,7 +20,7 @@
  */
 import React, { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Play, Pause, Volume2, VolumeX, RotateCcw, Captions, Sparkles } from "lucide-react";
+import { Play, Pause, Volume2, VolumeX, RotateCcw, Captions, Sparkles, Download } from "lucide-react";
 
 // 4 founder-uploaded promo clips, looped in this order.
 const CLIPS: string[] = [
@@ -306,6 +306,35 @@ const LandingTourVideo: React.FC<Props> = ({ onJoinBeta }) => {
         <p className="text-center text-[11px] text-white/30 mt-4 font-mono uppercase tracking-widest">
           Voiceover: AI-narrated · Onyx · {CAPTIONS.length} cues · {CLIPS.length} clip loop
         </p>
+
+        {/* Social-export row — direct download of the pre-rendered 9:16
+            vertical MP4 (subtitles burned in, narration muxed). Ready to
+            drag-and-drop into the TikTok / Reels / Shorts uploader. */}
+        <div
+          className="mt-6 rounded-2xl border border-white/10 bg-gradient-to-br from-fuchsia-500/10 via-violet-500/5 to-cyan-500/10 p-5 md:p-6 flex flex-col md:flex-row items-center gap-4"
+          data-testid="landing-tour-social-export"
+        >
+          <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-fuchsia-500 to-violet-600 flex items-center justify-center">
+            <Sparkles className="w-6 h-6 text-white" />
+          </div>
+          <div className="flex-1 text-center md:text-left">
+            <h3 className="text-base md:text-lg font-black text-white">
+              Want to share this?
+            </h3>
+            <p className="text-xs md:text-sm text-white/60">
+              Same script, same Onyx narration, vertical 9:16 with burned-in captions — ready for TikTok, Reels &amp; Shorts.
+            </p>
+          </div>
+          <a
+            href="/landing-tour-tiktok-9x16.mp4"
+            download="GlobalVibezDSG-Tour-9x16.mp4"
+            data-testid="landing-tour-download-9x16-btn"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white text-black text-sm font-black uppercase tracking-wider hover:bg-fuchsia-200 transition-colors shrink-0"
+          >
+            <Download className="w-4 h-4" />
+            Download MP4
+          </a>
+        </div>
       </div>
     </section>
   );

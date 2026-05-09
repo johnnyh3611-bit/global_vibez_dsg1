@@ -4252,3 +4252,39 @@ def test_landing_tour_video_mounted_with_narration_assets():
     assert tour_idx > 0 and genius_idx > tour_idx, \
         "LandingTourVideo must be mounted BEFORE the Genius Phase section (i.e., right after the 4-pillars grid)"
 
+
+def test_landing_tour_vertical_9x16_export_ready():
+    """Founder follow-up 2026-05-09 — wanted ready-to-post social
+    trailers without recording anything. Pipeline:
+      backend/scripts/render_landing_tour_vertical.py
+        → /app/frontend/public/landing-tour-tiktok-9x16.mp4
+
+    Locks:
+    • Vertical MP4 ships in frontend/public so it deploys with the build.
+    • File size sane (≥3 MB, ≤40 MB after CRF 28 compression).
+    • Render script preserved + uses the same 4 founder clips +
+      same 79s narration source.
+    • LandingTourVideo player exposes a download CTA pointing at the
+      vertical MP4 with the right testid.
+    """
+    import os
+    mp4 = "/app/frontend/public/landing-tour-tiktok-9x16.mp4"
+    assert os.path.exists(mp4), "Vertical 9:16 export must ship with the build"
+    size_mb = os.path.getsize(mp4) / (1024 * 1024)
+    assert 3 <= size_mb <= 40, \
+        f"Vertical export size {size_mb:.1f} MB is outside the 3–40 MB ship band"
+
+    # Render script preserved with all 4 clips + narration mux + 9:16 crop.
+    render = open("/app/backend/scripts/render_landing_tour_vertical.py").read()
+    for marker in ["aeaebfxp", "8s795ybg", "n612sxdb", "p21nztqq"]:
+        assert marker in render, f"Render script must reference clip {marker}"
+    assert "1080:1920" in render, "Render script must crop to 9:16 (1080×1920)"
+    assert "landing-tour-narration.mp3" in render, "Render script must mux the Onyx narration"
+    assert "subtitles=" in render, "Render script must burn captions in"
+
+    # Download CTA on the React player references the vertical MP4.
+    comp = open("/app/frontend/src/components/landing/LandingTourVideo.tsx").read()
+    assert 'href="/landing-tour-tiktok-9x16.mp4"' in comp
+    assert 'data-testid="landing-tour-download-9x16-btn"' in comp
+    assert 'data-testid="landing-tour-social-export"' in comp
+
