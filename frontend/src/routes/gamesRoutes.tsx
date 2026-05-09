@@ -28,6 +28,16 @@ import Hazard from "@/pages/games/Hazard";
 import ChuckALuck from "@/pages/games/ChuckALuck";
 import BigSixWheel from "@/pages/games/BigSixWheel";
 import JacksOrBetter from "@/pages/games/JacksOrBetter";
+
+// May 2026 PDF batch — new rooms backed by already-shipped DSG Guard
+// + Streamer Action Hub APIs.
+import StreamerOverlay   from "@/pages/streamer/StreamerOverlay";
+import Vibetionary       from "@/pages/party/Vibetionary";
+import MemeMatchmaker    from "@/pages/party/MemeMatchmaker";
+import VibeHideSeek      from "@/pages/party/VibeHideSeek";
+import BlindAuctionDating from "@/pages/dating/BlindAuctionDating";
+import VibeShopperHunt   from "@/pages/dsg/VibeShopperHunt";
+import BeatVaultDLC      from "@/pages/dsg/BeatVaultDLC";
 import FanTan from "@/pages/games/FanTan";
 import Faro from "@/pages/games/Faro";
 import VibesDarts from "@/pages/games/VibesDarts";
@@ -504,6 +514,18 @@ export const gamesRoutes = (ProtectedRoute) => (
         </ProtectedRoute>
       }
     />
+
+    {/* ───────── May 2026 PDF batch (Streamer Revenue / Master Tech /
+        Party Hub blueprints). Each new room is a thin frontend page
+        on top of the already-shipped `/api/streamer-actions/*` and
+        `/api/dsg-guard/*` rails. */}
+    <Route path="/streamer/overlay/:streamerId" element={<StreamerOverlay />} />
+    <Route path="/party/vibe-tionary"   element={<ProtectedRoute><Vibetionary /></ProtectedRoute>} />
+    <Route path="/party/meme-matchmaker" element={<ProtectedRoute><MemeMatchmaker /></ProtectedRoute>} />
+    <Route path="/party/hide-seek"      element={<ProtectedRoute><VibeHideSeek /></ProtectedRoute>} />
+    <Route path="/dating/blind-auction" element={<ProtectedRoute><BlindAuctionDating /></ProtectedRoute>} />
+    <Route path="/vibeshopper"          element={<ProtectedRoute><VibeShopperHunt /></ProtectedRoute>} />
+    <Route path="/beat-vault/dlc"       element={<ProtectedRoute><BeatVaultDLC /></ProtectedRoute>} />
 
   </>
 );

@@ -4293,3 +4293,68 @@ Plus 4 new tests in `test_power_hour_sponsors.py`. **76/76 passing.**
 - **Blackjack `KeyError: 'player_cards'`** — pre-existing, unchanged
   from previous handoff.
 
+
+
+---
+
+## 2026-05-09 (Late) — May 2026 PDF Trifecta: 7 New Rooms LIVE
+
+### Three blueprints absorbed
+1. `GlobalVibez_Streamer_Revenue_Blueprint.pdf` (Vibe-Check Gauntlet, VibeRidez Copilot, Beat Vault DLC, Streamer Plugins)
+2. `GlobalVibez_Master_Tech_Blueprint.pdf` (Party Hub, Dating Universe, VibeShopper, DSG Guard, Creator Monetization)
+3. `GlobalVibez_PartyHub_Blueprint.pdf` (Vibe-tionary, Meme Matchmaker, Vibe-Hide & Seek, Core Multiplayer Plugins)
+
+### Backend — unifying primitive layer
+- **`/app/backend/routes/streamer_actions.py` (NEW)** — single tip-to-action rail
+  shared across all 3 blueprints. 7 action kinds: `HECKLE`, `BUFF`, `ROUTE_TIP`,
+  `DJ_INTERCEPT`, `VOICE_INTERCEPT`, `INSTRUMENT_GIFT`, `HECKLE_GALLERY`.
+  Locked 70/13.5/10/6.5 split. Hype Meter cumulative cents with peak threshold = 1000.
+  Voice Mirror Intercept locked at 15s.
+  - `GET  /api/streamer-actions/constants`
+  - `POST /api/streamer-actions/tip`
+  - `POST /api/streamer-actions/complete/{action_id}`
+  - `GET  /api/streamer-actions/recent/{streamer_id}`
+  - `GET  /api/streamer-actions/hype-meter/{streamer_id}`
+- **`/app/backend/routes/beat_dlc.py` (NEW)** — finished-track Vibe DLC mint flow.
+  SIMULATED mode until founder safe-phrase `project_complete`. Same 70/13.5/10 split.
+  - `POST /api/beat-dlc/mint`
+  - `GET  /api/beat-dlc/list/{artist_id}`
+  - `GET  /api/beat-dlc/mint-mode`
+
+### Frontend — 7 new rooms
+| Room | Path | Source PDF |
+|---|---|---|
+| **Streamer Overlay** | `/streamer/overlay/{id}` | Streamer Revenue §4 |
+| **Vibe-tionary** | `/party/vibe-tionary` | Party Hub §1 |
+| **Meme Matchmaker** | `/party/meme-matchmaker` | Party Hub §2 |
+| **Vibe-Hide & Seek** | `/party/hide-seek` | Party Hub §3 |
+| **Blind Auction Dating** | `/dating/blind-auction` | Master Tech §2 |
+| **VibeShopper Hunt** | `/vibeshopper` | Master Tech §3 |
+| **Beat Vault DLC** | `/beat-vault/dlc` | Streamer Revenue §3 |
+
+### Discoverability
+- **Dashboard** (`/dashboard`) updated with 7 new tiles + a prominent
+  "What's New · May 2026" banner pointing to all 7 rooms.
+
+### Blackjack — verified clean
+- The pre-existing `KeyError: 'player_cards'` claim was speculative —
+  no such reference exists in code (grep confirmed empty across whole
+  repo). The action handler correctly uses `session['player_hands'][hand_index]`.
+  All endpoints return 200/400 cleanly, no 500s. New regression gate
+  `test_blackjack_action_endpoint_no_player_cards_keyerror` locks this
+  behavior so any future refactor that reintroduces the bad key fails fast.
+
+### Regression shield: 186 → 190
+Added 4 new gates:
+- `test_beat_dlc_routes_mounted`
+- `test_beat_dlc_share_split_locked`
+- `test_may_2026_pdf_rooms_routed` (validates all 7 routes declared)
+- `test_dashboard_surfaces_new_rooms` (validates all 7 tiles + What's New banner)
+
+**190/190 passing.**
+
+### Mocks / pending external integrations
+- **Beat Vault DLC mint** — `BEAT_DLC_MINT_MODE=SIMULATED` until mainnet TGE safe phrase
+- **Streamer Overlay tipping** — uses local fake auth token; production needs real Stripe wire
+- **Sponsored merchant 5% kickback in Vibe-Hide & Seek** — currently logged in `metadata.kickback_pct`; ledger application happens on `streamer-actions/complete` (not yet auto-fired in the demo flow)
+

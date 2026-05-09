@@ -6,6 +6,8 @@ import {
   Globe, Heart, LogOut, Settings, Sparkles, Crown, MessageCircle, Gamepad2,
   Trophy, Utensils, Car, Wallet, TrendingUp, Moon, Music, Film, Pizza,
   Languages, Mic, MapPin, BookMarked,
+  // May 2026 PDF batch
+  PenTool, Smile, Search, Eye, ShoppingBag, Disc3, Radio,
 } from 'lucide-react';
 import { RoomLayout } from '@/components/RoomLayout';
 import { GlassCard } from '@/components/GlassCard';
@@ -267,7 +269,87 @@ export default function Dashboard() {
       image: 'https://images.unsplash.com/photo-1673293964910-1a7dc4d5aa47?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1NzZ8MHwxfHNlYXJjaHwxfHx0cnVzdHdvcnRoeSUyMHNhZmUlMjBkcml2ZXIlMjBjYXIlMjBpbnRlcmlvciUyMG1vZGVybnxlbnwwfHx8fDE3NzM2OTkzMTl8MA&ixlib=rb-4.1.0&q=85',
       path: '/rides',
       stats: { count: '100%', label: 'Verified' }
-    }
+    },
+    // ─────── May 2026 PDF batch (Streamer Revenue / Master Tech /
+    //         Party Hub blueprints). Each room runs on the already-
+    //         shipped /api/streamer-actions/* + /api/dsg-guard/* rails.
+    {
+      id: 'vibetionary',
+      name: 'Vibe-tionary',
+      description: 'Collaborative neon-light drawing — guess the AI prompt for 1.5× stake',
+      icon: PenTool,
+      gradient: 'from-cyan-400 via-fuchsia-500 to-amber-300',
+      glow: 'rgba(34,211,238,0.5)',
+      image: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?crop=entropy&cs=srgb&fm=jpg',
+      path: '/party/vibe-tionary',
+      stats: { count: 'NEW', label: 'Party Hub' }
+    },
+    {
+      id: 'meme_matchmaker',
+      name: 'Meme Matchmaker',
+      description: 'Underground Club — vote with 3D Glass Emojis · 86.5% winner share',
+      icon: Smile,
+      gradient: 'from-fuchsia-500 via-pink-500 to-amber-400',
+      glow: 'rgba(217,70,239,0.5)',
+      image: 'https://images.unsplash.com/photo-1574391884720-bbc3740c59d1?crop=entropy&cs=srgb&fm=jpg',
+      path: '/party/meme-matchmaker',
+      stats: { count: 'NEW', label: 'Vote-to-Earn' }
+    },
+    {
+      id: 'hide_seek',
+      name: 'Vibe-Hide & Seek',
+      description: 'Geo-spatial hunt across local Yellow Pages merchants — 5% kickback',
+      icon: Search,
+      gradient: 'from-emerald-400 via-cyan-500 to-amber-300',
+      glow: 'rgba(16,185,129,0.5)',
+      image: 'https://images.unsplash.com/photo-1559329007-40df8a9345d8?crop=entropy&cs=srgb&fm=jpg',
+      path: '/party/hide-seek',
+      stats: { count: 'NEW', label: 'Local Mining' }
+    },
+    {
+      id: 'blind_auction',
+      name: 'Blind Auction',
+      description: 'Frost-filtered profiles · highest bid vs 98% synergy auto-bridge',
+      icon: Eye,
+      gradient: 'from-rose-500 via-pink-500 to-amber-300',
+      glow: 'rgba(244,63,94,0.5)',
+      image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=srgb&fm=jpg',
+      path: '/dating/blind-auction',
+      stats: { count: 'NEW', label: 'Game Show' }
+    },
+    {
+      id: 'vibeshopper',
+      name: 'VibeShopper Hunt',
+      description: 'Daily Odd Item Loop · 1.5× VibeXP boost · Vibe Vault escrow',
+      icon: ShoppingBag,
+      gradient: 'from-amber-400 via-orange-500 to-fuchsia-500',
+      glow: 'rgba(245,158,11,0.5)',
+      image: 'https://images.unsplash.com/photo-1601598704991-eef6114775c3?crop=entropy&cs=srgb&fm=jpg',
+      path: '/vibeshopper',
+      stats: { count: 'NEW', label: 'Direct-to-Shelf' }
+    },
+    {
+      id: 'beat_vault_dlc',
+      name: 'Beat Vault DLC',
+      description: 'Mint finished tracks as Vibe DLC — artist keeps 70% forever',
+      icon: Disc3,
+      gradient: 'from-amber-500 via-orange-500 to-yellow-300',
+      glow: 'rgba(217,119,6,0.5)',
+      image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?crop=entropy&cs=srgb&fm=jpg',
+      path: '/beat-vault/dlc',
+      stats: { count: 'NEW', label: '70/30' }
+    },
+    {
+      id: 'streamer_overlay',
+      name: 'Streamer Overlay',
+      description: 'OBS browser source — heckle / buff / hype meter live FX',
+      icon: Radio,
+      gradient: 'from-violet-500 via-fuchsia-500 to-pink-500',
+      glow: 'rgba(139,92,246,0.5)',
+      image: 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?crop=entropy&cs=srgb&fm=jpg',
+      path: '/streamer/overlay/demo',
+      stats: { count: 'OBS', label: 'Live FX' }
+    },
   ];
 
   if (loading) {
@@ -359,6 +441,34 @@ export default function Dashboard() {
 
         {/* Chair-holder vote banner — chair holders only, auto-hides if no open polls */}
         <ChairHolderVoteBanner />
+
+        {/* What's New — May 2026 PDF batch (Streamer Revenue / Master
+            Tech / Party Hub blueprints). Surfaces the seven new rooms
+            shipped this week so the founder/users can find them. */}
+        <motion.div
+          data-testid="whats-new-banner"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="relative mb-10 rounded-2xl border border-fuchsia-400/30 bg-gradient-to-r from-fuchsia-500/10 via-cyan-500/5 to-amber-500/10 backdrop-blur-md px-5 py-4"
+        >
+          <div className="flex items-start gap-3">
+            <Sparkles className="w-6 h-6 text-amber-300 mt-0.5 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <div className="text-[10px] uppercase tracking-[0.4em] text-fuchsia-300 font-bold">
+                What's New · May 2026
+              </div>
+              <div className="text-base sm:text-lg font-black text-white">
+                7 new rooms live — Vibe-tionary, Meme Matchmaker, Hide & Seek,
+                Blind Auction, VibeShopper Hunt, Beat Vault DLC, Streamer Overlay
+              </div>
+              <div className="text-xs text-white/70 mt-1">
+                All powered by the new <span className="text-cyan-300 font-bold">Streamer Action Hub</span> + <span className="text-amber-300 font-bold">DSG Guard</span> rails ·
+                70/13.5/10 split locked · 1.5-mi route deviation · 15s acceptance window.
+              </div>
+            </div>
+          </div>
+        </motion.div>
 
         {/* Room Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">

@@ -3536,6 +3536,63 @@ def test_blackjack_action_endpoint_no_player_cards_keyerror():
         "Blackjack must persist hands under 'player_hands' key"
 
 
+# ─────────────────────────────────────── Beat Vault DLC
+
+
+def test_beat_dlc_routes_mounted():
+    """The Beat Vault DLC mint flow must be reachable so the
+    finished-track Vibe DLC mint UI works end-to-end."""
+    from server import app
+    paths = {r.path for r in app.routes}
+    assert "/api/beat-dlc/mint" in paths
+    assert "/api/beat-dlc/list/{artist_id}" in paths
+    assert "/api/beat-dlc/mint-mode" in paths
+
+
+def test_beat_dlc_share_split_locked():
+    """Beat Vault DLC mints MUST credit the artist 70%, sovereign tax
+    13.5%, liquidity 10% — agrees with Immutable Core + Streamer Hub."""
+    from routes.beat_dlc import ARTIST_SHARE, SOVEREIGN_TAX, LIQUIDITY_POOL
+    assert ARTIST_SHARE == 0.70
+    assert SOVEREIGN_TAX == 0.135
+    assert LIQUIDITY_POOL == 0.10
+
+
+# ─────────────────────────────────────── May 2026 PDF rooms wired
+
+
+def test_may_2026_pdf_rooms_routed():
+    """All seven May 2026 rooms must be importable AND have routes
+    declared in `gamesRoutes.tsx`. If any of these fail to import
+    (e.g. broken JSX), the dashboard tile will 404."""
+    routes_src = open("/app/frontend/src/routes/gamesRoutes.tsx").read()
+    for path in [
+        '/streamer/overlay/',
+        '/party/vibe-tionary',
+        '/party/meme-matchmaker',
+        '/party/hide-seek',
+        '/dating/blind-auction',
+        '/vibeshopper',
+        '/beat-vault/dlc',
+    ]:
+        assert path in routes_src, f"Missing route declaration for {path}"
+
+
+def test_dashboard_surfaces_new_rooms():
+    """The dashboard must include every May 2026 room as a tile so
+    users can find them. If a tile is removed, this gate flags it."""
+    src = open("/app/frontend/src/pages/DashboardNew.tsx").read()
+    for tile_id in [
+        'vibetionary', 'meme_matchmaker', 'hide_seek',
+        'blind_auction', 'vibeshopper', 'beat_vault_dlc',
+        'streamer_overlay',
+    ]:
+        assert f"id: '{tile_id}'" in src, \
+            f"Dashboard tile '{tile_id}' missing — May 2026 PDF rooms must surface here"
+    assert "whats-new-banner" in src, \
+        "Dashboard must render the What's New (May 2026) banner"
+
+
 
 
 

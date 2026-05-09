@@ -659,6 +659,15 @@ def register_all_routes(
     except Exception as _e:
         log.warning(f"Streamer Action Hub routes not mounted: {_e}")
 
+    # Beat Vault DLC mint — finished-track Vibe DLC flow.
+    # SIMULATED mode until the founder confirms the project_complete
+    # safe phrase; on-chain mainnet hand-off is identical schema.
+    try:
+        from routes.beat_dlc import router as beat_dlc_router
+        api_router.include_router(beat_dlc_router)
+    except Exception as _e:
+        log.warning(f"Beat Vault DLC routes not mounted: {_e}")
+
 
 
 # ─── Domain helpers (Feb 2026 polish split) ──────────────────────────
