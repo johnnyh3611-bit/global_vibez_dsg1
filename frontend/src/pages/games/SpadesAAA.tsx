@@ -711,14 +711,17 @@ export default function SpadesAAA() {
         </div>
 
         {/* ── Hand fan — "like cards sitting on the table edge" ──
-            Pulled tight against the felt with a negative margin so the
-            top of the fan overlaps the bottom rim. Per the user: "move
-            the cards very close to the table... like if a bowl was
-            sitting on the table and the cards was coming around."
+            Pulled close to the felt with a small negative margin so the
+            top of the fan kisses the bottom rim WITHOUT colliding with
+            the south played-card landing slot in the trick pile.
+            Founder fix Feb 2026 (round 5): cut the overlap from -mt-12
+            to -mt-6 so the south trick card has ~60px of breathing
+            room above the hand fan.
+
             Renders during the playing phase AND during the 10s review
             window so the player can study their freshly-dealt hand
             before the bid modal pops up. */}
-        <div className="px-3 md:px-4 -mt-10 md:-mt-12 pb-3 md:pb-4 relative z-20">
+        <div className="px-3 md:px-4 -mt-4 md:-mt-6 pb-3 md:pb-4 relative z-20">
           {game.phase === "playing" ? (
             <SpadesHandFan
               key={dealKey}
@@ -730,11 +733,12 @@ export default function SpadesAAA() {
             />
           ) : game.phase === "bidding" && reviewActive ? (
             <>
-              {/* Floating countdown pill — positioned as a small overlay
-                  above the center of the hand fan so it doesn't push
-                  the cards away from the table rim. */}
+              {/* Floating countdown pill — positioned high above the
+                  hand fan so it doesn't occlude the leftmost cards.
+                  Founder fix Feb 2026 (round 5): bumped from -top-4 to
+                  -top-10 so the chip floats clear of the fan radius. */}
               <div
-                className="absolute left-1/2 -translate-x-1/2 -top-3 md:-top-4 flex items-center gap-2 z-30"
+                className="absolute left-1/2 -translate-x-1/2 -top-8 md:-top-10 flex items-center gap-2 z-30"
                 data-testid="spades-review-banner"
               >
                 <div className="px-2.5 py-1 rounded-full bg-slate-950/90 backdrop-blur border-2 border-amber-500/70 flex items-center gap-1.5 shadow-[0_0_16px_rgba(251,191,36,0.35)]">

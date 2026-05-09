@@ -442,7 +442,7 @@ export default function CrazyEightsAAA() {
           </div>
         </div>
 
-        <div className="px-3 md:px-4 -mt-10 md:-mt-12 pb-3 md:pb-4 relative z-30">
+        <div className="px-3 md:px-4 -mt-4 md:-mt-6 pb-3 md:pb-4 relative z-30">
           {raw.phase === "playing" ? (
             <SpadesHandFan
               key={dealKey}

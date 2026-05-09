@@ -14,6 +14,14 @@ import { CURRENT_DROP_VERSION } from "./FreshDropsLauncher";
 const SEEN_KEY = "fresh_drops_seen_version";
 const HIDDEN_PREFIXES = ["/login", "/signup", "/forgot-password", "/reset-password", "/vibe-drive/hud", "/vibe-vault-admin", "/chair-hall"];
 
+// Founder fix Feb 2026: auto-hide on every card-room route so the
+// pinned banner doesn't cover the table header during play.
+const HIDDEN_EXACT = [
+  "/spades", "/bid-whist", "/hearts", "/uno", "/euchre", "/pinochle",
+  "/gin-rummy", "/rummy", "/war", "/crazy-eights", "/go-fish",
+  "/baccarat", "/baccarat-aaa", "/vibe-654/solo",
+];
+
 // Human-readable headline per drop. Update when bumping CURRENT_DROP_VERSION.
 const DROP_HEADLINES: Record<string, string> = {
   "2026-02-22-drop-4": "Just for the Night rooms are now live. Vanishing chat + voice inside.",
@@ -36,7 +44,12 @@ const WhatsNewBanner: React.FC = () => {
 
   const p = location.pathname;
   const hidden =
-    p === "/" || HIDDEN_PREFIXES.some((pre) => p.startsWith(pre));
+    p === "/" ||
+    HIDDEN_PREFIXES.some((pre) => p.startsWith(pre)) ||
+    HIDDEN_EXACT.some((route) => p === route || p.startsWith(route + "/")) ||
+    p.startsWith("/card-mp/") ||
+    p.startsWith("/vibe-654/coliseum") ||
+    p.startsWith("/games/vibe654");
 
   const dismiss = () => {
     setDismissing(true);

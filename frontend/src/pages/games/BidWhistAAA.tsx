@@ -931,7 +931,7 @@ export default function BidWhistAAA() {
         </div>
 
         {/* Hand fan / review window */}
-        <div className="px-3 md:px-4 -mt-10 md:-mt-12 pb-3 md:pb-4 relative z-20">
+        <div className="px-3 md:px-4 -mt-4 md:-mt-6 pb-3 md:pb-4 relative z-20">
           {uiPhase === "playing" ? (
             <SpadesHandFan
               key={dealKey}
@@ -944,7 +944,7 @@ export default function BidWhistAAA() {
           ) : uiPhase === "bidding" && reviewActive ? (
             <>
               <div
-                className="absolute left-1/2 -translate-x-1/2 -top-3 md:-top-4 flex items-center gap-2 z-30"
+                className="absolute left-1/2 -translate-x-1/2 -top-8 md:-top-10 flex items-center gap-2 z-30"
                 data-testid="bidwhist-aaa-review-banner"
               >
                 <div className="px-2.5 py-1 rounded-full bg-slate-950/90 backdrop-blur border-2 border-amber-500/70 flex items-center gap-1.5 shadow-[0_0_16px_rgba(251,191,36,0.35)]">

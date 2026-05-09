@@ -471,7 +471,7 @@ export default function PinochleAAA() {
           </div>
         </div>
 
-        <div className="px-3 md:px-4 -mt-10 md:-mt-12 pb-3 md:pb-4 relative z-30">
+        <div className="px-3 md:px-4 -mt-4 md:-mt-6 pb-3 md:pb-4 relative z-30">
           {/* Always show the hand once dealt — bidders need to SEE their
               cards to bid intelligently. Fix Feb 2026 (round 2): user
               said "can't see the cards" — the fan was gated to `playing`

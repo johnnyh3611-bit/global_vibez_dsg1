@@ -1,0 +1,54 @@
+{
+  "summary": "P1 verification sweep of the 3 shipped fixes + ProtectedRoute action-strip refactor. ALL 4 FIXES PASS. Backend regression_shield 219/219 GREEN (with PYTHONPATH=/app/backend). FIX-1 hand-fan/trick-pile gap measured at 134px on both Spades and Bid Whist (requirement >=50px) -- exceeded by ~84px. FIX-2 'REVIEW Ns / BID NOW' chip top=552-579 sits 31px clear ABOVE hand-fan top=606-610, no card occlusion. FIX-3 WhatsNewBanner is hidden on all 12 card-room routes (/spades /bid-whist /hearts /uno /euchre /pinochle /gin-rummy /rummy /war /crazy-eights /go-fish /baccarat) and still visible on /dashboard. FIX-4 PageActionStrip ('QUICK ACCESS' pill) auto-mounted on every protected page, CornerDock data-testid is GONE everywhere, only the 'Made with Emergent' badge remains as a fixed bottom-right element. Trick-pile is perfectly centered (left=880, w=160 -> center=960px on 1920 viewport). Bid Whist cards visibly land in the center-table band in the screenshot. ENVIRONMENTAL ISSUE found and self-recovered: mongod was in FATAL state at the start of this run (FTDC fatal crash from earlier disk-full). Restarted mongod + backend, demo-login then returned 200 OK in 0.14s.",
+  "backend_issues": {"critical": [], "minor": [
+    {"endpoint": "supervisor/mongod", "issue": "mongod was FATAL on entry (FTDC crash 2026-05-09T14:54:20 -- 'Failed to write to interim file buffer' for /data/db/diagnostic.data/metrics.interim.temp). All /api/auth/* returned 500 until restart. Recovered via 'sudo supervisorctl start mongod' + 'restart backend'. Disk now 86GB free."},
+    {"endpoint": "/api/blackjack/action", "issue": "Pre-existing KeyError: 'player_cards' in backend.err.log (not card-room scope, unrelated to this sweep)"}
+  ]},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "verifications_passed": [
+    "FIX-1 Spades: trick_pile bottom=472, hand-fan top=606, gap=134px (requirement >=50px) PASS",
+    "FIX-1b Bid Whist: trick_pile bottom=476, hand-fan top=610, gap=134px PASS",
+    "FIX-2 Spades review chip top=552 sits 54px above hand-fan top=606, no card occlusion PASS",
+    "FIX-2 Bid Whist review chip top=556 sits 54px above hand-fan top=610 PASS",
+    "FIX-3 WhatsNewBanner ('Just for the Night room') hidden on all 12 card-room routes; still visible on /dashboard PASS",
+    "FIX-4 PageActionStrip data-testid='page-action-strip' present on /dashboard /games and all 12 card rooms PASS",
+    "FIX-4 'QUICK ACCESS' pill visible top-right of every protected screenshot PASS",
+    "FIX-4 [data-testid='corner-dock'] NOT present on any route PASS",
+    "FIX-4 'Made with Emergent' badge remains as the only persistent fixed bottom-right element PASS",
+    "Trick-pile horizontally centered: left=880, w=160 -> midpoint=960 on 1920 viewport (50% center) PASS",
+    "Spades AAA: Start AI Match flow drives game state; AI plays trick visible in screenshot",
+    "Bid Whist AAA: Start AI Match -> bid panel ('Place Your Bid', 1-13, NIL) opens cleanly; first played card lands in center band (visible in bidwhist_trick.png)",
+    "Backend regression_shield: 219/219 PASS (cd /app/backend && PYTHONPATH=/app/backend pytest tests/regression_shield.py)",
+    "test_corner_dock_no_longer_mounted_in_app PASS",
+    "test_protected_route_auto_mounts_page_action_strip PASS"
+  ],
+  "test_report_links": [
+    "/app/backend/tests/regression_shield.py",
+    "/app/test_reports/playwright_screenshots/jan2026_verify_fixes/spades_bidding.png",
+    "/app/test_reports/playwright_screenshots/jan2026_verify_fixes/spades_trick.png",
+    "/app/test_reports/playwright_screenshots/jan2026_verify_fixes/bidwhist_bidding.png",
+    "/app/test_reports/playwright_screenshots/jan2026_verify_fixes/bidwhist_trick.png"
+  ],
+  "action_items": [
+    "INFO ONLY: regression_shield.py must be invoked with cwd=/app/backend OR PYTHONPATH=/app/backend (it does 'from server import app'). When invoked from /app it fails with ModuleNotFoundError. Consider adding /app/backend/conftest.py with sys.path.insert or a pytest.ini rootdir/pythonpath entry so the suite is callable from project root. Not blocking.",
+    "INFO ONLY: mongod crashed earlier today (FTDC fatal). Supervisor exited it as FATAL ('Exited too quickly'). If this happens again post-deploy, founder will see all auth return 500. Worth wiring an autorestart / health-watcher.",
+    "P3 (existing, pre-fix): /api/blackjack/action returns 500 with KeyError: 'player_cards' -- unrelated to card-room sweep but visible in backend.err.log; out of scope here."
+  ],
+  "critical_code_review_comments": [
+    "All 4 P1 fixes are confirmed via DOM measurement, not just visual inspection -- 134px gap is generous and won't regress on slightly different viewport heights down to ~720px.",
+    "regression_shield.py rootdir fragility -- the test 'from server import app' assumes PYTHONPATH includes /app/backend. Either add an explicit pythonpath entry to /app/backend/pyproject.toml or document the cwd requirement in CI/CD scripts.",
+    "WhatsNewBanner HIDDEN_EXACT array works correctly for the 12 listed routes. Future card rooms (Solitaire, Cribbage, etc.) will need to be appended to that array."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "219/219 (100%)", "frontend": "All 4 P1 fixes verified, all 12 card-room lobbies + 2 in-game flows GREEN"},
+  "test_credentials": "Demo login [data-testid='login-demo-btn'] (no email needed). Confirmed working after mongod restart.",
+  "seed_data_creation": "None -- demo guest only.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All 3 shipped P1 fixes are CONFIRMED GREEN with DOM measurements; safe to redeploy from card-room perspective. ProtectedRoute auto-mounting PageActionStrip works on every route tested. The 'mongod FATAL on boot' is a recurrence risk -- if next agent sees ALL /api/auth/* returning 500, do 'sudo supervisorctl start mongod && sudo supervisorctl restart backend' before retest. Bid Whist joker direction rule remains UI-undriveable; rely on test_sovereign_validator_joker_power_indexing in regression_shield (now PASS).",
+  "rca of the issue": "Self-recovered: mongod crashed earlier today via FTDC IO failure (likely tied to the disk-full incident mentioned in the brief). Supervisor put it in FATAL state which masked the entire backend auth surface as 500. Started mongod + restarted backend; demo-login flipped from 500 to 200 in 0.14s and all card-room flows ran cleanly afterward. Recommend adding a supervisor autorestart=true rule for mongod or a backend startup health-check that hard-fails if MongoDB ping fails."
+}

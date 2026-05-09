@@ -332,7 +332,7 @@ export default function EuchreAAA() {
           </div>
         </div>
 
-        <div className="px-3 md:px-4 -mt-10 md:-mt-12 pb-3 md:pb-4 relative z-30">
+        <div className="px-3 md:px-4 -mt-4 md:-mt-6 pb-3 md:pb-4 relative z-30">
           {/* Always render the hand once dealt so the player can SEE
               their cards while bidding (Order Up / Name Trump / Pass).
               Interaction is locked off in non-play phases by passing
