@@ -43,13 +43,27 @@ const WhatsNewBanner: React.FC = () => {
   }, []);
 
   const p = location.pathname;
+  // Compute hidden status. Note: any path that falls through to the
+  // wildcard `<NotFound />` route is unknown by definition — we hide
+  // the banner on every unknown path too so 404s stay clean.
+  const KNOWN_TOP_LEVEL = [
+    "/dashboard", "/games", "/profile", "/settings", "/inbox",
+    "/chair-hall", "/treasury", "/cinema", "/streaming", "/streamer",
+    "/dating", "/match", "/swipe", "/just-for-the-night",
+    "/vibe-vault-admin", "/vibe-drive", "/vibe-ridez", "/rides",
+    "/hungryvibes", "/food", "/venues", "/vibe-venues",
+    "/beta-tester", "/beta", "/cyber-casino", "/casino",
+    "/dsg", "/safety", "/admin", "/social", "/wallet",
+  ];
+  const looksKnown = p === "/" || KNOWN_TOP_LEVEL.some((k) => p === k || p.startsWith(k + "/"));
   const hidden =
     p === "/" ||
     HIDDEN_PREFIXES.some((pre) => p.startsWith(pre)) ||
     HIDDEN_EXACT.some((route) => p === route || p.startsWith(route + "/")) ||
     p.startsWith("/card-mp/") ||
     p.startsWith("/vibe-654/coliseum") ||
-    p.startsWith("/games/vibe654");
+    p.startsWith("/games/vibe654") ||
+    !looksKnown;  // unknown route → 404, hide banner
 
   const dismiss = () => {
     setDismissing(true);
