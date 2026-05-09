@@ -30,6 +30,7 @@ import { useLocation } from "react-router-dom";
 import {
   Wrench, ChevronUp, MessageSquare, Mic, RotateCcw, Sparkles, Utensils, Globe, X,
 } from "lucide-react";
+import CornerDockTooltip from "./CornerDockTooltip";
 
 const HIDE_PATTERNS: RegExp[] = [
   /^\/streamer\/overlay/,   // OBS scene capture must stay clean.
@@ -187,6 +188,7 @@ const CornerDock: React.FC = () => {
     <>
       <DockSide side="left"  items={LEFT_ITEMS}  open={openLeft}  setOpen={setOpenLeft}  />
       <DockSide side="right" items={RIGHT_ITEMS} open={openRight} setOpen={setOpenRight} />
+      <CornerDockTooltip />
     </>
   );
 };

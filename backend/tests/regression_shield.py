@@ -4030,6 +4030,19 @@ def test_corner_dock_has_left_and_right_triggers_with_items():
             f"CornerDock must include menu item '{item_id}'"
 
 
+def test_corner_dock_first_time_tooltip_shipped():
+    """First-time discovery tooltip pulses next to the Tools trigger
+    on first session so beta testers find the unified menu without
+    being told. Auto-dismisses after 8s or on first dock open."""
+    tip = open("/app/frontend/src/components/common/CornerDockTooltip.tsx").read()
+    assert "corner-dock-first-time-tooltip" in tip
+    assert "gv_corner_dock_tooltip_seen_v1" in tip, \
+        "Tooltip must persist its dismissal in localStorage so it never re-shows"
+    # Mounted by CornerDock itself (no App.js coupling).
+    dock = open("/app/frontend/src/components/common/CornerDock.tsx").read()
+    assert "CornerDockTooltip" in dock
+
+
 
 
 
