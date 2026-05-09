@@ -1,0 +1,43 @@
+{
+  "summary": "Beta-Readiness QA pass on Cyber-Casino Chess: Voice Coach, Roguelite Chess Trial, Battle Mode skin. Backend 10/10 PASS (move-tip, voice-question guards 400/413/422-or-502, state auth gate 401, start idempotent, full scoring math + lives-to-zero + 409-on-ended-trial, leaderboard min/max clamping). Regression Shield 201/201 PASS. Frontend E2E confirmed all three features render and integrate correctly on /practice/play/chess after demo login.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter_beta_qa_voice_roguelite_battle.py",
+    "/app/test_reports/pytest/iter_beta_qa_voice_roguelite_battle.xml",
+    "/app/test_reports/pytest/regression_shield_beta_qa.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Roguelite leaderboard does an N+1 user lookup per row inside a loop (routes/roguelite_chess.py L246-253). At 50 rows this is 50 sequential mongo round-trips. Recommend batching with $in or aggregation $lookup for production scale.",
+    "Voice coach voice-question creates a fresh OpenAISpeechToText + LlmChat client per request. Acceptable for sporadic use but consider pooling if traffic grows.",
+    "roguelite_chess.py uses module-level Mongo client init at import time (L58); this is fine but if MONGO_URL is missing the module silently sets _db=None and every call returns 503 — could be louder in startup logs."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter_beta_qa_voice_roguelite_battle.py (new file)"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "betatester1@globalvibez.com / BetaTester2026! (per /app/memory/test_credentials.md). Note: review_request listed password as 'BetaTester_2026!' with underscore — that is INCORRECT; canonical is BetaTester2026! (no underscore). Demo Login (Quick Access) button works and was used for frontend E2E.",
+  "seed_data_creation": "Test wiped and re-seeded the demo user's roguelite_chess_trials doc for today's day_key to validate scoring math deterministically. The demo guest's trial was reset 3→0 lives during testing; a new trial will auto-start on next call, but if the demo account is shared the lives may be 0 until UTC midnight.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All three Cyber-Casino chess features (Voice Coach, Roguelite Trial, Battle Mode) are FULLY VERIFIED on prod URL. Frontend testids confirmed: voice-coach-trigger, voice-coach-panel, voice-coach-mic-btn, roguelite-trial-badge, roguelite-lives, roguelite-score, chess-view-classic, chess-view-battle. Backend regression baseline at 201/201. Safe to open beta.",
+  "verified_features": {
+    "voice_coach_move_tip": "POST /api/voice-coach/move-tip — verified 200 with valid coaching tip text on starting position FEN and midgame FEN (Claude Sonnet 4.5 live).",
+    "voice_coach_voice_question_guards": "Empty audio → 400, >25MB → 413, garbage audio → 502 (Whisper rejected upstream — acceptable per spec which allows 422/400/502).",
+    "roguelite_state_auth_gate": "GET /api/roguelite-chess/state returns 403 unauth, 200 with bearer token.",
+    "roguelite_start_idempotent": "POST /api/roguelite-chess/start returns 200 with full TrialState shape (day_key, lives, score, streak, started_at, ends_at, is_alive).",
+    "roguelite_scoring_math": "win+elo_diff=50 → +150 score, draw → +25 score & streak reset to 0, 3 consecutive losses → lives 3→2→1→0, is_alive=false.",
+    "roguelite_409_on_ended_trial": "After lives==0, both subsequent loss and subsequent win record-result calls return 409 'Trial already ended for today' as required.",
+    "roguelite_leaderboard_clamping": "limit=500 capped at 200 rows, limit=0 clamped to min 1.",
+    "frontend_practice_chess_page": "All three features render: Roguelite Trial Badge in header (3 hearts, score 0, 21h 34m countdown), Voice Coach Cyber-Casino panel opens on voice-coach-trigger click with 'Sharp eyes on the board' headline + press-and-hold mic, Battle Mode toggle (CLASSIC ↔ NEON ARENA) renders 64-square chessboard correctly in both views.",
+    "regression_shield_baseline": "201/201 PASS — supreme regression baseline preserved. NO test was modified."
+  }
+}
