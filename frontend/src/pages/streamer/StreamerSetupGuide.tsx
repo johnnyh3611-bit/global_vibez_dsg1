@@ -193,6 +193,34 @@ export default function StreamerSetupGuide() {
         </div>
       </section>
 
+      {/* Pro tip — second OBS scene */}
+      <section className="px-4 sm:px-8 max-w-5xl mx-auto pb-10" data-testid="setup-protip-glasshouse">
+        <div className="rounded-3xl border border-cyan-400/30 bg-gradient-to-r from-cyan-500/10 via-fuchsia-500/10 to-amber-500/10 p-6">
+          <div className="flex items-start gap-4">
+            <div className="shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-400 to-fuchsia-500 flex items-center justify-center font-black text-xl">
+              ⚡
+            </div>
+            <div className="flex-1">
+              <div className="text-[10px] uppercase tracking-[0.4em] font-black text-cyan-300 mb-1">Pro tip · Free 3D backdrop</div>
+              <div className="font-black text-lg sm:text-xl">
+                Drop <code className="bg-black/60 px-2 py-0.5 rounded font-mono text-cyan-300">{SITE}/music/glasshouse</code> into a SECOND OBS browser source for an instant 3D backdrop while you're recording.
+              </div>
+              <p className="text-sm text-white/70 mt-2">
+                Transparent background by default. Mic-reactive frequency bars + glass crystal that pulses to your voice.
+                Stack it underneath your overlay scene and you've got a free music-video-grade studio with zero plugins.
+              </p>
+              <Link
+                to="/music/glasshouse"
+                className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/40 border border-cyan-400/40 text-sm font-bold"
+                data-testid="setup-protip-glasshouse-cta"
+              >
+                Preview the Glasshouse <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Earnings note */}
       <section className="px-4 sm:px-8 max-w-5xl mx-auto pb-20">
         <div className="rounded-3xl bg-gradient-to-r from-emerald-500/15 via-cyan-500/10 to-amber-500/15 border border-emerald-400/30 p-6 text-center" data-testid="setup-earnings">

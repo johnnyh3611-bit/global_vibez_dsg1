@@ -203,6 +203,14 @@ async def sound_check_vote(v: SoundCheckVote, request: Request) -> Dict[str, Any
     track = await db.sound_check_tracks.find_one(
         {"track_id": v.track_id}, {"_id": 0},
     )
+    # Push the new top-10 to every subscribed Sound-Check Gauntlet
+    # client via Socket.IO so leaderboards update in real time.
+    try:
+        from services.sound_check_leaderboard import broadcast_leaderboard
+        await broadcast_leaderboard(triggering_track_id=v.track_id)
+    except Exception:
+        # Broadcast is best-effort — never let it 500 the vote endpoint.
+        pass
     qualifies = (track or {}).get("hype_score", 0) >= HYPE_MIN_TO_SURVIVE
     return {
         "track_id":     v.track_id,

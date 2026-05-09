@@ -2671,23 +2671,25 @@ def test_jftn_demo_room_seeder_wired() -> None:
 
     The demo-room seeder runs on backend boot via lifespan and inserts 3
     canonical rooms (Neon Blackjack / Velvet Poker / Sunrise Roulette)
-    with each of the 3 dealer types. Idempotent via stable seed_id.
+    with each of the 3 PG-13 dealer types. Idempotent via stable seed_id.
+    Library may include additional 18+ rooms (founder ask 2026-05-09).
     """
     from services.jftn_demo_room_seeder import DEMO_ROOMS, run_seeder
     assert callable(run_seeder)
-    assert len(DEMO_ROOMS) == 3, \
-        f"Expected exactly 3 demo rooms, got {len(DEMO_ROOMS)}"
+    pg13 = [r for r in DEMO_ROOMS if r.get("tier", "PG-13") == "PG-13"]
+    assert len(pg13) >= 3, \
+        f"Expected at least 3 PG-13 demo rooms, got {len(pg13)}"
     seed_ids = {r["seed_id"] for r in DEMO_ROOMS}
-    assert len(seed_ids) == 3, "Demo-room seed_ids must be unique"
-    # Each of the 3 dealer types should be represented at least once,
-    # so beta testers see UI variants on first visit.
-    dealer_types = {r["settings"]["dealer_type"] for r in DEMO_ROOMS}
-    assert dealer_types == {"founder_ai", "ghost_dealer", "personal_avatar"}, \
-        f"Demo rooms must showcase all 3 dealer types, got {dealer_types}"
-    # All 3 challenge games must be represented.
-    games = {r["settings"]["challenge_game"] for r in DEMO_ROOMS}
-    assert games == {"blackjack", "poker", "roulette"}, \
-        f"Demo rooms must showcase all 3 challenge games, got {games}"
+    assert len(seed_ids) == len(DEMO_ROOMS), "Demo-room seed_ids must be unique"
+    # Each of the 3 PG-13 dealer types should be represented at least
+    # once, so beta testers see UI variants on first visit.
+    dealer_types = {r["settings"]["dealer_type"] for r in pg13}
+    assert {"founder_ai", "ghost_dealer", "personal_avatar"}.issubset(dealer_types), \
+        f"PG-13 demo rooms must showcase all 3 original dealer types, got {dealer_types}"
+    # All 3 PG-13 challenge games must be represented.
+    games = {r["settings"]["challenge_game"] for r in pg13}
+    assert {"blackjack", "poker", "roulette"}.issubset(games), \
+        f"PG-13 demo rooms must showcase all 3 challenge games, got {games}"
 
     # The seeder must be wired to fire on backend startup.
     from pathlib import Path
@@ -3688,20 +3690,69 @@ def test_streamer_setup_guide_marketing_page():
     """The Streamer Setup Guide is a public-route marketing page that
     converts streamers to OBS browser-source users in <60s. It must
     have all 5 setup steps + the unique-URL block + the 7 action
-    catalog cards."""
+    catalog cards + the Lyric Glasshouse pro-tip CTA."""
     src = open("/app/frontend/src/pages/streamer/StreamerSetupGuide.tsx").read()
     assert "streamer-setup-guide" in src
     assert "copy-overlay-url" in src, "Must have a one-click copy URL button"
-    # Steps are rendered via a template literal `setup-step-${s.n}` so
-    # we just confirm the prefix + the 5-step source array landed.
-    assert "setup-step-${" in src or "setup-step-`" in src or "setup-step-" in src, \
+    assert "setup-step-${" in src or "setup-step-" in src, \
         "Setup steps must use the `setup-step-N` testid pattern"
     assert "STEPS = [" in src or "n: 1" in src, "Setup must declare 5 steps"
-    # All 7 action kinds from the PDF must be referenced (template
-    # literals build the data-testids, so we check the catalog labels).
     for kind in ["HECKLE", "BUFF", "ROUTE_TIP", "DJ_INTERCEPT",
                  "VOICE_INTERCEPT", "INSTRUMENT_GIFT", "HECKLE_GALLERY"]:
         assert kind in src, f"Setup guide missing action label for {kind}"
+    # Pro-tip Glasshouse callout MUST be present so streamers discover
+    # the second-OBS-source trick (founder ask 2026-05-09).
+    assert "setup-protip-glasshouse" in src, \
+        "Setup guide must include the Lyric Glasshouse pro-tip block"
+    assert "/music/glasshouse" in src, \
+        "Pro-tip must reference the glasshouse path"
+
+
+# ─────────────────────────────────────── JFTN library expansion
+
+
+def test_jftn_library_has_18plus_rooms():
+    """Founder ask 2026-05-09: the JFTN demo seeder must include the
+    five 18+ rooms (smoke jazz, red silk, midnight burlesque,
+    speakeasy truths, afterglow floor). Each must declare
+    `tier: '18+'` so the Global Vibez Guard age-gate enforces."""
+    from services.jftn_demo_room_seeder import DEMO_ROOMS
+    seed_ids = {r["seed_id"] for r in DEMO_ROOMS}
+    for sid in [
+        "jftn_demo_smoke_jazz", "jftn_demo_red_silk",
+        "jftn_demo_midnight_burlesque", "jftn_demo_speakeasy_truths",
+        "jftn_demo_afterglow_floor",
+    ]:
+        assert sid in seed_ids, f"Missing JFTN demo room {sid}"
+    eighteen_plus = [r for r in DEMO_ROOMS if r.get("tier") == "18+"]
+    assert len(eighteen_plus) == 5, \
+        f"Expected 5 18+ rooms in JFTN library, found {len(eighteen_plus)}"
+    for r in eighteen_plus:
+        assert r.get("settings", {}).get("age_gated") is True, \
+            f"18+ room {r['seed_id']} must declare settings.age_gated=True"
+
+
+# ─────────────────────────────────────── Sound-Check leaderboard WS
+
+
+def test_sound_check_leaderboard_module_exists():
+    """The Sound-Check Gauntlet leaderboard websocket module must
+    register socket.io handlers and expose `broadcast_leaderboard`."""
+    from services import sound_check_leaderboard as scl
+    assert hasattr(scl, "broadcast_leaderboard"), \
+        "Module must expose broadcast_leaderboard()"
+    assert callable(scl.broadcast_leaderboard)
+    assert scl.LEADERBOARD_ROOM == "sound_check_leaderboard"
+
+
+def test_sound_check_vote_broadcasts():
+    """`/sound-check/vote` must call broadcast_leaderboard so every
+    connected client sees ranking changes immediately."""
+    src = open("/app/backend/routes/totem_pole.py").read()
+    assert "broadcast_leaderboard" in src, \
+        "Vote handler must trigger leaderboard broadcast"
+    assert "sound_check_leaderboard" in src, \
+        "Vote handler must import the leaderboard service"
 
 
 

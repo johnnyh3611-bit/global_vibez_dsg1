@@ -4498,3 +4498,67 @@ Founder did NOT use the safe phrase `project complete` (only quoted it).
 
 **Beta-redeploy ready.**
 
+
+
+---
+
+## 2026-05-09 (Pre-Redeploy Final) — Last 3 P3 Asks Shipped
+
+### 1. Real-time Sound-Check Gauntlet leaderboard websocket
+- **`/app/backend/services/sound_check_leaderboard.py`** (NEW) hooks
+  the existing `services.multiplayer.sio` Socket.IO server. Handlers:
+  - `sound_check_join` — adds the client to `sound_check_leaderboard`
+    room and pushes the current snapshot immediately
+  - `sound_check_leave`
+  - `broadcast_leaderboard(triggering_track_id)` — emits the new
+    top-10 to every subscriber. Called from the vote endpoint AFTER
+    persistence, best-effort (never 500s the vote).
+- **Sound-Check Gauntlet UI** subscribes via `socket.io-client` and
+  renders a `Live Top 10 · Hype` widget that animates the row of the
+  most-recently-voted track via Framer Motion `layout` + `animate`.
+- Lifespan startup imports the module so handlers register at boot.
+- Confirmed in logs: `sound-check leaderboard handlers registered`.
+
+### 2. Mature/18+ Just-For-The-Night room library expansion
+- 5 new 18+ rooms added to `services/jftn_demo_room_seeder.py`:
+  - **Smoke Room Jazz · 18+ After Hours** — live jazz quartet, whisper voice
+  - **Red Silk Lounge · 18+** — masked profiles + Frost-Filtered auction
+  - **Midnight Burlesque · 18+ Cabaret** — performer rotation + tip-to-suggest
+  - **Speakeasy Truths · 18+ Confession Booth** — anonymous voice circle
+  - **Afterglow Dance Floor · 18+** — live DJ + DJ_INTERCEPT queue
+- Every 18+ room declares `tier: "18+"` and `settings.age_gated: True`
+  so the **Global Vibez Guard** age handshake (`/api/totem-pole/tv/age-verify`)
+  enforces before entry.
+- Seeder is idempotent — verified: `created=0 healed=0 untouched=8`.
+- Discover endpoint `/api/just-for-the-night/rooms/discover` returns
+  all 8 (3 PG-13 + 5 18+) plus any user-created rooms.
+
+### 3. Streamer Setup Guide — Lyric Glasshouse pro-tip callout
+- New `setup-protip-glasshouse` block on the public Setup Guide:
+  *"Drop {SITE}/music/glasshouse into a SECOND OBS browser source for
+  an instant 3D backdrop while you're recording."*
+- Includes "Preview the Glasshouse" CTA → `/music/glasshouse`
+- Verified live on the preview URL — beautiful gradient block with
+  inline code, body copy, and CTA all rendering.
+
+### Regression shield: 197 → 200
+Added 3 new gates (technically 5 assertions, consolidated):
+- `test_sound_check_leaderboard_module_exists`
+- `test_sound_check_vote_broadcasts`
+- `test_jftn_library_has_18plus_rooms`
+- Updated: `test_streamer_setup_guide_marketing_page` now asserts the
+  Glasshouse pro-tip block + CTA exist
+- Updated: `test_jftn_demo_room_seeder_wired` accepts ≥3 PG-13 rooms
+  + extra tiered rooms (no longer hard-coded to 3)
+
+**200/200 passing.** Backend lint clean. Frontend webpack 0 errors.
+
+### Pre-deploy health
+- ✅ `sound-check leaderboard handlers registered`
+- ✅ `TV Totem-Pole survive scheduler started (5-min ticks)`
+- ✅ `Memory Bank Cinema auto-archive started`
+- ✅ `JFTN demo-room seeder: created=0 healed=0 untouched=8` (3 PG-13 + 5 18+)
+- ✅ All 3 P3 founder asks shipped
+
+**Beta-redeploy ready.**
+

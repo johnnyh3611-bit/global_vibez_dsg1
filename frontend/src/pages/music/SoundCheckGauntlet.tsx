@@ -8,8 +8,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ThumbsUp, ThumbsDown, Music2, Trophy } from 'lucide-react';
+import { ArrowLeft, ThumbsUp, ThumbsDown, Music2, Trophy, Crown } from 'lucide-react';
 import { toast } from 'sonner';
+import { io, Socket } from 'socket.io-client';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -26,6 +27,30 @@ export default function SoundCheckGauntlet() {
   const [secs, setSecs] = useState(15);
   const [graduated, setGraduated] = useState<string | null>(null);
   const startRef = useRef(Date.now());
+
+  // ─────── Real-time leaderboard via Socket.IO
+  // Subscribes to `sound_check_leaderboard` so every Vibe / No-Vibe
+  // vote anywhere on the platform animates the top-10 here.
+  const [leaderboard, setLeaderboard] = useState<{ track_id: string; hype_score: number; vote_count: number }[]>([]);
+  const [pulseId, setPulseId] = useState<string | null>(null);
+  useEffect(() => {
+    const sock: Socket = io(API!, {
+      path: '/api/socket.io',
+      transports: ['polling', 'websocket'],
+      reconnection: true,
+    });
+    sock.on('connect', () => sock.emit('sound_check_join'));
+    sock.on('sound_check_leaderboard', (msg: any) => {
+      setLeaderboard(msg?.top || []);
+      if (msg?.triggered_by) {
+        setPulseId(msg.triggered_by);
+        setTimeout(() => setPulseId(null), 1200);
+      }
+    });
+    return () => {
+      try { sock.emit('sound_check_leave'); sock.disconnect(); } catch {}
+    };
+  }, []);
 
   const track = TRACKS[idx];
 
@@ -125,6 +150,44 @@ export default function SoundCheckGauntlet() {
             <div className="text-xs text-amber-100/70 mt-1">5 minutes on Vibe TV — automatic.</div>
           </motion.div>
         )}
+
+        {/* Real-time leaderboard — driven by socket.io
+            `sound_check_leaderboard` events. Empty until the first
+            vote lands; auto-fills on connect via the snapshot push. */}
+        <div className="mt-6 rounded-2xl bg-stone-900/60 border border-fuchsia-500/30 p-4" data-testid="sc-leaderboard">
+          <div className="flex items-center gap-2 mb-3">
+            <Crown className="w-4 h-4 text-amber-300" />
+            <div className="font-black text-sm uppercase tracking-widest text-amber-200">Live Top 10 · Hype</div>
+            <span className="ml-auto text-[10px] uppercase tracking-widest text-emerald-300 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> live
+            </span>
+          </div>
+          {leaderboard.length === 0 ? (
+            <div className="text-xs text-white/50 text-center py-3">Cast a vote — the leaderboard updates the instant any track moves.</div>
+          ) : (
+            <div className="space-y-1.5">
+              {leaderboard.map((row, i) => (
+                <motion.div
+                  key={row.track_id}
+                  layout
+                  data-testid={`sc-leaderboard-row-${row.track_id}`}
+                  animate={pulseId === row.track_id ? { scale: [1, 1.03, 1], backgroundColor: ['rgba(217,70,239,0.15)', 'rgba(217,70,239,0.4)', 'rgba(217,70,239,0.15)'] } : {}}
+                  transition={{ duration: 0.6 }}
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg bg-fuchsia-500/10 border border-fuchsia-400/20"
+                >
+                  <div className={`w-6 text-center font-mono text-xs font-black ${i === 0 ? 'text-amber-300' : i === 1 ? 'text-zinc-300' : i === 2 ? 'text-orange-300' : 'text-white/50'}`}>
+                    #{i + 1}
+                  </div>
+                  <div className="flex-1 truncate text-sm font-mono">{row.track_id}</div>
+                  <div className="text-right">
+                    <div className="font-mono font-black text-fuchsia-300 text-sm">{row.hype_score}</div>
+                    <div className="text-[10px] text-white/40">{row.vote_count} votes</div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
