@@ -7,7 +7,7 @@
  * Gating: POST /api/agent/learn requires the admin_session cookie;
  * non-admin users just get a 401 and a toast.
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 const CATEGORIES = ["Visuals", "Flow", "Rules", "Treasury", "Games", "Other"];
@@ -17,6 +17,21 @@ export const LogDesignLesson = () => {
   const [insight, setInsight] = useState("");
   const [category, setCategory] = useState("Visuals");
   const [msg, setMsg] = useState<string | null>(null);
+  // Vigilant Agent v2 fix — hide when CornerDock takes over the corner.
+  const [hiddenByDock, setHiddenByDock] = useState<boolean>(
+    typeof document !== "undefined" && document.body.dataset.cornerDockActive === "1",
+  );
+
+  useEffect(() => {
+    const onActive = () => setHiddenByDock(true);
+    const onInactive = () => setHiddenByDock(false);
+    window.addEventListener("cdock:active", onActive);
+    window.addEventListener("cdock:inactive", onInactive);
+    return () => {
+      window.removeEventListener("cdock:active", onActive);
+      window.removeEventListener("cdock:inactive", onInactive);
+    };
+  }, []);
 
   const submit = async () => {
     setMsg(null);
@@ -42,6 +57,7 @@ export const LogDesignLesson = () => {
   };
 
   if (!open) {
+    if (hiddenByDock) return null;
     return (
       <button
         onClick={() => setOpen(true)}

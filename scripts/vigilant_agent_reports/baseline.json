@@ -1,6 +1,6 @@
 {
-  "url": "https://globalvibezdsg.com",
-  "started_at": "2026-05-09T11:12:43.561Z",
+  "url": "https://social-connect-953.preview.emergentagent.com",
+  "started_at": "2026-05-09T12:34:34.165Z",
   "devices": [
     {
       "name": "Desktop_4K",
@@ -52,94 +52,45 @@
           "b_testid": null
         },
         {
-          "a": "BUTTON",
+          "a": "DIV",
           "b": "DIV",
           "overlap_pct": 100,
-          "a_testid": "log-design-lesson-toggle",
+          "a_testid": "corner-dock-left",
+          "b_testid": null
+        },
+        {
+          "a": "DIV",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "corner-dock-left",
+          "b_testid": "landing-room-tint-overlay"
+        },
+        {
+          "a": "DIV",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "corner-dock-left",
           "b_testid": null
         },
         {
           "a": "BUTTON",
           "b": "DIV",
           "overlap_pct": 100,
-          "a_testid": "log-design-lesson-toggle",
+          "a_testid": "corner-dock-left-trigger",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "corner-dock-left-trigger",
           "b_testid": "landing-room-tint-overlay"
         },
         {
           "a": "BUTTON",
           "b": "DIV",
           "overlap_pct": 100,
-          "a_testid": "log-design-lesson-toggle",
-          "b_testid": null
-        },
-        {
-          "a": "BUTTON",
-          "b": "DIV",
-          "overlap_pct": 100,
-          "a_testid": "globe-fab-button",
-          "b_testid": null
-        },
-        {
-          "a": "BUTTON",
-          "b": "DIV",
-          "overlap_pct": 100,
-          "a_testid": "globe-fab-button",
-          "b_testid": "landing-room-tint-overlay"
-        },
-        {
-          "a": "BUTTON",
-          "b": "DIV",
-          "overlap_pct": 100,
-          "a_testid": "globe-fab-button",
-          "b_testid": null
-        },
-        {
-          "a": "BUTTON",
-          "b": "A#emergent-badge",
-          "overlap_pct": 94,
-          "a_testid": "globe-fab-button",
-          "b_testid": null
-        },
-        {
-          "a": "BUTTON",
-          "b": "P",
-          "overlap_pct": 57,
-          "a_testid": "globe-fab-button",
-          "b_testid": null
-        },
-        {
-          "a": "SPAN",
-          "b": "DIV",
-          "overlap_pct": 100,
-          "a_testid": null,
-          "b_testid": null
-        },
-        {
-          "a": "SPAN",
-          "b": "DIV",
-          "overlap_pct": 100,
-          "a_testid": null,
-          "b_testid": "landing-room-tint-overlay"
-        },
-        {
-          "a": "SPAN",
-          "b": "DIV",
-          "overlap_pct": 100,
-          "a_testid": null,
-          "b_testid": null
-        },
-        {
-          "a": "SPAN",
-          "b": "A#emergent-badge",
-          "overlap_pct": 100,
-          "a_testid": null,
-          "b_testid": null
-        },
-        {
-          "a": "SPAN",
-          "b": "P",
-          "overlap_pct": 81,
-          "a_testid": null,
+          "a_testid": "corner-dock-left-trigger",
           "b_testid": null
         },
         {
@@ -164,28 +115,84 @@
           "b_testid": null
         },
         {
-          "a": "svg",
-          "b": "A#emergent-badge",
+          "a": "path",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": null
+        },
+        {
+          "a": "path",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": "landing-room-tint-overlay"
+        },
+        {
+          "a": "path",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": null
+        },
+        {
+          "a": "SPAN",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": null
+        },
+        {
+          "a": "SPAN",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": "landing-room-tint-overlay"
+        },
+        {
+          "a": "SPAN",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": null
+        },
+        {
+          "a": "SPAN",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": null
+        },
+        {
+          "a": "SPAN",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": "landing-room-tint-overlay"
+        },
+        {
+          "a": "SPAN",
+          "b": "DIV",
           "overlap_pct": 100,
           "a_testid": null,
           "b_testid": null
         },
         {
           "a": "svg",
-          "b": "P",
-          "overlap_pct": 81,
-          "a_testid": null,
-          "b_testid": null
-        },
-        {
-          "a": "circle",
-          "b": "path",
+          "b": "DIV",
           "overlap_pct": 100,
           "a_testid": null,
           "b_testid": null
         }
       ],
       "duplicate_testids": [],
+      "fab_stacks": {
+        "fab_count_by_corner": {
+          "bottom-left": 2,
+          "bottom-right": 2
+        },
+        "stacked_pairs": []
+      },
       "nav_error": null
     },
     {
@@ -238,74 +245,116 @@
           "b_testid": null
         },
         {
-          "a": "BUTTON",
-          "b": "BUTTON",
-          "overlap_pct": 100,
-          "a_testid": "orientation-fab",
-          "b_testid": "log-design-lesson-toggle"
-        },
-        {
-          "a": "BUTTON",
+          "a": "DIV",
           "b": "DIV",
           "overlap_pct": 100,
-          "a_testid": "orientation-fab",
+          "a_testid": "corner-dock-left",
+          "b_testid": null
+        },
+        {
+          "a": "DIV",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "corner-dock-left",
+          "b_testid": "landing-room-tint-overlay"
+        },
+        {
+          "a": "DIV",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "corner-dock-left",
+          "b_testid": null
+        },
+        {
+          "a": "DIV",
+          "b": "SECTION",
+          "overlap_pct": 100,
+          "a_testid": "corner-dock-left",
+          "b_testid": null
+        },
+        {
+          "a": "DIV",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "corner-dock-left",
+          "b_testid": null
+        },
+        {
+          "a": "DIV",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "corner-dock-left",
+          "b_testid": null
+        },
+        {
+          "a": "DIV",
+          "b": "DIV",
+          "overlap_pct": 23,
+          "a_testid": "corner-dock-left",
+          "b_testid": null
+        },
+        {
+          "a": "DIV",
+          "b": "BUTTON",
+          "overlap_pct": 23,
+          "a_testid": "corner-dock-left",
           "b_testid": null
         },
         {
           "a": "BUTTON",
           "b": "DIV",
           "overlap_pct": 100,
-          "a_testid": "orientation-fab",
+          "a_testid": "corner-dock-left-trigger",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "corner-dock-left-trigger",
           "b_testid": "landing-room-tint-overlay"
         },
         {
           "a": "BUTTON",
           "b": "DIV",
           "overlap_pct": 100,
-          "a_testid": "orientation-fab",
+          "a_testid": "corner-dock-left-trigger",
           "b_testid": null
         },
         {
           "a": "BUTTON",
           "b": "SECTION",
           "overlap_pct": 100,
-          "a_testid": "orientation-fab",
+          "a_testid": "corner-dock-left-trigger",
           "b_testid": null
         },
         {
           "a": "BUTTON",
           "b": "DIV",
           "overlap_pct": 100,
-          "a_testid": "orientation-fab",
+          "a_testid": "corner-dock-left-trigger",
           "b_testid": null
         },
         {
           "a": "BUTTON",
           "b": "DIV",
           "overlap_pct": 100,
-          "a_testid": "orientation-fab",
+          "a_testid": "corner-dock-left-trigger",
           "b_testid": null
         },
         {
           "a": "BUTTON",
           "b": "DIV",
           "overlap_pct": 23,
-          "a_testid": "orientation-fab",
+          "a_testid": "corner-dock-left-trigger",
           "b_testid": null
         },
         {
           "a": "BUTTON",
           "b": "BUTTON",
           "overlap_pct": 23,
-          "a_testid": "orientation-fab",
+          "a_testid": "corner-dock-left-trigger",
           "b_testid": null
-        },
-        {
-          "a": "svg",
-          "b": "BUTTON",
-          "overlap_pct": 100,
-          "a_testid": null,
-          "b_testid": "log-design-lesson-toggle"
         },
         {
           "a": "svg",
@@ -323,48 +372,6 @@
         },
         {
           "a": "svg",
-          "b": "DIV",
-          "overlap_pct": 100,
-          "a_testid": null,
-          "b_testid": null
-        },
-        {
-          "a": "svg",
-          "b": "SECTION",
-          "overlap_pct": 100,
-          "a_testid": null,
-          "b_testid": null
-        },
-        {
-          "a": "svg",
-          "b": "DIV",
-          "overlap_pct": 100,
-          "a_testid": null,
-          "b_testid": null
-        },
-        {
-          "a": "svg",
-          "b": "DIV",
-          "overlap_pct": 100,
-          "a_testid": null,
-          "b_testid": null
-        },
-        {
-          "a": "path",
-          "b": "path",
-          "overlap_pct": 100,
-          "a_testid": null,
-          "b_testid": null
-        },
-        {
-          "a": "path",
-          "b": "BUTTON",
-          "overlap_pct": 100,
-          "a_testid": null,
-          "b_testid": "log-design-lesson-toggle"
-        },
-        {
-          "a": "path",
           "b": "DIV",
           "overlap_pct": 100,
           "a_testid": null,
@@ -372,6 +379,13 @@
         }
       ],
       "duplicate_testids": [],
+      "fab_stacks": {
+        "fab_count_by_corner": {
+          "bottom-left": 2,
+          "bottom-right": 2
+        },
+        "stacked_pairs": []
+      },
       "nav_error": null
     },
     {
@@ -424,142 +438,149 @@
           "b_testid": null
         },
         {
-          "a": "BUTTON",
-          "b": "BUTTON",
-          "overlap_pct": 74,
-          "a_testid": "orientation-fab",
-          "b_testid": "log-design-lesson-toggle"
-        },
-        {
-          "a": "BUTTON",
+          "a": "DIV",
           "b": "DIV",
           "overlap_pct": 100,
-          "a_testid": "orientation-fab",
+          "a_testid": "corner-dock-left",
           "b_testid": null
         },
         {
-          "a": "BUTTON",
+          "a": "DIV",
           "b": "DIV",
           "overlap_pct": 100,
-          "a_testid": "orientation-fab",
+          "a_testid": "corner-dock-left",
           "b_testid": "landing-room-tint-overlay"
         },
         {
-          "a": "BUTTON",
+          "a": "DIV",
           "b": "DIV",
           "overlap_pct": 100,
-          "a_testid": "orientation-fab",
+          "a_testid": "corner-dock-left",
           "b_testid": null
         },
         {
-          "a": "BUTTON",
+          "a": "DIV",
           "b": "SECTION",
           "overlap_pct": 100,
-          "a_testid": "orientation-fab",
+          "a_testid": "corner-dock-left",
           "b_testid": null
         },
         {
-          "a": "BUTTON",
+          "a": "DIV",
           "b": "DIV",
-          "overlap_pct": 90,
-          "a_testid": "orientation-fab",
+          "overlap_pct": 95,
+          "a_testid": "corner-dock-left",
           "b_testid": null
         },
         {
-          "a": "BUTTON",
+          "a": "DIV",
           "b": "DIV",
-          "overlap_pct": 90,
-          "a_testid": "orientation-fab",
+          "overlap_pct": 95,
+          "a_testid": "corner-dock-left",
           "b_testid": null
         },
         {
-          "a": "BUTTON",
+          "a": "DIV",
           "b": "DIV",
-          "overlap_pct": 90,
-          "a_testid": "orientation-fab",
+          "overlap_pct": 95,
+          "a_testid": "corner-dock-left",
           "b_testid": null
         },
         {
-          "a": "BUTTON",
+          "a": "DIV",
           "b": "SECTION",
-          "overlap_pct": 90,
-          "a_testid": "orientation-fab",
+          "overlap_pct": 95,
+          "a_testid": "corner-dock-left",
           "b_testid": "burn-counter-widget"
         },
         {
-          "a": "BUTTON",
+          "a": "DIV",
           "b": "DIV",
-          "overlap_pct": 94,
-          "a_testid": "orientation-fab",
+          "overlap_pct": 97,
+          "a_testid": "corner-dock-left",
           "b_testid": null
         },
         {
-          "a": "BUTTON",
+          "a": "DIV",
           "b": "DIV",
-          "overlap_pct": 48,
-          "a_testid": "orientation-fab",
+          "overlap_pct": 73,
+          "a_testid": "corner-dock-left",
           "b_testid": null
         },
         {
-          "a": "BUTTON",
+          "a": "DIV",
           "b": "DIV",
-          "overlap_pct": 48,
-          "a_testid": "orientation-fab",
+          "overlap_pct": 73,
+          "a_testid": "corner-dock-left",
           "b_testid": "burn-counter-tiles"
         },
         {
-          "a": "BUTTON",
+          "a": "DIV",
           "b": "DIV",
-          "overlap_pct": 48,
-          "a_testid": "orientation-fab",
+          "overlap_pct": 73,
+          "a_testid": "corner-dock-left",
           "b_testid": "burn-tile-24h"
         },
         {
-          "a": "svg",
-          "b": "BUTTON",
-          "overlap_pct": 100,
-          "a_testid": null,
-          "b_testid": "log-design-lesson-toggle"
-        },
-        {
-          "a": "svg",
+          "a": "DIV",
           "b": "DIV",
-          "overlap_pct": 100,
-          "a_testid": null,
+          "overlap_pct": 66,
+          "a_testid": "corner-dock-left",
           "b_testid": null
         },
         {
-          "a": "svg",
+          "a": "DIV",
+          "b": "DIV",
+          "overlap_pct": 47,
+          "a_testid": "corner-dock-left",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
           "b": "DIV",
           "overlap_pct": 100,
-          "a_testid": null,
+          "a_testid": "corner-dock-left-trigger",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "corner-dock-left-trigger",
           "b_testid": "landing-room-tint-overlay"
         },
         {
-          "a": "svg",
+          "a": "BUTTON",
           "b": "DIV",
           "overlap_pct": 100,
-          "a_testid": null,
+          "a_testid": "corner-dock-left-trigger",
           "b_testid": null
         },
         {
-          "a": "svg",
+          "a": "BUTTON",
           "b": "SECTION",
           "overlap_pct": 100,
-          "a_testid": null,
+          "a_testid": "corner-dock-left-trigger",
           "b_testid": null
         },
         {
-          "a": "svg",
+          "a": "BUTTON",
           "b": "DIV",
-          "overlap_pct": 100,
-          "a_testid": null,
+          "overlap_pct": 95,
+          "a_testid": "corner-dock-left-trigger",
           "b_testid": null
         }
       ],
       "duplicate_testids": [],
+      "fab_stacks": {
+        "fab_count_by_corner": {
+          "bottom-left": 2,
+          "bottom-right": 2
+        },
+        "stacked_pairs": []
+      },
       "nav_error": null
     }
   ],
-  "finished_at": "2026-05-09T11:13:37.537Z"
+  "finished_at": "2026-05-09T12:35:22.576Z"
 }

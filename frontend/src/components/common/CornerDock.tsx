@@ -35,7 +35,10 @@ import CornerDockTooltip from "./CornerDockTooltip";
 const HIDE_PATTERNS: RegExp[] = [
   /^\/streamer\/overlay/,   // OBS scene capture must stay clean.
   /^\/login/, /^\/signup/, /^\/auth/,
-  /^\/$/,                   // Landing page already busy; respect founder ask.
+  // Landing route NOT hidden anymore (2026-02-09 founder polish):
+  // CornerDock activates on `/` too so anonymous visitors can reach
+  // Cultural Hub / Fresh Drops, and GlobeFAB stops colliding with
+  // the platform-injected "Made with Emergent" badge.
 ];
 
 interface DockItem {
@@ -85,9 +88,10 @@ const DockSide: React.FC<{
   const positionClass =
     side === "left"
       ? "fixed bottom-4 left-4 z-[9995]"
-      // Right side leaves 220 px of clearance for the platform's
-      // "Made with Emergent" badge that we can't move from app code.
-      : "fixed bottom-4 right-[230px] z-[9995]";
+      // Right side: on mobile the Emergent badge takes the bottom-
+      // right corner, so we sit ABOVE it. On ≥sm, badge moves to
+      // the side and we have room next to it.
+      : "fixed bottom-20 right-4 sm:bottom-4 sm:right-[230px] z-[9995]";
 
   return (
     <div
@@ -175,10 +179,18 @@ const CornerDock: React.FC = () => {
 
   // Mark body so the underlying FABs can hide their own trigger
   // buttons via document.body.dataset (no React-tree coupling).
+  // Also fire window events so FABs that mounted BEFORE this dock
+  // (race condition) get a synchronous signal to hide.
   useEffect(() => {
     document.body.dataset.cornerDockActive = "1";
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("cdock:active"));
+    }
     return () => {
       delete document.body.dataset.cornerDockActive;
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("cdock:inactive"));
+      }
     };
   }, []);
 
