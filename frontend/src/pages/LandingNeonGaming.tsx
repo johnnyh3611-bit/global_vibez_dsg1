@@ -25,12 +25,23 @@ import VibeVenuesSpotlight from '../components/landing/VibeVenuesSpotlight';
 import ChairWallTeaser from '../components/landing/ChairWallTeaser';
 import WaysToEarn from '../components/landing/WaysToEarn';
 import LandingLanguageSwitcher from '../components/LandingLanguageSwitcher';
+import LandingHeaderEnhanced, { type RoomKey } from '../components/landing/LandingHeaderEnhanced';
+import LandingFeatureAccordions from '../components/landing/LandingFeatureAccordions';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
 export default function LandingNeonGaming() {
   const navigate = useNavigate();
   const [hoveredGame, setHoveredGame] = useState(null);
+  // PDF §2 "Room Transitions" — when a nav link is hovered, shift the
+  // page's ambient background tint to evoke the target room.
+  const [hoveredRoom, setHoveredRoom] = useState<RoomKey>(null);
+
+  const ROOM_TINT: Record<Exclude<RoomKey, null>, string> = {
+    game_logic: "rgba(34, 211, 238, 0.18)",   // cyan — Cyber-Casino
+    tokenomics: "rgba(251, 191, 36, 0.18)",   // amber — vault
+    lifestyle:  "rgba(232, 121, 249, 0.18)",  // fuchsia — lifestyle
+  };
 
   const games = [
     { name: 'UNO', image: '/uno-card.png' },
@@ -41,8 +52,25 @@ export default function LandingNeonGaming() {
 
   return (
     <div className="min-h-screen bg-black relative">
-      {/* Platform Live Wins Ticker — sticky above everything */}
-      <WinnerTicker className="sticky top-0 z-50" />
+      {/* AAA-game-style landing nav. Founder directive 2026-02-09:
+          NO STICK — header just scrolls away with the page. */}
+      <LandingHeaderEnhanced onRoomHover={setHoveredRoom} />
+
+      {/* PDF §2 — room-transition tint overlay. Non-interactive; only
+          fades in when a nav link is hovered. Stays fixed because it
+          IS a viewport-wide ambient effect, not a UI chrome element. */}
+      <motion.div
+        aria-hidden
+        className="fixed inset-0 z-[1] pointer-events-none"
+        animate={{
+          backgroundColor: hoveredRoom ? ROOM_TINT[hoveredRoom] : "rgba(0,0,0,0)",
+        }}
+        transition={{ duration: 0.45, ease: "easeOut" }}
+        data-testid="landing-room-tint-overlay"
+      />
+
+      {/* Platform Live Wins Ticker — flows in document order, no sticky. */}
+      <WinnerTicker className="relative z-40" />
 
       {/* Apex Evolution countdown banner — auto-hides if no event configured */}
       <EvolutionCountdown />
@@ -81,71 +109,8 @@ export default function LandingNeonGaming() {
         />
       </div>
 
-      {/* Header — sticky so the 🌐 language switcher stays visible while
-          scrolling (founder request, May 2026). Sits just below the
-          WinnerTicker (which is at top-0 z-50). */}
-      <motion.header
-        initial={{ y: -100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.6 }}
-        className="sticky top-10 z-40 px-6 py-4 bg-black/80 backdrop-blur-xl border-b border-purple-500/20"
-      >
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/vibe-vault-admin')} data-testid="landing-logo">
-            {/* Brand logo image — the PNG itself has been chroma-keyed
-                to true transparency (Feb 2026) so we no longer need
-                `mix-blend-screen` hacks. DO NOT add background, border,
-                padding, or blend-mode classes — the file is the source
-                of truth and renders correctly on any backdrop. */}
-            <img
-              src="/global-vibez-logo.png?v=10"
-              alt="Global Vibez DSG Logo"
-              className="h-14 w-auto object-contain drop-shadow-[0_0_22px_rgba(217,70,239,0.45)]"
-            />
-            <div>
-              <h1 className="text-2xl font-black" onClick={(e) => { e.stopPropagation(); navigate('/'); }}>
-                <span className="text-white">GLOBAL VIBEZ</span>{' '}
-                <span className="text-transparent bg-gradient-to-r from-fuchsia-500 to-purple-500 bg-clip-text">
-                  DSG
-                </span>
-              </h1>
-              <p className="text-xs text-purple-400 font-mono uppercase tracking-wider">
-                Gaming · Dating · Rides · Food · Venues
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            {/* Language / country switcher (Feb 2026 Late × 6) — moved here
-                from the brand area because the founder's God-Mode hotspot
-                wraps the entire logo block (line 91 onClick). Lives in its
-                own portal so clicks never bubble to /vibe-vault-admin.
-                Wired to globalVibeSync (auto-detect, persist locally,
-                broadcast `gv:locale-changed`). */}
-            <LandingLanguageSwitcher />
-
-            {/* In-app Phantom Connect — non-custodial Solana wallet via
-                Google / Apple OAuth. Hidden on small screens to keep the
-                nav from wrapping; the same button lives on the Treasury
-                panel for the desktop admin flow. */}
-            <div className="hidden lg:flex" data-testid="landing-nav-phantom-wrapper">
-              <PhantomConnectButton label="Connect Wallet" />
-            </div>
-
-            <button
-              onClick={() => navigate('/login')}
-              className="px-6 py-2 text-purple-400 font-bold hover:text-fuchsia-400 transition-colors border border-purple-500/30 rounded-lg hover:border-fuchsia-500"
-            >
-              Sign In
-            </button>
-            <button
-              onClick={() => navigate('/signup')}
-              className="px-8 py-2 bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white font-bold rounded-lg hover:scale-105 transition-transform shadow-lg shadow-fuchsia-500/50"
-            >
-              Join Now
-            </button>
-          </div>
-        </div>
-      </motion.header>
+      {/* Header — replaced by <LandingHeaderEnhanced /> mounted at the
+          top of this page (LandingPage_Enhancement.pdf §1+§2). */}
 
       {/* Hero Section */}
       <section className="relative z-10 px-6 py-20 max-w-7xl mx-auto">
@@ -535,6 +500,12 @@ export default function LandingNeonGaming() {
       {/* Utility Rooms Dock — one-click hub for every room. Replaces the
            cluttered top-nav strip the user explicitly asked us to remove. */}
       <UtilityRoomsDock />
+
+      {/* PDF §3 — Progressive Information Compression accordions
+          (Game Logic / Tokenomics / Lifestyle Hub). Mounted right after
+          the rooms dock so first-time visitors who scroll past the hero
+          land on click-to-expand explanations of how the platform works. */}
+      <LandingFeatureAccordions />
 
       {/* 🪧 Social Infrastructure Network — LOCKED v8.0 Marketing OneSheet */}
       <section

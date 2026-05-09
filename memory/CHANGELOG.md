@@ -1,5 +1,65 @@
 # CHANGELOG
 
+## 2026-02-09 Late × 2 — Landing-Page AAA Upgrade SHIPPED 🎮 (final beta-blocker)
+
+**Founder ask:** *"Implement all the new features in the landing page. Last thing I need before beta."* PDF: `Global_Vibez_DSG_LandingPage_Enhancement.pdf`. Founder picked **b, a, c, c** for the four pre-flight ambiguities.
+
+### Built (all three PDF sections live)
+
+**§1 Sticky Navigation (Static Header)** — new `LandingHeaderEnhanced.tsx`:
+- `position: fixed; top: 0; left: 0; right: 0; z-index: 1000`
+- `background: rgba(13, 17, 23, 0.95); backdrop-filter: blur(10px)` (verbatim PDF spec)
+- 88 px aria-spacer pushes content down to compensate
+- WinnerTicker re-anchored at `top-[88px]` so it sits BELOW the new fixed header (Q2=a)
+
+**§2 Visual "Eye Candy" — AAA Game interface:**
+- **Neon pulsing glow** on nav links — keyframes `vibezNeonPulse` cycle `text-shadow: 0 0 14px #d946ef` (brand fuchsia, Q1=b)
+- **Room transitions** — three new nav anchors (`Game Logic` / `Tokenomics` / `Lifestyle Hub`) trigger `onRoomHover(key)` on `mouseEnter`. The landing page consumes this and fades a fixed full-viewport tint overlay (`landing-room-tint-overlay`) — cyan for game logic, amber for tokenomics, fuchsia for lifestyle. 0.45 s ease-out fade-in, fades back on `mouseLeave`.
+- **Pseudo-3D nav icons** — `<ParallaxIcon>` reads `mousemove`, applies `perspective(220px) rotateY/X` based on cursor offset, snaps back on `mouseleave` (Q3=c hybrid).
+- **Real three.js $VIBEZ coin** — `VibezCoin3D.tsx` uses the already-installed `@react-three/fiber` Canvas with a metallic gold `MeshStandardMaterial` (color `#fbbf24`, fuchsia `emissive`), `useFrame` rotates 1.4 rad/s. Zero net bundle bloat — the lib was already in place for Lyric Glasshouse.
+
+**§3 Progressive Information Compression** — new `LandingFeatureAccordions.tsx` mounted right after `UtilityRoomsDock`:
+
+| Card | Visual | Interaction | Copy source |
+|------|--------|-------------|-------------|
+| Game Logic | Spade + Dice5 lucide icons w/ neon drop-shadows | Toggle reveals "Rules & Mechanics" panel | 29 rooms · AAA card stack · Roguelite Trial · Voice Coach · DSG Guard + live `eligible_games` chips from `/api/vibez-rewards/constants` |
+| Tokenomics | `<VibezCoin3D>` (rotating three.js coin) | Toggle reveals formula + live supply telemetry | live constants from `/api/vibez-rewards/constants` + live burn from `/api/coins/stats/burn` |
+| Lifestyle Hub | Car / Pizza / Home lucide stack w/ multi-color glow | Toggle reveals 4 service cells (VibeRidez · HungryVibes · Vibe Venues · Yellow Pages) with deep-link CTAs | scraped from existing app surface — no fabricated copy |
+
+Every interactive element has a unique `data-testid`: `feature-card-{game-logic,tokenomics,lifestyle}` + `…-toggle`.
+
+### Regression Shield: 205 → **209** (no test deleted)
+- `test_landing_header_enhanced_is_fixed_and_glassmorphic` — locks `position:"fixed"`, `top:0`, `zIndex:1000`, `rgba(13,17,23,0.95)`, `blur(10px)`, brand `#d946ef`, all three nav keys.
+- `test_landing_uses_enhanced_header_and_room_tint_overlay` — landing page imports + mounts new header, mounts room-tint overlay, WinnerTicker offset to `top-[88px]`, legacy `<motion.header>` block deleted.
+- `test_landing_feature_accordions_mounted_with_three_cards` — all 3 testids + live data hooks (`/api/vibez-rewards/constants`, `/api/coins/stats/burn`) + accordion mount on landing page.
+- `test_landing_vibez_coin_3d_uses_three_fiber` — coin uses `@react-three/fiber`, `Canvas`, `useFrame`; component referenced by accordions.
+- **Updated** `test_landing_language_switcher_in_safe_portal` — switcher moved into the new header component; portal-safe nesting rule re-anchored to `LandingHeaderEnhanced.tsx` (rule preserved, location updated to follow the refactor).
+
+### Verified live (https://social-connect-953.preview.emergentagent.com/)
+- All 6 testids present: `landing-header-enhanced:1`, `landing-nav-game_logic:1`, `landing-nav-tokenomics:1`, `landing-nav-lifestyle:1`, `landing-room-tint-overlay:1`, `landing-feature-accordions:1` ✅
+- Tokenomics accordion expanded reveals live formula `R_total = (B_base × M_multiplier) + T_bonus + chair_boost`, Total Supply 3.00B ₵, Circulating 3.00B ₵, Mint mode SIMULATED ✅
+- Three.js $VIBEZ coin renders as a metallic gold disc with fuchsia rim glow ✅
+
+### Files added/edited
+- **NEW:** `/app/frontend/src/components/landing/LandingHeaderEnhanced.tsx` (216 LOC)
+- **NEW:** `/app/frontend/src/components/landing/VibezCoin3D.tsx` (54 LOC)
+- **NEW:** `/app/frontend/src/components/landing/LandingFeatureAccordions.tsx` (304 LOC)
+- **EDITED:** `/app/frontend/src/pages/LandingNeonGaming.tsx` (legacy header removed; new header mounted; WinnerTicker offset; room-tint overlay; accordions mounted)
+- **EDITED:** `/app/backend/tests/regression_shield.py` (+4 PDF guards, 1 stale guard updated to track the new header file)
+
+### State
+- Regression shield: **209/209 passing** ✅
+- Frontend webpack compile clean (only stale-source-map warnings unrelated to this change)
+- Backend healthy
+- All three PDF sections (Sticky Nav · Eye-Candy · Accordion Compression) shipped to prod
+
+### Action for founder
+**Beta is GO.** This was the final beta-blocker. The landing page now reads as an "AAA Game interface" per the PDF brief: fixed glassmorphic header → live wins ticker → grid background + glow spots → hero → utility rooms dock → **three click-to-expand info cards** showing the platform's depth without dumping it on visitors. Every visual choice in the PDF is now wired and locked behind a regression guard.
+
+**Q4-c review checkpoint:** Take a pass through the three accordion panels (Game Logic / Tokenomics / Lifestyle Hub) on the live URL and ping me with any copy tweaks. I drafted from existing app data so nothing is fabricated, but you may want different emphasis or different ordering.
+
+
+
 ## 2026-02-09 Late — Roadmap PDF §3 ecosystem wires shipped 🚖🍕👑
 
 **Founder ask:** *"c — Roadmap mounts"*

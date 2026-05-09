@@ -2434,11 +2434,12 @@ def test_landing_language_switcher_in_safe_portal() -> None:
     assert "LandingLanguageSwitcher" in landing
     assert 'data-testid="landing-nav-games"' not in landing, \
         "Legacy Games nav button must be removed (replaced by language switcher)"
-    # The switcher must be rendered in the right-side flex (next to
-    # Sign In / Join Now), not inside the brand block. We assert by
-    # checking it sits *after* the closing of the brand div.
-    brand_close_idx = landing.find("data-testid=\"landing-logo\"")
-    switcher_idx = landing.find("<LandingLanguageSwitcher />")
+    # 2026-02-09: After LandingPage_Enhancement.pdf the brand block +
+    # switcher moved into LandingHeaderEnhanced.tsx. The portal-safe
+    # nesting rule is preserved IN THAT COMPONENT — verify there.
+    header = (root / "frontend/src/components/landing/LandingHeaderEnhanced.tsx").read_text(encoding="utf-8")
+    brand_close_idx = header.find("data-testid=\"landing-logo\"")
+    switcher_idx = header.find("<LandingLanguageSwitcher />")
     assert brand_close_idx > 0 and switcher_idx > 0
     # Switcher must be placed AFTER landing-logo's onClick handler line.
     assert switcher_idx > brand_close_idx, \
@@ -3191,15 +3192,25 @@ def test_aaa_card_shaders_global():
 
 
 def test_landing_language_switcher_sticky():
-    """Founder fix (May 2026): the language switcher / globe must stay
-    pinned to the top during scroll. Sticky positioning on the header
-    + overflow-x: clip on html/body are the two locks."""
-    page = open("/app/frontend/src/pages/LandingNeonGaming.tsx").read()
-    assert "sticky top-" in page, \
-        "Landing header must be sticky so language switcher stays visible"
+    """Founder override (2026-02-09): NO STICK — landing header is no
+    longer sticky/fixed. The language-switcher safety guarantees move
+    to a different invariant: the switcher MUST live inside the
+    LandingHeaderEnhanced component (not nested inside the brand
+    block) so the God-Mode click hotspot can't hijack it. The
+    `overflow-x: clip` rule on html/body still stays for layout
+    stability across the page."""
+    header = open("/app/frontend/src/components/landing/LandingHeaderEnhanced.tsx").read()
+    assert "<LandingLanguageSwitcher />" in header, \
+        "LandingLanguageSwitcher must be rendered inside the new header"
+    # Must sit AFTER the brand block (not nested inside it).
+    brand_idx = header.find('data-testid="landing-logo"')
+    switcher_idx = header.find("<LandingLanguageSwitcher />")
+    assert brand_idx > 0 and switcher_idx > 0
+    assert switcher_idx > brand_idx, \
+        "LandingLanguageSwitcher must NOT be nested inside the God-Mode brand hotspot"
     css = open("/app/frontend/src/index.css").read()
     assert "overflow-x: clip" in css, \
-        "html/body must use `overflow-x: clip` (not hidden) so sticky works"
+        "html/body must keep `overflow-x: clip` for layout stability"
 
 
 def test_dashboard_route_uses_DashboardNew():
@@ -3827,6 +3838,79 @@ def test_roadmap_chat_broadcast_carries_chair_perks():
     live_src = open("/app/frontend/src/pages/LiveStreamPage.tsx").read()
     assert "ChairHolderName" in view_src and "ChairHolderName" in live_src
     assert "chair_perks" in view_src and "chair_perks" in live_src
+
+
+# --- LandingPage_Enhancement.pdf — sticky header / AAA eye-candy /
+# accordion compression. [2026-02-09] These four guards lock the new
+# landing-page architecture so a future agent can't accidentally
+# revert the founder's beta-blocker upgrade.
+
+def test_landing_header_enhanced_is_fixed_and_glassmorphic():
+    """Founder override 2026-02-09 — header MUST scroll with the page
+    (no stick, no fixed). Glassmorphic backdrop + brand-fuchsia neon
+    glow are still locked, but `position: fixed` is now BANNED."""
+    src = open("/app/frontend/src/components/landing/LandingHeaderEnhanced.tsx").read()
+    # Visual chrome still locked.
+    assert 'rgba(13, 17, 23, 0.95)' in src
+    assert 'blur(10px)' in src
+    # Brand fuchsia hex used as the neon-glow color (Q1=b).
+    assert '#d946ef' in src
+    # Header MUST flow with the page — relative, NOT fixed.
+    assert 'position: "relative"' in src
+    assert 'position: "fixed"' not in src, \
+        "Founder said no stick — header must NOT be position:fixed"
+    # All three nav anchors PRESENT (rendered as `landing-nav-${key}`).
+    assert 'landing-nav-${key}' in src
+    assert '"game_logic"' in src
+    assert '"tokenomics"' in src
+    assert '"lifestyle"'  in src
+
+
+def test_landing_uses_enhanced_header_and_room_tint_overlay():
+    """LandingNeonGaming must mount LandingHeaderEnhanced + a room
+    tint overlay (PDF §2 hover Room Transitions). The legacy sticky
+    <motion.header> block must be GONE. The page MUST NOT add a
+    fixed-header spacer (founder override — no stick)."""
+    src = open("/app/frontend/src/pages/LandingNeonGaming.tsx").read()
+    assert 'LandingHeaderEnhanced' in src, \
+        "Landing page must import + render LandingHeaderEnhanced"
+    assert 'landing-room-tint-overlay' in src, \
+        "Landing page must include the per-room hover tint overlay"
+    # WinnerTicker must NOT use sticky-with-offset (founder said no stick).
+    assert 'sticky top-[88px]' not in src, \
+        "WinnerTicker must not be pinned — no stick per founder directive"
+    # And the fixed-header spacer must be gone.
+    assert 'Spacer compensating for the fixed header' not in src
+    # Dead legacy header gone.
+    assert 'sticky top-10 z-40 px-6 py-4 bg-black/80' not in src, \
+        "Legacy sticky landing header block must be removed"
+
+
+def test_landing_feature_accordions_mounted_with_three_cards():
+    """PDF §3 — Progressive Information Compression. Three click-to-
+    expand cards: Game Logic / Tokenomics / Lifestyle Hub."""
+    src = open("/app/frontend/src/components/landing/LandingFeatureAccordions.tsx").read()
+    for tid in ("feature-card-game-logic", "feature-card-tokenomics", "feature-card-lifestyle"):
+        assert tid in src, f"Accordion card data-testid '{tid}' must be present"
+    # Live data hooks pulling from the existing backend rails.
+    assert '/api/vibez-rewards/constants' in src
+    assert '/api/coins/stats/burn'        in src
+    # Mounted on the landing page.
+    landing = open("/app/frontend/src/pages/LandingNeonGaming.tsx").read()
+    assert 'LandingFeatureAccordions' in landing
+
+
+def test_landing_vibez_coin_3d_uses_three_fiber():
+    """PDF §3 'Animated $VIBEZ coin asset' — must render via the
+    already-installed @react-three/fiber Canvas (no net bundle bloat)."""
+    src = open("/app/frontend/src/components/landing/VibezCoin3D.tsx").read()
+    assert "@react-three/fiber" in src
+    assert "Canvas"   in src
+    assert "useFrame" in src
+    # Used inside the Tokenomics accordion cell.
+    accordions = open("/app/frontend/src/components/landing/LandingFeatureAccordions.tsx").read()
+    assert "VibezCoin3D" in accordions
+
 
 
 
