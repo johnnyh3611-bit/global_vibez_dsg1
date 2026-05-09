@@ -496,6 +496,12 @@ def register_all_routes(
         log.warning(f"Profit-share routes not mounted: {_e}")
 
     try:
+        from routes.cinema_room import router as cinema_room_router
+        api_router.include_router(cinema_room_router, tags=["cinema-room"])
+    except Exception as _e:
+        log.warning(f"Cinema Room routes not mounted: {_e}")
+
+    try:
         from routes.premium_pricing import router as premium_pricing_router
         api_router.include_router(premium_pricing_router, tags=["premium-pricing"])
 

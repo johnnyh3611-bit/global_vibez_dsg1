@@ -18,8 +18,11 @@ const HIDDEN_PREFIXES = ["/login", "/signup", "/forgot-password", "/reset-passwo
 // pinned banner doesn't cover the table header during play.
 const HIDDEN_EXACT = [
   "/spades", "/bid-whist", "/hearts", "/uno", "/euchre", "/pinochle",
-  "/gin-rummy", "/rummy", "/war", "/crazy-eights", "/go-fish",
-  "/baccarat", "/baccarat-aaa", "/vibe-654/solo",
+  "/gin-rummy", "/rummy", "/war",
+  "/crazy-eights", "/go-fish", "/baccarat",
+  "/baccarat-aaa", "/blackjack", "/poker", "/three-card-poker",
+  "/vibe-654", "/vibez-654", "/vibe-654/solo",
+  "/cinema-room",
 ];
 
 // Human-readable headline per drop. Update when bumping CURRENT_DROP_VERSION.

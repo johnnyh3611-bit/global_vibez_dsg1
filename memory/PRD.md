@@ -1,6 +1,16 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
 
+> **2026-05-09 — THE CINEMA ROOM shipped 🎬🛋️.** Founder dropped in the `Cinema_Room_Implementation.pdf` blueprint asking for a NEW public sync-watch viewer that's strictly distinct from the Memory Bank Cinema (which carries founder user uploads). Delivered:
+>
+> 1. **Backend** — `/app/backend/routes/cinema_room.py` (mounted at `/api/cinema-room`). Endpoints: `GET /catalog`, `GET /catalog/{id}`, `GET /rooms`, `POST /rooms`, `GET /rooms/{id}`, `POST /rooms/{id}/food-order`, `WS /ws/{room_id}`. Curated free catalog (7 titles · Public Domain Archive.org MP4s + 1 Creative Commons YouTube). Mongo persists rooms + last_state so late-joiners snapshot to current playback position. WebSocket `CinemaManager` broadcasts `play / pause / seek / pick / chat / food_order / audience` events.
+> 2. **Frontend** — `/app/frontend/src/pages/CinemaRoom.tsx` mounted at `/cinema-room` (lobby) and `/cinema-room/:roomId` (synced player). Lobby: catalog grid (6 PD MP4s + Big Buck Bunny CC YouTube) · "Open a room" CTA · live rooms list with audience counts. Screen: YouTube IFrame Player API for YT content + native `<video>` for Archive.org MP4s · live chat sidebar · audience counter · Mute toggle · "ORDER FOOD" CTA (audits intent + opens HungryVIBEZ in a new tab so playback doesn't break).
+> 3. **Wiring** — added `/cinema-room` to `FULLSCREEN_GAME_ROUTES` (no PageActionStrip stealing pixels) + `WhatsNewBanner` HIDDEN_EXACT (no banner overlap on the player). Distinct from `/dsg/memory-bank/*` which stays Memory Bank Cinema for founder content.
+> 4. **Verification** — full end-to-end smoke test: lobby renders 7 catalog cards · "Open Room" with Big Buck Bunny → routes to `/cinema-room/cr_xxx` → header "Friday Night Flix · Big Buck Bunny · 2008 · Creative Commons" · YouTube player loads with the Big Buck Bunny PLAY frame · LIVE CHAT sidebar with "1 watching" · ORDER FOOD CTA visible. Backend pytest: 6/6 GREEN (`test_cinema_room.py`). Regression Shield: 227/227 (227 = 226 prior + 1 lock for cinema room wiring). **Total backend tests passing: 233/233.**
+>
+> **NOTE on Founder spelling lock**: Brand spelling **VIBEZ** (with Z) and **DSG** preserved everywhere I touched.
+
+
 > **2026-05-09 (Late) — /vibez-654 RESTORED · Fullscreen-Game Strip Fix · Photosensitive-Safe CSS 🎲♿️.** Founder reported THREE bugs in one shot:
 >
 > 1. **Original `/vibez-654` totally broken** — couldn't bet, couldn't push buttons, room "too compressed". RCA: page hardcoded the OLD "Florida Flow / 3 dice / calcify on 5/6" protocol, but the backend had been rewritten to "5 dice / sequential 6→5→4". Page was reading `locked_dice` / `unlocked_dice` (no longer emitted) → empty arrays → broken UI. **Full rewrite** of `Vibez654Game.tsx` to consume `has_6 / has_5 / has_4 / qualified / point_dice / residual_dice / rolls_remaining`. New layout: stake row · qualifier ladder (6→5→4 with lock icons) · dice arena · Roll/Stand controls · outcome card · 24h leaderboard. Verified end-to-end: stake select → Ante In → POST /api/vibez-654/start 200 → Roll → 5 dice render → qualifier locks fire correctly.

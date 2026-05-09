@@ -58,6 +58,7 @@ import GameVoiceDockMounter from "@/components/games/GameVoiceDockMounter";
 import FloatingFoodMenu from "@/components/common/FloatingFoodMenu";
 import PageActionStrip from "@/components/common/PageActionStrip";
 import NotFound from "@/pages/NotFound";
+import CinemaRoom from "@/pages/CinemaRoom";
 
 // Routes that own the entire viewport (h-[100dvh] + overflow-hidden) —
 // e.g. card rooms, dice games, casino tables, full-screen tools. The
@@ -72,6 +73,7 @@ const FULLSCREEN_GAME_ROUTES = [
   "/vibe-654", "/vibez-654",
   "/chess", "/checkers", "/connect4", "/practice/play",
   "/card-mp",  // multiplayer card rooms
+  "/cinema-room",  // The Cinema Room — sync-watch viewer
 ];
 
 function useIsFullscreenGameRoute() {
@@ -268,6 +270,13 @@ function AppRouter() {
             something useful instead of a blank chrome shell. */}
         <Route path="/poker-3d" element={<Navigate to="/games" replace />} />
         <Route path="/poker-css3d" element={<Navigate to="/games" replace />} />
+
+        {/* The Cinema Room — public sync-watch (free legal content).
+            DISTINCT from /dsg/memory-bank which is the founder's own
+            user-content cinema. Lobby renders catalog + active rooms;
+            /:roomId opens the synced player. */}
+        <Route path="/cinema-room" element={<ProtectedRoute><CinemaRoom /></ProtectedRoute>} />
+        <Route path="/cinema-room/:roomId" element={<ProtectedRoute><CinemaRoom /></ProtectedRoute>} />
 
         {/* Founder fix Feb 2026: replace the silent wildcard redirect with
             an honest 404 page so dead routes surface visibly instead of

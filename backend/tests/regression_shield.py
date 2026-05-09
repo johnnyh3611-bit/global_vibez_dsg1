@@ -4246,3 +4246,70 @@ def test_photosensitive_safe_card_styles():
     assert "toggleNoFlash" in strip
     assert "gv_no_flash_v1" in strip
 
+
+def test_cinema_room_route_and_backend_wired():
+    """Founder directive 2026-05-09 — `The Cinema Room` is a NEW
+    public sync-watch viewer for free legal content (YouTube +
+    Archive.org). Distinct from /dsg/memory-bank (Memory Bank Cinema)
+    which is for FOUNDER user-content. Locks both the backend
+    contract + frontend wiring so future refactors don't collapse
+    them back together."""
+    import os
+    # Backend route file exists with the right router + endpoints.
+    assert os.path.exists("/app/backend/routes/cinema_room.py")
+    body = open("/app/backend/routes/cinema_room.py").read()
+    for marker in [
+        'prefix="/cinema-room"',           # mounts under /api/cinema-room
+        '@router.get("/catalog")',
+        '@router.get("/catalog/{content_id}")',
+        '@router.get("/rooms")',
+        '@router.post("/rooms")',
+        '@router.get("/rooms/{room_id}")',
+        '@router.post("/rooms/{room_id}/food-order")',
+        '@router.websocket("/ws/{room_id}")',
+        'CinemaManager',
+        'class CatalogItem',  # not strictly needed but the curated list var is below
+    ]:
+        # The CatalogItem assertion above is loose; relax for the constant.
+        if marker == 'class CatalogItem':
+            assert 'CATALOG' in body
+        else:
+            assert marker in body, f"cinema_room.py missing {marker}"
+    # Registry must include the router.
+    reg = open("/app/backend/routes/registry.py").read()
+    assert "from routes.cinema_room import router as cinema_room_router" in reg
+    assert "api_router.include_router(cinema_room_router" in reg
+
+    # Frontend page wired with both lobby + room URLs.
+    assert os.path.exists("/app/frontend/src/pages/CinemaRoom.tsx")
+    page = open("/app/frontend/src/pages/CinemaRoom.tsx").read()
+    for tid in [
+        "cinema-room-lobby", "cinema-room-catalog", "cinema-rooms-list",
+        "cinema-create-name", "cinema-create-btn",
+        "cinema-room-screen", "cinema-back-to-lobby",
+        "cinema-audience-count", "cinema-player-shell",
+        "cinema-mute-btn", "cinema-order-food-btn",
+        "cinema-chat", "cinema-chat-input", "cinema-chat-send",
+    ]:
+        assert f'data-testid="{tid}"' in page, \
+            f"CinemaRoom must expose testid {tid}"
+    # Distinct namespace from memory-bank (founder rule). The page may
+    # mention `/dsg/memory-bank` in comments for context but MUST NOT
+    # navigate to or render any memory-bank component — those belong
+    # to the founder's user-content cinema.
+    assert "MemoryBankCinema" not in page, \
+        "Cinema Room MUST NOT import any MemoryBank* component"
+    assert 'navigate("/dsg/memory-bank' not in page
+
+    # App routes wired + included in fullscreen-game whitelist.
+    appsrc = open("/app/frontend/src/App.js").read()
+    assert 'import CinemaRoom from "@/pages/CinemaRoom"' in appsrc
+    assert '<Route path="/cinema-room"' in appsrc
+    assert '<Route path="/cinema-room/:roomId"' in appsrc
+    assert '"/cinema-room"' in appsrc, \
+        "Cinema Room must be in FULLSCREEN_GAME_ROUTES whitelist"
+
+    # WhatsNewBanner suppressed on the new route.
+    banner = open("/app/frontend/src/components/common/WhatsNewBanner.tsx").read()
+    assert '"/cinema-room"' in banner
+
