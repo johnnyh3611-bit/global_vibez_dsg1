@@ -9,7 +9,9 @@ import {
   // May 2026 PDF batch
   PenTool, Smile, Search, Eye, ShoppingBag, Disc3, Radio,
   // Music Arena + TV Totem Pole batch
-  Mic2, Tv, Headphones, Swords,
+  Mic2, Tv, Headphones, Swords, Sparkle,
+  // Cyber Casino tile (Unity WebGL, see CyberCasinoRoom.tsx)
+  Joystick,
 } from 'lucide-react';
 import { RoomLayout } from '@/components/RoomLayout';
 import { GlassCard } from '@/components/GlassCard';
@@ -397,6 +399,39 @@ export default function Dashboard() {
       path: '/tv/totem-pole',
       stats: { count: 'NEW', label: 'PG-13 / 18+' }
     },
+    {
+      id: 'vibe_suite',
+      name: 'Vibe Suite',
+      description: 'Live producer↔vocalist co-recording · Agora RTC · Pay-to-Suggest',
+      icon: Mic2,
+      gradient: 'from-cyan-400 via-fuchsia-500 to-rose-400',
+      glow: 'rgba(34,211,238,0.5)',
+      image: 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?crop=entropy&cs=srgb&fm=jpg',
+      path: '/music/vibe-suite/demo',
+      stats: { count: 'LIVE', label: 'Agora RTC' }
+    },
+    {
+      id: 'lyric_glasshouse',
+      name: 'Lyric Glasshouse',
+      description: '3D frequency-reactive visualizer — drop into OBS as a scene',
+      icon: Sparkle,
+      gradient: 'from-cyan-300 via-fuchsia-400 to-amber-300',
+      glow: 'rgba(34,211,238,0.5)',
+      image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?crop=entropy&cs=srgb&fm=jpg',
+      path: '/music/glasshouse',
+      stats: { count: '3D', label: 'WebGL' }
+    },
+    {
+      id: 'cyber_casino',
+      name: 'Cyber Casino',
+      description: 'Unity WebGL casino games · 72-hour God-Mode escrow rewards',
+      icon: Joystick,
+      gradient: 'from-violet-500 via-fuchsia-500 to-cyan-400',
+      glow: 'rgba(139,92,246,0.5)',
+      image: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?crop=entropy&cs=srgb&fm=jpg',
+      path: '/cyber-casino',
+      stats: { count: 'WebGL', label: 'Unity' }
+    },
   ];
 
   if (loading) {
@@ -506,9 +541,10 @@ export default function Dashboard() {
                 What's New · May 2026
               </div>
               <div className="text-base sm:text-lg font-black text-white">
-                11 new rooms live — Vibe-tionary, Meme Matchmaker, Hide & Seek,
+                15 new rooms live — Vibe-tionary, Meme Matchmaker, Hide & Seek (now with Mapbox),
                 Blind Auction, VibeShopper Hunt, Beat Vault DLC, Streamer Overlay,
-                Sound-Check Gauntlet, Collab Matchmaker, Totem Pole Battles, Vibe TV Totem Pole
+                Sound-Check Gauntlet, Collab Matchmaker, Totem Pole Battles, Vibe TV Totem Pole,
+                Vibe Suite (Agora RTC), Lyric Glasshouse (3D), Cyber Casino (Unity WebGL)
               </div>
               <div className="text-xs text-white/70 mt-1">
                 Powered by the <span className="text-cyan-300 font-bold">Streamer Action Hub</span>, <span className="text-amber-300 font-bold">DSG Guard</span>, and <span className="text-fuchsia-300 font-bold">Totem Pole rails</span> ·

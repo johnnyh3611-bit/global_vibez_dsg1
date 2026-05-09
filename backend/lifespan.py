@@ -70,6 +70,11 @@ def register_startup_tasks(app, logger: logging.Logger) -> None:
                   _start_jftn_demo_room_seeder, logger)
         _kick_off("Marketplace demo seeder",
                   _start_marketplace_demo_seeder, logger)
+        _kick_off("TV Totem-Pole survive scheduler",
+                  _start_tv_survive, logger,
+                  success_msg="TV Totem-Pole survive scheduler started (5-min ticks)")
+        _kick_off("Memory Bank Cinema auto-archive",
+                  _start_memory_bank_archive, logger)
 
 
 def register_shutdown(app, logger: logging.Logger) -> None:
@@ -259,6 +264,97 @@ def _start_solvency_broadcaster() -> None:
             except Exception as exc:
                 log.warning(f"broadcast failed: {exc}")
             await asyncio.sleep(60)
+
+    asyncio.create_task(loop())
+
+
+def _start_tv_survive() -> None:
+    """Vibe TV Totem-Pole survival worker. Every 5 minutes we run the
+    PDF algorithm: shows below `HYPE_MIN_TO_SURVIVE` get cut, shows
+    above promote to PRIMETIME and trigger their 70/30 payout. The
+    `/api/totem-pole/tv/survive` endpoint runs the same logic
+    on-demand so manual refreshes still work.
+    """
+    from utils.database import get_database
+    from datetime import datetime, timezone
+
+    async def loop():
+        log = logging.getLogger("tv-survive")
+        await asyncio.sleep(15)  # warm-up
+        while True:
+            try:
+                from routes.totem_pole import HYPE_MIN_TO_SURVIVE, _split_payout  # noqa: PLC0415
+                db = get_database()
+                cur = db.tv_pilots.find({"status": "QUEUED"}, {"_id": 0})
+                cuts = promotes = 0
+                async for pilot in cur:
+                    hype = pilot.get("hype_meter_cents", 0)
+                    now_iso = datetime.now(timezone.utc).isoformat()
+                    if hype < HYPE_MIN_TO_SURVIVE:
+                        await db.tv_pilots.update_one(
+                            {"pilot_id": pilot["pilot_id"]},
+                            {"$set": {"status": "CUT", "cut_at": now_iso}},
+                        )
+                        cuts += 1
+                    else:
+                        await db.tv_pilots.update_one(
+                            {"pilot_id": pilot["pilot_id"]},
+                            {"$set": {
+                                "status": "PRIMETIME",
+                                "promoted_at": now_iso,
+                                "payout_split": _split_payout(hype),
+                            }},
+                        )
+                        promotes += 1
+                if cuts or promotes:
+                    log.info(f"survival pass: cut={cuts}, promoted={promotes}")
+            except Exception as exc:
+                log.warning(f"survival pass failed: {exc}")
+            await asyncio.sleep(300)  # 5 minutes
+
+    asyncio.create_task(loop())
+
+
+def _start_memory_bank_archive() -> None:
+    """Memory Bank Cinema auto-archive. Every hour we scan resolved
+    Totem-Pole battles whose total pot crossed the 'classic' threshold
+    ($25 = 2500c) and stamp them as MEMORY_BANK_ARCHIVED. Idempotent —
+    we only touch rows that have NOT been archived yet.
+    """
+    from utils.database import get_database
+    from datetime import datetime, timezone
+    CLASSIC_THRESHOLD_CENTS = 2500
+
+    async def loop():
+        log = logging.getLogger("memory-bank")
+        await asyncio.sleep(30)  # warm-up
+        while True:
+            try:
+                db = get_database()
+                cur = db.totem_battles.find(
+                    {"resolved": True,
+                     "memory_bank_archived": {"$ne": True}},
+                    {"_id": 0},
+                )
+                archived = 0
+                async for b in cur:
+                    total = (b.get("pot_a_cents", 0) + b.get("pot_b_cents", 0))
+                    if total < CLASSIC_THRESHOLD_CENTS:
+                        continue
+                    await db.totem_battles.update_one(
+                        {"battle_id": b["battle_id"]},
+                        {"$set": {
+                            "memory_bank_archived": True,
+                            "archived_at": datetime.now(timezone.utc).isoformat(),
+                            "classic_total_cents": total,
+                        }},
+                    )
+                    archived += 1
+                if archived:
+                    log.info(f"archived {archived} classic battles")
+            except Exception as exc:
+                log.warning(f"archive pass failed: {exc}")
+            await asyncio.sleep(3600)  # 1 hour
 
     asyncio.create_task(loop())
 

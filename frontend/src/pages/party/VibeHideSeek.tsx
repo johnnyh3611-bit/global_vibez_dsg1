@@ -2,7 +2,7 @@
  * VibeHideSeek — geo-spatial scavenger hunt (Party Hub Blueprint §3).
  *
  * Players "hide" in sponsored Mom & Pop stores from the Vibe Yellow
- * Pages. Seekers are given a clue based on the listing description and
+ * Pages. Seekers see a Mapbox-rendered city with merchant pins and
  * have to identify which merchant the player is hiding at.
  *
  * Each correct find fires a `ROUTE_TIP` action through the Streamer
@@ -14,22 +14,27 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, MapPin, Eye, Star, Trophy, Search } from 'lucide-react';
 import { toast } from 'sonner';
+import Map, { Marker, NavigationControl } from 'react-map-gl/mapbox';
+import 'mapbox-gl/dist/mapbox-gl.css';
 
 const API = process.env.REACT_APP_BACKEND_URL;
+const MAPBOX_TOKEN = process.env.REACT_APP_MAPBOX_TOKEN;
 
 interface Hideout {
   id: string;
   name: string;
   cat: string;
   clue: string;
+  lat: number;
+  lng: number;
 }
 
 const SAMPLE_HIDEOUTS: Hideout[] = [
-  { id: 'h1', name: "Ramon's Cuban Bakery",  cat: 'food',   clue: "Smells like vanilla flan and abuelo's pipe smoke." },
-  { id: 'h2', name: "Glitter Box Salon",    cat: 'beauty', clue: "Where heads of hair turn into rainbow sculptures." },
-  { id: 'h3', name: "Volt Repair Garage",   cat: 'auto',   clue: "Engines hum and oil drips here — every wrench has a name." },
-  { id: 'h4', name: "Knit & Spin Studio",   cat: 'retail', clue: "Yarn balls roll like tumbleweeds across pine floors." },
-  { id: 'h5', name: "Marisol Curaçao Café", cat: 'food',   clue: "Cracked coconut shells and steel drums rattle the wall." },
+  { id: 'h1', name: "Ramon's Cuban Bakery",  cat: 'food',   clue: "Smells like vanilla flan and abuelo's pipe smoke.",       lat: 25.7617, lng: -80.1918 },
+  { id: 'h2', name: "Glitter Box Salon",    cat: 'beauty', clue: "Where heads of hair turn into rainbow sculptures.",       lat: 25.7741, lng: -80.1937 },
+  { id: 'h3', name: "Volt Repair Garage",   cat: 'auto',   clue: "Engines hum and oil drips here — every wrench has a name.", lat: 25.7530, lng: -80.2000 },
+  { id: 'h4', name: "Knit & Spin Studio",   cat: 'retail', clue: "Yarn balls roll like tumbleweeds across pine floors.",     lat: 25.7700, lng: -80.1850 },
+  { id: 'h5', name: "Marisol Curaçao Café", cat: 'food',   clue: "Cracked coconut shells and steel drums rattle the wall.",  lat: 25.7580, lng: -80.1880 },
 ];
 
 export default function VibeHideSeek() {
@@ -105,6 +110,40 @@ export default function VibeHideSeek() {
             </div>
           </div>
         </motion.div>
+
+        {/* Mapbox city view with merchant pins */}
+        {MAPBOX_TOKEN && (
+          <div className="rounded-2xl overflow-hidden border-2 border-emerald-500/30 mb-3" style={{ height: 280 }} data-testid="hideseek-map">
+            <Map
+              mapboxAccessToken={MAPBOX_TOKEN}
+              initialViewState={{ longitude: -80.1918, latitude: 25.7617, zoom: 12.5 }}
+              mapStyle="mapbox://styles/mapbox/dark-v11"
+              style={{ width: '100%', height: '100%' }}
+            >
+              <NavigationControl position="top-right" />
+              {SAMPLE_HIDEOUTS.map((h) => {
+                const isHidden = h.id === hidden.id;
+                const result = guessed === h.id ? (isHidden ? 'correct' : 'wrong') : null;
+                return (
+                  <Marker key={h.id} longitude={h.lng} latitude={h.lat} anchor="bottom">
+                    <button
+                      onClick={() => guess(h)}
+                      data-testid={`hideseek-pin-${h.id}`}
+                      disabled={!!guessed}
+                      className={`relative w-9 h-9 rounded-full border-2 flex items-center justify-center transition ${
+                        result === 'correct' ? 'bg-emerald-500 border-emerald-200' :
+                        result === 'wrong'   ? 'bg-rose-500 border-rose-200' :
+                        'bg-emerald-500/30 border-emerald-300 hover:bg-emerald-500/60'
+                      }`}
+                    >
+                      <MapPin className="w-5 h-5 text-white" />
+                    </button>
+                  </Marker>
+                );
+              })}
+            </Map>
+          </div>
+        )}
 
         <div className="grid sm:grid-cols-2 gap-3" data-testid="hideout-grid">
           {SAMPLE_HIDEOUTS.map((h) => {

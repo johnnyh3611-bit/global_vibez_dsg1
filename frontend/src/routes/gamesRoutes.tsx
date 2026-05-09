@@ -44,6 +44,8 @@ import CollabMatchmaker   from "@/pages/music/CollabMatchmaker";
 import TotemPoleBattles   from "@/pages/music/TotemPoleBattles";
 import TotemPoleQueue     from "@/pages/tv/TotemPoleQueue";
 import StreamerSetupGuide from "@/pages/streamer/StreamerSetupGuide";
+import VibeSuite          from "@/pages/music/VibeSuite";
+import LyricGlasshouse    from "@/pages/music/LyricGlasshouse";
 import FanTan from "@/pages/games/FanTan";
 import Faro from "@/pages/games/Faro";
 import VibesDarts from "@/pages/games/VibesDarts";
@@ -537,6 +539,9 @@ export const gamesRoutes = (ProtectedRoute) => (
     <Route path="/music/sound-check"      element={<ProtectedRoute><SoundCheckGauntlet /></ProtectedRoute>} />
     <Route path="/music/collab-matchmaker" element={<ProtectedRoute><CollabMatchmaker /></ProtectedRoute>} />
     <Route path="/music/totem-battles"    element={<ProtectedRoute><TotemPoleBattles /></ProtectedRoute>} />
+    <Route path="/music/vibe-suite"       element={<ProtectedRoute><VibeSuite /></ProtectedRoute>} />
+    <Route path="/music/vibe-suite/:suiteId" element={<ProtectedRoute><VibeSuite /></ProtectedRoute>} />
+    <Route path="/music/glasshouse"       element={<ProtectedRoute><LyricGlasshouse /></ProtectedRoute>} />
     <Route path="/tv/totem-pole"          element={<ProtectedRoute><TotemPoleQueue /></ProtectedRoute>} />
 
   </>

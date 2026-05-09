@@ -4440,3 +4440,61 @@ Added 4 new gates:
 Founder did NOT use the safe phrase `project complete` (only quoted it).
 `BEAT_DLC_MINT_MODE` remains `SIMULATED`.
 
+
+
+---
+
+## 2026-05-09 (Final pre-redeploy) — P1 + P2 Complete + Cyber Casino Surfaced
+
+### P1 — Real-time
+- **Vibe Suite** (`/music/vibe-suite/:suiteId`) — live producer↔vocalist
+  co-recording room. Uses the existing `/api/agora/rtc-token` endpoint
+  to mint short-lived tokens and `agora-rtc-sdk-ng` for publish.
+  Lazy-imports the Agora SDK on first mic-toggle so the rest of the
+  app doesn't pay the bundle cost. Pay-to-Suggest tips post via
+  `INSTRUMENT_GIFT` so they hit the same 70/13.5/10 ledger.
+- **TV Survive scheduler** wired in `lifespan.py` — runs every **5 minutes**.
+  Cuts pilots below `HYPE_MIN_TO_SURVIVE`, promotes to PRIMETIME
+  above. Confirmed in logs: `TV Totem-Pole survive scheduler started (5-min ticks)`.
+
+### P2 — Polish
+- **Lyric Glasshouse** (`/music/glasshouse`) — three.js + react-three-fiber
+  3D visualizer. Glass dodecahedron at center, 32 frequency-reactive
+  bars in a ring, `<Stars>` background. Web Audio API analyser feeds
+  FFT data into a `useFrame` loop that lerps bar scale + HSL color
+  per bin. OBS-friendly transparent black background.
+- **Mapbox in Vibe-Hide & Seek** — swapped the merchant grid for real
+  Mapbox dark tiles via `react-map-gl` + `mapbox-gl`. Uses
+  `REACT_APP_MAPBOX_TOKEN` (already set in `.env`). Each merchant has
+  a clickable map pin AND its grid card so users can pick from either.
+- **Memory Bank Cinema auto-archive** — runs hourly. Stamps resolved
+  Totem-Pole battles whose total pot crossed the $25 "classic"
+  threshold as `MEMORY_BANK_ARCHIVED`. Confirmed in logs.
+
+### Cyber Casino — surfaced
+- New **Cyber Casino** dashboard tile pointing at `/cyber-casino`.
+  CyberCasinoRoom.tsx already gracefully falls back to
+  `<CyberCasinoDemoGame />` when no Unity build is found, so the tile
+  is functional today. Drop the Unity ZIP at `/unity-builds/` later
+  to swap in real games.
+
+### Regression shield: 194 → 197
+- `test_p1_p2_rooms_routed`           (Vibe Suite + Glasshouse routes)
+- `test_tv_survive_scheduler_registered` (lifespan wiring)
+- `test_hideseek_uses_mapbox`         (real Mapbox tiles + pins)
+- `test_dashboard_surfaces_new_rooms` updated for vibe_suite, lyric_glasshouse, cyber_casino
+
+**197/197 passing.** Backend lint clean. Webpack 0 errors.
+
+### Final dashboard tally
+- **15 new May 2026 rooms** all surfaced
+- What's New banner reflects the full count + Streamer Setup Guide CTA
+- Both schedulers (TV survive + Memory Bank archive) auto-running
+
+### Still locked 🔒
+- Mainnet TGE / Beat Vault DLC mint mode (founder did not say `project complete`)
+- Stripe payouts (no key in `.env` — Vibe credits flow only)
+- Resend default sender (`onboarding@resend.dev` until DNS swap)
+
+**Beta-redeploy ready.**
+

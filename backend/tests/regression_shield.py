@@ -3588,11 +3588,45 @@ def test_dashboard_surfaces_new_rooms():
         'streamer_overlay',
         # Music Arena + TV Totem Pole batch
         'sound_check', 'collab_matchmaker', 'totem_battles', 'tv_totem_pole',
+        # P1 / P2 batch (May 9, 2026 evening)
+        'vibe_suite', 'lyric_glasshouse', 'cyber_casino',
     ]:
         assert f"id: '{tile_id}'" in src, \
             f"Dashboard tile '{tile_id}' missing — May 2026 PDF rooms must surface here"
     assert "whats-new-banner" in src, \
         "Dashboard must render the What's New (May 2026) banner"
+
+
+def test_p1_p2_rooms_routed():
+    """Vibe Suite + Lyric Glasshouse must be wired in gamesRoutes."""
+    src = open("/app/frontend/src/routes/gamesRoutes.tsx").read()
+    for path in [
+        "/music/vibe-suite",
+        "/music/glasshouse",
+    ]:
+        assert path in src, f"Missing route declaration for {path}"
+
+
+def test_tv_survive_scheduler_registered():
+    """TV Survive scheduler MUST be wired in lifespan.py so the queue
+    auto-cuts pilots below the survival threshold every 5 min."""
+    src = open("/app/backend/lifespan.py").read()
+    assert "_start_tv_survive" in src, \
+        "TV Totem-Pole survive scheduler not registered"
+    assert "TV Totem-Pole survive scheduler" in src
+    assert "Memory Bank Cinema auto-archive" in src
+    assert "_start_memory_bank_archive" in src
+
+
+def test_hideseek_uses_mapbox():
+    """Vibe-Hide & Seek must use real Mapbox tiles in addition to
+    the merchant grid (Master Tech Blueprint upgrade)."""
+    src = open("/app/frontend/src/pages/party/VibeHideSeek.tsx").read()
+    assert "react-map-gl/mapbox" in src, "Hide & Seek must import react-map-gl"
+    assert "MAPBOX_TOKEN" in src, "Must read REACT_APP_MAPBOX_TOKEN"
+    assert 'data-testid="hideseek-map"' in src, "Map container missing testid"
+    # Pins must exist on every hideout
+    assert 'hideseek-pin-' in src, "Pin testids must be present"
 
 
 # ─────────────────────────────────────── Music Arena + TV Totem Pole
