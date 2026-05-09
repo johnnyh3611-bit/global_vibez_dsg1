@@ -38,6 +38,12 @@ import VibeHideSeek      from "@/pages/party/VibeHideSeek";
 import BlindAuctionDating from "@/pages/dating/BlindAuctionDating";
 import VibeShopperHunt   from "@/pages/dsg/VibeShopperHunt";
 import BeatVaultDLC      from "@/pages/dsg/BeatVaultDLC";
+// Music Arena + TV Totem Pole batch (May 2026 PDFs).
+import SoundCheckGauntlet from "@/pages/music/SoundCheckGauntlet";
+import CollabMatchmaker   from "@/pages/music/CollabMatchmaker";
+import TotemPoleBattles   from "@/pages/music/TotemPoleBattles";
+import TotemPoleQueue     from "@/pages/tv/TotemPoleQueue";
+import StreamerSetupGuide from "@/pages/streamer/StreamerSetupGuide";
 import FanTan from "@/pages/games/FanTan";
 import Faro from "@/pages/games/Faro";
 import VibesDarts from "@/pages/games/VibesDarts";
@@ -520,12 +526,18 @@ export const gamesRoutes = (ProtectedRoute) => (
         on top of the already-shipped `/api/streamer-actions/*` and
         `/api/dsg-guard/*` rails. */}
     <Route path="/streamer/overlay/:streamerId" element={<StreamerOverlay />} />
+    <Route path="/streamer/setup-guide"   element={<StreamerSetupGuide />} />
     <Route path="/party/vibe-tionary"   element={<ProtectedRoute><Vibetionary /></ProtectedRoute>} />
     <Route path="/party/meme-matchmaker" element={<ProtectedRoute><MemeMatchmaker /></ProtectedRoute>} />
     <Route path="/party/hide-seek"      element={<ProtectedRoute><VibeHideSeek /></ProtectedRoute>} />
     <Route path="/dating/blind-auction" element={<ProtectedRoute><BlindAuctionDating /></ProtectedRoute>} />
     <Route path="/vibeshopper"          element={<ProtectedRoute><VibeShopperHunt /></ProtectedRoute>} />
     <Route path="/beat-vault/dlc"       element={<ProtectedRoute><BeatVaultDLC /></ProtectedRoute>} />
+    {/* Music Arena + TV Totem Pole rooms (May 2026 PDFs) */}
+    <Route path="/music/sound-check"      element={<ProtectedRoute><SoundCheckGauntlet /></ProtectedRoute>} />
+    <Route path="/music/collab-matchmaker" element={<ProtectedRoute><CollabMatchmaker /></ProtectedRoute>} />
+    <Route path="/music/totem-battles"    element={<ProtectedRoute><TotemPoleBattles /></ProtectedRoute>} />
+    <Route path="/tv/totem-pole"          element={<ProtectedRoute><TotemPoleQueue /></ProtectedRoute>} />
 
   </>
 );

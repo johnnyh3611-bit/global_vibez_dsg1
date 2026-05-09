@@ -8,6 +8,8 @@ import {
   Languages, Mic, MapPin, BookMarked,
   // May 2026 PDF batch
   PenTool, Smile, Search, Eye, ShoppingBag, Disc3, Radio,
+  // Music Arena + TV Totem Pole batch
+  Mic2, Tv, Headphones, Swords,
 } from 'lucide-react';
 import { RoomLayout } from '@/components/RoomLayout';
 import { GlassCard } from '@/components/GlassCard';
@@ -350,6 +352,51 @@ export default function Dashboard() {
       path: '/streamer/overlay/demo',
       stats: { count: 'OBS', label: 'Live FX' }
     },
+    // ─────── May 2026 — Music Arena + TV Totem Pole Blueprints ───────
+    {
+      id: 'sound_check',
+      name: 'Sound-Check Gauntlet',
+      description: '15-second flips · Vibe / No-Vibe swipe · Live Pilot Slot reward',
+      icon: Headphones,
+      gradient: 'from-fuchsia-500 via-pink-500 to-amber-300',
+      glow: 'rgba(217,70,239,0.5)',
+      image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?crop=entropy&cs=srgb&fm=jpg',
+      path: '/music/sound-check',
+      stats: { count: 'NEW', label: 'Music Arena' }
+    },
+    {
+      id: 'collab_matchmaker',
+      name: 'Collab Matchmaker',
+      description: '98% Synergy Logic · pair producers with vocalists in Vibe Suites',
+      icon: Mic2,
+      gradient: 'from-cyan-400 via-fuchsia-500 to-amber-300',
+      glow: 'rgba(34,211,238,0.5)',
+      image: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?crop=entropy&cs=srgb&fm=jpg',
+      path: '/music/collab-matchmaker',
+      stats: { count: '98%', label: 'Synergy' }
+    },
+    {
+      id: 'totem_battles',
+      name: 'Totem Pole Battles',
+      description: '1v1 music-video battles · audience gifts decide · Power Hour ×1.5',
+      icon: Swords,
+      gradient: 'from-orange-500 via-rose-500 to-amber-300',
+      glow: 'rgba(249,115,22,0.5)',
+      image: 'https://images.unsplash.com/photo-1571330735066-03aaa9429d89?crop=entropy&cs=srgb&fm=jpg',
+      path: '/music/totem-battles',
+      stats: { count: 'LIVE', label: 'Battles' }
+    },
+    {
+      id: 'tv_totem_pole',
+      name: 'Vibe TV · Totem Pole',
+      description: 'Audience-survival queue · Tip-to-Shield · 18+ age gating',
+      icon: Tv,
+      gradient: 'from-purple-500 via-pink-500 to-amber-300',
+      glow: 'rgba(168,85,247,0.5)',
+      image: 'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?crop=entropy&cs=srgb&fm=jpg',
+      path: '/tv/totem-pole',
+      stats: { count: 'NEW', label: 'PG-13 / 18+' }
+    },
   ];
 
   if (loading) {
@@ -459,12 +506,15 @@ export default function Dashboard() {
                 What's New · May 2026
               </div>
               <div className="text-base sm:text-lg font-black text-white">
-                7 new rooms live — Vibe-tionary, Meme Matchmaker, Hide & Seek,
-                Blind Auction, VibeShopper Hunt, Beat Vault DLC, Streamer Overlay
+                11 new rooms live — Vibe-tionary, Meme Matchmaker, Hide & Seek,
+                Blind Auction, VibeShopper Hunt, Beat Vault DLC, Streamer Overlay,
+                Sound-Check Gauntlet, Collab Matchmaker, Totem Pole Battles, Vibe TV Totem Pole
               </div>
               <div className="text-xs text-white/70 mt-1">
-                All powered by the new <span className="text-cyan-300 font-bold">Streamer Action Hub</span> + <span className="text-amber-300 font-bold">DSG Guard</span> rails ·
-                70/13.5/10 split locked · 1.5-mi route deviation · 15s acceptance window.
+                Powered by the <span className="text-cyan-300 font-bold">Streamer Action Hub</span>, <span className="text-amber-300 font-bold">DSG Guard</span>, and <span className="text-fuchsia-300 font-bold">Totem Pole rails</span> ·
+                70/13.5/10 split locked · Power Hour ×1.5 · 98% Synergy · Tip-to-Shield $2/5min ·
+                {' '}
+                <a href="/streamer/setup-guide" className="underline text-emerald-300">Streamer Setup Guide →</a>
               </div>
             </div>
           </div>

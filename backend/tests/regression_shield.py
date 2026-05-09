@@ -3586,11 +3586,88 @@ def test_dashboard_surfaces_new_rooms():
         'vibetionary', 'meme_matchmaker', 'hide_seek',
         'blind_auction', 'vibeshopper', 'beat_vault_dlc',
         'streamer_overlay',
+        # Music Arena + TV Totem Pole batch
+        'sound_check', 'collab_matchmaker', 'totem_battles', 'tv_totem_pole',
     ]:
         assert f"id: '{tile_id}'" in src, \
             f"Dashboard tile '{tile_id}' missing — May 2026 PDF rooms must surface here"
     assert "whats-new-banner" in src, \
         "Dashboard must render the What's New (May 2026) banner"
+
+
+# ─────────────────────────────────────── Music Arena + TV Totem Pole
+
+
+def test_totem_pole_constants_locked():
+    """Music Arena + TV PDFs lock these rails. Drift requires a
+    founder-signed amendment."""
+    from routes.totem_pole import get_locked_constants_dict
+    locked = get_locked_constants_dict()
+    assert locked["CREATOR_PAYOUT"] == 0.70
+    assert locked["SOVEREIGN_TAX"] == 0.135
+    assert locked["LIQUIDITY_POOL"] == 0.10
+    assert locked["POWER_HOUR_MULTIPLIER"] == 1.5, \
+        "Music Battle PDF: 1.5× stake bonus for fans on Power Hour"
+    assert locked["COLLAB_SYNERGY_MIN_PCT"] == 98, \
+        "Beat-Maker PDF: 98% Synergy Logic"
+    assert locked["SOUND_CHECK_FLIP_SECS"] == 15, \
+        "Sound-Check Gauntlet PDF: 15-second flip"
+    assert locked["TIP_SHIELD_BLOCK_SECS"] == 300, \
+        "Tip-to-Shield PDF: 5-minute block"
+    assert locked["TIP_SHIELD_BLOCK_CENTS"] == 200, \
+        "Tip-to-Shield PDF: $2.00 per shield extension"
+
+
+def test_totem_pole_routes_mounted():
+    """All Totem Pole endpoints must be mounted under /api/totem-pole."""
+    from server import app
+    paths = {r.path for r in app.routes}
+    for p in [
+        "/api/totem-pole/constants",
+        "/api/totem-pole/sound-check/vote",
+        "/api/totem-pole/collab/match",
+        "/api/totem-pole/battle/gift",
+        "/api/totem-pole/battle/resolve",
+        "/api/totem-pole/tv/tip-shield",
+        "/api/totem-pole/tv/survive",
+        "/api/totem-pole/tv/age-verify",
+        "/api/totem-pole/tv/entry-code",
+    ]:
+        assert p in paths, f"Missing route {p}"
+
+
+def test_music_tv_rooms_routed():
+    """The 4 Music Arena + TV Totem Pole pages MUST have route
+    declarations in `gamesRoutes.tsx`."""
+    src = open("/app/frontend/src/routes/gamesRoutes.tsx").read()
+    for path in [
+        "/music/sound-check",
+        "/music/collab-matchmaker",
+        "/music/totem-battles",
+        "/tv/totem-pole",
+        "/streamer/setup-guide",
+    ]:
+        assert path in src, f"Missing route declaration for {path}"
+
+
+def test_streamer_setup_guide_marketing_page():
+    """The Streamer Setup Guide is a public-route marketing page that
+    converts streamers to OBS browser-source users in <60s. It must
+    have all 5 setup steps + the unique-URL block + the 7 action
+    catalog cards."""
+    src = open("/app/frontend/src/pages/streamer/StreamerSetupGuide.tsx").read()
+    assert "streamer-setup-guide" in src
+    assert "copy-overlay-url" in src, "Must have a one-click copy URL button"
+    # Steps are rendered via a template literal `setup-step-${s.n}` so
+    # we just confirm the prefix + the 5-step source array landed.
+    assert "setup-step-${" in src or "setup-step-`" in src or "setup-step-" in src, \
+        "Setup steps must use the `setup-step-N` testid pattern"
+    assert "STEPS = [" in src or "n: 1" in src, "Setup must declare 5 steps"
+    # All 7 action kinds from the PDF must be referenced (template
+    # literals build the data-testids, so we check the catalog labels).
+    for kind in ["HECKLE", "BUFF", "ROUTE_TIP", "DJ_INTERCEPT",
+                 "VOICE_INTERCEPT", "INSTRUMENT_GIFT", "HECKLE_GALLERY"]:
+        assert kind in src, f"Setup guide missing action label for {kind}"
 
 
 

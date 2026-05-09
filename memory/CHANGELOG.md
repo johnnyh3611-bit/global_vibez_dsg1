@@ -4358,3 +4358,85 @@ Added 4 new gates:
 - **Streamer Overlay tipping** — uses local fake auth token; production needs real Stripe wire
 - **Sponsored merchant 5% kickback in Vibe-Hide & Seek** — currently logged in `metadata.kickback_pct`; ledger application happens on `streamer-actions/complete` (not yet auto-fired in the demo flow)
 
+
+
+---
+
+## 2026-05-09 (Late Pt 2) — Music Arena + TV Totem Pole + Streamer Setup Guide
+
+### Two more PDFs absorbed
+1. `GlobalVibez_MusicArena_Blueprint.pdf`
+2. `GlobalVibez_TV_TotemPole_Blueprint.pdf`
+
+### Backend — single shared rail (`routes/totem_pole.py`)
+Music side and TV side built on ONE module so the threshold + 70/30
+split can never drift between them.
+- **Locked constants:**
+  - `POWER_HOUR_MULTIPLIER = 1.5` (Music Battle PDF: 1.5× fan stake)
+  - `COLLAB_SYNERGY_MIN_PCT = 98` (Beat-Maker PDF: 98% Synergy Logic)
+  - `SOUND_CHECK_FLIP_SECS = 15` (Sound-Check Gauntlet PDF)
+  - `TIP_SHIELD_BLOCK_SECS = 300` (TV PDF: 5-min extension)
+  - `TIP_SHIELD_BLOCK_CENTS = 200` ($2.00 per shield)
+  - `HYPE_MIN_TO_SURVIVE = 250` (TV survival threshold)
+  - `LIVE_PILOT_SLOT_SECS = 300` (5-min Vibe TV reward for graduated tracks)
+  - 70/13.5/10/6.5 split — locked to match Immutable Core + Streamer Action Hub
+- **Endpoints:**
+  - `GET  /api/totem-pole/constants`
+  - `POST /api/totem-pole/sound-check/vote`
+  - `POST /api/totem-pole/collab/match`            (deterministic 98+% synergy match)
+  - `POST /api/totem-pole/battle/gift`             (audience gifts → side pot)
+  - `POST /api/totem-pole/battle/resolve`          (PDF code: rank_Up + apply_PowerHour)
+  - `POST /api/totem-pole/tv/tip-shield`           (Tip-to-Shield $2/5min)
+  - `POST /api/totem-pole/tv/survive`              (cut_Stream / rank_Up algorithm)
+  - `POST /api/totem-pole/tv/age-verify`           (Global Vibez Guard age indexer)
+  - `POST /api/totem-pole/tv/entry-code`           (single-use 8-char 18+ token)
+
+### Frontend — 4 new rooms
+| Room | Path | PDF |
+|---|---|---|
+| **Sound-Check Gauntlet** | `/music/sound-check` | Music Arena §1 |
+| **Collab Matchmaker** | `/music/collab-matchmaker` | Music Arena §2 |
+| **Totem Pole Battles** | `/music/totem-battles` | Music Arena §3 |
+| **Vibe TV Totem Pole** | `/tv/totem-pole` | TV Totem Pole §1-§3 |
+
+### Streamer Setup Guide (NEW MARKETING PAGE)
+- `/streamer/setup-guide` — public route, no auth.
+- "Make money on every tip. Live in 60 seconds." hero
+- One-click Copy of the streamer's unique overlay URL
+- 5-step OBS setup checklist
+- Catalog of all 7 audience-paid actions (HECKLE, BUFF, ROUTE_TIP,
+  DJ_INTERCEPT, VOICE_INTERCEPT, INSTRUMENT_GIFT, HECKLE_GALLERY)
+- Sticky 70/30 Revolution earnings note
+- Linked from the Dashboard's What's New banner
+- Verified live on the preview URL — page renders cleanly with all
+  5 steps, copy button functional.
+
+### Dashboard
+- 4 new tiles added (sound_check, collab_matchmaker, totem_battles,
+  tv_totem_pole)
+- What's New banner upgraded — now lists **11 rooms** total + a
+  direct link to the Streamer Setup Guide
+
+### Regression shield: 190 → 194
+Added 4 new gates:
+- `test_totem_pole_constants_locked`
+- `test_totem_pole_routes_mounted`
+- `test_music_tv_rooms_routed`
+- `test_streamer_setup_guide_marketing_page`
+
+**194/194 passing.** Lint clean.
+
+### Total May 2026 footprint
+- **5 PDFs** absorbed: Safety & Operations · Streamer Revenue · Master Tech
+  · Party Hub · Music Arena · TV Totem Pole (one PDF was actually the
+  bundled Streamer Revenue + Master Tech — counted separately above)
+- **11 new frontend rooms** + **1 marketing page** (Streamer Setup Guide)
+- **3 new backend modules**: `dsg_guard.py`, `streamer_actions.py`,
+  `beat_dlc.py`, `totem_pole.py` (4 actually)
+- **+24 regression gates** (170 → 194)
+- All splits locked to **70 / 13.5 / 10 / 6.5** at the protocol level
+
+### Mainnet TGE — STILL LOCKED 🔒
+Founder did NOT use the safe phrase `project complete` (only quoted it).
+`BEAT_DLC_MINT_MODE` remains `SIMULATED`.
+

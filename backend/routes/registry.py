@@ -668,6 +668,17 @@ def register_all_routes(
     except Exception as _e:
         log.warning(f"Beat Vault DLC routes not mounted: {_e}")
 
+    # Totem Pole rails — Music Arena + TV broadcast survival logic.
+    # Implements GlobalVibez_MusicArena_Blueprint.pdf and
+    # GlobalVibez_TV_TotemPole_Blueprint.pdf on a single shared rail
+    # so the music side and TV side can never drift on threshold or
+    # the 70/30 split.
+    try:
+        from routes.totem_pole import router as totem_pole_router
+        api_router.include_router(totem_pole_router)
+    except Exception as _e:
+        log.warning(f"Totem Pole routes not mounted: {_e}")
+
 
 
 # ─── Domain helpers (Feb 2026 polish split) ──────────────────────────
