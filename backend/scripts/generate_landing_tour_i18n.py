@@ -122,7 +122,7 @@ async def translate(target_label: str, text: str, kind: str) -> str:
             ),
         )
         .with_model("anthropic", "claude-3-5-haiku-20241022")
-        .with_max_tokens(2048)
+        .with_params(max_tokens=2048)
     )
     user = UserMessage(text=f"Target language: {target_label}\n\nSource:\n{text}")
     out = await chat.send_message(user)
@@ -134,62 +134,101 @@ async def generate_all() -> None:
         raise SystemExit("EMERGENT_LLM_KEY missing")
     tts = OpenAITextToSpeech(api_key=os.getenv("EMERGENT_LLM_KEY"))
 
+    # Resume from existing manifest so re-runs after a budget top-up
+    # don't re-bill for already-generated languages.
     manifest: dict = {"default": "en", "languages": {}}
+    if MANIFEST.exists():
+        try:
+            existing = json.loads(MANIFEST.read_text(encoding="utf-8"))
+            if isinstance(existing, dict) and existing.get("languages"):
+                manifest = existing
+                manifest["default"] = "en"
+                print(f"[i18n] resume: found {len(manifest['languages'])} existing languages")
+        except Exception:
+            pass
+
+    # Seed English from the legacy single-language MP3 if we already
+    # have it, so TTS budget can be saved for the new languages.
+    legacy_en = PUBLIC_DIR / "landing-tour-narration.mp3"
+    en_alias = PUBLIC_DIR / "landing-tour-narration-en.mp3"
+    if legacy_en.exists() and not en_alias.exists():
+        en_alias.write_bytes(legacy_en.read_bytes())
+        print(f"[i18n] seeded English MP3 from legacy {legacy_en.name}")
 
     for code, meta in LANGUAGES.items():
         print(f"\n[i18n] {code} ({meta['native']}) ────────────────────")
-
-        # 1. Translate (or use English source).
-        if code == "en":
-            translated_script = ENGLISH_SCRIPT
-            translated_cues = [c[1] for c in ENGLISH_CAPTIONS]
-        else:
-            print(f"  → translating script via Claude Haiku…")
-            translated_script = await translate(meta["label"], ENGLISH_SCRIPT, "script")
-            joined_cues = "\n###\n".join(c[1] for c in ENGLISH_CAPTIONS)
-            print(f"  → translating {len(ENGLISH_CAPTIONS)} caption cues…")
-            joined_translated = await translate(meta["label"], joined_cues, "cues")
-            translated_cues = [s.strip() for s in joined_translated.split("###")]
-            if len(translated_cues) != len(ENGLISH_CAPTIONS):
-                # Translation drift — fall back to English caption count.
-                # Pad / truncate so the timing array stays aligned.
-                while len(translated_cues) < len(ENGLISH_CAPTIONS):
-                    translated_cues.append(ENGLISH_CAPTIONS[len(translated_cues)][1])
-                translated_cues = translated_cues[: len(ENGLISH_CAPTIONS)]
-                print(f"    ⚠ caption count drift, padded to {len(ENGLISH_CAPTIONS)}")
-
-        # 2. Generate the MP3 via OpenAI TTS Onyx.
         out_mp3 = PUBLIC_DIR / f"landing-tour-narration-{code}.mp3"
-        print(f"  → TTS → {out_mp3.name}")
-        audio_bytes = await tts.generate_speech(
-            text=translated_script,
-            model="tts-1-hd",
-            voice="onyx",
-            response_format="mp3",
-            speed=1.0,
-        )
-        out_mp3.write_bytes(audio_bytes)
 
-        # 3. Capture actual duration + scale cue timings.
+        # Resume: if the MP3 already exists and the manifest already
+        # has cues for this language, skip the whole pipeline.
+        if out_mp3.exists() and code in manifest["languages"] and manifest["languages"][code].get("cues"):
+            # Refresh the audio path so legacy entries point at the
+            # per-language MP3 alias even after we seeded en.
+            manifest["languages"][code]["audio"] = f"/landing-tour-narration-{code}.mp3"
+            print(f"  ↻ skip — already generated ({out_mp3.stat().st_size // 1024} KB)")
+            continue
+
         try:
-            actual_dur = MP3(str(out_mp3)).info.length
-        except Exception:
-            actual_dur = ENGLISH_DURATION
-        scale = actual_dur / ENGLISH_DURATION if ENGLISH_DURATION else 1.0
-        cues = [
-            {"t": round(t * scale, 2), "text": text}
-            for (t, _), text in zip(ENGLISH_CAPTIONS, translated_cues)
-        ]
+            # 1. Translate (or use English source).
+            if code == "en":
+                translated_script = ENGLISH_SCRIPT
+                translated_cues = [c[1] for c in ENGLISH_CAPTIONS]
+            else:
+                print(f"  → translating script via Claude Haiku…")
+                translated_script = await translate(meta["label"], ENGLISH_SCRIPT, "script")
+                joined_cues = "\n###\n".join(c[1] for c in ENGLISH_CAPTIONS)
+                print(f"  → translating {len(ENGLISH_CAPTIONS)} caption cues…")
+                joined_translated = await translate(meta["label"], joined_cues, "cues")
+                translated_cues = [s.strip() for s in joined_translated.split("###")]
+                if len(translated_cues) != len(ENGLISH_CAPTIONS):
+                    while len(translated_cues) < len(ENGLISH_CAPTIONS):
+                        translated_cues.append(ENGLISH_CAPTIONS[len(translated_cues)][1])
+                    translated_cues = translated_cues[: len(ENGLISH_CAPTIONS)]
+                    print(f"    ⚠ caption count drift, padded to {len(ENGLISH_CAPTIONS)}")
 
-        manifest["languages"][code] = {
-            "label": meta["label"],
-            "native": meta["native"],
-            "rtl": meta["rtl"],
-            "audio": f"/landing-tour-narration-{code}.mp3",
-            "duration": round(actual_dur, 2),
-            "cues": cues,
-        }
-        print(f"  ✅ {actual_dur:.1f}s · {out_mp3.stat().st_size // 1024} KB")
+            # 2. Generate the MP3 via OpenAI TTS Onyx (unless already on disk).
+            if out_mp3.exists() and out_mp3.stat().st_size > 0:
+                print(f"  ↻ MP3 already on disk — reusing ({out_mp3.stat().st_size // 1024} KB)")
+            else:
+                print(f"  → TTS → {out_mp3.name}")
+                audio_bytes = await tts.generate_speech(
+                    text=translated_script,
+                    model="tts-1-hd",
+                    voice="onyx",
+                    response_format="mp3",
+                    speed=1.0,
+                )
+                out_mp3.write_bytes(audio_bytes)
+
+            # 3. Capture actual duration + scale cue timings.
+            try:
+                actual_dur = MP3(str(out_mp3)).info.length
+            except Exception:
+                actual_dur = ENGLISH_DURATION
+            scale = actual_dur / ENGLISH_DURATION if ENGLISH_DURATION else 1.0
+            cues = [
+                {"t": round(t * scale, 2), "text": text}
+                for (t, _), text in zip(ENGLISH_CAPTIONS, translated_cues)
+            ]
+
+            manifest["languages"][code] = {
+                "label": meta["label"],
+                "native": meta["native"],
+                "rtl": meta["rtl"],
+                "audio": f"/landing-tour-narration-{code}.mp3",
+                "duration": round(actual_dur, 2),
+                "cues": cues,
+            }
+            # Save manifest after each language so partial runs persist.
+            MANIFEST.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+            print(f"  ✅ {actual_dur:.1f}s · {out_mp3.stat().st_size // 1024} KB")
+        except Exception as exc:
+            msg = str(exc)
+            if "Budget" in msg or "budget" in msg:
+                print(f"  ⛔ budget exceeded — stopping. Top up Universal Key, then re-run this script.")
+                break
+            print(f"  ⚠ skipped {code} due to error: {msg[:200]}")
+            continue
 
     PUBLIC_DIR.mkdir(parents=True, exist_ok=True)
     MANIFEST.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
