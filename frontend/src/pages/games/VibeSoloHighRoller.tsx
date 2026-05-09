@@ -19,6 +19,7 @@ interface SoloGameState {
   has_4: boolean;
   qualified: boolean;
   point_dice: number[];
+  residual_dice?: number[];   // dice still IN PLAY after the peel (qualified or not)
   last_roll_dice: number[];
   rolls: number;
   rolls_remaining: number;
@@ -248,9 +249,13 @@ export default function VibeSoloHighRoller() {
       return rollingDice.map((v) => ({ value: v, state: 'rolling' as DieState }));
     }
     // Post-roll static display — only the dice STILL IN PLAY.
+    // Per official rules each qualifier is REMOVED from the physical
+    // dice set once locked; the qualifier chips above are the source of
+    // truth for which 6/5/4 the player has banked. Backend now exposes
+    // `residual_dice` (post-peel) so the tray drops the just-locked die.
     const leftovers = game.qualified
       ? (game.point_dice || [])
-      : (game.last_roll_dice || []);
+      : (game.residual_dice ?? game.last_roll_dice ?? []);
     return leftovers.map((v) => ({ value: v, state: 'settled' as DieState }));
   }, [game, rolling, rollingDice]);
 

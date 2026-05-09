@@ -4103,3 +4103,91 @@ def test_bid_whist_cards_land_near_center_table_logo():
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--tb=short"])
+
+
+# ── Beta-redeploy follow-ups (founder fix May 2026) ───────────────────
+def test_not_found_page_replaces_wildcard_redirect():
+    """App.js previously had `<Route path="*" element={<Navigate to="/" />}>`
+    which silently bounced every dead route to the landing — making it
+    impossible to detect broken links during QA. Replaced with a proper
+    NotFound 404 page so dead URLs surface honestly."""
+    src = open("/app/frontend/src/App.js").read()
+    assert "import NotFound from" in src, \
+        "NotFound page must be imported in App.js"
+    assert '<Route path="*" element={<NotFound />} />' in src, \
+        "Wildcard route must render <NotFound /> (not Navigate to '/')"
+    assert 'Navigate to="/" replace />' not in src.split('path="*"')[1].split(">", 2)[0] if 'path="*"' in src else True
+    nf = open("/app/frontend/src/pages/NotFound.tsx").read()
+    assert 'data-testid="not-found-page"' in nf
+    assert "404" in nf
+    assert "not-found-home-btn" in nf and "not-found-back-btn" in nf
+
+
+def test_mongo_health_check_at_startup():
+    """Founder fix Feb 2026 (post-disk-full incident): the FastAPI startup
+    hook must ping Mongo before kicking off background schedulers, and
+    log a FATAL error if the ping fails. This surfaces the
+    `mongod-FATAL-after-disk-full` recurrence that masked every API as
+    a 500 silently."""
+    src = open("/app/backend/lifespan.py").read()
+    assert 'client.admin.command("ping")' in src, \
+        "lifespan.py must ping Mongo on startup"
+    assert "FATAL: Mongo ping failed at startup" in src, \
+        "lifespan.py must log FATAL when Mongo is unreachable on boot"
+    assert "asyncio.wait_for" in src, \
+        "Mongo ping must use a timeout so it doesn't hang startup forever"
+
+
+def test_vibez_654_residual_dice_contract():
+    """Founder fix Feb 2026 — Vibez 654 dice tray was showing all 5 dice
+    even after qualifying 6/5/4 got peeled. Per official rules, each
+    qualifier REMOVES a die from the physical roll. Backend must expose
+    `residual_dice` (post-peel) so the frontend tray drops the locked
+    qualifier."""
+    from routes.vibez_654 import _apply_654_pass
+    out = _apply_654_pass([6, 3, 2, 1, 1], False, False, False)
+    assert "residual_dice" in out, "Vibez 654 helper must return residual_dice"
+    # The 6 got peeled — 4 dice still in play, no 6 among them.
+    assert sorted(out["residual_dice"]) == [1, 1, 2, 3]
+    assert 6 not in out["residual_dice"]
+    # When qualified, residual mirrors point_dice.
+    qual = _apply_654_pass([6, 5, 4, 3, 2], False, False, False)
+    assert qual["qualified"] is True
+    assert sorted(qual["residual_dice"]) == [2, 3]
+    assert sorted(qual["point_dice"]) == [2, 3]
+
+
+def test_whats_new_banner_hidden_on_card_rooms():
+    """Founder fix Feb 2026 (round 5): the pinned 'Just for the Night'
+    announcement banner was overlapping every card-room header. Lock
+    the auto-hide list so future card rooms don't regress."""
+    src = open("/app/frontend/src/components/common/WhatsNewBanner.tsx").read()
+    assert "HIDDEN_EXACT" in src
+    for route in [
+        "/spades", "/bid-whist", "/hearts", "/uno", "/euchre",
+        "/pinochle", "/gin-rummy", "/rummy", "/war",
+        "/crazy-eights", "/go-fish", "/baccarat",
+    ]:
+        assert f'"{route}"' in src, \
+            f"WhatsNewBanner HIDDEN_EXACT must include {route}"
+
+
+def test_card_room_handfan_breathing_room():
+    """Founder fix Feb 2026 (round 5): south hand-fan was overlapping
+    the south played-card landing slot in the trick pile. Cut the
+    negative top-margin from -mt-12 to -mt-6 across all 6 AAA card
+    rooms that share the SpadesHandFan."""
+    for f in [
+        "/app/frontend/src/pages/games/SpadesAAA.tsx",
+        "/app/frontend/src/pages/games/BidWhistAAA.tsx",
+        "/app/frontend/src/pages/games/HeartsAAA.tsx",
+        "/app/frontend/src/pages/games/PinochleAAA.tsx",
+        "/app/frontend/src/pages/games/EuchreAAA.tsx",
+        "/app/frontend/src/pages/games/CrazyEightsAAA.tsx",
+    ]:
+        body = open(f).read()
+        assert "-mt-10 md:-mt-12" not in body, \
+            f"{f} must NOT use the legacy -mt-12 hand-fan margin (collides with south trick card)"
+        # Either -mt-4 md:-mt-6 (fix applied) OR no -mt at all (some rooms removed it)
+        assert "-mt-4 md:-mt-6" in body or "-mt-" not in body, \
+            f"{f} hand-fan margin must use the new -mt-6 breathing-room value"

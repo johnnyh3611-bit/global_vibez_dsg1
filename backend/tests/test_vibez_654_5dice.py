@@ -76,15 +76,27 @@ def test_apply_654_pass_logic_unit():
     assert out["qualified"] is True
     # Leftover should be the two non-qualifier dice.
     assert sorted(out["point_dice"]) == [2, 3]
+    # residual_dice mirrors point_dice when qualified.
+    assert sorted(out["residual_dice"]) == [2, 3]
 
     # Out-of-order 4 alone can't qualify before 6.
     out = _apply_654_pass([4, 4, 4, 4, 4], False, False, False)
     assert out["has_6"] is False and out["qualified"] is False
+    # All 5 dice still IN PLAY because nothing got peeled.
+    assert out["residual_dice"] == [4, 4, 4, 4, 4]
 
     # 6 then 5 but no 4 → not qualified, but flags updated.
     out = _apply_654_pass([6, 5, 3, 3, 2], False, False, False)
     assert out["has_6"] is True and out["has_5"] is True
     assert out["has_4"] is False and out["qualified"] is False
+    # The 6 and 5 got REMOVED from the physical dice set per the rules.
+    # residual_dice should be the 3 leftover dice [3, 3, 2].
+    assert sorted(out["residual_dice"]) == [2, 3, 3]
+
+    # Single qualifier this pass — only the 6 is peeled.
+    out = _apply_654_pass([6, 3, 2, 1, 1], False, False, False)
+    assert out["has_6"] is True and out["has_5"] is False and out["has_4"] is False
+    assert sorted(out["residual_dice"]) == [1, 1, 2, 3]
 
 
 def test_rolls_remaining_decrements_and_auto_ends_at_zero(client, token):

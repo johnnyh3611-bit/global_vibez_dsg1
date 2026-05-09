@@ -51,7 +51,12 @@ def _apply_654_pass(
     Apply the sequential 6→5→4 qualification on a fresh roll.
 
     Returns the updated flags AND the point_dice (the dice left over after
-    peeling off the first 6, first 5, first 4 encountered in qualifying order).
+    peeling off the first 6, first 5, first 4 encountered in qualifying
+    order). Also returns `residual_dice` — the dice still IN PLAY after the
+    peel (i.e., the `roll` minus the just-locked qualifiers). The frontend
+    uses this so the tray visually drops the locked die when a 6/5/4 gets
+    qualified, matching the official rule: *"each qualifier removes a die
+    from the roll."*
     """
     remaining = list(roll)
     if not has_6 and 6 in remaining:
@@ -70,6 +75,7 @@ def _apply_654_pass(
         "has_4": has_4,
         "qualified": qualified,
         "point_dice": remaining if qualified else [],
+        "residual_dice": remaining,  # always exposed (qualified or not)
     }
 
 
@@ -117,6 +123,7 @@ async def start_game(payload: StartPayload, http_request: Request):
         "has_4": False,
         "qualified": False,
         "point_dice": [],          # leftover dice once qualified
+        "residual_dice": [],       # dice still in play (post-peel) — always populated
         "last_roll_dice": [],      # what the player just rolled
         "rolls": 0,
         "rolls_remaining": MAX_ROLLS,
@@ -174,12 +181,14 @@ async def roll_dice(payload: RollPayload, http_request: Request):
         # Already qualified — the fresh dice ARE the new point dice. Don't
         # re-peel 6/5/4 because those qualifiers are already locked.
         point_dice = list(fresh)
+        residual_dice = list(fresh)
         qualified = True
     else:
         out = _apply_654_pass(fresh, has_6, has_5, has_4)
         has_6, has_5, has_4 = out["has_6"], out["has_5"], out["has_4"]
         qualified = out["qualified"]
         point_dice = out["point_dice"]  # may be [] if not yet qualified
+        residual_dice = out["residual_dice"]  # always populated
 
     rolls = game["rolls"] + 1
     rolls_remaining = MAX_ROLLS - rolls
@@ -200,6 +209,7 @@ async def roll_dice(payload: RollPayload, http_request: Request):
         "has_4": has_4,
         "qualified": qualified,
         "point_dice": point_dice,
+        "residual_dice": residual_dice,
         "last_roll_dice": fresh,
         "rolls": rolls,
         "rolls_remaining": rolls_remaining,
@@ -214,6 +224,7 @@ async def roll_dice(payload: RollPayload, http_request: Request):
         "has_4": has_4,
         "qualified": qualified,
         "point_dice": point_dice,
+        "residual_dice": residual_dice,
     }
     game.update(update)
 

@@ -57,6 +57,7 @@ import GlobeFAB from "@/components/GlobeFAB";
 import GameVoiceDockMounter from "@/components/games/GameVoiceDockMounter";
 import FloatingFoodMenu from "@/components/common/FloatingFoodMenu";
 import PageActionStrip from "@/components/common/PageActionStrip";
+import NotFound from "@/pages/NotFound";
 
 // Import version manager for cache busting
 import { startVersionMonitoring } from "@/utils/versionManager";
@@ -217,8 +218,10 @@ function AppRouter() {
         <Route path="/poker-3d" element={<Navigate to="/games" replace />} />
         <Route path="/poker-css3d" element={<Navigate to="/games" replace />} />
 
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        {/* Founder fix Feb 2026: replace the silent wildcard redirect with
+            an honest 404 page so dead routes surface visibly instead of
+            quietly bouncing to the landing. */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </>
   );
