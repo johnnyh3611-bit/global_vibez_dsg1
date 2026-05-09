@@ -3468,6 +3468,74 @@ def test_viewport_meta_supports_safe_areas():
         "<meta viewport> must include viewport-fit=cover for safe-area support"
 
 
+# ─────────────────────────────────────── Streamer Action Hub
+# (Streamer Revenue / Master Tech / Party Hub blueprints, May 2026)
+
+
+def test_streamer_actions_constants_locked():
+    """Streamer Revenue PDF §4 + Master Tech §5 + Party Hub §4:
+    the unifying tip-to-action rail must publish the locked split
+    + voice-intercept window + hype meter threshold."""
+    from routes.streamer_actions import get_locked_constants_dict
+    locked = get_locked_constants_dict()
+    assert locked["STREAMER_PAYOUT"] == 0.70, \
+        "Streamer share must be 70% per Streamer Revenue PDF §1"
+    assert locked["SOVEREIGN_TAX"] == 0.135, \
+        "Sovereign tax must be 13.5% — must agree with Immutable Core"
+    assert locked["LIQUIDITY_POOL"] == 0.10
+    assert locked["VOICE_INTERCEPT_SECONDS"] == 15, \
+        "Voice Mirror Intercept must be 15s per PDF §4"
+    assert locked["HYPE_METER_PEAK_THRESHOLD"] >= 1, \
+        "Hype meter must have a positive peak threshold"
+    # All seven action kinds from the 3 PDFs must be supported
+    expected_kinds = {
+        "HECKLE", "BUFF", "ROUTE_TIP", "DJ_INTERCEPT",
+        "VOICE_INTERCEPT", "INSTRUMENT_GIFT", "HECKLE_GALLERY",
+    }
+    assert set(locked["ACTION_KINDS"]) == expected_kinds, \
+        f"Action kinds drifted; expected {expected_kinds}"
+
+
+def test_streamer_actions_routes_mounted():
+    """The streamer-actions router MUST be mounted under /api so
+    overlay polling and tip POSTs are reachable."""
+    from server import app
+    paths = {r.path for r in app.routes}
+    assert "/api/streamer-actions/constants" in paths
+    assert "/api/streamer-actions/tip" in paths
+    assert "/api/streamer-actions/hype-meter/{streamer_id}" in paths
+    assert "/api/streamer-actions/recent/{streamer_id}" in paths
+    assert "/api/streamer-actions/complete/{action_id}" in paths
+
+
+def test_streamer_actions_payout_buckets_sum_to_one():
+    """Streamer / sovereign-tax / liquidity-pool / residual MUST
+    sum to 100% — otherwise the ledger leaks money."""
+    from routes.streamer_actions import (
+        STREAMER_PAYOUT, SOVEREIGN_TAX, LIQUIDITY_POOL, RESIDUAL,
+    )
+    total = STREAMER_PAYOUT + SOVEREIGN_TAX + LIQUIDITY_POOL + RESIDUAL
+    assert abs(total - 1.0) < 1e-9, \
+        f"Streamer Action payout buckets must sum to 1.0; got {total}"
+
+
+# ─────────────────────────────────────── Blackjack (no-bug lock)
+
+
+def test_blackjack_action_endpoint_no_player_cards_keyerror():
+    """Lock the current Blackjack session-shape: the action handler
+    reads `session['player_hands'][hand_index]`, NEVER
+    `session['player_cards']` (which would KeyError). If a future
+    refactor accidentally reintroduces the bad lookup this gate
+    catches it before the 500 hits production."""
+    src = open("/app/backend/routes/blackjack.py").read()
+    assert "session['player_cards']" not in src, \
+        "Blackjack action handler must use session['player_hands'][hand_index]"
+    assert 'session["player_cards"]' not in src
+    assert "session['player_hands']" in src or 'session["player_hands"]' in src, \
+        "Blackjack must persist hands under 'player_hands' key"
+
+
 
 
 

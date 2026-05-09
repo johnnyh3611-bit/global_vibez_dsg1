@@ -651,6 +651,14 @@ def register_all_routes(
     except Exception as _e:
         log.warning(f"DSG Guard routes not mounted: {_e}")
 
+    # Streamer Action Hub — unifying tip-to-action rail backing the
+    # Streamer Revenue / Master Tech / Party Hub blueprints.
+    try:
+        from routes.streamer_actions import router as streamer_actions_router
+        api_router.include_router(streamer_actions_router)
+    except Exception as _e:
+        log.warning(f"Streamer Action Hub routes not mounted: {_e}")
+
 
 
 # ─── Domain helpers (Feb 2026 polish split) ──────────────────────────
