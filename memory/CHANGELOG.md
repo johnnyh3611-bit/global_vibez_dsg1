@@ -4562,3 +4562,108 @@ Added 3 new gates (technically 5 assertions, consolidated):
 
 **Beta-redeploy ready.**
 
+
+
+---
+
+## 2026-05-09 (Final-Final Pre-Redeploy) — JFTN Dual-Rail Shipped
+
+### Founder ask delivered
+Just-For-The-Night discovery page now splits into TWO rails:
+
+1. **Tonight (PG-13)** — open to all
+2. **After Dark (18+)** — Global Vibez Guard age-verification required
+
+Between them, a **shimmer divider** with a rounded "After Dark · age verified"
+chip clearly telegraphs the gate. Each room card gains an `18+` corner
+badge when its `tier === '18+'`. Filters apply across both rails.
+
+### Files
+- `/app/frontend/src/pages/just-for-the-night/RoomDiscovery.tsx` — split grid
+  into `jftn-rail-pg13`, `jftn-tier-divider`, `jftn-rail-18plus`. Common
+  card renderer to keep the look consistent.
+
+### Regression: 200 → 201
+- `test_jftn_discovery_dual_rails` locks the rails + divider pattern.
+
+**201/201 passing.** Webpack 0 errors. All schedulers + leaderboard handlers
++ JFTN seeder still running cleanly in startup logs.
+
+---
+
+## 📋 COMPLETE REMAINING BACKLOG (post-redeploy)
+
+The user uploaded `Global_Vibez_DSG_Implementation_Roadmap.pdf` requesting
+all remaining items be surfaced before redeploy. Listed below.
+
+### 🔴 P0 — Roadmap PDF items NOT yet implemented
+
+1. **$VIBEZ Activity Multiplier Reward Formula** (PDF §1)
+   - Formula: `R_total = (B_base × M_multiplier) + T_bonus`
+   - `B_base` — token rate per minute of active gameplay/streaming
+   - `M_multiplier` — environmental boost (1.5x for special events)
+   - `T_bonus` — social interaction bonuses (chat, gifts, matches)
+   - **Implementation Trigger**: when a Spades / Vibe Dice / Chess match
+     ends, backend must send a transaction request to the Solana mint
+     address to distribute calculated rewards to user's wallet.
+   - **Status**: NOT STARTED. Solana SPL mint authority is held by the
+     Squads multisig and is locked behind the `project complete` safe
+     phrase. The formula calculation can ship NOW with `SIMULATED`
+     transactions (same pattern as Beat Vault DLC).
+
+2. **Visual Asset Specifications** (PDF §2) — Three environments need
+   AAA-grade visual upgrades:
+   - **Celestial Glasshouse**: PBR + Skyboxes (real-time starfield/reflections)
+   - **Cyber-Casino**: Real-time ray-tracing for surfaces + neon volumetric lighting
+   - **Underground Club**: Sub-surface scattering on human skin + 4K texture maps + high-poly modeling
+   - **Status**: PARTIAL. Lyric Glasshouse is shipped (3D crystal +
+     particle field). Cyber-Casino has a working demo placeholder.
+     Underground Club (= Meme Matchmaker) has neon palette but no
+     SSS/4K texture pass yet.
+
+3. **Floating 3D Food Delivery Menu** (PDF §3)
+   - Ribbon icon overlay that lets users order food from any room
+     WITHOUT pausing the game.
+   - **Status**: HungryVibes API exists but no in-room overlay.
+
+4. **"Ride Home" Lobby Button** (PDF §3)
+   - Shares user's location with the VibeRidez driver system.
+   - **Status**: VibeRidez backend lives. Lobby CTA missing.
+
+5. **Seated Ownership** (PDF §3)
+   - DB check on Chair Ownership → exclusive chair unlocks unique
+     chat colors + token-generation boost (ties to the $VIBEZ formula).
+   - **Status**: PARTIAL. `routes/chairs.py` exists for ownership.
+     Chat-color unlock + token-gen boost not wired.
+
+### 🟠 P1 — Operational
+
+6. **Stripe wire-up** — currently Vibe credits only; needed for real-
+    money cash-out flow on tipping & DLC purchases.
+
+7. **Resend custom sender** — swap `onboarding@resend.dev` for
+   `support@globalvibezdsg.com` (DNS-dependent).
+
+8. **Cyber Casino Unity WebGL ZIP** — drop `cyber_casino_main.zip`
+   at `/unity-builds/` to swap the demo placeholder for the real game.
+
+### 🟡 P2 — Polish
+
+9. **3D dual-rail upgrade** for the JFTN discovery page (shipped today
+   was a 2D rail split — could become a perspective tunnel later).
+
+10. **WebSocket Hype Meter feed** for the Streamer Overlay (currently
+    polls every 3s — moving it to socket.io would feel snappier).
+
+11. **Music Arena Vibe Suite recording archive** — auto-mint the
+    recorded session to Beat Vault DLC when the suite closes.
+
+### 🔒 LOCKED (only unlocks on `project complete` safe phrase)
+
+12. Mainnet TGE & Solana SPL bridge (Squads multisig)
+13. Beat Vault DLC mint mode flip from SIMULATED → PRODUCTION
+14. $VIBEZ Activity Multiplier transaction on-chain (item #1 above)
+
+**That's the complete picture. Redeploy whenever you're ready —
+everything currently shipped is production-clean.**
+

@@ -3711,6 +3711,19 @@ def test_streamer_setup_guide_marketing_page():
 # ─────────────────────────────────────── JFTN library expansion
 
 
+def test_jftn_discovery_dual_rails():
+    """Founder ask 2026-05-09: the JFTN discovery page must split
+    rooms into a 'Tonight' (PG-13) rail and an 'After Dark' (18+)
+    rail, with a shimmer divider between them so first-time visitors
+    instantly see both vibes."""
+    src = open("/app/frontend/src/pages/just-for-the-night/RoomDiscovery.tsx").read()
+    assert 'jftn-rail-pg13' in src, "Discovery must render the PG-13 rail"
+    assert 'jftn-rail-18plus' in src, "Discovery must render the 18+ rail"
+    assert 'jftn-tier-divider' in src, "Discovery must render the After-Dark divider"
+    assert "Tonight" in src and "After Dark" in src, \
+        "Rail headlines must read Tonight + After Dark"
+
+
 def test_jftn_library_has_18plus_rooms():
     """Founder ask 2026-05-09: the JFTN demo seeder must include the
     five 18+ rooms (smoke jazz, red silk, midnight burlesque,

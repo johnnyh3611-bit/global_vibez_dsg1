@@ -227,69 +227,115 @@ export const RoomDiscovery = () => {
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredRooms.map((room, index) => (
-                <motion.div
-                  key={room.room_id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  onClick={() => navigate(`/just-for-the-night/room/${room.room_id}`)}
-                  className="bg-gray-800 rounded-2xl overflow-hidden cursor-pointer hover:ring-2 hover:ring-purple-500 transition-all group"
-                >
-                {/* Preview Image (Blurred) */}
-                <div className="relative h-48 bg-gradient-to-br from-purple-900 via-pink-900 to-purple-900 overflow-hidden">
-                  {room.preview_image_url ? (
-                    <img 
-                      src={room.preview_image_url} 
-                      alt={room.title}
-                      className="w-full h-full object-cover blur-xl scale-110 group-hover:scale-125 transition-transform duration-500"
-                    />
-                  ) : (
-                    <div className="w-full h-full animate-pulse" />
-                  )}
-                  
-                  {/* Lock Overlay */}
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                    <Lock className="w-12 h-12 text-pink-400 animate-pulse" />
-                  </div>
-
-                  {/* Dealer Badge */}
-                  <div className="absolute top-3 right-3">
-                    {getDealerBadge(room.settings?.dealer_type)}
-                  </div>
-                </div>
-
-                {/* Room Info */}
-                <div className="p-5">
-                  <h3 className="text-xl font-bold text-white mb-2 line-clamp-1">
-                    {room.title}
-                  </h3>
-                  <p className="text-gray-400 text-sm mb-4 line-clamp-2">
-                    {room.description || "Mystery awaits..."}
-                  </p>
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-gray-500 text-sm">
-                      <Users className="w-4 h-4" />
-                      <span>{room.total_visits || 0} visits</span>
+            <div data-testid="jftn-rails">
+              {(() => {
+                // Founder ask 2026-05-09: split discovery into two
+                // rails so first-time visitors immediately see both
+                // PG-13 and 18+ vibes, with the age-gate as a clear
+                // shimmer divider between them.
+                const pg13Rooms = filteredRooms.filter((r) => (r.tier || 'PG-13') !== '18+');
+                const adultRooms = filteredRooms.filter((r) => r.tier === '18+');
+                const renderCard = (room, index) => (
+                  <motion.div
+                    key={room.room_id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    onClick={() => navigate(`/just-for-the-night/room/${room.room_id}`)}
+                    data-testid={`jftn-room-card-${room.room_id}`}
+                    className="bg-gray-800 rounded-2xl overflow-hidden cursor-pointer hover:ring-2 hover:ring-purple-500 transition-all group"
+                  >
+                    <div className="relative h-48 bg-gradient-to-br from-purple-900 via-pink-900 to-purple-900 overflow-hidden">
+                      {room.preview_image_url ? (
+                        <img
+                          src={room.preview_image_url}
+                          alt={room.title}
+                          className="w-full h-full object-cover blur-xl scale-110 group-hover:scale-125 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full animate-pulse" />
+                      )}
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                        <Lock className="w-12 h-12 text-pink-400 animate-pulse" />
+                      </div>
+                      <div className="absolute top-3 right-3 flex items-center gap-2">
+                        {room.tier === '18+' && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500/30 border border-rose-400/60 text-rose-100">
+                            18+
+                          </span>
+                        )}
+                        {getDealerBadge(room.settings?.dealer_type)}
+                      </div>
                     </div>
-                    
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-500/20 border border-purple-500/30 rounded-full">
-                      <Coins className="w-4 h-4 text-purple-400" />
-                      <span className="font-bold text-purple-300">{room.settings?.entry_tokens || 100}</span>
+                    <div className="p-5">
+                      <h3 className="text-xl font-bold text-white mb-2 line-clamp-1">{room.title}</h3>
+                      <p className="text-gray-400 text-sm mb-4 line-clamp-2">{room.description || 'Mystery awaits...'}</p>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-gray-500 text-sm">
+                          <Users className="w-4 h-4" />
+                          <span>{room.total_visits || 0} visits</span>
+                        </div>
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-500/20 border border-purple-500/30 rounded-full">
+                          <Coins className="w-4 h-4 text-purple-400" />
+                          <span className="font-bold text-purple-300">{room.settings?.entry_tokens || 100}</span>
+                        </div>
+                      </div>
+                      <div className="mt-3 pt-3 border-t border-gray-700">
+                        <span className="text-xs text-gray-500">
+                          Challenge: <span className="text-purple-400 font-semibold">{room.settings?.challenge_game?.toUpperCase() || 'UNKNOWN'}</span>
+                        </span>
+                      </div>
                     </div>
-                  </div>
+                  </motion.div>
+                );
+                return (
+                  <>
+                    {/* Rail 1 — Tonight (PG-13) */}
+                    <div data-testid="jftn-rail-pg13" className="mb-10">
+                      <div className="flex items-baseline gap-3 mb-4">
+                        <h2 className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-cyan-300 via-purple-300 to-pink-300 bg-clip-text text-transparent">
+                          Tonight
+                        </h2>
+                        <span className="text-[10px] uppercase tracking-[0.4em] font-bold text-cyan-300/80">PG-13 · open to all</span>
+                        <span className="ml-auto text-xs text-gray-500">{pg13Rooms.length} rooms</span>
+                      </div>
+                      {pg13Rooms.length === 0 ? (
+                        <div className="text-center text-gray-500 py-10 italic">No PG-13 rooms match your filters.</div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {pg13Rooms.map(renderCard)}
+                        </div>
+                      )}
+                    </div>
 
-                  {/* Challenge Info */}
-                  <div className="mt-3 pt-3 border-t border-gray-700">
-                    <span className="text-xs text-gray-500">
-                      Challenge: <span className="text-purple-400 font-semibold">{room.settings?.challenge_game?.toUpperCase() || "UNKNOWN"}</span>
-                    </span>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+                    {/* Shimmer divider — telegraphs the age gate */}
+                    <div data-testid="jftn-tier-divider" className="my-10 relative">
+                      <div className="h-px bg-gradient-to-r from-transparent via-rose-500/60 to-transparent" />
+                      <div className="absolute left-1/2 -translate-x-1/2 -top-3 px-4 py-1 rounded-full text-[10px] uppercase tracking-[0.4em] font-black bg-black border border-rose-400/40 text-rose-200">
+                        After Dark · age verified
+                      </div>
+                    </div>
+
+                    {/* Rail 2 — After Dark (18+) */}
+                    <div data-testid="jftn-rail-18plus" className="mb-6">
+                      <div className="flex items-baseline gap-3 mb-4">
+                        <h2 className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-rose-300 via-fuchsia-300 to-amber-300 bg-clip-text text-transparent">
+                          After Dark
+                        </h2>
+                        <span className="text-[10px] uppercase tracking-[0.4em] font-bold text-rose-300/80">18+ · Global Vibez Guard required</span>
+                        <span className="ml-auto text-xs text-gray-500">{adultRooms.length} rooms</span>
+                      </div>
+                      {adultRooms.length === 0 ? (
+                        <div className="text-center text-gray-500 py-10 italic">No 18+ rooms match your filters.</div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {adultRooms.map(renderCard)}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           </>
         )}
