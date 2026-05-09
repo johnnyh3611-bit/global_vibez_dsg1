@@ -1,6 +1,14 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
 
+> **2026-05-09 — Date Night Mode + Beta-Tester Accessibility Chip + Pre-Deploy Code Review ✅🚀.** Two final UX enhancements shipped + production-readiness review passed.
+>
+> 1. **Date Night Mode (Cinema Room)** — toggle in lobby promotes the room to private, swaps to soft warm rose theme, hides audience count, replaces the chat header with "Just the two of you", auto-pins a 🌹 welcome message, and switches the chat input placeholder to "Whisper something…". Cross-pillar feature designed to pull Dating Universe matches into the Cinema Room for second/third dates. Backend auto-promotes `is_private=True` whenever `is_date_night=True` so date-night rooms NEVER appear in the public lobby list.
+> 2. **Beta-Tester Accessibility Chip** — visible BEFORE login on `/beta-tester`. Wired to the same `body[data-no-flash="1"]` / `localStorage gv_no_flash_v1` toggle used by the in-app Reduce Motion button so the preference carries into the authenticated app shell. Copy: "Photosensitive-safe Mode · WCAG-2.3.1 friendly · one-click toggle". Verified live: click flips `body.dataset.noFlash="1"` + persists in localStorage. WCAG-2.3.1 differentiator visible to first-time visitors.
+> 3. **Pre-Deploy Code Review (troubleshoot agent)** — verdict: **NO P0 BLOCKERS · PRODUCTION READY**. Confirmed: no hardcoded preview URLs in new routes, no Mongo _id leaks, CORS configured via env, all routes registered cleanly, photosensitive animations removed, FULLSCREEN_GAME_ROUTES whitelist includes `/cinema-room` + `/vibez-654`, Vibez654Game state shape matches backend protocol. P1 follow-ups (NOT blockers): two pre-existing fallback URLs in `system_monitor.py` + `hungryvibes_merchant.py`, 37 MB tour MP4 in build dir (acceptable on CDN), CinemaManager in-memory dict could grow over weeks (mitigated by Mongo persistence).
+> 4. **Regression Shield: 236/236 GREEN** (227 regression + 9 cinema_room incl. 1 date-night auto-private lock + extra beta-tester a11y lock).
+
+
 > **2026-05-09 — THE CINEMA ROOM shipped 🎬🛋️.** Founder dropped in the `Cinema_Room_Implementation.pdf` blueprint asking for a NEW public sync-watch viewer that's strictly distinct from the Memory Bank Cinema (which carries founder user uploads). Delivered:
 >
 > 1. **Backend** — `/app/backend/routes/cinema_room.py` (mounted at `/api/cinema-room`). Endpoints: `GET /catalog`, `GET /catalog/{id}`, `GET /rooms`, `POST /rooms`, `GET /rooms/{id}`, `POST /rooms/{id}/food-order`, `WS /ws/{room_id}`. Curated free catalog (7 titles · Public Domain Archive.org MP4s + 1 Creative Commons YouTube). Mongo persists rooms + last_state so late-joiners snapshot to current playback position. WebSocket `CinemaManager` broadcasts `play / pause / seek / pick / chat / food_order / audience` events.
