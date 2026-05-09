@@ -1,5 +1,70 @@
 # CHANGELOG
 
+## 2026-02-09 Late × 3 — Beta Operational Sweep · 3 BLOCKERS FIXED 🛠️
+
+**Founder ask:** *"make sure everything actually work inside the app so I can test every room I can get in or click need to be operational"* + 2 PDFs about a Vigilant Agent collision scanner.
+
+### Built (permanent tooling)
+- **`/app/scripts/vigilant_agent.js`** — multi-device Playwright UI integrity scanner per the PDFs:
+  - 3 device profiles: Desktop 4K (3840×2160) / iPhone 15 Pro / iPad Pro 11
+  - Full-page screenshots written to `/app/scripts/vigilant_agent_reports/scan_<DeviceName>.png`
+  - "Square-by-square" DOM collision scan with significance threshold (>20% overlap, parent/child filtered)
+  - Duplicate `data-testid` detection (catches the "double step boards" the PDF specifically warned about)
+  - JSON report at `/app/scripts/vigilant_agent_reports/report.json`
+  - Baseline run: **0 duplicate testids** across all 3 profiles
+  - Defaults to the preview URL from `/app/frontend/.env`; CLI override: `node vigilant_agent.js https://my-app.com`
+  - Designed to be re-run pre-deploy as the PDF's "pre-flight" check
+
+### 3 BLOCKERS surfaced + fixed
+- **🔴 Dashboard HungryVibes tile dead** — `pages/DashboardNew.tsx` line ~176 had `path: '/hungry-vibez'` (typo with the wrong hyphen+spelling). Every click bounced through App.js wildcard back to `/`. **Fixed** → `/hungryvibes`.
+- **🔴 `/hungryvibes` consumer route never registered** — `pages/HungryVibez.tsx` existed but no `<Route>` mounted it. FloatingFoodMenu FAB, Landing accordion CTA, and dashboard tile all linked here — all dead. **Fixed** by importing + registering in `routes/monetizationRoutes.tsx` as a ProtectedRoute.
+- **🔴 `/practice/chess` dead** — `components/GamesMenu.tsx` chess card linked to bare `/practice/chess` but only `/practice/play/:gameId` was registered. The Voice Coach + Roguelite Trial + Battle Mode chess feature was unreachable for beta testers. **Fixed** by switching the GamesMenu route to canonical `/practice/play/chess` AND adding a defensive `/practice/chess` → `/practice/play/chess` redirect in `routes/gamesRoutes.tsx` so legacy bookmarks still resolve.
+
+### False positive (skipped)
+- **`/streamer/action-hub`** — testing agent flagged this as a missing route, but a codebase grep confirmed the only link is `/streamer/setup-guide` (which IS registered). "Streamer Action Hub" appears as brand copy text only, no actual `href`/`navigate` calls. No fix needed.
+
+### Regression Shield: 209 → **213** (no test deleted; 1 stale guard updated)
+- `test_dashboard_hungryvibes_tile_uses_canonical_path` — locks `path: '/hungryvibes'` and bans the `/hungry-vibez` typo.
+- `test_hungryvibes_consumer_route_is_registered` — verifies HungryVibez import + Route registration in monetizationRoutes.
+- `test_games_menu_chess_route_is_canonical_practice_play_chess` — locks the chess card route.
+- `test_practice_chess_legacy_path_redirects` — verifies the Navigate redirect exists.
+- **Updated** `test_dashboard_surfaces_v8_features` — was actively asserting the `/hungry-vibez` BUG was in place; flipped to assert canonical `/hungryvibes`.
+
+### Live verified (post-fix smoke)
+| URL | Result |
+|---|---|
+| `/hungryvibes` | ✅ Stays at `/hungryvibes` — no bounce |
+| `/practice/chess` | ✅ Redirects to `/practice/play/chess` |
+| `/practice/play/chess` | ✅ Stays put — full PracticeChess loads (Voice Coach + Roguelite + Battle Mode toggle reachable) |
+| Dashboard | ✅ "Hungry Vibez" tile present + Ride Home row + FAB renders |
+
+### Files added/edited
+- **NEW:** `/app/scripts/vigilant_agent.js`
+- **NEW:** `/app/scripts/vigilant_agent_reports/{scan_Desktop_4K,scan_iPhone_Mobile,scan_iPad_Tablet}.png` + `report.json`
+- **EDITED:** `/app/frontend/src/pages/DashboardNew.tsx` (tile path corrected)
+- **EDITED:** `/app/frontend/src/components/GamesMenu.tsx` (chess card route corrected)
+- **EDITED:** `/app/frontend/src/routes/monetizationRoutes.tsx` (HungryVibez route registered)
+- **EDITED:** `/app/frontend/src/routes/gamesRoutes.tsx` (defensive `/practice/chess` redirect)
+- **EDITED:** `/app/backend/tests/regression_shield.py` (+4 beta-operational guards, 1 stale guard updated)
+
+### State
+- Regression shield: **213/213 passing** ✅
+- Backend healthy
+- Frontend webpack compile clean
+- Vigilant Agent script ready for pre-deploy use
+- All 3 BLOCKER routes now operational
+
+### Action for founder
+**Beta is unblocked.** Every previously-dead room/click is now operational on the preview environment. Ready for redeploy when you push. Production at `https://globalvibezdsg.com` will get the fix on next deploy.
+
+**Tip:** You can run the Vigilant Agent yourself anytime with:
+```bash
+node /app/scripts/vigilant_agent.js https://globalvibezdsg.com
+```
+That'll generate fresh device-shot screenshots + collision report — useful right after each deploy.
+
+
+
 ## 2026-02-09 Late × 2 — Landing-Page AAA Upgrade SHIPPED 🎮 (final beta-blocker)
 
 **Founder ask:** *"Implement all the new features in the landing page. Last thing I need before beta."* PDF: `Global_Vibez_DSG_LandingPage_Enhancement.pdf`. Founder picked **b, a, c, c** for the four pre-flight ambiguities.

@@ -173,7 +173,7 @@ export default function Dashboard() {
       gradient: 'from-orange-500 via-red-500 to-fuchsia-600',
       glow: 'rgba(249,115,22,0.5)',
       image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?crop=entropy&cs=srgb&fm=jpg',
-      path: '/hungry-vibez',
+      path: '/hungryvibes',
       stats: { count: '24/7', label: 'Delivery' }
     },
     {

@@ -23,6 +23,7 @@ import HowChairsWork from '@/pages/HowChairsWork';
 import JoinByInvite from '@/pages/JoinByInvite';
 
 import Referral from '@/pages/Referral';
+import HungryVibez from '@/pages/HungryVibez';
 import HungryVibesMerchant from '@/pages/HungryVibesMerchant';
 import SmartStackDashboard from '@/pages/SmartStackDashboard';
 
@@ -163,6 +164,20 @@ export const monetizationRoutes = (ProtectedRoute) => (
           <Referral />
         </ProtectedRoute>
       } 
+    />
+    {/* HungryVibes Consumer Page — beta-blocker fix (2026-02-09):
+        FloatingFoodMenu, Landing accordions, and the dashboard tile
+        all link to /hungryvibes. The page existed but was never
+        registered — clicks bounced off App.js wildcard back to '/'.
+        Mounted as PROTECTED so guest landing-page users still see the
+        site CTA, while in-app FAB clicks resolve cleanly. */}
+    <Route
+      path="/hungryvibes"
+      element={
+        <ProtectedRoute>
+          <HungryVibez />
+        </ProtectedRoute>
+      }
     />
     {/* HungryVibes Merchant Dashboard — restaurant-owner self-serve
         portal (Feb 2026, GlobalVibez_HungryVibes_Merchant_Dashboard

@@ -22,7 +22,7 @@ const GAME_CATEGORIES = {
     icon: '🧠',
     color: 'from-cyan-600 to-blue-600',
     games: [
-      { id: 'chess', name: 'Chess', image: '/chess-card.png', route: '/practice/chess', difficulty: 'Hard', players: '2' },
+      { id: 'chess', name: 'Chess', image: '/chess-card.png', route: '/practice/play/chess', difficulty: 'Hard', players: '2' },
       { id: 'checkers', name: 'Checkers', image: '/checkers-card.png', route: '/practice/checkers', difficulty: 'Medium', players: '2' },
       { id: 'reversi', name: 'Reversi', image: '/reversi-card.png', route: '/practice/reversi', difficulty: 'Medium', players: '2' }
     ]

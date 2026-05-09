@@ -1892,7 +1892,7 @@ def test_dashboard_surfaces_v8_features() -> None:
         ("vigilant_matchmaking", "/dsg/matchmaking"),
         ("cultural_onboarding", "/dating/cultural-onboarding"),
         ("voice_mirror", "/voice-mirror"),
-        ("hungry_vibez", "/hungry-vibez"),
+        ("hungry_vibez", "/hungryvibes"),
         ("vibez_tv", "/vibe-tv"),
     ]
     for tile_id, route in expected_tiles:
@@ -3910,6 +3910,53 @@ def test_landing_vibez_coin_3d_uses_three_fiber():
     # Used inside the Tokenomics accordion cell.
     accordions = open("/app/frontend/src/components/landing/LandingFeatureAccordions.tsx").read()
     assert "VibezCoin3D" in accordions
+
+
+# --- Beta operational sweep (2026-02-09) — 4 BLOCKERS surfaced by
+# testing_agent_v3_fork. These four guards lock the fix so a future
+# refactor can't reintroduce the dead-route regressions.
+
+def test_dashboard_hungryvibes_tile_uses_canonical_path():
+    """DashboardNew.tsx HungryVibes tile must link to '/hungryvibes'.
+    Earlier it pointed to '/hungry-vibez' (typo + hyphen) which fell
+    through App.js wildcard back to '/'."""
+    src = open("/app/frontend/src/pages/DashboardNew.tsx").read()
+    assert "path: '/hungryvibes'" in src, \
+        "Dashboard HungryVibes tile must use the canonical path '/hungryvibes'"
+    assert "/hungry-vibez" not in src, \
+        "Dashboard tile path '/hungry-vibez' is a dead-link typo and must be removed"
+    assert "/hungry-vibes" not in src, \
+        "Dashboard tile path '/hungry-vibes' (hyphen) is a dead link"
+
+
+def test_hungryvibes_consumer_route_is_registered():
+    """The HungryVibes consumer page (FAB target, accordion target,
+    dashboard tile target) MUST be registered — otherwise every
+    'Order food' click bounces back to '/'."""
+    src = open("/app/frontend/src/routes/monetizationRoutes.tsx").read()
+    assert "import HungryVibez from" in src, \
+        "HungryVibez page must be imported into monetizationRoutes"
+    assert 'path="/hungryvibes"' in src, \
+        "Route '/hungryvibes' must be registered (separate from /hungryvibes/merchant)"
+
+
+def test_games_menu_chess_route_is_canonical_practice_play_chess():
+    """GamesMenu.tsx chess card must route to '/practice/play/chess'
+    (the route that actually renders PracticeChess with Voice Coach +
+    Roguelite Trial + Battle Mode). Bare '/practice/chess' was a
+    dead route until the redirect was added."""
+    src = open("/app/frontend/src/components/GamesMenu.tsx").read()
+    assert "route: '/practice/play/chess'" in src, \
+        "GamesMenu chess card must link to /practice/play/chess"
+
+
+def test_practice_chess_legacy_path_redirects():
+    """Defensive: any caller still hitting '/practice/chess' should be
+    redirected to '/practice/play/chess' rather than fall back to '/'."""
+    src = open("/app/frontend/src/routes/gamesRoutes.tsx").read()
+    assert 'path="/practice/chess"' in src and "Navigate to=\"/practice/play/chess\"" in src, \
+        "Legacy '/practice/chess' must redirect to '/practice/play/chess'"
+
 
 
 

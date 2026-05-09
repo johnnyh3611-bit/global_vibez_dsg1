@@ -353,6 +353,12 @@ export const gamesRoutes = (ProtectedRoute) => (
     <Route path="/practice" element={<ProtectedRoute><Games /></ProtectedRoute>} />
     <Route path="/practice/play/:gameId" element={<ProtectedRoute><PracticeGamePlay /></ProtectedRoute>} />
     <Route path="/practice/stats" element={<ProtectedRoute><PracticeStats /></ProtectedRoute>} />
+    {/* Defensive redirect — beta-blocker fix (2026-02-09): older
+        GamesMenu link + bookmarks point to '/practice/chess'. Send
+        them to the canonical '/practice/play/chess' (which renders
+        PracticeChess with Voice Coach + Roguelite Trial + Battle
+        Mode toggle). */}
+    <Route path="/practice/chess" element={<Navigate to="/practice/play/chess" replace />} />
     
     {/* AAA Casino Games - Updated to use WebSocket-enabled components */}
     <Route path="/practice/play/blackjack-aaa" element={<ProtectedRoute><BlackjackGameAAA /></ProtectedRoute>} />
