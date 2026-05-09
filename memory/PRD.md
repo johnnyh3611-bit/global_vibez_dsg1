@@ -1,6 +1,24 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
 
+> **2026-05-09 — Beta Redeploy Prep · Card Room Sweep + Floating Chrome PURGE 🎮🚀.** Founder directive: "all card rooms one by one, full sweep" + "set up the redeploy for beta." Two-phase delivery shipped:
+>
+> **Phase 1 — Floating chrome eradicated.** Final chapter of the inline `<PageActionStrip />` saga. Killed the global `<CornerDock />` mount + import from `App.js`, deleted the dead files (`CornerDock.tsx`, `CornerDockTooltip.tsx`, `UnifiedChromeBar.tsx`). Replacement: every protected page now auto-mounts a `<PageActionStrip />` at the top of its content via the `ProtectedRoute` wrapper (testid `protected-route-action-strip`). Public Landing keeps its own inline mount under WinnerTicker. The 8 legacy FABs (BetaFeedback / VoiceMirror / Orientation / Globe / FloatingFood / FreshDrops / CommHubDropdown / IncomingCallModal) all stay mounted but auto-suppress their triggers via `useCornerDockTrigger` once the strip dispatches `chromebar:active`. Net: ZERO floating buttons left on the app, only the platform-required "Made with Emergent" badge.
+>
+> **Phase 2 — Card-room polish (10/10 AAA rooms swept).** Testing-agent diagnostic surfaced 3 P1 visual bugs; all fixed and verified with DOM measurements:
+> 1. **Hand-fan / trick-pile collision** (Spades, Bid Whist, Hearts, Pinochle, Euchre, Crazy Eights) — south hand-fan was overlapping the south played-card landing slot. Cut the negative top-margin from `-mt-12` → `-mt-6`. Verified gap: 134px on Spades + Bid Whist (requirement ≥50px). Cards now visibly land near the centre table logo.
+> 2. **Bid-chip occlusion** (Spades, Bid Whist) — "Bid Now" / "Review 10s" pill was sitting at `-top-4` and clipping the leftmost cards. Bumped to `-top-10` so the chip floats clear of the fan radius. Verified clearance: 54px above hand-fan top.
+> 3. **WhatsNewBanner intrusion** (all 12 card rooms + Vibe-654 Coliseum + card-mp rooms) — the pinned "Just for the Night room" banner was covering every game header. Added `HIDDEN_EXACT` array + prefix matchers in `WhatsNewBanner.tsx`. Banner stays VISIBLE on `/dashboard`.
+>
+> **Joker-direction rule (Bid Whist)** verified at the unit-test level: `test_sovereign_validator_joker_power_indexing` confirms Big Joker (100) > Little Joker (90) > Ace-trump under BOTH Uptown AND Downtown when trump is declared, and both jokers are inert in NT (rank treated as < 0). The buggy `20 - value` Downtown rank inversion was killed in round-9 of Feb 2026; the locked test prevents regression.
+>
+> **Test-suite portability fix.** Added `/app/backend/conftest.py` so `pytest /app/backend/tests/regression_shield.py` runs from any cwd (previously failed with `ModuleNotFoundError` when invoked from `/app`). Beta-redeploy CI scripts no longer have to set `PYTHONPATH=/app/backend`.
+>
+> **Disk-full incident self-recovered** mid-run. `/app` filled to 100% from a 2.2 GB stale Webpack cache; cleared in-place. Mongo crashed under the IO failure but supervisor's `autorestart=true` brought it back as soon as space was free. Worth wiring a startup health-check that hard-fails the backend if `mongo ping` fails.
+>
+> **Regression Shield: 219/219 GREEN** (was 220 pre-sweep; -4 dead CornerDock guards, +3 new strip / no-CornerDock guards, +0 net minus the consolidation). All 4 P1 fixes confirmed via DOM-measurement sweep by `testing_agent_v3_fork` — `retest_needed: false`, `main_agent_can_self_test: true`. **Status: READY FOR BETA REDEPLOY.** See `/app/test_reports/iteration_jan2026_card_room_p1_fix_verify.json`.
+
+
 > **2026-02-09 Late × 4 — Corner-FAB pile-up FIXED 🎯 (Vigilant Agent v2).** Founder reported the exact issue I missed: bottom-left had 3 stacked FABs (Voice Mirror / Auto-Rotate / Beta Feedback all at `bottom-4 left-4` with different z-indexes — z-index lottery for clicks); bottom-right had 2-3 FABs + Emergent badge intertwined. Fix shipped: new **`CornerDock`** component with two labeled pop-out menus (left "TOOLS · 3" / right "MORE · 3") replacing all 6 individual FABs (Beta Feedback, Voice Mirror, Auto-Rotate, Fresh Drops, Hungry Vibez, Cultural Hub/Globe). Each existing FAB component cooperates via the new shared `useCornerDockTrigger` hook — hides its own trigger when CornerDock is mounted, listens for `cdock:open:${id}` event to fire its modal/panel without internal-state coupling. Vigilant Agent v2 upgraded with new **FAB_STACK_SCRIPT** detector that flags any 2+ `position:fixed` elements overlapping in the same screen corner (the metric the v1 25-collision cap was missing). Regression Shield: 213 → **217 GREEN** (4 new corner-dock guards). Live verified: left dock shows 3 labeled items, right dock shows 3 labeled items, 0 legacy FABs visible in corners post-auth. **Beta-redeploy ready.** See CHANGELOG 2026-02-09 Late × 4.
 
 
