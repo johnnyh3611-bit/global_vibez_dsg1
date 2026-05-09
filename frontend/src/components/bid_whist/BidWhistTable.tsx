@@ -35,12 +35,16 @@ const getSuitColor = (suit) => {
 };
 
 export default function BidWhistTable({ gameState, onPlayCard, dealerName = "Nova" }) {
-  // Mapping positions to 3D space for the "Celestial Glasshouse" feel
+  // Founder fix Feb 2026: cards must land NEAR the center logo, not
+  // at the player seat positions (15% from edges was the bug — cards
+  // were landing on top of player pods instead of forming a center
+  // trick pile). Each card now sits ~12% from center, fanned toward
+  // its player's seat so you can still tell who played what.
   const tableSlots = {
-    north: { top: '15%', left: '50%' },
-    south: { bottom: '15%', left: '50%' },
-    east: { right: '15%', top: '50%' },
-    west: { left: '15%', top: '50%' }
+    north: { top: '38%', left: '50%' },
+    south: { top: '62%', left: '50%' },
+    east:  { top: '50%', left: '62%' },
+    west:  { top: '50%', left: '38%' },
   };
 
   // Get player tricks from game state

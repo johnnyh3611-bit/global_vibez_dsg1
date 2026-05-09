@@ -4043,6 +4043,59 @@ def test_corner_dock_first_time_tooltip_shipped():
     assert "CornerDockTooltip" in dock
 
 
+def test_unified_chrome_bar_owns_corner_real_estate():
+    """Founder directive Feb 2026 — every page needs ONE specific spot
+    for chrome buttons. UnifiedChromeBar must:
+    • mount globally in App.js
+    • expose `chrome-bar-{comms,tools,more}-trigger` testids
+    • acknowledge the platform Emergent badge with a labeled link
+    • dispatch `chromebar:active` on mount so legacy floating FABs
+      (CornerDock + CommHubDropdown free pill + 6 corner FABs) all
+      collapse their triggers
+    • hide on game pages (room-menu-bar present)
+    • hide on auth + streamer overlay routes
+    """
+    src = open("/app/frontend/src/components/common/UnifiedChromeBar.tsx").read()
+    for tid in ("chrome-bar-comms-trigger", "chrome-bar-tools-trigger",
+                "chrome-bar-more-trigger", "chrome-bar-emergent-info"):
+        assert 'chrome-bar-${key}-trigger' in src or tid in src, f"{tid} must be in UnifiedChromeBar"
+    assert "chromebar:active" in src and "chromebar:inactive" in src
+    assert "data-testid=\"unified-chrome-bar\"" in src or 'data-testid="unified-chrome-bar"' in src
+    assert 'document.querySelector(\'[data-testid="room-menu-bar"]\')' in src, \
+        "Bar must hide when RoomMenuBar is mounted (room owns chrome inside games)"
+    # App.js must mount it.
+    appsrc = open("/app/frontend/src/App.js").read()
+    assert "UnifiedChromeBar" in appsrc
+    # CornerDock must yield to the new bar.
+    cdock = open("/app/frontend/src/components/common/CornerDock.tsx").read()
+    assert "chromebar:active" in cdock and "chromeBarActive" in cdock
+    # CommHubDropdown free pill must yield too.
+    chub = open("/app/frontend/src/components/common/CommHubDropdown.tsx").read()
+    assert "chromeBarActive" in chub
+    # Hook updated to listen for chromebar events.
+    hook = open("/app/frontend/src/hooks/useCornerDockTrigger.ts").read()
+    assert "chromebar:active" in hook
+
+
+def test_bid_whist_cards_land_near_center_table_logo():
+    """Founder bug Feb 2026 — Bid Whist cards were landing at 15%-
+    from-edge seat positions, falling on top of player pods instead
+    of forming a centered trick pile near the table logo. Locked at
+    ~12% offset from center."""
+    src = open("/app/frontend/src/components/bid_whist/BidWhistTable.tsx").read()
+    # All four offsets must be within 38%–62% (center-zone band).
+    for slot, expected in [
+        ("north", "top: '38%', left: '50%'"),
+        ("south", "top: '62%', left: '50%'"),
+        ("east",  "top: '50%', left: '62%'"),
+        ("west",  "top: '50%', left: '38%'"),
+    ]:
+        assert expected in src, f"Bid Whist {slot} card position must land near center: expected `{expected}`"
+    # Old buggy 15%-from-edge offsets must be gone.
+    assert "top: '15%'" not in src and "bottom: '15%'" not in src and "right: '15%'" not in src
+
+
+
 
 
 

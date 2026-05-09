@@ -176,6 +176,7 @@ const CornerDock: React.FC = () => {
   const loc = useLocation();
   const [openLeft, setOpenLeft] = useState(false);
   const [openRight, setOpenRight] = useState(false);
+  const [chromeBarActive, setChromeBarActive] = useState<boolean>(false);
 
   // Mark body so the underlying FABs can hide their own trigger
   // buttons via document.body.dataset (no React-tree coupling).
@@ -194,7 +195,22 @@ const CornerDock: React.FC = () => {
     };
   }, []);
 
+  // Yield to the new UnifiedChromeBar — it owns the corners now.
+  useEffect(() => {
+    const sync = () => setChromeBarActive(document.body.dataset.chromeBarActive === "1");
+    sync();
+    const onActive = () => setChromeBarActive(true);
+    const onInactive = () => setChromeBarActive(false);
+    window.addEventListener("chromebar:active", onActive);
+    window.addEventListener("chromebar:inactive", onInactive);
+    return () => {
+      window.removeEventListener("chromebar:active", onActive);
+      window.removeEventListener("chromebar:inactive", onInactive);
+    };
+  }, []);
+
   if (HIDE_PATTERNS.some((re) => re.test(loc.pathname))) return null;
+  if (chromeBarActive) return null;
 
   return (
     <>

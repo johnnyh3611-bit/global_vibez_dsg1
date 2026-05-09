@@ -47,16 +47,30 @@ export const CommHubDropdown: React.FC = () => {
   // Auto-hide the floating CommHub when an in-game RoomMenuBar exists,
   // since that bar already renders an inline CommHubButton (founder
   // directive May 2026: comms must live INSIDE the game's menu bar).
+  // ALSO hide when UnifiedChromeBar is active — that bar surfaces the
+  // same comm actions via its "Comms" slot (founder fix Feb 2026).
   const [hasRoomBar, setHasRoomBar] = useState(false);
+  const [chromeBarActive, setChromeBarActive] = useState<boolean>(
+    typeof document !== "undefined" && document.body.dataset.chromeBarActive === "1",
+  );
 
   useEffect(() => {
     const check = () => {
       setHasRoomBar(!!document.querySelector('[data-testid="room-menu-bar"]'));
+      setChromeBarActive(document.body.dataset.chromeBarActive === "1");
     };
     check();
     const obs = new MutationObserver(check);
     obs.observe(document.body, { childList: true, subtree: true });
-    return () => obs.disconnect();
+    const onActive = () => setChromeBarActive(true);
+    const onInactive = () => setChromeBarActive(false);
+    window.addEventListener("chromebar:active", onActive);
+    window.addEventListener("chromebar:inactive", onInactive);
+    return () => {
+      obs.disconnect();
+      window.removeEventListener("chromebar:active", onActive);
+      window.removeEventListener("chromebar:inactive", onInactive);
+    };
   }, []);
 
   // Read the live Voice Mirror state so the indicator reflects reality.
@@ -82,6 +96,7 @@ export const CommHubDropdown: React.FC = () => {
   // Hide the floating button when an in-game menu bar already shows
   // the inline CommHub — avoids a double-button.
   if (hasRoomBar) return null;
+  if (chromeBarActive) return null;
 
   const triggerVoiceMirror = () => {
     // The existing VoiceMirrorDock listens for a custom event from the

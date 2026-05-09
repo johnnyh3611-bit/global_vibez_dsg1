@@ -30,27 +30,33 @@ export function useCornerDockTrigger(
   const [triggerHidden, setTriggerHidden] = useState<boolean>(false);
 
   useEffect(() => {
-    if (typeof document !== "undefined") {
-      setTriggerHidden(document.body.dataset.cornerDockActive === "1");
-    }
+    const sync = () => {
+      if (typeof document === "undefined") return;
+      setTriggerHidden(
+        document.body.dataset.cornerDockActive === "1" ||
+        document.body.dataset.chromeBarActive === "1",
+      );
+    };
+    sync();
     const onOpen = () => setOpen(true);
-    // CornerDock fires this when it mounts/unmounts so the FABs can
-    // sync without depending on mount order.
     const onActive = () => setTriggerHidden(true);
-    const onInactive = () => setTriggerHidden(false);
+    const onInactive = () => sync();
     if (typeof window !== "undefined") {
       window.addEventListener(`cdock:open:${id}`, onOpen as EventListener);
       window.addEventListener("cdock:active", onActive);
       window.addEventListener("cdock:inactive", onInactive);
+      window.addEventListener("chromebar:active", onActive);
+      window.addEventListener("chromebar:inactive", onInactive);
     }
     return () => {
       if (typeof window !== "undefined") {
         window.removeEventListener(`cdock:open:${id}`, onOpen as EventListener);
         window.removeEventListener("cdock:active", onActive);
         window.removeEventListener("cdock:inactive", onInactive);
+        window.removeEventListener("chromebar:active", onActive);
+        window.removeEventListener("chromebar:inactive", onInactive);
       }
     };
-    // setOpen is stable from useState; id is constant per component instance.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
