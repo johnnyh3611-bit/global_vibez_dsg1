@@ -3352,6 +3352,122 @@ def test_vigilant_agent_audits_pile_centering():
         "VigilantDesignAgent must enumerate trick-pile selectors"
 
 
+# ─────────────────────────────────────────────────────────── DSG Guard
+# (Safety & Operations Code, May 2026 PDF)
+
+
+def test_dsg_guard_constants_locked():
+    """DSG Guard PDF (§Real-Time Safety Rails + §Payout Structure):
+    the four canonical constants MUST stay at their published values.
+    Drift requires a founder-signed amendment to the PDF.
+    """
+    from routes.dsg_guard import get_locked_constants_dict
+    locked = get_locked_constants_dict()
+    assert locked["ROUTE_DEVIATION_LIMIT_MILES"] == 1.5, \
+        "Route-deviation rail must be 1.5 miles per PDF"
+    assert locked["ACCEPTANCE_WINDOW_SECONDS"] == 15, \
+        "Acceptance window must be 15 seconds per PDF"
+    assert locked["DSG_PAYOUT_DRIVER"] == 0.70, \
+        "VibeShoppers driver share must be 70% per PDF"
+    assert locked["DSG_PAYOUT_SOVEREIGN_TAX"] == 0.135, \
+        "VibeShoppers sovereign tax must be 13.5% per PDF (matches Immutable Core)"
+    assert locked["DSG_PAYOUT_LIQUIDITY_POOL"] == 0.10, \
+        "VibeShoppers liquidity pool must be 10% per PDF"
+
+
+def test_dsg_guard_routes_mounted():
+    """The DSG Guard router MUST be mounted under /api/dsg-guard so
+    the public safety-rails / payout-structure endpoints are reachable."""
+    from server import app
+    paths = {r.path for r in app.routes}
+    assert "/api/dsg-guard/safety-rails" in paths, \
+        "Public safety-rails endpoint missing — DSG Guard router not mounted"
+    assert "/api/dsg-guard/payout-structure" in paths, \
+        "Public payout-structure endpoint missing"
+    assert "/api/dsg-guard/enrollment/submit" in paths
+    assert "/api/dsg-guard/dispatch/build" in paths
+    assert "/api/dsg-guard/route-deviation/check" in paths
+
+
+def test_dsg_guard_payout_buckets_sum_to_one():
+    """The 4 payout buckets (driver / sovereign tax / liquidity pool /
+    residual) MUST sum to 100% — otherwise the ledger leaks money."""
+    from routes.dsg_guard import (
+        DSG_PAYOUT_DRIVER, DSG_PAYOUT_SOVEREIGN_TAX,
+        DSG_PAYOUT_LIQUIDITY_POOL, DSG_PAYOUT_RESIDUAL,
+    )
+    total = (DSG_PAYOUT_DRIVER + DSG_PAYOUT_SOVEREIGN_TAX
+             + DSG_PAYOUT_LIQUIDITY_POOL + DSG_PAYOUT_RESIDUAL)
+    assert abs(total - 1.0) < 1e-9, \
+        f"DSG payout buckets must sum to 1.0; got {total}"
+
+
+# ─────────────────────────────────── Universal Mobile Foundation
+# (Phase 1+2 — May 2026 founder mandate: orientation toggle in every
+#  game room, portrait-friendly home screen)
+
+
+def test_orientation_toggle_component_exists():
+    """The OrientationToggle component is the source of truth for the
+    in-app rotation control. It must export both `OrientationToggle`
+    AND `OrientationApplier` + `OrientationFAB` so RoomMenuBar /
+    App.js can mount them respectively."""
+    src = open("/app/frontend/src/components/common/OrientationToggle.tsx").read()
+    assert "OrientationToggle" in src
+    assert "OrientationApplier" in src, \
+        "OrientationApplier must exist for App-level mount"
+    assert "OrientationFAB" in src, \
+        "OrientationFAB must exist for mobile-only floating button"
+    # Cycle order is documented (auto → landscape → portrait → auto)
+    assert "screen.orientation" in src or "orientation.lock" in src, \
+        "Must attempt OS-level orientation lock first"
+    assert "gv-orient-fake-landscape" in src, \
+        "Must apply CSS class fallback when OS lock unavailable"
+
+
+def test_orientation_toggle_in_room_menu_bar():
+    """Every game room must inherit the OrientationToggle via the
+    shared RoomMenuBar (founder mandate, May 2026 — no per-game wiring)."""
+    src = open("/app/frontend/src/components/games/RoomMenuBar.tsx").read()
+    assert "OrientationToggle" in src, \
+        "RoomMenuBar MUST mount OrientationToggle so all 18 rooms inherit it"
+
+
+def test_app_mounts_orientation_globals():
+    """App.js must mount the OrientationApplier + OrientationFAB so the
+    saved preference is applied on every page load and the floating
+    mobile-only toggle is available outside game rooms."""
+    src = open("/app/frontend/src/App.js").read()
+    assert "OrientationApplier" in src, \
+        "App.js must mount OrientationApplier"
+    assert "OrientationFAB" in src, \
+        "App.js must mount OrientationFAB for non-room screens"
+
+
+def test_mobile_foundation_css_loaded():
+    """The universal mobile foundation stylesheet must be imported
+    once via index.css and must contain the fluid typography + fake-
+    landscape rotation rules."""
+    idx = open("/app/frontend/src/index.css").read()
+    assert "mobile-foundation.css" in idx, \
+        "index.css must @import the mobile-foundation stylesheet"
+    foundation = open("/app/frontend/src/styles/mobile-foundation.css").read()
+    assert "gv-orient-fake-landscape" in foundation, \
+        "mobile-foundation.css must define the OS-lock fallback rotation"
+    assert "clamp(" in foundation, \
+        "mobile-foundation.css must scale hero typography with clamp()"
+    assert "overflow-x: hidden" in foundation, \
+        "Mobile foundation must prevent horizontal scroll"
+
+
+def test_viewport_meta_supports_safe_areas():
+    """index.html viewport meta must include `viewport-fit=cover` so
+    iOS notch / Android gesture bars are handled correctly."""
+    html = open("/app/frontend/public/index.html").read()
+    assert "viewport-fit=cover" in html, \
+        "<meta viewport> must include viewport-fit=cover for safe-area support"
+
+
 
 
 

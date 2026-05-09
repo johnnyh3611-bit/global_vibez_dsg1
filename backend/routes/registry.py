@@ -642,6 +642,15 @@ def register_all_routes(
     except Exception as _e:
         log.warning(f"Landing video routes not mounted: {_e}")
 
+    # DSG Guard — Safety & Operations Module (PDF §May 2026).
+    # Locks the 1.5-mi route deviation rail, 15s acceptance window,
+    # and the VibeShoppers 70/13.5/10 payout split.
+    try:
+        from routes.dsg_guard import router as dsg_guard_router
+        api_router.include_router(dsg_guard_router)
+    except Exception as _e:
+        log.warning(f"DSG Guard routes not mounted: {_e}")
+
 
 
 # ─── Domain helpers (Feb 2026 polish split) ──────────────────────────

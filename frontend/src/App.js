@@ -46,6 +46,7 @@ import WhatsNewBanner from "@/components/common/WhatsNewBanner";
 import VoiceMirrorDock from "@/components/common/VoiceMirrorDock";
 import CommHubDropdown from "@/components/common/CommHubDropdown";
 import VigilantDesignAgent from "@/components/common/VigilantDesignAgent";
+import { OrientationApplier, OrientationFAB } from "@/components/common/OrientationToggle";
 import IncomingCallModal from "@/components/voice/IncomingCallModal";
 import BetaFeedbackButton from "@/components/common/BetaFeedbackButton";
 import FriendEventToaster from "@/components/common/FriendEventToaster";
@@ -133,6 +134,8 @@ function AppRouter() {
       <WhatsNewBanner />
       <CommHubDropdown />
       <VigilantDesignAgent />
+      <OrientationApplier />
+      <OrientationFAB />
       <VoiceMirrorDock />
       <IncomingCallModal />
       <BetaFeedbackButton />

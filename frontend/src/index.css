@@ -5,6 +5,10 @@
    single stylesheet means every game picks them up automatically. */
 @import './styles/vibez-pro.css';
 
+/* Universal Mobile Foundation — phone/tablet responsive baseline +
+   orientation-lock fallback. Founder mandate (May 2026). */
+@import './styles/mobile-foundation.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

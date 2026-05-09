@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import CommHubButton from '@/components/common/CommHubButton';
+import OrientationToggle from '@/components/common/OrientationToggle';
 
 export type RoomTheme =
   | 'spades'      // emerald + amber
@@ -263,8 +264,14 @@ export const RoomMenuBar: React.FC<RoomMenuBarProps> = ({
               CommHubButton is auto-injected here so every game room
               picks it up without per-game wiring. The floating
               CommHubDropdown auto-hides on routes where this bar is
-              mounted. */}
+              mounted.
+
+              The OrientationToggle is mounted here for the SAME
+              reason — every room inherits a "rotate the view"
+              control without any per-game code, satisfying the
+              founder's mobile-responsiveness mandate. */}
           <div className="shrink-0 flex items-center gap-2">
+            <OrientationToggle compact />
             <CommHubButton compact />
             {rightSlot}
           </div>

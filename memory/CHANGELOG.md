@@ -4202,3 +4202,94 @@ Plus 4 new tests in `test_power_hour_sponsors.py`. **76/76 passing.**
   CI-tested) — `/app/memory/MULTI_HUMAN_QA_CHECKLIST.md`
 - v4 Master Plan more items still pending: Vibe Spots + QR
   verification, Seated Ownership 250k Founder Reserve
+
+
+---
+
+## 2026-05-09 — Universal Mobile Foundation + DSG Guard (PDF #1)
+
+### Phase 1: Mobile Responsive Foundation 📱
+- **`/app/frontend/src/styles/mobile-foundation.css` (NEW)** — universal
+  responsive baseline. Imported once via `index.css`.
+  - `overflow-x: hidden` on html/body to kill horizontal scroll bleed
+  - Fluid hero typography for `< 640px`: `text-7xl/8xl/9xl` use
+    `clamp(...)` so the AAA hero fits a 360-390px portrait phone
+  - Tightened gutters (`px-6 → 1rem`, `py-20 → 2.5rem`) on mobile
+  - `gv-orient-fake-landscape` / `gv-orient-fake-portrait` rotate
+    `#root` when OS-level lock is unavailable (Safari, non-fullscreen)
+- **`<meta viewport>` updated** to include `viewport-fit=cover` for
+  iOS notch / Android gesture-bar safe-area handling.
+
+### Phase 2: Universal Orientation Toggle 🔄
+- **`/app/frontend/src/components/common/OrientationToggle.tsx` (NEW)**
+  - Tries `screen.orientation.lock(...)` FIRST (best UX — OS rotates
+    keyboard, status bar, chrome together)
+  - Falls back to a CSS `transform: rotate(90deg)` on `#root` when the
+    browser refuses (covers desktops, Safari iOS)
+  - 3-state cycle: AUTO → WIDE (landscape) → TALL (portrait) → AUTO
+  - Persists in `localStorage` under `gv:orient-pref`
+- **Three mount points wired**:
+  1. `RoomMenuBar` — every game room inherits the toggle automatically
+     (founder mandate: no per-game wiring)
+  2. `OrientationApplier` — global app-level mount in `App.js` so the
+     saved preference is reapplied on every page load
+  3. `OrientationFAB` — mobile-only floating bottom-left button for
+     non-game screens (home, dashboard, signup, etc.). Auto-hides on
+     tablets+ and inside game rooms (where RoomMenuBar covers it).
+
+### Phase 3: SpadesTrickPile Centering ✅
+- The previous agent's `SEAT_OFFSET ±10/±18` edit IS in place. Math
+  verified: 4-card centroid sits exactly at (0,0) — true table center.
+- New `test_trick_pile_offsets_tight_and_centered` regression gate
+  enforces `|x| ≤ 24, |y| ≤ 14` so this can never silently regress.
+
+### PDF #1: DSG Guard — Safety & Operations Code 🛡️
+- **`/app/backend/routes/dsg_guard.py` (NEW)** — single source of truth
+  for everything the PDF mandates.
+- **Locked constants** (mirrors PDF §Real-Time Safety Rails):
+  - `ROUTE_DEVIATION_LIMIT_MILES = 1.5`
+  - `ACCEPTANCE_WINDOW_SECONDS = 15`
+  - `ESCROW_RELEASE_GPS_MATCH_M = 50`
+- **Locked payout split** (mirrors PDF §Payout Structure):
+  - `DSG_PAYOUT_DRIVER = 0.70`
+  - `DSG_PAYOUT_SOVEREIGN_TAX = 0.135`
+  - `DSG_PAYOUT_LIQUIDITY_POOL = 0.10`
+  - `DSG_PAYOUT_RESIDUAL = 0.065` (insurance/referral/platform)
+- **Schemas** match the PDF intake form 1:1 — Identity (legal name,
+  SSN last4, DL#/state, DOB), Vehicle (year/make/model/VIN/color/plate),
+  Residency (verified address + geo-pin lat/lon), Emergency (contact
+  name + verified phone).
+- **Endpoints** (all under `/api/dsg-guard/`):
+  - `GET /safety-rails` — public
+  - `GET /payout-structure` — public
+  - `POST /enrollment/submit` — auth (or anon for marketing intake)
+  - `GET /enrollment/status` — auth
+  - `POST /dispatch/build` — produces full VibeShopper dispatch payload
+    matching PDF schema (`dispatch_id`, `task_type`, `security_status`,
+    `vehicle_match`, `payout_structure`, `payout_breakdown_usd`)
+  - `POST /route-deviation/check` — Haversine-based 1.5-mi rail check
+    that auto-emits to `dsg_guard_safety_alerts` when triggered
+- **Verified live** via `curl /api/dsg-guard/safety-rails` — returns
+  the locked constants on the public preview URL.
+
+### Regression Shield 174 → 182 (8 new locks)
+- `test_dsg_guard_constants_locked`
+- `test_dsg_guard_routes_mounted`
+- `test_dsg_guard_payout_buckets_sum_to_one`
+- `test_orientation_toggle_component_exists`
+- `test_orientation_toggle_in_room_menu_bar`
+- `test_app_mounts_orientation_globals`
+- `test_mobile_foundation_css_loaded`
+- `test_viewport_meta_supports_safe_areas`
+
+**182/182 passing.** Run with `cd /app/backend && PYTHONPATH=/app/backend pytest tests/regression_shield.py -v`.
+
+### Pending
+- **PDF #2** — user mentioned "two PDFs" but only PDF #1 was attached.
+  Awaiting upload to fold in.
+- **`/api/auth/login` returns 500** for some external curl calls
+  (Cloudflare bot challenge). `/api/auth/demo-login` works fine from
+  the browser. Pre-existing — not introduced by this session.
+- **Blackjack `KeyError: 'player_cards'`** — pre-existing, unchanged
+  from previous handoff.
+

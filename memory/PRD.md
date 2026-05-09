@@ -3375,3 +3375,34 @@ User confirmed they don't have a compiled Unity WebGL build (the GitHub repo pro
 ## 3rd-Party Integrations
 - **Stripe** (Payments) — user-provided keys.
 - **Emergent Google Auth** — via Emergent LLM key.
+
+
+---
+
+## May 2026 — Universal Mobile Foundation + DSG Guard
+
+### Mobile Responsiveness (founder mandate)
+- All pages must be readable on phone portrait WITHOUT rotating sideways
+- Every game room must let the player flip orientation from inside the app
+- Rotation toggle: 3-state cycle (AUTO → WIDE → TALL), persists across rooms
+- Strategy: OS-level `screen.orientation.lock()` first; CSS rotation fallback
+
+### DSG Guard — Safety & Operations Code (`GlobalVibez_Safety_and_Operations_Code.pdf`)
+- Source of truth: `/app/backend/routes/dsg_guard.py`
+- Constants locked at module level (`Final[float]` typing)
+- VibeShoppers payout: 70% driver / 13.5% sovereign tax / 10% liquidity pool
+  / 6.5% residual (insurance + referral + platform)
+- Real-time safety rails: 1.5-mi route-deviation auto-security trigger,
+  15s task-acceptance window, 50m GPS-match escrow release
+- Enrollment intake form mandatory for VibeRidez / Hungry Vibez / VibeShopper
+  pillars — single endpoint, three role-tagged routes
+
+### Files of reference
+- `/app/frontend/src/components/common/OrientationToggle.tsx` (NEW)
+- `/app/frontend/src/styles/mobile-foundation.css` (NEW)
+- `/app/backend/routes/dsg_guard.py` (NEW)
+- `/app/frontend/src/components/games/RoomMenuBar.tsx` (toggle injected)
+- `/app/frontend/src/App.js` (OrientationApplier + OrientationFAB mounted)
+- `/app/frontend/public/index.html` (viewport-fit=cover added)
+- `/app/backend/tests/regression_shield.py` (8 new gates → 182 total)
+
