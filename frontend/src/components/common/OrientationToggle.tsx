@@ -172,6 +172,14 @@ export const OrientationApplier: React.FC = () => {
 export const OrientationFAB: React.FC = () => {
   const [show, setShow] = useState(false);
   const [pref, setPref] = useState<OrientPref>(getOrientPref());
+  const [triggerHidden, setTriggerHidden] = useState(false);
+
+  const cycle = useCallback(() => {
+    const next: OrientPref =
+      pref === 'auto' ? 'landscape' : pref === 'landscape' ? 'portrait' : 'auto';
+    setOrientPref(next);
+    setPref(next);
+  }, [pref]);
 
   useEffect(() => {
     const update = () => {
@@ -179,32 +187,31 @@ export const OrientationFAB: React.FC = () => {
       // Hide inside game rooms — RoomMenuBar already has its own toggle
       const inRoom = document.querySelector('[data-testid="room-menu-bar"]') !== null;
       setShow(isMobile && !inRoom);
+      // Also reflect CornerDock takeover (Vigilant Agent v2 fix)
+      setTriggerHidden(document.body.dataset.cornerDockActive === '1');
     };
     update();
     const onResize = () => update();
     const onPrefChange = (e: any) => setPref(e?.detail ?? getOrientPref());
+    // CornerDock dispatches this when its menu item is clicked.
+    const onCDockOpen = () => cycle();
     // Re-check when DOM mounts a room bar (e.g. user clicks into a game)
     const observer = new MutationObserver(update);
     observer.observe(document.body, { childList: true, subtree: true });
     window.addEventListener('resize', onResize);
     window.addEventListener('orientationchange', onResize);
     window.addEventListener('gv:orient-pref-changed', onPrefChange as any);
+    window.addEventListener('cdock:open:orientation', onCDockOpen as any);
     return () => {
       observer.disconnect();
       window.removeEventListener('resize', onResize);
       window.removeEventListener('orientationchange', onResize);
       window.removeEventListener('gv:orient-pref-changed', onPrefChange as any);
+      window.removeEventListener('cdock:open:orientation', onCDockOpen as any);
     };
-  }, []);
+  }, [cycle]);
 
-  if (!show) return null;
-
-  const cycle = () => {
-    const next: OrientPref =
-      pref === 'auto' ? 'landscape' : pref === 'landscape' ? 'portrait' : 'auto';
-    setOrientPref(next);
-    setPref(next);
-  };
+  if (!show || triggerHidden) return null;
 
   const Icon = pref === 'portrait' ? Smartphone : pref === 'landscape' ? Tablet : RotateCw;
 

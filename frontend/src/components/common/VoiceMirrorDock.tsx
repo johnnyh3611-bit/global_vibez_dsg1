@@ -17,6 +17,7 @@
 import React, { useCallback, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "react-router-dom";
+import useCornerDockTrigger from "@/hooks/useCornerDockTrigger";
 import {
   Mic,
   MicOff,
@@ -74,6 +75,7 @@ export const VoiceMirrorDock: React.FC = () => {
   } = useVoiceMirror();
 
   const [open, setOpen] = useState(false);
+  const triggerHidden = useCornerDockTrigger("voice_mirror", setOpen);
   const [showLangPicker, setShowLangPicker] = useState(false);
   const [recording, setRecording] = useState(false);
   const [processing, setProcessing] = useState(false);
@@ -96,7 +98,7 @@ export const VoiceMirrorDock: React.FC = () => {
   const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
 
-  const hidden = HIDDEN_PUBLIC_ROUTES.has(location.pathname);
+  const hidden = HIDDEN_PUBLIC_ROUTES.has(location.pathname) || triggerHidden && !open;
 
   const stopStream = useCallback(() => {
     if (streamRef.current) {
@@ -531,8 +533,8 @@ export const VoiceMirrorDock: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Collapsed pill */}
-      {enabled ? (
+      {/* Collapsed pill — hidden when CornerDock owns the corner */}
+      {!triggerHidden && (enabled ? (
         <button
           onClick={() => setOpen((o) => !o)}
           className="pointer-events-auto flex items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-600 to-cyan-500 px-3.5 py-2 text-white text-xs font-bold shadow-[0_0_24px_rgba(168,85,247,0.45)] hover:shadow-[0_0_36px_rgba(168,85,247,0.65)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
@@ -558,7 +560,7 @@ export const VoiceMirrorDock: React.FC = () => {
           <MicOff className="w-3 h-3" />
           Enable Voice Mirror
         </button>
-      )}
+      ))}
     </div>
   );
 };

@@ -116,6 +116,66 @@ const DUPLICATE_TESTID_SCRIPT = () => {
     .map(([tid, n]) => ({ testid: tid, count: n }));
 };
 
+// Vigilant Agent v2 (2026-02-09) — Corner-FAB stacking detector.
+// Catches the exact regression the founder reported: multiple
+// `position: fixed` buttons piled into the same screen corner so
+// users can't tell them apart or click them. Returns one row per
+// stacked pair grouped by corner.
+const FAB_STACK_SCRIPT = () => {
+  const all = Array.from(document.querySelectorAll("*"));
+  const fabs = [];
+  for (const el of all) {
+    const cs = window.getComputedStyle(el);
+    if (cs.position !== "fixed") continue;
+    const r = el.getBoundingClientRect();
+    if (r.width <= 0 || r.height <= 0) continue;
+    if (r.width >= window.innerWidth - 32) continue;   // skip full-bar elements
+    if (r.height >= window.innerHeight - 32) continue;
+    // Determine which corner (or center) the element occupies.
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const nearLeft   = r.left   <= 96;
+    const nearRight  = (vw - r.right)  <= 320; // include "Made with Emergent" zone
+    const nearBottom = (vh - r.bottom) <= 96;
+    const nearTop    = r.top    <= 96;
+    let corner = null;
+    if (nearBottom && nearLeft)  corner = "bottom-left";
+    else if (nearBottom && nearRight) corner = "bottom-right";
+    else if (nearTop && nearLeft) corner = "top-left";
+    else if (nearTop && nearRight) corner = "top-right";
+    if (!corner) continue;
+    fabs.push({
+      corner,
+      tag: el.tagName + (el.id ? `#${el.id}` : ""),
+      testid: el.getAttribute("data-testid") || null,
+      rect: { x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height) },
+    });
+  }
+  // Group by corner and detect overlaps within each group.
+  const stacks = {};
+  for (const f of fabs) {
+    (stacks[f.corner] = stacks[f.corner] || []).push(f);
+  }
+  const issues = [];
+  for (const [corner, list] of Object.entries(stacks)) {
+    for (let i = 0; i < list.length; i++) {
+      for (let j = i + 1; j < list.length; j++) {
+        const a = list[i].rect, b = list[j].rect;
+        const overlapW = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+        const overlapH = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+        if (overlapW > 4 && overlapH > 4) {
+          issues.push({
+            corner,
+            a: list[i].testid || list[i].tag,
+            b: list[j].testid || list[j].tag,
+            overlap_px: overlapW * overlapH,
+          });
+        }
+      }
+    }
+  }
+  return { fab_count_by_corner: Object.fromEntries(Object.entries(stacks).map(([c, l]) => [c, l.length])), stacked_pairs: issues };
+};
+
 (async () => {
   console.log(`🔍 Vigilant Agent scanning ${TARGET}`);
   const browser = await chromium.launch();
@@ -141,12 +201,25 @@ const DUPLICATE_TESTID_SCRIPT = () => {
 
       collisions = await page.evaluate(COLLISION_SCRIPT);
       dupes = await page.evaluate(DUPLICATE_TESTID_SCRIPT);
+      const fabReport = await page.evaluate(FAB_STACK_SCRIPT);
 
       const shotPath = path.join(OUT_DIR, `scan_${dev.name}.png`);
       await page.screenshot({ path: shotPath, fullPage: true });
       console.log(`    ✓ screenshot → ${shotPath}`);
       console.log(`    ✓ collisions: ${collisions.length} (significant >20% overlap)`);
       console.log(`    ✓ duplicate testids: ${dupes.length}`);
+      console.log(`    ✓ corner-FAB stacks: ${fabReport.stacked_pairs.length} pairs`);
+      // Stash on the per-device record below.
+      report.devices.push({
+        name: dev.name,
+        viewport: dev.viewport,
+        collisions,
+        duplicate_testids: dupes,
+        fab_stacks: fabReport,
+        nav_error,
+      });
+      await context.close();
+      continue;
     } catch (e) {
       nav_error = String(e);
       console.log(`    ✗ nav error: ${nav_error}`);
@@ -156,6 +229,7 @@ const DUPLICATE_TESTID_SCRIPT = () => {
       viewport: dev.viewport,
       collisions,
       duplicate_testids: dupes,
+      fab_stacks: { fab_count_by_corner: {}, stacked_pairs: [] },
       nav_error,
     });
     await context.close();
@@ -173,9 +247,15 @@ const DUPLICATE_TESTID_SCRIPT = () => {
       console.log(`  ${d.name.padEnd(16)}  NAV ERROR (${d.nav_error.slice(0, 80)})`);
       continue;
     }
+    const stacks = d.fab_stacks ? d.fab_stacks.stacked_pairs.length : 0;
     console.log(
-      `  ${d.name.padEnd(16)}  ${String(d.collisions.length).padStart(3)} collisions   ${String(d.duplicate_testids.length).padStart(2)} dupe testids`,
+      `  ${d.name.padEnd(16)}  ${String(d.collisions.length).padStart(3)} collisions   ${String(d.duplicate_testids.length).padStart(2)} dupe testids   ${String(stacks).padStart(2)} FAB stacks`,
     );
+    if (stacks > 0 && d.fab_stacks) {
+      for (const p of d.fab_stacks.stacked_pairs) {
+        console.log(`     ⚠️  [${p.corner}] ${p.a} ⇄ ${p.b}  (${p.overlap_px}px²)`);
+      }
+    }
   }
   console.log("════════════════════════════════════\n");
 })();

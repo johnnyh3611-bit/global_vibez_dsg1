@@ -8,6 +8,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bug, X, Send, Check, Loader2 } from "lucide-react";
 import { authFetch, getUserId } from "@/utils/secureAuth";
+import useCornerDockTrigger from "@/hooks/useCornerDockTrigger";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -21,6 +22,7 @@ const CATEGORIES = [
 
 export default function BetaFeedbackButton() {
   const [open, setOpen] = useState(false);
+  const triggerHidden = useCornerDockTrigger("beta_feedback", setOpen);
   const [category, setCategory] = useState(CATEGORIES[0].id);
   const [severity, setSeverity] = useState<"low" | "normal" | "high" | "critical">("normal");
   const [comment, setComment] = useState("");
@@ -54,14 +56,16 @@ export default function BetaFeedbackButton() {
 
   return (
     <>
-      <button
-        onClick={() => setOpen(true)}
-        className="fixed bottom-4 left-4 z-[9990] w-11 h-11 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 text-black shadow-[0_0_20px_rgba(255,165,0,0.5)] flex items-center justify-center hover:scale-110 transition"
-        title="Report an issue / request a feature"
-        data-testid="beta-feedback-toggle"
-      >
-        <Bug className="w-5 h-5" />
-      </button>
+      {!triggerHidden && (
+        <button
+          onClick={() => setOpen(true)}
+          className="fixed bottom-4 left-4 z-[9990] w-11 h-11 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 text-black shadow-[0_0_20px_rgba(255,165,0,0.5)] flex items-center justify-center hover:scale-110 transition"
+          title="Report an issue / request a feature"
+          data-testid="beta-feedback-toggle"
+        >
+          <Bug className="w-5 h-5" />
+        </button>
+      )}
 
       <AnimatePresence>
         {open && (

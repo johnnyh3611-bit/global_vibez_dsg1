@@ -10,6 +10,7 @@
  */
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import useCornerDockTrigger from "@/hooks/useCornerDockTrigger";
 import {
   Sparkles,
   X,
@@ -59,6 +60,7 @@ const FreshDropsLauncher: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [open, setOpen] = useState(false);
+  const triggerHidden = useCornerDockTrigger("fresh_drops", setOpen);
   const [seenVersion, setSeenVersion] = useState<string | null>(null);
 
   useEffect(() => {
@@ -110,21 +112,23 @@ const FreshDropsLauncher: React.FC = () => {
       {/* Floating pill — bottom-right to avoid overlapping any page
           header's top-right action buttons. Voice Mirror lives in the
           bottom-left, so the two docks don't collide. */}
-      <button
-        onClick={() => { setOpen(true); markSeen(); }}
-        className="fixed bottom-4 right-4 z-[60] flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/80 backdrop-blur-xl border border-fuchsia-500/40 hover:border-fuchsia-400 shadow-[0_0_30px_rgba(236,72,153,0.25)] text-white font-bold text-xs uppercase tracking-widest transition-all hover:scale-[1.03]"
-        data-testid="fresh-drops-launcher-btn"
-        aria-label="Open fresh drops menu"
-      >
-        <Sparkles className="w-4 h-4 text-fuchsia-400" />
-        Fresh Drops
-        {hasNew && (
-          <span className="relative flex h-2 w-2" data-testid="fresh-drops-new-dot">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-fuchsia-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-fuchsia-500" />
-          </span>
-        )}
-      </button>
+      {!triggerHidden && (
+        <button
+          onClick={() => { setOpen(true); markSeen(); }}
+          className="fixed bottom-4 right-4 z-[60] flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/80 backdrop-blur-xl border border-fuchsia-500/40 hover:border-fuchsia-400 shadow-[0_0_30px_rgba(236,72,153,0.25)] text-white font-bold text-xs uppercase tracking-widest transition-all hover:scale-[1.03]"
+          data-testid="fresh-drops-launcher-btn"
+          aria-label="Open fresh drops menu"
+        >
+          <Sparkles className="w-4 h-4 text-fuchsia-400" />
+          Fresh Drops
+          {hasNew && (
+            <span className="relative flex h-2 w-2" data-testid="fresh-drops-new-dot">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-fuchsia-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-fuchsia-500" />
+            </span>
+          )}
+        </button>
+      )}
 
       {/* Overlay */}
       {open && (

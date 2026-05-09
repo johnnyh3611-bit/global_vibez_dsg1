@@ -3962,7 +3962,8 @@ def test_vigilant_agent_scripts_exist_and_have_required_apis():
     """The two Vigilant Agent scripts must remain on disk so the
     founder's pre/post-deploy CI workflow keeps working. PDF spec
     requires the bare scanner + a CI wrapper with baseline diff +
-    optional Slack/Discord webhook."""
+    optional Slack/Discord webhook. v2 (2026-02-09) adds a corner-
+    FAB stacking detector."""
     bare = open("/app/scripts/vigilant_agent.js").read()
     ci   = open("/app/scripts/vigilant_agent_ci.js").read()
     # Bare scanner — 3 device profiles, screenshots, dupe-testid scan.
@@ -3971,11 +3972,63 @@ def test_vigilant_agent_scripts_exist_and_have_required_apis():
     assert "iPad Pro 11"        in bare
     assert "duplicate_testids"  in bare
     assert "scan_${dev.name}.png" in bare
+    # v2 corner-FAB stack detector.
+    assert "FAB_STACK_SCRIPT" in bare
+    assert "stacked_pairs"    in bare
     # CI wrapper — baseline + check + webhook posters.
     assert "--baseline" in ci and "--check" in ci
     assert "SLACK_WEBHOOK_URL"   in ci
     assert "DISCORD_WEBHOOK_URL" in ci
     assert "regressed_devices"   in ci
+
+
+# ── CornerDock guards (Vigilant Agent v2 founder fix) ──────────────
+def test_corner_dock_is_mounted_in_app():
+    """Vigilant Agent v2 (founder report 2026-02-09): the unified
+    CornerDock must be mounted globally so corner-FAB stacking is
+    impossible."""
+    src = open("/app/frontend/src/App.js").read()
+    assert "import CornerDock from" in src, \
+        "CornerDock must be imported in App.js"
+    assert "<CornerDock />" in src, \
+        "CornerDock must be mounted in the AppRouter chrome layer"
+
+
+def test_legacy_fabs_use_corner_dock_trigger_hook():
+    """The 5 legacy FABs (Beta Feedback / Fresh Drops / Voice Mirror /
+    Floating Food / Globe) MUST hide their own trigger when CornerDock
+    takes over the corners. Each component imports the shared
+    `useCornerDockTrigger` hook."""
+    files = [
+        "/app/frontend/src/components/common/BetaFeedbackButton.tsx",
+        "/app/frontend/src/components/common/FreshDropsLauncher.tsx",
+        "/app/frontend/src/components/common/VoiceMirrorDock.tsx",
+        "/app/frontend/src/components/common/FloatingFoodMenu.tsx",
+        "/app/frontend/src/components/GlobeFAB.tsx",
+    ]
+    for f in files:
+        body = open(f).read()
+        assert "useCornerDockTrigger" in body, \
+            f"{f} must import + call useCornerDockTrigger so CornerDock can suppress its trigger"
+        assert "triggerHidden" in body, \
+            f"{f} must reference the triggerHidden flag returned by the hook"
+
+
+def test_corner_dock_has_left_and_right_triggers_with_items():
+    """CornerDock must expose `corner-dock-left-trigger` and
+    `corner-dock-right-trigger` test ids, plus at least 2 labeled
+    items per side so the user can identify each action."""
+    src = open("/app/frontend/src/components/common/CornerDock.tsx").read()
+    # Triggers are rendered via template-literal so we look for the suffix.
+    assert 'corner-dock-${side}-trigger' in src
+    assert 'corner-dock-${side}-menu'    in src
+    assert 'corner-dock-item-'           in src
+    # The 6 known item ids that map to the 5 underlying FABs + globe.
+    for item_id in ["voice_mirror", "orientation", "beta_feedback",
+                    "fresh_drops", "food", "cultural_hub"]:
+        assert f'id: "{item_id}"' in src, \
+            f"CornerDock must include menu item '{item_id}'"
+
 
 
 

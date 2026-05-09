@@ -8,6 +8,7 @@
  */
 import React, { useEffect, useState, useCallback } from 'react';
 import { Globe } from 'lucide-react';
+import useCornerDockTrigger from "@/hooks/useCornerDockTrigger";
 import { CulturalHubModal } from './CulturalHubModal';
 import {
   autoDetectLocale,
@@ -26,6 +27,7 @@ const FLAG_FOR_COUNTRY: Record<string, string> = {
 export function GlobeFAB() {
   const [open, setOpen] = useState(false);
   const [locale, setLocale] = useState<UserLocaleSelection | null>(null);
+  const triggerHidden = useCornerDockTrigger("cultural_hub", setOpen);
 
   // Tier-1: Auto-Sync on first launch (only if no local pref yet).
   useEffect(() => {
@@ -65,19 +67,21 @@ export function GlobeFAB() {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        data-testid="globe-fab-button"
-        title="Cultural Hub — change country / language / units"
-        className="fixed bottom-24 right-4 z-50 flex items-center gap-1.5 rounded-full bg-[#0A0A0F]/95 hover:bg-[#1a1a25] text-[#00E5C7] border border-[#00E5C7]/40 px-3 py-2 text-sm font-bold shadow-lg shadow-[#00E5C7]/10 backdrop-blur-md transition-all hover:scale-105 active:scale-95 sm:bottom-6"
-      >
-        <span className="text-base leading-none" aria-hidden>{flag}</span>
-        <Globe className="w-4 h-4" />
-        <span className="hidden sm:inline tabular-nums text-xs uppercase tracking-wider">
-          {code}
-        </span>
-      </button>
+      {!triggerHidden && (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          data-testid="globe-fab-button"
+          title="Cultural Hub — change country / language / units"
+          className="fixed bottom-24 right-4 z-50 flex items-center gap-1.5 rounded-full bg-[#0A0A0F]/95 hover:bg-[#1a1a25] text-[#00E5C7] border border-[#00E5C7]/40 px-3 py-2 text-sm font-bold shadow-lg shadow-[#00E5C7]/10 backdrop-blur-md transition-all hover:scale-105 active:scale-95 sm:bottom-6"
+        >
+          <span className="text-base leading-none" aria-hidden>{flag}</span>
+          <Globe className="w-4 h-4" />
+          <span className="hidden sm:inline tabular-nums text-xs uppercase tracking-wider">
+            {code}
+          </span>
+        </button>
+      )}
 
       <CulturalHubModal
         open={open}

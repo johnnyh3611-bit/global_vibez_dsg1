@@ -1,6 +1,6 @@
 {
-  "url": "https://globalvibezdsg.com",
-  "started_at": "2026-05-09T11:12:43.561Z",
+  "url": "https://social-connect-953.preview.emergentagent.com/dashboard",
+  "started_at": "2026-05-09T12:18:12.817Z",
   "devices": [
     {
       "name": "Desktop_4K",
@@ -63,7 +63,49 @@
           "b": "DIV",
           "overlap_pct": 100,
           "a_testid": "log-design-lesson-toggle",
-          "b_testid": "landing-room-tint-overlay"
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "log-design-lesson-toggle",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "log-design-lesson-toggle",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "CANVAS",
+          "overlap_pct": 100,
+          "a_testid": "log-design-lesson-toggle",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "log-design-lesson-toggle",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "log-design-lesson-toggle",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "log-design-lesson-toggle",
+          "b_testid": null
         },
         {
           "a": "BUTTON",
@@ -84,7 +126,49 @@
           "b": "DIV",
           "overlap_pct": 100,
           "a_testid": "globe-fab-button",
-          "b_testid": "landing-room-tint-overlay"
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "globe-fab-button",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "globe-fab-button",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "CANVAS",
+          "overlap_pct": 100,
+          "a_testid": "globe-fab-button",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "globe-fab-button",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "globe-fab-button",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "globe-fab-button",
+          "b_testid": null
         },
         {
           "a": "BUTTON",
@@ -99,93 +183,23 @@
           "overlap_pct": 94,
           "a_testid": "globe-fab-button",
           "b_testid": null
-        },
-        {
-          "a": "BUTTON",
-          "b": "P",
-          "overlap_pct": 57,
-          "a_testid": "globe-fab-button",
-          "b_testid": null
-        },
-        {
-          "a": "SPAN",
-          "b": "DIV",
-          "overlap_pct": 100,
-          "a_testid": null,
-          "b_testid": null
-        },
-        {
-          "a": "SPAN",
-          "b": "DIV",
-          "overlap_pct": 100,
-          "a_testid": null,
-          "b_testid": "landing-room-tint-overlay"
-        },
-        {
-          "a": "SPAN",
-          "b": "DIV",
-          "overlap_pct": 100,
-          "a_testid": null,
-          "b_testid": null
-        },
-        {
-          "a": "SPAN",
-          "b": "A#emergent-badge",
-          "overlap_pct": 100,
-          "a_testid": null,
-          "b_testid": null
-        },
-        {
-          "a": "SPAN",
-          "b": "P",
-          "overlap_pct": 81,
-          "a_testid": null,
-          "b_testid": null
-        },
-        {
-          "a": "svg",
-          "b": "DIV",
-          "overlap_pct": 100,
-          "a_testid": null,
-          "b_testid": null
-        },
-        {
-          "a": "svg",
-          "b": "DIV",
-          "overlap_pct": 100,
-          "a_testid": null,
-          "b_testid": "landing-room-tint-overlay"
-        },
-        {
-          "a": "svg",
-          "b": "DIV",
-          "overlap_pct": 100,
-          "a_testid": null,
-          "b_testid": null
-        },
-        {
-          "a": "svg",
-          "b": "A#emergent-badge",
-          "overlap_pct": 100,
-          "a_testid": null,
-          "b_testid": null
-        },
-        {
-          "a": "svg",
-          "b": "P",
-          "overlap_pct": 81,
-          "a_testid": null,
-          "b_testid": null
-        },
-        {
-          "a": "circle",
-          "b": "path",
-          "overlap_pct": 100,
-          "a_testid": null,
-          "b_testid": null
         }
       ],
       "duplicate_testids": [],
+      "fab_stacks": {
+        "fab_count_by_corner": {
+          "bottom-left": 1,
+          "bottom-right": 2
+        },
+        "stacked_pairs": [
+          {
+            "corner": "bottom-right",
+            "a": "globe-fab-button",
+            "b": "A#emergent-badge",
+            "overlap_px": 3648
+          }
+        ]
+      },
       "nav_error": null
     },
     {
@@ -239,139 +253,146 @@
         },
         {
           "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "log-design-lesson-toggle",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "log-design-lesson-toggle",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "log-design-lesson-toggle",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "log-design-lesson-toggle",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "CANVAS",
+          "overlap_pct": 100,
+          "a_testid": "log-design-lesson-toggle",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "log-design-lesson-toggle",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "log-design-lesson-toggle",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "log-design-lesson-toggle",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "log-design-lesson-toggle",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "log-design-lesson-toggle",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "log-design-lesson-toggle",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 78,
+          "a_testid": "log-design-lesson-toggle",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
           "b": "BUTTON",
-          "overlap_pct": 100,
-          "a_testid": "orientation-fab",
-          "b_testid": "log-design-lesson-toggle"
+          "overlap_pct": 57,
+          "a_testid": "log-design-lesson-toggle",
+          "b_testid": "login-google-btn"
         },
         {
           "a": "BUTTON",
-          "b": "DIV",
-          "overlap_pct": 100,
-          "a_testid": "orientation-fab",
-          "b_testid": null
-        },
-        {
-          "a": "BUTTON",
-          "b": "DIV",
-          "overlap_pct": 100,
-          "a_testid": "orientation-fab",
-          "b_testid": "landing-room-tint-overlay"
-        },
-        {
-          "a": "BUTTON",
-          "b": "DIV",
-          "overlap_pct": 100,
-          "a_testid": "orientation-fab",
-          "b_testid": null
-        },
-        {
-          "a": "BUTTON",
-          "b": "SECTION",
-          "overlap_pct": 100,
-          "a_testid": "orientation-fab",
+          "b": "IMG",
+          "overlap_pct": 95,
+          "a_testid": "log-design-lesson-toggle",
           "b_testid": null
         },
         {
           "a": "BUTTON",
           "b": "DIV",
           "overlap_pct": 100,
-          "a_testid": "orientation-fab",
+          "a_testid": "globe-fab-button",
           "b_testid": null
         },
         {
           "a": "BUTTON",
           "b": "DIV",
           "overlap_pct": 100,
-          "a_testid": "orientation-fab",
+          "a_testid": "globe-fab-button",
           "b_testid": null
         },
         {
           "a": "BUTTON",
           "b": "DIV",
-          "overlap_pct": 23,
-          "a_testid": "orientation-fab",
+          "overlap_pct": 100,
+          "a_testid": "globe-fab-button",
           "b_testid": null
         },
         {
           "a": "BUTTON",
-          "b": "BUTTON",
-          "overlap_pct": 23,
-          "a_testid": "orientation-fab",
-          "b_testid": null
-        },
-        {
-          "a": "svg",
-          "b": "BUTTON",
-          "overlap_pct": 100,
-          "a_testid": null,
-          "b_testid": "log-design-lesson-toggle"
-        },
-        {
-          "a": "svg",
           "b": "DIV",
           "overlap_pct": 100,
-          "a_testid": null,
+          "a_testid": "globe-fab-button",
           "b_testid": null
         },
         {
-          "a": "svg",
-          "b": "DIV",
+          "a": "BUTTON",
+          "b": "CANVAS",
           "overlap_pct": 100,
-          "a_testid": null,
-          "b_testid": "landing-room-tint-overlay"
-        },
-        {
-          "a": "svg",
-          "b": "DIV",
-          "overlap_pct": 100,
-          "a_testid": null,
-          "b_testid": null
-        },
-        {
-          "a": "svg",
-          "b": "SECTION",
-          "overlap_pct": 100,
-          "a_testid": null,
-          "b_testid": null
-        },
-        {
-          "a": "svg",
-          "b": "DIV",
-          "overlap_pct": 100,
-          "a_testid": null,
-          "b_testid": null
-        },
-        {
-          "a": "svg",
-          "b": "DIV",
-          "overlap_pct": 100,
-          "a_testid": null,
-          "b_testid": null
-        },
-        {
-          "a": "path",
-          "b": "path",
-          "overlap_pct": 100,
-          "a_testid": null,
-          "b_testid": null
-        },
-        {
-          "a": "path",
-          "b": "BUTTON",
-          "overlap_pct": 100,
-          "a_testid": null,
-          "b_testid": "log-design-lesson-toggle"
-        },
-        {
-          "a": "path",
-          "b": "DIV",
-          "overlap_pct": 100,
-          "a_testid": null,
+          "a_testid": "globe-fab-button",
           "b_testid": null
         }
       ],
       "duplicate_testids": [],
+      "fab_stacks": {
+        "fab_count_by_corner": {
+          "bottom-left": 1,
+          "bottom-right": 2
+        },
+        "stacked_pairs": []
+      },
       "nav_error": null
     },
     {
@@ -425,141 +446,155 @@
         },
         {
           "a": "BUTTON",
-          "b": "BUTTON",
-          "overlap_pct": 74,
-          "a_testid": "orientation-fab",
-          "b_testid": "log-design-lesson-toggle"
-        },
-        {
-          "a": "BUTTON",
           "b": "DIV",
           "overlap_pct": 100,
-          "a_testid": "orientation-fab",
+          "a_testid": "log-design-lesson-toggle",
           "b_testid": null
         },
         {
           "a": "BUTTON",
           "b": "DIV",
           "overlap_pct": 100,
-          "a_testid": "orientation-fab",
-          "b_testid": "landing-room-tint-overlay"
+          "a_testid": "log-design-lesson-toggle",
+          "b_testid": null
         },
         {
           "a": "BUTTON",
           "b": "DIV",
           "overlap_pct": 100,
-          "a_testid": "orientation-fab",
+          "a_testid": "log-design-lesson-toggle",
           "b_testid": null
         },
         {
           "a": "BUTTON",
-          "b": "SECTION",
+          "b": "DIV",
           "overlap_pct": 100,
-          "a_testid": "orientation-fab",
+          "a_testid": "log-design-lesson-toggle",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "CANVAS",
+          "overlap_pct": 100,
+          "a_testid": "log-design-lesson-toggle",
           "b_testid": null
         },
         {
           "a": "BUTTON",
           "b": "DIV",
-          "overlap_pct": 90,
-          "a_testid": "orientation-fab",
+          "overlap_pct": 100,
+          "a_testid": "log-design-lesson-toggle",
           "b_testid": null
         },
         {
           "a": "BUTTON",
           "b": "DIV",
-          "overlap_pct": 90,
-          "a_testid": "orientation-fab",
+          "overlap_pct": 100,
+          "a_testid": "log-design-lesson-toggle",
           "b_testid": null
         },
         {
           "a": "BUTTON",
           "b": "DIV",
-          "overlap_pct": 90,
-          "a_testid": "orientation-fab",
+          "overlap_pct": 100,
+          "a_testid": "log-design-lesson-toggle",
           "b_testid": null
         },
         {
           "a": "BUTTON",
-          "b": "SECTION",
-          "overlap_pct": 90,
-          "a_testid": "orientation-fab",
-          "b_testid": "burn-counter-widget"
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "log-design-lesson-toggle",
+          "b_testid": null
         },
         {
           "a": "BUTTON",
           "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "globe-fab-button",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "globe-fab-button",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "globe-fab-button",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "globe-fab-button",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "CANVAS",
+          "overlap_pct": 100,
+          "a_testid": "globe-fab-button",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "globe-fab-button",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "globe-fab-button",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "globe-fab-button",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "globe-fab-button",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "A#emergent-badge",
           "overlap_pct": 94,
-          "a_testid": "orientation-fab",
-          "b_testid": null
-        },
-        {
-          "a": "BUTTON",
-          "b": "DIV",
-          "overlap_pct": 48,
-          "a_testid": "orientation-fab",
-          "b_testid": null
-        },
-        {
-          "a": "BUTTON",
-          "b": "DIV",
-          "overlap_pct": 48,
-          "a_testid": "orientation-fab",
-          "b_testid": "burn-counter-tiles"
-        },
-        {
-          "a": "BUTTON",
-          "b": "DIV",
-          "overlap_pct": 48,
-          "a_testid": "orientation-fab",
-          "b_testid": "burn-tile-24h"
-        },
-        {
-          "a": "svg",
-          "b": "BUTTON",
-          "overlap_pct": 100,
-          "a_testid": null,
-          "b_testid": "log-design-lesson-toggle"
-        },
-        {
-          "a": "svg",
-          "b": "DIV",
-          "overlap_pct": 100,
-          "a_testid": null,
-          "b_testid": null
-        },
-        {
-          "a": "svg",
-          "b": "DIV",
-          "overlap_pct": 100,
-          "a_testid": null,
-          "b_testid": "landing-room-tint-overlay"
-        },
-        {
-          "a": "svg",
-          "b": "DIV",
-          "overlap_pct": 100,
-          "a_testid": null,
-          "b_testid": null
-        },
-        {
-          "a": "svg",
-          "b": "SECTION",
-          "overlap_pct": 100,
-          "a_testid": null,
-          "b_testid": null
-        },
-        {
-          "a": "svg",
-          "b": "DIV",
-          "overlap_pct": 100,
-          "a_testid": null,
+          "a_testid": "globe-fab-button",
           "b_testid": null
         }
       ],
       "duplicate_testids": [],
+      "fab_stacks": {
+        "fab_count_by_corner": {
+          "bottom-left": 1,
+          "bottom-right": 2
+        },
+        "stacked_pairs": [
+          {
+            "corner": "bottom-right",
+            "a": "globe-fab-button",
+            "b": "A#emergent-badge",
+            "overlap_px": 3648
+          }
+        ]
+      },
       "nav_error": null
     }
   ],
-  "finished_at": "2026-05-09T11:13:37.537Z"
+  "finished_at": "2026-05-09T12:18:39.711Z"
 }

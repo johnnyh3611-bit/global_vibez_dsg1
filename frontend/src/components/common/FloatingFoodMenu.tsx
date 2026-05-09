@@ -11,6 +11,7 @@ import React, { useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UtensilsCrossed, X, Pizza, Coffee, IceCream } from 'lucide-react';
+import useCornerDockTrigger from "@/hooks/useCornerDockTrigger";
 
 const HIDE_PATTERNS = [
   /^\/$/,
@@ -31,6 +32,7 @@ const QUICK_CATS = [
 export default function FloatingFoodMenu() {
   const loc = useLocation();
   const [open, setOpen] = useState(false);
+  const triggerHidden = useCornerDockTrigger("food", setOpen);
 
   // Hide on routes that don't make sense for the floater
   if (HIDE_PATTERNS.some((re) => re.test(loc.pathname))) return null;
@@ -39,17 +41,19 @@ export default function FloatingFoodMenu() {
 
   return (
     <>
-      <motion.button
-        whileHover={{ scale: 1.08, rotate: -6 }}
-        whileTap={{ scale: 0.92 }}
-        onClick={() => setOpen((v) => !v)}
-        data-testid="floating-food-menu-trigger"
-        title="Order food without pausing"
-        className="fixed bottom-20 right-4 z-[9997] w-14 h-14 rounded-full bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 shadow-2xl shadow-orange-500/40 flex items-center justify-center text-white hover:shadow-orange-500/70 transition-shadow"
-        style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 0px)' }}
-      >
-        <UtensilsCrossed className="w-6 h-6 drop-shadow" />
-      </motion.button>
+      {!triggerHidden && (
+        <motion.button
+          whileHover={{ scale: 1.08, rotate: -6 }}
+          whileTap={{ scale: 0.92 }}
+          onClick={() => setOpen((v) => !v)}
+          data-testid="floating-food-menu-trigger"
+          title="Order food without pausing"
+          className="fixed bottom-20 right-4 z-[9997] w-14 h-14 rounded-full bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 shadow-2xl shadow-orange-500/40 flex items-center justify-center text-white hover:shadow-orange-500/70 transition-shadow"
+          style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 0px)' }}
+        >
+          <UtensilsCrossed className="w-6 h-6 drop-shadow" />
+        </motion.button>
+      )}
 
       <AnimatePresence>
         {open && (

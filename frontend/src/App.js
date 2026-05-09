@@ -56,6 +56,7 @@ import GlobeFAB from "@/components/GlobeFAB";
 // v8 — universal voice/video chat dock auto-mounted on every multiplayer URL
 import GameVoiceDockMounter from "@/components/games/GameVoiceDockMounter";
 import FloatingFoodMenu from "@/components/common/FloatingFoodMenu";
+import CornerDock from "@/components/common/CornerDock";
 
 // Import version manager for cache busting
 import { startVersionMonitoring } from "@/utils/versionManager";
@@ -145,6 +146,13 @@ function AppRouter() {
       <GlobeFAB />
       <GameVoiceDockMounter />
       <FloatingFoodMenu />
+      {/* Vigilant Agent v2 fix (2026-02-09): single corner dock now
+          owns the bottom-corner real estate. The 5 FABs above stay
+          mounted (they own their modals/panels) but their trigger
+          buttons hide via `useCornerDockTrigger`. CornerDock renders
+          two labeled pop-out menus — one trigger per corner — so
+          buttons no longer overlap and every action is named. */}
+      <CornerDock />
       <Routes>
         {/* Public Routes */}
         {authRoutes}

@@ -1,5 +1,88 @@
 # CHANGELOG
 
+## 2026-02-09 Late × 4 — Corner-FAB Pile-Up FIXED 🎯 (Vigilant Agent v2)
+
+**Founder ask:** *"On our landing page and home page, in the left-hand corner to the bottom is still the auto change, voice mirror, and beta feedback all bundled together... three different buttons, and I can't press all three because they all intertwine. Same on the right. Put inside a menu bar... pop down, pop out, pop up — out the way and clicked, everybody could see what they're getting they self into."*
+
+**Why Vigilant Agent v1 missed it:** the bare collision script capped at 25 generic overlaps and ignored `position: fixed` button stacking specifically. v1 reported "0 duplicate testids ✅" which was technically true but completely missed the actual user-blocker.
+
+### Built (the user's pop-out menu spec, exactly)
+
+**`CornerDock.tsx`** — a single, unified component with two labeled triggers:
+- **Bottom-left "TOOLS · 3"** (cyan-emerald gradient pill) → pops up a labeled vertical menu containing Voice Mirror · Auto-Rotate Lock · Beta Feedback (each with its own brand-colored icon + title)
+- **Bottom-right "MORE · 3"** (fuchsia-orange gradient pill) → pops up Cultural Hub · Fresh Drops · Hungry Vibez
+- Right side anchors at `right-[230px]` to leave clearance for the platform-injected "Made with Emergent" badge
+- Click-outside-to-close, X close button per menu, animated slide-in
+- Hidden via HIDE_PATTERNS on `/`, `/login`, `/signup`, `/streamer/overlay`
+- Sets `document.body.dataset.cornerDockActive = "1"` on mount as a no-React-tree-coupling signal
+
+**`useCornerDockTrigger.ts`** — shared hook that lets each existing FAB cooperate without refactoring its modal:
+- Reads body dataset on mount → returns `triggerHidden: boolean`
+- Listens for `cdock:open:${id}` window event → calls component's existing setOpen(true)
+- 5-line edit per FAB component to integrate
+
+### 5 legacy FABs migrated (trigger hidden when CornerDock active, modal still works)
+- **`BetaFeedbackButton.tsx`** — Beta Feedback (amber chat-bubble icon)
+- **`FreshDropsLauncher.tsx`** — Fresh Drops (fuchsia sparkles icon)
+- **`VoiceMirrorDock.tsx`** — Voice Mirror (cyan mic icon)
+- **`FloatingFoodMenu.tsx`** — Hungry Vibez (orange utensils icon)
+- **`GlobeFAB.tsx`** — Cultural Hub (cyan globe icon)
+- **`OrientationToggle.tsx`** (OrientationFAB) — Auto-Rotate Lock (emerald rotate icon) — uses cycle() instead of setOpen, so wired manually with the same body-dataset / cdock-event pattern
+
+### Vigilant Agent v2 upgrade
+- New `FAB_STACK_SCRIPT` injected into the bare scanner — walks every `position: fixed` element, classifies its corner (top/bottom × left/right with a 320 px right-corridor for the Emergent badge zone), and flags any pair overlapping by more than 4×4 px on the same corner.
+- Stdout summary now includes a `FAB stacks` column + per-pair detail lines like `[bottom-right] globe-fab-button ⇄ A#emergent-badge  (3648px²)`.
+- Per-device record in `report.json` now includes `fab_stacks: { fab_count_by_corner, stacked_pairs }`.
+
+### Regression Shield: 213 → **217** (no test deleted)
+- `test_corner_dock_is_mounted_in_app` — App.js imports + mounts `<CornerDock />`.
+- `test_legacy_fabs_use_corner_dock_trigger_hook` — 5 legacy FABs all import + reference `useCornerDockTrigger` and `triggerHidden`.
+- `test_corner_dock_has_left_and_right_triggers_with_items` — both triggers + 6 menu item ids (voice_mirror, orientation, beta_feedback, fresh_drops, food, cultural_hub) present.
+- **Updated** `test_vigilant_agent_scripts_exist_and_have_required_apis` — now also asserts `FAB_STACK_SCRIPT` and `stacked_pairs` exist in the v2 scanner.
+
+### Live verified (post-auth /dashboard)
+| Element | Result |
+|---|---|
+| `corner-dock-left-trigger` | ✅ rendered |
+| `corner-dock-right-trigger` | ✅ rendered |
+| Legacy Beta Feedback FAB | ✅ trigger hidden |
+| Legacy Voice Mirror pill | ✅ trigger hidden |
+| Legacy Auto-Rotate FAB | ✅ trigger hidden |
+| Legacy Fresh Drops pill | ✅ trigger hidden |
+| Legacy Hungry Vibez FAB | ✅ trigger hidden |
+| Legacy Globe FAB | ✅ trigger hidden |
+| Left menu opens with 3 labeled items | ✅ |
+| Right menu opens with 3 labeled items | ✅ |
+| Corner-FAB stacks detected post-login | **0** ✅ |
+
+### Files added/edited
+- **NEW:** `/app/frontend/src/components/common/CornerDock.tsx`
+- **NEW:** `/app/frontend/src/hooks/useCornerDockTrigger.ts`
+- **EDITED:** `/app/frontend/src/components/common/BetaFeedbackButton.tsx` (+ hook)
+- **EDITED:** `/app/frontend/src/components/common/FreshDropsLauncher.tsx` (+ hook)
+- **EDITED:** `/app/frontend/src/components/common/VoiceMirrorDock.tsx` (+ hook)
+- **EDITED:** `/app/frontend/src/components/common/FloatingFoodMenu.tsx` (+ hook)
+- **EDITED:** `/app/frontend/src/components/common/OrientationToggle.tsx` (manual cdock-event wire, cycle() instead of setOpen)
+- **EDITED:** `/app/frontend/src/components/GlobeFAB.tsx` (+ hook)
+- **EDITED:** `/app/frontend/src/App.js` (+ `<CornerDock />` mount)
+- **EDITED:** `/app/scripts/vigilant_agent.js` (+ FAB_STACK_SCRIPT detector + summary lines)
+- **EDITED:** `/app/backend/tests/regression_shield.py` (+4 dock guards, +1 v2 assertion)
+
+### State
+- Regression shield: **217/217 passing** ✅
+- Frontend webpack compile clean
+- Vigilant Agent v2 detector live
+- All 6 corner FABs unified into 2 labeled pop-out menus
+
+### Action for founder
+**Beta-redeploy ready.** Hit Deploy on Emergent. After the production deploy completes, run the Vigilant Agent v2 against production to lock the new clean baseline:
+```bash
+node /app/scripts/vigilant_agent_ci.js --baseline https://globalvibezdsg.com
+```
+The new corner-FAB stack detector will catch any future regression where someone adds a new fixed-positioned FAB without going through CornerDock.
+
+
+
 ## 2026-02-09 Late × 3 — Beta Operational Sweep · 3 BLOCKERS FIXED 🛠️
 
 **Founder ask:** *"make sure everything actually work inside the app so I can test every room I can get in or click need to be operational"* + 2 PDFs about a Vigilant Agent collision scanner.
