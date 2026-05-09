@@ -3958,6 +3958,27 @@ def test_practice_chess_legacy_path_redirects():
         "Legacy '/practice/chess' must redirect to '/practice/play/chess'"
 
 
+def test_vigilant_agent_scripts_exist_and_have_required_apis():
+    """The two Vigilant Agent scripts must remain on disk so the
+    founder's pre/post-deploy CI workflow keeps working. PDF spec
+    requires the bare scanner + a CI wrapper with baseline diff +
+    optional Slack/Discord webhook."""
+    bare = open("/app/scripts/vigilant_agent.js").read()
+    ci   = open("/app/scripts/vigilant_agent_ci.js").read()
+    # Bare scanner — 3 device profiles, screenshots, dupe-testid scan.
+    assert "Desktop_4K"         in bare
+    assert "iPhone 15 Pro"      in bare
+    assert "iPad Pro 11"        in bare
+    assert "duplicate_testids"  in bare
+    assert "scan_${dev.name}.png" in bare
+    # CI wrapper — baseline + check + webhook posters.
+    assert "--baseline" in ci and "--check" in ci
+    assert "SLACK_WEBHOOK_URL"   in ci
+    assert "DISCORD_WEBHOOK_URL" in ci
+    assert "regressed_devices"   in ci
+
+
+
 
 
 
