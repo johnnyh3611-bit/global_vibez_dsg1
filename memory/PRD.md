@@ -1,6 +1,19 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
 
+> **2026-05-09 (Late) — /vibez-654 RESTORED · Fullscreen-Game Strip Fix · Photosensitive-Safe CSS 🎲♿️.** Founder reported THREE bugs in one shot:
+>
+> 1. **Original `/vibez-654` totally broken** — couldn't bet, couldn't push buttons, room "too compressed". RCA: page hardcoded the OLD "Florida Flow / 3 dice / calcify on 5/6" protocol, but the backend had been rewritten to "5 dice / sequential 6→5→4". Page was reading `locked_dice` / `unlocked_dice` (no longer emitted) → empty arrays → broken UI. **Full rewrite** of `Vibez654Game.tsx` to consume `has_6 / has_5 / has_4 / qualified / point_dice / residual_dice / rolls_remaining`. New layout: stake row · qualifier ladder (6→5→4 with lock icons) · dice arena · Roll/Stand controls · outcome card · 24h leaderboard. Verified end-to-end: stake select → Ante In → POST /api/vibez-654/start 200 → Roll → 5 dice render → qualifier locks fire correctly.
+>
+> 2. **Vibe Dice 654 SOLO + every card room "compressed"** — `ProtectedRoute` was unconditionally injecting `<PageActionStrip />` above EVERY protected page including full-viewport games (`h-[100dvh] + overflow-hidden`). The strip stole vertical pixels and pushed the bottom CTAs (Ante In · Bid Now · Roll) off-screen. Fix: introduced `FULLSCREEN_GAME_ROUTES` whitelist + `ProtectedRouteContent` branching component in App.js. Strip now skipped on 17 game routes (`/spades`, `/bid-whist`, `/hearts`, `/uno`, `/euchre`, `/pinochle`, `/gin-rummy`, `/rummy`, `/war`, `/crazy-eights`, `/go-fish`, `/baccarat`, `/baccarat-aaa`, `/blackjack`, `/poker`, `/three-card-poker`, `/vibe-654`, `/vibez-654`, `/chess`, `/checkers`, `/connect4`, `/practice/play`, `/card-mp/*`). Also dispatches `chromebar:active` so legacy floating FABs stay collapsed on these routes.
+>
+> 3. **Flashing cards = photosensitive seizure / migraine risk** — RCA: 5 keyframe animations (`gv-card-neon-pulse 1.6s`, `ace-flicker 1.5s steps(2)`, `ruby-heartbeat 1.2s`, `nova-shimmer 2s`, `jade-pulse 2s`) were applied to playable cards + action buttons across every card room. Replaced ALL with static gradient + glow + hover-only intensify. Added `@media (prefers-reduced-motion: reduce)` killswitch + opt-in `body[data-no-flash="1"]` toggle (persisted in `localStorage gv_no_flash_v1`) wired to a new "Reduce Motion" menu item in `PageActionStrip` (Tools section, `<ZapOff />` icon). Verified: 0 elements running flicker animations on /spades; flag persists across page reload.
+>
+> **Regression Shield: 226/226 GREEN** (+3 new locks: `test_protected_route_skips_action_strip_on_fullscreen_games`, `test_vibez654_classic_page_speaks_5dice_protocol`, `test_photosensitive_safe_card_styles`). Testing agent: `retest_needed: false`. **Status: BETA-READY.**
+>
+> **OPS NOTE:** mongod entered FATAL state once during the disk-fill incident. Recovered cleanly via `sudo supervisorctl start mongod`. Pre-existing Mongo-ping startup health-check (Feb 2026) catches this on subsequent boots — log line `FATAL: Mongo ping failed at startup` will show in `backend_error.log` if it recurs.
+
+
 > **2026-05-09 (Latest) — TikTok/Shorts/Reels Export Pipeline 🎬📲.** Founder asked for ready-to-post social trailers without filming. Shipped:
 >
 > 1. **`render_landing_tour_vertical.py`** ffmpeg pipeline (`/app/backend/scripts/`) — downloads the 4 founder MP4s → re-encodes to 9:16 (1080×1920 center-crop) → concats + loops to 79s → burns in subtitles (white-on-black, 58px Inter Bold, MarginV=220) → muxes the Onyx narration → final encode at CRF 28 / 2.5 Mbps for shippable file size.
