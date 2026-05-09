@@ -4044,41 +4044,51 @@ def test_corner_dock_first_time_tooltip_shipped():
 
 
 def test_unified_chrome_bar_owns_corner_real_estate():
-    """Founder directive Feb 2026 — every page needs ONE specific spot
-    for chrome buttons. UnifiedChromeBar must:
-    • mount globally in App.js
-    • expose `chrome-bar-{comms,tools,more}-trigger` testids
-    • dispatch `chromebar:active` on mount so legacy floating FABs
-      (CornerDock + CommHubDropdown free pill + 6 corner FABs) all
-      collapse their triggers
-    • hide on game pages (room-menu-bar present)
-    • hide on auth + streamer overlay routes
-    • be top-anchored (founder override 2026-02-09: bottom was
-      colliding with the platform Made-with-Emergent badge)
+    """Founder directive 2026-02-09 — final iteration: chrome menu must
+    be INLINE (scrolls with the page, NEVER `position: fixed`).
+    Replaces the previous global UnifiedChromeBar with a per-page
+    `<PageActionStrip />` that each page drops into its own empty
+    spot (under WinnerTicker on landing, after the dashboard header,
+    etc.).
+
+    Locks the new contract:
+    • PageActionStrip exists with Comms / Tools / More sections.
+    • Landing page mounts it under WinnerTicker.
+    • DashboardNew mounts it inside the main content flow.
+    • UnifiedChromeBar is NO LONGER mounted globally in App.js (the
+      file may exist for reference but must not render anywhere).
+    • Strip dispatches `chromebar:active` so legacy floating FABs
+      stay collapsed.
     """
-    src = open("/app/frontend/src/components/common/UnifiedChromeBar.tsx").read()
-    assert 'chrome-bar-${key}-trigger' in src
-    assert "chromebar:active" in src and "chromebar:inactive" in src
-    assert 'data-testid="unified-chrome-bar"' in src
-    assert 'document.querySelector(\'[data-testid="room-menu-bar"]\')' in src, \
-        "Bar must hide when RoomMenuBar is mounted (room owns chrome inside games)"
-    # Top-anchored, NOT bottom (founder override).
-    assert "top-2 sm:top-3" in src, \
-        "Chrome bar must be top-anchored (top-2 sm:top-3) per founder directive 2026-02-09"
-    assert "bottom-3" not in src and "bottom-4" not in src, \
-        "Chrome bar must NOT use bottom anchoring — collides with Emergent badge"
-    # App.js must mount it.
+    strip = open("/app/frontend/src/components/common/PageActionStrip.tsx").read()
+    assert 'data-testid="page-action-strip"' in strip
+    assert "page-action-strip-trigger" in strip
+    assert "page-action-strip-menu" in strip
+    # Three sections labeled Comms / Tools / More.
+    for title in ('"Comms"', '"Tools"', '"More"'):
+        assert title in strip, f"PageActionStrip must include section title {title}"
+    # Inline-only contract: must NOT use `position: fixed` anywhere.
+    assert "position: \"fixed\"" not in strip
+    assert "fixed bottom-" not in strip
+    assert "fixed top-" not in strip
+    # Sets the chromebar:active signal so legacy FABs collapse.
+    assert "chromebar:active" in strip
+    # Landing page must mount it under the live wins ticker.
+    landing = open("/app/frontend/src/pages/LandingNeonGaming.tsx").read()
+    assert "PageActionStrip" in landing
+    assert "WinnerTicker" in landing
+    # WinnerTicker block must come BEFORE the strip mount.
+    wt_idx = landing.find("WinnerTicker className=")
+    strip_idx = landing.find("<PageActionStrip")
+    assert wt_idx > 0 and strip_idx > wt_idx, \
+        "Landing page must render PageActionStrip AFTER WinnerTicker"
+    # Dashboard must mount it.
+    dash = open("/app/frontend/src/pages/DashboardNew.tsx").read()
+    assert "PageActionStrip" in dash
+    # UnifiedChromeBar must NOT be globally mounted in App.js anymore.
     appsrc = open("/app/frontend/src/App.js").read()
-    assert "UnifiedChromeBar" in appsrc
-    # CornerDock must yield to the new bar.
-    cdock = open("/app/frontend/src/components/common/CornerDock.tsx").read()
-    assert "chromebar:active" in cdock and "chromeBarActive" in cdock
-    # CommHubDropdown free pill must yield too.
-    chub = open("/app/frontend/src/components/common/CommHubDropdown.tsx").read()
-    assert "chromeBarActive" in chub
-    # Hook updated to listen for chromebar events.
-    hook = open("/app/frontend/src/hooks/useCornerDockTrigger.ts").read()
-    assert "chromebar:active" in hook
+    assert "<UnifiedChromeBar />" not in appsrc, \
+        "UnifiedChromeBar must NOT be in the global App.js mount — chrome is now per-page"
 
 
 def test_bid_whist_cards_land_near_center_table_logo():

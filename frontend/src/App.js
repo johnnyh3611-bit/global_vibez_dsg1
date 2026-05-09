@@ -57,7 +57,6 @@ import GlobeFAB from "@/components/GlobeFAB";
 import GameVoiceDockMounter from "@/components/games/GameVoiceDockMounter";
 import FloatingFoodMenu from "@/components/common/FloatingFoodMenu";
 import CornerDock from "@/components/common/CornerDock";
-import UnifiedChromeBar from "@/components/common/UnifiedChromeBar";
 
 // Import version manager for cache busting
 import { startVersionMonitoring } from "@/utils/versionManager";
@@ -154,13 +153,13 @@ function AppRouter() {
           two labeled pop-out menus — one trigger per corner — so
           buttons no longer overlap and every action is named. */}
       <CornerDock />
-      {/* Founder fix Feb 2026 — single dedicated chrome bar that owns
-          one specific spot on every page (bottom-center). Replaces
-          the scattered floating FABs with a labeled dock so users
-          always know where to find Comms / Tools / More + an
-          acknowledgement of the platform Emergent badge. CornerDock
-          and CommHubDropdown both yield to this bar. */}
-      <UnifiedChromeBar />
+      {/* Founder directive 2026-02-09 — chrome menu MUST be inline
+          (scroll with the page, never sticky). The new
+          <PageActionStrip /> is now manually placed by each page in
+          its empty spot (under WinnerTicker on landing, after the
+          dashboard header, etc). UnifiedChromeBar removed from the
+          global mount because fixed-position chrome was the exact
+          regression the founder kept reporting. */}
       <Routes>
         {/* Public Routes */}
         {authRoutes}

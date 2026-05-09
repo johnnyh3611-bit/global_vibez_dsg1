@@ -27,6 +27,7 @@ import WaysToEarn from '../components/landing/WaysToEarn';
 import LandingLanguageSwitcher from '../components/LandingLanguageSwitcher';
 import LandingHeaderEnhanced, { type RoomKey } from '../components/landing/LandingHeaderEnhanced';
 import LandingFeatureAccordions from '../components/landing/LandingFeatureAccordions';
+import PageActionStrip from '@/components/common/PageActionStrip';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -71,6 +72,13 @@ export default function LandingNeonGaming() {
 
       {/* Platform Live Wins Ticker — flows in document order, no sticky. */}
       <WinnerTicker className="relative z-40" />
+
+      {/* Founder directive 2026-02-09 — Quick Access menu sits right
+          under the Live Wins ticker. Inline (NOT fixed), scrolls with
+          the page. Replaces the old floating chrome bar. */}
+      <div className="relative z-30 px-6 pt-3 pb-1 max-w-7xl mx-auto">
+        <PageActionStrip align="end" />
+      </div>
 
       {/* Apex Evolution countdown banner — auto-hides if no event configured */}
       <EvolutionCountdown />
