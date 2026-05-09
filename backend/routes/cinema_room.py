@@ -142,6 +142,7 @@ class CinemaRoom(BaseModel):
     name: str
     content_id: Optional[str] = None
     is_private: bool = False
+    is_date_night: bool = False  # 2-person private link · warm theme · audience hidden
     audience_count: int = 0
     created_at: float
     last_state: Dict[str, Any] = Field(default_factory=lambda: {"action": "pause", "time": 0.0})
@@ -151,6 +152,7 @@ class CreateRoomBody(BaseModel):
     name: str = Field(..., min_length=2, max_length=60)
     content_id: Optional[str] = None
     is_private: bool = False
+    is_date_night: bool = False
     host_id: str = Field(..., min_length=1, max_length=80)
 
 
@@ -195,7 +197,8 @@ async def create_room(body: CreateRoomBody) -> CinemaRoom:
         host_id=body.host_id,
         name=body.name.strip(),
         content_id=body.content_id,
-        is_private=body.is_private,
+        is_private=body.is_private or body.is_date_night,  # date night IS private
+        is_date_night=body.is_date_night,
         audience_count=0,
         created_at=time.time(),
     )

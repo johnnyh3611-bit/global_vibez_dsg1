@@ -4313,3 +4313,45 @@ def test_cinema_room_route_and_backend_wired():
     banner = open("/app/frontend/src/components/common/WhatsNewBanner.tsx").read()
     assert '"/cinema-room"' in banner
 
+
+def test_cinema_room_date_night_mode():
+    """Founder enhancement 2026-05-09 — Date Night Mode for the
+    Cinema Room: 2-person private link · soft-warm rose theme ·
+    audience count hidden · pinned 🌹 'Just the two of you'
+    welcome message · whispers placeholder. Cross-pillar feature
+    pulls Dating Universe matches into Cinema Room for second/
+    third dates."""
+    page = open("/app/frontend/src/pages/CinemaRoom.tsx").read()
+    # Lobby toggle.
+    assert 'data-testid="cinema-date-night-toggle"' in page
+    assert 'data-testid="cinema-date-night-checkbox"' in page
+    assert "is_date_night" in page, \
+        "Lobby must POST is_date_night when creating a date-night room"
+    # Room screen behavior.
+    assert 'data-testid="cinema-date-night-badge"' in page
+    assert 'data-testid="cinema-date-night-pinned-msg"' in page
+    assert "Just the two of you" in page
+    # Backend model carries the flag.
+    body = open("/app/backend/routes/cinema_room.py").read()
+    assert "is_date_night: bool" in body, \
+        "CinemaRoom + CreateRoomBody must declare is_date_night"
+    assert "is_private=body.is_private or body.is_date_night" in body, \
+        "Date Night must auto-promote the room to private"
+
+
+def test_beta_tester_accessibility_chip():
+    """Founder enhancement 2026-05-09 — Beta Tester signup page now
+    surfaces a public-facing 'Photosensitive-safe Mode' chip wired
+    to the same body[data-no-flash] / gv_no_flash_v1 toggle used by
+    the in-app Reduce Motion button. WCAG-2.3.1 differentiator
+    visible BEFORE login so first-time visitors see inclusivity
+    on day one of beta."""
+    page = open("/app/frontend/src/pages/BetaTester.tsx").read()
+    assert 'data-testid="beta-tester-a11y-chip"' in page
+    assert "Photosensitive-safe Mode" in page
+    assert "WCAG-2.3.1 friendly" in page
+    assert "gv_no_flash_v1" in page, \
+        "BetaTester chip must persist via the shared gv_no_flash_v1 key"
+    assert "AccessibilityChip" in page, \
+        "Page must define + render the AccessibilityChip component"
+

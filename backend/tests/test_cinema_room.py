@@ -123,3 +123,25 @@ def test_cinema_room_food_order_audit(client):
 def test_cinema_room_404_for_unknown_room(client):
     r = client.get("/api/cinema-room/rooms/cr_does-not-exist")
     assert r.status_code == 404
+
+
+def test_cinema_room_date_night_auto_private(client):
+    """Date Night rooms MUST be auto-promoted to private (audience
+    hidden, lobby skips them) regardless of the is_private flag the
+    client sent. Founder rule 2026-05-09."""
+    listing = client.get("/api/cinema-room/catalog").json()
+    cid = listing["items"][0]["id"]
+    r = client.post("/api/cinema-room/rooms", json={
+        "name": "Cuffing Season",
+        "host_id": "u_dn_host",
+        "content_id": cid,
+        "is_date_night": True,
+        # deliberately leave is_private off — backend must override.
+    })
+    assert r.status_code == 200
+    room = r.json()
+    assert room["is_date_night"] is True
+    assert room["is_private"] is True, "Date night rooms must be private"
+    # Lobby must NOT surface the date-night room.
+    rooms = client.get("/api/cinema-room/rooms").json()
+    assert room["room_id"] not in {x["room_id"] for x in rooms["rows"]}

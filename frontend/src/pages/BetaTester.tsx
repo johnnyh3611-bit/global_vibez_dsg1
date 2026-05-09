@@ -22,9 +22,28 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles, Check, Mail, Crown, Zap, Heart,
   Gamepad2, Trophy, Users, ArrowRight, Copy, Share2, Trophy as TrophyIcon,
+  Accessibility, ZapOff,
 } from 'lucide-react';
 
 const API = process.env.REACT_APP_BACKEND_URL as string;
+
+// Photosensitive-safe mode toggle — mirrors the implementation in
+// PageActionStrip.tsx so the chip on this PUBLIC page works even
+// before login. Persists in localStorage so the preference carries
+// into the authenticated app shell.
+const NO_FLASH_KEY = "gv_no_flash_v1";
+const isNoFlashOn = () => typeof window !== "undefined" && localStorage.getItem(NO_FLASH_KEY) === "1";
+const applyNoFlashGlobal = (enabled: boolean) => {
+  if (typeof document === "undefined") return;
+  if (enabled) {
+    document.body.dataset.noFlash = "1";
+    localStorage.setItem(NO_FLASH_KEY, "1");
+  } else {
+    delete document.body.dataset.noFlash;
+    localStorage.removeItem(NO_FLASH_KEY);
+  }
+};
+if (typeof document !== "undefined") applyNoFlashGlobal(isNoFlashOn());
 
 interface SignupResponse {
   ok: boolean;
@@ -258,7 +277,7 @@ export default function BetaTester() {
             cohort right now — drop your email to claim your seat.
           </p>
 
-          {/* Live counter + referral banner */}
+          {/* Live counter + referral banner + accessibility chip */}
           <div className="mt-7 flex flex-wrap items-center gap-3">
             <div
               data-testid="beta-tester-counter"
@@ -286,6 +305,7 @@ export default function BetaTester() {
                 </span>
               </div>
             )}
+            <AccessibilityChip />
           </div>
         </motion.div>
 
@@ -666,5 +686,49 @@ export default function BetaTester() {
         </div>
       </div>
     </div>
+  );
+}
+
+
+// ─────────────────────────────────────────────────────────────────────
+// AccessibilityChip — public-facing photosensitive-safe toggle
+// ─────────────────────────────────────────────────────────────────────
+// Visible on the Beta Tester signup page so day-one beta testers know
+// the platform takes WCAG-2.3.1 (three-flashes-or-below) compliance
+// seriously. Differentiator vs every other casino-style competitor.
+function AccessibilityChip() {
+  const [enabled, setEnabled] = useState<boolean>(isNoFlashOn());
+  const toggle = () => {
+    const next = !enabled;
+    setEnabled(next);
+    applyNoFlashGlobal(next);
+  };
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      data-testid="beta-tester-a11y-chip"
+      aria-pressed={enabled}
+      title={enabled ? "Photosensitive-safe mode is ON" : "Click to enable photosensitive-safe mode"}
+      className={`group inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm border transition ${
+        enabled
+          ? "bg-emerald-500/15 border-emerald-400/50 text-emerald-100 shadow-[0_0_18px_-6px_rgba(16,185,129,0.5)]"
+          : "bg-black/40 border-white/10 text-white/70 hover:border-emerald-400/40 hover:text-white"
+      }`}
+    >
+      {enabled ? (
+        <ZapOff className="w-4 h-4 text-emerald-300" />
+      ) : (
+        <Accessibility className="w-4 h-4 text-emerald-300" />
+      )}
+      <span className="text-left leading-tight">
+        <span className="block text-[11px] uppercase tracking-widest text-emerald-300 font-black">
+          {enabled ? "Reduce Motion · ON" : "Photosensitive-safe Mode"}
+        </span>
+        <span className="block text-[10px] text-white/60">
+          WCAG-2.3.1 friendly · one-click toggle
+        </span>
+      </span>
+    </button>
   );
 }

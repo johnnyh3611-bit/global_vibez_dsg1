@@ -22,7 +22,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Film, Users, Plus, Send, Pizza, Play, Pause, Volume2, VolumeX,
-  ArrowLeft, Loader2, Clapperboard, Lock,
+  ArrowLeft, Loader2, Clapperboard, Lock, Heart,
 } from "lucide-react";
 import { authFetch } from "@/utils/secureAuth";
 
@@ -49,6 +49,7 @@ type Room = {
   name: string;
   content_id: string | null;
   is_private: boolean;
+  is_date_night?: boolean;
   audience_count: number;
   created_at: number;
   last_state?: { action: string; time: number; ts?: number };
@@ -90,6 +91,7 @@ function CinemaLobby() {
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("Friday Night Flix");
   const [contentId, setContentId] = useState<string>("");
+  const [dateNight, setDateNight] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -117,7 +119,13 @@ function CinemaLobby() {
       const r = await authFetch(`${API}/api/cinema-room/rooms`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), content_id: contentId || null, host_id: userId, is_private: false }),
+        body: JSON.stringify({
+          name: name.trim(),
+          content_id: contentId || null,
+          host_id: userId,
+          is_private: dateNight,           // date night is auto-private
+          is_date_night: dateNight,
+        }),
       });
       if (!r.ok) {
         const j = await r.json().catch(() => ({}));
@@ -194,6 +202,32 @@ function CinemaLobby() {
             <p className="text-[10px] text-white/40 mb-2">
               Selected: <span className="text-white/70">{catalog.find(c => c.id === contentId)?.title || "—"}</span>
             </p>
+            {/* Date Night Mode — turns the room into a warm-themed
+                two-person private link with audience hidden. Ideal
+                for second / third dates from the Dating Universe. */}
+            <label
+              data-testid="cinema-date-night-toggle"
+              className={`flex items-center gap-2 cursor-pointer rounded-lg p-2 mb-2 border transition ${
+                dateNight ? "bg-rose-500/15 border-rose-400/40" : "bg-black/30 border-white/10 hover:border-rose-400/30"
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={dateNight}
+                onChange={(e) => setDateNight(e.target.checked)}
+                className="accent-rose-400"
+                data-testid="cinema-date-night-checkbox"
+              />
+              <Heart className={`w-4 h-4 ${dateNight ? "text-rose-300 fill-rose-300" : "text-white/40"}`} />
+              <span className="text-xs">
+                <span className={`block font-black ${dateNight ? "text-rose-200" : "text-white/80"}`}>
+                  Date Night Mode
+                </span>
+                <span className="block text-[10px] text-white/50">
+                  Just the two of you · private · audience hidden
+                </span>
+              </span>
+            </label>
             <button
               onClick={createRoom}
               disabled={creating || !name.trim()}
@@ -405,19 +439,35 @@ function CinemaScreen({ roomId }: { roomId: string }) {
   if (error) return <div className="min-h-screen bg-black text-rose-300 flex items-center justify-center p-6">{error}</div>;
   if (!room || !content) return <div className="min-h-screen bg-black text-white flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin" /></div>;
 
+  const dateNight = !!room.is_date_night;
+  const themeShell = dateNight
+    ? "bg-gradient-to-br from-[#1a0510] via-[#0a0508] to-[#1a0510]"
+    : "bg-black";
+  const themeAside = dateNight ? "bg-[#180a14] border-rose-500/15" : "bg-[#0b0b14] border-white/5";
+  const themeHeaderBorder = dateNight ? "border-rose-500/20" : "border-white/10";
+
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col" data-testid="cinema-room-screen">
-      <header className="px-4 py-3 border-b border-white/10 flex items-center justify-between bg-black/80 backdrop-blur">
+    <div className={`min-h-screen text-white flex flex-col ${themeShell}`} data-testid="cinema-room-screen" data-date-night={dateNight ? "1" : "0"}>
+      <header className={`px-4 py-3 border-b ${themeHeaderBorder} flex items-center justify-between bg-black/80 backdrop-blur`}>
         <button onClick={() => navigate("/cinema-room")} className="text-cyan-300 text-xs flex items-center gap-1.5" data-testid="cinema-back-to-lobby">
           <ArrowLeft className="w-4 h-4" /> Lobby
         </button>
         <div className="text-center min-w-0 flex-1 px-4">
-          <h1 className="text-sm md:text-base font-black truncate">{room.name}</h1>
+          <h1 className="text-sm md:text-base font-black truncate flex items-center justify-center gap-2">
+            {dateNight && <Heart className="w-4 h-4 text-rose-300 fill-rose-300" />}
+            {room.name}
+          </h1>
           <p className="text-[10px] text-white/40 truncate">{content.title} · {content.year} · {content.license}</p>
         </div>
-        <span className="text-[10px] uppercase tracking-widest text-cyan-300 font-mono flex items-center gap-1.5" data-testid="cinema-audience-count">
-          <Users className="w-3.5 h-3.5" /> {audience}
-        </span>
+        {dateNight ? (
+          <span className="text-[10px] uppercase tracking-widest text-rose-200 font-mono flex items-center gap-1.5" data-testid="cinema-date-night-badge">
+            <Heart className="w-3.5 h-3.5 fill-rose-300 text-rose-300" /> Date Night
+          </span>
+        ) : (
+          <span className="text-[10px] uppercase tracking-widest text-cyan-300 font-mono flex items-center gap-1.5" data-testid="cinema-audience-count">
+            <Users className="w-3.5 h-3.5" /> {audience}
+          </span>
+        )}
       </header>
 
       <main className="flex-1 flex flex-col lg:flex-row overflow-hidden">
@@ -465,30 +515,41 @@ function CinemaScreen({ roomId }: { roomId: string }) {
         </section>
 
         {/* Chat sidebar */}
-        <aside className="w-full lg:w-80 bg-[#0b0b14] border-l border-white/5 flex flex-col" data-testid="cinema-chat">
-          <div className="px-3 py-2 border-b border-white/5 text-[10px] uppercase tracking-widest text-cyan-300">
-            Live chat · {audience} watching
+        <aside className={`w-full lg:w-80 ${themeAside} border-l flex flex-col`} data-testid="cinema-chat">
+          <div className={`px-3 py-2 border-b ${themeHeaderBorder} text-[10px] uppercase tracking-widest ${dateNight ? "text-rose-200" : "text-cyan-300"}`}>
+            {dateNight ? "Just the two of you" : `Live chat · ${audience} watching`}
           </div>
           <ul className="flex-1 overflow-y-auto p-3 space-y-1.5 text-xs">
-            {chat.length === 0 && <li className="text-white/30 italic">No chats yet — say hi.</li>}
+            {dateNight && (
+              <li className="text-rose-200 italic flex items-start gap-2 pb-2 mb-1 border-b border-rose-500/15" data-testid="cinema-date-night-pinned-msg">
+                <Heart className="w-3.5 h-3.5 mt-0.5 fill-rose-300 text-rose-300 shrink-0" />
+                <span>🌹 Just the two of you. Sound on. Snacks ready. Press play.</span>
+              </li>
+            )}
+            {chat.length === 0 && !dateNight && <li className="text-white/30 italic">No chats yet — say hi.</li>}
             {chat.map((c, i) => (
-              <li key={`${c.ts}-${i}`} className={c.kind === "food" ? "text-amber-200" : "text-white/85"}>
-                <span className="text-cyan-300/80 font-mono mr-1.5">@{c.user_id.slice(0, 8)}</span>
+              <li key={`${c.ts}-${i}`} className={c.kind === "food" ? "text-amber-200" : (dateNight ? "text-rose-100" : "text-white/85")}>
+                <span className={`${dateNight ? "text-rose-300/80" : "text-cyan-300/80"} font-mono mr-1.5`}>@{c.user_id.slice(0, 8)}</span>
                 {c.text}
               </li>
             ))}
           </ul>
-          <div className="p-2 border-t border-white/5 flex gap-2">
+          <div className={`p-2 border-t ${themeHeaderBorder} flex gap-2`}>
             <input
               value={chatDraft}
               onChange={(e) => setChatDraft(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") sendChat(); }}
-              placeholder="Say something…"
+              placeholder={dateNight ? "Whisper something…" : "Say something…"}
               data-testid="cinema-chat-input"
               className="flex-1 px-3 py-2 rounded-lg bg-black/60 border border-white/10 text-xs placeholder-white/30"
               maxLength={300}
             />
-            <button onClick={sendChat} data-testid="cinema-chat-send" className="px-3 rounded-lg bg-fuchsia-500 hover:bg-fuchsia-400 text-white" aria-label="Send">
+            <button
+              onClick={sendChat}
+              data-testid="cinema-chat-send"
+              className={`px-3 rounded-lg text-white ${dateNight ? "bg-rose-500 hover:bg-rose-400" : "bg-fuchsia-500 hover:bg-fuchsia-400"}`}
+              aria-label="Send"
+            >
               <Send className="w-4 h-4" />
             </button>
           </div>
