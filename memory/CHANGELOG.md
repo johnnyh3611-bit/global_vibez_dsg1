@@ -1,5 +1,35 @@
 # CHANGELOG
 
+## 2026-02-09 — Beta-Stage QA Pass: Cyber-Casino Chess Trio ✅
+
+**Founder ask:** *"a + e — full E2E QA + smoke. When done I start beta."*
+
+### Verified (no code changes — pure QA pass)
+- **Voice Coach** — `POST /api/voice-coach/move-tip` returns live coaching tips from Claude Sonnet 4.5. `POST /api/voice-coach/voice-question` Whisper STT pipeline guards confirmed (400 on empty / 413 on >25 MB / 502 on garbage audio). Frontend `VoiceCoachButton` renders bottom-left on `/practice/play/chess`; Cyber-Casino panel opens with press-and-hold mic.
+- **Roguelite Chess Trial** — All 4 endpoints verified: `state` (auth-gated), `start` (idempotent), `record-result` (full scoring math: win=+100+max(0,elo_diff), draw=+25, loss=−1 life), `leaderboard` (clamp 1–200). Lives-to-zero edge case → subsequent calls return **409** as required. Frontend `RogueliteTrialBadge` renders 3-heart row + score + streak + UTC reset countdown in PracticeChess header.
+- **Cyber-Casino Battle Mode** — `PracticeChessBattleMode.tsx` skin toggles cleanly (CLASSIC ↔ NEON ARENA), 64-square board renders correctly in both modes, react-chessboard validation flows untouched.
+- **Regression Shield: 201/201 PASS** — supreme baseline preserved (no test modified).
+
+### Test artifacts
+- `/app/test_reports/iteration_beta_qa_voice_roguelite_battle.json`
+- `/app/backend/tests/test_iter_beta_qa_voice_roguelite_battle.py` (added by testing agent)
+- `/app/test_reports/pytest/regression_shield_beta_qa.xml`
+
+### Backlog (non-blocking, surfaced by code-review)
+- P3: Roguelite leaderboard does N+1 user lookups (50 sequential mongo round-trips at 50 rows). Batch with `$in` or `$lookup` for production scale.
+- P3: Voice Coach instantiates fresh `OpenAISpeechToText` + `LlmChat` per request — fine now, pool if traffic grows.
+- P3: `roguelite_chess.py` silently sets `_db=None` if `MONGO_URL` is missing — could fail louder on startup.
+
+### State
+- Regression shield: **201/201 passing**
+- Frontend compile clean, supervisor healthy
+- Backend healthy, all three Cyber-Casino chess routes registered in `routes/registry.py:615-623`
+
+### Action for founder
+**Beta is GO.** All three Cyber-Casino chess features (Voice Coach / Roguelite Trial / Battle Mode) are E2E verified on `social-connect-953.preview.emergentagent.com`. Open the doors when ready. 🛡️
+
+
+
 ## 2026-05-07 — Live Burn Counter shipped 🔥 (final pre-beta widget)
 
 **Founder ask:** *"Add the Burn Counter now. Hold off on anything till after I say I'm done with beta."*
