@@ -668,6 +668,14 @@ def register_all_routes(
     except Exception as _e:
         log.warning(f"Beat Vault DLC routes not mounted: {_e}")
 
+    # $VIBEZ Activity Multiplier reward formula (Roadmap PDF §1).
+    # SIMULATED mints until the founder confirms project_complete.
+    try:
+        from routes.vibez_rewards import router as vibez_rewards_router
+        api_router.include_router(vibez_rewards_router)
+    except Exception as _e:
+        log.warning(f"$VIBEZ rewards routes not mounted: {_e}")
+
     # Totem Pole rails — Music Arena + TV broadcast survival logic.
     # Implements GlobalVibez_MusicArena_Blueprint.pdf and
     # GlobalVibez_TV_TotemPole_Blueprint.pdf on a single shared rail

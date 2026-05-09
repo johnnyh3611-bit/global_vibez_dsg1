@@ -275,10 +275,14 @@ def _start_tv_survive() -> None:
     `/api/totem-pole/tv/survive` endpoint runs the same logic
     on-demand so manual refreshes still work.
     """
-    # Side-effect import — registers Sound-Check leaderboard socket.io
-    # handlers if not already wired. Safe to import multiple times.
+    # Side-effect imports — register socket.io handlers if not already
+    # wired. Safe to import multiple times.
     try:
         import services.sound_check_leaderboard  # noqa: F401, PLC0415
+    except Exception:
+        pass
+    try:
+        import services.hype_meter_ws  # noqa: F401, PLC0415
     except Exception:
         pass
 

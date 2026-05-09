@@ -192,6 +192,14 @@ async def post_tip(tip: TipPayload, request: Request) -> Dict[str, Any]:
     ) or {"cumulative_cents": tip.amount_cents}
     peak_reached = meter["cumulative_cents"] >= HYPE_METER_PEAK_THRESHOLD
 
+    # Real-time WS broadcast — bumps the overlay/widgets immediately
+    # instead of forcing them to poll. Best-effort.
+    try:
+        from services.hype_meter_ws import broadcast_hype
+        await broadcast_hype(tip.streamer_id, last_action_kind=tip.action_kind)
+    except Exception:
+        pass
+
     return {
         "action_id":   action_id,
         "status":      "ESCROW",
