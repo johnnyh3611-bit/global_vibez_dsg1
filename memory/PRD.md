@@ -1,6 +1,14 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
 
+> **2026-05-09 (Late) — 79-Second Narrated Landing Tour 🎬🎙️.** Founder requested a "voice + pictures" surplus video for visitors who don't scroll the landing page. Shipped:
+>
+> 1. **Onyx-narrated MP3** — 79.0s, 1.58 MB, generated via OpenAI TTS HD (`tts-1-hd · onyx · 1.0×`) using `EMERGENT_LLM_KEY`. Pre-rendered to `/app/frontend/public/landing-tour-narration.mp3` so deploy doesn't need a runtime TTS call. Re-generation script at `/app/backend/scripts/generate_landing_tour_narration.py` — edit the `SCRIPT` constant + run.
+> 2. **240-word script** covers: 6 utility rooms · $VIBEZ token (3 B cap, 13.5% Sovereign Tax, 5× mining multiplier) · Solana 4:1 bridge · 30+ AAA card rooms · Cyber-Casino · Dating Universe · VibeRidez (70% keep) · Hungry VIBEZ · Vibe Venues · DSG TV · Chair Hall (Genius / Genesis / Apex · 200K seats) · beta CTA. Brand spelling locked: **VIBEZ** (with Z), **DSG**, **$VIBEZ**.
+> 3. **`<LandingTourVideo />`** component (`/app/frontend/src/components/landing/LandingTourVideo.tsx`) — loops the 4 founder-uploaded promo MP4s (muted) as visual base while the Onyx narration plays as master soundtrack. Big fuchsia/violet PLAY CTA (gates browser autoplay-with-sound block), 10 synced caption cues, scrubber, play/pause/mute/restart/captions toggle, "Join Beta →" amber CTA. Mounted on `LandingNeonGaming.tsx` between the 4-pillars `</section>` and Genius Phase, i.e., directly below the DSG VIBE TV pillar.
+> 4. **Regression Shield: 225/225 GREEN** (+1 lock `test_landing_tour_video_mounted_with_narration_assets` enforces: component testids, brand spellings, all 4 MP4 URLs referenced, narration MP3 ≥ 100 KB, generation script preserved with `voice="onyx"` + `tts-1-hd`, mount position correct).
+
+
 > **2026-05-09 (Late) — Beta-Redeploy Final Polish · 4 Founder Follow-ups + Vibez 654 Rule Fix 🎲🚀.** Founder picked all 4 backlog items + flagged Vibez 654 as "not correct." All 5 shipped + verified by `testing_agent_v3_fork`:
 >
 > 1. **Vibez 654 dice tray fix** — bug: backend was returning `last_roll_dice` (all 5 raw dice) when not yet qualified, so the tray kept rendering a "6" face even after that 6 had been peeled into a qualifier. Per official rules each qualifier REMOVES a die from the physical roll. New `residual_dice` field exposed by `_apply_654_pass` + `/api/vibez-654/roll`; frontend `VibeSoloHighRoller.tsx` uses it as the source of truth. Verified visually: 5 dice − 2 qualifiers locked = 3 in tray. Unit-test extended to assert `residual_dice` across [6,3,2,1,1], [6,5,3,3,2], [6,5,4,3,2], [4,4,4,4,4] scenarios.

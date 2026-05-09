@@ -27,6 +27,7 @@ import WaysToEarn from '../components/landing/WaysToEarn';
 import LandingLanguageSwitcher from '../components/LandingLanguageSwitcher';
 import LandingHeaderEnhanced, { type RoomKey } from '../components/landing/LandingHeaderEnhanced';
 import LandingFeatureAccordions from '../components/landing/LandingFeatureAccordions';
+import LandingTourVideo from '../components/landing/LandingTourVideo';
 import PageActionStrip from '@/components/common/PageActionStrip';
 
 const API = process.env.REACT_APP_BACKEND_URL;
@@ -659,6 +660,13 @@ export default function LandingNeonGaming() {
           </div>
         </div>
       </section>
+
+      {/* 79-second narrated tour — sits below the 4-pillars grid (which
+          contains the DSG VIBE TV pillar at position 02). Founder
+          directive 2026-05-09: surplus video for visitors who don't
+          scroll the full landing page. Onyx-narrated · 4 looped MP4
+          clips · live captions · play / pause / mute / restart. */}
+      <LandingTourVideo onJoinBeta={() => navigate('/beta-tester')} />
 
       {/* 🪑 Genius Phase — Chair Holder Network (LOCKED v8.0) */}
       <section

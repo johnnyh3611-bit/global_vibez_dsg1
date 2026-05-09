@@ -4191,3 +4191,64 @@ def test_card_room_handfan_breathing_room():
         # Either -mt-4 md:-mt-6 (fix applied) OR no -mt at all (some rooms removed it)
         assert "-mt-4 md:-mt-6" in body or "-mt-" not in body, \
             f"{f} hand-fan margin must use the new -mt-6 breathing-room value"
+
+
+def test_landing_tour_video_mounted_with_narration_assets():
+    """Founder directive 2026-05-09 — public landing must carry a
+    79-second narrated tour video positioned BELOW the 4-pillars grid
+    (which contains the DSG VIBE TV pillar at position 02). Surplus
+    pitch for visitors who don't scroll the full page.
+
+    Locks:
+    • LandingTourVideo component exists and is mounted on landing.
+    • Mount sits AFTER the 4-pillars `<section>` close tag.
+    • Pre-rendered narration MP3 lives at frontend/public so deploy
+      doesn't require a runtime TTS call.
+    • Brand spelling enforced: VIBEZ (with Z), DSG, $VIBEZ.
+    • All 4 founder-uploaded promo clips referenced.
+    • Captions track present (≥10 cues for accessibility).
+    """
+    import os
+    # 1. Component file exists with the required testids + brand spellings.
+    comp_path = "/app/frontend/src/components/landing/LandingTourVideo.tsx"
+    assert os.path.exists(comp_path), "LandingTourVideo.tsx must exist"
+    body = open(comp_path).read()
+    assert 'data-testid="landing-tour-video"' in body
+    assert 'data-testid="landing-tour-play-overlay"' in body
+    assert 'data-testid="landing-tour-play-btn"' in body
+    assert 'data-testid="landing-tour-mute-btn"' in body
+    assert 'data-testid="landing-tour-restart-btn"' in body
+    assert 'data-testid="landing-tour-captions-btn"' in body
+    assert 'data-testid="landing-tour-caption"' in body
+    # Brand spellings — must appear in narration captions.
+    assert "VIBEZ" in body
+    assert "DSG" in body
+    assert "$VIBEZ" in body
+    # 4 founder MP4 clips referenced.
+    for marker in ["aeaebfxp", "8s795ybg", "n612sxdb", "p21nztqq"]:
+        assert marker in body, f"LandingTourVideo must reference clip {marker}"
+    # Caption track has at least 10 cues for accessibility.
+    assert body.count('{ t:') >= 10, "Caption track must have ≥10 cues"
+
+    # 2. Pre-rendered narration MP3 ships in frontend/public.
+    mp3 = "/app/frontend/public/landing-tour-narration.mp3"
+    assert os.path.exists(mp3), "Pre-rendered narration MP3 must exist"
+    assert os.path.getsize(mp3) > 100_000, "Narration MP3 looks suspiciously small"
+
+    # 3. Generation script preserved + uses the Onyx voice.
+    gen = open("/app/backend/scripts/generate_landing_tour_narration.py").read()
+    assert 'voice="onyx"' in gen
+    assert 'tts-1-hd' in gen
+    assert 'GLOBAL VIBEZ DSG' in gen
+    assert 'VIBEZ' in gen and 'DSG' in gen
+
+    # 4. Mounted on landing page AFTER the 4-pillars section closes.
+    landing = open("/app/frontend/src/pages/LandingNeonGaming.tsx").read()
+    assert "import LandingTourVideo" in landing
+    assert "<LandingTourVideo" in landing
+    # Genius Phase section comes AFTER the tour video mount.
+    tour_idx = landing.find("<LandingTourVideo")
+    genius_idx = landing.find("Genius Phase — Chair Holder Network")
+    assert tour_idx > 0 and genius_idx > tour_idx, \
+        "LandingTourVideo must be mounted BEFORE the Genius Phase section (i.e., right after the 4-pillars grid)"
+
