@@ -75,7 +75,7 @@ async def _send_reset_email(to_email: str, name: str, raw_token: str) -> bool:
     """Send the email. Returns True on success, False on any failure
     (callers must not raise — we always return the same API shape)."""
     api_key = os.environ.get("RESEND_API_KEY")
-    sender = os.environ.get("RESEND_SENDER_EMAIL", "onboarding@resend.dev")
+    sender = os.environ.get("RESEND_SENDER_EMAIL", "support@globalvibezdsg.com")
     if not api_key:
         logger.warning("RESEND_API_KEY not configured — skipping email send")
         return False

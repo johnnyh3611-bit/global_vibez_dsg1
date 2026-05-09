@@ -726,7 +726,7 @@ async def _send_receipt_email(sub: Dict[str, Any]) -> None:
     api_key = os.environ.get("RESEND_API_KEY")
     if not api_key:
         return
-    sender = os.environ.get("RESEND_SENDER_EMAIL", "onboarding@resend.dev")
+    sender = os.environ.get("RESEND_SENDER_EMAIL", "support@globalvibezdsg.com")
 
     db = get_database()
     to_email: Optional[str] = None

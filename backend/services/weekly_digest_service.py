@@ -270,7 +270,7 @@ async def dispatch_weekly_digest(db, recipient: Optional[str] = None) -> Dict[st
         recipient
         or os.environ.get("DIGEST_RECIPIENT_EMAIL")
         or os.environ.get("RESEND_SENDER_EMAIL")
-        or "onboarding@resend.dev"
+        or "support@globalvibezdsg.com"
     )
     api_key = os.environ.get("RESEND_API_KEY")
     sent = False
@@ -282,7 +282,7 @@ async def dispatch_weekly_digest(db, recipient: Optional[str] = None) -> Dict[st
         try:
             import resend
             resend.api_key = api_key
-            sender = os.environ.get("RESEND_SENDER_EMAIL", "onboarding@resend.dev")
+            sender = os.environ.get("RESEND_SENDER_EMAIL", "support@globalvibezdsg.com")
             html = render_digest_email_html(payload)
             week_label = datetime.fromisoformat(
                 payload["generated_at"]

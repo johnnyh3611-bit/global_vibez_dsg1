@@ -113,7 +113,7 @@ def _confirmation_email_html(name: str) -> str:
 async def _send_confirmation(to_email: str, name: str) -> bool:
     """Fire-and-forget Resend dispatch. Never raises."""
     api_key = os.environ.get("RESEND_API_KEY")
-    sender = os.environ.get("RESEND_SENDER_EMAIL", "onboarding@resend.dev")
+    sender = os.environ.get("RESEND_SENDER_EMAIL", "support@globalvibezdsg.com")
     if not api_key:
         logger.warning("RESEND_API_KEY missing — skipping beta confirmation email")
         return False
@@ -531,7 +531,7 @@ def _invite_email_html(name: str, token: str, frontend_base: str) -> str:
 async def _send_invite_email(to_email: str, name: str, token: str) -> bool:
     """Async, non-blocking. Returns True if Resend accepted the message."""
     api_key = os.environ.get("RESEND_API_KEY")
-    sender = os.environ.get("RESEND_SENDER_EMAIL", "onboarding@resend.dev")
+    sender = os.environ.get("RESEND_SENDER_EMAIL", "support@globalvibezdsg.com")
     frontend_base = os.environ.get(
         "REACT_APP_BACKEND_URL", "https://globalvibezdsg.com"
     )
