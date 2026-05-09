@@ -4355,3 +4355,45 @@ def test_beta_tester_accessibility_chip():
     assert "AccessibilityChip" in page, \
         "Page must define + render the AccessibilityChip component"
 
+
+def test_in_room_comms_launcher_mounted_on_fullscreen_games():
+    """Founder directive 2026-05-09 (final pre-beta polish) — every
+    game/cinema room must surface a 'Chat & Video' pill that opens
+    a Jitsi Meet iframe for shared text + audio + video. The pill
+    is mounted by App.js inside the `isFullscreenGame` branch so
+    every entry in FULLSCREEN_GAME_ROUTES gets it for free.
+    Anchored top-right over the game viewport so it doesn't steal
+    vertical pixels (which would push Ante-In / Bid Now / Roll
+    CTAs off-screen)."""
+    import os
+    assert os.path.exists("/app/frontend/src/components/common/InRoomCommsLauncher.tsx")
+    body = open("/app/frontend/src/components/common/InRoomCommsLauncher.tsx").read()
+    for tid in [
+        "in-room-comms-pill", "in-room-comms-modal",
+        "in-room-comms-close", "in-room-comms-iframe",
+        "in-room-comms-popout",
+    ]:
+        assert f'data-testid="{tid}"' in body, \
+            f"InRoomCommsLauncher must expose testid {tid}"
+    assert "meet.jit.si" in body, \
+        "Launcher must use the free Jitsi Meet endpoint (no API key needed)"
+    # Mounted in App.js inside the fullscreen-game branch.
+    appsrc = open("/app/frontend/src/App.js").read()
+    assert "import InRoomCommsLauncher from" in appsrc
+    assert "<InRoomCommsLauncher />" in appsrc
+
+
+def test_cinema_room_date_night_cross_link_to_dating():
+    """Founder enhancement 2026-05-09 — at the end of a successful
+    Date Night, both players get a polite cross-link to the Dating
+    Universe so we surface synergy match-ups at the emotional peak
+    of the evening. Banner sits above the player when
+    `is_date_night=true`."""
+    page = open("/app/frontend/src/pages/CinemaRoom.tsx").read()
+    assert 'data-testid="cinema-date-night-cross-link"' in page
+    assert 'data-testid="cinema-go-to-dating-btn"' in page
+    assert 'navigate("/dating")' in page, \
+        "Cross-link must route to /dating"
+    assert "synergy" in page.lower(), \
+        "Cross-link copy must reference synergy match-ups"
+

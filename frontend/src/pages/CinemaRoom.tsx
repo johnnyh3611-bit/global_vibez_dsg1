@@ -473,6 +473,27 @@ function CinemaScreen({ roomId }: { roomId: string }) {
       <main className="flex-1 flex flex-col lg:flex-row overflow-hidden">
         {/* Player */}
         <section className="flex-1 min-h-0 flex flex-col bg-black">
+          {dateNight && (
+            <div
+              className="bg-gradient-to-r from-rose-500/20 via-rose-400/10 to-transparent border-b border-rose-500/25 px-4 py-2 flex items-center justify-between gap-3"
+              data-testid="cinema-date-night-cross-link"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <Heart className="w-4 h-4 text-rose-300 fill-rose-300 shrink-0" />
+                <p className="text-[11px] text-rose-100 truncate">
+                  Loved tonight? See if your synergy hit 98%.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => navigate("/dating")}
+                data-testid="cinema-go-to-dating-btn"
+                className="shrink-0 px-3 py-1 rounded-full bg-rose-500 hover:bg-rose-400 text-white text-[11px] font-black uppercase tracking-wider transition"
+              >
+                Dating Universe →
+              </button>
+            </div>
+          )}
           <div className="flex-1 relative" data-testid="cinema-player-shell">
             {content.source === "youtube" ? (
               <div ref={ytContainerRef} className="absolute inset-0 [&>iframe]:w-full [&>iframe]:h-full" data-testid="cinema-player-yt" />

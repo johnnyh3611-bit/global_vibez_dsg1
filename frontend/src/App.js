@@ -59,6 +59,7 @@ import FloatingFoodMenu from "@/components/common/FloatingFoodMenu";
 import PageActionStrip from "@/components/common/PageActionStrip";
 import NotFound from "@/pages/NotFound";
 import CinemaRoom from "@/pages/CinemaRoom";
+import InRoomCommsLauncher from "@/components/common/InRoomCommsLauncher";
 
 // Routes that own the entire viewport (h-[100dvh] + overflow-hidden) —
 // e.g. card rooms, dice games, casino tables, full-screen tools. The
@@ -184,7 +185,17 @@ function ProtectedRouteContent({ children }) {
   }, [isFullscreenGame]);
 
   if (isFullscreenGame) {
-    return <>{children}</>;
+    // Founder directive 2026-05-09 — every game/cinema room gets a
+    // top-right "Chat & Video" pill that opens a Jitsi Meet iframe
+    // for shared text + audio + video. The pill is anchored over
+    // the game viewport so it never steals vertical space (which
+    // would push Ante-In / Bid Now / Roll buttons off-screen).
+    return (
+      <>
+        <InRoomCommsLauncher />
+        {children}
+      </>
+    );
   }
   return (
     <>

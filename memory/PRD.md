@@ -1,6 +1,17 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
 
+> **2026-05-09 (Final pre-beta) — Chat + Video Linked Into Every Room · Cinema Room → Dating Universe Bridge 💬📹❤️.** Final founder ask before flipping to BETA STATE: "make sure all video links + chat links are linked in to every room" + ship the Date Night cross-link. Done:
+>
+> 1. **`<InRoomCommsLauncher />`** — small inline pill anchored top-right (`fixed top-3 right-3 z-[55]`) on every fullscreen game/cinema route. One click opens a full-window modal containing a **Jitsi Meet iframe** (https://meet.jit.si/{room-name}). Jitsi delivers BOTH text chat AND audio/video in a single drop-in widget — no API key, no backend, end-to-end encrypted. Room name auto-derives from `window.location.pathname` so two players who navigate to `/spades` from the same match share one channel. "Open in new tab" pop-out + "Close" controls included. Mounted globally inside `ProtectedRouteContent` whenever `useIsFullscreenGameRoute()` returns true → automatic coverage of all 18 routes (12 card rooms, 2 dice rooms, 4 casino rooms, cinema room) without touching individual game files.
+> 2. **Existing `<CommHubDropdown />`** auto-hides on those same routes via the pre-existing `chromebar:active` dispatch in `ProtectedRouteContent` — no double-button. Non-game pages keep the legacy CommHub for Voice Mirror / Agora / Mute All.
+> 3. **Date Night → Dating Universe cross-link** — when `is_date_night` is set on the cinema room, a soft rose banner sits above the player: *"Loved tonight? See if your synergy hit 98%."* with a `Dating Universe →` button that navigates to `/dating`. Surfaces the synergy match-up at the emotional peak of a successful date.
+> 4. **Regression Shield: 238/238 GREEN** (+2 final locks: `test_in_room_comms_launcher_mounted_on_fullscreen_games`, `test_cinema_room_date_night_cross_link_to_dating`).
+> 5. **System health post-pod-reinit**: backend / frontend / mongod / nginx all RUNNING; `/app` at 80% used (2.1 GB free); pre-deploy code review verdict: NO P0 BLOCKERS · PRODUCTION READY.
+
+**Status: 🟢 GO FOR BETA REDEPLOY.**
+
+
 > **2026-05-09 — Date Night Mode + Beta-Tester Accessibility Chip + Pre-Deploy Code Review ✅🚀.** Two final UX enhancements shipped + production-readiness review passed.
 >
 > 1. **Date Night Mode (Cinema Room)** — toggle in lobby promotes the room to private, swaps to soft warm rose theme, hides audience count, replaces the chat header with "Just the two of you", auto-pins a 🌹 welcome message, and switches the chat input placeholder to "Whisper something…". Cross-pillar feature designed to pull Dating Universe matches into the Cinema Room for second/third dates. Backend auto-promotes `is_private=True` whenever `is_date_night=True` so date-night rooms NEVER appear in the public lobby list.
