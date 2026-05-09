@@ -32,20 +32,25 @@ const CLIPS: string[] = [
 
 const NARRATION_SRC = "/landing-tour-narration.mp3";
 
-// Caption track synced to the narration timeline (Onyx · 1.0× · 79s).
-// Times in seconds; tweaked to match the rendered MP3.
+// Caption track synced to the narration timeline (Onyx · 1.0× · ~122s).
+// Times in seconds; tweak after the founder reviews the rendered MP3.
 type Cue = { t: number; text: string };
 const CAPTIONS: Cue[] = [
-  { t:  0.0, text: "GLOBAL VIBEZ DSG." },
-  { t:  3.0, text: "The world's first social infrastructure network — built on Solana — where every interaction is monetized." },
-  { t: 13.5, text: "One token. Six utility rooms. Real payouts." },
-  { t: 18.5, text: "Thirty-plus AAA card rooms · neon Cyber-Casino · every win flows back to YOU." },
-  { t: 28.0, text: "Match in the Dating Universe · drive a VibeRidez · deliver Hungry VIBEZ · host a Vibe Venue · stream on DSG TV." },
-  { t: 41.0, text: "Get tipped in $VIBEZ — bridges to Solana at four-to-one." },
-  { t: 46.0, text: "Three billion VIBEZ coins. Hard-capped. 13.5% Sovereign Tax recirculates back to the players." },
-  { t: 56.5, text: "Chair Hall is open: Genius · Genesis · Apex. Two hundred thousand seats. Real ownership." },
-  { t: 67.0, text: "This is the Sovereign Casino + Social Network where every room runs on one currency you actually own." },
-  { t: 75.0, text: "Lock in your seat. Claim your VIBEZ." },
+  { t:   0.0, text: "GLOBAL VIBEZ DSG." },
+  { t:   3.0, text: "The world's first sovereign infrastructure network — built on Solana — where every interaction earns." },
+  { t:  13.0, text: "Six utility rooms · one currency · a real economy you actually own." },
+  { t:  22.0, text: "30+ AAA card rooms — Spades, Bid Whist, Hearts, UNO, Pinochle, Euchre, Gin Rummy." },
+  { t:  33.0, text: "Neon casino floor — chess, Vibez 6-5-4, baccarat, blackjack, three-card poker. Every win → $VIBEZ." },
+  { t:  44.0, text: "Find your Player Two · 98% synergy-logic matchmaking · Cinema Dates · culturally-aware AI dealer." },
+  { t:  56.0, text: "Drive VibeRidez · keep 70% · Hungry VIBEZ · Vibe Artisan · Vibe Venue · DSG TV 24/7." },
+  { t:  70.0, text: "70/30 Music Revolution · Beat Vault · Freestyle Battles · Collab Matchmaker · Totem Pole." },
+  { t:  80.0, text: "Vibe Yellow Pages · Mom & Pop · hyper-local · DSG Guard safety protocol." },
+  { t:  88.0, text: "3 BILLION VIBEZ · hard-capped · 13.5% Sovereign Tax recirculates back to the players." },
+  { t:  98.0, text: "5× mining multiplier for chair holders · $VIBEZ bridges to Solana 4:1." },
+  { t: 105.0, text: "Chair Hall is OPEN · Genius · Genesis · Apex · 1,000,000 seats · forever." },
+  { t: 115.0, text: "First cohort to sit at the table owns the network." },
+  { t: 120.0, text: "Right now is the best time to take your seat at the table." },
+  { t: 127.0, text: "GLOBAL VIBEZ DSG. Own the network. Feel the VIBEZ." },
 ];
 
 interface Props {
@@ -141,7 +146,7 @@ const LandingTourVideo: React.FC<Props> = ({ onJoinBeta }) => {
     setHasStarted(true);
   };
 
-  const duration = audioRef.current?.duration || 79;
+  const duration = audioRef.current?.duration || 122;
   const pct = Math.min(100, (progress / duration) * 100);
   const currentCaption = CAPTIONS[captionIdx]?.text || "";
 
@@ -159,10 +164,10 @@ const LandingTourVideo: React.FC<Props> = ({ onJoinBeta }) => {
         >
           <p className="text-xs uppercase tracking-[0.4em] text-fuchsia-300 font-black mb-2">
             <Sparkles className="inline w-3 h-3 mr-1.5 -mt-0.5" />
-            Watch · 79 sec tour
+            Watch · 2-min tour
           </p>
           <h2 className="text-3xl md:text-5xl font-black text-white mb-2">
-            The Whole Vibe in <span className="bg-gradient-to-r from-fuchsia-400 to-cyan-400 bg-clip-text text-transparent">79 Seconds</span>
+            The Whole Vibe in <span className="bg-gradient-to-r from-fuchsia-400 to-cyan-400 bg-clip-text text-transparent">2 Minutes</span>
           </h2>
           <p className="text-sm md:text-base text-white/60 max-w-2xl mx-auto">
             Don't feel like scrolling? Hit play. We'll walk you through every room, every payout, every reason to lock in your seat.
@@ -209,7 +214,7 @@ const LandingTourVideo: React.FC<Props> = ({ onJoinBeta }) => {
               <span className="mt-4 text-white font-black text-sm md:text-base uppercase tracking-[0.3em]">
                 Play the Tour
               </span>
-              <span className="text-white/60 text-xs mt-1">79 seconds · narrated</span>
+              <span className="text-white/60 text-xs mt-1">~2 min · narrated</span>
             </button>
           )}
 

@@ -28,21 +28,27 @@ load_dotenv()
 # Length: ~240 words → ~95-100s at Onyx 1.0× speed. Tested below.
 SCRIPT = """GLOBAL VIBEZ DSG.
 
-The world's first social infrastructure network — built on Solana — where every interaction is economically monetized.
+The world's first sovereign infrastructure network — built on Solana — where every interaction earns.
 
-One token. Six utility rooms. Real payouts.
+This isn't a chat app. This isn't another play-to-earn. This is six utility rooms. One currency. And a real economy you actually own.
 
-Inside, you'll find more than thirty AAA card rooms — Spades, Bid Whist, Hearts, UNO, and more. A neon Cyber-Casino — chess, Vibez six-five-four, baccarat, blackjack, three-card poker. Every win flows back to you.
+Welcome to the Cyber-Casino. Thirty-plus AAA card rooms — Spades, Bid Whist, Hearts, UNO, Pinochle, Euchre, Gin Rummy. A neon casino floor — chess, Vibez six-five-four, baccarat, blackjack, three-card poker. Every win flows back to you in $VIBEZ.
 
-Match your perfect player two in the Dating Universe. Drive a VibeRidez — keep seventy percent of every fare. Deliver Hungry VIBEZ. Host a Vibe Venue. Stream live on DSG TV — get tipped in $VIBEZ that bridges to Solana at four-to-one.
+Find your Player Two in the Dating Universe. Ninety-eight percent synergy-logic matchmaking. Synced streaming. Cinema Dates. Voice rooms. A culturally-aware AI dealer that actually gets you.
 
-The economy? Three billion VIBEZ coins. Hard-capped. A thirteen-point-five percent Sovereign Tax recirculates every transaction back to the players. A five-times mining multiplier waits for chair holders.
+Drive a VibeRidez and keep seventy percent of every fare. Deliver Hungry VIBEZ. Cook as a Vibe Artisan. Host a Vibe Venue. Stream live on DSG TV — twenty-four seven channels, independent movies, thirty-minute episodes, the Memory Bank Cinema.
 
-Speaking of chairs — the Chair Hall is open. Three tiers: Genius, Genesis, Apex. Two hundred thousand seats. Real ownership. A perpetual share of the network's upside.
+Independent artists keep seventy percent. Beat Vault. Freestyle Battles. Collab Matchmaker. The Totem Pole. The seventy-thirty Revolution is here.
 
-This isn't another play-to-earn. This isn't another chat app. This is the Sovereign Casino plus Social Network where games, dating, rides, food, venues, and streaming all run on one currency you actually own.
+Local Mom and Pop earn back. Vibe Yellow Pages — geo-pinned, verified businesses. Hyper-local sponsorship. Backed by the DSG Guard safety protocol.
 
-Lock in your seat. Claim your VIBEZ.
+The economy. Three billion VIBEZ coins. Hard-capped forever. A thirteen-point-five percent Sovereign Tax recirculates every transaction back to the players. A five-times mining multiplier locked in for chair holders. $VIBEZ bridges to Solana at four-to-one.
+
+Speaking of chairs — the Chair Hall is open. Three tiers. Genius. Genesis. Apex. One million seats. Globally. Forever. Eight hundred thousand reserve seats unlock after Chair number fifty thousand. The first cohort to sit at the table owns the network.
+
+This is the Sovereign Casino plus Social Network. Where games, dating, rides, food, venues, music, and streaming all run on one currency you control.
+
+Right now is the best time to take your seat at the table.
 
 GLOBAL VIBEZ DSG. Own the network. Feel the VIBEZ.
 """

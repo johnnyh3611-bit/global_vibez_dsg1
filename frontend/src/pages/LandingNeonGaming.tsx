@@ -380,7 +380,7 @@ export default function LandingNeonGaming() {
                 className="px-8 py-4 bg-black/60 backdrop-blur-xl text-white text-lg font-black rounded-lg hover:bg-black/80 transition-all border-2 border-cyan-400 hover:border-fuchsia-400 flex items-center gap-2 shadow-[0_0_30px_-8px_rgba(34,211,238,0.5)]"
               >
                 <Play className="w-5 h-5" fill="currentColor" />
-                Watch 79-sec Tour
+                Watch 2-min Tour
               </button>
             </motion.div>
 

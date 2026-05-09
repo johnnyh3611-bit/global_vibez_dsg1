@@ -42,19 +42,24 @@ CLIPS = [
 
 # (start_seconds, text) — must match the React caption track.
 CUES = [
-    (0.0,  "GLOBAL VIBEZ DSG."),
-    (3.0,  "The world's first social\ninfrastructure network on Solana."),
-    (13.5, "One token. Six utility rooms."),
-    (18.5, "30+ AAA card rooms\nand a neon Cyber-Casino."),
-    (28.0, "Dating · VibeRidez · Hungry VIBEZ\nVibe Venues · DSG TV"),
-    (41.0, "$VIBEZ bridges to Solana 4:1."),
-    (46.0, "3 BILLION VIBEZ.\n13.5% Sovereign Tax recirculates."),
-    (56.5, "Chair Hall is OPEN.\nGenius · Genesis · Apex."),
-    (67.0, "One currency.\nYou actually own it."),
-    (75.0, "Lock in your seat.\nClaim your VIBEZ."),
+    (0.0,   "GLOBAL VIBEZ DSG."),
+    (3.0,   "World's first sovereign\ninfrastructure network on Solana."),
+    (13.0,  "Six utility rooms.\nOne currency. You own it."),
+    (22.0,  "30+ AAA card rooms.\nSpades · Bid Whist · Hearts · UNO."),
+    (33.0,  "Chess · Vibez 6-5-4\nBaccarat · Blackjack · Poker."),
+    (44.0,  "Dating Universe.\n98% synergy-logic matchmaking."),
+    (56.0,  "VibeRidez · keep 70%\nHungry VIBEZ · DSG TV 24/7."),
+    (70.0,  "70/30 Music Revolution.\nBeat Vault · Battles · Totem Pole."),
+    (80.0,  "Vibe Yellow Pages.\nDSG Guard safety protocol."),
+    (88.0,  "3 BILLION VIBEZ.\n13.5% Sovereign Tax recirculates."),
+    (98.0,  "5× mining for chair holders.\n$VIBEZ → Solana 4:1."),
+    (105.0, "Chair Hall is OPEN.\nGenius · Genesis · Apex · 1M seats."),
+    (115.0, "First cohort owns the network."),
+    (120.0, "Right now is the BEST time\nto take your seat at the table."),
+    (127.0, "GLOBAL VIBEZ DSG.\nFeel the VIBEZ."),
 ]
 
-NARRATION_DURATION = 79.0  # seconds — pinned to the rendered MP3.
+NARRATION_DURATION = 122.0  # seconds — pinned to the rendered MP3.
 
 
 def run(cmd: str, *, check: bool = True) -> None:
