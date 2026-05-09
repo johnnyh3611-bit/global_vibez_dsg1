@@ -668,6 +668,28 @@ async def my_chairs(http_request: Request) -> Dict[str, Any]:
     }
 
 
+@router.get("/chairs/perks")
+async def chairs_perks(http_request: Request) -> Dict[str, Any]:
+    """Roadmap PDF §3 — Seated Ownership UI unlock.
+
+    Returns the caller's chair-holder perk payload so the frontend can
+    color chat usernames, glow profile rings, and surface the +10%
+    $VIBEZ generation badge. Non-holders get a fallback payload (no
+    auth required to fail through cleanly — caller decides how to
+    render).
+
+    The +10% boost mirrors the value `vibez_rewards.py:_calculate_reward`
+    already applies on match-end when `chair_id` is owned. All color/
+    badge logic lives in `services.chair_perks_service` so any surface
+    (chat broadcast, profile ring, badge renderer) can stamp messages
+    without re-implementing the rules.
+    """
+    user = await get_current_user(http_request)
+    db = get_database()
+    from services.chair_perks_service import get_chair_perks_for_user  # noqa: PLC0415
+    return await get_chair_perks_for_user(db, getattr(user, "user_id", None) if user else None)
+
+
 @router.get("/chairs/wall")
 async def chair_wall(
     phase: Optional[str] = None,

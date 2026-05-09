@@ -1,5 +1,57 @@
 # CHANGELOG
 
+## 2026-02-09 Late — Roadmap PDF §3 ecosystem wires shipped 🚖🍕👑
+
+**Founder ask:** *"c — Roadmap mounts"*
+
+### Built
+- **Floating in-game food menu (Roadmap §3)** — `FloatingFoodMenu` is now globally mounted in `frontend/src/App.js`. The component's own `HIDE_PATTERNS` regex suppresses it on `/streamer/overlay`, `/login`, `/signup`, and inside HungryVibes itself. Every other protected route gets the orange utensils FAB bottom-right with a 3-quick-cat overlay (Pizza / Coffee / Late-Night Sweet) — clicks deep-link to `/hungryvibes?cat=…` so users never lose game state.
+- **"Ride Home" lobby button (Roadmap §3)** — `RideHomeButton` is now mounted on `DashboardNew.tsx` directly above the room grid in a gradient "Need a lift?" row (`data-testid=dashboard-ride-home-row`). Click triggers `navigator.geolocation.getCurrentPosition`; if granted, hands off to `/rides?lat=…&lng=…` with coords pre-filled; if denied, falls through to the manual address prompt.
+- **Seated Ownership UI unlock (Roadmap §3)** — full stack:
+  - New `services/chair_perks_service.py` is the canonical source of perk truth. Deterministic per-phase color/glow (Genius=`#22d3ee`, Founder=`#fbbf24`, Standard=`#e879f9`) + 10% generation boost (mirrors `vibez_rewards.py:_calculate_reward` chair_boost).
+  - New `GET /api/chairs/perks` endpoint — returns the caller's perk payload (or fallback for non-holders / unauth).
+  - New `frontend/src/hooks/useChairPerks.ts` — cached fetch hook with test-only reset escape hatch.
+  - New `frontend/src/components/common/ChairHolderName.tsx` — pure presentation component that renders a chat username with the chair-holder's color + glow + crown badge if owned, plain span otherwise.
+  - **Live-streaming chat broadcasts enriched** — `routes/live_streaming.py` `chat/send` now calls `get_chair_perks_for_user(db, sender_user_id)` and attaches `chair_perks` to every WebSocket `chat-message` payload. `ViewStreamPage` and `LiveStreamPage` both wired to `<ChairHolderName>` so chair-holder names render in their unique color across the chat rail in real time.
+
+### Regression Shield: 201 → **205** (no test removed)
+- `test_roadmap_floating_food_menu_globally_mounted` — App.js mount + HIDE_PATTERNS + testid intact.
+- `test_roadmap_ride_home_button_in_dashboard` — DashboardNew.tsx import + render + testid intact.
+- `test_roadmap_chair_perks_endpoint_and_service` — endpoint + service + the 3 phase color codes locked.
+- `test_roadmap_chat_broadcast_carries_chair_perks` — backend broadcast attaches `chair_perks` AND both stream-page chat rails consume it via `<ChairHolderName>`.
+
+### Verified live
+- `GET /api/chairs/perks` returns `{owns_chair:false,…}` for unauthenticated callers — fallback works ✅
+- Smoke screenshot at `/dashboard` after demo login: `ride-home-button: 1`, `floating-food-menu-trigger: 1`, `dashboard-ride-home-row: 1` ✅
+- Webpack: 0 errors, only stale-source-map warnings from `iwer` (unrelated, pre-existing) ✅
+
+### Files added/edited
+- **NEW:** `/app/backend/services/chair_perks_service.py`
+- **NEW:** `/app/frontend/src/hooks/useChairPerks.ts`
+- **NEW:** `/app/frontend/src/components/common/ChairHolderName.tsx`
+- **EDITED:** `/app/backend/routes/chairs.py` (+ /chairs/perks endpoint, delegates to service)
+- **EDITED:** `/app/backend/routes/live_streaming.py` (chat broadcast carries `chair_perks`)
+- **EDITED:** `/app/frontend/src/App.js` (FloatingFoodMenu globally mounted)
+- **EDITED:** `/app/frontend/src/pages/DashboardNew.tsx` (RideHomeButton row mounted)
+- **EDITED:** `/app/frontend/src/pages/ViewStreamPage.tsx` + `LiveStreamPage.tsx` (chat uses ChairHolderName + carries chair_perks through state)
+- **EDITED:** `/app/backend/tests/regression_shield.py` (+4 Roadmap §3 guards, total 205)
+
+### State
+- Regression shield: **205/205 passing** ✅
+- Frontend compile clean
+- Backend healthy
+- All three Roadmap §3 wires live
+
+### Action for founder
+Beta is still GO. Roadmap §3 is now visibly wired for testers to feel:
+- They'll see the orange "food anytime" FAB in-game.
+- They'll see "Ride Home" on the dashboard right above games.
+- Chair holders will see their name in cyan/amber/fuchsia in stream chats with a 👑 badge — instant social proof of ownership.
+
+Roadmap §1 reward formula already shipped earlier in `routes/vibez_rewards.py`. §2 visual specs (Glasshouse PBR / Cyber-Casino raytracing / Underground Club SSS) flagged as **mostly done** — recommend a focused art-pass session post-beta-launch.
+
+
+
 ## 2026-02-09 — Beta-Stage QA Pass: Cyber-Casino Chess Trio ✅
 
 **Founder ask:** *"a + e — full E2E QA + smoke. When done I start beta."*

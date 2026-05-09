@@ -3768,6 +3768,67 @@ def test_sound_check_vote_broadcasts():
         "Vote handler must import the leaderboard service"
 
 
+# --- Roadmap PDF §3 — Seated Ownership · Floating Food · Ride Home ---
+# [2026-02-09] PDF tasked: (1) floating in-game food menu without pause,
+# (2) "Ride Home" button in the lobby, (3) chair-holder UI unlock
+# (chat color + boost). All four wires below MUST stay green.
+
+def test_roadmap_floating_food_menu_globally_mounted():
+    """FloatingFoodMenu must be self-mounted in App.js so every
+    protected route shows it (Roadmap §3 — "without pausing the game")."""
+    src = open("/app/frontend/src/App.js").read()
+    assert "FloatingFoodMenu" in src, \
+        "App.js must import + mount FloatingFoodMenu (Roadmap §3)"
+    # Component file must still exist with its hide-pattern guard so it
+    # can suppress itself on streamer overlay / login routes.
+    fm = open("/app/frontend/src/components/common/FloatingFoodMenu.tsx").read()
+    assert "HIDE_PATTERNS" in fm
+    assert "floating-food-menu-trigger" in fm
+
+
+def test_roadmap_ride_home_button_in_dashboard():
+    """RideHomeButton must be mounted on the main DashboardNew lobby
+    so the "lobby Ride Home" trigger from Roadmap §3 is reachable."""
+    src = open("/app/frontend/src/pages/DashboardNew.tsx").read()
+    assert "RideHomeButton" in src, \
+        "DashboardNew.tsx must import + render RideHomeButton (Roadmap §3)"
+    assert "dashboard-ride-home-row" in src, \
+        "Ride Home row must keep its data-testid for QA"
+
+
+def test_roadmap_chair_perks_endpoint_and_service():
+    """Roadmap §3 Seated Ownership — /api/chairs/perks endpoint + the
+    shared chair_perks_service helper must both exist so any chat
+    surface can stamp messages with the holder's color."""
+    chairs_src = open("/app/backend/routes/chairs.py").read()
+    assert '/chairs/perks' in chairs_src, \
+        "chairs.py must expose GET /chairs/perks"
+    assert 'chair_perks_service' in chairs_src, \
+        "chairs.py must delegate to services.chair_perks_service"
+    svc_src = open("/app/backend/services/chair_perks_service.py").read()
+    assert 'get_chair_perks_for_user' in svc_src
+    # Color rules locked at three phases.
+    assert '#22d3ee' in svc_src   # Genius cyan
+    assert '#fbbf24' in svc_src   # Founder amber
+    assert '#e879f9' in svc_src   # Standard fuchsia
+
+
+def test_roadmap_chat_broadcast_carries_chair_perks():
+    """Live-streaming chat broadcast must attach the sender's
+    chair_perks payload so viewers can colorize chair-holder names
+    in real time (Roadmap §3)."""
+    src = open("/app/backend/routes/live_streaming.py").read()
+    assert 'chair_perks' in src, \
+        "live_streaming chat broadcast must attach chair_perks"
+    assert 'get_chair_perks_for_user' in src, \
+        "live_streaming must call the chair_perks_service helper"
+    # Frontend must read it.
+    view_src = open("/app/frontend/src/pages/ViewStreamPage.tsx").read()
+    live_src = open("/app/frontend/src/pages/LiveStreamPage.tsx").read()
+    assert "ChairHolderName" in view_src and "ChairHolderName" in live_src
+    assert "chair_perks" in view_src and "chair_perks" in live_src
+
+
 
 
 

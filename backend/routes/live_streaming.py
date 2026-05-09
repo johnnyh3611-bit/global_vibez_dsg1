@@ -320,14 +320,24 @@ async def send_chat_message(message: ChatMessage) -> Dict[str, Any]:
             {"id": message.stream_id},
             {"$inc": {"total_messages": 1}}
         )
-        
+
+        # Roadmap PDF §3 — Seated Ownership UI unlock. Stamp the
+        # broadcast with the sender's chair perks so every viewer sees
+        # the chair-holder's name in their unique color.
+        try:
+            from services.chair_perks_service import get_chair_perks_for_user  # noqa: PLC0415
+            chair_perks = await get_chair_perks_for_user(db, message.user_id)
+        except Exception:
+            chair_perks = None
+
         # Broadcast to all viewers via WebSocket
         await broadcast_to_stream(message.stream_id, {
             "type": "chat-message",
             "user_id": message.user_id,
             "username": message.username,
             "message": message.message,
-            "timestamp": msg_doc["timestamp"]
+            "timestamp": msg_doc["timestamp"],
+            "chair_perks": chair_perks,
         })
         
         return {"success": True, "message_id": msg_doc["id"]}

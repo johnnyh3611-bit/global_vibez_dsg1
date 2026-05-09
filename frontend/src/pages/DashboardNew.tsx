@@ -21,6 +21,7 @@ import CreditBalance from '@/components/CreditBalance';
 import AppFooter from '@/components/AppFooter';
 import NotificationBanner from '@/components/NotificationBanner';
 import ChairHolderVoteBanner from '@/components/dashboard/ChairHolderVoteBanner';
+import RideHomeButton from '@/components/common/RideHomeButton';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -555,6 +556,19 @@ export default function Dashboard() {
             </div>
           </div>
         </motion.div>
+
+        {/* Ride Home — Roadmap PDF §3. One-tap geo-locked ride from
+            the lobby. Hands off to /rides with lat/lng pre-filled. */}
+        <div
+          data-testid="dashboard-ride-home-row"
+          className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-2xl border border-blue-400/30 bg-gradient-to-r from-blue-950/60 via-slate-950/40 to-cyan-950/40 backdrop-blur p-4"
+        >
+          <div className="text-white/90">
+            <p className="text-[10px] uppercase tracking-[0.4em] font-bold text-cyan-300">Need a lift?</p>
+            <p className="text-base sm:text-lg font-black">One-tap Ride Home from anywhere on the platform.</p>
+          </div>
+          <RideHomeButton />
+        </div>
 
         {/* Room Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">

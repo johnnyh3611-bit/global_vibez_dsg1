@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Users, MessageCircle, Heart, Send, Share2, ArrowLeft } from 'lucide-react';
 import Peer from 'simple-peer';
+import ChairHolderName from '@/components/common/ChairHolderName';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -98,7 +99,8 @@ export default function ViewStreamPage() {
           setChatMessages(prev => [...prev, {
             username: message.username,
             message: message.message,
-            timestamp: message.timestamp
+            timestamp: message.timestamp,
+            chair_perks: message.chair_perks || null,
           }]);
           break;
 
@@ -309,8 +311,12 @@ export default function ViewStreamPage() {
                     animate={{ opacity: 1, x: 0 }}
                     className="text-sm"
                   >
-                    <span className="font-bold text-cyan-400">{msg.username}:</span>
-                    <span className="text-gray-300 ml-2">{msg.message}</span>
+                    <ChairHolderName
+                      username={msg.username}
+                      perks={msg.chair_perks}
+                      className="font-bold text-cyan-400"
+                    />
+                    <span className="text-gray-300 ml-2">: {msg.message}</span>
                   </motion.div>
                 ))}
               </div>

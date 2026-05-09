@@ -55,6 +55,7 @@ import { LogDesignLesson } from "@/components/vibez/LogDesignLesson";
 import GlobeFAB from "@/components/GlobeFAB";
 // v8 — universal voice/video chat dock auto-mounted on every multiplayer URL
 import GameVoiceDockMounter from "@/components/games/GameVoiceDockMounter";
+import FloatingFoodMenu from "@/components/common/FloatingFoodMenu";
 
 // Import version manager for cache busting
 import { startVersionMonitoring } from "@/utils/versionManager";
@@ -143,6 +144,7 @@ function AppRouter() {
       <FriendEventToaster />
       <GlobeFAB />
       <GameVoiceDockMounter />
+      <FloatingFoodMenu />
       <Routes>
         {/* Public Routes */}
         {authRoutes}
