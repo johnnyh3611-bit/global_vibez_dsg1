@@ -3982,23 +3982,26 @@ def test_vigilant_agent_scripts_exist_and_have_required_apis():
     assert "regressed_devices"   in ci
 
 
-# ── CornerDock guards (Vigilant Agent v2 founder fix) ──────────────
-def test_corner_dock_is_mounted_in_app():
-    """Vigilant Agent v2 (founder report 2026-02-09): the unified
-    CornerDock must be mounted globally so corner-FAB stacking is
-    impossible."""
+# ── Inline PageActionStrip guards (founder directive 2026-02-09 final) ──
+def test_corner_dock_no_longer_mounted_in_app():
+    """Founder rejected ALL floating chrome (CornerDock + UnifiedChromeBar)
+    on 2026-02-09. The replacement is the inline `<PageActionStrip />`
+    which scrolls with the page. App.js must NOT mount the legacy
+    CornerDock anywhere."""
     src = open("/app/frontend/src/App.js").read()
-    assert "import CornerDock from" in src, \
-        "CornerDock must be imported in App.js"
-    assert "<CornerDock />" in src, \
-        "CornerDock must be mounted in the AppRouter chrome layer"
+    assert "<CornerDock />" not in src, \
+        "CornerDock must NOT be mounted — it was the floating dock the founder rejected"
+    assert "import CornerDock from" not in src, \
+        "CornerDock import must be removed from App.js"
 
 
 def test_legacy_fabs_use_corner_dock_trigger_hook():
     """The 5 legacy FABs (Beta Feedback / Fresh Drops / Voice Mirror /
-    Floating Food / Globe) MUST hide their own trigger when CornerDock
-    takes over the corners. Each component imports the shared
-    `useCornerDockTrigger` hook."""
+    Floating Food / Globe) MUST hide their own trigger when the inline
+    chrome strip is active. Each component imports the shared
+    `useCornerDockTrigger` hook (the hook listens for both the legacy
+    `cdock:active` event and the new `chromebar:active` event the
+    PageActionStrip dispatches)."""
     files = [
         "/app/frontend/src/components/common/BetaFeedbackButton.tsx",
         "/app/frontend/src/components/common/FreshDropsLauncher.tsx",
@@ -4009,54 +4012,35 @@ def test_legacy_fabs_use_corner_dock_trigger_hook():
     for f in files:
         body = open(f).read()
         assert "useCornerDockTrigger" in body, \
-            f"{f} must import + call useCornerDockTrigger so CornerDock can suppress its trigger"
+            f"{f} must import + call useCornerDockTrigger so the chrome strip can suppress its trigger"
         assert "triggerHidden" in body, \
             f"{f} must reference the triggerHidden flag returned by the hook"
 
 
-def test_corner_dock_has_left_and_right_triggers_with_items():
-    """CornerDock must expose `corner-dock-left-trigger` and
-    `corner-dock-right-trigger` test ids, plus at least 2 labeled
-    items per side so the user can identify each action."""
-    src = open("/app/frontend/src/components/common/CornerDock.tsx").read()
-    # Triggers are rendered via template-literal so we look for the suffix.
-    assert 'corner-dock-${side}-trigger' in src
-    assert 'corner-dock-${side}-menu'    in src
-    assert 'corner-dock-item-'           in src
-    # The 6 known item ids that map to the 5 underlying FABs + globe.
-    for item_id in ["voice_mirror", "orientation", "beta_feedback",
-                    "fresh_drops", "food", "cultural_hub"]:
-        assert f'id: "{item_id}"' in src, \
-            f"CornerDock must include menu item '{item_id}'"
-
-
-def test_corner_dock_first_time_tooltip_shipped():
-    """First-time discovery tooltip pulses next to the Tools trigger
-    on first session so beta testers find the unified menu without
-    being told. Auto-dismisses after 8s or on first dock open."""
-    tip = open("/app/frontend/src/components/common/CornerDockTooltip.tsx").read()
-    assert "corner-dock-first-time-tooltip" in tip
-    assert "gv_corner_dock_tooltip_seen_v1" in tip, \
-        "Tooltip must persist its dismissal in localStorage so it never re-shows"
-    # Mounted by CornerDock itself (no App.js coupling).
-    dock = open("/app/frontend/src/components/common/CornerDock.tsx").read()
-    assert "CornerDockTooltip" in dock
+def test_protected_route_auto_mounts_page_action_strip():
+    """Founder directive 2026-02-09 (option B) — every protected page
+    must auto-mount the inline PageActionStrip at the top of its
+    content area. ProtectedRoute owns this mount so we don't have to
+    edit every single page individually."""
+    src = open("/app/frontend/src/App.js").read()
+    assert "import PageActionStrip from" in src, \
+        "App.js must import PageActionStrip"
+    assert "<PageActionStrip" in src, \
+        "ProtectedRoute must render <PageActionStrip /> above its children"
+    assert 'data-testid="protected-route-action-strip"' in src, \
+        "ProtectedRoute must wrap PageActionStrip with the protected-route-action-strip testid"
 
 
 def test_unified_chrome_bar_owns_corner_real_estate():
     """Founder directive 2026-02-09 — final iteration: chrome menu must
     be INLINE (scrolls with the page, NEVER `position: fixed`).
-    Replaces the previous global UnifiedChromeBar with a per-page
-    `<PageActionStrip />` that each page drops into its own empty
-    spot (under WinnerTicker on landing, after the dashboard header,
-    etc.).
+    Replaces the previous global UnifiedChromeBar + CornerDock with a
+    per-page `<PageActionStrip />`.
 
     Locks the new contract:
     • PageActionStrip exists with Comms / Tools / More sections.
     • Landing page mounts it under WinnerTicker.
-    • DashboardNew mounts it inside the main content flow.
-    • UnifiedChromeBar is NO LONGER mounted globally in App.js (the
-      file may exist for reference but must not render anywhere).
+    • UnifiedChromeBar + CornerDock are NO LONGER mounted globally.
     • Strip dispatches `chromebar:active` so legacy floating FABs
       stay collapsed.
     """
@@ -4082,13 +4066,12 @@ def test_unified_chrome_bar_owns_corner_real_estate():
     strip_idx = landing.find("<PageActionStrip")
     assert wt_idx > 0 and strip_idx > wt_idx, \
         "Landing page must render PageActionStrip AFTER WinnerTicker"
-    # Dashboard must mount it.
-    dash = open("/app/frontend/src/pages/DashboardNew.tsx").read()
-    assert "PageActionStrip" in dash
-    # UnifiedChromeBar must NOT be globally mounted in App.js anymore.
+    # UnifiedChromeBar + CornerDock must NOT be globally mounted in App.js.
     appsrc = open("/app/frontend/src/App.js").read()
     assert "<UnifiedChromeBar />" not in appsrc, \
-        "UnifiedChromeBar must NOT be in the global App.js mount — chrome is now per-page"
+        "UnifiedChromeBar must NOT be in the global App.js mount"
+    assert "<CornerDock />" not in appsrc, \
+        "CornerDock must NOT be in the global App.js mount"
 
 
 def test_bid_whist_cards_land_near_center_table_logo():

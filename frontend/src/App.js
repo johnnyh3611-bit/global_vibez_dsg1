@@ -56,7 +56,7 @@ import GlobeFAB from "@/components/GlobeFAB";
 // v8 — universal voice/video chat dock auto-mounted on every multiplayer URL
 import GameVoiceDockMounter from "@/components/games/GameVoiceDockMounter";
 import FloatingFoodMenu from "@/components/common/FloatingFoodMenu";
-import CornerDock from "@/components/common/CornerDock";
+import PageActionStrip from "@/components/common/PageActionStrip";
 
 // Import version manager for cache busting
 import { startVersionMonitoring } from "@/utils/versionManager";
@@ -125,7 +125,21 @@ function ProtectedRoute({ children }) {
     return <PageLoader message="Authenticating..." />;
   }
 
-  return isAuthenticated ? children : null;
+  // Founder directive 2026-02-09 — every protected page auto-renders the
+  // inline PageActionStrip at the top of its content area. The strip
+  // scrolls with the page (NEVER `position: fixed`) and sets
+  // `body.dataset.chromeBarActive="1"` so all 8 legacy floating FABs
+  // (Beta Feedback / Voice Mirror / Orientation / Globe / Fresh Drops /
+  // Floating Food / etc.) hide their triggers via useCornerDockTrigger.
+  if (!isAuthenticated) return null;
+  return (
+    <>
+      <div className="px-4 pt-3 max-w-7xl mx-auto" data-testid="protected-route-action-strip">
+        <PageActionStrip align="end" />
+      </div>
+      {children}
+    </>
+  );
 }
 
 // Main App Router
@@ -146,20 +160,17 @@ function AppRouter() {
       <GlobeFAB />
       <GameVoiceDockMounter />
       <FloatingFoodMenu />
-      {/* Vigilant Agent v2 fix (2026-02-09): single corner dock now
-          owns the bottom-corner real estate. The 5 FABs above stay
-          mounted (they own their modals/panels) but their trigger
-          buttons hide via `useCornerDockTrigger`. CornerDock renders
-          two labeled pop-out menus — one trigger per corner — so
-          buttons no longer overlap and every action is named. */}
-      <CornerDock />
       {/* Founder directive 2026-02-09 — chrome menu MUST be inline
-          (scroll with the page, never sticky). The new
-          <PageActionStrip /> is now manually placed by each page in
-          its empty spot (under WinnerTicker on landing, after the
-          dashboard header, etc). UnifiedChromeBar removed from the
-          global mount because fixed-position chrome was the exact
-          regression the founder kept reporting. */}
+          (scroll with the page, never sticky). Public Landing mounts
+          its own <PageActionStrip /> under the WinnerTicker; every
+          protected page gets one auto-mounted at the top of its
+          content area inside ProtectedRoute. The legacy CornerDock
+          (floating bottom-corner pop-out) and UnifiedChromeBar
+          (floating top bar) are both DELETED — they were the exact
+          regression the founder kept reporting. The 8 underlying FAB
+          components stay mounted (they own their modals/panels) but
+          their trigger buttons hide via `useCornerDockTrigger` once
+          the strip dispatches `chromebar:active`. */}
       <Routes>
         {/* Public Routes */}
         {authRoutes}

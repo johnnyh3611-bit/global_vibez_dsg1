@@ -22,7 +22,6 @@ import AppFooter from '@/components/AppFooter';
 import NotificationBanner from '@/components/NotificationBanner';
 import ChairHolderVoteBanner from '@/components/dashboard/ChairHolderVoteBanner';
 import RideHomeButton from '@/components/common/RideHomeButton';
-import PageActionStrip from '@/components/common/PageActionStrip';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -508,13 +507,6 @@ export default function Dashboard() {
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-12">
-        {/* Quick Access menu — inline, scrolls with the page (founder
-            directive 2026-02-09: chrome stays inside the page flow,
-            never sticky). */}
-        <div className="mb-6">
-          <PageActionStrip align="end" />
-        </div>
-
         {/* Welcome Section */}
         <motion.div
           className="text-center mb-12"
