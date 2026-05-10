@@ -1,7 +1,20 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
 
-> **2026-05-09 (Latest) — Stripe Verified Live · i18n Awaiting LLM Top-Up 💳🌍.** Founder asked to "resume i18n + wire Stripe keys".
+> **2026-05-09 (Latest) — Vibe 654 Side Bets + Recent Rolls + Whole-App FAB Sweep 🎲🔧.** Founder pre-beta sweep round 2.
+>
+> 1. **Vibe 654 single-player (`/vibez-654`) restored** — full rewrite. Layout: stat bar → qualifier ladder → centred dice arena → **collapsible Side Bets drawer** (11 bet types from new `/api/vibez-654/side-bet-types` catalog: TRIPLE_6, ONE_AND_DONE, ANY_STRAIGHT, STRAIGHT_1-6, SMALL_STRAIGHT, LARGE_STRAIGHT — each with ₵10/25/100/500 quick picks + custom +/-) → **collapsible Recent Rolls drawer** (last 10 from new `/api/vibez-654/history?limit=10`) → Roll/Stand controls. Drawer locks read-only once a game starts. Outcome card now always shows `data-testid=v654-payout`.
+> 2. **Backend `/api/vibez-654/start`** now accepts `side_bets[]` (max 11). Stake + side-bet stakes debited up-front. `/roll` evaluates side bets only on roll #1, populates `side_bet_results` + `side_bet_payout`. `/stand` credits both main winnings AND side-bet payouts. New endpoints: `/history`, `/side-bet-types`. 8/8 new pytest tests + 232 regression-shield tests = **240/240 GREEN**.
+> 3. **High Roller Vault (`/vibe-654/solo`) table fix** — Coliseum now `maxWidth: min(820px, 100%, calc(60vh))` so the round table never overflows on short viewports + wrapper has `maxHeight: calc(100vh - 220px)` so dice always sit centred above the bottom stake bar.
+> 4. **Whole-app visual sweep** (every fullscreen game route at 1366×768 + 414×896) found 5 founder-rule violations, ALL FIXED:
+>    - WhatsNewBanner now hides on `/games/cyber-casino*`, `/cyber-casino*`, `/games/vibez-654`.
+>    - `voice-mirror-dock`, `beta-feedback-toggle`, `floating-food-menu-trigger`, `game-voice-dock` now hide on every cyber-casino route (root + roulette + slots + blackjack) AND `/casino-war` AND every other fullscreen game route.
+>    - Root cause: `chromebar:active` was only dispatched inside `ProtectedRouteContent` so unprotected routes (`/games/cyber-casino`, `/roulette`) bypassed it. Lifted dispatcher to a global `<ChromebarActiveDispatcher />` mounted at the AppRouter level — fires for every fullscreen game route regardless of auth status.
+>    - `GameVoiceDockMounter` now suppresses the bottom-right voice FAB on all fullscreen game routes (InRoomCommsLauncher pill at top-right covers comms there).
+>    - `/chess` top-level URL now redirects to `/practice/play/chess` instead of 404'ing.
+> 5. **Verified live** (1366×768 + cyber-casino root + cyber-casino/roulette): zero FABs visible in DOM. Only allowed elements remain: header chrome, game content, top-right `InRoomCommsLauncher` pill, bottom-right Emergent platform watermark.
+>
+> **Status: 🟢 ready for beta redeploy.** No P0 blockers remaining for the V654 + visual-sweep workstream. The user has already deployed; preview ↑ matches what next deploy will ship.
 >
 > 1. **Stripe is FULLY WIRED and LIVE** — was incorrectly flagged as "missing keys" in handoff. The pod env auto-provisions `STRIPE_API_KEY=sk_test_emergent`, both Stripe checkout flows tested end-to-end with curl + the betatester1 token: `POST /api/coins/topup/checkout` (auth-gated, ₵-pack vibez coin top-up · 4 packs $5/$9/$20/$35) and `POST /api/wallet/topup/create-session` (vibez wallet · 5 packs $10–$250) both return valid `cs_test_…` Stripe-hosted checkout URLs. `TopUpVibezCoinsModal` is auto-opened on 402/insufficient errors across JFTN, VibeRidez, YellowPages, RestaurantDetail, plus a manual "Buy" CTA inside `/wallet`. `/wallet/topup-success` polls `/api/coins/topup/status/{id}` until credited. **No further wiring required for beta.**
 > 2. **i18n script re-attempted** — same `budget_exceeded` (cap is still $0.40, current $0.4232). Generator is resumable; English (`en`) ships today, the other 7 languages auto-generate when the cap is raised. Founder must hit Profile → Universal Key → Add Balance.

@@ -209,10 +209,29 @@ function ProtectedRouteContent({ children }) {
   );
 }
 
+// Global chromebar-active dispatcher — fires for ALL fullscreen game
+// routes regardless of auth status. Replaces the previous version that
+// only fired inside ProtectedRouteContent and missed unprotected
+// routes like /games/cyber-casino root and /games/cyber-casino/roulette.
+function ChromebarActiveDispatcher() {
+  const isFullscreenGame = useIsFullscreenGameRoute();
+  useEffect(() => {
+    if (!isFullscreenGame) return;
+    document.body.dataset.chromeBarActive = "1";
+    window.dispatchEvent(new CustomEvent("chromebar:active", { detail: true }));
+    return () => {
+      delete document.body.dataset.chromeBarActive;
+      window.dispatchEvent(new CustomEvent("chromebar:active", { detail: false }));
+    };
+  }, [isFullscreenGame]);
+  return null;
+}
+
 // Main App Router
 function AppRouter() {
   return (
     <>
+      <ChromebarActiveDispatcher />
       <FreshDropsLauncher />
       <WhatsNewBanner />
       <CommHubDropdown />
