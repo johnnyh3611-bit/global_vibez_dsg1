@@ -72,9 +72,11 @@ const FULLSCREEN_GAME_ROUTES = [
   "/gin-rummy", "/rummy", "/war", "/crazy-eights", "/go-fish", "/baccarat",
   "/baccarat-aaa", "/blackjack", "/poker", "/three-card-poker",
   "/vibe-654", "/vibez-654",
+  "/games/vibez-654",
   "/chess", "/checkers", "/connect4", "/practice/play",
   "/card-mp",  // multiplayer card rooms
   "/cinema-room",  // The Cinema Room — sync-watch viewer
+  "/cyber-casino", "/games/cyber-casino", "/casino-war",
 ];
 
 function useIsFullscreenGameRoute() {

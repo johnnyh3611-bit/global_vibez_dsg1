@@ -359,6 +359,10 @@ export const gamesRoutes = (ProtectedRoute) => (
         PracticeChess with Voice Coach + Roguelite Trial + Battle
         Mode toggle). */}
     <Route path="/practice/chess" element={<Navigate to="/practice/play/chess" replace />} />
+    {/* Top-level /chess alias → canonical practice route (founder ask
+        2026-05-09 visual sweep — bookmark / direct-link to /chess
+        was returning NotFound before this redirect). */}
+    <Route path="/chess" element={<Navigate to="/practice/play/chess" replace />} />
     
     {/* AAA Casino Games - Updated to use WebSocket-enabled components */}
     <Route path="/practice/play/blackjack-aaa" element={<ProtectedRoute><BlackjackGameAAA /></ProtectedRoute>} />

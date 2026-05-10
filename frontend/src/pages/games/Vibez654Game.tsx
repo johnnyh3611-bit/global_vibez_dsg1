@@ -415,13 +415,16 @@ export default function Vibez654Game() {
                   <p className="text-2xl font-black text-white mt-2">
                     {game.score > 0 ? `Stood on ${game.score}` : "Bust"}
                   </p>
-                  {game.payout && game.payout > 0 ? (
-                    <p className="text-[#D4AF37] text-base font-black mt-1 tabular-nums" data-testid="v654-payout">
-                      +₵{game.payout.toLocaleString()} main payout
-                    </p>
-                  ) : (
-                    <p className="text-rose-300/80 text-sm mt-1">Stake lost</p>
-                  )}
+                  <p
+                    data-testid="v654-payout"
+                    className={`text-base font-black mt-1 tabular-nums ${
+                      (game.payout || 0) > 0 ? "text-[#D4AF37]" : "text-rose-300/80"
+                    }`}
+                  >
+                    {(game.payout || 0) > 0
+                      ? `+₵${(game.payout as number).toLocaleString()} main payout`
+                      : "Main stake lost"}
+                  </p>
                   {(game.side_bet_payout || 0) > 0 && (
                     <p className="text-fuchsia-200 text-sm font-black mt-1 tabular-nums" data-testid="v654-side-payout">
                       +₵{(game.side_bet_payout || 0).toLocaleString()} side bet payout
@@ -449,6 +452,8 @@ export default function Vibez654Game() {
               ? `Side bets ${sideBetsList.length ? `· ${sideBetsList.length} placed` : "· none"}`
               : `Side bets${sideBetsTotal ? ` · ₵${sideBetsTotal.toLocaleString()}` : ""}`
           }
+          totalTestId="v654-side-bets-total"
+          totalValue={sideBetsLocked ? null : sideBetsTotal}
           open={sideBetsOpen}
           setOpen={setSideBetsOpen}
         >
@@ -641,6 +646,8 @@ function Drawer({
   testId,
   icon,
   label,
+  totalTestId,
+  totalValue,
   open,
   setOpen,
   children,
@@ -648,6 +655,8 @@ function Drawer({
   testId: string;
   icon: React.ReactNode;
   label: string;
+  totalTestId?: string;
+  totalValue?: number | null;
   open: boolean;
   setOpen: (v: boolean) => void;
   children: React.ReactNode;
@@ -668,9 +677,19 @@ function Drawer({
           {icon}
           {label}
         </span>
-        <ChevronDown
-          className={`w-4 h-4 text-cyan-300 transition-transform ${open ? "rotate-180" : ""}`}
-        />
+        <span className="flex items-center gap-2">
+          {totalTestId && totalValue !== null && totalValue !== undefined && (
+            <span
+              data-testid={totalTestId}
+              className="text-amber-300 text-xs font-black tabular-nums"
+            >
+              ₵{totalValue.toLocaleString()}
+            </span>
+          )}
+          <ChevronDown
+            className={`w-4 h-4 text-cyan-300 transition-transform ${open ? "rotate-180" : ""}`}
+          />
+        </span>
       </button>
       {open && (
         <div

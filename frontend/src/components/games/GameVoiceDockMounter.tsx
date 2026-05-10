@@ -120,6 +120,26 @@ const MATCHERS: MatchSpec[] = [
   },
 ];
 
+// Founder rule (2026-05-09): NO floating buttons on fullscreen game
+// rooms. The inline PageActionStrip + the top-right
+// <InRoomCommsLauncher /> Jitsi pill cover comms in those rooms, so
+// the legacy bottom-right voice dock would create a FAB collision.
+// Mirror App.js → FULLSCREEN_GAME_ROUTES so the suppression doesn't
+// drift between files.
+const FULLSCREEN_PREFIXES = [
+  '/spades', '/bid-whist', '/hearts', '/uno', '/euchre', '/pinochle',
+  '/gin-rummy', '/rummy', '/war', '/crazy-eights', '/go-fish', '/baccarat',
+  '/baccarat-aaa', '/blackjack', '/poker', '/three-card-poker',
+  '/vibe-654', '/vibez-654', '/games/vibez-654',
+  '/chess', '/checkers', '/connect4', '/practice/play',
+  '/card-mp', '/cinema-room',
+  '/cyber-casino', '/games/cyber-casino', '/casino-war',
+];
+
+function isFullscreenGameRoute(pathname: string): boolean {
+  return FULLSCREEN_PREFIXES.some((r) => pathname === r || pathname.startsWith(r + '/'));
+}
+
 export function GameVoiceDockMounter() {
   const { pathname } = useLocation();
 
@@ -134,6 +154,10 @@ export function GameVoiceDockMounter() {
   }, [pathname]);
 
   if (!match) return null;
+
+  // Hide the legacy bottom-right voice dock on fullscreen game routes —
+  // <InRoomCommsLauncher /> at top-right covers comms there.
+  if (isFullscreenGameRoute(pathname)) return null;
 
   // `key` forces a remount when navigating between distinct rooms so we
   // don't leak the previous channel's Agora session.

@@ -22,6 +22,7 @@ const HIDDEN_EXACT = [
   "/crazy-eights", "/go-fish", "/baccarat",
   "/baccarat-aaa", "/blackjack", "/poker", "/three-card-poker",
   "/vibe-654", "/vibez-654", "/vibe-654/solo",
+  "/games/vibez-654",
   "/cinema-room",
 ];
 
@@ -66,6 +67,8 @@ const WhatsNewBanner: React.FC = () => {
     p.startsWith("/card-mp/") ||
     p.startsWith("/vibe-654/coliseum") ||
     p.startsWith("/games/vibe654") ||
+    p.startsWith("/games/cyber-casino") ||
+    p.startsWith("/cyber-casino") ||
     !looksKnown;  // unknown route → 404, hide banner
 
   const dismiss = () => {
