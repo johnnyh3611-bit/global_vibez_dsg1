@@ -305,7 +305,7 @@ export default function VibeSoloHighRoller() {
         className="flex-1 min-h-0 relative flex flex-col items-center justify-center px-3 sm:px-4 py-2"
         data-testid="vibe654-solo-main"
       >
-        <div className="w-full max-w-[440px] sm:max-w-[520px] mx-auto">
+        <div className="w-full max-w-[440px] sm:max-w-[520px] mx-auto" style={{ maxHeight: 'calc(100vh - 220px)' }}>
           <Coliseum
             variant="solo"
             seats={seats}

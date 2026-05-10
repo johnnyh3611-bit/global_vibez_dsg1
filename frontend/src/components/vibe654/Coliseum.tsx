@@ -62,7 +62,15 @@ export const Coliseum: React.FC<ColiseumProps> = ({
 
   return (
     <div
-      className={`relative w-full aspect-square max-w-[820px] mx-auto ${theme.floor} rounded-full ${theme.ringGlow} overflow-hidden`}
+      className={`relative w-full aspect-square mx-auto ${theme.floor} rounded-full ${theme.ringGlow} overflow-hidden`}
+      style={{
+        // Cap the table so it never bleeds into the bottom stake bar /
+        // decision dock on short viewports. min() picks whichever is
+        // smaller: 820px hard cap, the parent's width, or 60% of the
+        // viewport height. Result: dice always centred, table never
+        // intrudes on chrome.
+        maxWidth: 'min(820px, 100%, calc(60vh))',
+      }}
       data-testid={`vibe654-coliseum-${variant}`}
       data-variant={variant}
     >
