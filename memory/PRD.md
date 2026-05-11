@@ -1,5 +1,25 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-02-11 (CLOUDFLARE STREAM LIVE 🟢) — Every-device → every-audience streaming infrastructure shipped end-to-end. 308/308 regression green.**
+>
+> **Founder enabled Cloudflare Stream subscription**, pasted API token (`cfut_2Pvcb...26af5fbe`), platform auto-discovered subdomain (`customer-i634rqcpn9lgnaho.cloudflarestream.com`) by provisioning a verification input then deleting it. Backend `_is_live()` now returns `True`; Streamer Studio renders real RTMP/SRT credentials with no stub banner; HLS player connects to Cloudflare's edge network.
+>
+> **Live capabilities (verified end-to-end via curl + UI smoke test):**
+>   - ✅ `POST /api/streaming/cloudflare/live-inputs` → real RTMPS + SRT + HLS URLs from Cloudflare
+>   - ✅ Idempotent per `streamer_id` (refreshing the studio never rotates the streamer's OBS key)
+>   - ✅ `/streamer/studio` page renders real credentials, masked stream key with reveal toggle, copy buttons, device cheat-sheet for OBS/Streamlabs/vMix/Larix/console capture cards
+>   - ✅ `<HLSPlayer />` reusable component handles hls.js + native Safari/iOS HLS + low-latency mode + auto-recovery on network blip
+>   - ✅ Volumetric Dashboard "Go Live" tile (Streaming planet) routes to `/streamer/studio`
+>   - ✅ STUB→LIVE branching preserved so the same code path works if/when credentials rotate
+>
+> **Bonus discovered**: Cloudflare also returned WebRTC ingest URLs for sub-second-latency browser-to-browser broadcasts (no OBS required). Not wired yet but documented for future enhancement.
+>
+> **Outstanding (optional)**: `CLOUDFLARE_STREAM_WEBHOOK_SECRET` is still empty. Without it, stream-start/stream-end events accept without signature verification (a warning is logged). To wire: Cloudflare Dashboard → Stream → Settings → Webhooks → URL `https://globalvibezdsg.com/api/streaming/cloudflare/webhook` → save → paste secret into `.env`.
+>
+> **Regression Shield: 308/308 GREEN** (+1 new lock: `test_cloudflare_stream_ingest_wired`).
+>
+> ---
+>
 > **2026-02-11 (POST-DEPLOY POLISH SPRINT) — Push polish + Lighthouse perf + Video Vault + Beat Vault DRM all shipped. 307/307 regression green.**
 >
 > **Tasks A-D completed in this session** (user requested A through D one by one):
