@@ -65,14 +65,23 @@ export const authFetch = async (url, options = {}) => {
     },
   });
 
-  // Handle 401 unauthorized
-  if (response.status === 401) {
-    console.warn('Authentication failed - session may be expired');
-    // Clear user data and redirect to login
+  // 2026-05-12 BUGFIX: previously a 401 from ANY authFetch call triggered
+  // `window.location.href = '/login'`. This caused two symptoms:
+  //   1. Focus stolen mid-input → "can't type in profile fields"
+  //   2. Hard redirect mid-session → "kicked completely out"
+  // The global RoomVisitLogger fires authFetch on every route change,
+  // which would race with auth state and force-logout valid users.
+  //
+  // New contract: authFetch ONLY clears bad tokens — it does NOT redirect.
+  // ProtectedRoute (App.js) remains the single source of truth for
+  // redirecting unauthenticated users to /login.
+  if (response.status === 401 && token) {
+    // Only clear tokens if we actually sent one and the server rejected it.
+    // Anonymous calls (no token) just return the 401 to the caller.
+    console.warn('authFetch: token rejected by server, clearing local credentials');
     localStorage.removeItem('auth_token');
     localStorage.removeItem('username');
     localStorage.removeItem('user_id');
-    window.location.href = '/login';
   }
 
   return response;
