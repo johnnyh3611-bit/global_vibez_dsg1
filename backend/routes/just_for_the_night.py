@@ -3,14 +3,24 @@ Just for the Night - Premium Room System
 Token-gated rooms with blur-to-reveal mechanics and customizable AI dealers
 """
 from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+from passlib.context import CryptContext
 from utils.database import get_database, get_current_user
 from models import User
+import os
 import uuid
 
 router = APIRouter(prefix="/just-for-the-night", tags=["Just for the Night Rooms"])
+
+# Shared bcrypt context — same scheme as email_auth so verify costs match.
+_pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# Season Pass — 2026-05-12 founder ask.
+SEASON_PASS_USD = 25
+SEASON_PASS_DAYS = 30
+SEASON_PASS_PRICE_ENV = "STRIPE_PRICE_JFTN_SEASON_PASS"
 
 # ==================== MODELS ====================
 
@@ -38,6 +48,10 @@ class CreateRoomRequest(BaseModel):
     preview_image_url: Optional[str] = None
     stream_url: str  # Video URL (pre-recorded or live stream)
     settings: RoomSettings
+    # 2026-05-12 founder ask: optional per-room password creates a
+    # "double-security" gate — even if someone breaches the visitor's
+    # account, they can't enter without the owner-set password.
+    room_password: Optional[str] = Field(default=None, min_length=4, max_length=64)
 
 class UpdateRoomSettingsRequest(BaseModel):
     room_id: str
@@ -46,6 +60,14 @@ class UpdateRoomSettingsRequest(BaseModel):
 class JoinRoomRequest(BaseModel):
     room_id: str
     visitor_id: str
+    # Required when the room owner set a `room_password` at creation.
+    room_password: Optional[str] = Field(default=None, max_length=64)
+
+class GiftRoomRequest(BaseModel):
+    """Founder ask: 'gift this room to a friend' — pay for someone else."""
+    room_id: str
+    recipient_user_id: str = Field(min_length=2, max_length=64)
+    room_password: Optional[str] = Field(default=None, max_length=64)
 
 class RoomResponse(BaseModel):
     room_id: str
@@ -132,7 +154,10 @@ async def create_room(
         "total_visits": 0,
         "total_revenue": 0,
         "created_at": datetime.now(timezone.utc).isoformat(),
-        "updated_at": datetime.now(timezone.utc).isoformat()
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        # 2026-05-12: per-room password gate. None = open room.
+        "password_hash": _pwd.hash(request.room_password) if request.room_password else None,
+        "requires_password": bool(request.room_password),
     }
     
     await db.jftn_rooms.insert_one(room_data)
@@ -188,7 +213,7 @@ async def get_room_details(room_id: str) -> Dict[str, Any]:
     
     room = await db.jftn_rooms.find_one(
         {"room_id": room_id},
-        {"_id": 0, "stream_url": 0}  # Hide stream URL until paid
+        {"_id": 0, "stream_url": 0, "password_hash": 0}  # Hide stream URL + password hash until paid
     )
     
     if not room:
@@ -199,58 +224,77 @@ async def get_room_details(room_id: str) -> Dict[str, Any]:
         "room": room
     }
 
+async def _has_active_season_pass(db, user_id: str) -> bool:
+    """Returns True if the user has a Season Pass that hasn't expired."""
+    now = datetime.now(timezone.utc).isoformat()
+    pass_doc = await db.jftn_season_passes.find_one(
+        {"user_id": user_id, "active": True, "expires_at_iso": {"$gte": now}},
+        {"_id": 0, "expires_at_iso": 1},
+    )
+    return pass_doc is not None
+
+
 @router.post("/rooms/join-transaction")
 async def process_room_entry(
     request: JoinRoomRequest,
     current_user: User = Depends(get_current_user)
 ):
     """
-    Process token payment and grant access to room.
-    
+    Process token payment + password gate + Season Pass check, then
+    grant access to room.
+
     Flow:
-    1. Deduct tokens from visitor
-    2. Calculate 70/30 split (Creator/Platform)
-    3. Distribute funds
-    4. Grant room access
-    5. Return challenge game configuration
+    1. Verify room password (if owner set one).
+    2. If user has active Season Pass → grant access, skip token deduction.
+    3. Otherwise: deduct tokens, 70/30 split, distribute, grant access.
     """
     db = get_database()
-    
+
     # Get room details
     room = await db.jftn_rooms.find_one({"room_id": request.room_id}, {"_id": 0})
     if not room:
         raise HTTPException(status_code=404, detail="Room not found")
-    
+
     if not room.get("is_active"):
         raise HTTPException(status_code=400, detail="Room is not active")
-    
+
+    # 1. Password gate (2026-05-12 founder ask) — verify BEFORE charging.
+    if room.get("requires_password"):
+        if not request.room_password:
+            raise HTTPException(status_code=403, detail="Room password required")
+        if not _pwd.verify(request.room_password, room.get("password_hash") or ""):
+            raise HTTPException(status_code=403, detail="Incorrect room password")
+
     token_amount = room["settings"]["entry_tokens"]
-    
-    # 1. Deduct tokens from visitor
-    success = await deduct_tokens(db, current_user.user_id, token_amount)
-    if not success:
-        visitor_balance = await get_user_balance(db, current_user.user_id)
-        raise HTTPException(
-            status_code=400,
-            detail=f"Insufficient balance. You have {visitor_balance} tokens, need {token_amount}"
-        )
-    
-    # 2. Calculate Revenue Split (70% to Creator, 30% to Global Vibez)
-    creator_payout = int(token_amount * 0.70)
-    platform_cut = token_amount - creator_payout
-    
-    # 3. Distribute funds
-    await add_tokens(db, room["owner_id"], creator_payout)
-    await add_to_treasury(db, platform_cut)
-    
+    used_season_pass = False
+
+    # 2. Season Pass — bypass per-room token deduction if active.
+    if await _has_active_season_pass(db, current_user.user_id):
+        used_season_pass = True
+        creator_payout = 0
+        platform_cut = 0
+    else:
+        # 3. Pay-per-room flow — deduct + 70/30 split.
+        success = await deduct_tokens(db, current_user.user_id, token_amount)
+        if not success:
+            visitor_balance = await get_user_balance(db, current_user.user_id)
+            raise HTTPException(
+                status_code=400,
+                detail=f"Insufficient balance. You have {visitor_balance} tokens, need {token_amount}"
+            )
+        creator_payout = int(token_amount * 0.70)
+        platform_cut = token_amount - creator_payout
+        await add_tokens(db, room["owner_id"], creator_payout)
+        await add_to_treasury(db, platform_cut)
+
     # Update room stats
     await db.jftn_rooms.update_one(
         {"room_id": request.room_id},
         {
-            "$inc": {"total_visits": 1, "total_revenue": token_amount}
+            "$inc": {"total_visits": 1, "total_revenue": (0 if used_season_pass else token_amount)}
         }
     )
-    
+
     # 4. Record transaction
     transaction_id = f"txn_{uuid.uuid4().hex[:12]}"
     transaction = {
@@ -258,9 +302,10 @@ async def process_room_entry(
         "room_id": request.room_id,
         "visitor_id": current_user.user_id,
         "owner_id": room["owner_id"],
-        "amount": token_amount,
+        "amount": (0 if used_season_pass else token_amount),
         "creator_payout": creator_payout,
         "platform_cut": platform_cut,
+        "used_season_pass": used_season_pass,
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "challenge_completed": False
     }
@@ -523,4 +568,218 @@ async def get_my_rooms(current_user: User = Depends(get_current_user)):
         "success": True,
         "rooms": rooms,
         "total": len(rooms)
+    }
+
+
+# ==================== SEASON PASS (2026-05-12) ====================
+#
+# $25/month unlimited JFTN unlocks. Stripe checkout session in
+# subscription mode → on verify success we set an
+# `expires_at_iso = now + 30 days` row in jftn_season_passes.
+
+class StartSeasonPassRequest(BaseModel):
+    origin_url: str = Field(min_length=8, max_length=256)
+
+
+@router.post("/season-pass/subscribe")
+async def start_season_pass_checkout(
+    request: StartSeasonPassRequest,
+    current_user: User = Depends(get_current_user),
+):
+    """Create a Stripe checkout session for the $25/mo JFTN Season Pass."""
+    try:
+        from emergentintegrations.payments.stripe.checkout import (  # noqa: PLC0415
+            StripeCheckout,
+            CheckoutSessionRequest,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Stripe integration unavailable: {exc}")
+
+    stripe_key = os.environ.get("STRIPE_API_KEY")
+    if not stripe_key:
+        raise HTTPException(status_code=503, detail="Stripe key not configured")
+
+    db = get_database()
+    sc = StripeCheckout(api_key=stripe_key)
+    origin = request.origin_url.rstrip("/")
+    session_req = CheckoutSessionRequest(
+        amount=float(SEASON_PASS_USD),
+        currency="usd",
+        success_url=f"{origin}/just-for-the-night?pass=success&session_id={{CHECKOUT_SESSION_ID}}",
+        cancel_url=f"{origin}/just-for-the-night?pass=cancelled",
+        metadata={
+            "feature": "jftn_season_pass",
+            "user_id": current_user.user_id,
+        },
+    )
+    session = await sc.create_checkout_session(session_req)
+    await db.jftn_season_pass_sessions.insert_one({
+        "session_id": session.session_id,
+        "user_id": current_user.user_id,
+        "status": "pending",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    })
+    return {
+        "checkout_url": session.url,
+        "session_id": session.session_id,
+        "price_usd": SEASON_PASS_USD,
+        "duration_days": SEASON_PASS_DAYS,
+    }
+
+
+@router.post("/season-pass/verify")
+async def verify_season_pass(
+    session_id: str,
+    current_user: User = Depends(get_current_user),
+):
+    """Verify a Stripe checkout session paid → activate the pass."""
+    try:
+        from emergentintegrations.payments.stripe.checkout import StripeCheckout  # noqa: PLC0415
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Stripe integration unavailable: {exc}")
+    stripe_key = os.environ.get("STRIPE_API_KEY")
+    if not stripe_key:
+        raise HTTPException(status_code=503, detail="Stripe key not configured")
+    db = get_database()
+    sc = StripeCheckout(api_key=stripe_key)
+    status = await sc.get_checkout_status(session_id)
+    if not status or status.payment_status != "paid":
+        raise HTTPException(status_code=402, detail="Payment not completed")
+    expires = (datetime.now(timezone.utc) + timedelta(days=SEASON_PASS_DAYS)).isoformat()
+    existing = await db.jftn_season_passes.find_one(
+        {"session_id": session_id}, {"_id": 0},
+    )
+    if not existing:
+        await db.jftn_season_passes.insert_one({
+            "session_id": session_id,
+            "user_id": current_user.user_id,
+            "active": True,
+            "issued_at_iso": datetime.now(timezone.utc).isoformat(),
+            "expires_at_iso": expires,
+            "price_usd": SEASON_PASS_USD,
+        })
+    await db.jftn_season_pass_sessions.update_one(
+        {"session_id": session_id}, {"$set": {"status": "paid"}},
+    )
+    return {"status": "active", "expires_at_iso": expires}
+
+
+@router.get("/season-pass/me")
+async def my_season_pass(current_user: User = Depends(get_current_user)):
+    """Return the caller's current Season Pass status."""
+    db = get_database()
+    now_iso = datetime.now(timezone.utc).isoformat()
+    pass_doc = await db.jftn_season_passes.find_one(
+        {"user_id": current_user.user_id, "active": True, "expires_at_iso": {"$gte": now_iso}},
+        {"_id": 0, "session_id": 0},
+    )
+    return {
+        "active": pass_doc is not None,
+        "pass": pass_doc,
+        "price_usd": SEASON_PASS_USD,
+        "duration_days": SEASON_PASS_DAYS,
+    }
+
+
+# ==================== GIFT UNLOCKS (2026-05-12) ====================
+
+@router.post("/rooms/gift")
+async def gift_room(
+    request: GiftRoomRequest,
+    current_user: User = Depends(get_current_user),
+):
+    """Buy a JFTN room unlock for another user."""
+    db = get_database()
+    if request.recipient_user_id == current_user.user_id:
+        raise HTTPException(status_code=400, detail="Cannot gift to yourself")
+
+    recipient = await db.users.find_one(
+        {"user_id": request.recipient_user_id},
+        {"_id": 0, "user_id": 1, "name": 1},
+    )
+    if not recipient:
+        raise HTTPException(status_code=404, detail="Recipient not found")
+
+    room = await db.jftn_rooms.find_one({"room_id": request.room_id}, {"_id": 0})
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+    if not room.get("is_active"):
+        raise HTTPException(status_code=400, detail="Room is not active")
+
+    if room.get("requires_password"):
+        if not request.room_password:
+            raise HTTPException(status_code=403, detail="Room password required")
+        if not _pwd.verify(request.room_password, room.get("password_hash") or ""):
+            raise HTTPException(status_code=403, detail="Incorrect room password")
+
+    token_amount = room["settings"]["entry_tokens"]
+    success = await deduct_tokens(db, current_user.user_id, token_amount)
+    if not success:
+        balance = await get_user_balance(db, current_user.user_id)
+        raise HTTPException(
+            status_code=400,
+            detail=f"Insufficient balance to gift. You have {balance} tokens, need {token_amount}",
+        )
+
+    creator_payout = int(token_amount * 0.70)
+    platform_cut = token_amount - creator_payout
+    await add_tokens(db, room["owner_id"], creator_payout)
+    await add_to_treasury(db, platform_cut)
+
+    gift_id = f"gift_{uuid.uuid4().hex[:12]}"
+    await db.jftn_gifts.insert_one({
+        "gift_id": gift_id,
+        "room_id": request.room_id,
+        "gifter_id": current_user.user_id,
+        "gifter_name": current_user.name,
+        "recipient_id": request.recipient_user_id,
+        "amount": token_amount,
+        "creator_payout": creator_payout,
+        "platform_cut": platform_cut,
+        "redeemed": False,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    })
+    return {
+        "success": True,
+        "gift_id": gift_id,
+        "recipient": recipient.get("name"),
+        "amount": token_amount,
+    }
+
+
+@router.get("/gifts/my-inbox")
+async def my_gift_inbox(current_user: User = Depends(get_current_user)):
+    """Return JFTN rooms gifted to me that I haven't redeemed yet."""
+    db = get_database()
+    rows = await db.jftn_gifts.find(
+        {"recipient_id": current_user.user_id, "redeemed": False},
+        {"_id": 0},
+    ).sort("created_at", -1).to_list(50)
+    return {"count": len(rows), "gifts": rows}
+
+
+@router.post("/gifts/{gift_id}/redeem")
+async def redeem_gift(gift_id: str, current_user: User = Depends(get_current_user)):
+    """Mark a gift redeemed and return the stream URL for the gifted room."""
+    db = get_database()
+    gift = await db.jftn_gifts.find_one(
+        {"gift_id": gift_id, "recipient_id": current_user.user_id},
+        {"_id": 0},
+    )
+    if not gift:
+        raise HTTPException(status_code=404, detail="Gift not found")
+    if gift.get("redeemed"):
+        raise HTTPException(status_code=400, detail="Gift already redeemed")
+    room = await db.jftn_rooms.find_one({"room_id": gift["room_id"]}, {"_id": 0})
+    if not room:
+        raise HTTPException(status_code=404, detail="Room no longer exists")
+    await db.jftn_gifts.update_one(
+        {"gift_id": gift_id},
+        {"$set": {"redeemed": True, "redeemed_at": datetime.now(timezone.utc).isoformat()}},
+    )
+    return {
+        "success": True,
+        "room_id": room["room_id"],
+        "title": room["title"],
+        "stream_url": room["stream_url"],
     }

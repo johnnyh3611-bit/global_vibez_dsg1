@@ -4740,3 +4740,40 @@ def test_wallet_login_removed_phantom_moved_to_wallet_page():
     wallet = open("/app/frontend/src/pages/Wallet.tsx").read()
     assert "PhantomConnectButton" in wallet
     assert "wallet-connect-phantom-row" in wallet
+
+
+def test_jftn_season_pass_password_gift_wired():
+    """2026-05-12 founder asks bundled into a single JFTN upgrade:
+    1. Season Pass — $25/mo Stripe subscription that unlocks all rooms.
+    2. Room password — owner-set per-room password creates a 'double
+       security' gate verified before any token deduction.
+    3. Gift unlocks — buy a JFTN room unlock for a friend (recipient
+       redeems from /gifts/my-inbox).
+    Constants locked: $25 price, 30-day duration."""
+    from server import app
+    from routes.just_for_the_night import (
+        SEASON_PASS_USD, SEASON_PASS_DAYS,
+    )
+
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    for ep in [
+        "/api/just-for-the-night/season-pass/subscribe",
+        "/api/just-for-the-night/season-pass/verify",
+        "/api/just-for-the-night/season-pass/me",
+        "/api/just-for-the-night/rooms/gift",
+        "/api/just-for-the-night/gifts/my-inbox",
+    ]:
+        assert ep in paths, f"JFTN endpoint missing: {ep}"
+    assert SEASON_PASS_USD == 25
+    assert SEASON_PASS_DAYS == 30
+
+    src = open("/app/backend/routes/just_for_the_night.py").read()
+    # Password gate uses bcrypt (passlib CryptContext) — same scheme as
+    # /api/auth so verify cost stays consistent.
+    assert "CryptContext" in src
+    assert "password_hash" in src
+    assert "requires_password" in src
+    # Season Pass is checked BEFORE any token deduction in join.
+    assert "_has_active_season_pass" in src
+    # Gift flow records a redeem-on-demand row in jftn_gifts.
+    assert "jftn_gifts" in src
