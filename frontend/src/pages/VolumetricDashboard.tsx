@@ -74,6 +74,7 @@ const CATEGORIES = [
     id: "streaming", label: "Streaming", color: "#a855f7", aura: "#c084fc",
     rooms: [
       { id: "live", label: "Live", emoji: "📡", path: "/live" },
+      { id: "go-live", label: "Go Live", emoji: "🎥", path: "/streamer/studio" },
       { id: "underground-live", label: "Underground Live", emoji: "🎤", path: "/underground-live" },
       { id: "sports", label: "Vibez Sports", emoji: "🏆", path: "/sports-lounge" },
       { id: "memory", label: "Memory Bank", emoji: "🎞️", path: "/dsg/memory-bank" },

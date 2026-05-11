@@ -1,6 +1,7 @@
 import { Route } from 'react-router-dom';
 import LiveStreamingPage from '@/pages/LiveStreamingPage';
 import StreamerDashboard from '@/pages/StreamerDashboard';
+import StreamerStudio from '@/pages/streaming/StreamerStudio';
 
 export const streamingRoutes = (ProtectedRoute) => (
   <>
@@ -19,6 +20,14 @@ export const streamingRoutes = (ProtectedRoute) => (
           <StreamerDashboard />
         </ProtectedRoute>
       } 
+    />
+    <Route
+      path="/streamer/studio"
+      element={
+        <ProtectedRoute>
+          <StreamerStudio />
+        </ProtectedRoute>
+      }
     />
   </>
 );

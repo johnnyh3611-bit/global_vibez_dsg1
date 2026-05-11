@@ -1,0 +1,337 @@
+"""
+Cloudflare Stream — RTMP/SRT ingest + HLS playback integration.
+
+Wires every streamer on the platform to a Cloudflare-hosted live input,
+which gives us:
+  • RTMP + SRT ingest URLs (works with OBS, Streamlabs, vMix, XSplit,
+    GoXLR, Elgato Stream Deck, Cam Link, PS5/Xbox via Elgato, iOS Larix
+    Broadcaster, Android RTMP apps, DSLR via NDI)
+  • Auto-transcoded HLS + DASH playback URLs (universal device support)
+  • Webhook events on stream.live + stream.disconnected
+
+Activation:
+  Drop these into /app/backend/.env (without commits) — once present,
+  endpoints flip from STUB to LIVE automatically:
+    CLOUDFLARE_ACCOUNT_ID=...
+    CLOUDFLARE_API_TOKEN=...
+    CLOUDFLARE_STREAM_SUBDOMAIN=customer-xxxxx.cloudflarestream.com
+    CLOUDFLARE_STREAM_WEBHOOK_SECRET=...   (optional — webhook-only)
+"""
+from __future__ import annotations
+
+import hashlib
+import hmac
+import logging
+import os
+import time
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
+
+import httpx
+from fastapi import APIRouter, Header, HTTPException, Request
+from motor.motor_asyncio import AsyncIOMotorClient
+from pydantic import BaseModel
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/streaming/cloudflare", tags=["cloudflare-stream"])
+
+# ────────────────────────────────────────────── Config (lazy) ──
+# We read env at request time so a `.env` change auto-flips STUB→LIVE
+# without a backend restart. Cheap dict lookup; negligible overhead.
+CF_API_BASE = "https://api.cloudflare.com/client/v4"
+
+
+def _cf_config() -> Dict[str, Optional[str]]:
+    return {
+        "account_id": os.environ.get("CLOUDFLARE_ACCOUNT_ID"),
+        "api_token": os.environ.get("CLOUDFLARE_API_TOKEN"),
+        "subdomain": os.environ.get("CLOUDFLARE_STREAM_SUBDOMAIN"),
+        "webhook_secret": os.environ.get("CLOUDFLARE_STREAM_WEBHOOK_SECRET"),
+    }
+
+
+def _is_live() -> bool:
+    """True when both account_id and api_token are configured. We still
+    serve the API in STUB mode without these so the frontend can be
+    exercised end-to-end pre-credential."""
+    c = _cf_config()
+    return bool(c["account_id"] and c["api_token"])
+
+
+# ────────────────────────────────────────────── Mongo ──
+MONGO_URL = os.environ.get("MONGO_URL")
+_client = AsyncIOMotorClient(MONGO_URL)
+db = _client[os.environ.get("DB_NAME", "global_vibez_dsg")]
+
+
+# ────────────────────────────────────────────── Pydantic ──
+class CreateLiveInputRequest(BaseModel):
+    streamer_id: str
+    name: str = "Vibez Live"
+
+
+class LiveInputPublic(BaseModel):
+    input_id: str
+    streamer_id: str
+    name: str
+    rtmps_url: Optional[str]
+    rtmps_key: Optional[str]
+    srt_url: Optional[str]
+    srt_stream_id: Optional[str]
+    srt_passphrase: Optional[str]
+    hls_playback_url: Optional[str]
+    dash_playback_url: Optional[str]
+    is_live: bool
+    mode: str  # "live" | "stub"
+    created_at: str
+
+
+def _public_input(doc: Dict[str, Any]) -> Dict[str, Any]:
+    """Mongo-safe, key-stripped public shape. Does NOT echo the API
+    token or webhook secret — only the streamer's RTMP key (which is
+    safe; it's how OBS authenticates the ingest)."""
+    return {k: v for k, v in doc.items() if k != "_id"}
+
+
+# ────────────────────────────────────────────── Cloudflare client ──
+async def _cf_request(method: str, path: str, json_body: Optional[Dict] = None) -> Dict[str, Any]:
+    """Thin wrapper around Cloudflare's REST API. Raises HTTPException
+    with the CF error text on non-200 so the caller surfaces something
+    useful to the founder during setup."""
+    cfg = _cf_config()
+    if not cfg["api_token"]:
+        raise HTTPException(503, detail="CLOUDFLARE_API_TOKEN missing in environment")
+    url = f"{CF_API_BASE}{path}"
+    headers = {
+        "Authorization": f"Bearer {cfg['api_token']}",
+        "Content-Type": "application/json",
+    }
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        resp = await client.request(method, url, headers=headers, json=json_body)
+    try:
+        data = resp.json()
+    except Exception:
+        raise HTTPException(resp.status_code, detail=resp.text[:200])
+    if not data.get("success", False):
+        errs = data.get("errors") or [{"message": "unknown CF error"}]
+        raise HTTPException(resp.status_code or 502, detail=f"Cloudflare: {errs[0].get('message')}")
+    return data.get("result") or {}
+
+
+def _playback_urls(uid: str) -> Dict[str, Optional[str]]:
+    sub = _cf_config()["subdomain"]
+    if not sub:
+        return {"hls": None, "dash": None}
+    return {
+        "hls": f"https://{sub}/{uid}/manifest/video.m3u8",
+        "dash": f"https://{sub}/{uid}/manifest/video.mpd",
+    }
+
+
+# ────────────────────────────────────────────── Endpoints ──
+@router.get("/status")
+async def status() -> Dict[str, Any]:
+    cfg = _cf_config()
+    return {
+        "mode": "live" if _is_live() else "stub",
+        "account_id_present": bool(cfg["account_id"]),
+        "api_token_present": bool(cfg["api_token"]),
+        "subdomain_present": bool(cfg["subdomain"]),
+        "webhook_secret_present": bool(cfg["webhook_secret"]),
+    }
+
+
+@router.post("/live-inputs")
+async def create_live_input(req: CreateLiveInputRequest) -> Dict[str, Any]:
+    """Provision a Cloudflare live input for a streamer. Idempotent on
+    `streamer_id` — if one already exists we return it untouched so the
+    OBS Browser Source URL never rotates and overlays never break."""
+    existing = await db.cf_live_inputs.find_one(
+        {"streamer_id": req.streamer_id, "is_deleted": {"$ne": True}}, {"_id": 0}
+    )
+    if existing:
+        return _public_input(existing)
+
+    now = datetime.now(timezone.utc).isoformat()
+
+    if not _is_live():
+        # STUB mode — generate deterministic placeholder so the frontend
+        # can render the full flow before the founder pastes keys.
+        fake_uid = f"stub_{req.streamer_id[:16]}"
+        doc = {
+            "input_id": fake_uid,
+            "streamer_id": req.streamer_id,
+            "name": req.name,
+            "rtmps_url": "rtmps://stub.cloudflarestream.com:443/live/",
+            "rtmps_key": f"STUB-KEY-{fake_uid}",
+            "srt_url": "srt://stub.cloudflarestream.com:778",
+            "srt_stream_id": f"publish:{fake_uid}",
+            "srt_passphrase": "stub-passphrase",
+            "hls_playback_url": None,
+            "dash_playback_url": None,
+            "is_live": False,
+            "mode": "stub",
+            "created_at": now,
+        }
+        await db.cf_live_inputs.insert_one(dict(doc))
+        return _public_input(doc)
+
+    # LIVE — provision via Cloudflare API
+    cfg = _cf_config()
+    result = await _cf_request(
+        "POST",
+        f"/accounts/{cfg['account_id']}/stream/live_inputs",
+        {
+            "meta": {"name": req.name, "streamer_id": req.streamer_id},
+            "recording": {"mode": "automatic"},
+            "defaultCreator": req.streamer_id,
+        },
+    )
+    uid = result.get("uid")
+    rtmps = result.get("rtmps") or {}
+    srt = result.get("srt") or {}
+    playback = _playback_urls(uid)
+
+    doc = {
+        "input_id": uid,
+        "streamer_id": req.streamer_id,
+        "name": req.name,
+        "rtmps_url": rtmps.get("url"),
+        "rtmps_key": rtmps.get("streamKey"),
+        "srt_url": srt.get("url"),
+        "srt_stream_id": srt.get("streamId"),
+        "srt_passphrase": srt.get("passphrase"),
+        "hls_playback_url": playback["hls"],
+        "dash_playback_url": playback["dash"],
+        "is_live": False,
+        "mode": "live",
+        "created_at": now,
+    }
+    await db.cf_live_inputs.insert_one(dict(doc))
+    return _public_input(doc)
+
+
+@router.get("/live-inputs/by-streamer/{streamer_id}")
+async def get_my_live_input(streamer_id: str) -> Dict[str, Any]:
+    doc = await db.cf_live_inputs.find_one(
+        {"streamer_id": streamer_id, "is_deleted": {"$ne": True}}, {"_id": 0}
+    )
+    if not doc:
+        raise HTTPException(404, detail="No live input provisioned for this streamer")
+    return _public_input(doc)
+
+
+@router.get("/live-inputs")
+async def list_live_inputs(only_live: bool = False, limit: int = 60) -> Dict[str, Any]:
+    """Public catalog of streamers who currently have a live input
+    provisioned. When `only_live=true`, restrict to streams Cloudflare
+    has confirmed are actively broadcasting via webhook events."""
+    q: Dict[str, Any] = {"is_deleted": {"$ne": True}}
+    if only_live:
+        q["is_live"] = True
+    cursor = db.cf_live_inputs.find(q, {"_id": 0}).sort("created_at", -1)
+    items = await cursor.to_list(limit)
+    # Strip the RTMP key from the public list — that's a write-credential
+    # and only the owning streamer should ever see it.
+    safe = [
+        {k: v for k, v in d.items() if k not in ("rtmps_key", "srt_passphrase")}
+        for d in items
+    ]
+    return {"streams": safe, "count": len(safe)}
+
+
+@router.delete("/live-inputs/{input_id}")
+async def delete_live_input(input_id: str) -> Dict[str, Any]:
+    """Soft-delete locally + hard-delete on Cloudflare. We keep the Mongo
+    row with `is_deleted=True` so historical analytics keep working."""
+    doc = await db.cf_live_inputs.find_one({"input_id": input_id})
+    if not doc:
+        raise HTTPException(404, detail="Live input not found")
+
+    if doc.get("mode") == "live" and _is_live():
+        cfg = _cf_config()
+        try:
+            await _cf_request(
+                "DELETE",
+                f"/accounts/{cfg['account_id']}/stream/live_inputs/{input_id}",
+            )
+        except HTTPException as e:
+            # If CF already deleted it, that's fine — proceed with local cleanup.
+            logger.warning("Cloudflare delete returned %s — continuing", e.detail)
+
+    await db.cf_live_inputs.update_one(
+        {"input_id": input_id},
+        {"$set": {"is_deleted": True, "deleted_at": datetime.now(timezone.utc).isoformat()}},
+    )
+    return {"ok": True, "input_id": input_id}
+
+
+# ────────────────────────────────────────────── Webhook ──
+def _verify_cf_signature(raw_body: bytes, header: Optional[str], secret: str) -> bool:
+    """Cloudflare Stream signs webhooks with header
+    `Webhook-Signature: time=<unix>,sig1=<hex_hmac_sha256(time + . + body)>`.
+    """
+    if not header:
+        return False
+    try:
+        parts = {p.split("=", 1)[0]: p.split("=", 1)[1] for p in header.split(",")}
+    except Exception:
+        return False
+    ts = parts.get("time")
+    sig = parts.get("sig1")
+    if not ts or not sig:
+        return False
+    # Reject anything older than 10 minutes — narrows the replay window.
+    try:
+        if abs(int(time.time()) - int(ts)) > 600:
+            return False
+    except ValueError:
+        return False
+    signed = f"{ts}.".encode() + raw_body
+    expected = hmac.new(secret.encode(), signed, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(expected, sig)
+
+
+@router.post("/webhook")
+async def cloudflare_webhook(
+    request: Request,
+    webhook_signature: Optional[str] = Header(None, alias="Webhook-Signature"),
+) -> Dict[str, Any]:
+    """Cloudflare Stream pings us when a stream connects/disconnects.
+    We flip `is_live` so the public catalog and Volumetric "Streaming"
+    tile reflect reality without polling."""
+    raw = await request.body()
+    secret = _cf_config()["webhook_secret"]
+    if secret:
+        if not _verify_cf_signature(raw, webhook_signature, secret):
+            raise HTTPException(401, detail="Invalid webhook signature")
+    else:
+        # No secret configured yet — accept but log loudly so the founder
+        # sees this is a security gap in the deploy logs.
+        logger.warning(
+            "CLOUDFLARE_STREAM_WEBHOOK_SECRET not set — webhook accepted without verification."
+        )
+
+    try:
+        payload = await request.json()
+    except Exception:
+        raise HTTPException(400, detail="Invalid JSON")
+
+    # Cloudflare webhook payload shape (per docs):
+    #   { "uid": "<live_input_uid>", "status": { "state": "connected"|"disconnected", ... }, ... }
+    uid = payload.get("uid")
+    status_state = (payload.get("status") or {}).get("state")
+    if not uid:
+        return {"ok": True, "ignored": True}
+
+    is_live = status_state == "connected"
+    await db.cf_live_inputs.update_one(
+        {"input_id": uid},
+        {"$set": {
+            "is_live": is_live,
+            "last_status": status_state,
+            "last_status_at": datetime.now(timezone.utc).isoformat(),
+        }},
+    )
+    return {"ok": True, "input_id": uid, "is_live": is_live}

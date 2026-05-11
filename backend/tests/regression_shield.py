@@ -6455,3 +6455,78 @@ def test_beat_vault_content_rights_wiring():
     assert '"drm_protected": bool(b.asset_id)' in routes_src
 
 
+
+
+def test_cloudflare_stream_ingest_wired():
+    """2026-02 sprint: Cloudflare Stream RTMP/SRT ingest + HLS playback.
+    Closes the "every-device → every-audience" gap so streamers can
+    broadcast from OBS/Streamlabs/Larix/vMix/console capture cards and
+    viewers watch via auto-transcoded HLS in our React app.
+
+    Locks:
+      - Backend route file present + registered + correct prefix.
+      - Endpoints support both STUB (no creds) and LIVE (creds set) modes.
+      - Idempotent live-input provisioning per streamer.
+      - HLS player component + Streamer Studio page wired.
+      - React route + Volumetric Dashboard tile present.
+      - hls.js dependency installed (required for cross-browser HLS).
+    """
+    # ── Backend ─────────────────────────────────────────────────────────
+    src = open("/app/backend/routes/cloudflare_stream.py").read()
+    assert 'prefix="/streaming/cloudflare"' in src, "CF Stream prefix should be /streaming/cloudflare (api_router adds /api)"
+    # Three credentials read from env (the four-key contract).
+    for env_key in (
+        "CLOUDFLARE_ACCOUNT_ID",
+        "CLOUDFLARE_API_TOKEN",
+        "CLOUDFLARE_STREAM_SUBDOMAIN",
+        "CLOUDFLARE_STREAM_WEBHOOK_SECRET",
+    ):
+        assert env_key in src, f"CF Stream missing env var: {env_key}"
+    # STUB/LIVE branching + idempotency.
+    assert "_is_live()" in src
+    assert 'mode": "stub"' in src or '"mode": "stub"' in src
+    assert "existing = await db.cf_live_inputs.find_one" in src, "Provisioning must be idempotent per streamer"
+    # Webhook signature verification helper.
+    assert "_verify_cf_signature" in src
+    assert "hmac.compare_digest" in src
+
+    # Registry mounts it.
+    registry = open("/app/backend/routes/registry.py").read()
+    assert "from routes.cloudflare_stream import router as cf_stream_router" in registry
+
+    # ── Frontend ────────────────────────────────────────────────────────
+    player = open("/app/frontend/src/components/streaming/HLSPlayer.tsx").read()
+    assert 'import Hls from "hls.js"' in player or "import Hls from 'hls.js'" in player
+    assert 'data-testid="hls-player"' in player
+    assert "lowLatencyMode" in player
+    # Safari/iOS native HLS fallback present.
+    assert 'application/vnd.apple.mpegurl' in player
+
+    studio = open("/app/frontend/src/pages/streaming/StreamerStudio.tsx").read()
+    for tid in (
+        "streamer-studio-root",
+        "streamer-studio-provision",
+        "streamer-studio-rtmp-url",
+        "streamer-studio-rtmp-key",
+        "streamer-studio-srt-url",
+        "streamer-studio-cheatsheet",
+    ):
+        assert tid in studio, f"StreamerStudio missing testid: {tid}"
+    # Calls our new backend endpoints, not localhost.
+    assert "process.env.REACT_APP_BACKEND_URL" in studio
+    assert "/api/streaming/cloudflare/live-inputs" in studio
+
+    # Router + Dashboard tile.
+    routes = open("/app/frontend/src/routes/streamingRoutes.tsx").read()
+    assert "/streamer/studio" in routes
+    assert "StreamerStudio" in routes
+
+    vol = open("/app/frontend/src/pages/VolumetricDashboard.tsx").read()
+    assert "/streamer/studio" in vol, "Streamer Studio tile missing from Volumetric Dashboard"
+
+    # hls.js installed in package.json (required for cross-browser HLS).
+    import json
+    pkg = json.load(open("/app/frontend/package.json"))
+    deps = {**pkg.get("dependencies", {}), **pkg.get("devDependencies", {})}
+    assert "hls.js" in deps, "hls.js must be installed for HLS playback"
+

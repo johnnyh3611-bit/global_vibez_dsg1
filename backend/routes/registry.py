@@ -766,6 +766,15 @@ def register_all_routes(
     except Exception as _e:
         log.warning(f"Video Vault routes not mounted: {_e}")
 
+    # Cloudflare Stream — RTMP/SRT ingest for every-device → every-audience
+    # broadcast. STUB mode when CF env vars are absent (frontend exercises
+    # the full flow); LIVE the moment the founder pastes account+token+subdomain.
+    try:
+        from routes.cloudflare_stream import router as cf_stream_router
+        api_router.include_router(cf_stream_router)
+    except Exception as _e:
+        log.warning(f"Cloudflare Stream routes not mounted: {_e}")
+
     # $VIBEZ Activity Multiplier reward formula (Roadmap PDF §1).
     # SIMULATED mints until the founder confirms project_complete.
     try:
