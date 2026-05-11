@@ -495,6 +495,25 @@ def register_all_routes(
     except Exception as _e:
         log.warning(f"Profit-share routes not mounted: {_e}")
 
+    # ── Master Blueprint + Genius Phase (PDFs · 2026-05-09) ──────────
+    # DSG 6 Lottery · Vibe Spots cancellation · Vibe Core orchestrator.
+    # All three are self-contained; failure of one doesn't impact others.
+    try:
+        from routes.dsg6_lottery import router as dsg6_router
+        api_router.include_router(dsg6_router, tags=["dsg6-lottery"])
+    except Exception as _e:
+        log.warning(f"DSG 6 Lottery routes not mounted: {_e}")
+    try:
+        from routes.vibe_spots import router as vibe_spots_router
+        api_router.include_router(vibe_spots_router, tags=["vibe-spots"])
+    except Exception as _e:
+        log.warning(f"Vibe Spots routes not mounted: {_e}")
+    try:
+        from routes.vibe_core_orchestrator import router as vibe_core_router
+        api_router.include_router(vibe_core_router, tags=["vibe-core"])
+    except Exception as _e:
+        log.warning(f"Vibe Core orchestrator not mounted: {_e}")
+
     try:
         from routes.cinema_room import router as cinema_room_router
         api_router.include_router(cinema_room_router, tags=["cinema-room"])

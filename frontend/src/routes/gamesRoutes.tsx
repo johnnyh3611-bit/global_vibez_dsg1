@@ -135,6 +135,7 @@ import Vibe654TournamentLobby from "@/pages/games/Vibe654TournamentLobby";
 import Vibe654TournamentTable from "@/pages/games/Vibe654TournamentTable";
 import VibeColiseum from "@/pages/games/VibeColiseum";
 import VibeSoloHighRoller from "@/pages/games/VibeSoloHighRoller";
+import DSG6Lottery from "@/pages/games/DSG6Lottery";
 import VibeWallet from "@/pages/VibeWallet";
 import CommunitySlots from "@/pages/CommunitySlots";
 import SmartTables from "@/pages/SmartTables";
@@ -363,6 +364,10 @@ export const gamesRoutes = (ProtectedRoute) => (
         2026-05-09 visual sweep — bookmark / direct-link to /chess
         was returning NotFound before this redirect). */}
     <Route path="/chess" element={<Navigate to="/practice/play/chess" replace />} />
+
+    {/* DSG 6 Quantum Vault Lottery — Genius Phase PDF (May 2026) */}
+    <Route path="/lottery" element={<ProtectedRoute><DSG6Lottery /></ProtectedRoute>} />
+    <Route path="/dsg6" element={<Navigate to="/lottery" replace />} />
     
     {/* AAA Casino Games - Updated to use WebSocket-enabled components */}
     <Route path="/practice/play/blackjack-aaa" element={<ProtectedRoute><BlackjackGameAAA /></ProtectedRoute>} />

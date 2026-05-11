@@ -77,6 +77,7 @@ const FULLSCREEN_GAME_ROUTES = [
   "/card-mp",  // multiplayer card rooms
   "/cinema-room",  // The Cinema Room — sync-watch viewer
   "/cyber-casino", "/games/cyber-casino", "/casino-war",
+  "/lottery", "/dsg6",  // DSG 6 Quantum Vault (May 2026)
 ];
 
 function useIsFullscreenGameRoute() {

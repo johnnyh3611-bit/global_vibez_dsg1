@@ -134,6 +134,7 @@ const FULLSCREEN_PREFIXES = [
   '/chess', '/checkers', '/connect4', '/practice/play',
   '/card-mp', '/cinema-room',
   '/cyber-casino', '/games/cyber-casino', '/casino-war',
+  '/lottery', '/dsg6',  // DSG 6 Quantum Vault Lottery (May 2026)
 ];
 
 function isFullscreenGameRoute(pathname: string): boolean {
