@@ -19,6 +19,14 @@ const PendingPayouts = ({ userId, onCancel }) => {
   const fetchPayouts = async () => {
     try {
       const response = await fetch(`${API_URL}/api/v1/payout/my-payouts/${userId}`);
+      // 2026-05-12 fix: guard against non-OK responses. Without this guard
+      // a 404/500 would still hit response.json() (which throws "body stream
+      // already read" when the response was wrapped/cached upstream),
+      // polluting the console on every dashboard mount.
+      if (!response.ok) {
+        setPayouts([]);
+        return;
+      }
       const data = await response.json();
       setPayouts(data.payouts || []);
     } catch (error) {

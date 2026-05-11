@@ -667,6 +667,11 @@ async def verify_season_pass(
 @router.get("/season-pass/me")
 async def my_season_pass(current_user: User = Depends(get_current_user)):
     """Return the caller's current Season Pass status."""
+    # 2026-05-12 fix: get_current_user returns None on missing auth; we
+    # must raise 401 explicitly or the AttributeError below would return
+    # a 500 to anonymous callers (testing agent flagged it).
+    if current_user is None:
+        raise HTTPException(status_code=401, detail="Authentication required")
     db = get_database()
     now_iso = datetime.now(timezone.utc).isoformat()
     pass_doc = await db.jftn_season_passes.find_one(

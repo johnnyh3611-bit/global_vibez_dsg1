@@ -1,5 +1,23 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-05-12 (late) — Pre-redeploy POLISH PASS · ProfileSetup invisible-text BUG FIXED 🐛✅.** Founder reported "I went inside the preview to log in and it took me to the page where I had to put my profile information, and that still don't type over in that section yet either." RCA: shadcn `<Input>/<Textarea>/<Label>` primitives inherit `text-foreground` which the global dark theme defines as near-white. ProfileSetup.tsx renders those on a WHITE card → white-on-white = users could type but the text was invisible. Three-layer fix shipped:
+> 1. **ProfileSetup.tsx** — explicit `text-slate-900` + `placeholder:text-slate-400` on every Input/Textarea, `text-slate-800 font-semibold` on every Label, error banner for failed submits, proper bearer-token auth header.
+> 2. **index.css (global hardening)** — scoped rules: any `input/textarea/label` inside a `.bg-white` ancestor is forced to slate-900 text + slate-400 placeholders + slate-800 labels. Prevents this exact bug from ever surfacing on a future white-card form.
+> 3. **Regression Shield lock** — `test_profile_setup_white_card_text_visible` asserts both the CSS rules AND the ProfileSetup explicit overrides survive future refactors. **247/247 GREEN.**
+>
+> **Polish items resolved in same pass (from comprehensive pre-redeploy sweep):**
+> - **`/api/just-for-the-night/season-pass/me`** — was 500 on missing auth, now correctly raises 401 (`get_current_user` returns `Optional[User]`, needed explicit None check).
+> - **`PendingPayouts.fetchPayouts()`** — was silently calling `.json()` on non-OK responses → "body stream already read" console noise on every dashboard mount. Now guards with `if (!response.ok) return`.
+> - **`<OrientationToggle />` FAB** — moved from `bottom-4 left-4 z-[9998]` (occluded `voice-mirror-dock-enable` + `log-design-lesson-toggle`; VigilantAgent flagged 8+ click-block warnings per mount) to `bottom-20 left-4 z-40`. Bottom-left dock buttons now register taps cleanly.
+>
+> **COMPREHENSIVE PRE-REDEPLOY SWEEP (testing_agent_v3_fork):**
+> Backend ✅: /api/health · /api/live-activity/recent · /api/live-activity/admin-pulse (admin-gated) · JFTN flow · Sovereign Tiers (5 tiers + Genius Chair) · Underground Live · Sports Lounge (Bet of the Day pinned) · Vibez 654 · Chess Hall (5 modes) · Cinema Room · Integrity Protocol · Spectator Bet · Receipt OCR · DSG 6 Lottery — all respond correctly.
+> Frontend ✅: Volumetric Galaxy default · 6 planets render with rings/moons/thumbnails · CLASSIC VIEW toggle works · Live Activity Ticker scrolls at bottom · Classic dashboard healthy · /wallet renders Phantom row · /tiers renders all tiers · /profile/setup text now visible (computed color rgb(15,23,42)) · 404 branded NotFound renders · login flows (demo + beta tester) work.
+> Known accepted non-blockers (DEPLOY-OK): STRIPE_WEBHOOK_SECRET missing · Resend DNS pending · Universal LLM Key budget capped (Receipt OCR + i18n gracefully degrade) · Solana mainnet stubbed behind TGE lock.
+> **VERDICT: 🟢 BETA-REDEPLOY READY.**
+>
+> Deployment Agent verdict (run minutes earlier): PASS · zero critical blockers · 2 informational warnings (Web3 deps + explicit CORS allowlist) both already mitigated.
+
 > **2026-05-12 — Activity Pulse for /vibe-vault-admin 📊.** Founder-only un-anonymized live business pulse: 4 summary tiles (72h events, gross ₵, gross $, top-ups) + scrollable feed of every payment/gift/season-pass/lottery-ticket/Underground-Live event of the last 72 hours with full usernames and timestamps. Admin-gated via `is_admin`/`role=="admin"`; unauth returns 403 (verified). Same 7 collections feed both the public ticker (anonymized) and the admin pulse (full handles + dollar amounts). Mounted just below `<SystemStressMeter />` in GodModeDashboard. Polls every 15s. 253/253 regression-shield GREEN.
 
 
