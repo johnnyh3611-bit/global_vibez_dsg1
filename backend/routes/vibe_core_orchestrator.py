@@ -123,10 +123,14 @@ async def _broadcast_vibe_court(db, event_id: str, decision: Dict[str, Any]) -> 
 
 
 async def _email_founder(event_id: str, event_type: str, decision: Dict[str, Any]) -> bool:
-    """Best-effort founder email via the existing Resend integration."""
+    """Best-effort founder email via the existing Resend integration.
+    Recipient comes from FOUNDER_EMAIL env so it can be any address the
+    founder controls (the hardcoded globalvibez.dsg mailbox didn't yet
+    exist as of May 2026 — flagged by the founder)."""
     sender = os.environ.get("RESEND_SENDER_EMAIL")
     api_key = os.environ.get("RESEND_API_KEY")
-    if not (sender and api_key):
+    recipient = os.environ.get("FOUNDER_EMAIL")
+    if not (sender and api_key and recipient):
         return False
     try:
         import httpx  # noqa: PLC0415
@@ -136,7 +140,7 @@ async def _email_founder(event_id: str, event_type: str, decision: Dict[str, Any
                 headers={"Authorization": f"Bearer {api_key}"},
                 json={
                     "from": sender,
-                    "to": ["founder@globalvibez.dsg"],
+                    "to": [recipient],
                     "subject": f"System Alert: {event_type} Resolved",
                     "html": (
                         f"<p><b>Event:</b> {event_id}</p>"

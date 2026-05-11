@@ -36,6 +36,24 @@ from utils.database import get_database, get_current_user
 
 router = APIRouter()
 
+# ── Vibe Vault config (Master Blueprint Final, May 10 2026) ────────
+# Chair holders ("Geniuses") get an Owner_Fee_Reduction on every bet
+# and uncapped high-limit on the Sports Lounge stake input.
+VIBE_VAULT_CONFIG: Dict[str, Any] = {
+    "Vault_Type": "Escrow_Escalation",
+    "Genius_Perk": "High_Limit_Uncapped",
+    "Owner_Fee_Reduction": 0.15,
+    "Betting_Oracle": "SportsData_V3_Bridge",
+}
+
+
+async def _is_chair_holder(db, user_id: str) -> bool:
+    """True if user owns at least one chair. Single-query check used by
+    the place-bet flow to apply the 15% owner-fee reduction."""
+    doc = await db.chairs.find_one({"user_id": user_id}, {"_id": 0, "chair_id": 1})
+    return doc is not None
+
+
 # ── Seed catalog (works without external API key) ───────────────────
 # Refreshed weekly via cron / admin tool. Bare minimum to keep the
 # lounge functional pre-RapidAPI provisioning.
@@ -182,6 +200,7 @@ async def place_bet(payload: PlaceBetPayload, http_request: Request):
         "choice": payload.choice,
         "amount": payload.amount,
         "locked_odds": odds,
+        "chair_holder": await _is_chair_holder(db, user.user_id),
         "status": "vaulted",
         "placed_at": datetime.now(timezone.utc).isoformat(),
         "settled_at": None,
@@ -233,8 +252,19 @@ async def settle_game(payload: SettlePayload, http_request: Request):
             gross = int(bet["amount"] * (bet.get("locked_odds") or 2.0))
             net_winnings = max(0, gross - bet["amount"])
             tax_split = apply_sovereign_tax(net_winnings)
-            credit = bet["amount"] + tax_split["net"]  # stake-back + net winnings
-            tax_total += tax_split["tax"]
+            # Master Blueprint Final §4: chair holders get a 15% reduction
+            # on the Sovereign Tax (the "Owner_Fee_Reduction" perk).
+            tax_due = tax_split["tax"]
+            if bet.get("chair_holder"):
+                rebate = int(tax_due * VIBE_VAULT_CONFIG["Owner_Fee_Reduction"])
+                tax_due = max(0, tax_due - rebate)
+                # Net to player = (gross - tax_due) so we recompute net here
+                # rather than trusting tax_split["net"].
+                net_to_player = net_winnings - tax_due
+            else:
+                net_to_player = tax_split["net"]
+            credit = bet["amount"] + net_to_player  # stake-back + net winnings
+            tax_total += tax_due
 
             uw = await db.users.find_one(
                 {"user_id": bet["user_id"]},
@@ -251,10 +281,11 @@ async def settle_game(payload: SettlePayload, http_request: Request):
                     "status": "won",
                     "settled_at": datetime.now(timezone.utc).isoformat(),
                     "payout_vibe": credit,
-                    "tax_vibe": tax_split["tax"],
+                    "tax_vibe": tax_due,
+                    "chair_holder_perk_applied": bool(bet.get("chair_holder")),
                 }},
             )
-            payouts.append({"bet_id": bet["bet_id"], "user_id": bet["user_id"], "payout": credit})
+            payouts.append({"bet_id": bet["bet_id"], "user_id": bet["user_id"], "payout": credit, "chair_holder": bool(bet.get("chair_holder"))})
         else:
             await db.sports_bets.update_one(
                 {"bet_id": bet["bet_id"]},
@@ -268,6 +299,41 @@ async def settle_game(payload: SettlePayload, http_request: Request):
         "winners": len(payouts),
         "tax_collected_vibe": tax_total,
         "payouts": payouts,
+    }
+
+
+@router.get("/sports/vault-config")
+async def vault_config():
+    """Public read of the Vibe Vault parameters (per Master Blueprint
+    Final §4). Powers the in-room "How the vault works" tooltip."""
+    return VIBE_VAULT_CONFIG
+
+
+@router.get("/sports/bet-of-the-day")
+async def bet_of_the_day():
+    """The single highest-vaulted bet in the past 24h. Pinned to the
+    top of the jumbotron ticker. Seeds social-proof for first-time
+    sports bettors who haven't placed a stake yet."""
+    db = get_database()
+    cutoff = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+    cursor = db.sports_bets.find(
+        {"placed_at": {"$gte": cutoff}},
+        {"_id": 0, "user_id": 1, "game_id": 1, "choice": 1, "amount": 1, "sport": 1, "league": 1, "locked_odds": 1},
+    ).sort("amount", -1).limit(1)
+    rows = await cursor.to_list(length=1)
+    if not rows:
+        return {"hit": None}
+    r = rows[0]
+    return {
+        "hit": {
+            "user_id": (r.get("user_id") or "")[:8] + "…",
+            "game_id": r.get("game_id"),
+            "choice": r.get("choice"),
+            "amount": r.get("amount"),
+            "sport": r.get("sport"),
+            "league": r.get("league"),
+            "locked_odds": r.get("locked_odds"),
+        }
     }
 
 

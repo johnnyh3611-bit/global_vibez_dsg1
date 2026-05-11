@@ -143,6 +143,7 @@ import ChessPuzzle from "@/pages/games/ChessPuzzle";
 import ChessTournament from "@/pages/games/ChessTournament";
 import HttpMultiplayerChess from "@/pages/games/HttpMultiplayerChess";
 import SportsLounge from "@/pages/SportsLounge";
+import AdminCinemaCatalog from "@/pages/AdminCinemaCatalog";
 import VibeWallet from "@/pages/VibeWallet";
 import CommunitySlots from "@/pages/CommunitySlots";
 import SmartTables from "@/pages/SmartTables";
@@ -390,6 +391,9 @@ export const gamesRoutes = (ProtectedRoute) => (
     {/* Sports Lounge — Vibe Sports Book (May 2026) */}
     <Route path="/sports-lounge" element={<ProtectedRoute><SportsLounge /></ProtectedRoute>} />
     <Route path="/sportsbook" element={<Navigate to="/sports-lounge" replace />} />
+
+    {/* Admin Cinema Catalog CRUD (May 2026) */}
+    <Route path="/admin/cinema-catalog" element={<ProtectedRoute><AdminCinemaCatalog /></ProtectedRoute>} />
     
     {/* AAA Casino Games - Updated to use WebSocket-enabled components */}
     <Route path="/practice/play/blackjack-aaa" element={<ProtectedRoute><BlackjackGameAAA /></ProtectedRoute>} />

@@ -1,7 +1,17 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
 
-> **2026-05-10 (Latest) — Vibe Sports Book Social Stakes Lounge 🏈🏀⚽.** Founder dropped 2 new PDFs; I picked the highest-impact one (Sports Lounge Blueprint) over the polish P1s.
+> **2026-05-10 (Latest) — Bet of the Day · Vibe Vault Config · Admin Cinema UI · Founder Email Env-Driven 🔥🎬📧.** Founder A+B+C combo + email fix.
+>
+> **A) Bet of the Day ticker pin** — `GET /api/sports/bet-of-the-day` returns the highest-vaulted bet in the past 24h. Pinned to the top of the Sports Lounge jumbotron with `🔥 BET OF THE DAY` prefix. Seeds social-proof for first-time sports bettors. Verified live: `8f707bb9… · LAL · ₵250 @ 2.10x` rendering.
+>
+> **B) Master Blueprint Final implementation slice** — `GET /api/sports/vault-config` exposes the canonical Vibe Vault config `{Vault_Type: Escrow_Escalation, Genius_Perk: High_Limit_Uncapped, Owner_Fee_Reduction: 0.15, Betting_Oracle: SportsData_V3_Bridge}`. Chair holders ("Geniuses") now get a 15% Owner Fee Reduction applied to the Sovereign Tax on their winning sports bets. Each settled winning bet stores `chair_holder_perk_applied: true/false` for the audit ledger.
+>
+> **C) Admin Cinema Catalog UI** (`/admin/cinema-catalog`) — Founder-only page (admin-gated via `/api/cinema-room/admin/catalog`). Add/Edit/Delete catalog items without a redeploy. Mongo-backed override layer means admin additions REPLACE seed items by id, soft-deletes tombstone seeds. Form fields: ID, Title, Year, Duration, MP4 URL, Thumbnail, Genres, Rating. All 7 existing films listed with inline EDIT/DEL controls.
+>
+> **Email fix** — `vibe_core_orchestrator._email_founder` was hardcoded to `founder@globalvibez.dsg` (which doesn't exist yet). Now reads `FOUNDER_EMAIL` env. Founder must add this to `/app/backend/.env` once they pick the address they want alerts at.
+>
+> **Tests:** 265/265 pytest GREEN. Smoke screenshots verified both pages render correctly with all global pills (comms + landscape) in place.
 >
 > 1. **`/sports-lounge`** — Vibe Sports Book MVP. 3 seeded games on the board (NFL Chiefs/Bills, NBA Lakers/Celtics, EPL ManCity/Arsenal). Each game is a "Betting Pit" with team-color-driven hue, decimal odds, click-to-bet. Stake presets ₵50/250/1k/5k. Jumbotron ticker shows last 8 settlements across all users. "My Bets" section auto-refreshes every 30s. Top-right comms + landscape pills mounted globally.
 > 2. **Backend `/api/sports/*`** — 5 endpoints. `games` (seeded + optional RapidAPI live), `place-bet` (locks ₵ in vault), `my-bets`, `settle` (admin only — distributes vault with 13.5% Sovereign Tax applied to net winnings), `jumbotron` (public feed). Verified end-to-end via curl: ₵250 LAL bet placed, vaulted, listed.

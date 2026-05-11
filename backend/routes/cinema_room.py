@@ -24,9 +24,12 @@ import time
 import uuid
 from typing import Any, Dict, List, Optional, Set
 
-from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, HTTPException, Request, WebSocket, WebSocketDisconnect
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, Field
+from datetime import datetime, timezone
+
+from utils.database import get_current_user
 
 router = APIRouter(prefix="/cinema-room", tags=["cinema_room"])
 
@@ -162,18 +165,84 @@ class FoodOrderEvent(BaseModel):
     item_hint: Optional[str] = None
 
 
+async def _effective_catalog() -> List[Dict[str, Any]]:
+    """Static CATALOG seed + any admin-added items from the
+    `cinema_catalog_overrides` collection. Admin additions take
+    precedence by id (an override with the same id REPLACES the seed)."""
+    db = _db()
+    overrides: List[Dict[str, Any]] = []
+    async for doc in db.cinema_catalog_overrides.find({"deleted": {"$ne": True}}, {"_id": 0}):
+        overrides.append(doc)
+    override_ids = {o["id"] for o in overrides}
+    return [c for c in CATALOG if c["id"] not in override_ids] + overrides
+
+
 # ── Catalog endpoints ──────────────────────────────────────────────
 @router.get("/catalog")
 async def list_catalog() -> Dict[str, Any]:
-    return {"count": len(CATALOG), "items": CATALOG}
+    items = await _effective_catalog()
+    return {"count": len(items), "items": items}
 
 
 @router.get("/catalog/{content_id}")
 async def get_content(content_id: str) -> Dict[str, Any]:
-    for item in CATALOG:
+    items = await _effective_catalog()
+    for item in items:
         if item["id"] == content_id:
             return item
     raise HTTPException(status_code=404, detail="content_not_found")
+
+
+# ── Admin catalog CRUD (founder ask 2026-05-10, P3 → P1 unblock) ───
+class AdminCatalogItem(BaseModel):
+    id: str = Field(min_length=2, max_length=64)
+    title: str = Field(min_length=2, max_length=120)
+    year: int = Field(ge=1900, le=2100)
+    duration_min: int = Field(ge=1, le=600)
+    source: str = Field(default="archive_org", max_length=24)
+    url: str = Field(min_length=8, max_length=512)
+    youtube_id: Optional[str] = None
+    thumbnail: Optional[str] = None
+    genre: List[str] = Field(default_factory=list, max_length=8)
+    rating: str = Field(default="PG", max_length=8)
+    license: str = Field(default="Public Domain", max_length=64)
+
+
+async def _require_admin(http_request: Request):
+    user = await get_current_user(http_request)
+    if not user:
+        raise HTTPException(401, "Not authenticated")
+    if not getattr(user, "is_admin", False) and getattr(user, "role", "") != "admin":
+        raise HTTPException(403, "Admin only")
+    return user
+
+
+@router.post("/admin/catalog")
+async def admin_upsert_catalog(body: AdminCatalogItem, http_request: Request):
+    """Add or update a catalog item — overrides the static seed by id."""
+    await _require_admin(http_request)
+    db = _db()
+    doc = body.model_dump()
+    doc["updated_at"] = datetime.now(timezone.utc).isoformat()
+    await db.cinema_catalog_overrides.update_one(
+        {"id": body.id}, {"$set": doc, "$unset": {"deleted": ""}}, upsert=True,
+    )
+    return {"status": "saved", "item": doc}
+
+
+@router.delete("/admin/catalog/{content_id}")
+async def admin_delete_catalog(content_id: str, http_request: Request):
+    """Soft-delete a catalog item. Static seed items are 'hidden' by
+    upserting a tombstone with deleted=True; admin-added items just
+    flip the same flag."""
+    await _require_admin(http_request)
+    db = _db()
+    await db.cinema_catalog_overrides.update_one(
+        {"id": content_id},
+        {"$set": {"id": content_id, "deleted": True, "deleted_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True,
+    )
+    return {"status": "deleted", "id": content_id}
 
 
 # ── Room CRUD ──────────────────────────────────────────────────────

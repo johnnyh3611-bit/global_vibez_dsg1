@@ -33,6 +33,7 @@ export default function SportsLounge() {
   const [games, setGames] = useState<Game[]>([]);
   const [bets, setBets] = useState<Bet[]>([]);
   const [jumbo, setJumbo] = useState<JumboRow[]>([]);
+  const [botd, setBotd] = useState<BetOfDay>(null);
   const [rapidConnected, setRapidConnected] = useState(false);
   const [loading, setLoading] = useState(true);
   const [stake, setStake] = useState<number>(50);
@@ -40,15 +41,17 @@ export default function SportsLounge() {
   const [error, setError] = useState<string | null>(null);
 
   const refresh = async () => {
-    const [g, b, j] = await Promise.all([
+    const [g, b, j, botd] = await Promise.all([
       fetch(`${API}/api/sports/games`).then((r) => r.json()),
       authFetch(`${API}/api/sports/my-bets?limit=10`).then((r) => r.json()).catch(() => ({ rows: [] })),
       fetch(`${API}/api/sports/jumbotron`).then((r) => r.json()),
+      fetch(`${API}/api/sports/bet-of-the-day`).then((r) => r.json()),
     ]);
     setGames(g?.games || []);
     setRapidConnected(!!g?.rapidapi_connected);
     setBets((b?.rows as Bet[]) || []);
     setJumbo((j?.rows as JumboRow[]) || []);
+    setBotd((botd?.hit as BetOfDay) || null);
   };
 
   useEffect(() => {
@@ -93,10 +96,15 @@ export default function SportsLounge() {
         </div>
       </header>
 
-      {/* Top ticker — last 8 settlements */}
+      {/* Top ticker — Bet of the Day pin + last 8 settlements */}
       <div className="border-b border-white/5 bg-black/40 overflow-hidden" data-testid="sports-jumbotron-ticker">
         <div className="flex gap-6 px-6 py-2 text-[11px] font-mono whitespace-nowrap overflow-x-auto">
-          {jumbo.length === 0 ? (
+          {botd && (
+            <span className="text-amber-300 font-black tabular-nums" data-testid="sports-bet-of-the-day">
+              🔥 BET OF THE DAY · {botd.user_id} · {botd.choice.toUpperCase()} · ₵{botd.amount.toLocaleString()} @ {botd.locked_odds?.toFixed(2)}x
+            </span>
+          )}
+          {jumbo.length === 0 && !botd ? (
             <span className="text-white/40">No settlements yet — be the first.</span>
           ) : (
             jumbo.map((j) => (
