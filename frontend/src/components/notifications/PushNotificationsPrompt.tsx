@@ -31,6 +31,18 @@ export default function PushNotificationsPrompt({ context }: { context: string }
   const onEnable = async () => {
     const result = await request();
     if (result === "granted") {
+      // Kick off FCM token registration in the background. If Firebase
+      // isn't configured for this build, this no-ops cleanly. Importing
+      // lazily keeps the firebase SDK out of the initial bundle for
+      // users who never grant permission.
+      try {
+        const { requestNotificationPermission } = await import("@/lib/firebase");
+        requestNotificationPermission().catch(() => {
+          /* silent — local notifications still work */
+        });
+      } catch {
+        /* firebase module unavailable — local-only mode */
+      }
       // Confirmation ping
       try {
         new Notification("Notifications enabled", {

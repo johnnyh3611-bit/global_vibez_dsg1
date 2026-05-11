@@ -68,17 +68,14 @@ export async function requestNotificationPermission() {
     const permission = await Notification.requestPermission();
     
     if (permission === 'granted') {
-      // Skip FCM registration entirely if the service worker file ships
-      // with unreplaced "__FIREBASE_API_KEY__" placeholders. Some build
-      // pipelines (and our preview env) don't substitute these, which
-      // causes Firebase to throw `Failed to execute 'postMessage' on
-      // 'Window': Request object could not be cloned` and freezes the
-      // page. Cheap probe: fetch the SW file and check for placeholders.
+      // Defensive probe: if the SW file somehow still contains the legacy
+      // `__FIREBASE_*__` placeholders (old cached deploy), bail before
+      // initializeApp() blows up. Real config now lives directly in the
+      // SW file, so this is the unhappy-path safeguard.
       try {
         const swProbe = await fetch('/firebase-messaging-sw.js', { cache: 'no-store' });
         const swBody = await swProbe.text();
-        if (swBody.includes('__FIREBASE_API_KEY__')) {
-          // Unregister any previously-registered broken instance + bail.
+        if (swBody.includes('"__FIREBASE_API_KEY__"')) {
           if ('serviceWorker' in navigator) {
             const regs = await navigator.serviceWorker.getRegistrations();
             for (const r of regs) {
@@ -90,32 +87,36 @@ export async function requestNotificationPermission() {
           return null;
         }
       } catch {
-        // If we can't probe, fail closed — better no push than a broken page.
         return null;
       }
 
       const messaging = getFirebaseMessaging();
-
-      if (!messaging) {
-        return null;
-      }
+      if (!messaging) return null;
 
       const vapidKey = process.env.REACT_APP_FIREBASE_VAPID_KEY;
-
-      // Register service worker first
       const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-
-      // Get FCM token
       const token = await getToken(messaging, {
         vapidKey: vapidKey,
-        serviceWorkerRegistration: registration
+        serviceWorkerRegistration: registration,
       });
-      
+
       if (token) {
+        // Best-effort register on backend so we can target this device.
+        try {
+          const apiBase = process.env.REACT_APP_BACKEND_URL;
+          const userId = localStorage.getItem('user_id') || 'anonymous';
+          await fetch(`${apiBase}/api/notifications/register?user_id=${encodeURIComponent(userId)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fcm_token: token }),
+          });
+        } catch {
+          // Registration failure shouldn't block the user — we'll retry
+          // next session when they hit any push-aware page.
+        }
         return token;
-      } else {
-        return null;
       }
+      return null;
     } else {
       return null;
     }

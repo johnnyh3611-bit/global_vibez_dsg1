@@ -1,24 +1,26 @@
 // Firebase Cloud Messaging Service Worker
 //
-// SAFETY GUARD (Apr 27 2026):
-// This file ships with `__FIREBASE_*__` placeholders that are meant to
-// be replaced at build time. If they aren't (and they aren't on this
-// preview pipeline), `firebase.initializeApp()` throws and that throw
-// surfaces in the parent window as:
-//   "Failed to execute 'postMessage' on 'Window': Request object could
-//    not be cloned"
-// which freezes the React event loop on the login page.
+// HISTORY:
+//   - Earlier version shipped with __FIREBASE_*__ placeholders that the
+//     build pipeline was meant to replace. The pipeline never substituted
+//     them, which made `initializeApp()` throw and froze the React event
+//     loop on the login page.
+//   - 2026-02 polish pass: Firebase **client/web** config is intentionally
+//     public (security is enforced server-side via Firestore rules + FCM
+//     admin keys), so we bake the production values directly. This is the
+//     same pattern Firebase docs recommend for service workers, which
+//     can't read process.env at runtime.
 //
-// We early-bail when placeholders are detected so the SW becomes a
-// harmless no-op until real keys are wired into the build pipeline.
+// If you ever rotate the Firebase project, update FIREBASE_CONFIG below
+// AND the matching REACT_APP_FIREBASE_* values in `/app/frontend/.env`.
 const FIREBASE_CONFIG = {
-  apiKey: "__FIREBASE_API_KEY__",
-  authDomain: "__FIREBASE_AUTH_DOMAIN__",
-  projectId: "__FIREBASE_PROJECT_ID__",
-  storageBucket: "__FIREBASE_STORAGE_BUCKET__",
-  messagingSenderId: "__FIREBASE_MESSAGING_SENDER_ID__",
-  appId: "__FIREBASE_APP_ID__",
-  measurementId: "__FIREBASE_MEASUREMENT_ID__"
+  apiKey: "AIzaSyCy6128GnnznO_vO0-Kbtcx60DDaJBUUIA",
+  authDomain: "global-vibez-dsg.firebaseapp.com",
+  projectId: "global-vibez-dsg",
+  storageBucket: "global-vibez-dsg.firebasestorage.app",
+  messagingSenderId: "855242106787",
+  appId: "1:855242106787:web:61b698146881cc902d1c16",
+  measurementId: "G-XT93NJJX8B"
 };
 
 const HAS_REAL_CONFIG =
@@ -35,12 +37,12 @@ if (HAS_REAL_CONFIG) {
     const notificationTitle = payload.notification?.title || 'Global Vibez DSG';
     const notificationOptions = {
       body: payload.notification?.body || 'You have a new notification',
-      icon: payload.notification?.icon || '/logo192.png',
-      badge: '/logo192.png',
+      icon: payload.notification?.icon || '/global-vibez-logo.png',
+      badge: '/global-vibez-logo.png',
       tag: payload.data?.tag || 'default',
-      data: payload.data,
+      data: payload.data || {},
       requireInteraction: false,
-      vibrate: [200, 100, 200]
+      vibrate: [200, 100, 200],
     };
     return self.registration.showNotification(notificationTitle, notificationOptions);
   });
@@ -62,10 +64,17 @@ if (HAS_REAL_CONFIG) {
         })
     );
   });
+
+  // Take control of any already-open clients on activate, so the very
+  // first push after permission grant is delivered without a refresh.
+  self.addEventListener('activate', (event) => {
+    event.waitUntil(self.clients.claim());
+  });
+  self.addEventListener('install', () => self.skipWaiting());
 } else {
   // No real config — install a no-op SW that immediately self-unregisters
   // on activate, so a future deploy with real keys gets a clean slate.
-  self.addEventListener('install', (e) => self.skipWaiting());
+  self.addEventListener('install', () => self.skipWaiting());
   self.addEventListener('activate', (e) => {
     e.waitUntil(self.registration.unregister());
   });

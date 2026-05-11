@@ -43,6 +43,13 @@ class Beat:
     genre: str
     use_count: int = 0
     is_active: bool = True
+    # Optional Content Rights wiring — populated when the producer
+    # supplies a real master audio file. The presence of `asset_id`
+    # flips the /use endpoint from billing-meter mode to signed-URL
+    # delivery mode without changing the existing payout payload.
+    audio_url: Optional[str] = None       # private master (never exposed)
+    preview_url: Optional[str] = None     # 30s watermarked sample
+    asset_id: Optional[str] = None        # FK into content_assets
 
 
 def settle_beat_use(beat: Beat) -> Dict:

@@ -50,6 +50,7 @@ import { OrientationApplier, OrientationFAB } from "@/components/common/Orientat
 import IncomingCallModal from "@/components/voice/IncomingCallModal";
 import BetaFeedbackButton from "@/components/common/BetaFeedbackButton";
 import FriendEventToaster from "@/components/common/FriendEventToaster";
+import PushForegroundBridge from "@/components/notifications/PushForegroundBridge";
 import { LogDesignLesson } from "@/components/vibez/LogDesignLesson";
 // v8 — International Globalization Protocol v2.0 (Globe FAB / Cultural Hub)
 import GlobeFAB from "@/components/GlobeFAB";
@@ -266,6 +267,7 @@ function AppRouter() {
       <BetaFeedbackButton />
       <LogDesignLesson />
       <FriendEventToaster />
+      <PushForegroundBridge />
       <GlobeFAB />
       <GameVoiceDockMounter />
       <FloatingFoodMenu />

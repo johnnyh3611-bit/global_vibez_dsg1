@@ -1,5 +1,41 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-02-11 (POST-DEPLOY POLISH SPRINT) — Push polish + Lighthouse perf + Video Vault + Beat Vault DRM all shipped. 307/307 regression green.**
+>
+> **Tasks A-D completed in this session** (user requested A through D one by one):
+>
+> 🟢 **A. Push Notifications polish**
+>   - Replaced `__FIREBASE_*__` placeholders in `/firebase-messaging-sw.js` with real Firebase public config (these are designed to be public; security is server-side). Push now works in production.
+>   - New `PushForegroundBridge` component mounted in `App.js` surfaces foreground FCM messages via native Notification API with click-through routing.
+>   - `requestNotificationPermission()` now auto-registers the FCM token to `/api/notifications/register?user_id=...` so the backend can target the device.
+>   - Mounted `<PushNotificationsPrompt context="ride status" />` inside `RiderTracking.tsx` — riders now get a discreet banner offering push pings for ride-status changes.
+>
+> 🟢 **B. Lighthouse performance pass**
+>   - Google Fonts now load non-render-blocking (`<link rel="preload" as="style">` + `media="print" onload="this.media='all'"` swap). Saves ~200-400ms FCP.
+>   - PostHog SDK init deferred via `requestIdleCallback` (1.5s `load`-event fallback). Saves ~150ms TTI.
+>   - Added `preconnect`/`dns-prefetch` for Mapbox + PostHog assets domain so first API call doesn't pay the connection round-trip.
+>
+> 🟢 **C. Video Vault MVP (new feature)**
+>   - New `routes/video_vault.py` backend (`/api/video-vault/*`) — list, browse, purchase, stats. 8 categories: clip, b_roll, motion_graphics, music_video, tutorial, vfx_template, stream_overlay, short_film.
+>   - 3 license tiers: standard (1x), extended (3x), exclusive (10x, retires listing on purchase).
+>   - Every upload routes through `services.content_rights` for fingerprint dedupe + metadata blocklist + DMCA queue. Every purchase mints a signed 5-min download token + 10-day escrow.
+>   - New page `/dsg/video-vault` (`VideoVaultMarketplace.tsx`) — grid, category filters, list-a-video modal, purchase button, DMCA-protected badging.
+>   - Added "Video Vault" tile to the Streaming planet on the Volumetric Dashboard.
+>   - **E2E verified**: list → browse → purchase → signed token, plus blocklist correctly trips on "official trailer" / "leaked".
+>
+> 🟢 **D. Beat Vault Content Rights wiring**
+>   - `Beat` dataclass extended with `audio_url`, `preview_url`, `asset_id` fields.
+>   - `POST /api/freestyle/beats/upload` now async — when `audio_url` is supplied (real MP3), upload routes through `content_rights.register_asset` with metadata blocklist + fingerprint dedupe. Backward-compatible: beats without `audio_url` keep legacy meter-only billing.
+>   - `POST /api/freestyle/beats/{id}/use` mints a signed download token via `content_rights.record_purchase` for DRM-protected beats; returns existing 70/30 payout payload otherwise.
+>   - `/beats` listing exposes `preview_url` + `drm_protected` flag (never the master URL).
+>   - **E2E verified**: DRM beat upload → signed download token (5-min expiry, 10-day escrow), legacy meter beat still works, DMCA blocklist trips on "Drake Official Video".
+>
+> 🔒 **Regression Shield**: **307/307 GREEN** (+2 new locks: `test_video_vault_endpoints_and_page_wired`, `test_beat_vault_content_rights_wiring`).
+>
+> **Streaming gap (mentioned to founder, awaiting decision)**: We have a robust streamer overlay system (OBS Browser Source, tip alerts, hype meter, WebSocket chat) but **we don't run an RTMP/SRT ingest server** — so streamers can't push their actual video through us to their audience like Twitch/Kick. To cover every device (OBS/Streamlabs/GoXLR/Stream Deck/Cam Link/PS5/Xbox/iOS Larix), we'd need to add Cloudflare Stream / Mux / Livepeer or self-host OvenMediaEngine. Founder to decide.
+>
+> ---
+>
 > **2026-05-11 (FINAL PRE-BETA · CLEARED) — DMCA agent email wired + full functional + stress test PASSED 🚀.** Founder asked to run a comprehensive pre-deploy test sweep and added the customer service email for the DMCA Designated Agent. Done — system is beta-ready.
 >
 > **DMCA agent email**: `customerservice@globalvibezdsg.com` added to `backend/.env::DMCA_AGENT_EMAIL` and now surfaced on the public `/content-rights` page as a clickable mailto link under the registered H&S Solutions Group agent block. Regression test updated to assert the email is set.

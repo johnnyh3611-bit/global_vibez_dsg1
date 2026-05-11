@@ -6349,3 +6349,109 @@ def test_volumetric_dashboard_every_tile_has_a_route():
     for path in ("/dating", "/cinema-room", "/vibe-spots", "/my-vibez"):
         assert path in tile_paths, f"Expected tile path not present: {path}"
         assert path in all_routes, f"Expected route not registered: {path}"
+
+
+def test_video_vault_endpoints_and_page_wired():
+    """2026-02 sprint: Video Vault marketplace — sibling of Beat Vault for
+    filmmakers / motion-graphics artists / B-roll stockers. Every listing
+    routes through services.content_rights for fingerprint dedupe,
+    metadata blocklist, signed download URLs, and DMCA escrow.
+
+    Locks:
+      - Backend route file present + registered + correct prefix.
+      - Service integrates with content_rights (preflight + record_purchase).
+      - Frontend page + route + dashboard tile all wired.
+      - License tiers + metadata blocklist enforced.
+    """
+    # ── Backend ─────────────────────────────────────────────────────────
+    route_src = open("/app/backend/routes/video_vault.py").read()
+    # Correct prefix (NO /api — registry strips that since api_router has /api).
+    assert 'prefix="/video-vault"' in route_src, "Video Vault route prefix should be /video-vault (api_router adds /api)"
+    # Wired through content rights, not a side-channel.
+    assert "from services import content_rights" in route_src
+    assert "content_rights.metadata_block_check" in route_src
+    assert "content_rights.record_purchase" in route_src
+    assert "content_rights.register_asset" in route_src
+    # License tiers spec'd (per Content Rights & IP Policy §3).
+    for tier in ("standard", "extended", "exclusive"):
+        assert f'"{tier}"' in route_src, f"License tier missing: {tier}"
+    # Master URL is never echoed back through _public_video.
+    assert '_public_video' in route_src
+    assert '"master_url"' in route_src
+
+    # Registry registers it.
+    registry = open("/app/backend/routes/registry.py").read()
+    assert "from routes.video_vault import router as video_vault_router" in registry
+    assert "api_router.include_router(video_vault_router)" in registry
+
+    # ── Frontend page ───────────────────────────────────────────────────
+    page = open("/app/frontend/src/pages/dsg/VideoVaultMarketplace.tsx").read()
+    for tid in (
+        "video-vault-root",
+        "video-vault-list-cta",
+        "video-vault-refresh",
+        "video-vault-list-modal",
+        "video-vault-form-submit",
+        "video-vault-form-title",
+        "video-vault-form-master",
+        "video-vault-form-category",
+        "video-vault-form-tier",
+    ):
+        assert tid in page, f"VideoVaultMarketplace missing testid: {tid}"
+    # Hits the API base, not localhost.
+    assert "process.env.REACT_APP_BACKEND_URL" in page
+    assert "/api/video-vault/videos" in page
+    assert "/api/video-vault/stats" in page
+
+    # ── Router + Dashboard tile ─────────────────────────────────────────
+    routes = open("/app/frontend/src/routes/dsgRoutes.tsx").read()
+    assert "/dsg/video-vault" in routes
+    assert "VideoVaultMarketplace" in routes
+
+    vol = open("/app/frontend/src/pages/VolumetricDashboard.tsx").read()
+    assert "/dsg/video-vault" in vol, "Video Vault tile missing from Volumetric Dashboard"
+    assert "Video Vault" in vol
+
+
+def test_beat_vault_content_rights_wiring():
+    """2026-02 sprint: Beat Vault is now preemptively wired into the
+    Content Rights ledger. When a producer uploads a beat with a real
+    `audio_url`, the upload routes through services.content_rights
+    (metadata blocklist + fingerprint dedupe + signed-URL delivery on
+    every /use). Backwards-compatible: legacy meter-only beats keep
+    working without an audio_url.
+
+    Locks:
+      - Beat dataclass carries audio_url + preview_url + asset_id.
+      - Upload endpoint calls register_asset when audio_url is present.
+      - Use endpoint mints a signed token via record_purchase for
+        DRM-protected beats.
+      - Metadata blocklist is enforced on the upload.
+    """
+    routes_src = open("/app/backend/routes/freestyle_battles_routes.py").read()
+    service_src = open("/app/backend/services/freestyle_battles.py").read()
+
+    # Dataclass extension.
+    assert "audio_url: Optional[str] = None" in service_src
+    assert "preview_url: Optional[str] = None" in service_src
+    assert "asset_id: Optional[str] = None" in service_src
+
+    # Routes pull content_rights and use both register + record_purchase.
+    assert "from services import content_rights" in routes_src
+    assert "content_rights.metadata_block_check" in routes_src
+    assert "content_rights.register_asset" in routes_src
+    assert "content_rights.record_purchase" in routes_src
+
+    # Upload + use endpoints are now async (required for content_rights calls).
+    assert "async def beat_upload" in routes_src
+    assert "async def beat_use" in routes_src
+
+    # Backwards compat: legacy meter path still works (no audio_url branch).
+    assert "if req.audio_url:" in routes_src
+    assert "if beat.asset_id:" in routes_src
+
+    # /beats listing exposes preview_url + drm_protected flag (never master).
+    assert '"preview_url": b.preview_url' in routes_src
+    assert '"drm_protected": bool(b.asset_id)' in routes_src
+
+

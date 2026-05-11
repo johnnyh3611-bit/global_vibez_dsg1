@@ -756,6 +756,16 @@ def register_all_routes(
     except Exception as _e:
         log.warning(f"Beat Vault DLC routes not mounted: {_e}")
 
+    # Video Vault — sibling marketplace to Beat Vault for video-side
+    # creators (B-roll, motion graphics, stream overlays, tutorials).
+    # Wired through services.content_rights so DMCA + signed-URL plumbing
+    # is shared with Beat Vault and any future asset class.
+    try:
+        from routes.video_vault import router as video_vault_router
+        api_router.include_router(video_vault_router)
+    except Exception as _e:
+        log.warning(f"Video Vault routes not mounted: {_e}")
+
     # $VIBEZ Activity Multiplier reward formula (Roadmap PDF §1).
     # SIMULATED mints until the founder confirms project_complete.
     try:

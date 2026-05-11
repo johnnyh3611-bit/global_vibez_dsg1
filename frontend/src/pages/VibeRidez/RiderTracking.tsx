@@ -16,6 +16,7 @@ import { motion } from "framer-motion";
 import { Crosshair, Bolt, Loader2, Car, MapPin, X, History, Star, Check } from "lucide-react";
 import { authFetch, getUserId } from "@/utils/secureAuth";
 import VibeDriveTipControls from "@/components/vibe-drive/VibeDriveTipControls";
+import PushNotificationsPrompt from "@/components/notifications/PushNotificationsPrompt";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 const MAPBOX_TOKEN = process.env.REACT_APP_MAPBOX_TOKEN;
@@ -277,6 +278,10 @@ export default function RiderTracking() {
         <p className="text-[11px] text-cyan-500/80 mt-2" data-testid="rider-tracking-status">
           {statusMsg}
         </p>
+
+        <div className="mt-3">
+          <PushNotificationsPrompt context="ride status" />
+        </div>
 
         {!pickup && (
           <button

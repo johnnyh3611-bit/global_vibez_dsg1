@@ -78,6 +78,7 @@ const CATEGORIES = [
       { id: "sports", label: "Vibez Sports", emoji: "🏆", path: "/sports-lounge" },
       { id: "memory", label: "Memory Bank", emoji: "🎞️", path: "/dsg/memory-bank" },
       { id: "beats", label: "Beat Vault", emoji: "🎧", path: "/dsg/beat-vault" },
+      { id: "video-vault", label: "Video Vault", emoji: "🎬", path: "/dsg/video-vault" },
     ],
   },
   {

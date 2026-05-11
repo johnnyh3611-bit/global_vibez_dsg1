@@ -14,6 +14,7 @@
 import { Route, Navigate } from "react-router-dom";
 import VigilantMatchmakingRoom from "@/pages/dsg/VigilantMatchmakingRoom";
 import BeatVaultMarketplace from "@/pages/dsg/BeatVaultMarketplace";
+import VideoVaultMarketplace from "@/pages/dsg/VideoVaultMarketplace";
 import MemoryBankMarketplace from "@/pages/dsg/MemoryBankMarketplace";
 import DSGMusicGroupHub from "@/pages/dsg/DSGMusicGroupHub";
 import VibeTvHub from "@/pages/dsg/VibeTvHub";
@@ -37,6 +38,7 @@ export const dsgRoutes = (ProtectedRoute) => (
         canonical Vigilant room rather than 404. */}
     <Route path="/dsg/matchmaking" element={<ProtectedRoute><VigilantMatchmakingRoom /></ProtectedRoute>} />
     <Route path="/dsg/beat-vault" element={<ProtectedRoute><BeatVaultMarketplace /></ProtectedRoute>} />
+    <Route path="/dsg/video-vault" element={<ProtectedRoute><VideoVaultMarketplace /></ProtectedRoute>} />
     <Route path="/dsg/memory-bank" element={<ProtectedRoute><MemoryBankMarketplace /></ProtectedRoute>} />
     {/* Sync-watch cinema room — supports both lobby and per-room URLs. */}
     <Route path="/dsg/memory-bank/room/:roomId" element={<ProtectedRoute><MemoryBankCinemaRoom /></ProtectedRoute>} />
