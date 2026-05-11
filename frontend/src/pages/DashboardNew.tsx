@@ -471,12 +471,14 @@ export default function Dashboard() {
             
             <Button
               variant="ghost"
-              className="hidden md:flex items-center gap-2 text-fuchsia-200 hover:text-white hover:bg-fuchsia-500/20 border border-fuchsia-400/30 rounded-full px-4 py-1.5 text-xs uppercase tracking-widest"
+              className="flex items-center gap-2 text-fuchsia-200 hover:text-white hover:bg-fuchsia-500/20 border border-fuchsia-400/40 rounded-full px-3 md:px-4 py-1.5 text-[10px] md:text-xs uppercase tracking-widest animate-pulse"
               onClick={() => { localStorage.setItem("gv_volumetric_v1", "1"); navigate("/dashboard-volumetric"); }}
               aria-label="Try volumetric view"
               data-testid="dashboard-try-volumetric"
             >
-              <Sparkles className="w-3 h-3" /> Try Volumetric
+              <Sparkles className="w-3 h-3" />
+              <span className="hidden sm:inline">Try Volumetric</span>
+              <span className="sm:hidden">3D</span>
             </Button>
 
             <GlassCard className="px-4 py-2" hoverable={false}>
@@ -531,6 +533,39 @@ export default function Dashboard() {
             Choose your destination in the Global Vibez DSG universe
           </p>
         </motion.div>
+
+        {/* 🌌 Volumetric preview banner — founder ask 2026-05-12 ("build it
+            first to see what it looks like; if I don't like it, take it
+            off"). Big, can't-miss A/B toggle into the new Three.js dashboard. */}
+        <motion.button
+          type="button"
+          onClick={() => { localStorage.setItem("gv_volumetric_v1", "1"); navigate("/dashboard-volumetric"); }}
+          data-testid="dashboard-volumetric-banner"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="group relative w-full mb-8 overflow-hidden rounded-2xl border-2 border-fuchsia-400/50 bg-gradient-to-r from-violet-600/30 via-fuchsia-600/30 to-cyan-600/30 backdrop-blur-md px-5 py-5 text-left hover:scale-[1.005] active:scale-[0.995] transition-transform shadow-[0_0_40px_-10px_rgba(217,70,239,0.6)]"
+        >
+          <div className="absolute -inset-px bg-gradient-to-r from-fuchsia-500/0 via-fuchsia-500/30 to-cyan-500/0 opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
+          <div className="relative flex items-center gap-4">
+            <div className="text-4xl md:text-5xl animate-pulse">🌌</div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[10px] uppercase tracking-[0.4em] text-fuchsia-300 font-bold flex items-center gap-2">
+                NEW · Founder Preview
+                <span className="bg-amber-400 text-amber-950 text-[8px] px-2 py-0.5 rounded-full font-black">A/B</span>
+              </div>
+              <div className="text-lg sm:text-2xl font-black text-white mt-1">
+                Try the Volumetric Galaxy Dashboard
+              </div>
+              <div className="text-xs sm:text-sm text-fuchsia-100/80 mt-1">
+                6 emissive planets · drag to spin · tap to dive in. Don't like it? One tap brings you back to Classic.
+              </div>
+            </div>
+            <div className="hidden sm:flex items-center gap-1 text-fuchsia-200 text-xs uppercase tracking-widest font-black">
+              Open 3D →
+            </div>
+          </div>
+        </motion.button>
 
         {/* Chair-holder vote banner — chair holders only, auto-hides if no open polls */}
         <ChairHolderVoteBanner />
