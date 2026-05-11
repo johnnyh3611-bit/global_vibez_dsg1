@@ -17,10 +17,12 @@ Implements the 21+ gate per `Legal_Age_Verification_Protocol.pdf`:
 """
 from __future__ import annotations
 
+import json
 import logging
+import os
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
 from services import age_verification as avp
@@ -247,18 +249,116 @@ class VendorDecisionPayload(BaseModel):
 
 @router.post("/webhook/vendor")
 async def webhook_vendor(
-    payload: VendorDecisionPayload,
+    request: Request,
+    payload: Optional[VendorDecisionPayload] = None,
     user=Depends(get_current_user),
 ) -> Dict[str, Any]:
-    """KYC vendor → DSG webhook surface (Stripe Identity by default).
+    """KYC vendor → DSG webhook surface.
 
-    Admin-gated until a vendor secret signing flow lands; once the
-    Stripe Identity webhook secret is configured, this endpoint moves
-    to signature-verified open access (no JWT)."""
+    Two modes (auto-detected at runtime):
+
+    1. **Stripe Identity production mode** — active when
+       `STRIPE_IDENTITY_WEBHOOK_SECRET` is set. The endpoint becomes
+       PUBLIC (no JWT) and instead verifies the `Stripe-Signature`
+       header via `stripe.Webhook.construct_event(...)`. Maps Stripe
+       Identity event types → our 5-state decision matrix:
+         identity.verification_session.verified         → VERIFIED_21 (or VERIFIED_UNDER_21 if DOB < 21)
+         identity.verification_session.requires_input   → REQUIRES_INPUT
+         identity.verification_session.canceled         → REJECTED
+         identity.verification_session.processing       → PENDING
+
+    2. **Stub mode** (current default) — admin-JWT-gated. Lets admins
+       hand-fire vendor decisions while Stripe Identity provisioning
+       is pending. Same code path, just a different authn front door.
+    """
+    db = get_database()
+    secret = os.environ.get("STRIPE_IDENTITY_WEBHOOK_SECRET", "").strip()
+
+    # ──────── Mode 1: Stripe Identity signature-verified webhook ────────
+    if secret:
+        try:
+            import stripe  # noqa: PLC0415
+        except ImportError:
+            raise HTTPException(status_code=500, detail="stripe SDK not installed")
+
+        sig_header = request.headers.get("stripe-signature", "")
+        body = await request.body()
+        try:
+            event = stripe.Webhook.construct_event(body, sig_header, secret)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid payload")
+        except stripe.error.SignatureVerificationError:  # type: ignore[attr-defined]
+            raise HTTPException(status_code=401, detail="Invalid signature")
+
+        # Map Stripe Identity event types → our decision matrix.
+        event_type = event.get("type", "")
+        session = event.get("data", {}).get("object", {})
+        metadata = session.get("metadata") or {}
+        user_id = metadata.get("user_id") or session.get("client_reference_id")
+        if not user_id:
+            logger.warning("Stripe Identity event missing user_id in metadata; dropping")
+            return {"received": True, "skipped": "no_user_id"}
+
+        provider_session_id = session.get("id")
+        doc_status = (session.get("verified_outputs") or {}).get("id_number_status") or session.get("status")
+
+        if event_type == "identity.verification_session.verified":
+            # Spec corrected: gate the 21-year-old check on the DOB Stripe returned.
+            verified_outputs = session.get("verified_outputs") or {}
+            dob = verified_outputs.get("dob") or {}
+            from datetime import date  # noqa: PLC0415
+            try:
+                ref_age = date.today().year - int(dob.get("year", 0))
+                # rough — refined by full DOB check on submit; Stripe gives full
+                if dob.get("month") and dob.get("day"):
+                    d_obj = date(int(dob["year"]), int(dob["month"]), int(dob["day"]))
+                    ref_age = avp.calculate_age(d_obj.isoformat())
+            except (ValueError, TypeError, KeyError):
+                ref_age = 0
+            decision = (
+                avp.DECISION_VERIFIED_21
+                if ref_age >= avp.RESTRICTED_GOODS_MIN_AGE
+                else avp.DECISION_VERIFIED_UNDER_21
+            )
+            requirements_due = []
+        elif event_type == "identity.verification_session.requires_input":
+            decision = avp.DECISION_REQUIRES_INPUT
+            requirements_due = [
+                e.get("code", "unknown")
+                for e in (session.get("last_error") and [session["last_error"]] or [])
+            ]
+        elif event_type == "identity.verification_session.processing":
+            decision = avp.DECISION_PENDING
+            requirements_due = []
+        elif event_type == "identity.verification_session.canceled":
+            decision = avp.DECISION_REJECTED
+            requirements_due = []
+        else:
+            # Ignore unhandled events; Stripe will retry on 5xx so we 200 + skip.
+            return {"received": True, "ignored_event": event_type}
+
+        rec = await avp.apply_vendor_decision(
+            db,
+            user_id=user_id,
+            decision=decision,
+            doc_status=doc_status,
+            requirements_due=requirements_due,
+            provider=avp.KYC_PROVIDER_STRIPE_IDENTITY,
+            provider_session_id=provider_session_id,
+        )
+        return {"received": True, "decision": decision, "user_id": user_id, "record": rec}
+
+    # ──────── Mode 2: Admin-gated stub (no Stripe secret yet) ────────
     _require_admin(user)
+    if payload is None:
+        # Tolerate either pydantic-parsed body or raw JSON in stub mode.
+        try:
+            raw = await request.json()
+            payload = VendorDecisionPayload(**raw)
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid stub payload")
     if payload.provider not in avp.SUPPORTED_KYC_PROVIDERS:
         raise HTTPException(status_code=400, detail=f"Unsupported provider: {payload.provider}")
-    db = get_database()
     try:
         rec = await avp.apply_vendor_decision(
             db,

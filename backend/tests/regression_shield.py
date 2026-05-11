@@ -6107,3 +6107,34 @@ def test_corrected_kyc_frontend_surfaces_vendor():
     page = open("/app/frontend/src/pages/AgeVerificationPage.tsx").read()
     assert "avp-kyc-vendor-label" in page
     assert "Stripe Identity" in page
+
+
+
+def test_stripe_identity_webhook_dual_mode():
+    """Stripe Identity webhook handler supports two modes:
+       1. Production: signature-verified via STRIPE_IDENTITY_WEBHOOK_SECRET
+       2. Stub: admin-gated when secret is not yet configured
+
+    Both paths funnel through `apply_vendor_decision` so the audit log
+    sees Stripe events identically to admin-fired decisions."""
+    handler = open("/app/backend/routes/age_verification.py").read()
+
+    # Signature verification wired with the env-driven secret.
+    assert "STRIPE_IDENTITY_WEBHOOK_SECRET" in handler
+    assert "stripe.Webhook.construct_event" in handler
+    assert 'stripe-signature' in handler
+
+    # Maps the 4 canonical Stripe Identity event types.
+    for evt in (
+        "identity.verification_session.verified",
+        "identity.verification_session.requires_input",
+        "identity.verification_session.processing",
+        "identity.verification_session.canceled",
+    ):
+        assert evt in handler, f"Stripe Identity event missing handler branch: {evt}"
+
+    # Both modes call apply_vendor_decision so audit log shape is uniform.
+    assert handler.count("apply_vendor_decision") >= 2
+
+    # Stub mode preserved (admin-gated) when secret isn't set yet.
+    assert "_require_admin(user)" in handler
