@@ -242,6 +242,70 @@ async def driver_location(driver_id: str):
     }
 
 
+@router.get("/ridez/nearby-drivers")
+async def nearby_drivers(
+    lat: float, lon: float,
+    radius_km: float = 10.0,
+    limit: int = 25,
+    ride_type: str = "any",
+):
+    """Public preview endpoint for the rider geo-proximity map.
+
+    Returns AVAILABLE drivers within `radius_km` of the given coordinates,
+    anonymized (no driver_id, no exact GPS — coords rounded to ~110m / 3 d.p.
+    so we never expose a driver's home block to the public).
+
+    Used by the RideSearch booking flow to show "12 drivers within 4 km"
+    + a stylized map of nearby driver dots before the rider commits to a
+    request. Coordinates are intentionally fuzzed so this endpoint can stay
+    unauthenticated (matches what every major rideshare app shows publicly).
+    """
+    if ride_type not in ("any", "real", "virtual"):
+        raise HTTPException(status_code=400, detail="Invalid ride_type")
+
+    radius_km = max(0.1, min(radius_km, 50.0))
+    limit = max(1, min(limit, 100))
+
+    matches = []
+    for d in _DRIVERS.values():
+        if d.get("status") != "AVAILABLE":
+            continue
+        if d.get("lat") is None or d.get("lon") is None:
+            continue
+        if ride_type != "any" and d.get("type") != ride_type:
+            continue
+        dist = _haversine_km(lat, lon, d["lat"], d["lon"])
+        if dist > radius_km:
+            continue
+        matches.append((dist, d))
+    matches.sort(key=lambda t: t[0])
+    matches = matches[:limit]
+
+    drivers_out = []
+    for dist, d in matches:
+        drivers_out.append({
+            "lat": round(d["lat"], 3),   # ~110m fuzz
+            "lon": round(d["lon"], 3),
+            "distance_km": round(dist, 2),
+            "type": d.get("type", "real"),
+        })
+
+    nearest = drivers_out[0]["distance_km"] if drivers_out else None
+    avg_eta_min = None
+    if drivers_out:
+        # crude city ETA: 35 km/h average
+        avg_dist = sum(x["distance_km"] for x in drivers_out[:3]) / min(3, len(drivers_out))
+        avg_eta_min = round((avg_dist / 35) * 60)
+
+    return {
+        "count": len(drivers_out),
+        "nearest_km": nearest,
+        "estimated_eta_minutes": avg_eta_min,
+        "radius_km": radius_km,
+        "drivers": drivers_out,
+    }
+
+
 # ───────────────────────────────────────── Ride dispatch ──
 
 class RideRequestPayload(BaseModel):

@@ -49,9 +49,14 @@ class HostListing(BaseModel):
     zip_code: str
     capacity: int = 4
     cover_photo: Optional[str] = None
+    # Up to 8 additional gallery photos for the venue detail page.
+    gallery_photos: List[str] = []
     walkthrough_3d_url: Optional[str] = None
     base_hourly_rate_usd: float = 50.0
     amenities: List[str] = []
+    # Refund policy — one of "flexible", "moderate", "strict". Default to
+    # moderate (50% refund > 48h, 0% inside 48h).
+    refund_policy: str = "moderate"
 
 
 class ArtisanProfile(BaseModel):
@@ -352,6 +357,34 @@ async def my_bookings(user_id: str) -> Dict[str, Any]:
     return {"bookings": bookings}
 
 
+# Refund policy presets — three industry-standard tiers. The host picks one
+# at listing time; admins enforce via the dispute resolution endpoint.
+REFUND_POLICIES: Dict[str, Dict[str, Any]] = {
+    "flexible": {
+        "id": "flexible",
+        "label": "Flexible",
+        "summary": "Full refund up to 24 h before start. 50% refund inside 24 h.",
+        "cutoff_hours_full_refund": 24,
+        "partial_refund_pct": 0.50,
+    },
+    "moderate": {
+        "id": "moderate",
+        "label": "Moderate",
+        "summary": "Full refund up to 5 days before start. 50% refund up to 48 h. 0% inside 48 h.",
+        "cutoff_hours_full_refund": 120,
+        "cutoff_hours_partial_refund": 48,
+        "partial_refund_pct": 0.50,
+    },
+    "strict": {
+        "id": "strict",
+        "label": "Strict",
+        "summary": "Full refund up to 7 days before start. 0% refund inside 7 days.",
+        "cutoff_hours_full_refund": 168,
+        "partial_refund_pct": 0.0,
+    },
+}
+
+
 @router.get("/config")
 async def get_config() -> Dict[str, Any]:
     return {
@@ -360,6 +393,7 @@ async def get_config() -> Dict[str, Any]:
         "prep_fee_pct": PREP_FEE_PCT,
         "artisan_membership_fee_usd": ARTISAN_MEMBERSHIP_FEE_USD,
         "lifecycle_states": LIFECYCLE,
+        "refund_policies": list(REFUND_POLICIES.values()),
     }
 
 

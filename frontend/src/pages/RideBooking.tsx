@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Car, MapPin, Navigation, DollarSign, Clock, Shield } from 'lucide-react';
+import NearbyDriversMap from '@/components/vibe-ridez/NearbyDriversMap';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -197,6 +198,20 @@ export default function RideBooking() {
                 onBlur={() => geocodeAddress(dropoffAddress, false)}
                 placeholder="Enter destination address"
                 className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 outline-none"
+              />
+            </div>
+
+            {/* Geo-proximity preview map — shows nearby AVAILABLE drivers
+                around the rider's pickup before they commit to a request. */}
+            <div data-testid="ride-booking-nearby-map-wrapper">
+              <p className="text-xs uppercase tracking-widest text-gray-500 font-bold mb-2">
+                Drivers near you
+              </p>
+              <NearbyDriversMap
+                lat={pickupLat}
+                lng={pickupLng}
+                radiusKm={8}
+                pickupLabel={pickupAddress}
               />
             </div>
 

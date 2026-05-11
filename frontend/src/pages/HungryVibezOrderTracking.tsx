@@ -10,7 +10,7 @@
  * a vertical timeline with the current state highlighted. Archived (delivered
  * / rejected) orders collapse into a "Show past orders" expander.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -22,6 +22,9 @@ import {
   Pizza,
 } from "lucide-react";
 import { authFetch } from "@/utils/secureAuth";
+import DeliveryProgressMap from "@/components/hungryvibes/DeliveryProgressMap";
+import PushNotificationsPrompt from "@/components/notifications/PushNotificationsPrompt";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -58,6 +61,10 @@ export default function HungryVibezOrderTracking() {
   const [orders, setOrders] = useState<OrderDoc[]>([]);
   const [loading, setLoading] = useState(true);
   const [showArchive, setShowArchive] = useState(false);
+  const { notify } = usePushNotifications();
+
+  // Track per-order last-known status so we only notify on actual transitions.
+  const prevStatusRef = useRef<Record<string, string>>({});
 
   const load = useCallback(async () => {
     try {
@@ -67,11 +74,43 @@ export default function HungryVibezOrderTracking() {
         return;
       }
       const d = await res.json();
-      setOrders(d.orders || []);
+      const next: OrderDoc[] = d.orders || [];
+
+      // Fire local browser notifications on status transitions.
+      next.forEach((o) => {
+        const prev = prevStatusRef.current[o.order_id];
+        if (prev && prev !== o.status) {
+          const STATUS_COPY: Record<string, { title: string; body: string }> = {
+            preparing: {
+              title: "Your order is being prepared",
+              body: `Order #${o.order_id.slice(0, 6)} · the chef is firing it up.`,
+            },
+            ready: {
+              title: "Your food is on the way",
+              body: `Order #${o.order_id.slice(0, 6)} · courier en route.`,
+            },
+            delivered: {
+              title: "Delivered — enjoy!",
+              body: `Order #${o.order_id.slice(0, 6)} · arrived at your door.`,
+            },
+            rejected: {
+              title: "Order rejected — refunded",
+              body: `Order #${o.order_id.slice(0, 6)} · your coins have been returned.`,
+            },
+          };
+          const copy = STATUS_COPY[o.status];
+          if (copy) {
+            notify(copy.title, { body: copy.body, url: "/hungryvibes/tracking" });
+          }
+        }
+        prevStatusRef.current[o.order_id] = o.status;
+      });
+
+      setOrders(next);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [notify]);
 
   useEffect(() => {
     load();
@@ -101,6 +140,8 @@ export default function HungryVibezOrderTracking() {
           HungryVibes · Your Orders
         </p>
         <h1 className="text-3xl md:text-4xl font-black mb-6">Order Tracking</h1>
+
+        {active.length > 0 && <PushNotificationsPrompt context="food order" />}
 
         {loading ? (
           <p className="text-amber-100/60 text-sm py-12 text-center">Loading…</p>
@@ -190,7 +231,12 @@ function OrderTimeline({ order }: { order: OrderDoc }) {
         </div>
       </div>
 
-      <div className="space-y-3">
+      {/* Live delivery map */}
+      <div className="mt-4">
+        <DeliveryProgressMap status={order.status} orderId={order.order_id} />
+      </div>
+
+      <div className="space-y-3 mt-4">
         {STAGES.map((stage, idx) => {
           const Icon = stage.icon;
           const isDone = idx <= currentStage;

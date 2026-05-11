@@ -24,9 +24,31 @@
  * instantly. Cross-tab (`storage`) and tab-refocus (`focus`) listeners are
  * preserved for free.
  */
-import { useState, useEffect } from "react";
-import VolumetricDashboard from "@/pages/VolumetricDashboard";
+import { useState, useEffect, lazy, Suspense } from "react";
 import Dashboard from "@/pages/DashboardNew";
+
+// Lazy-load the Volumetric (Three.js ~500KB) bundle so the Classic dashboard
+// + first paint never pay for it. When a user has opted into Volumetric we
+// dynamic-import on demand; webpack splits a separate chunk.
+const VolumetricDashboard = lazy(() => import("@/pages/VolumetricDashboard"));
+
+function VolumetricLoadingFallback() {
+  return (
+    <div
+      data-testid="volumetric-loading-fallback"
+      className="fixed inset-0 z-[1000] flex flex-col items-center justify-center bg-[#0d1117] text-slate-200"
+    >
+      <div className="relative h-20 w-20">
+        <div className="absolute inset-0 animate-spin rounded-full border-2 border-fuchsia-500/30 border-t-fuchsia-400" />
+        <div className="absolute inset-2 animate-pulse rounded-full bg-fuchsia-500/10" />
+      </div>
+      <p className="mt-6 text-sm uppercase tracking-[0.3em] text-fuchsia-300">
+        Loading Galaxy
+      </p>
+      <p className="mt-2 text-xs text-slate-400">Spinning up the volumetric scene…</p>
+    </div>
+  );
+}
 
 export const DASHBOARD_VIEW_KEY = "gv_dashboard_view";
 export const DASHBOARD_VIEW_EVENT = "gv-dashboard-view";
@@ -77,5 +99,11 @@ export default function DashboardRouter() {
     return () => window.removeEventListener("focus", onFocus);
   }, []);
 
-  return view === "classic" ? <Dashboard /> : <VolumetricDashboard />;
+  return view === "classic" ? (
+    <Dashboard />
+  ) : (
+    <Suspense fallback={<VolumetricLoadingFallback />}>
+      <VolumetricDashboard />
+    </Suspense>
+  );
 }

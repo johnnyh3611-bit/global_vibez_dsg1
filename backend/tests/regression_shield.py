@@ -5515,3 +5515,155 @@ def test_beta_cohort_report_card_wired():
     assert "BetaCohortReportCard" in god
     assert "<BetaCohortReportCard />" in god
 
+
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# 2026-05-13 — Beta-launch polish sweep (7 locks)
+# ═══════════════════════════════════════════════════════════════════════
+
+def test_volumetric_dashboard_code_split():
+    """2026-05-13 perf: Three.js (~500KB) is now lazy-loaded so the Classic
+    dashboard + first paint don't pay for it. Verify React.lazy() + Suspense
+    wiring stays in place."""
+    router = open("/app/frontend/src/pages/DashboardRouter.tsx").read()
+    assert "lazy(() => import(\"@/pages/VolumetricDashboard\"))" in router
+    assert "Suspense" in router
+    assert "VolumetricLoadingFallback" in router
+
+    misc = open("/app/frontend/src/routes/miscRoutes.tsx").read()
+    assert "lazy(() => import(\"@/pages/VolumetricDashboard\"))" in misc
+    assert "volumetric-route-loading" in misc
+
+
+def test_hungryvibes_delivery_progress_map_mounted():
+    """2026-05-13 backlog: Customer-side HungryVibes order delivery tracking
+    UI — animated SVG delivery map showing courier progression from
+    restaurant → customer pin, swapping in based on order status."""
+    component = open("/app/frontend/src/components/hungryvibes/DeliveryProgressMap.tsx").read()
+    # Animated SVG with bezier-projected courier marker.
+    assert "STATUS_PROGRESS" in component
+    assert "ready" in component and "preparing" in component
+    assert "Q 240 40 440 180" in component  # bezier path
+    # Pinned to order_id testid for accessibility / Playwright.
+    assert "hv-delivery-map" in component
+
+    tracking = open("/app/frontend/src/pages/HungryVibezOrderTracking.tsx").read()
+    assert "DeliveryProgressMap" in tracking
+
+
+def test_ridez_nearby_drivers_endpoint_and_map():
+    """2026-05-13 backlog: Geo-proximity ride matching map UI — backend
+    haversine logic was already wired; surfaced new public preview
+    endpoint + stylized radar widget for the rider booking flow."""
+    from server import app
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    assert "/api/ridez/nearby-drivers" in paths
+
+    backend = open("/app/backend/routes/vibe_ridez_dispatch.py").read()
+    # Coordinates fuzzed to ~110m before exposing publicly (3 d.p.).
+    assert 'round(d["lat"], 3)' in backend
+    # ETA derivation present.
+    assert "estimated_eta_minutes" in backend
+
+    fe = open("/app/frontend/src/components/vibe-ridez/NearbyDriversMap.tsx").read()
+    for tid in [
+        "nearby-drivers-map",
+        "nearby-drivers-count",
+        "nearby-drivers-nearest",
+        "nearby-drivers-eta",
+        "nearby-rider-pin",
+    ]:
+        assert tid in fe, f"NearbyDriversMap missing testid: {tid}"
+
+    booking = open("/app/frontend/src/pages/RideBooking.tsx").read()
+    assert "NearbyDriversMap" in booking
+
+
+def test_push_notifications_hook_and_prompt_wired():
+    """2026-05-13 backlog: Web Push notifications — hook + prompt banner
+    + service-worker registration. Notifications fire on order/ride
+    status transitions."""
+    hook = open("/app/frontend/src/hooks/usePushNotifications.ts").read()
+    assert "Notification.requestPermission" in hook
+    assert "gv_push_pref" in hook
+    assert "notify" in hook
+
+    prompt = open("/app/frontend/src/components/notifications/PushNotificationsPrompt.tsx").read()
+    for tid in [
+        "push-notifications-prompt",
+        "push-notifications-enable",
+        "push-notifications-not-now",
+    ]:
+        assert tid in prompt, f"PushNotificationsPrompt missing testid: {tid}"
+
+    sw = open("/app/frontend/public/gv-sw.js").read()
+    # App-shell precache + cache-first for static assets.
+    assert "PRECACHE_URLS" in sw
+    assert "navigator.serviceWorker" not in sw  # SW file itself shouldn't reference navigator
+    assert "self.addEventListener(\"fetch\"" in sw
+
+    idx = open("/app/frontend/src/index.js").read()
+    assert "/gv-sw.js" in idx
+
+    tracking = open("/app/frontend/src/pages/HungryVibezOrderTracking.tsx").read()
+    assert "PushNotificationsPrompt" in tracking
+    assert "usePushNotifications" in tracking
+
+
+def test_vibe_venues_refund_policies_and_gallery():
+    """2026-05-13 backlog: Full Vibe Venues booking platform — refund
+    policy preset (flexible/moderate/strict), gallery photos (up to 8),
+    and visible policy banner on venue detail."""
+    backend = open("/app/backend/routes/vibe_venues.py").read()
+    # Three refund policy presets surfaced via /config.
+    for tier in ["flexible", "moderate", "strict"]:
+        assert f'"id": "{tier}"' in backend, f"refund policy missing: {tier}"
+    # HostListing fields.
+    assert "gallery_photos: List[str]" in backend
+    assert "refund_policy: str" in backend
+
+    host = open("/app/frontend/src/pages/vibe-venues/VibeVenuesHost.tsx").read()
+    assert "vv-host-gallery-wrapper" in host
+    assert "vv-host-refund-policy-wrapper" in host
+    # Three refund presets enumerated in the picker.
+    assert "vv-host-refund-${p.id}" in host
+    for tier in ["flexible", "moderate", "strict"]:
+        assert f'id: "{tier}"' in host, f"refund picker missing tier: {tier}"
+
+    detail = open("/app/frontend/src/pages/vibe-venues/VibeVenuesVenueDetail.tsx").read()
+    assert "vv-detail-refund-policy" in detail
+    assert "vv-detail-gallery" in detail
+
+
+def test_stripe_connect_wizard_route_and_steps():
+    """2026-05-13 backlog: Stripe Connect onboarding wizard — 3-step guided
+    flow lifting the single-button experience into a full
+    requirements → verification → activation funnel."""
+    wizard = open("/app/frontend/src/pages/payouts/StripeConnectWizard.tsx").read()
+    for tid in [
+        "stripe-connect-wizard",
+        "connect-wizard-stepper",
+        "connect-step-1",
+        "connect-step-2",
+        "connect-step-3",
+        "connect-wizard-start-btn",
+    ]:
+        assert tid in wizard, f"StripeConnectWizard missing testid: {tid}"
+    # Stripe data collection happens on Stripe's servers — disclaimer required.
+    assert "Stripe directly" in wizard
+
+    misc = open("/app/frontend/src/routes/miscRoutes.tsx").read()
+    assert '/payouts/setup' in misc
+
+
+def test_offline_service_worker_versioned():
+    """2026-05-13 perf: Offline asset cache SW caches the app shell so
+    flaky connections don't blank the page. Versioned cache name evicts
+    old caches on activate."""
+    sw = open("/app/frontend/public/gv-sw.js").read()
+    assert "CACHE_VERSION" in sw
+    assert "skipWaiting" in sw
+    assert "clients.claim" in sw
+    # Never cache /api/ — backend handles its own caching.
+    assert '/api/' in sw

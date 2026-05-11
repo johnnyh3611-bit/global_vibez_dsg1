@@ -20,6 +20,7 @@ import {
   Calendar as CalendarIcon,
   ChefHat,
   AlertCircle,
+  ShieldCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -33,9 +34,11 @@ type Venue = {
   zip_code: string;
   capacity: number;
   cover_photo?: string;
+  gallery_photos?: string[];
   walkthrough_3d_url?: string;
   base_hourly_rate_usd: number;
   amenities?: string[];
+  refund_policy?: string;
 };
 
 type Calendar = {
@@ -218,6 +221,59 @@ export default function VibeVenuesVenueDetail() {
               ))}
             </div>
           ) : null}
+        </Card>
+
+        {/* Gallery */}
+        {venue.gallery_photos && venue.gallery_photos.length > 0 && (
+          <Card
+            className="p-4 bg-[#0F0720] border border-fuchsia-500/15 rounded-2xl mb-6"
+            data-testid="vv-detail-gallery"
+          >
+            <p className="text-xs font-mono uppercase tracking-[0.3em] text-purple-300/80 mb-3">
+              Gallery · {venue.gallery_photos.length} photos
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              {venue.gallery_photos.map((url, i) => (
+                <a
+                  key={i}
+                  href={url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block aspect-square rounded-lg overflow-hidden border border-fuchsia-500/10 hover:border-fuchsia-400/50 transition"
+                  data-testid={`vv-detail-gallery-photo-${i}`}
+                >
+                  <img
+                    src={url}
+                    alt={`${venue.name} photo ${i + 1}`}
+                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                  />
+                </a>
+              ))}
+            </div>
+          </Card>
+        )}
+
+        {/* Refund policy banner */}
+        <Card
+          className="p-4 bg-gradient-to-r from-cyan-500/10 via-fuchsia-500/10 to-cyan-500/10 border border-cyan-400/25 rounded-2xl mb-6 flex items-start gap-3"
+          data-testid="vv-detail-refund-policy"
+        >
+          <ShieldCheck className="w-5 h-5 text-cyan-300 mt-0.5 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-mono uppercase tracking-[0.3em] text-cyan-300/90 mb-1">
+              Refund Policy · {(venue.refund_policy || "moderate").toUpperCase()}
+            </p>
+            <p className="text-sm text-cyan-100/85">
+              {venue.refund_policy === "flexible"
+                ? "Full refund up to 24 hours before start time. 50% refund inside 24 hours."
+                : venue.refund_policy === "strict"
+                ? "Full refund up to 7 days before start time. No refund inside the 7-day window."
+                : "Full refund up to 5 days before start. 50% refund up to 48 hours before. No refund inside 48 hours."}
+            </p>
+            <p className="text-[10px] text-cyan-100/60 mt-1 italic">
+              All funds held in $DSG escrow until Vibe-Check confirms or a dispute resolves.
+            </p>
+          </div>
         </Card>
 
         {/* Booking widget */}
