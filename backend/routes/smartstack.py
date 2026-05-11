@@ -445,3 +445,250 @@ async def my_orders(request: Request) -> Dict[str, Any]:
         {"customer_user_id": user.user_id}, {"_id": 0}
     ).sort("created_at", -1).limit(25).to_list(length=25)
     return {"success": True, "orders": orders}
+
+
+# ─── Merchant-side: fulfillment state machine ───────────────────────────
+#
+# 2026-05-12 founder ask: "If I had drivers and merchants right now, would
+# everything work?" Honest answer at the time: no, because merchants
+# couldn't actually SEE or FULFILL the orders customers placed. We had
+# `hv_orders` writes from the customer side but no merchant inbox / accept
+# / mark-ready / mark-delivered loop.
+#
+# This module wires the merchant fulfillment side end-to-end. The state
+# machine is intentionally simple for beta (small-restaurant model where
+# the merchant handles delivery themselves with their own staff/driver):
+#
+#   pending ──merchant accepts──▶ preparing ──merchant marks ready──▶ ready
+#     │                                                                  │
+#     └─merchant rejects──▶ rejected (auto-refund)        merchant marks
+#                                                          delivered │
+#                                                                    ▼
+#                                                              delivered
+#                                                              (+ merchant
+#                                                              vibe-account
+#                                                              credit, 2% tax)
+#
+# A future round can branch "ready" into "out_for_delivery" + driver
+# assignment (cross-link to Vibe Ridez drivers via SmartStack offer logic
+# above). For beta, merchant-fulfilled is the realistic shippable model.
+
+
+# Valid forward transitions. Anything not listed is rejected with 409.
+ORDER_TRANSITIONS = {
+    "pending":     {"preparing", "rejected"},
+    "paid":        {"preparing", "rejected"},  # paid = post-coins debit
+    "preparing":   {"ready"},
+    "ready":       {"delivered"},
+    "delivered":   set(),
+    "rejected":    set(),
+}
+
+
+class OrderStatusPatch(BaseModel):
+    """Body for merchant transition endpoints (accept / ready / delivered / reject)."""
+    note: Optional[str] = None  # optional merchant note (e.g. "Out of pepperoni")
+
+
+async def _get_merchant_owned_order(db, order_id: str, owner_user_id: str) -> Dict[str, Any]:
+    """Fetch an order AND verify the caller owns the receiving merchant.
+    Raises 404 if the order doesn't exist or isn't ours."""
+    order = await db.hv_orders.find_one({"order_id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    merchant = await db.hv_merchants.find_one(
+        {"owner_user_id": owner_user_id, "merchant_id": order.get("merchant_id")},
+        {"_id": 0, "merchant_id": 1, "name": 1},
+    )
+    if not merchant:
+        raise HTTPException(
+            status_code=403,
+            detail="Order belongs to a different merchant",
+        )
+    return order
+
+
+async def _transition_order(
+    db,
+    order_id: str,
+    owner_user_id: str,
+    new_status: str,
+    note: Optional[str],
+) -> Dict[str, Any]:
+    order = await _get_merchant_owned_order(db, order_id, owner_user_id)
+    current = order.get("status", "pending")
+    allowed = ORDER_TRANSITIONS.get(current, set())
+    if new_status not in allowed:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Cannot transition {current} → {new_status}. "
+                   f"Allowed: {sorted(allowed) or 'none (terminal state)'}",
+        )
+
+    now_iso = datetime.now(timezone.utc).isoformat()
+    update = {
+        "status": new_status,
+        f"status_history.{new_status}_at": now_iso,
+    }
+    if note:
+        update[f"merchant_notes.{new_status}"] = note
+
+    await db.hv_orders.update_one(
+        {"order_id": order_id},
+        {"$set": update},
+    )
+
+    # If transitioning to "delivered", credit the merchant's Vibe Account
+    # minus the 2% Vibe Tax. Mirrors POST /api/hungryvibes/merchant/vibe-account/credit
+    # so the same ledger collection (`hv_vibe_ledger`) and same balance
+    # field (`vibe_account_balance`) are updated — one source of truth.
+    if new_status == "delivered":
+        food_usd = round(float(order.get("food_payout_usd", 0)), 2)
+        vibe_tax = round(food_usd * VIBE_TAX_RATE, 2)
+        net = round(food_usd - vibe_tax, 2)
+        merchant_doc = await db.hv_merchants.find_one(
+            {"merchant_id": order["merchant_id"]},
+            {"_id": 0, "vibe_account_balance": 1},
+        )
+        new_balance = round(float((merchant_doc or {}).get("vibe_account_balance", 0.0)) + net, 2)
+        await db.hv_vibe_ledger.insert_one({
+            "ledger_id": str(uuid4()),
+            "merchant_id": order["merchant_id"],
+            "order_id": order_id,
+            "gross": food_usd,
+            "vibe_tax": vibe_tax,
+            "net_credit": net,
+            "kind": "fulfillment_settlement",
+            "created_at": now_iso,
+        })
+        await db.hv_merchants.update_one(
+            {"merchant_id": order["merchant_id"]},
+            {"$set": {"vibe_account_balance": new_balance}},
+        )
+
+    # If transitioning to "rejected", refund coins if they paid with coins.
+    if new_status == "rejected" and order.get("payment_method") == "coins":
+        coins_paid = int(order.get("coins_paid") or 0)
+        if coins_paid > 0:
+            from services.coin_wallet import credit_coins
+            try:
+                await credit_coins(
+                    db, order["customer_user_id"], coins_paid,
+                    reason="hungryvibez_order_rejected_refund",
+                    metadata={"order_id": order_id},
+                )
+            except Exception:
+                # Silent — admin can manual-refund via God Mode if this fails.
+                pass
+
+    refreshed = await db.hv_orders.find_one({"order_id": order_id}, {"_id": 0})
+    return refreshed
+
+
+# Need VIBE_TAX_RATE here — re-import from merchant module to keep one
+# source of truth (DRY: changing the rate in one place updates both).
+from routes.hungryvibes_merchant import VIBE_TAX_RATE  # noqa: E402
+
+
+# Merchant inbox — orders received, newest first. Filters out "rejected"
+# + "delivered" by default so the active queue stays focused; pass
+# ?include_archived=true to see everything.
+@customer_router.get("/merchant-inbox")
+async def merchant_inbox(
+    request: Request,
+    include_archived: bool = False,
+    limit: int = 50,
+) -> Dict[str, Any]:
+    """Return all orders for the merchant the caller owns."""
+    user = await _require_user(request)
+    db = get_database()
+    merchant = await db.hv_merchants.find_one(
+        {"owner_user_id": user.user_id},
+        {"_id": 0, "merchant_id": 1, "name": 1},
+    )
+    if not merchant:
+        raise HTTPException(
+            status_code=404,
+            detail="No merchant profile — register first via /api/hungryvibes/merchant/register",
+        )
+
+    query: Dict[str, Any] = {"merchant_id": merchant["merchant_id"]}
+    if not include_archived:
+        query["status"] = {"$nin": ["rejected", "delivered"]}
+
+    orders = await db.hv_orders.find(query, {"_id": 0}).sort(
+        "created_at", -1
+    ).limit(int(limit)).to_list(length=int(limit))
+
+    return {
+        "success": True,
+        "merchant_id": merchant["merchant_id"],
+        "merchant_name": merchant.get("name"),
+        "count": len(orders),
+        "orders": orders,
+    }
+
+
+# Single-order detail (merchant-owned). Useful for an order-detail modal
+# that polls every few seconds.
+@customer_router.get("/merchant/{order_id}")
+async def merchant_order_detail(order_id: str, request: Request) -> Dict[str, Any]:
+    user = await _require_user(request)
+    db = get_database()
+    order = await _get_merchant_owned_order(db, order_id, user.user_id)
+    return {"success": True, "order": order}
+
+
+@customer_router.post("/merchant/{order_id}/accept")
+async def merchant_accept(
+    order_id: str,
+    payload: OrderStatusPatch,
+    request: Request,
+) -> Dict[str, Any]:
+    """Merchant accepts the order — transitions pending/paid → preparing."""
+    user = await _require_user(request)
+    db = get_database()
+    order = await _transition_order(db, order_id, user.user_id, "preparing", payload.note)
+    return {"success": True, "order": order}
+
+
+@customer_router.post("/merchant/{order_id}/ready")
+async def merchant_ready(
+    order_id: str,
+    payload: OrderStatusPatch,
+    request: Request,
+) -> Dict[str, Any]:
+    """Merchant marks the order ready for pickup/delivery (preparing → ready)."""
+    user = await _require_user(request)
+    db = get_database()
+    order = await _transition_order(db, order_id, user.user_id, "ready", payload.note)
+    return {"success": True, "order": order}
+
+
+@customer_router.post("/merchant/{order_id}/delivered")
+async def merchant_delivered(
+    order_id: str,
+    payload: OrderStatusPatch,
+    request: Request,
+) -> Dict[str, Any]:
+    """Merchant marks the order as delivered (ready → delivered).
+    Auto-credits Vibe Account net of 2% Vibe Tax."""
+    user = await _require_user(request)
+    db = get_database()
+    order = await _transition_order(db, order_id, user.user_id, "delivered", payload.note)
+    return {"success": True, "order": order}
+
+
+@customer_router.post("/merchant/{order_id}/reject")
+async def merchant_reject(
+    order_id: str,
+    payload: OrderStatusPatch,
+    request: Request,
+) -> Dict[str, Any]:
+    """Merchant rejects the order (pending/paid → rejected).
+    Auto-refunds coins if customer paid with coins."""
+    user = await _require_user(request)
+    db = get_database()
+    order = await _transition_order(db, order_id, user.user_id, "rejected", payload.note)
+    return {"success": True, "order": order}
+

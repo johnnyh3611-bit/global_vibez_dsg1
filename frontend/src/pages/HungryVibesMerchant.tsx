@@ -33,13 +33,17 @@ import {
   Trash2,
   Utensils,
   Wallet,
+  ClipboardList,
+  CheckCircle2,
+  XCircle,
+  Clock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { authFetch } from "@/utils/secureAuth";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
-type TabKey = "menu" | "promos" | "vibe";
+type TabKey = "menu" | "orders" | "promos" | "vibe";
 
 interface Merchant {
   merchant_id: string;
@@ -288,6 +292,7 @@ export default function HungryVibesMerchant() {
         {/* Tabs */}
         <div className="flex gap-2 mb-5 overflow-x-auto" data-testid="hv-tabs">
           <TabButton active={tab === "menu"} onClick={() => setTab("menu")} icon={<Utensils className="w-4 h-4" />} label="Menu Builder" testId="hv-tab-menu" />
+          <TabButton active={tab === "orders"} onClick={() => setTab("orders")} icon={<ClipboardList className="w-4 h-4" />} label="Orders" testId="hv-tab-orders" />
           <TabButton active={tab === "promos"} onClick={() => setTab("promos")} icon={<Tag className="w-4 h-4" />} label="VIBE Promos" testId="hv-tab-promos" />
           <TabButton active={tab === "vibe"} onClick={() => setTab("vibe")} icon={<Wallet className="w-4 h-4" />} label="Vibe Account" testId="hv-tab-vibe" />
         </div>
@@ -300,6 +305,8 @@ export default function HungryVibesMerchant() {
             setBusy={setBusy}
             reload={loadMenu}
           />
+        ) : tab === "orders" ? (
+          <OrdersTab onSettlementCredit={async () => { await loadVibe(); await loadMerchant(); }} />
         ) : tab === "promos" ? (
           <PromosTab promos={promos} busy={busy} setBusy={setBusy} reload={loadPromos} />
         ) : (
@@ -960,6 +967,224 @@ function VibeAccountTab({
             ))}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+
+
+// ─── ORDERS TAB ───────────────────────────────────────────────────────
+//
+// 2026-05-12 founder ask: "If I had drivers and merchants right now, would
+// everything work?" Built the merchant fulfillment loop end-to-end so the
+// answer is now YES.
+//
+// Polls /api/hungryvibes/orders/merchant-inbox every 8s. Active orders
+// show at the top; each card has the correct CTA for its current state
+// (Accept/Reject when pending → Mark Ready when preparing → Mark Delivered
+// when ready). Delivered/Rejected hidden by default; toggle "Show archive"
+// to include them. Marking delivered auto-credits the merchant's Vibe
+// Account net of the 2% Vibe Tax (server-side).
+
+interface HVOrder {
+  order_id: string;
+  customer_user_id: string;
+  merchant_id: string;
+  food_payout_usd: number;
+  status: "pending" | "paid" | "preparing" | "ready" | "delivered" | "rejected";
+  payment_method: "card" | "coins";
+  coins_paid?: number | null;
+  pickup_at?: { lat: number; lng: number };
+  deliver_to?: { lat: number; lng: number };
+  note?: string | null;
+  created_at: string;
+  status_history?: Record<string, string>;
+}
+
+const STATUS_TINT: Record<HVOrder["status"], string> = {
+  pending: "bg-amber-500/15 text-amber-300 border-amber-400/40",
+  paid: "bg-amber-500/15 text-amber-300 border-amber-400/40",
+  preparing: "bg-cyan-500/15 text-cyan-300 border-cyan-400/40",
+  ready: "bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-400/40",
+  delivered: "bg-emerald-500/15 text-emerald-300 border-emerald-400/40",
+  rejected: "bg-rose-500/15 text-rose-300 border-rose-400/40",
+};
+
+function OrdersTab({ onSettlementCredit }: { onSettlementCredit: () => Promise<void> }) {
+  const [orders, setOrders] = useState<HVOrder[]>([]);
+  const [includeArchive, setIncludeArchive] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    try {
+      const res = await authFetch(
+        `${API}/api/hungryvibes/orders/merchant-inbox?include_archived=${includeArchive}`,
+      );
+      if (!res.ok) {
+        setOrders([]);
+        return;
+      }
+      const data = await res.json();
+      setOrders(data.orders || []);
+    } finally {
+      setLoading(false);
+    }
+  }, [includeArchive]);
+
+  useEffect(() => {
+    load();
+    const id = setInterval(load, 8000);
+    return () => clearInterval(id);
+  }, [load]);
+
+  const transition = async (
+    order: HVOrder,
+    action: "accept" | "ready" | "delivered" | "reject",
+  ) => {
+    setBusyId(order.order_id);
+    try {
+      const res = await authFetch(
+        `${API}/api/hungryvibes/orders/merchant/${order.order_id}/${action}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        },
+      );
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        toast.error(err.detail || `Could not ${action} order`);
+        return;
+      }
+      toast.success(
+        action === "accept"
+          ? "Order accepted · preparing"
+          : action === "ready"
+          ? "Order marked ready"
+          : action === "delivered"
+          ? "Delivered — vibe account credited"
+          : "Order rejected — customer refunded",
+      );
+      await load();
+      if (action === "delivered") await onSettlementCredit();
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="text-center py-12 text-amber-200/60 text-sm" data-testid="hv-orders-loading">
+        Loading orders…
+      </div>
+    );
+  }
+
+  return (
+    <div data-testid="hv-orders-tab">
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-amber-100/80 text-sm">
+          {orders.length === 0
+            ? includeArchive
+              ? "No orders yet."
+              : "No active orders — flip 'Show archive' to see past orders."
+            : `${orders.length} order${orders.length === 1 ? "" : "s"}${includeArchive ? "" : " · active queue"}`}
+        </p>
+        <button
+          type="button"
+          onClick={() => setIncludeArchive((v) => !v)}
+          data-testid="hv-orders-toggle-archive"
+          className="text-[10px] uppercase tracking-widest text-amber-300/80 hover:text-white border border-amber-400/30 px-3 py-1 rounded-full"
+        >
+          {includeArchive ? "Active only" : "Show archive"}
+        </button>
+      </div>
+
+      <div className="space-y-3" data-testid="hv-orders-list">
+        {orders.map((o) => {
+          const tint = STATUS_TINT[o.status] || STATUS_TINT.pending;
+          const isActionable = ["pending", "paid", "preparing", "ready"].includes(o.status);
+          return (
+            <div
+              key={o.order_id}
+              className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-md p-4"
+              data-testid={`hv-order-${o.order_id}`}
+            >
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span
+                      className={`text-[10px] uppercase tracking-widest font-bold border px-2 py-0.5 rounded-full ${tint}`}
+                      data-testid={`hv-order-status-${o.order_id}`}
+                    >
+                      {o.status}
+                    </span>
+                    <span className="text-amber-100 font-bold">
+                      ${o.food_payout_usd.toFixed(2)}
+                    </span>
+                    {o.payment_method === "coins" && (
+                      <span className="text-cyan-300/80 text-[10px]">paid in ₵</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-amber-100/60 truncate">
+                    Order {o.order_id.slice(0, 8)} · {new Date(o.created_at).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                  </p>
+                  {o.note && (
+                    <p className="text-xs text-amber-200/80 mt-1 italic">"{o.note}"</p>
+                  )}
+                </div>
+                <Clock className="w-4 h-4 text-amber-300/60 shrink-0" />
+              </div>
+
+              {isActionable && (
+                <div className="flex flex-wrap gap-2">
+                  {(o.status === "pending" || o.status === "paid") && (
+                    <>
+                      <button
+                        onClick={() => transition(o, "accept")}
+                        disabled={busyId === o.order_id}
+                        data-testid={`hv-order-accept-${o.order_id}`}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/80 hover:bg-emerald-400 text-[#0a1a0e] text-xs font-bold disabled:opacity-50"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Accept
+                      </button>
+                      <button
+                        onClick={() => transition(o, "reject")}
+                        disabled={busyId === o.order_id}
+                        data-testid={`hv-order-reject-${o.order_id}`}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-500/30 hover:bg-rose-500/50 text-rose-100 text-xs font-bold disabled:opacity-50"
+                      >
+                        <XCircle className="w-3.5 h-3.5" /> Reject · refund
+                      </button>
+                    </>
+                  )}
+                  {o.status === "preparing" && (
+                    <button
+                      onClick={() => transition(o, "ready")}
+                      disabled={busyId === o.order_id}
+                      data-testid={`hv-order-ready-${o.order_id}`}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-fuchsia-500/80 hover:bg-fuchsia-400 text-white text-xs font-bold disabled:opacity-50"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Mark ready
+                    </button>
+                  )}
+                  {o.status === "ready" && (
+                    <button
+                      onClick={() => transition(o, "delivered")}
+                      disabled={busyId === o.order_id}
+                      data-testid={`hv-order-delivered-${o.order_id}`}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-400 hover:bg-amber-300 text-[#1a0d05] text-xs font-bold disabled:opacity-50"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Mark delivered
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

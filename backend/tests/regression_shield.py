@@ -4955,3 +4955,69 @@ def test_role_switcher_globally_mounted():
     assert "import RoleSwitcher" in app_js, "RoleSwitcher not imported"
     assert "<RoleSwitcher />" in app_js, "RoleSwitcher not mounted in AppRouter"
 
+
+
+def test_hungryvibes_merchant_fulfillment_loop_wired():
+    """2026-05-12 — founder: 'If I had drivers and merchants right now,
+    would everything work?' Honest answer was 'no, merchants can't
+    actually accept/fulfill the orders customers placed.' Fixed by
+    adding the merchant fulfillment state machine on top of the existing
+    order-create flow.
+
+    The state machine: pending|paid → preparing → ready → delivered.
+    From pending|paid you can also reject (auto-refund if paid in coins).
+    Marking delivered auto-credits the merchant's Vibe Account net of
+    the 2% Vibe Tax — same ledger collection (hv_vibe_ledger) and same
+    balance field (vibe_account_balance) as the existing
+    POST /api/hungryvibes/merchant/vibe-account/credit endpoint so there's
+    one source of truth.
+    """
+    from server import app
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    for p in [
+        "/api/hungryvibes/orders/merchant-inbox",
+        "/api/hungryvibes/orders/merchant/{order_id}",
+        "/api/hungryvibes/orders/merchant/{order_id}/accept",
+        "/api/hungryvibes/orders/merchant/{order_id}/ready",
+        "/api/hungryvibes/orders/merchant/{order_id}/delivered",
+        "/api/hungryvibes/orders/merchant/{order_id}/reject",
+    ]:
+        assert p in paths, f"merchant fulfillment endpoint missing: {p}"
+
+    src = open("/app/backend/routes/smartstack.py").read()
+    # State machine must enforce forward-only transitions.
+    assert "ORDER_TRANSITIONS" in src
+    assert '"preparing"' in src and '"ready"' in src and '"delivered"' in src
+    # Sanity: cannot transition delivered → anything.
+    assert '"delivered":   set()' in src or '"delivered": set()' in src
+    # Delivered must credit the merchant Vibe Account using the SAME schema
+    # as the existing endpoint (vibe_account_balance + hv_vibe_ledger).
+    assert "hv_vibe_ledger" in src
+    assert "vibe_account_balance" in src
+    assert "VIBE_TAX_RATE" in src
+    # Rejected coin orders refund the customer.
+    assert "credit_coins" in src
+    assert "hungryvibez_order_rejected_refund" in src
+
+    # Merchant dashboard frontend mounts an Orders tab + actionable CTAs.
+    fe = open("/app/frontend/src/pages/HungryVibesMerchant.tsx").read()
+    for tid in [
+        "hv-tab-orders",
+        "hv-orders-tab",
+        "hv-orders-list",
+        "hv-orders-toggle-archive",
+    ]:
+        assert tid in fe, f"OrdersTab missing testid: {tid}"
+    # Per-order action testids are template-literal; assert the templates exist.
+    for tmpl in [
+        "hv-order-${o.order_id}",
+        "hv-order-status-${o.order_id}",
+        "hv-order-accept-${o.order_id}",
+        "hv-order-reject-${o.order_id}",
+        "hv-order-ready-${o.order_id}",
+        "hv-order-delivered-${o.order_id}",
+    ]:
+        assert tmpl in fe, f"OrdersTab missing testid template: {tmpl}"
+    # Polls merchant-inbox.
+    assert "/api/hungryvibes/orders/merchant-inbox" in fe
+
