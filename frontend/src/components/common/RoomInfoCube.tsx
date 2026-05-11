@@ -112,6 +112,9 @@ export default function RoomInfoCube() {
         <div
           className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-sm flex items-center justify-center px-4 py-8 overflow-y-auto"
           data-testid="room-info-cube-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="room-info-cube-title-h2"
           onClick={() => setOpen(false)}
         >
           <div
@@ -132,7 +135,7 @@ export default function RoomInfoCube() {
               <Info className="w-5 h-5 text-cyan-300" />
               <p className="text-[10px] uppercase tracking-[0.3em] text-cyan-400">Room Info</p>
             </div>
-            <h2 className="text-2xl font-black text-white mt-1" data-testid="room-info-cube-title">
+            <h2 className="text-2xl font-black text-white mt-1" id="room-info-cube-title-h2" data-testid="room-info-cube-title">
               {info.title}
             </h2>
             <p className="text-sm text-cyan-100/80 italic mt-1" data-testid="room-info-cube-tagline">

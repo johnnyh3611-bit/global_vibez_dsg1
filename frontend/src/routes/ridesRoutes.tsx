@@ -1,10 +1,9 @@
-import { Route } from "react-router-dom";
+import { Route, Navigate } from "react-router-dom";
 import RidesLanding from "@/pages/RidesLanding";
 import RideBooking from "@/pages/RideBooking";
 import RideIntegration from "@/pages/RideIntegration";
 import RideHistory from "@/pages/RideHistory";
 import DriverRegistration from "@/pages/DriverRegistration";
-import DriverDashboard from "@/pages/DriverDashboard";
 import SafeRideTracking from "@/pages/SafeRideTracking";
 import SafetySettings from "@/pages/SafetySettings";
 import DriverLicenseVerification from "@/pages/DriverLicenseVerification";
@@ -37,7 +36,12 @@ export const ridesRoutes = (ProtectedRoute) => (
     <Route path="/ride/track/:rideId" element={<ProtectedRoute><SafeRideTracking /></ProtectedRoute>} />
     <Route path="/rides/safety-settings" element={<ProtectedRoute><SafetySettings /></ProtectedRoute>} />
     <Route path="/driver/register" element={<ProtectedRoute><DriverRegistration /></ProtectedRoute>} />
-    <Route path="/driver/dashboard" element={<ProtectedRoute><DriverDashboard /></ProtectedRoute>} />
+    {/* 2026-05-12 fix: legacy /driver/dashboard hung indefinitely on
+        'Loading driver dashboard...' for authenticated users (the old
+        DriverDashboard.tsx awaited a fetch that never resolved). Redirect
+        to the working /vibe-ridez/driver-dashboard so legacy bookmarks +
+        in-app links resolve cleanly. */}
+    <Route path="/driver/dashboard" element={<Navigate to="/vibe-ridez/driver-dashboard" replace />} />
     <Route path="/driver-registration" element={<ProtectedRoute><DriverRegistration /></ProtectedRoute>} />
     <Route path="/driver-license-verification" element={<ProtectedRoute><DriverLicenseVerification /></ProtectedRoute>} />
     <Route path="/driver-verification-status" element={<ProtectedRoute><DriverVerificationStatus /></ProtectedRoute>} />
