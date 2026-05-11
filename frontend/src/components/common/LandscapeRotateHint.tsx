@@ -70,12 +70,12 @@ export default function LandscapeRotateHint() {
         data-testid="landscape-toggle"
         aria-pressed={forced}
         aria-label={forced ? "Disable forced landscape" : "Force landscape orientation"}
-        className="fixed top-14 right-3 z-[55] flex items-center gap-1.5 px-2.5 py-1 rounded-full
+        className="fixed top-14 right-3 z-[54] flex items-center gap-1 px-2 py-0.5 rounded-full
                    bg-black/70 hover:bg-black/90 backdrop-blur border border-amber-400/40
                    text-white text-[10px] font-black uppercase tracking-wider transition-colors"
       >
         <RotateCcw className={`w-3 h-3 ${forced ? "text-amber-300" : "text-white/60"}`} />
-        <span className="hidden sm:inline">{forced ? "Forced" : orientation}</span>
+        <span className="hidden md:inline text-[9px]">{forced ? "Forced" : orientation}</span>
       </button>
 
       {/* Centered hint overlay — only on portrait + mobile + not forced. */}

@@ -24,7 +24,7 @@ const PASS_PHRASE = "I understand";
 type Wallet = { credits_balance?: number; token_balance?: number };
 
 const TABLES = [
-  { id: "blackjack", label: "Velvet Blackjack", path: "/blackjack", icon: Spade, sub: "₵5k minimum · 1-deck table" },
+  { id: "blackjack", label: "Velvet Blackjack", path: "/practice/play/blackjack", icon: Spade, sub: "₵5k minimum · 1-deck table" },
   { id: "baccarat", label: "Sapphire Baccarat", path: "/baccarat", icon: Diamond, sub: "₵5k buy-in · single-shoe" },
   { id: "roulette", label: "Brass Roulette", path: "/practice/play/roulette", icon: Coins, sub: "₵5k inside max · European" },
   { id: "three-card-poker", label: "Garnet 3-Card", path: "/three-card-poker", icon: Heart, sub: "₵5k ante · pair-plus on" },

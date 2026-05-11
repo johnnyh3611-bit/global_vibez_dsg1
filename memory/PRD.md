@@ -1,7 +1,14 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
 
-> **2026-05-10 (Latest) — Tier A PDF Features Shipped + Launch Readiness GREEN 🚀.** Founder ran the comprehensive launch sweep.
+> **2026-05-10 (Latest) — The Underground Casino + Universal Landscape Toggle 🎰♠️.** Founder's three asks shipped.
+>
+> 1. **The Underground** (`/underground-casino`) — brand-new unique high-limit private lounge. Deep wine/burgundy velvet base + amber brass accents (visually distinct from cyan `/cyber-casino`). Pass-phrase gate ("I understand") + ₵5,000 balance floor. AI host Lou greets in the lobby. 6 themed tables: Velvet Blackjack, Sapphire Baccarat, Brass Roulette, Garnet 3-Card, Obsidian 654, Quantum Vault — each navigates to its underlying game with `?stake_floor=5000&lounge=underground` so future stake-floor enforcement is one-line wire-up away. testids: `ugc-entry-gate`, `ugc-balance`, `ugc-pass-phrase`, `ugc-enter`, `ugc-lobby`, `ugc-tables`, `ugc-table-{id}`.
+> 2. **Universal Landscape Toggle** (`<LandscapeRotateHint />`) — top-right pill (data-testid=`landscape-toggle`) mounted globally on every fullscreen game route via `<GlobalCommsMounter />`. 3 states: AUTO/portrait/Forced. Auto-shows a centered hint overlay (`landscape-hint-overlay`) with Force + Continue-in-Portrait buttons when the device is portrait+mobile. Forced state applies `body.gv-force-landscape` CSS rotation that works on ANY device regardless of OS orientation. Persisted in `localStorage.gv_force_landscape`. **Verified live on all 13 fullscreen routes.**
+> 3. **Implementation Guide PDF fixes** — new shared CSS helpers (`.card-room-frame`, `.trick-play-area`, `.player-hand`) that cap table size to `min(95vw, 75vh, 600px)`, push trick-play area `+25px` toward center-top per PDF §2, and anchor player hand to bottom safe-area per PDF §5. Available as opt-in classes; existing room components keep working unchanged.
+> 4. **Bug fixed during testing**: clicking Velvet Blackjack from Underground stripped `?stake_floor=5000` because `/blackjack` does a `Navigate` redirect. Switched to direct path `/practice/play/blackjack`.
+>
+> **Status: 🟢 ready for redeploy.** 265/265 pytest GREEN. **i18n still budget-capped** ($0.42/$0.40) — your top-up hasn't propagated yet to the Universal Key.
 >
 > **NEW MODULES (3 backend + 1 frontend, all live):**
 > 1. **DSG 6 Quantum Vault Lottery** (`/api/dsg6/*`, page `/lottery`) — 5+1 ball draw (5 core 1-50 + 1 Vibe Ball RUBY/SAPPHIRE/EMERALD/GOLD/DIAMOND). $2 VIBE ticket, 10% maintenance at entry, 13.5% Sovereign Tax on winnings. Tier payouts: 5-match=JACKPOT, 4-match=10% of pool, 3-match=3% of pool. RUBY/correct-ball=2× multiplier, partial-ball=1.5×. Admin draw endpoint settles all tickets, credits winners. Lottery `/lottery` page with picker grid + ball selector + my-tickets list + last-draw display.
