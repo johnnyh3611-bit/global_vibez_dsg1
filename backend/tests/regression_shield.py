@@ -4719,3 +4719,24 @@ def test_personal_homeworld_wired_end_to_end():
     assert "/api/recent-rooms/me" in vol
     assert "homeworld" in vol
     assert "HOME" in vol  # the "HOME" badge on the thumbnail
+
+
+def test_wallet_login_removed_phantom_moved_to_wallet_page():
+    """2026-05-12 founder ask: 'let's drop the wallet login' (Privy iframe
+    rendered as a 'really big, outrageous modal' when CSP blocked framing
+    on production domains). Phantom wallet linking now happens AFTER
+    login on /wallet so the sign-in flow stays clean."""
+    login = open("/app/frontend/src/pages/LoginPage.tsx").read()
+    # Privy import + button slot removed from the login page.
+    assert "import PrivyLoginButton" not in login
+    assert "<PrivyLoginButton />" not in login
+    assert 'data-testid="privy-login-slot"' not in login
+
+    # PhantomConnectButton no longer rendered in the landing header.
+    landing = open("/app/frontend/src/components/landing/LandingHeaderEnhanced.tsx").read()
+    assert "<PhantomConnectButton" not in landing or "/* 2026-05-12" in landing
+
+    # PhantomConnectButton IS rendered on the /wallet page.
+    wallet = open("/app/frontend/src/pages/Wallet.tsx").read()
+    assert "PhantomConnectButton" in wallet
+    assert "wallet-connect-phantom-row" in wallet

@@ -17,7 +17,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Spade, Coins, Sparkles } from "lucide-react";
 import LandingLanguageSwitcher from "@/components/LandingLanguageSwitcher";
-import PhantomConnectButton from "@/components/web3/PhantomConnectButton";
+import PhantomConnectButton from "@/components/web3/PhantomConnectButton"; // eslint-disable-line @typescript-eslint/no-unused-vars
 
 export type RoomKey =
   | "game_logic"
@@ -171,9 +171,8 @@ const LandingHeaderEnhanced: React.FC<Props> = ({ onRoomHover }) => {
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <LandingLanguageSwitcher />
 
-          <div className="hidden lg:flex" data-testid="landing-nav-phantom-wrapper">
-            <PhantomConnectButton label="Connect Wallet" />
-          </div>
+          {/* 2026-05-12: Phantom wallet button moved from landing header
+              to /wallet (Connect Wallet flow happens AFTER login). */}
 
           <button
             onClick={() => navigate("/login")}

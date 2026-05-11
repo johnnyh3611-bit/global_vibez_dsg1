@@ -1,5 +1,15 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-05-12 — Wallet login dropped · Phantom moved to /wallet.** Founder ask: "let's go with C [drop wallet login at sign-in, link wallet AFTER login at /wallet]."
+> - Removed `<PrivyLoginButton />` import + render from `/app/frontend/src/pages/LoginPage.tsx` (no more giant-modal CSP crash).
+> - Removed `<PhantomConnectButton />` from the landing header (`LandingHeaderEnhanced.tsx`).
+> - Added a clean **"Connect Phantom Wallet"** row to `/wallet` (right under the balance card) — explains "Link a Solana wallet. Required before the DSG token bridge launches."
+> - Login page now ships: Email/Password · Google OAuth · Demo Login — that's it.
+> - `PrivyLoginButton.tsx` + `PhantomConnectButton.tsx` files preserved on disk so the wiring can be re-enabled if needed; nothing else imports them publicly.
+> - Tests: 250/250 regression-shield GREEN (+1 new lock: `test_wallet_login_removed_phantom_moved_to_wallet_page`).
+
+
+
 > **2026-05-12 (Personal Homeworld + Security audit + Pre-redeploy polish list).**
 >
 > **Personal Homeworld** — `/api/recent-rooms/{log,me,leaderboard}` ledger + `<RoomVisitLogger />` mounted globally in App.js logs every route change with a 5-second cooldown. The Volumetric Galaxy fetches `/api/recent-rooms/me` on mount and overlays each planet thumbnail with the user's most-played room in that category. The thumbnail emoji swaps to that room's emoji + a tiny **"HOME"** badge appears under the coin frame. Tapping the thumbnail now launches the homeworld instead of the category's first room. Verified live: visited Vibez 654 twice → Games planet thumbnail shows the dice + HOME badge → tap routes to /vibez-654.

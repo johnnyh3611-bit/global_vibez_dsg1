@@ -5,6 +5,7 @@ import { Wallet as WalletIcon, DollarSign, TrendingUp, ArrowUpRight, ArrowDownLe
 import UnifiedNavigation from '../components/hub/UnifiedNavigation';
 import PayoutRequestModal from '../components/payout/PayoutRequestModal';
 import PendingPayouts from '../components/payout/PendingPayouts';
+import PhantomConnectButton from '../components/web3/PhantomConnectButton';
 
 const Wallet = () => {
   const navigate = useNavigate();
@@ -132,6 +133,29 @@ const Wallet = () => {
               Minimum cashout: ₵20,000 ($10.00)
             </p>
           )}
+        </motion.div>
+
+        {/* Connect Phantom wallet — post-login linking. 2026-05-12: moved
+            here from the login page so the sign-in flow stays clean. */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="mb-8 rounded-2xl border border-purple-500/30 bg-black/40 backdrop-blur p-5 flex flex-col sm:flex-row items-center justify-between gap-3"
+          data-testid="wallet-connect-phantom-row"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-fuchsia-500 to-purple-700 flex items-center justify-center text-2xl">
+              👻
+            </div>
+            <div>
+              <p className="text-sm font-black text-white">Connect Phantom Wallet</p>
+              <p className="text-xs text-white/60 mt-0.5">
+                Link a Solana wallet to your account. Required before the DSG token bridge launches.
+              </p>
+            </div>
+          </div>
+          <PhantomConnectButton label="Connect" />
         </motion.div>
 
         {/* Quick Stats */}

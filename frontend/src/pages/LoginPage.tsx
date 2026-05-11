@@ -10,7 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff, Mail, Lock, ArrowLeft, AlertCircle } from 'lucide-react';
-import PrivyLoginButton from '@/components/web3/PrivyLoginButton';
+// 2026-05-12: Privy wallet login removed from login page per founder ask.
+// Wallet linking now happens AFTER login at /wallet (Connect Phantom flow).
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -290,10 +291,8 @@ export default function LoginPage() {
                     Sign in with Google
                   </NeonButton>
 
-                  {/* Privy hybrid auth — social + embedded Solana wallets */}
-                  <div className="w-full mt-3 flex justify-center" data-testid="privy-login-slot">
-                    <PrivyLoginButton />
-                  </div>
+                  {/* Privy hybrid auth removed 2026-05-12 — wallet linking
+                      moved to /wallet → "Connect Phantom" (post-login). */}
                   
                   {/* Demo Login Button */}
                   <Button
