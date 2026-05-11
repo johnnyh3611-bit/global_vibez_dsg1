@@ -472,12 +472,16 @@ export default function Dashboard() {
             <Button
               variant="ghost"
               className="flex items-center gap-2 text-fuchsia-200 hover:text-white hover:bg-fuchsia-500/20 border border-fuchsia-400/40 rounded-full px-3 md:px-4 py-1.5 text-[10px] md:text-xs uppercase tracking-widest animate-pulse"
-              onClick={() => { localStorage.setItem("gv_volumetric_v1", "1"); navigate("/dashboard-volumetric"); }}
-              aria-label="Try volumetric view"
+              onClick={() => {
+                // 2026-05-12: persist Volumetric as the user's preferred dashboard.
+                localStorage.setItem("gv_dashboard_view", "volumetric");
+                navigate("/dashboard");
+              }}
+              aria-label="Switch to volumetric view"
               data-testid="dashboard-try-volumetric"
             >
               <Sparkles className="w-3 h-3" />
-              <span className="hidden sm:inline">Try Volumetric</span>
+              <span className="hidden sm:inline">Volumetric View</span>
               <span className="sm:hidden">3D</span>
             </Button>
 
@@ -539,7 +543,10 @@ export default function Dashboard() {
             off"). Big, can't-miss A/B toggle into the new Three.js dashboard. */}
         <motion.button
           type="button"
-          onClick={() => { localStorage.setItem("gv_volumetric_v1", "1"); navigate("/dashboard-volumetric"); }}
+          onClick={() => {
+            localStorage.setItem("gv_dashboard_view", "volumetric");
+            navigate("/dashboard");
+          }}
           data-testid="dashboard-volumetric-banner"
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}

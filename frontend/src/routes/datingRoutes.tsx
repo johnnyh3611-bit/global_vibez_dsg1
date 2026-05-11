@@ -1,5 +1,6 @@
 import { Route } from "react-router-dom";
 import Dashboard from "@/pages/DashboardNew";
+import DashboardRouter from "@/pages/DashboardRouter";
 import DiscoverPage from "@/pages/DiscoverPage";
 import Matches from "@/pages/Matches";
 import Messages from "@/pages/Messages";
@@ -22,7 +23,9 @@ import CulturalOnboardingWizard from "@/pages/CulturalOnboardingWizard";
 
 export const datingRoutes = (ProtectedRoute) => (
   <>
-    <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+    {/* /dashboard duplicated here for backward compat — routes to the
+        DashboardRouter (Volumetric default, Classic on opt-out). */}
+    <Route path="/dashboard" element={<ProtectedRoute><DashboardRouter /></ProtectedRoute>} />
     <Route path="/discover" element={<ProtectedRoute><DiscoverPage /></ProtectedRoute>} />
     <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
     <Route path="/discover-category/:categoryType/:categoryId" element={<ProtectedRoute><DiscoverByCategory /></ProtectedRoute>} />

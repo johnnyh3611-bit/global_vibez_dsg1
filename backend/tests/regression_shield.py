@@ -4646,24 +4646,40 @@ def test_sports_lounge_no_longer_depends_on_rapidapi():
     assert "Crowd-judged" in fe or "Vibe Check oracle" in fe
 
 
-def test_volumetric_dashboard_opt_in_only():
-    """2026-05-12 founder ask: 'build it first to see what it looks like;
-    if I don't like it, take it off'. The Volumetric Galaxy view must be
-    a SEPARATE route (not replace /dashboard), and the classic dashboard
-    must expose a 'Try Volumetric' toggle. If the founder dislikes it,
-    a single route-deletion removes the entire feature."""
+def test_volumetric_dashboard_default_and_opt_out():
+    """2026-05-12 founder ask: 'I would like the volumetric galaxy view
+    to be the view that people come into the page and get, where they
+    have an option at the top to change it to the classic view.'
+
+    DashboardRouter resolves /dashboard to either VolumetricDashboard
+    (default) or DashboardNew (when user opts out via gv_dashboard_view).
+    Both views expose toggles that flip the localStorage flag. One file
+    deletion (DashboardRouter.tsx + a route revert) cleanly removes the
+    feature if the founder ever wants Classic back as the default."""
     page_path = "/app/frontend/src/pages/VolumetricDashboard.tsx"
     assert os.path.exists(page_path)
     page = open(page_path).read()
     for tid in ["volumetric-dashboard", "vol-back-classic", "vol-planet-", "vol-room-"]:
         assert tid in page, f"VolumetricDashboard missing testid: {tid}"
-    # Route registered at /dashboard-volumetric.
+
+    # DashboardRouter exists and defaults to volumetric.
+    router_path = "/app/frontend/src/pages/DashboardRouter.tsx"
+    assert os.path.exists(router_path)
+    router = open(router_path).read()
+    assert "VolumetricDashboard" in router
+    assert "DashboardNew" in router or "Dashboard" in router
+    assert "gv_dashboard_view" in router
+    assert '"volumetric"' in router and '"classic"' in router
+
+    # /dashboard route in miscRoutes now uses DashboardRouter.
     routes = open("/app/frontend/src/routes/miscRoutes.tsx").read()
-    assert '"/dashboard-volumetric"' in routes
-    assert "VolumetricDashboard" in routes
-    # Classic dashboard has the toggle pill.
+    assert "DashboardRouter" in routes
+    assert '"/dashboard"' in routes
+
+    # Classic dashboard still has the toggle pill back to Volumetric.
     dash = open("/app/frontend/src/pages/DashboardNew.tsx").read()
     assert "dashboard-try-volumetric" in dash
-    assert "/dashboard-volumetric" in dash
-    # The toggle MUST navigate to the new route, NOT replace /dashboard.
-    assert 'navigate("/dashboard-volumetric")' in dash or "navigate('/dashboard-volumetric')" in dash
+    assert 'localStorage.setItem("gv_dashboard_view", "volumetric")' in dash
+
+    # Volumetric exposes the back-to-classic toggle.
+    assert 'localStorage.setItem("gv_dashboard_view", "classic")' in page

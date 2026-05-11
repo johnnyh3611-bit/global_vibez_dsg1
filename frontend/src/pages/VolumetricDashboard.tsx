@@ -30,55 +30,55 @@ const CATEGORIES = [
   {
     id: "games", label: "Games", color: "#22d3ee", aura: "#22d3ee",
     rooms: [
-      { id: "spades", label: "Spades", path: "/spades" },
-      { id: "vibez-654", label: "Vibe 654", path: "/vibez-654" },
-      { id: "chess-hall", label: "Chess Hall", path: "/chess-hall" },
-      { id: "underground", label: "Underground", path: "/underground-casino" },
-      { id: "cyber", label: "Cyber Casino", path: "/cyber-casino" },
+      { id: "spades", label: "Spades", emoji: "♠️", path: "/spades" },
+      { id: "vibez-654", label: "Vibez 654", emoji: "🎲", path: "/vibez-654" },
+      { id: "chess-hall", label: "Chess Hall", emoji: "♟️", path: "/chess-hall" },
+      { id: "underground", label: "Underground", emoji: "🃏", path: "/underground-casino" },
+      { id: "cyber", label: "Cyber Casino", emoji: "🎰", path: "/cyber-casino" },
     ],
   },
   {
     id: "dating", label: "Dating", color: "#ec4899", aura: "#f0abfc",
     pulsing: true,  // PDF spec: "Pulsing_Pink_Aura"
     rooms: [
-      { id: "dating", label: "Universe", path: "/dating" },
-      { id: "matchmaking", label: "Matchmaking", path: "/matchmaking" },
-      { id: "cinema", label: "Cinema Date", path: "/cinema-room" },
-      { id: "spots", label: "Vibe Spots", path: "/vibe-spots" },
+      { id: "dating", label: "Universe", emoji: "💞", path: "/dating" },
+      { id: "matchmaking", label: "Matchmaking", emoji: "✨", path: "/matchmaking" },
+      { id: "cinema", label: "Cinema Date", emoji: "🎬", path: "/cinema-room" },
+      { id: "spots", label: "Vibez Spots", emoji: "📍", path: "/vibe-spots" },
     ],
   },
   {
     id: "rides", label: "Rides", color: "#f59e0b", aura: "#fbbf24",
     rooms: [
-      { id: "ridez", label: "Vibe Ridez", path: "/vibe-ridez" },
+      { id: "ridez", label: "Vibez Ridez", emoji: "🚗", path: "/vibe-ridez" },
     ],
   },
   {
     id: "food", label: "Food", color: "#84cc16", aura: "#a3e635",
     rooms: [
-      { id: "hungry", label: "Hungry VIBEZ", path: "/hungryvibes" },
-      { id: "yellow", label: "Yellow Pages", path: "/yellow-pages" },
-      { id: "receipts", label: "Receipts +15%", path: "/receipts" },
+      { id: "hungry", label: "Hungry Vibez", emoji: "🍕", path: "/hungryvibes" },
+      { id: "yellow", label: "Yellow Pages", emoji: "📒", path: "/yellow-pages" },
+      { id: "receipts", label: "Receipts +15%", emoji: "🧾", path: "/receipts" },
     ],
   },
   {
     id: "streaming", label: "Streaming", color: "#a855f7", aura: "#c084fc",
     rooms: [
-      { id: "live", label: "Live", path: "/live" },
-      { id: "underground-live", label: "Underground Live", path: "/underground-live" },
-      { id: "sports", label: "Sports Lounge", path: "/sports-lounge" },
-      { id: "memory", label: "Memory Bank", path: "/dsg/memory-bank" },
-      { id: "beats", label: "Beat Vault", path: "/dsg/beat-vault" },
+      { id: "live", label: "Live", emoji: "📡", path: "/live" },
+      { id: "underground-live", label: "Underground Live", emoji: "🎤", path: "/underground-live" },
+      { id: "sports", label: "Vibez Sports", emoji: "🏆", path: "/sports-lounge" },
+      { id: "memory", label: "Memory Bank", emoji: "🎞️", path: "/dsg/memory-bank" },
+      { id: "beats", label: "Beat Vault", emoji: "🎧", path: "/dsg/beat-vault" },
     ],
   },
   {
     id: "vault", label: "Vault", color: "#fde047", aura: "#facc15",
     rooms: [
-      { id: "lottery", label: "DSG 6 Lottery", path: "/lottery" },
-      { id: "tiers", label: "Tiers", path: "/tiers" },
-      { id: "wallet", label: "Wallet", path: "/wallet" },
-      { id: "chair", label: "Chair Hall", path: "/chair-hall" },
-      { id: "voice", label: "Voice Mirror", path: "/voice-mirror" },
+      { id: "lottery", label: "DSG 6 Lottery", emoji: "🎰", path: "/lottery" },
+      { id: "tiers", label: "Vibez Tiers", emoji: "👑", path: "/tiers" },
+      { id: "wallet", label: "Vibez Wallet", emoji: "💰", path: "/wallet" },
+      { id: "chair", label: "Chair Hall", emoji: "🪑", path: "/chair-hall" },
+      { id: "voice", label: "Voice Mirror", emoji: "🎙️", path: "/voice-mirror" },
     ],
   },
 ];
@@ -128,10 +128,15 @@ function Planet({
   selected: boolean;
   onSelect: () => void;
 }) {
+  const navigate = useNavigate();
   const meshRef = useRef<Mesh>(null);
+  const cloudsRef = useRef<Mesh>(null);
   const auraRef = useRef<Mesh>(null);
+  const ringRef = useRef<Mesh>(null);
+  const moonOrbitRef = useRef<Group>(null);
   const groupRef = useRef<Group>(null);
   const [hover, setHover] = useState(false);
+  const [thumbHover, setThumbHover] = useState(false);
 
   // Position on a circle.
   const basePos = useMemo(() => {
@@ -149,8 +154,21 @@ function Planet({
         basePos.z,
       );
     }
-    if (meshRef.current) {
-      meshRef.current.rotation.y = t * 0.4;
+    // Planet rotation — faster on hover so it feels reactive.
+    const spinSpeed = hover ? 1.4 : 0.4;
+    if (meshRef.current) meshRef.current.rotation.y = t * spinSpeed;
+    // Cloud / noise layer rotates the OPPOSITE direction at a different
+    // speed, creating procedural-feeling surface motion without a texture.
+    if (cloudsRef.current) {
+      cloudsRef.current.rotation.y = -t * (spinSpeed * 0.6);
+      cloudsRef.current.rotation.x = Math.sin(t * 0.3 + index) * 0.05;
+    }
+    // Saturn ring slowly counter-rotates for life.
+    if (ringRef.current) ringRef.current.rotation.z = t * 0.08;
+    // Moon orbit.
+    if (moonOrbitRef.current) {
+      moonOrbitRef.current.rotation.y = t * 1.2 + index;
+      moonOrbitRef.current.rotation.x = 0.4;
     }
     if (auraRef.current && category.pulsing) {
       // PDF spec: pulsing pink aura on Dating.
@@ -169,9 +187,14 @@ function Planet({
         <meshBasicMaterial color={category.aura} transparent opacity={hover ? 0.25 : 0.15} />
       </mesh>
       {/* Saturn-style ring tilted ~20° — makes the orbs feel like planets */}
-      <mesh rotation={[Math.PI / 2 - 0.35, 0, 0]}>
+      <mesh ref={ringRef} rotation={[Math.PI / 2 - 0.35, 0, 0]}>
         <ringGeometry args={[radius * 1.5, radius * 2.0, 64]} />
         <meshBasicMaterial color={category.aura} transparent opacity={0.35} side={2} />
+      </mesh>
+      {/* Inner secondary ring — gives the planet more "structure" */}
+      <mesh rotation={[Math.PI / 2 - 0.55, 0.4, 0]}>
+        <ringGeometry args={[radius * 2.1, radius * 2.2, 64]} />
+        <meshBasicMaterial color={category.color} transparent opacity={0.5} side={2} />
       </mesh>
       {/* Core planet */}
       <mesh
@@ -189,6 +212,28 @@ function Planet({
           metalness={0.6}
         />
       </mesh>
+      {/* Cloud / noise layer — slightly larger semi-transparent sphere
+          that rotates the OPPOSITE direction. Creates surface motion
+          without needing a texture asset. */}
+      <mesh ref={cloudsRef} scale={1.035}>
+        <sphereGeometry args={[radius, 32, 32]} />
+        <meshStandardMaterial
+          color={category.aura}
+          emissive={category.aura}
+          emissiveIntensity={0.18}
+          transparent
+          opacity={0.32}
+          roughness={0.9}
+          wireframe={category.id === "vault"}
+        />
+      </mesh>
+      {/* Tiny orbiting moon — adds dynamism */}
+      <group ref={moonOrbitRef}>
+        <mesh position={[radius * 2.4, 0, 0]} scale={0.12}>
+          <sphereGeometry args={[1, 16, 16]} />
+          <meshStandardMaterial color={category.aura} emissive={category.aura} emissiveIntensity={0.7} />
+        </mesh>
+      </group>
       {/* Label */}
       <Html position={[0, -1.4, 0]} center distanceFactor={10}>
         <div
@@ -209,10 +254,19 @@ function Planet({
         center
         distanceFactor={8}
         zIndexRange={[100, 0]}
-        style={{ pointerEvents: "none" }}
       >
         <div
+          onClick={(e) => {
+            e.stopPropagation();
+            // 2026-05-12 founder enhancement: tap-thumbnail = jump to
+            // most-recent room in this category (we use the first room
+            // as a stand-in until per-user recent-room tracking ships).
+            if (category.rooms.length > 0) navigate(category.rooms[0].path);
+          }}
+          onMouseEnter={() => setThumbHover(true)}
+          onMouseLeave={() => setThumbHover(false)}
           style={{
+            cursor: "pointer",
             width: "76px",
             height: "76px",
             display: "flex",
@@ -221,10 +275,15 @@ function Planet({
             borderRadius: "50%",
             background: `radial-gradient(circle at 50% 30%, ${category.color}cc, ${category.aura}40 60%, transparent 75%)`,
             border: `2px solid ${category.color}`,
-            boxShadow: `0 0 22px ${category.color}, 0 0 40px ${category.aura}`,
+            boxShadow: thumbHover
+              ? `0 0 32px ${category.color}, 0 0 60px ${category.aura}`
+              : `0 0 22px ${category.color}, 0 0 40px ${category.aura}`,
             fontSize: "44px",
             lineHeight: 1,
+            transform: thumbHover ? "scale(1.12)" : "scale(1)",
+            transition: "transform 0.2s, box-shadow 0.2s",
           }}
+          title={`Jump to ${category.rooms[0]?.label ?? category.label}`}
         >
           {renderIcon(category.id)}
           <span style={{ filter: `drop-shadow(0 0 6px ${category.color})` }}>
@@ -269,24 +328,48 @@ function OrbitingRoom({ room, index, total, tint }: { room: any; index: number; 
 
   return (
     <group ref={groupRef}>
+      {/* Invisible click-target sphere — easier to tap than a tiny box */}
       <mesh
         onPointerOver={(e) => { e.stopPropagation(); setHover(true); document.body.style.cursor = "pointer"; }}
         onPointerOut={() => { setHover(false); document.body.style.cursor = "auto"; }}
         onClick={(e) => { e.stopPropagation(); navigate(room.path); }}
       >
-        <boxGeometry args={[0.5, 0.5, 0.05]} />
-        <meshStandardMaterial
-          color={tint}
-          emissive={tint}
-          emissiveIntensity={hover ? 0.9 : 0.5}
-          transparent
-          opacity={0.85}
-        />
+        <sphereGeometry args={[0.45, 16, 16]} />
+        <meshBasicMaterial color={tint} transparent opacity={hover ? 0.4 : 0.15} />
       </mesh>
-      <Html position={[0, 0.42, 0]} center distanceFactor={8}>
+      {/* Glowing picture-tile billboarded above the click target */}
+      <Html position={[0, 0, 0]} center distanceFactor={7} zIndexRange={[80, 0]}>
         <div
           data-testid={`vol-room-${room.id}`}
-          className="text-white text-[10px] uppercase tracking-widest font-bold whitespace-nowrap pointer-events-none"
+          onClick={() => navigate(room.path)}
+          onMouseEnter={() => setHover(true)}
+          onMouseLeave={() => setHover(false)}
+          style={{
+            cursor: "pointer",
+            width: "64px",
+            height: "64px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            borderRadius: "16px",
+            background: `linear-gradient(135deg, ${tint}d0, ${tint}50)`,
+            border: `2px solid ${tint}`,
+            boxShadow: `0 0 18px ${tint}, 0 8px 18px -4px rgba(0,0,0,0.6)`,
+            fontSize: "30px",
+            lineHeight: 1,
+            transform: hover ? "scale(1.18) translateY(-3px)" : "scale(1)",
+            transition: "transform 0.2s, box-shadow 0.2s",
+          }}
+        >
+          <span style={{ filter: `drop-shadow(0 0 6px ${tint})` }}>
+            {room.emoji ?? "✦"}
+          </span>
+        </div>
+      </Html>
+      {/* Label below the tile */}
+      <Html position={[0, -0.55, 0]} center distanceFactor={10}>
+        <div
+          className="text-white text-[10px] uppercase tracking-widest font-bold whitespace-nowrap pointer-events-none select-none"
           style={{ textShadow: `0 0 8px ${tint}` }}
         >
           {room.label}
@@ -352,6 +435,9 @@ export default function VolumetricDashboard() {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   const setClassicMode = () => {
+    // 2026-05-12: switch the persistent dashboard preference and reload
+    // /dashboard so the DashboardRouter picks up the Classic view.
+    localStorage.setItem("gv_dashboard_view", "classic");
     localStorage.removeItem("gv_volumetric_v1");
     navigate("/dashboard");
   };

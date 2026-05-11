@@ -12,6 +12,7 @@ import SovereignTiers from "@/pages/SovereignTiers";
 import UndergroundLive from "@/pages/UndergroundLive";
 import ReceiptsPage from "@/pages/ReceiptsPage";
 import VolumetricDashboard from "@/pages/VolumetricDashboard";
+import DashboardRouter from "@/pages/DashboardRouter";
 import PaymentSuccess from "@/pages/PaymentSuccess";
 import PaymentCancel from "@/pages/PaymentCancel";
 import CelebrationDemo from "@/pages/CelebrationDemo";
@@ -33,9 +34,12 @@ import LegacyVaultPage from "@/pages/LegacyVaultPage";
 
 export const miscRoutes = (ProtectedRoute) => (
   <>
-    {/* Hub & Main Pages */}
-    <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-    <Route path="/lounge" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+    {/* Hub & Main Pages — /dashboard now resolves to either the Volumetric
+        Galaxy (default per founder ask 2026-05-12) or the classic grid
+        based on the user's stored preference. */}
+    <Route path="/dashboard" element={<ProtectedRoute><DashboardRouter /></ProtectedRoute>} />
+    <Route path="/dashboard-classic" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+    <Route path="/lounge" element={<ProtectedRoute><DashboardRouter /></ProtectedRoute>} />
     <Route path="/discover" element={<ProtectedRoute><DiscoverPage /></ProtectedRoute>} />
     <Route path="/live" element={<ProtectedRoute><LiveStreamingPage /></ProtectedRoute>} />
 

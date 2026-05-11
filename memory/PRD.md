@@ -1,5 +1,35 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-05-12 (volumetric becomes default + Vibez branding + room pictures + planet polish).** Founder ask: "I would like the volumetric galaxy view to be the view that people come into the page and get, where they have an option at the top to change it to the classic view... every word with 'vibe' in it needs to end with a Z (Vibez)... and the room tabs need pictures... and make the planets more dynamic."
+>
+> **1. Default dashboard = Volumetric.** New `<DashboardRouter />` resolves `/dashboard` based on `localStorage.gv_dashboard_view` (`"volumetric"` default, `"classic"` opt-out). Both views ship reciprocal toggles: Volumetric shows **"CLASSIC VIEW"** top-left; Classic shows the **"Volumetric View"** pulsing pill in the header + the big "Try Volumetric" banner. Listens to `window.focus` + `storage` events so cross-tab toggles propagate.
+>
+> **2. Vibez branding sweep** — room labels in the Volumetric Galaxy are now founder-canonical:
+> - "Vibe 654" → **Vibez 654**
+> - "Vibe Ridez" → **Vibez Ridez**
+> - "Vibe Spots" → **Vibez Spots**
+> - "Hungry VIBEZ" → **Hungry Vibez**
+> - "Sports Lounge" → **Vibez Sports**
+> - "Tiers" → **Vibez Tiers**
+> - "Wallet" → **Vibez Wallet**
+> URL paths preserved for SEO/stability — only the user-visible labels changed.
+>
+> **3. Pictures on every orbiting room tile.** Tile rendered as a `linear-gradient` 64×64 rounded square with a 2px category-tinted border + glow halo + thematic emoji icon (♠️ Spades · 🎲 Vibez 654 · ♟️ Chess · 🃏 Underground · 🎰 Cyber · 💞 Universe · ✨ Matchmaking · 🎬 Cinema · 📍 Vibez Spots · 🚗 Vibez Ridez · 🍕 Hungry Vibez · 📒 Yellow Pages · 🧾 Receipts · 📡 Live · 🎤 Underground Live · 🏆 Vibez Sports · 🎞️ Memory Bank · 🎧 Beat Vault · 🎰 Lottery · 👑 Vibez Tiers · 💰 Vibez Wallet · 🪑 Chair Hall · 🎙️ Voice Mirror). Hover scales the tile 1.18× with brighter glow.
+>
+> **4. Planets are more alive.** Added per-planet:
+> - **Cloud / noise layer** — secondary translucent sphere counter-rotating at 60% planet speed
+> - **Faster spin on hover** — base speed 0.4 rad/s, hover speed 1.4 rad/s (3.5× snap)
+> - **Inner secondary ring** — second ring tilted on different axis at radius 2.1–2.2 (matches category color, complements the Saturn ring)
+> - **Slow ring counter-rotation** — Saturn ring rotates 0.08 rad/s on its z-axis
+> - **Orbiting moon** — small 0.12-scale emissive satellite circling at radius 2.4× planet radius (1.2 rad/s)
+> - Vault planet's cloud layer renders as a wireframe for a "crystalline gem" feel
+>
+> **5. Tap-thumbnail = quick-jump.** The coin-frame thumbnail above each planet is now its own click target — taps the first room of that category (e.g. tap the 🎲 Games thumbnail → instantly land in Spades). Tapping the planet SPHERE still expands the orbit view. Two-layer interaction without visual clutter.
+>
+> **Tests:** 248/248 regression-shield GREEN (test renamed: `test_volumetric_dashboard_default_and_opt_out`). Smoke screenshot confirms default-on-dashboard, themed thumbnails on all 6 planets, orbiting moons, dual rings.
+
+
+
 > **2026-05-12 (volumetric thumbnails + voice readout · REDEPLOY-READY 🟢).**
 >
 > **Thematic planet thumbnails** — each Volumetric Galaxy planet now wears a category-tinted glowing "coin frame" with a thematic pictogram inside:
