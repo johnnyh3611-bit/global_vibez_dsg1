@@ -1,5 +1,32 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-05-13 (Pre-redeploy v4 · BETA-READY FINAL) — Corrected KYC Compliance Protocol shipped 🔐🚀.** Founder uploaded `Corrected_KYC_Compliance_Protocol.pdf` and asked to finish everything for beta. Done — superseded the prior Legal Age Verification Protocol with the corrected matrix:
+>
+> **Backend service corrections** (`services/age_verification.py`):
+> - **Stripe Identity** named as `KYC_PROVIDER_STRIPE_IDENTITY` and the recommended vendor (the Corrected Protocol calls it out explicitly for tight integration with the Stripe Connect payment rails). `SUPPORTED_KYC_PROVIDERS` array adds drop-in support for `persona`, `veriff`, `onfido`, `jumio`.
+> - **5-state vendor decision matrix** (Corrected Protocol §1): `VERIFIED_21` → status verified, `VERIFIED_UNDER_21` → status rejected + reason underage, `PENDING` → pending, `REQUIRES_INPUT` → pending + `requirements_due[]` surfaced, `REJECTED` → rejected + reason policy. New `DECISION_TO_STATUS` mapping enforces the conversion.
+> - **`apply_vendor_decision(user_id, decision, doc_status, requirements_due, provider, provider_session_id)`** — single entry point that any KYC vendor webhook calls. Persists `doc_status`, `requirements_due[]`, `kyc_provider`, `kyc_session_id` so the user + admin can see exactly what the vendor needs and which session produced the decision.
+> - **7-reason driver delivery refusal taxonomy**: `id_invalid`, `id_mismatch`, `underage`, `intoxicated`, `absent`, `wrong_address`, `other`. All have user-facing copy.
+> - **`driver_confirm_delivery(order_id, pdf417_scanned, biometric_match, recipient_age, sobriety_ok)`** — all 4 checks must pass for handoff to register as complete. Auto-flags which check failed in `refusal_reasons[]`.
+> - **`driver_refuse_delivery(order_id, reason, note)`** — codifies the Corrected Protocol's driver right-to-refuse (driver judgment can override digital checks for visibly intoxicated recipients, etc.).
+>
+> **New endpoints** (4 added):
+> - `POST /api/age-verification/webhook/vendor` — KYC vendor decision intake (admin-gated until Stripe Identity webhook secret lands; flips to signature-verified open access once configured).
+> - `POST /api/age-verification/delivery/confirm` — driver completes point-of-delivery checks (PDF417 + biometric + age + sobriety).
+> - `POST /api/age-verification/delivery/refuse` — driver explicit refusal with reason + optional note.
+> - `GET /api/age-verification/delivery/refusal-reasons` — public — drivers + admins read the standardized taxonomy.
+>
+> **`/constants` endpoint upgraded** to surface the corrected protocol metadata: `recommended_kyc_provider: "stripe_identity"`, `supported_kyc_providers`, `vendor_decisions[]` (the 5-state matrix), `delivery_refusal_reasons` (the 7-reason taxonomy), and the new version stamp `"Corrected KYC Compliance Protocol · 2026"`.
+>
+> **Frontend** (`pages/AgeVerificationPage.tsx`): subhead now reads "Verified by **Stripe Identity** — bank-grade identity verification." with testid `avp-kyc-vendor-label`. Trust signal users + investors immediately recognize.
+>
+> **Verified live via curl**: `/constants` returns the full corrected metadata · `/delivery/refusal-reasons` returns the 7-reason taxonomy · all 10 critical endpoints return 200.
+>
+> **🔒 Regression Shield: 296/296 GREEN** (+6 new Corrected Protocol locks: `test_corrected_kyc_decision_matrix` (5-state mapping), `test_corrected_kyc_stripe_identity_provider` (vendor + 4 alternatives), `test_corrected_kyc_delivery_refusal_taxonomy` (7 reasons + copy), `test_corrected_kyc_endpoints_registered` (4 new endpoints), `test_corrected_kyc_constants_endpoint_surfaces_vendor_info` (public landing copy), `test_corrected_kyc_frontend_surfaces_vendor` (Stripe Identity badge on AVP page).
+>
+> **🟢 BETA-READY STATUS — 4 SPEC DOCUMENTS, 296 LOCKED TESTS, 10/10 SMOKE GREEN.** Beta launch backlog from the start of this session through 4 spec drops is COMPLETE. Time to deploy.
+
+
 > **2026-05-13 (Pre-redeploy v3) — Legal Age Verification Protocol shipped 🛡️🆔.** Founder uploaded `Legal_Age_Verification_Protocol.pdf` (Restricted Goods Delivery Standard 2026). 21+ alcohol/tobacco gate now live end-to-end:
 >
 > **Backend** (`services/age_verification.py` + `routes/age_verification.py`):

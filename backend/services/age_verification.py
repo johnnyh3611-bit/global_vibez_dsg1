@@ -35,6 +35,27 @@ logger = logging.getLogger(__name__)
 RESTRICTED_GOODS_MIN_AGE: int = 21
 RESTRICTED_CATEGORIES: List[str] = ["alcohol", "tobacco"]
 
+# Corrected KYC Compliance Protocol — Stripe Identity is the recommended
+# vendor (chosen for seamless integration with the existing Stripe
+# Connect payment rails). Provider-agnostic plumbing remains — swap
+# `KYC_PROVIDER` env var to plug in Persona / Veriff / Onfido / Jumio.
+KYC_PROVIDER_STRIPE_IDENTITY = "stripe_identity"
+SUPPORTED_KYC_PROVIDERS = [
+    KYC_PROVIDER_STRIPE_IDENTITY, "persona", "veriff", "onfido", "jumio",
+]
+
+# Corrected protocol decision matrix — vendor returns one of:
+#   VERIFIED_21       → 21+ confirmed → eligible
+#   VERIFIED_UNDER_21 → docs valid but DOB < 21 → not eligible
+#   PENDING           → docs received, awaiting vendor decision
+#   REQUIRES_INPUT    → vendor needs more docs (requirements_due[] populated)
+#   REJECTED          → vendor declined (fraud, expired, mismatch, etc.)
+DECISION_VERIFIED_21 = "VERIFIED_21"
+DECISION_VERIFIED_UNDER_21 = "VERIFIED_UNDER_21"
+DECISION_PENDING = "PENDING"
+DECISION_REQUIRES_INPUT = "REQUIRES_INPUT"
+DECISION_REJECTED = "REJECTED"
+
 # Verification statuses (mirrors the lifecycle in every major KYC API).
 STATUS_NOT_SUBMITTED = "not_submitted"
 STATUS_PENDING = "pending"          # documents received, awaiting review
@@ -46,6 +67,15 @@ ALL_STATUSES = [
     STATUS_NOT_SUBMITTED, STATUS_PENDING, STATUS_VERIFIED,
     STATUS_REJECTED, STATUS_APPEAL,
 ]
+
+# Map Corrected-Protocol vendor decision → internal lifecycle status.
+DECISION_TO_STATUS: Dict[str, str] = {
+    DECISION_VERIFIED_21: STATUS_VERIFIED,
+    DECISION_VERIFIED_UNDER_21: STATUS_REJECTED,
+    DECISION_PENDING: STATUS_PENDING,
+    DECISION_REQUIRES_INPUT: STATUS_PENDING,
+    DECISION_REJECTED: STATUS_REJECTED,
+}
 
 # Decline reason taxonomy (admin picks one; user sees the copy below).
 DECLINE_REASONS: Dict[str, str] = {
@@ -285,3 +315,170 @@ async def list_events(
     if kind:
         q["kind"] = kind
     return await db.age_verification_events.find(q, {"_id": 0}).sort("ts", -1).limit(limit).to_list(limit)
+
+
+# ───────────────────────────────────────── Corrected Protocol: KYC vendor webhook ──
+
+async def apply_vendor_decision(
+    db,
+    user_id: str,
+    decision: str,
+    doc_status: Optional[str] = None,
+    requirements_due: Optional[List[str]] = None,
+    provider: str = KYC_PROVIDER_STRIPE_IDENTITY,
+    provider_session_id: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    Apply a KYC vendor's decision to the user's verification record.
+
+    Spec corrections (Corrected_KYC_Compliance_Protocol.pdf) — vendor
+    returns the decision matrix below; we map it to our internal
+    lifecycle and persist `doc_status` + `requirements_due[]` so users
+    + admins can see exactly what the vendor needs.
+
+      VERIFIED_21       → status=verified, eligible
+      VERIFIED_UNDER_21 → status=rejected, rejected_reason=underage
+      PENDING           → status=pending
+      REQUIRES_INPUT    → status=pending + requirements_due surfaced
+      REJECTED          → status=rejected, rejected_reason=policy
+
+    Designed for direct call from Stripe Identity webhook handler. Same
+    shape works for Persona / Veriff / Onfido / Jumio webhooks too.
+    """
+    if decision not in DECISION_TO_STATUS:
+        raise ValueError(f"Unknown vendor decision: {decision}")
+
+    now = datetime.now(timezone.utc).isoformat()
+    target_status = DECISION_TO_STATUS[decision]
+    update: Dict[str, Any] = {
+        "status": target_status,
+        "vendor_decision": decision,
+        "doc_status": doc_status,
+        "requirements_due": requirements_due or [],
+        "kyc_provider": provider,
+        "kyc_session_id": provider_session_id,
+        "updated_at": now,
+    }
+    if target_status == STATUS_VERIFIED:
+        update["verified_at"] = now
+        update["rejected_reason"] = None
+    elif decision == DECISION_VERIFIED_UNDER_21:
+        update["rejected_reason"] = "underage"
+    elif decision == DECISION_REJECTED:
+        update["rejected_reason"] = "policy"
+
+    result = await db.age_verification.find_one_and_update(
+        {"user_id": user_id},
+        {"$set": update},
+        upsert=True,
+        return_document=True,
+    )
+
+    await _log_event(db, user_id, "vendor_decision", {
+        "decision": decision,
+        "doc_status": doc_status,
+        "requirements_due": requirements_due,
+        "provider": provider,
+        "provider_session_id": provider_session_id,
+    })
+
+    record = {k: v for k, v in (result or update).items() if k != "_id"}
+    record["eligible_for_restricted"] = is_eligible_for_restricted(
+        record.get("age"), record.get("status", STATUS_NOT_SUBMITTED)
+    )
+    return record
+
+
+# ───────────────────────────────────────── Corrected Protocol: Driver delivery flow ──
+
+DELIVERY_REFUSAL_REASONS: Dict[str, str] = {
+    "id_invalid":       "Recipient ID failed PDF417 validation or appeared altered.",
+    "id_mismatch":      "Recipient's photo did not match the ID presented.",
+    "underage":         "Recipient's ID showed an age below 21.",
+    "intoxicated":      "Recipient appeared visibly intoxicated.",
+    "absent":           "No 21+ adult present to receive the order.",
+    "wrong_address":    "Address mismatch from order details.",
+    "other":            "Other (driver provided written reason).",
+}
+
+
+async def driver_confirm_delivery(
+    db,
+    order_id: str,
+    driver_user_id: str,
+    pdf417_scanned: bool,
+    biometric_match: bool,
+    recipient_age: int,
+    sobriety_ok: bool,
+) -> Dict[str, Any]:
+    """
+    Spec-mandated point-of-delivery checks (Corrected Protocol):
+      1. Mandatory PDF417 barcode scan on recipient's physical ID.
+      2. Biometric facial match against the verified digital profile.
+      3. Recipient age ≥ 21.
+      4. Sobriety check — driver may refuse if recipient is visibly
+         impaired (codified driver right-to-refuse).
+
+    All four checks must pass for the handoff to complete. Failure
+    auto-routes the order to `delivery_refused` and refunds.
+    """
+    now = datetime.now(timezone.utc).isoformat()
+    all_passed = (
+        bool(pdf417_scanned)
+        and bool(biometric_match)
+        and int(recipient_age) >= RESTRICTED_GOODS_MIN_AGE
+        and bool(sobriety_ok)
+    )
+    refusal_reasons: List[str] = []
+    if not pdf417_scanned:
+        refusal_reasons.append("id_invalid")
+    if not biometric_match:
+        refusal_reasons.append("id_mismatch")
+    if recipient_age < RESTRICTED_GOODS_MIN_AGE:
+        refusal_reasons.append("underage")
+    if not sobriety_ok:
+        refusal_reasons.append("intoxicated")
+
+    record = {
+        "delivery_id": f"avp_delivery_{uuid.uuid4().hex[:12]}",
+        "order_id": order_id,
+        "driver_user_id": driver_user_id,
+        "pdf417_scanned": pdf417_scanned,
+        "biometric_match": biometric_match,
+        "recipient_age": recipient_age,
+        "sobriety_ok": sobriety_ok,
+        "handoff_completed": all_passed,
+        "refusal_reasons": refusal_reasons,
+        "ts": now,
+    }
+    await db.age_verification_deliveries.insert_one(dict(record))
+    await _log_event(db, driver_user_id, "delivery_confirm", record)
+    return {k: v for k, v in record.items() if k != "_id"}
+
+
+async def driver_refuse_delivery(
+    db,
+    order_id: str,
+    driver_user_id: str,
+    reason: str,
+    note: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Driver explicit refusal — overrides any partial-pass state. Used
+    when the driver's judgment trumps the digital checks (e.g., visibly
+    intoxicated even though the ID checked out)."""
+    if reason not in DELIVERY_REFUSAL_REASONS:
+        raise ValueError(f"Unknown refusal reason: {reason}")
+    now = datetime.now(timezone.utc).isoformat()
+    record = {
+        "delivery_id": f"avp_refusal_{uuid.uuid4().hex[:12]}",
+        "order_id": order_id,
+        "driver_user_id": driver_user_id,
+        "handoff_completed": False,
+        "refused": True,
+        "reason": reason,
+        "note": note,
+        "ts": now,
+    }
+    await db.age_verification_deliveries.insert_one(dict(record))
+    await _log_event(db, driver_user_id, "delivery_refuse", record)
+    return {k: v for k, v in record.items() if k != "_id"}

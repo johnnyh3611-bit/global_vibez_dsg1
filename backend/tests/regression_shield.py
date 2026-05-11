@@ -5972,7 +5972,7 @@ def test_avp_constants_endpoint_public():
     assert d["minimum_age"] == 21
     assert d["restricted_categories"] == ["alcohol", "tobacco"]
     assert "decline_reasons" in d
-    assert d["protocol_version"].startswith("Restricted Goods Delivery Standard")
+    assert d["protocol_version"].startswith("Corrected KYC Compliance Protocol")
 
 
 def test_avp_frontend_surfaces_wired():
@@ -6017,3 +6017,93 @@ def test_avp_restaurant_detail_shadow_gates_restricted():
     assert "shadow_filter_menu" in detail
     assert '"alcohol"' in detail and '"tobacco"' in detail
     assert "age_gate" in detail
+
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# 2026-05-13 — Corrected KYC Compliance Protocol (supersedes prior AVP)
+# Encodes Corrected_KYC_Compliance_Protocol.pdf
+# ═══════════════════════════════════════════════════════════════════════
+
+def test_corrected_kyc_decision_matrix():
+    """Vendor decision matrix from the Corrected Protocol — maps the
+    5 vendor outcomes to internal lifecycle status correctly."""
+    from services.age_verification import (
+        DECISION_VERIFIED_21, DECISION_VERIFIED_UNDER_21,
+        DECISION_PENDING, DECISION_REQUIRES_INPUT, DECISION_REJECTED,
+        DECISION_TO_STATUS,
+        STATUS_VERIFIED, STATUS_REJECTED, STATUS_PENDING,
+    )
+    assert DECISION_TO_STATUS[DECISION_VERIFIED_21] == STATUS_VERIFIED
+    assert DECISION_TO_STATUS[DECISION_VERIFIED_UNDER_21] == STATUS_REJECTED
+    assert DECISION_TO_STATUS[DECISION_PENDING] == STATUS_PENDING
+    assert DECISION_TO_STATUS[DECISION_REQUIRES_INPUT] == STATUS_PENDING
+    assert DECISION_TO_STATUS[DECISION_REJECTED] == STATUS_REJECTED
+
+
+def test_corrected_kyc_stripe_identity_provider():
+    """Stripe Identity is the recommended vendor per the Corrected
+    Protocol. 4 other providers supported as drop-in alternatives."""
+    from services.age_verification import (
+        KYC_PROVIDER_STRIPE_IDENTITY, SUPPORTED_KYC_PROVIDERS,
+    )
+    assert KYC_PROVIDER_STRIPE_IDENTITY == "stripe_identity"
+    assert "stripe_identity" in SUPPORTED_KYC_PROVIDERS
+    # Drop-in alternatives per the Corrected Protocol.
+    for vendor in ("persona", "veriff", "onfido", "jumio"):
+        assert vendor in SUPPORTED_KYC_PROVIDERS, f"Missing supported vendor: {vendor}"
+
+
+def test_corrected_kyc_delivery_refusal_taxonomy():
+    """7-reason driver delivery refusal taxonomy — explicit Corrected
+    Protocol requirement (codifies the driver right-to-refuse)."""
+    from services.age_verification import DELIVERY_REFUSAL_REASONS
+    expected = {"id_invalid", "id_mismatch", "underage", "intoxicated",
+                "absent", "wrong_address", "other"}
+    assert set(DELIVERY_REFUSAL_REASONS.keys()) == expected
+    # All reasons must have human-readable copy.
+    for k, v in DELIVERY_REFUSAL_REASONS.items():
+        assert isinstance(v, str) and len(v) > 10, f"Missing copy for {k}"
+
+
+def test_corrected_kyc_endpoints_registered():
+    """New endpoints from the Corrected Protocol: KYC vendor webhook +
+    driver delivery confirm/refuse + refusal reasons."""
+    from server import app
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    expected = [
+        "/api/age-verification/webhook/vendor",
+        "/api/age-verification/delivery/confirm",
+        "/api/age-verification/delivery/refuse",
+        "/api/age-verification/delivery/refusal-reasons",
+    ]
+    for ep in expected:
+        assert ep in paths, f"Corrected Protocol endpoint missing: {ep}"
+
+
+def test_corrected_kyc_constants_endpoint_surfaces_vendor_info():
+    """`/constants` exposes Stripe Identity + the 5-state vendor decision
+    matrix + delivery refusal taxonomy + 'Corrected KYC Compliance
+    Protocol · 2026' version stamp for the public landing copy."""
+    from fastapi.testclient import TestClient
+    from server import app
+    client = TestClient(app)
+    r = client.get("/api/age-verification/constants")
+    assert r.status_code == 200
+    d = r.json()
+    assert d["recommended_kyc_provider"] == "stripe_identity"
+    assert "VERIFIED_21" in d["vendor_decisions"]
+    assert "VERIFIED_UNDER_21" in d["vendor_decisions"]
+    assert "PENDING" in d["vendor_decisions"]
+    assert "REQUIRES_INPUT" in d["vendor_decisions"]
+    assert "REJECTED" in d["vendor_decisions"]
+    assert d["delivery_refusal_reasons"]["intoxicated"]
+    assert d["protocol_version"] == "Corrected KYC Compliance Protocol · 2026"
+
+
+def test_corrected_kyc_frontend_surfaces_vendor():
+    """AgeVerificationPage shows the KYC vendor (Stripe Identity) for
+    user trust + audit transparency."""
+    page = open("/app/frontend/src/pages/AgeVerificationPage.tsx").read()
+    assert "avp-kyc-vendor-label" in page
+    assert "Stripe Identity" in page

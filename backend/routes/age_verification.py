@@ -56,7 +56,17 @@ async def constants() -> Dict[str, Any]:
         "restricted_categories": avp.RESTRICTED_CATEGORIES,
         "statuses": avp.ALL_STATUSES,
         "decline_reasons": avp.DECLINE_REASONS,
-        "protocol_version": "Restricted Goods Delivery Standard · 2026",
+        "delivery_refusal_reasons": avp.DELIVERY_REFUSAL_REASONS,
+        "vendor_decisions": [
+            avp.DECISION_VERIFIED_21,
+            avp.DECISION_VERIFIED_UNDER_21,
+            avp.DECISION_PENDING,
+            avp.DECISION_REQUIRES_INPUT,
+            avp.DECISION_REJECTED,
+        ],
+        "recommended_kyc_provider": avp.KYC_PROVIDER_STRIPE_IDENTITY,
+        "supported_kyc_providers": avp.SUPPORTED_KYC_PROVIDERS,
+        "protocol_version": "Corrected KYC Compliance Protocol · 2026",
     }
 
 
@@ -222,3 +232,108 @@ async def admin_decide(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     return rec
+
+
+# ───────────────────────────────────────── Corrected Protocol: KYC vendor webhook ──
+
+class VendorDecisionPayload(BaseModel):
+    user_id: str
+    decision: str  # VERIFIED_21 | VERIFIED_UNDER_21 | PENDING | REQUIRES_INPUT | REJECTED
+    doc_status: Optional[str] = None
+    requirements_due: Optional[List[str]] = None
+    provider: str = Field(default=avp.KYC_PROVIDER_STRIPE_IDENTITY)
+    provider_session_id: Optional[str] = None
+
+
+@router.post("/webhook/vendor")
+async def webhook_vendor(
+    payload: VendorDecisionPayload,
+    user=Depends(get_current_user),
+) -> Dict[str, Any]:
+    """KYC vendor → DSG webhook surface (Stripe Identity by default).
+
+    Admin-gated until a vendor secret signing flow lands; once the
+    Stripe Identity webhook secret is configured, this endpoint moves
+    to signature-verified open access (no JWT)."""
+    _require_admin(user)
+    if payload.provider not in avp.SUPPORTED_KYC_PROVIDERS:
+        raise HTTPException(status_code=400, detail=f"Unsupported provider: {payload.provider}")
+    db = get_database()
+    try:
+        rec = await avp.apply_vendor_decision(
+            db,
+            user_id=payload.user_id,
+            decision=payload.decision,
+            doc_status=payload.doc_status,
+            requirements_due=payload.requirements_due,
+            provider=payload.provider,
+            provider_session_id=payload.provider_session_id,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return rec
+
+
+# ───────────────────────────────────────── Corrected Protocol: Driver delivery ──
+
+class DeliveryConfirmPayload(BaseModel):
+    order_id: str
+    pdf417_scanned: bool = Field(..., description="Recipient ID PDF417 barcode scanned successfully")
+    biometric_match: bool = Field(..., description="Driver visually confirmed recipient matches ID photo")
+    recipient_age: int = Field(..., ge=0, le=120)
+    sobriety_ok: bool = Field(..., description="Recipient not visibly intoxicated")
+
+
+@router.post("/delivery/confirm")
+async def delivery_confirm(
+    payload: DeliveryConfirmPayload,
+    user=Depends(get_current_user),
+) -> Dict[str, Any]:
+    """Driver completes point-of-delivery checks for a restricted-goods
+    order. All 4 checks must pass (PDF417 + biometric + age + sobriety)
+    for the handoff to register as complete."""
+    db = get_database()
+    rec = await avp.driver_confirm_delivery(
+        db,
+        order_id=payload.order_id,
+        driver_user_id=_user_id(user),
+        pdf417_scanned=payload.pdf417_scanned,
+        biometric_match=payload.biometric_match,
+        recipient_age=payload.recipient_age,
+        sobriety_ok=payload.sobriety_ok,
+    )
+    return rec
+
+
+class DeliveryRefusePayload(BaseModel):
+    order_id: str
+    reason: str
+    note: Optional[str] = None
+
+
+@router.post("/delivery/refuse")
+async def delivery_refuse(
+    payload: DeliveryRefusePayload,
+    user=Depends(get_current_user),
+) -> Dict[str, Any]:
+    """Driver right-to-refuse. Codified per Corrected Protocol — driver
+    may refuse handoff regardless of digital checks (e.g., visibly
+    intoxicated recipient even though ID validated)."""
+    db = get_database()
+    try:
+        rec = await avp.driver_refuse_delivery(
+            db,
+            order_id=payload.order_id,
+            driver_user_id=_user_id(user),
+            reason=payload.reason,
+            note=payload.note,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return rec
+
+
+@router.get("/delivery/refusal-reasons")
+async def delivery_refusal_reasons() -> Dict[str, Any]:
+    """Public — the standardized refusal-reason taxonomy for drivers."""
+    return {"reasons": avp.DELIVERY_REFUSAL_REASONS}

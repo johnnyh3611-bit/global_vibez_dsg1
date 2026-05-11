@@ -175,10 +175,19 @@ export default function AgeVerificationPage() {
           and only used for this verification.
         </p>
         {constants?.protocol_version && (
-          <p className="text-[10px] font-mono text-purple-400/60 mb-6">
+          <p className="text-[10px] font-mono text-purple-400/60 mb-2">
             {constants.protocol_version}
           </p>
         )}
+        <p className="text-[10px] font-mono text-fuchsia-300/70 mb-6" data-testid="avp-kyc-vendor-label">
+          Verified by{" "}
+          <span className="text-fuchsia-200 font-bold">
+            {(constants as { recommended_kyc_provider?: string } | null)?.recommended_kyc_provider === "stripe_identity"
+              ? "Stripe Identity"
+              : (constants as { recommended_kyc_provider?: string } | null)?.recommended_kyc_provider || "Trusted KYC partner"}
+          </span>{" "}
+          — bank-grade identity verification.
+        </p>
 
         {/* Status banner */}
         <StatusBanner status={status} constants={constants} />
