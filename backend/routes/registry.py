@@ -570,6 +570,13 @@ def register_all_routes(
     except Exception as _e:
         log.warning(f"Recent Rooms routes not mounted: {_e}")
 
+    # Live Activity Ticker (May 2026 — Volumetric Galaxy bottom band)
+    try:
+        from routes.live_activity import router as live_activity_router  # noqa: PLC0415
+        api_router.include_router(live_activity_router, tags=["live-activity"])
+    except Exception as _e:
+        log.warning(f"Live Activity routes not mounted: {_e}")
+
     try:
         from routes.cinema_room import router as cinema_room_router
         api_router.include_router(cinema_room_router, tags=["cinema-room"])

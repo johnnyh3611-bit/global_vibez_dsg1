@@ -26,6 +26,7 @@ import { Vector3 } from "three";
 import type { Mesh, Group } from "three";
 import { ArrowLeft, Sparkles } from "lucide-react";
 import { authFetch } from "@/utils/secureAuth";
+import LiveActivityTicker from "@/components/common/LiveActivityTicker";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -545,12 +546,15 @@ export default function VolumetricDashboard() {
         />
       </Canvas>
 
-      {/* Bottom hint */}
-      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 text-center text-[10px] uppercase tracking-widest text-white/50 px-4">
+      {/* Bottom hint — sits just above the activity ticker (32px tall) */}
+      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-10 text-center text-[10px] uppercase tracking-widest text-white/50 px-4">
         {selectedIndex === null
           ? "6 planets · drag to spin the galaxy · tap a planet to see its rooms"
           : `${CATEGORIES[selectedIndex].label} · tap any orbiting tile to enter that room`}
       </div>
+
+      {/* 2026-05-12 enhancement: live activity ticker across the bottom */}
+      <LiveActivityTicker />
     </div>
   );
 }

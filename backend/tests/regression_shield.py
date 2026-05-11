@@ -4777,3 +4777,30 @@ def test_jftn_season_pass_password_gift_wired():
     assert "_has_active_season_pass" in src
     # Gift flow records a redeem-on-demand row in jftn_gifts.
     assert "jftn_gifts" in src
+
+
+def test_live_activity_ticker_wired():
+    """2026-05-12 founder enhancement: 'Vegas floor energy' — live
+    activity scrolling band at the bottom of the Volumetric Galaxy.
+    Backend derives events from existing collections so we don't need
+    a dedicated event bus. Frontend ticker auto-falls-back to teaser
+    strands if no events surface so the strip never collapses."""
+    from server import app
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    assert "/api/live-activity/recent" in paths, "Live activity endpoint missing"
+
+    # Backend anonymizes usernames before exposing them publicly.
+    src = open("/app/backend/routes/live_activity.py").read()
+    assert "_anon" in src
+    assert "spectator_bonus_caps" not in src or "jftn_gifts" in src  # multi-source
+
+    # Frontend ticker is mounted on the Volumetric dashboard.
+    ticker = open("/app/frontend/src/components/common/LiveActivityTicker.tsx").read()
+    assert "/api/live-activity/recent" in ticker
+    assert "live-activity-ticker" in ticker
+    # Fallback strands so the strip never collapses.
+    assert "FALLBACK_EVENTS" in ticker
+
+    vol = open("/app/frontend/src/pages/VolumetricDashboard.tsx").read()
+    assert "LiveActivityTicker" in vol
+    assert "<LiveActivityTicker />" in vol

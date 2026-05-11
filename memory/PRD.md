@@ -1,5 +1,9 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-05-12 — Live Activity Ticker 🎯.** Founder-approved enhancement. Backend `/api/live-activity/recent` derives a real-time event feed from 6 existing collections (`jftn_gifts`, `jftn_season_passes`, `coin_top_up_transactions`, `lottery_tickets`, `underground_battles`, `integrity_resolutions`) and anonymizes usernames as `j…s` before exposing them. Frontend `<LiveActivityTicker />` (mounted at bottom of Volumetric Galaxy) polls every 12s, scrolls via CSS keyframe (no JS RAF cost), and falls back to 4 teaser strands when the feed is empty so the strip never collapses. 252/252 regression-shield GREEN. Verified live: ticker visible at the bottom of `/dashboard` showing all 4 teaser strands until real events flow in.
+
+
+
 > **2026-05-12 — Pre-redeploy beta verification PASSED 🟢.** Founder asks bundled into one final pass:
 >
 > 1. **JFTN Season Pass** ($25/mo, 30-day, Stripe subscription) — endpoints `/api/just-for-the-night/season-pass/{subscribe,verify,me}`. Backend join-transaction now checks active pass BEFORE deducting tokens — pass holders unlock any room for free.
