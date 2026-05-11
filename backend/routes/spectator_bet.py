@@ -93,11 +93,34 @@ async def settle_market(payload: SettlePayload, http_request: Request):
                        "winning_choice": payload.winning_choice}},
         )
         if won:
-            # Cap daily bonus.
-            day_doc = await db.spectator_bonus_caps.find_one(
-                {"user_id": b["user_id"], "date": today}, {"_id": 0},
-            ) or {"hits_today": 0}
-            if day_doc.get("hits_today", 0) < DAILY_BONUS_CAP:
+            # Atomic cap-and-credit: use a single conditional update so
+            # concurrent settles can never exceed DAILY_BONUS_CAP per user.
+            # Mongo guarantees atomicity per-document.
+            cap_doc = await db.spectator_bonus_caps.find_one_and_update(
+                {"user_id": b["user_id"], "date": today, "hits_today": {"$lt": DAILY_BONUS_CAP}},
+                {"$inc": {"hits_today": 1}},
+                upsert=False,
+            )
+            if cap_doc is None:
+                # First hit today OR cap reached. Try to upsert with hits_today=1.
+                # If the document already exists at the cap this no-ops safely.
+                try:
+                    await db.spectator_bonus_caps.update_one(
+                        {"user_id": b["user_id"], "date": today},
+                        {"$setOnInsert": {"hits_today": 1}},
+                        upsert=True,
+                    )
+                    # Re-read to confirm we're under the cap before crediting.
+                    cap = await db.spectator_bonus_caps.find_one(
+                        {"user_id": b["user_id"], "date": today}, {"_id": 0, "hits_today": 1},
+                    )
+                    if not cap or cap.get("hits_today", 0) > DAILY_BONUS_CAP:
+                        cap_doc = None  # Cap reached — skip credit.
+                    else:
+                        cap_doc = cap
+                except Exception:
+                    cap_doc = None
+            if cap_doc is not None:
                 uw = await db.users.find_one(
                     {"user_id": b["user_id"]},
                     {"_id": 0, "token_balance": 1, "credits_balance": 1},
@@ -106,11 +129,6 @@ async def settle_market(payload: SettlePayload, http_request: Request):
                 await db.users.update_one(
                     {"user_id": b["user_id"]},
                     {"$inc": {field: BONUS_PER_HIT}},
-                )
-                await db.spectator_bonus_caps.update_one(
-                    {"user_id": b["user_id"], "date": today},
-                    {"$inc": {"hits_today": 1}},
-                    upsert=True,
                 )
                 bonus_paid += BONUS_PER_HIT
         settled += 1

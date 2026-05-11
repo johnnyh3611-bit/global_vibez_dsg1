@@ -1,5 +1,17 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-05-12 (Personal Homeworld + Security audit + Pre-redeploy polish list).**
+>
+> **Personal Homeworld** — `/api/recent-rooms/{log,me,leaderboard}` ledger + `<RoomVisitLogger />` mounted globally in App.js logs every route change with a 5-second cooldown. The Volumetric Galaxy fetches `/api/recent-rooms/me` on mount and overlays each planet thumbnail with the user's most-played room in that category. The thumbnail emoji swaps to that room's emoji + a tiny **"HOME"** badge appears under the coin frame. Tapping the thumbnail now launches the homeworld instead of the category's first room. Verified live: visited Vibez 654 twice → Games planet thumbnail shows the dice + HOME badge → tap routes to /vibez-654.
+>
+> **Atomic spectator-bet cap fix** — Replaced the read-then-increment pattern in `/api/spectator-bet/settle` with an atomic `find_one_and_update` (single Mongo doc guarantees atomicity) so concurrent settles cannot exceed the 5/day bonus cap per user.
+>
+> **Security audit** — Read-only troubleshoot agent ran a 10-step scan. **Verdict: strong fundamentals + 3 BLOCKER configuration gaps + 3 HIGH polish items.** Full list in finish summary below.
+>
+> **Tests:** 249/249 regression-shield GREEN (+1 new lock: `test_personal_homeworld_wired_end_to_end`).
+
+
+
 > **2026-05-12 (volumetric becomes default + Vibez branding + room pictures + planet polish).** Founder ask: "I would like the volumetric galaxy view to be the view that people come into the page and get, where they have an option at the top to change it to the classic view... every word with 'vibe' in it needs to end with a Z (Vibez)... and the room tabs need pictures... and make the planets more dynamic."
 >
 > **1. Default dashboard = Volumetric.** New `<DashboardRouter />` resolves `/dashboard` based on `localStorage.gv_dashboard_view` (`"volumetric"` default, `"classic"` opt-out). Both views ship reciprocal toggles: Volumetric shows **"CLASSIC VIEW"** top-left; Classic shows the **"Volumetric View"** pulsing pill in the header + the big "Try Volumetric" banner. Listens to `window.focus` + `storage` events so cross-tab toggles propagate.
