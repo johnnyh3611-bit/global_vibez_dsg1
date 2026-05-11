@@ -1,5 +1,25 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-02-11 (LIVE NOW WALL SHIPPED 🔴📺) — Public streaming discovery surface live. 309/309 regression green.**
+>
+> **New surfaces shipped this round:**
+>   - 🔴 **`/streams/live`** (PUBLIC, no auth) — Live Now Wall. Auto-pulls every Cloudflare-confirmed-live streamer, renders responsive grid of mini HLS players, auto-refreshes every 8s as a safety net behind webhooks. Animated `framer-motion` mount/unmount as streams come online and go offline.
+>   - 📺 **`/streams/watch/:inputId`** (PUBLIC) — Single-stream watch room with deep-link sharing, share-link copy button, "Go Live yourself" cross-promo CTA.
+>   - 🪐 Volumetric Dashboard: "Live Now Wall" tile added to the Streaming planet alongside "Go Live".
+>
+> **Why this matters**: Without a public discovery surface, streamers were invisible to non-followers. With it: every broadcast is one-click-shareable, the URL works for anyone (no signup wall), and the page is SEO-indexable so each "Stream X is live!" notification on Twitter/Reddit drives instant cold traffic.
+>
+> **Verified end-to-end:**
+>   - ✅ Fire `stream.connected` webhook → tile appears within 8s on the wall (no manual refresh)
+>   - ✅ Fire `stream.disconnected` webhook → tile auto-removes
+>   - ✅ Empty state renders inviting "Be the first to go live" CTA → Studio
+>   - ✅ HLSPlayer component reused (no DRY violation; same low-latency config)
+>   - ✅ Public routes lock-verified by regression test (`ProtectedRoute` would silently break SEO)
+>
+> **Regression Shield: 309/309 GREEN** (+1 new lock: `test_live_now_wall_and_watch_room_wired`).
+>
+> ---
+>
 > **2026-02-11 (CLOUDFLARE STREAM FULLY SECURED 🔐🟢) — Webhook signature verification active. All 4 credentials live. End-to-end attack surface tested.**
 >
 > **Latest update**: Used the existing API token to programmatically register the webhook URL via `PUT /accounts/{id}/stream/webhook`. Cloudflare auto-returned a signing secret, which is now stored in `.env`. **No founder UI navigation needed.**

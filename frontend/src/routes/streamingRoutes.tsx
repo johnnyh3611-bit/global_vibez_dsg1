@@ -2,6 +2,8 @@ import { Route } from 'react-router-dom';
 import LiveStreamingPage from '@/pages/LiveStreamingPage';
 import StreamerDashboard from '@/pages/StreamerDashboard';
 import StreamerStudio from '@/pages/streaming/StreamerStudio';
+import LiveNowWall from '@/pages/streaming/LiveNowWall';
+import WatchRoom from '@/pages/streaming/WatchRoom';
 
 export const streamingRoutes = (ProtectedRoute) => (
   <>
@@ -29,5 +31,9 @@ export const streamingRoutes = (ProtectedRoute) => (
         </ProtectedRoute>
       }
     />
+    {/* Public discovery surface — no auth gate, so search engines can
+        index it and word-of-mouth shares load instantly. */}
+    <Route path="/streams/live" element={<LiveNowWall />} />
+    <Route path="/streams/watch/:inputId" element={<WatchRoom />} />
   </>
 );

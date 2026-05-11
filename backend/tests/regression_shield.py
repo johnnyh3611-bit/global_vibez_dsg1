@@ -6530,3 +6530,66 @@ def test_cloudflare_stream_ingest_wired():
     deps = {**pkg.get("dependencies", {}), **pkg.get("devDependencies", {})}
     assert "hls.js" in deps, "hls.js must be installed for HLS playback"
 
+
+
+def test_live_now_wall_and_watch_room_wired():
+    """2026-02 sprint: Public Live Now Wall — auto-pulls every webhook-
+    confirmed-live Cloudflare streamer and renders mini HLS players in
+    a grid. Public route (no auth) for SEO + viral discovery. Pairs
+    with WatchRoom for click-to-enter deep links.
+
+    Locks:
+      - LiveNowWall + WatchRoom pages exist.
+      - Routes are PUBLIC (not wrapped in ProtectedRoute).
+      - Volumetric Dashboard tile present.
+      - Wall reuses the canonical HLSPlayer component (no DRY violations).
+      - Wall hits the only_live=true endpoint, not a side-channel.
+      - Watch route uses :inputId param matching the Cloudflare uid format.
+    """
+    wall = open("/app/frontend/src/pages/streaming/LiveNowWall.tsx").read()
+    watch = open("/app/frontend/src/pages/streaming/WatchRoom.tsx").read()
+    routes = open("/app/frontend/src/routes/streamingRoutes.tsx").read()
+
+    # Pages mount + reuse shared player.
+    for tid in (
+        "live-now-wall-root",
+        "live-now-refresh",
+        "live-now-mute-all",
+        "live-now-go-live",
+    ):
+        assert tid in wall, f"LiveNowWall missing testid: {tid}"
+    assert "HLSPlayer" in wall, "Wall must reuse the canonical HLSPlayer component"
+    assert "only_live=true" in wall, "Wall must filter to live streams only"
+    assert "process.env.REACT_APP_BACKEND_URL" in wall
+
+    for tid in ("watch-room-root", "watch-room-back", "watch-room-share"):
+        assert tid in watch, f"WatchRoom missing testid: {tid}"
+    assert "HLSPlayer" in watch
+    assert "useParams" in watch and "inputId" in watch
+
+    # Routes are PUBLIC (no ProtectedRoute wrap on these two paths).
+    import re
+    live_route_match = re.search(
+        r'<Route\s+path="/streams/live"\s+element=\{(.+?)\}\s*/>',
+        routes,
+        re.DOTALL,
+    )
+    assert live_route_match, "Missing /streams/live route registration"
+    assert "ProtectedRoute" not in live_route_match.group(1), (
+        "/streams/live must be PUBLIC for SEO + viral discovery — do not wrap in ProtectedRoute"
+    )
+
+    watch_route_match = re.search(
+        r'<Route\s+path="/streams/watch/:inputId"\s+element=\{(.+?)\}\s*/>',
+        routes,
+        re.DOTALL,
+    )
+    assert watch_route_match, "Missing /streams/watch/:inputId route registration"
+    assert "ProtectedRoute" not in watch_route_match.group(1), (
+        "/streams/watch/:inputId must be PUBLIC so shared links work for anyone"
+    )
+
+    # Volumetric Dashboard tile.
+    vol = open("/app/frontend/src/pages/VolumetricDashboard.tsx").read()
+    assert "/streams/live" in vol, "Live Now Wall tile missing from Volumetric Dashboard"
+
