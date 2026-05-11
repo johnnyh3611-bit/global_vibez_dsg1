@@ -138,12 +138,16 @@ async def _fetch_rapidapi_fixtures() -> List[Dict[str, Any]]:
 
 @router.get("/sports/games")
 async def list_games():
-    """Seeded + live RapidAPI fixtures. Cached only on the client side."""
+    """Crowd-oracle sports book — fixtures are seeded + admin-curated; the
+    Integrity Protocol Vibe Check decides winners, so we no longer need
+    a 3rd-party odds API to be live. RAPIDAPI_SPORTS_KEY (if set) is
+    still optional but the platform is fully functional without it."""
     live = await _fetch_rapidapi_fixtures()
     return {
         "count": len(SEED_GAMES) + len(live),
         "games": SEED_GAMES + live,
         "rapidapi_connected": bool(os.environ.get("RAPIDAPI_SPORTS_KEY")),
+        "settlement_oracle": "vibe_check_crowd_consensus",
     }
 
 

@@ -93,7 +93,7 @@ export default function SportsLounge() {
           <Tv className="w-5 h-5" /> Vibe Sports Book
         </h1>
         <div className="text-[10px] uppercase tracking-widest text-white/40 hidden md:block">
-          {rapidConnected ? "🟢 Live odds" : "🟡 Seed catalog"}
+          {rapidConnected ? "🟢 Live odds" : "🛡 Crowd-judged · Vibe Check oracle"}
         </div>
       </header>
 

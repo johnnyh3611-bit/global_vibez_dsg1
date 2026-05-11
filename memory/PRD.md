@@ -1,5 +1,14 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-05-12 (later) — Universal Room Info Cube + RapidAPI dependency dropped 📘🛡.** Founder ask: "every tab or room needs an information cube — some rooms I go in I don't even know what it is" + "we don't need the RapidAPI Sports key anymore — the people are the oracle".
+>
+> 1. **`<RoomInfoCube />`** — new top-right info pill (`data-testid=room-info-cube-trigger`) mounted GLOBALLY in App.js. Auto-detects the current route via `useLocation()`, looks up content from `/app/frontend/src/data/roomInfo.ts`, and opens a modal with 4 sections: Title + tagline · How it works (numbered steps) · How you earn (bulleted) · optional Social hook + Fairness/Safety. Hides itself on auth pages and when no content matches.
+> 2. **Content catalog** — `roomInfo.ts` ships entries for 30+ rooms: dashboard, sports-lounge, underground-casino, underground-live, lottery, chess-hall, chess/blitz, chess/puzzle, chess/tournament, vibez-654, cinema-room, dating, matchmaking, cyber-casino, vibe-ridez, hungryvibes, yellow-pages, receipts, tiers, pricing, wallet, chair-hall, vibe-spots, vibe-vault-admin, admin/cinema-catalog, blackjack, baccarat, spades, bid-whist, hearts. `matchInfo()` returns the most-specific prefix match.
+> 3. **RapidAPI dependency dropped** — `/api/sports/games` now returns `"settlement_oracle": "vibe_check_crowd_consensus"`. Sports Lounge header swapped "🟡 Seed catalog" → "🛡 Crowd-judged · Vibe Check oracle". The crowd consensus is the canonical winner declaration via Integrity Protocol's 10-reporter / 75%-agreement mesh. RapidAPI key is now OPTIONAL — present-day operations are 100% functional without it.
+> 4. **Tests:** 247/247 pytest GREEN (+2 new locks: `test_room_info_cube_globally_mounted`, `test_sports_lounge_no_longer_depends_on_rapidapi`). Verified live: Sports Lounge → Info pill → modal rendering all 4 sections correctly.
+
+
+
 > **2026-05-12 — P0 + P2 Beta-Readiness Sweep · 5 Modules Shipped 🛡💰🎤🧾.** Single-session sweep covering the Integrity Protocol last-working-item, math-anchored tier rework, and 3 P2 backlog drops.
 >
 > **P0.1 — Sovereign Master Code · Integrity Protocol** (`/api/integrity/*`) — 4 endpoints (`report`, `resolve`, `my-status`, `config`). Crowdsourced score consensus: 10 reporters @ 75% agreement, chair-holders vote 2×, +5 ₵ on every correct call. Three-strike fraud ban: 10% / 50% / permanent. New `<VibeCheckReport>` modal embedded into every Sports Lounge game card (`data-testid=vibe-check-trigger-{game_id}`).

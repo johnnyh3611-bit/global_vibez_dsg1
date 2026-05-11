@@ -4588,3 +4588,52 @@ def test_p2_receipt_ocr_routes_and_constants_locked():
     page = open("/app/frontend/src/pages/ReceiptsPage.tsx").read()
     for tid in ["receipts-page", "receipts-form", "receipts-submit", "receipts-image-url"]:
         assert tid in page, f"ReceiptsPage missing testid: {tid}"
+
+
+def test_room_info_cube_globally_mounted():
+    """2026-05-12 founder ask: 'every tab or each room needs an
+    information cube — tell people how the room works'. The cube must
+    be globally mounted via App.js and read from a single content
+    catalog (roomInfo.ts). Drift here means a room's info goes blank."""
+    # Component exists.
+    comp_path = "/app/frontend/src/components/common/RoomInfoCube.tsx"
+    assert os.path.exists(comp_path)
+    comp = open(comp_path).read()
+    for tid in [
+        "room-info-cube-trigger", "room-info-cube-modal",
+        "room-info-cube-title", "room-info-cube-tagline",
+        "room-info-cube-close", "room-info-cube-got-it",
+    ]:
+        assert tid in comp, f"RoomInfoCube missing testid: {tid}"
+    assert "matchInfo" in comp, "RoomInfoCube must use matchInfo()"
+
+    # Content catalog exists with the must-cover rooms.
+    cat_path = "/app/frontend/src/data/roomInfo.ts"
+    assert os.path.exists(cat_path)
+    cat = open(cat_path).read()
+    for room in [
+        "/dashboard", "/sports-lounge", "/underground-casino", "/underground-live",
+        "/lottery", "/chess-hall", "/vibez-654", "/cinema-room", "/dating",
+        "/vibe-ridez", "/hungryvibes", "/yellow-pages", "/receipts", "/tiers",
+        "/chair-hall", "/wallet", "/spades", "/bid-whist", "/hearts", "/baccarat",
+    ]:
+        assert f'"{room}"' in cat, f"roomInfo.ts missing entry for {room}"
+    assert "export function matchInfo" in cat
+
+    # Globally mounted in App.js.
+    app_js = open("/app/frontend/src/App.js").read()
+    assert "RoomInfoCube" in app_js
+    assert "<RoomInfoCube />" in app_js
+
+
+def test_sports_lounge_no_longer_depends_on_rapidapi():
+    """2026-05-12 founder ask: 'we don't need the API key for RapidAPI
+    Sports anymore — the people are the oracle.' Backend exposes the
+    Vibe Check crowd-consensus as the settlement_oracle so /sports/games
+    consumers can drop the 'seed catalog' framing."""
+    src = open("/app/backend/routes/sports_lounge.py").read()
+    assert '"settlement_oracle": "vibe_check_crowd_consensus"' in src
+    # Frontend dropped the "Seed catalog" framing.
+    fe = open("/app/frontend/src/pages/SportsLounge.tsx").read()
+    assert "Seed catalog" not in fe
+    assert "Crowd-judged" in fe or "Vibe Check oracle" in fe
