@@ -30,6 +30,7 @@ import BetaFeedbackTab from '@/components/admin/tabs/BetaFeedbackTab';
 import SmartStackOpsTab from '@/components/admin/tabs/SmartStackOpsTab';
 
 import SystemStressMeter from '@/components/admin/SystemStressMeter';
+import ActivityPulseCard from '@/components/admin/ActivityPulseCard';
 import EmergencyOverride from '@/components/admin/EmergencyOverride';
 import ApexEvolutionControls from '@/components/admin/ApexEvolutionControls';
 import ChairHolderVoting from '@/components/admin/ChairHolderVoting';
@@ -188,6 +189,9 @@ export const GodModeDashboard = () => {
       <div className="mb-6">
         <SystemStressMeter />
       </div>
+
+      {/* 2026-05-12 founder enhancement: live business pulse card */}
+      <ActivityPulseCard />
 
       <TabGroup index={selectedTab} onIndexChange={setSelectedTab}>
         <TabList className="mb-6">

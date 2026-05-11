@@ -1,5 +1,9 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-05-12 — Activity Pulse for /vibe-vault-admin 📊.** Founder-only un-anonymized live business pulse: 4 summary tiles (72h events, gross ₵, gross $, top-ups) + scrollable feed of every payment/gift/season-pass/lottery-ticket/Underground-Live event of the last 72 hours with full usernames and timestamps. Admin-gated via `is_admin`/`role=="admin"`; unauth returns 403 (verified). Same 7 collections feed both the public ticker (anonymized) and the admin pulse (full handles + dollar amounts). Mounted just below `<SystemStressMeter />` in GodModeDashboard. Polls every 15s. 253/253 regression-shield GREEN.
+
+
+
 > **2026-05-12 — Live Activity Ticker 🎯.** Founder-approved enhancement. Backend `/api/live-activity/recent` derives a real-time event feed from 6 existing collections (`jftn_gifts`, `jftn_season_passes`, `coin_top_up_transactions`, `lottery_tickets`, `underground_battles`, `integrity_resolutions`) and anonymizes usernames as `j…s` before exposing them. Frontend `<LiveActivityTicker />` (mounted at bottom of Volumetric Galaxy) polls every 12s, scrolls via CSS keyframe (no JS RAF cost), and falls back to 4 teaser strands when the feed is empty so the strip never collapses. 252/252 regression-shield GREEN. Verified live: ticker visible at the bottom of `/dashboard` showing all 4 teaser strands until real events flow in.
 
 

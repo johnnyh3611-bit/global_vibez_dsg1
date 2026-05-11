@@ -4804,3 +4804,32 @@ def test_live_activity_ticker_wired():
     vol = open("/app/frontend/src/pages/VolumetricDashboard.tsx").read()
     assert "LiveActivityTicker" in vol
     assert "<LiveActivityTicker />" in vol
+
+
+def test_admin_activity_pulse_wired():
+    """2026-05-12 founder enhancement: admin-only un-anonymized live
+    activity pulse on /vibe-vault-admin. Same source data as the public
+    ticker but with full usernames + dollar amounts + 72h totals.
+    Locked admin-only via get_current_user.is_admin/role check."""
+    from server import app
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    assert "/api/live-activity/admin-pulse" in paths, "Admin pulse endpoint missing"
+
+    src = open("/app/backend/routes/live_activity.py").read()
+    assert "admin-pulse" in src
+    # Admin-only gate present.
+    assert "is_admin" in src or 'role" == "admin"' in src
+    # Aggregates a totals block for the summary tiles.
+    assert "gross_vibe_72h" in src
+    assert "gross_usd_72h" in src
+
+    # Frontend card exists with testids + admin pulse endpoint.
+    card = open("/app/frontend/src/components/admin/ActivityPulseCard.tsx").read()
+    assert "/api/live-activity/admin-pulse" in card
+    for tid in ["admin-activity-pulse", "pulse-tile-events", "pulse-tile-vibe", "pulse-tile-usd", "pulse-event-list"]:
+        assert tid in card, f"ActivityPulseCard missing testid: {tid}"
+
+    # Mounted in God Mode dashboard.
+    god = open("/app/frontend/src/pages/admin/GodModeDashboard.tsx").read()
+    assert "ActivityPulseCard" in god
+    assert "<ActivityPulseCard />" in god
