@@ -1,0 +1,49 @@
+{
+  "summary": "PRE-REDEPLOY COMPREHENSIVE SWEEP — All critical items GREEN. ProfileSetup typing-invisibility bug is FIXED (text renders rgb(15,23,42) slate-900 on white card). Volumetric Galaxy is the default dashboard with 6 planets + CLASSIC VIEW toggle. /wallet now correctly mounts the new Wallet.tsx with PhantomConnect row (previous route collision is resolved). 247/247 regression_shield.py pytest PASS. Backend smoke across all major /api/* endpoints PASS. Login flows (demo + beta tester credentials) work. /tiers shows all 5 tiers + Genius Chair. 404 page renders branded NotFound. JFTN, sports, underground-live, integrity, spectator-bet, dsg6, receipts endpoints all respond correctly. PLATFORM IS READY FOR REDEPLOY. Only minor non-blocking polish items remain (overlay z-index click-blockers + a fetchPayouts double-.json() console error).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/just-for-the-night/season-pass/me", "issue": "Returns 500 when called WITHOUT auth header (should return 401). With Bearer token works fine and returns 200 with {active,pass,price_usd,duration_days}."},
+      {"endpoint": "WS /api/ws/vibe-phone/{user_id} and /api/ws/friend-events/{user_id}", "issue": "Both fail to upgrade for demo guest users (closed before connection established). Harmless warnings, but suggests these sockets don't accept the demo/guest user_id path."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Dashboard FAB stack", "issue": "BUTTON[orientation-fab].fixed bottom-4 left-4 z-[9998] occludes BUTTON[voice-mirror-dock-enable] AND BUTTON[log-design-lesson-toggle] — flagged repeatedly by VigilantAgent. Clicks on those bottom-left dock buttons may not register on desktop.", "selector": "[data-testid='orientation-fab']", "priority": "MEDIUM"},
+      {"component": "Header strip", "issue": "BUTTON[page-action-strip-trigger] reported occluded by DIV.flex items-center justify-between in the header. Cosmetic / overlap risk.", "selector": "[data-testid='page-action-strip-trigger']", "priority": "LOW"},
+      {"component": "Vibe Ridez payouts fetcher", "issue": "Console error: 'Failed to fetch payouts: TypeError: Failed to execute json on Response: body stream already read at fetchPayouts (bundle.js:77478)'. The fetcher is calling response.json() twice (or after a non-OK 404 it still tries to parse). Triggers on dashboard mount.", "selector": "n/a", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Multiple rooms", "issues": ["VigilantAgent (the platform's own click-blocker detector) is firing 8+ warnings per page mount. Most are bottom-left orientation-fab z-9998 occluding voice/log dock buttons. Recommend lowering orientation-fab z-index or repositioning so it doesn't overlap other docks."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/test_reports/pytest/regression_shield_jan2026_predeploy.xml"
+  ],
+  "action_items": [
+    "(LOW) Return 401 instead of 500 from /api/just-for-the-night/season-pass/me when no auth header is supplied.",
+    "(MEDIUM) Fix fetchPayouts in the dashboard bundle — guard against non-OK responses (use response.ok and only call .json() once). Currently throws 'body stream already read' on every dashboard mount.",
+    "(MEDIUM) Reduce z-index or reposition [data-testid='orientation-fab'] so it stops occluding voice-mirror-dock-enable + log-design-lesson-toggle bottom-left dock buttons.",
+    "(LOW) Add a no-op handler or accept demo/guest user_ids for /api/ws/vibe-phone/* and /api/ws/friend-events/* so demo testers don't see WebSocket failure warnings."
+  ],
+  "critical_code_review_comments": [
+    "ProfileSetup.tsx fix is CORRECT and complete. The inputCls + labelCls pattern (text-slate-900 / text-slate-800 on white card) cleanly defeats the dark-theme text-foreground inheritance. Verified live: computed color on bio + age input = rgb(15,23,42).",
+    "fetchPayouts() double-.json() bug throws on every dashboard mount — easy fix but noisy in prod logs and shows up in any monitoring/Sentry pipeline.",
+    "orientation-fab z-9998 is the highest z-index in the app and sits at bottom-4 left-4 — same coordinate slot as several other FAB docks. This is the same family of bug that previously occluded the /wallet new page; recommend a global FAB stacking convention.",
+    "247-test regression_shield.py remains GREEN — the safety net is intact."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (247/247 regression + all smoke endpoints respond correctly)", "frontend": "100% on critical verification (ProfileSetup typing, Volumetric default, Classic toggle visible, Wallet Phantom row, Tiers, 404, JFTN, dashboard render)"},
+  "test_credentials": "Used betatester1@globalvibez.com / BetaTester2026! (login → token returned). Also used demo login button (login-demo-btn) — landed on /dashboard as demo_23970ac9.",
+  "seed_data_creation": "No new seeds created this run. Previous TEST_pwroom_083604 JFTN room still present in DB from earlier iteration (not cleaned).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Platform is in a SHIP-READY state for beta redeploy. The previously flagged /wallet route collision has been resolved (Wallet.tsx with PhantomConnect row now correctly mounts and [data-testid=wallet-connect-phantom-row] is visible). The ProfileSetup typing-invisibility bug is verifiably fixed (typed text renders in slate-900 on white). The only remaining items are MEDIUM/LOW polish: fetchPayouts double-.json() error, orientation-fab z-index occlusion, season-pass/me unauth 500 vs 401, and demo-user WebSocket warnings. None of these block beta launch.",
+  "rca of the issue": {
+    "founder_reported_bug": "I went into preview, logged in, got sent to profile setup page, and I still can't type over in that section.",
+    "rca": "False bug — typing always worked, but the input text inherited the dark-theme foreground color (near-white) on a white card, making every keystroke invisible. Fix in ProfileSetup.tsx adds explicit className 'text-slate-900' on inputs + 'text-slate-800' on labels, plus a defensive global rule in index.css scoped to .bg-white inputs.",
+    "verification_method": "Playwright filled all 4 visible inputs, then read input.value (matched expected text) AND computed getComputedStyle().color (= rgb(15,23,42)), AND took a screenshot showing dark text on white card. Bug is fully resolved.",
+    "screenshot_path": "/tmp/profile_setup.png (in test container)"
+  }
+}

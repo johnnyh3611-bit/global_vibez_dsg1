@@ -4833,3 +4833,35 @@ def test_admin_activity_pulse_wired():
     god = open("/app/frontend/src/pages/admin/GodModeDashboard.tsx").read()
     assert "ActivityPulseCard" in god
     assert "<ActivityPulseCard />" in god
+
+
+def test_profile_setup_white_card_text_visible():
+    """2026-05-12 — founder reported "I went inside the preview to log in,
+    and it took me to the page where I had to put my profile information,
+    and that still don't type over in that section yet either."
+
+    Root cause: shadcn <Input>/<Textarea>/<Label> inherit text color from
+    the global `--foreground` token which the dark theme sets to near-white.
+    ProfileSetup renders on a WHITE card → white-on-white = invisible text
+    while typing. The fix lives in TWO places, both required:
+      1. ProfileSetup.tsx — explicit text-slate-900 / text-slate-800 classes
+      2. index.css — scoped `.bg-white input/textarea/label` color rules
+         so any future white-card form is auto-protected.
+    """
+    css = open("/app/frontend/src/index.css").read()
+    # Scoped white-card text-visibility rules must be present.
+    assert ".bg-white input" in css, "white-card input color rule missing"
+    assert ".bg-white textarea" in css, "white-card textarea color rule missing"
+    assert ".bg-white label" in css, "white-card label color rule missing"
+    # Use slate-900 (15 23 42) for inputs, slate-800 (30 41 59) for labels.
+    assert "rgb(15 23 42)" in css, "input color must be slate-900"
+    assert "rgb(30 41 59)" in css, "label color must be slate-800"
+
+    # ProfileSetup explicitly applies the inputCls / labelCls overrides.
+    src = open("/app/frontend/src/pages/ProfileSetup.tsx").read()
+    assert "text-slate-900" in src, "ProfileSetup must force dark input text"
+    assert "text-slate-800" in src, "ProfileSetup must force dark label text"
+    # Testids preserved so the test agent can fill the form end-to-end.
+    for tid in ["bio-input", "age-input", "location-input", "interests-input", "submit-profile-btn"]:
+        assert tid in src, f"ProfileSetup missing testid: {tid}"
+

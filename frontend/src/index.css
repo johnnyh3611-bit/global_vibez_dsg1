@@ -553,3 +553,31 @@ html, body {
   overflow-x: clip;
   width: 100%;
 }
+
+/* 2026-05-12 — White-card text-visibility hardening.
+ *
+ * Bug: shadcn <Input>/<Textarea>/<Label> primitives intentionally have NO
+ * explicit text color (they inherit from theme `--foreground`). On the
+ * dark global theme, foreground = near-white. ProfileSetup, ProfileEdit,
+ * and SignupPage render those primitives on a WHITE card → white-on-white
+ * = users could type but their text was invisible. Reported by founder.
+ *
+ * Fix: any input / textarea / select-trigger / label inside a `.bg-white`
+ * ancestor is forced to slate-900 text + slate-400 placeholders. The rule
+ * is scoped to `.bg-white` so it cannot break dark-themed forms.
+ * Date attribute selector tightens it further to avoid hitting things
+ * styled-but-not-visible. */
+.bg-white input,
+.bg-white textarea,
+.bg-white [role="combobox"],
+.bg-white [data-radix-select-trigger] {
+  color: rgb(15 23 42); /* slate-900 */
+}
+.bg-white input::placeholder,
+.bg-white textarea::placeholder {
+  color: rgb(148 163 184); /* slate-400 */
+}
+.bg-white label {
+  color: rgb(30 41 59); /* slate-800 */
+}
+
