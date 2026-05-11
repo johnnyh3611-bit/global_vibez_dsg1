@@ -5243,7 +5243,7 @@ def test_production_smoke_test_card_wired():
         "/api/health",
         "/api/live-activity/recent",
         "/api/sports/games",
-        "/api/just-for-the-night/rooms",
+        "/api/just-for-the-night/rooms/discover",
         "/api/hungryvibes/restaurants",
         "/api/vibe-venues/venues",
         "/api/ridez/active-drivers",

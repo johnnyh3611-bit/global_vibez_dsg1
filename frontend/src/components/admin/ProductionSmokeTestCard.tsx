@@ -33,7 +33,7 @@ const PROBES: ProbeSpec[] = [
   { label: "Live Activity (public)", path: "/api/live-activity/recent", expectStatus: [200], expectKey: "events" },
   { label: "Sports — games", path: "/api/sports/games", expectStatus: [200] },
   { label: "Tiers", path: "/api/sovereign-tiers/config", expectStatus: [200, 404] },
-  { label: "JFTN — rooms", path: "/api/just-for-the-night/rooms", expectStatus: [200] },
+  { label: "JFTN — rooms", path: "/api/just-for-the-night/rooms/discover", expectStatus: [200] },
   { label: "JFTN — season pass (auth-required)", path: "/api/just-for-the-night/season-pass/me", expectStatus: [401] },
   { label: "HungryVibes — restaurants", path: "/api/hungryvibes/restaurants", expectStatus: [200, 404] },
   { label: "Vibe Venues — list", path: "/api/vibe-venues/venues", expectStatus: [200] },
