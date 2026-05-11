@@ -1,5 +1,29 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-05-13 (Pre-redeploy v5 · ANTI-PIRACY) — Content Rights & IP Protection installed 🛡️🎵.** Founder uploaded `Content_Rights_And_IP_Policy.pdf` with: "people couldn't just steal people other peoples' stuff within our system... they gotta actually buy it to download. Have a timeframe... Safety come first with our site, and it guarantees people trust us." Done — full anti-piracy protection now live and unifiable across every downloadable asset on the platform:
+>
+> **Backend** (`services/content_rights.py` + `routes/content_rights.py`):
+> - **Signed time-limited download URLs**: HMAC-SHA256 over `{asset_id}:{user_id}:{exp}:{nonce}` signed by `CONTENT_RIGHTS_SECRET` (auto-generated 48-byte URL-safe token in `backend/.env`). Default TTL 5 minutes. `mint_download_token` + `verify_download_token` round-trip cleanly; tampered signatures, payload tampering, malformed tokens, and expired tokens all rejected.
+> - **Master files are NEVER exposed in API responses**: `_public_asset()` helper strips `master_url` + `_id` from every response shape. The ONLY way to get a master is `/download/{token}` which requires: valid signature + auth token matches signed user_id + active non-refunded license + active non-takedown asset.
+> - **DMCA 24-hour SLA + 3-strike auto-termination**: `submit_dmca_notice` flags asset `takedown_status=pending` immediately. `admin_decide_dmca("upheld")` cascades: deactivate listing → refund all in-escrow purchases → add a copyright strike to the seller. At 3 strikes, the seller is auto-terminated AND all their other listings deactivate simultaneously.
+> - **10-day payment escrow**: every purchase row in `content_purchases` carries `escrow_release_at` (purchased_at + 10 days) + `escrow_status` (holding/released/refunded). Upheld takedowns flip in-escrow purchases to refunded automatically.
+> - **Upload preflight**: `preflight_upload` runs 4 checks BEFORE the file hits storage — (a) seller warranty signed, (b) seller not previously terminated, (c) metadata blocklist scan ("Official Movie" / "Leak" / "Type Beat" / "Pirated" / "Cam Rip" / etc. — case-insensitive, includes regex catch for `\b\w+ type beat\b`), (d) fingerprint collision against the global registry. Any fail returns `{ok:false, block_reason, message}` with copy ready for the seller.
+> - **9 endpoints** under `/api/content-rights/*`: `GET /policy` (public snapshot + live counters), `GET /sample/{asset_id}` (public preview, never master), `POST /purchase/{asset_id}` (record + mint token), `GET /download/{token}` (verify → 302 redirect to master), `POST /dmca/notice` (open form), `POST /upload/preflight` (authed), `GET /admin/dmca/queue`, `POST /admin/dmca/decide`, `GET /admin/strikes`.
+>
+> **Frontend**:
+> - **Public `/content-rights` page** (`pages/ContentRightsPage.tsx`): "Your work is protected here" headline + 4 live counters (Active works / Purchases settled / DMCA filings / Sellers terminated) + 6 spec pillars + User Rights Agreement in cyan box + open DMCA filing form. Anyone can file — no login required (DMCA notices come from rights-holders who aren't necessarily users).
+> - **`<ContentRightsDmcaQueueCard />`** admin tool (`components/admin/ContentRightsDmcaQueueCard.tsx`) mounted on God Mode dashboard right after the AVP queue: 3 filter tabs (Pending / Upheld / Dismissed), per-row Uphold (red gavel) / Dismiss (green check) actions, claim text + proof URL inline, plus the **3-strike repeat-infringer roster** with terminated sellers explicitly flagged.
+>
+> **Verified end-to-end via curl + screenshot**:
+> - `GET /policy` returns 24h SLA + 3-strike threshold + 10-day escrow + 5-minute TTL + 30s sample + 11-keyword blocklist + full User Rights Agreement + "Content Rights & Anti-Piracy Policy · 2026" version stamp + live enforcement counters.
+> - `GET /sample/{nonexistent}` returns 404 (asset not found) — proves the endpoint enforces existence checks.
+> - `/content-rights` page renders all 6 pillars + 4 counters + agreement box + DMCA filing form (form opens on button click, confirmed via Playwright).
+>
+> **🔒 Regression Shield: 303/303 GREEN** (+6 new Content Rights locks: `test_content_rights_spec_constants_locked` (24h/3-strike/10-day/300s/30s + spec keywords), `test_content_rights_signed_download_token_lifecycle` (mint → verify → tamper detection x3 → malformed rejection), `test_content_rights_metadata_blocklist_detection` (Type Beat / Official Movie / Leak vs. clean originals), `test_content_rights_endpoints_registered` (all 9 endpoints), `test_content_rights_policy_endpoint_public` (no-auth policy snapshot), `test_content_rights_frontend_surfaces_wired` (all 11 testids + 6 pillars + admin queue + God Mode mount + route).
+>
+> **🟢 FIVE SPEC DOCUMENTS NOW LIVE, 303 LOCKED REGRESSION TESTS, BETA-READY.** Economic Engine · Definitive Economy · Legal Age Verification · Corrected KYC Compliance · Content Rights & Anti-Piracy. Deploy when ready.
+
+
 > **2026-05-13 (Pre-redeploy v4 · BETA-READY FINAL) — Corrected KYC Compliance Protocol shipped 🔐🚀.** Founder uploaded `Corrected_KYC_Compliance_Protocol.pdf` and asked to finish everything for beta. Done — superseded the prior Legal Age Verification Protocol with the corrected matrix:
 >
 > **Backend service corrections** (`services/age_verification.py`):

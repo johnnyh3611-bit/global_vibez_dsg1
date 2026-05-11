@@ -6138,3 +6138,152 @@ def test_stripe_identity_webhook_dual_mode():
 
     # Stub mode preserved (admin-gated) when secret isn't set yet.
     assert "_require_admin(user)" in handler
+
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# 2026-05-13 — Content Rights & Anti-Piracy Policy
+# Encodes Content_Rights_And_IP_Policy.pdf
+# ═══════════════════════════════════════════════════════════════════════
+
+def test_content_rights_spec_constants_locked():
+    """All spec constants from the Content Rights & IP Policy PDF."""
+    from services import content_rights as cr
+    # 24h DMCA SLA per Spec §1b.
+    assert cr.DMCA_TAKEDOWN_SLA_HOURS == 24
+    # 3-strike repeat infringer rule per Spec §1c.
+    assert cr.REPEAT_INFRINGER_STRIKE_THRESHOLD == 3
+    # 10-day payment escrow per Spec §5.
+    assert cr.PAYMENT_ESCROW_DAYS == 10
+    # 5-minute default download window.
+    assert cr.DEFAULT_DOWNLOAD_TTL_SECONDS == 300
+    # 30-second sample/preview clips.
+    assert cr.SAMPLE_DURATION_SECONDS == 30
+    # Metadata blocklist contains spec-named keywords.
+    blocklist = " ".join(cr.DEFAULT_METADATA_BLOCKLIST).lower()
+    for kw in ("official movie", "leak", "type beat"):
+        assert kw in blocklist, f"Missing spec keyword: {kw}"
+
+
+def test_content_rights_signed_download_token_lifecycle():
+    """Mint + verify + tamper detection + expiry."""
+    import os
+    os.environ["CONTENT_RIGHTS_SECRET"] = "TEST_SECRET_NEVER_USE_IN_PROD"
+    from services.content_rights import (
+        mint_download_token, verify_download_token,
+    )
+    # Valid token — round-trips.
+    t = mint_download_token("asset_123", "user_alice", ttl_seconds=60)
+    decoded = verify_download_token(t["token"])
+    assert decoded["asset_id"] == "asset_123"
+    assert decoded["user_id"] == "user_alice"
+
+    # Tampered signature → rejected.
+    tampered = t["token"][:-2] + "00"
+    try:
+        verify_download_token(tampered)
+        assert False, "Tampered token must be rejected"
+    except ValueError:
+        pass
+
+    # Tampered payload → rejected (signature won't match).
+    payload_parts = t["token"].split(":")
+    payload_parts[1] = "user_eve"
+    bad = ":".join(payload_parts)
+    try:
+        verify_download_token(bad)
+        assert False, "Payload tampering must be rejected"
+    except ValueError:
+        pass
+
+    # Malformed token → rejected.
+    try:
+        verify_download_token("not_a_real_token")
+        assert False, "Malformed token must be rejected"
+    except ValueError:
+        pass
+
+
+def test_content_rights_metadata_blocklist_detection():
+    """Title + description scan catches spec-named piracy keywords."""
+    from services.content_rights import metadata_block_check
+    assert metadata_block_check("Drake Type Beat", "free") == "type beat"
+    assert metadata_block_check("My Beat", "Official Movie soundtrack") == "official movie"
+    assert metadata_block_check("Title", "LEAKED from session") == "leak"
+    # Original work passes clean.
+    assert metadata_block_check("Sunset Drive", "an original instrumental") is None
+    assert metadata_block_check("", "") is None
+
+
+def test_content_rights_endpoints_registered():
+    """All Content Rights endpoints mounted under /api."""
+    from server import app
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    expected = [
+        "/api/content-rights/policy",
+        "/api/content-rights/sample/{asset_id}",
+        "/api/content-rights/purchase/{asset_id}",
+        "/api/content-rights/download/{token}",
+        "/api/content-rights/dmca/notice",
+        "/api/content-rights/upload/preflight",
+        "/api/content-rights/admin/dmca/queue",
+        "/api/content-rights/admin/dmca/decide",
+        "/api/content-rights/admin/strikes",
+    ]
+    for ep in expected:
+        assert ep in paths, f"Content Rights endpoint missing: {ep}"
+
+
+def test_content_rights_policy_endpoint_public():
+    """Policy endpoint must be open + return the full spec snapshot."""
+    from fastapi.testclient import TestClient
+    from server import app
+    client = TestClient(app)
+    r = client.get("/api/content-rights/policy")
+    assert r.status_code == 200
+    d = r.json()
+    assert d["dmca_takedown_sla_hours"] == 24
+    assert d["repeat_infringer_strike_threshold"] == 3
+    assert d["payment_escrow_days"] == 10
+    assert "metadata_blocklist" in d and len(d["metadata_blocklist"]) >= 5
+    assert "user_rights_agreement" in d
+    assert d["protocol_version"].startswith("Content Rights & Anti-Piracy Policy")
+
+
+def test_content_rights_frontend_surfaces_wired():
+    """ContentRightsPage + DMCA admin queue card mounted on God Mode."""
+    page = open("/app/frontend/src/pages/ContentRightsPage.tsx").read()
+    for tid in [
+        "content-rights-page",
+        "content-rights-counters",
+        "content-rights-pillars",
+        "content-rights-agreement",
+        "content-rights-open-dmca",
+        "content-rights-dmca-form",
+        "dmca-asset-id",
+        "dmca-claimant-name",
+        "dmca-claimant-email",
+        "dmca-claim-text",
+        "dmca-submit",
+    ]:
+        assert tid in page, f"ContentRightsPage missing testid: {tid}"
+    # All 6 pillars present per spec.
+    for pillar in ["Signed Download URLs", "Upload Fingerprint Scan",
+                   "DMCA 24-Hour Takedown", "Termination",
+                   "Metadata Keyword Filter", "Escrow"]:
+        assert pillar in page, f"Pillar missing: {pillar}"
+
+    queue = open("/app/frontend/src/components/admin/ContentRightsDmcaQueueCard.tsx").read()
+    for tid in [
+        "content-rights-dmca-queue-card",
+        "content-rights-dmca-filters",
+        "content-rights-strikes-list",
+    ]:
+        assert tid in queue, f"DMCA queue card missing testid: {tid}"
+
+    god = open("/app/frontend/src/pages/admin/GodModeDashboard.tsx").read()
+    assert "ContentRightsDmcaQueueCard" in god
+    assert "<ContentRightsDmcaQueueCard />" in god
+
+    misc = open("/app/frontend/src/routes/miscRoutes.tsx").read()
+    assert '"/content-rights"' in misc

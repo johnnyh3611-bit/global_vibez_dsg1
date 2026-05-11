@@ -35,6 +35,7 @@ import ProductionSmokeTestCard from '@/components/admin/ProductionSmokeTestCard'
 import BetaCohortReportCard from '@/components/admin/BetaCohortReportCard';
 import EconomicEngineCard from '@/components/economic_engine/EconomicEngineCard';
 import AgeVerificationQueueCard from '@/components/admin/AgeVerificationQueueCard';
+import ContentRightsDmcaQueueCard from '@/components/admin/ContentRightsDmcaQueueCard';
 import EmergencyOverride from '@/components/admin/EmergencyOverride';
 import ApexEvolutionControls from '@/components/admin/ApexEvolutionControls';
 import ChairHolderVoting from '@/components/admin/ChairHolderVoting';
@@ -214,6 +215,10 @@ export const GodModeDashboard = () => {
       {/* 2026-05-13 — 21+ Age Verification queue (Restricted Goods
           Delivery Standard 2026). Pending submissions + approve/reject. */}
       <AgeVerificationQueueCard />
+
+      {/* 2026-05-13 — Content Rights DMCA queue (Content_Rights_And_IP_Policy.pdf).
+          Pending takedowns, uphold/dismiss actions, repeat-infringer roster. */}
+      <ContentRightsDmcaQueueCard />
 
       <TabGroup index={selectedTab} onIndexChange={setSelectedTab}>
         <TabList className="mb-6">

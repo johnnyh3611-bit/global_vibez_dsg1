@@ -832,3 +832,9 @@ def _register_hungryvibes_smartstack(api_router) -> None:
     # menu shadow-gating, driver eligibility, audit trail, admin override.
     from routes.age_verification import router as age_verification_router  # noqa: PLC0415
     api_router.include_router(age_verification_router)
+
+    # 2026-05-13 — Content Rights & IP Protection (Content_Rights_And_IP_Policy.pdf).
+    # Signed time-limited download URLs, DMCA 24h takedown, 3-strike
+    # repeat-infringer policy, 10-day escrow, metadata blocklist.
+    from routes.content_rights import router as content_rights_router  # noqa: PLC0415
+    api_router.include_router(content_rights_router)
