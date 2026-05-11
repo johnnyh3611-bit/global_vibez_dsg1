@@ -1,5 +1,31 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-05-13 (Pre-redeploy) — DSG Economic Engine encoded into the system 💰⚙️.** Founder uploaded `Global_Vibez_DSG_Economic_Engine.pdf` and asked: "Last thing before I deploy, I wanna put this in the system to make sure that we have it." Done — full spec is now live and auditable:
+>
+> **Backend** (`services/dsg_economic_engine.py` + `routes/economic_engine.py`):
+> - **Constants (spec-locked)**: INITIAL_SUPPLY=3 B, STABILIZATION_TARGET_SUPPLY=1.5 B, GOLDEN_ASSET_SUPPLY=750 M, INITIAL_BURN_RATE=4 %, MINIMUM_BURN_RATE=0.5 %, REVENUE_SPLIT_RATIO=50/50, DEFAULT_UTILITY_COST_USD=$10, PARITY_USD=$1.00.
+> - **Pure-math helpers** (deterministic, easy to audit): `calculate_dynamic_burn_rate(supply)` — preserves the spec's Python verbatim (4 % at 3 B → linear → 0.5 % floor at 1.5 B); `split_revenue(amount_usd)` (50/50); `calculate_dynamic_price(cost_usd, coin_price)` (utility-room fixed-USD anchor).
+> - **Stateful engine** (Mongo): `dsg_economic_state` singleton holds `current_supply` + `liquidity_fund_usd` + lifetime cumulative counters; `dsg_economic_events` append-only audit log of every burn, deposit, and ingestion.
+> - **6 endpoints** under `/api/economic-engine`: `GET /constants` (public), `GET /snapshot` (public full live state), `GET /burn-rate?supply=X` (hypothetical or live), `GET /dynamic-price?cost_usd=10&coin_price_usd=1.0`, `POST /process-revenue` (admin, with `dry_run` flag), `GET /events` (admin audit log).
+>
+> **Frontend**:
+> - `<EconomicEngineCard />` (`components/economic_engine/EconomicEngineCard.tsx`) — live dashboard tile with status pill ("Stabilized" / "Burning down"), progress bar (0–100 % toward 1.5 B target), 4 stat tiles (Current supply · Burn rate live · Liquidity fund · Lifetime burned), and a collapsible "See the formula" reference that renders the spec's pseudocode verbatim with live constants substituted in.
+> - Card mounted on the God Mode admin (`pages/admin/GodModeDashboard.tsx`) right after Production Smoke Test.
+> - New public page `/economic-engine` (`pages/EconomicEnginePage.tsx`) — investor/user transparency surface with the live state card, the 4 economic pillars (Dual-Asset Shield · Dynamic Burn · 50/50 Revenue Split · Dynamic Utility Pricing), and an immutable-audit-log trust strip.
+>
+> **Verified end-to-end via curl + screenshot**:
+> - `GET /constants` returns all 8 spec constants.
+> - `GET /snapshot` returns supply=3 B, burn_rate=4.00 %, status=BURNING DOWN.
+> - `GET /burn-rate?supply=2250000000` returns 0.0225 (perfectly linear midpoint).
+> - `GET /burn-rate?supply=1500000000` returns 0.005 (floor reached).
+> - `GET /dynamic-price?cost_usd=10` returns 10 coins (at parity).
+> - `/economic-engine` page renders cleanly with all 14 expected testids.
+>
+> **🔒 Regression Shield: 280/280 GREEN** (+6 new locks: `test_economic_engine_constants_match_spec`, `test_economic_engine_burn_rate_curve_endpoints`, `test_economic_engine_revenue_split_50_50`, `test_economic_engine_dynamic_price_formula`, `test_economic_engine_routes_registered`, `test_economic_engine_card_and_page_mounted`). Burn-rate math locked at both endpoints + midpoint so spec drift gets caught.
+>
+> **Status: 🟢 SYSTEM HAS THE ENGINE. Safe to redeploy.**
+
+
 > **2026-05-13 — Beta-Launch Backlog Sweep · 7 Features Shipped · 274/274 regression GREEN · 281/281 sprint+regression GREEN 🚀.** Founder ask: "every available task one by one to finish so I can go into beta". One-shot delivery against the entire actionable P1/P2 backlog:
 >
 > 1. **Volumetric dashboard code-split** (`DashboardRouter.tsx`, `miscRoutes.tsx`) — Three.js (~500KB) now `React.lazy()` + `<Suspense>` so Classic view + first paint never download the WebGL bundle. Adds `<VolumetricLoadingFallback />` for the brief async hydration. Direct `/dashboard-volumetric` route also lazy-mounted.

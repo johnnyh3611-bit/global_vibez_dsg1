@@ -33,6 +33,7 @@ import SystemStressMeter from '@/components/admin/SystemStressMeter';
 import ActivityPulseCard from '@/components/admin/ActivityPulseCard';
 import ProductionSmokeTestCard from '@/components/admin/ProductionSmokeTestCard';
 import BetaCohortReportCard from '@/components/admin/BetaCohortReportCard';
+import EconomicEngineCard from '@/components/economic_engine/EconomicEngineCard';
 import EmergencyOverride from '@/components/admin/EmergencyOverride';
 import ApexEvolutionControls from '@/components/admin/ApexEvolutionControls';
 import ChairHolderVoting from '@/components/admin/ChairHolderVoting';
@@ -203,6 +204,11 @@ export const GodModeDashboard = () => {
           14 read-only probes against the live URL. Catches regressions
           in 30 seconds right after each redeploy. */}
       <ProductionSmokeTestCard />
+
+      {/* 2026-05-13 — DSG Economic Engine live state per the
+          Global_Vibez_DSG_Economic_Engine.pdf spec. Single source of
+          truth for Vibez Coin supply, dynamic burn, liquidity fund. */}
+      <EconomicEngineCard />
 
       <TabGroup index={selectedTab} onIndexChange={setSelectedTab}>
         <TabList className="mb-6">

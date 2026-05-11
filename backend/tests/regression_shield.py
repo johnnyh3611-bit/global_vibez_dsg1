@@ -5667,3 +5667,113 @@ def test_offline_service_worker_versioned():
     assert "clients.claim" in sw
     # Never cache /api/ — backend handles its own caching.
     assert '/api/' in sw
+
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# 2026-05-13 — DSG Economic Engine (Global_Vibez_DSG_Economic_Engine.pdf)
+# ═══════════════════════════════════════════════════════════════════════
+
+def test_economic_engine_constants_match_spec():
+    """Spec-locked constants from the Economic Engine PDF must not drift."""
+    from services import dsg_economic_engine as engine
+    assert engine.INITIAL_SUPPLY == 3_000_000_000
+    assert engine.STABILIZATION_TARGET_SUPPLY == 1_500_000_000
+    assert engine.GOLDEN_ASSET_SUPPLY == 750_000_000
+    assert engine.INITIAL_BURN_RATE == 0.04
+    assert engine.MINIMUM_BURN_RATE == 0.005
+    assert engine.REVENUE_SPLIT_RATIO == 0.50
+    assert engine.DEFAULT_UTILITY_COST_USD == 10.00
+    assert engine.PARITY_USD == 1.00
+
+
+def test_economic_engine_burn_rate_curve_endpoints():
+    """Burn-rate curve: 4% at 3B, 0.5% at 1.5B (and below)."""
+    from services.dsg_economic_engine import calculate_dynamic_burn_rate
+    # Spec endpoints.
+    assert calculate_dynamic_burn_rate(3_000_000_000) == 0.04
+    assert calculate_dynamic_burn_rate(1_500_000_000) == 0.005
+    # Below target → floored at minimum.
+    assert calculate_dynamic_burn_rate(500_000_000) == 0.005
+    assert calculate_dynamic_burn_rate(0) == 0.005
+    # Linear midpoint: 2.25B → halfway between min + max.
+    midpoint = calculate_dynamic_burn_rate(2_250_000_000)
+    assert midpoint == 0.0225, f"midpoint expected 0.0225 got {midpoint}"
+
+
+def test_economic_engine_revenue_split_50_50():
+    """All fee revenue splits 50/50 — liquidity vs buyback/burn."""
+    from services.dsg_economic_engine import split_revenue
+    split = split_revenue(100.0)
+    assert split["liquidity_usd"] == 50.0
+    assert split["buyback_usd"] == 50.0
+    # Zero handled, negative rejected.
+    assert split_revenue(0)["liquidity_usd"] == 0.0
+    try:
+        split_revenue(-1)
+        assert False, "split_revenue should reject negative amount"
+    except ValueError:
+        pass
+
+
+def test_economic_engine_dynamic_price_formula():
+    """Dynamic pricing — $10 ride is always $10 regardless of coin price."""
+    from services.dsg_economic_engine import calculate_dynamic_price
+    # At parity → 10 coins for $10.
+    assert calculate_dynamic_price(10.0, 1.0) == 10.0
+    # Coin at $2 → 5 coins for $10.
+    assert calculate_dynamic_price(10.0, 2.0) == 5.0
+    # Coin at $0.50 → 20 coins for $10.
+    assert calculate_dynamic_price(10.0, 0.50) == 20.0
+    # Reject non-positive coin price.
+    try:
+        calculate_dynamic_price(10.0, 0)
+        assert False, "must reject coin_price_usd <= 0"
+    except ValueError:
+        pass
+
+
+def test_economic_engine_routes_registered():
+    """All Economic Engine endpoints must be mounted under /api."""
+    from server import app
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    for ep in [
+        "/api/economic-engine/constants",
+        "/api/economic-engine/snapshot",
+        "/api/economic-engine/burn-rate",
+        "/api/economic-engine/dynamic-price",
+        "/api/economic-engine/process-revenue",
+        "/api/economic-engine/events",
+    ]:
+        assert ep in paths, f"Economic Engine endpoint missing: {ep}"
+
+
+def test_economic_engine_card_and_page_mounted():
+    """Frontend surfaces — God Mode admin card + public /economic-engine page."""
+    card = open("/app/frontend/src/components/economic_engine/EconomicEngineCard.tsx").read()
+    for tid in [
+        "economic-engine-card",
+        "economic-engine-status-pill",
+        "economic-engine-progress-pct",
+        "economic-engine-supply",
+        "economic-engine-burn-rate",
+        "economic-engine-liquidity",
+        "economic-engine-lifetime-burned",
+        "economic-engine-formula",
+    ]:
+        assert tid in card, f"EconomicEngineCard missing testid: {tid}"
+
+    page = open("/app/frontend/src/pages/EconomicEnginePage.tsx").read()
+    for tid in [
+        "economic-engine-page",
+        "economic-engine-pillars",
+        "economic-engine-trust-strip",
+    ]:
+        assert tid in page, f"EconomicEnginePage missing testid: {tid}"
+
+    god = open("/app/frontend/src/pages/admin/GodModeDashboard.tsx").read()
+    assert "EconomicEngineCard" in god
+    assert "<EconomicEngineCard />" in god
+
+    misc = open("/app/frontend/src/routes/miscRoutes.tsx").read()
+    assert '"/economic-engine"' in misc

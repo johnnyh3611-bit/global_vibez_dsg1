@@ -820,3 +820,9 @@ def _register_hungryvibes_smartstack(api_router) -> None:
     # 2026-05-12 — Beta Cohort Report for God Mode.
     from routes.admin_beta_cohort import router as admin_beta_cohort_router  # noqa: PLC0415
     api_router.include_router(admin_beta_cohort_router)
+
+    # 2026-05-13 — DSG Economic Engine (Vibez Coin Dual-Asset Shield).
+    # Encodes Global_Vibez_DSG_Economic_Engine.pdf: 3B → 1.5B dynamic
+    # burn (4% → 0.5%) + 50/50 revenue split (buyback/burn + liquidity).
+    from routes.economic_engine import router as economic_engine_router  # noqa: PLC0415
+    api_router.include_router(economic_engine_router)
