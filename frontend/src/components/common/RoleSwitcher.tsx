@@ -33,9 +33,10 @@ import {
   Pizza,
   Tv,
   Cog,
+  Home,
 } from "lucide-react";
 
-type RoleKey = "rider" | "driver" | "merchant" | "streamer" | "smartstack";
+type RoleKey = "rider" | "driver" | "merchant" | "host" | "streamer" | "smartstack";
 
 type Role = {
   key: RoleKey;
@@ -82,6 +83,15 @@ const ROLES: Role[] = [
     matches: ["/hungryvibes/merchant"],
     icon: Pizza,
     tint: "text-amber-300",
+  },
+  {
+    key: "host",
+    label: "Host · Vibe Venues",
+    short: "Host",
+    href: "/vibe-venues/host-dashboard",
+    matches: ["/vibe-venues/host", "/vibe-venues/host-dashboard"],
+    icon: Home,
+    tint: "text-violet-300",
   },
   {
     key: "streamer",

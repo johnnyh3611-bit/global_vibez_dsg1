@@ -542,7 +542,10 @@ async def _transition_order(
     # minus the 2% Vibe Tax. Mirrors POST /api/hungryvibes/merchant/vibe-account/credit
     # so the same ledger collection (`hv_vibe_ledger`) and same balance
     # field (`vibe_account_balance`) are updated — one source of truth.
-    if new_status == "delivered":
+    # Test orders (is_test=True) walk the state machine for practice but
+    # contribute ZERO real credit — the merchant gets the muscle memory
+    # without any funny money landing in their ledger.
+    if new_status == "delivered" and not order.get("is_test"):
         food_usd = round(float(order.get("food_payout_usd", 0)), 2)
         vibe_tax = round(food_usd * VIBE_TAX_RATE, 2)
         net = round(food_usd - vibe_tax, 2)
@@ -691,4 +694,54 @@ async def merchant_reject(
     db = get_database()
     order = await _transition_order(db, order_id, user.user_id, "rejected", payload.note)
     return {"success": True, "order": order}
+
+
+
+# ─── Test Order (merchant onboarding) ───────────────────────────────────
+# 2026-05-12 founder ask: "would you like a 'Test Order' button on the
+# merchant dashboard? One tap drops a fake $25 order into their inbox so
+# a new merchant onboarding can practice the Accept/Ready/Delivered flow
+# without needing a real customer."
+#
+# Drops a synthetic order WITH `is_test=True` marker and `payment_method
+# ="test"` so the settlement step gives zero real credit (we still walk
+# the state machine for practice, but the merchant's Vibe Account stays
+# clean of test funds). Test orders are filtered out of revenue reports
+# by checking `is_test`.
+@customer_router.post("/merchant/test-order")
+async def merchant_drop_test_order(request: Request) -> Dict[str, Any]:
+    """Drop a synthetic $25 order into the caller's merchant inbox.
+    Marked is_test=True so settlement is zero-credit (practice only)."""
+    user = await _require_user(request)
+    db = get_database()
+    merchant = await db.hv_merchants.find_one(
+        {"owner_user_id": user.user_id},
+        {"_id": 0, "merchant_id": 1, "name": 1},
+    )
+    if not merchant:
+        raise HTTPException(
+            status_code=404,
+            detail="Register a merchant first via /api/hungryvibes/merchant/register",
+        )
+
+    order_id = str(uuid4())
+    now_iso = datetime.now(timezone.utc).isoformat()
+    test_order = {
+        "order_id": order_id,
+        "merchant_id": merchant["merchant_id"],
+        "customer_user_id": "test-customer",
+        "pickup_at": {"lat": 40.7128, "lng": -74.0060},
+        "deliver_to": {"lat": 40.7589, "lng": -73.9851},
+        "food_payout_usd": 25.0,
+        "payment_method": "test",
+        "is_test": True,
+        "status": "pending",
+        "note": "Practice run — flow through Accept → Ready → Delivered.",
+        "created_at": now_iso,
+        "status_history": {"pending_at": now_iso},
+    }
+    await db.hv_orders.insert_one(test_order)
+    # Strip Mongo's injected _id before returning.
+    test_order.pop("_id", None)
+    return {"success": True, "order": test_order}
 

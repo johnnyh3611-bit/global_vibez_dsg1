@@ -5021,3 +5021,90 @@ def test_hungryvibes_merchant_fulfillment_loop_wired():
     # Polls merchant-inbox.
     assert "/api/hungryvibes/orders/merchant-inbox" in fe
 
+
+
+def test_hungryvibes_test_order_button_wired():
+    """2026-05-12 founder ask: 'Test Order button on the merchant dashboard
+    — one tap drops a fake $25 order into their inbox so a new merchant
+    onboarding can practice the Accept/Ready/Delivered flow without needing
+    a real customer.'
+
+    Two contracts this test locks:
+      1. Backend endpoint POST /api/hungryvibes/orders/merchant/test-order
+         creates an `is_test=True` order with payout=25.0.
+      2. The transition handler MUST skip Vibe-Account crediting when
+         is_test is truthy — otherwise a merchant who plays with the test
+         button would see funny money in their ledger and panic.
+    """
+    from server import app
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    assert "/api/hungryvibes/orders/merchant/test-order" in paths
+
+    src = open("/app/backend/routes/smartstack.py").read()
+    # is_test marker + zero-credit gate on delivered transition.
+    assert '"is_test": True' in src
+    assert 'and not order.get("is_test")' in src
+
+    fe = open("/app/frontend/src/pages/HungryVibesMerchant.tsx").read()
+    assert "hv-orders-drop-test" in fe
+    assert "hv-order-test-badge" in fe
+    assert "/api/hungryvibes/orders/merchant/test-order" in fe
+
+
+def test_streamer_dashboard_wired():
+    """2026-05-12 founder asked us to confirm Streamer Dashboard exists.
+    It does — at /my-streams via routes/streamingRoutes.tsx + Switch Role
+    pill highlights `Streamer` when on that route. Locking it here so
+    nobody renames the route or strips the role mapping silently."""
+    streamer = open("/app/frontend/src/pages/StreamerDashboard.tsx").read()
+    assert "Streamer Dashboard" in streamer
+    assert "/api/streaming/dashboard" in streamer
+    routes = open("/app/frontend/src/routes/streamingRoutes.tsx").read()
+    assert '/my-streams' in routes
+    assert "StreamerDashboard" in routes
+    role = open("/app/frontend/src/components/common/RoleSwitcher.tsx").read()
+    assert '"streamer"' in role
+    assert '/my-streams' in role
+
+
+def test_vibe_venues_host_dashboard_wired():
+    """2026-05-12 founder ask: 'for the people that have the Airbnbs or
+    the Vibrants, their dashboards also made.' Vibe Venues already covered
+    listing + booking + escrow; we added the recurring HOST DASHBOARD with
+    properties tab, bookings tab, and earnings summary (escrowed / released
+    / paid_out / venue_count).
+
+    Locks: 3 host read-side endpoints + the new dashboard page + role pill
+    entry routing to /vibe-venues/host-dashboard.
+    """
+    from server import app
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    for p in [
+        "/api/vibe-venues/host/venues/{user_id}",
+        "/api/vibe-venues/host/bookings/{user_id}",
+        "/api/vibe-venues/host/earnings/{user_id}",
+    ]:
+        assert p in paths, f"host endpoint missing: {p}"
+
+    page = open("/app/frontend/src/pages/vibe-venues/VibeVenuesHostDashboard.tsx").read()
+    for tid in [
+        "vibe-venues-host-dashboard",
+        "vvhd-tab-venues",
+        "vvhd-tab-bookings",
+        "vvhd-earnings",
+        "vvhd-list-new",
+    ]:
+        assert tid in page, f"host dashboard missing testid: {tid}"
+    # Empty states for first-time hosts must not crash.
+    assert "vvhd-venues-empty" in page
+    assert "vvhd-bookings-empty" in page
+
+    routes = open("/app/frontend/src/routes/socialRoutes.tsx").read()
+    assert '/vibe-venues/host-dashboard' in routes
+    assert "VibeVenuesHostDashboard" in routes
+
+    # Switch Role pill carries a "host" option.
+    role = open("/app/frontend/src/components/common/RoleSwitcher.tsx").read()
+    assert '"host"' in role
+    assert '/vibe-venues/host-dashboard' in role
+

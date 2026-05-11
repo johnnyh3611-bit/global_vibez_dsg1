@@ -811,3 +811,116 @@ async def _send_receipt_email(sub: Dict[str, Any]) -> None:
         "html": html,
     }
     await asyncio.to_thread(resend.Emails.send, params)
+
+
+# ─── HOST DASHBOARD ENDPOINTS ───────────────────────────────────────────
+# 2026-05-12 founder ask: dashboards for "people that have the Airbnbs or
+# the Vibrants". The existing /vibe-venues/host route is a ONE-TIME listing
+# form. Hosts need a recurring dashboard to:
+#   1. See all properties they've listed
+#   2. See incoming bookings across all their properties
+#   3. See earnings (pending escrow / released / paid out)
+#
+# We piggy-back on what's already wired: hosts can drive bookings through
+# the existing /release-prep + state machine. This module only adds the
+# read-side aggregation the dashboard needs.
+
+
+@router.get("/host/venues/{user_id}")
+async def host_my_venues(user_id: str) -> Dict[str, Any]:
+    """List every venue the host has put on the platform."""
+    db = get_database()
+    venues = await db.vibe_venues.find(
+        {"host_user_id": user_id}, {"_id": 0}
+    ).sort("created_at", -1).to_list(length=100)
+    return {"success": True, "count": len(venues), "venues": venues}
+
+
+@router.get("/host/bookings/{user_id}")
+async def host_my_bookings(user_id: str, status: Optional[str] = None) -> Dict[str, Any]:
+    """All bookings ACROSS every property the host owns.
+    Optional `?status=pending|escrowed|prep_released|in_progress|completed|paid_out|cancelled|disputed`."""
+    db = get_database()
+    # 1. Resolve every venue_id the host owns.
+    venue_docs = await db.vibe_venues.find(
+        {"host_user_id": user_id}, {"_id": 0, "venue_id": 1, "name": 1}
+    ).to_list(length=200)
+    if not venue_docs:
+        return {"success": True, "count": 0, "bookings": []}
+    venue_id_to_name = {v["venue_id"]: v.get("name", "") for v in venue_docs}
+
+    # 2. Find every booking against those venues.
+    q: Dict[str, Any] = {"venue_id": {"$in": list(venue_id_to_name.keys())}}
+    if status:
+        q["state"] = status
+    bookings = await db.vibe_venues_bookings.find(q, {"_id": 0}).sort(
+        "created_at", -1
+    ).limit(200).to_list(length=200)
+
+    # 3. Decorate each booking with the venue name (saves a frontend join).
+    for b in bookings:
+        b["venue_name"] = venue_id_to_name.get(b.get("venue_id"), "")
+
+    return {"success": True, "count": len(bookings), "bookings": bookings}
+
+
+@router.get("/host/earnings/{user_id}")
+async def host_earnings_summary(user_id: str) -> Dict[str, Any]:
+    """Rolled-up host earnings across every property:
+      - escrowed_usd:    sitting in escrow waiting for prep_released
+      - released_usd:    chef released the prep fee but stay not paid out yet
+      - paid_out_usd:    actually settled into host wallet (lifetime)
+      - active_count:    bookings currently in flight
+      - all_time_count:  every completed/paid_out booking
+    """
+    db = get_database()
+    venue_docs = await db.vibe_venues.find(
+        {"host_user_id": user_id}, {"_id": 0, "venue_id": 1}
+    ).to_list(length=200)
+    if not venue_docs:
+        return {
+            "success": True,
+            "escrowed_usd": 0.0,
+            "released_usd": 0.0,
+            "paid_out_usd": 0.0,
+            "active_count": 0,
+            "all_time_count": 0,
+            "venue_count": 0,
+            "platform_fee_pct": PLATFORM_RENTAL_FEE_PCT,
+            "prep_fee_pct": PREP_FEE_PCT,
+        }
+    venue_ids = [v["venue_id"] for v in venue_docs]
+    pipeline = [
+        {"$match": {"venue_id": {"$in": venue_ids}}},
+        {
+            "$group": {
+                "_id": "$state",
+                "total_payout": {"$sum": {"$ifNull": ["$pricing.host_payout", 0]}},
+                "count": {"$sum": 1},
+            }
+        },
+    ]
+    agg = await db.vibe_venues_bookings.aggregate(pipeline).to_list(length=20)
+    by_state = {row["_id"]: row for row in agg}
+
+    def payout_of(state: str) -> float:
+        return round(float(by_state.get(state, {}).get("total_payout", 0)), 2)
+
+    def count_of(state: str) -> int:
+        return int(by_state.get(state, {}).get("count", 0))
+
+    return {
+        "success": True,
+        "escrowed_usd": payout_of("escrowed"),
+        "released_usd": payout_of("prep_released") + payout_of("in_progress"),
+        "paid_out_usd": payout_of("paid_out") + payout_of("completed"),
+        "active_count": (
+            count_of("pending") + count_of("escrowed")
+            + count_of("prep_released") + count_of("in_progress")
+        ),
+        "all_time_count": count_of("completed") + count_of("paid_out"),
+        "venue_count": len(venue_ids),
+        "platform_fee_pct": PLATFORM_RENTAL_FEE_PCT,
+        "prep_fee_pct": PREP_FEE_PCT,
+    }
+

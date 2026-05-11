@@ -18,6 +18,7 @@ import AdminRestaurants from "@/pages/AdminRestaurants";
 import HungryVibez from "@/pages/HungryVibez";
 import VibeVenues from "@/pages/vibe-venues/VibeVenues";
 import VibeVenuesHost from "@/pages/vibe-venues/VibeVenuesHost";
+import VibeVenuesHostDashboard from "@/pages/vibe-venues/VibeVenuesHostDashboard";
 import VibeVenuesArtisan from "@/pages/vibe-venues/VibeVenuesArtisan";
 import VibeVenuesBookingDetail from "@/pages/vibe-venues/VibeVenuesBookingDetail";
 import VibeVenuesArtisanDashboard from "@/pages/vibe-venues/VibeVenuesArtisanDashboard";
@@ -66,6 +67,7 @@ export const socialRoutes = (ProtectedRoute) => (
     {/* Vibe Venues — hourly-housing + Vibe Artisan utility room (Master Lock-In v1) */}
     <Route path="/vibe-venues" element={<ProtectedRoute><VibeVenues /></ProtectedRoute>} />
     <Route path="/vibe-venues/host" element={<ProtectedRoute><VibeVenuesHost /></ProtectedRoute>} />
+    <Route path="/vibe-venues/host-dashboard" element={<ProtectedRoute><VibeVenuesHostDashboard /></ProtectedRoute>} />
     <Route path="/vibe-venues/artisan" element={<ProtectedRoute><VibeVenuesArtisan /></ProtectedRoute>} />
     <Route path="/vibe-venues/booking/:bookingId" element={<ProtectedRoute><VibeVenuesBookingDetail /></ProtectedRoute>} />
     <Route path="/vibe-venues/artisan/dashboard" element={<ProtectedRoute><VibeVenuesArtisanDashboard /></ProtectedRoute>} />

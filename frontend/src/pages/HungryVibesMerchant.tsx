@@ -993,8 +993,9 @@ interface HVOrder {
   merchant_id: string;
   food_payout_usd: number;
   status: "pending" | "paid" | "preparing" | "ready" | "delivered" | "rejected";
-  payment_method: "card" | "coins";
+  payment_method: "card" | "coins" | "test";
   coins_paid?: number | null;
+  is_test?: boolean;
   pickup_at?: { lat: number; lng: number };
   deliver_to?: { lat: number; lng: number };
   note?: string | null;
@@ -1084,22 +1085,44 @@ function OrdersTab({ onSettlementCredit }: { onSettlementCredit: () => Promise<v
 
   return (
     <div data-testid="hv-orders-tab">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <p className="text-amber-100/80 text-sm">
           {orders.length === 0
             ? includeArchive
               ? "No orders yet."
-              : "No active orders — flip 'Show archive' to see past orders."
+              : "No active orders — tap 'Drop test order' to practice the flow, or flip 'Show archive' to see past orders."
             : `${orders.length} order${orders.length === 1 ? "" : "s"}${includeArchive ? "" : " · active queue"}`}
         </p>
-        <button
-          type="button"
-          onClick={() => setIncludeArchive((v) => !v)}
-          data-testid="hv-orders-toggle-archive"
-          className="text-[10px] uppercase tracking-widest text-amber-300/80 hover:text-white border border-amber-400/30 px-3 py-1 rounded-full"
-        >
-          {includeArchive ? "Active only" : "Show archive"}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={async () => {
+              const res = await authFetch(
+                `${API}/api/hungryvibes/orders/merchant/test-order`,
+                { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" },
+              );
+              if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                toast.error(err.detail || "Could not drop test order");
+                return;
+              }
+              toast.success("Test order dropped — try Accept → Ready → Delivered");
+              await load();
+            }}
+            data-testid="hv-orders-drop-test"
+            className="text-[10px] uppercase tracking-widest font-bold bg-amber-400/20 text-amber-200 hover:bg-amber-400 hover:text-[#1a0d05] border border-amber-400/40 px-3 py-1 rounded-full transition-colors"
+          >
+            + Drop test order
+          </button>
+          <button
+            type="button"
+            onClick={() => setIncludeArchive((v) => !v)}
+            data-testid="hv-orders-toggle-archive"
+            className="text-[10px] uppercase tracking-widest text-amber-300/80 hover:text-white border border-amber-400/30 px-3 py-1 rounded-full"
+          >
+            {includeArchive ? "Active only" : "Show archive"}
+          </button>
+        </div>
       </div>
 
       <div className="space-y-3" data-testid="hv-orders-list">
@@ -1126,6 +1149,14 @@ function OrdersTab({ onSettlementCredit }: { onSettlementCredit: () => Promise<v
                     </span>
                     {o.payment_method === "coins" && (
                       <span className="text-cyan-300/80 text-[10px]">paid in ₵</span>
+                    )}
+                    {o.is_test && (
+                      <span
+                        className="text-[9px] uppercase tracking-widest font-bold border px-1.5 py-0.5 rounded-full bg-violet-500/15 text-violet-200 border-violet-400/40"
+                        data-testid="hv-order-test-badge"
+                      >
+                        TEST
+                      </span>
                     )}
                   </div>
                   <p className="text-xs text-amber-100/60 truncate">
