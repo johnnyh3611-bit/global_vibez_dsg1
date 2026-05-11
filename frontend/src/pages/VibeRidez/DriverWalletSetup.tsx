@@ -18,6 +18,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Wallet, CheckCircle, AlertTriangle, Copy } from "lucide-react";
 import { useAccounts } from "@phantom/react-sdk";
 import PhantomConnectButton from "@/components/web3/PhantomConnectButton";
+import StripeConnectButton from "@/components/payout/StripeConnectButton";
 import { authFetch } from "@/utils/secureAuth";
 
 const API = process.env.REACT_APP_BACKEND_URL;
@@ -116,6 +117,12 @@ export default function DriverWalletSetup() {
             Payouts are automatic — every completed ride queues USDC to
             this address. No wallet, no payout.
           </p>
+          {/* 2026-05-12 backlog #11: bank-deposit option via Stripe Connect.
+              Drivers who don't want crypto can opt to receive USD direct
+              deposit. Auto-shows "available after launch" until live keys. */}
+          <div className="mt-4">
+            <StripeConnectButton role="driver" />
+          </div>
         </header>
 
         {loading ? (

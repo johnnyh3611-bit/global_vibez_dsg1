@@ -811,3 +811,8 @@ def _register_hungryvibes_smartstack(api_router) -> None:
     # 2026-05-12 — unified earnings rollup powering the main-dashboard widget.
     from routes.unified_earnings import router as unified_earnings_router  # noqa: PLC0415
     api_router.include_router(unified_earnings_router)
+
+    # 2026-05-12 — Stripe Connect Express onboarding (scaffolded;
+    # auto-degrades to `configured: false` until live keys are added).
+    from routes.stripe_connect import router as stripe_connect_router  # noqa: PLC0415
+    api_router.include_router(stripe_connect_router)

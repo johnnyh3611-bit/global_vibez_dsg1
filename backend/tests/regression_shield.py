@@ -5281,3 +5281,91 @@ def test_smartstack_driver_delivery_offer_already_wired():
     assert "/api/smartstack/driver/accept-stack" in fe
     assert "/api/smartstack/driver/dismiss-offer" in fe
 
+
+
+def test_stripe_connect_express_scaffolded():
+    """2026-05-12 backlog #11: Stripe Connect Express onboarding +
+    payout scaffolding. Founder approved building NOW so live keys can
+    drop in later without code changes.
+
+    Lock guarantees:
+      • 4 Express endpoints exist (/onboard /status /login-link /payout)
+      • Graceful degradation: returns `configured: false` when keys
+        aren't set instead of 500-ing
+      • Per-role return URLs cover all 4 valid roles
+      • Drop-in <StripeConnectButton> mounted on driver wallet + host
+        dashboard + merchant dashboard surfaces
+    """
+    from server import app
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    for p in [
+        "/api/connect/onboard",
+        "/api/connect/status",
+        "/api/connect/login-link",
+        "/api/connect/payout",
+    ]:
+        assert p in paths, f"connect endpoint missing: {p}"
+
+    src = open("/app/backend/routes/stripe_connect.py").read()
+    # Soft-fail contract — must never 500 when keys aren't set.
+    assert "_is_configured" in src
+    assert '"configured": False' in src
+    # All 4 role return URLs.
+    for role in ["driver", "host", "merchant", "streamer"]:
+        assert f'"{role}": "/' in src, f"return-url missing for role: {role}"
+    # Audit trail for payouts so admin can reconcile.
+    assert "stripe_connect_payouts" in src
+
+    btn = open("/app/frontend/src/components/payout/StripeConnectButton.tsx").read()
+    for tid in [
+        "connect-not-configured",
+        "connect-manage-btn",
+        "connect-onboard-btn",
+    ]:
+        assert tid in btn, f"StripeConnectButton missing testid: {tid}"
+
+    # Button mounted on all 3 role pages.
+    for path in [
+        "/app/frontend/src/pages/VibeRidez/DriverWalletSetup.tsx",
+        "/app/frontend/src/pages/vibe-venues/VibeVenuesHostDashboard.tsx",
+        "/app/frontend/src/pages/HungryVibesMerchant.tsx",
+    ]:
+        page = open(path).read()
+        assert "StripeConnectButton" in page, f"connect button not mounted: {path}"
+
+
+def test_landing_tour_video_clips_extended_keeping_dice_first():
+    """2026-05-12 founder ask: "I want the tour video to stay the same. I
+    want the dice to just be the first thing you see in the front 'cause
+    I like that, but I want you to add this so it adds more wow factor."
+    Two founder-uploaded clips appended (positions 5 + 6); existing 4
+    clips stay in their existing order with the dice intro first."""
+    src = open("/app/frontend/src/components/landing/LandingTourVideo.tsx").read()
+    # Dice intro stays at position #1 — must be the FIRST entry in CLIPS.
+    dice_url = "aeaebfxp_e_c_a_d_d_db_c_e_videomp_.mp4"
+    # All 6 clips referenced.
+    for clip_marker in [
+        dice_url,
+        "8s795ybg_mp_",
+        "n612sxdb__The_video_will_be_available",
+        "p21nztqq_mp_",
+        "jhcw8qgh_Now_could_you_make_me_another",  # NEW 2026-05-12
+        "4r7dg2zf_mp_.mp4",  # NEW 2026-05-12
+    ]:
+        assert clip_marker in src, f"missing clip in tour video: {clip_marker}"
+    # Dice must appear BEFORE every other clip in the CLIPS array
+    # (founder explicitly wants it first; this guarantees future edits
+    # can't accidentally re-order).
+    dice_pos = src.find(dice_url)
+    for later in [
+        "8s795ybg_mp_",
+        "n612sxdb__The_video_will_be_available",
+        "p21nztqq_mp_",
+        "jhcw8qgh_Now_could_you_make_me_another",
+        "4r7dg2zf_mp_.mp4",
+    ]:
+        later_pos = src.find(later)
+        assert 0 < dice_pos < later_pos, (
+            f"dice clip MUST appear before '{later}' in CLIPS array"
+        )
+

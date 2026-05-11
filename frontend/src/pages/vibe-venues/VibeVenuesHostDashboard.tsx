@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { authFetch } from "@/utils/secureAuth";
+import StripeConnectButton from "@/components/payout/StripeConnectButton";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -158,6 +159,10 @@ export default function VibeVenuesHostDashboard() {
           >
             <Plus className="w-4 h-4" /> List a new property
           </button>
+          {/* 2026-05-12 backlog #11: Stripe Connect Express — host gets
+              auto-deposit to their bank instead of manual payout approval.
+              Auto-shows "available after launch" until live keys are in. */}
+          <StripeConnectButton role="host" variant="compact" />
         </div>
 
         {/* Test Booking — drops a synthetic 6h booking onto the host's newest

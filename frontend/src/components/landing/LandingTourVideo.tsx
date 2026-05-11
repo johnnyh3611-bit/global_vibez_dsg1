@@ -7,7 +7,7 @@
  *    don't scroll need a surplus they can hit and learn everything."
  *
  * Implementation
- *   • The 4 founder-uploaded MP4 clips loop in the background (muted).
+ *   • Founder-uploaded MP4 clips loop in the background (muted).
  *   • An OpenAI-TTS Onyx-voiced narration MP3 plays as the master
  *     soundtrack — pre-rendered to /landing-tour-narration.mp3 by
  *     `backend/scripts/generate_landing_tour_narration.py`.
@@ -22,12 +22,28 @@ import React, { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Play, Pause, Volume2, VolumeX, RotateCcw, Captions, Sparkles, Download, Globe } from "lucide-react";
 
-// 4 founder-uploaded promo clips, looped in this order.
+// Founder-uploaded promo clips, looped in this order.
+//
+// 2026-05-12 founder ask: "I want the tour video to stay the same. I want
+// the dice to just be the first thing you see in the front 'cause I like
+// that, but I want you to add this so we don't have... so it add more
+// wow factor to the video." Adding clips #5 and #6 AT THE END so the
+// dice intro and existing flow stay exactly as-is and the new clips
+// extend the loop for additional wow factor when the narration cycles
+// through B-roll a second time.
 const CLIPS: string[] = [
+  // 1 — dice intro (founder explicitly likes this first)
   "https://customer-assets.emergentagent.com/job_social-connect-953/artifacts/aeaebfxp_e_c_a_d_d_db_c_e_videomp_.mp4",
+  // 2 — original promo
   "https://customer-assets.emergentagent.com/job_social-connect-953/artifacts/8s795ybg_mp_%20%281%29.mp4",
+  // 3 — original promo
   "https://customer-assets.emergentagent.com/job_social-connect-953/artifacts/n612sxdb__The_video_will_be_available_for_hours.mp4",
+  // 4 — original promo
   "https://customer-assets.emergentagent.com/job_social-connect-953/artifacts/p21nztqq_mp_.mp4",
+  // 5 — 2026-05-12 founder-added wow-factor clip ("Now_could_you_make_me_another")
+  "https://customer-assets.emergentagent.com/job_social-connect-953/artifacts/jhcw8qgh_Now_could_you_make_me_another.mp4",
+  // 6 — 2026-05-12 founder-added wow-factor clip ("mp_")
+  "https://customer-assets.emergentagent.com/job_social-connect-953/artifacts/4r7dg2zf_mp_.mp4",
 ];
 
 const MANIFEST_URL = "/landing-tour-i18n.json";
