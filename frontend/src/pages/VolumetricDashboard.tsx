@@ -18,7 +18,7 @@
  * Toggle from the classic Dashboard pill. To disable globally, remove the
  * route registration in miscRoutes.tsx.
  */
-import { useState, useRef, useMemo, useEffect, Suspense } from "react";
+import { useState, useRef, useMemo, useEffect, useCallback, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Stars, Html, Text } from "@react-three/drei";
@@ -571,6 +571,19 @@ export default function VolumetricDashboard() {
         />
       </Canvas>
 
+      {/* 2026-05-12 founder fix: "the rotation don't actually rotate one
+          by one... if you spin it, you spin it by wanting to go over one
+          by one so people could actually have easier access." Adding
+          prev/next snap-navigation arrows on the mid-left and mid-right
+          plus a dot indicator + planet label, so users can step through
+          planets like a carousel instead of fighting OrbitControls drag.
+          Camera tween is automatic via the existing CameraRig lerp on
+          selectedIndex change. */}
+      <PlanetCarouselNav
+        selectedIndex={selectedIndex}
+        setSelectedIndex={setSelectedIndex}
+      />
+
       {/* Bottom hint — sits just above the activity ticker (32px tall) */}
       <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-10 text-center text-[10px] uppercase tracking-widest text-white/50 px-4">
         {selectedIndex === null
@@ -581,5 +594,124 @@ export default function VolumetricDashboard() {
       {/* 2026-05-12 enhancement: live activity ticker across the bottom */}
       <LiveActivityTicker />
     </div>
+  );
+}
+
+
+// ─── Planet Carousel Nav ─────────────────────────────────────────────
+//
+// 2026-05-12 founder fix: free-spin OrbitControls drag was too finicky
+// for stepping through 6 planets one at a time. This component renders:
+//
+//   • Mid-left CHEVRON LEFT  → prev planet (wraps at 0 → last)
+//   • Mid-right CHEVRON RIGHT → next planet (wraps at last → 0)
+//   • Bottom-center planet label + dot indicator showing which of the 6
+//     planets is active
+//   • Keyboard ← / → / Esc shortcuts (Esc exits selection)
+//
+// Both arrows trigger setSelectedIndex which the existing CameraRig
+// already lerps to — no extra animation logic needed. Auto-hides
+// initially (selectedIndex === null) until user taps any planet, then
+// the carousel becomes the primary nav surface.
+function PlanetCarouselNav({
+  selectedIndex,
+  setSelectedIndex,
+}: {
+  selectedIndex: number | null;
+  setSelectedIndex: (i: number | null) => void;
+}) {
+  const total = CATEGORIES.length;
+  const isOpen = selectedIndex !== null;
+  const current = isOpen ? CATEGORIES[selectedIndex] : null;
+
+  const goNext = useCallback(() => {
+    const next = selectedIndex === null ? 0 : (selectedIndex + 1) % total;
+    setSelectedIndex(next);
+  }, [selectedIndex, setSelectedIndex, total]);
+
+  const goPrev = useCallback(() => {
+    const prev = selectedIndex === null ? total - 1 : (selectedIndex - 1 + total) % total;
+    setSelectedIndex(prev);
+  }, [selectedIndex, setSelectedIndex, total]);
+
+  // ← / → / Esc keyboard shortcuts. Always active on this page.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      // Ignore when typing into an input/textarea/select.
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        goNext();
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        goPrev();
+      } else if (e.key === "Escape" && selectedIndex !== null) {
+        e.preventDefault();
+        setSelectedIndex(null);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [goNext, goPrev, selectedIndex, setSelectedIndex]);
+
+  return (
+    <>
+      {/* Prev arrow — always rendered; bumps selection from null → last */}
+      <button
+        type="button"
+        onClick={goPrev}
+        data-testid="vol-carousel-prev"
+        aria-label="Previous planet"
+        className="absolute top-1/2 -translate-y-1/2 left-2 md:left-4 z-20 w-11 h-11 md:w-12 md:h-12 rounded-full bg-black/60 backdrop-blur-md border border-white/15 hover:border-fuchsia-400/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors shadow-lg shadow-black/40"
+      >
+        <ArrowLeft className="w-5 h-5" />
+      </button>
+
+      {/* Next arrow */}
+      <button
+        type="button"
+        onClick={goNext}
+        data-testid="vol-carousel-next"
+        aria-label="Next planet"
+        className="absolute top-1/2 -translate-y-1/2 right-2 md:right-4 z-20 w-11 h-11 md:w-12 md:h-12 rounded-full bg-black/60 backdrop-blur-md border border-white/15 hover:border-fuchsia-400/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors shadow-lg shadow-black/40 rotate-180"
+      >
+        <ArrowLeft className="w-5 h-5" />
+      </button>
+
+      {/* Dot indicator + active label — bottom-center, above the ticker */}
+      <div
+        className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 pointer-events-none"
+        data-testid="vol-carousel-indicator"
+      >
+        {current && (
+          <div
+            className="text-white text-xs font-black uppercase tracking-[0.4em] px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10"
+            style={{ textShadow: `0 0 12px ${current.color}` }}
+            data-testid="vol-carousel-active-label"
+          >
+            {current.label}
+          </div>
+        )}
+        <div className="flex gap-1.5">
+          {CATEGORIES.map((c, i) => {
+            const active = i === selectedIndex;
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setSelectedIndex(i)}
+                aria-label={`Jump to ${c.label}`}
+                data-testid={`vol-carousel-dot-${c.id}`}
+                className={`pointer-events-auto h-1.5 rounded-full transition-all ${
+                  active ? "w-6 bg-white" : "w-1.5 bg-white/30 hover:bg-white/60"
+                }`}
+                style={active ? { boxShadow: `0 0 8px ${c.color}` } : undefined}
+              />
+            );
+          })}
+        </div>
+      </div>
+    </>
   );
 }

@@ -5388,3 +5388,36 @@ def test_landing_tour_video_clips_extended_keeping_dice_first():
     # explicit "I like the dice first" ask is preserved visually too.
     assert "Roll the dice" in src
 
+
+
+def test_volumetric_planet_carousel_nav_wired():
+    """2026-05-12 founder fix on production: 'the rotation don't actually
+    rotate one by one... if you spin it, you spin it by wanting to go
+    over one by one so people could actually have easier access. The room
+    is perfect besides that. It's just too hard to rotate.'
+
+    Adds a prev/next snap carousel + dot indicator + arrow-key shortcuts
+    so users can step through the 6 planets like a carousel instead of
+    fighting OrbitControls drag. Camera tween is handled by the existing
+    CameraRig lerp on selectedIndex change — no extra animation logic.
+    """
+    page = open("/app/frontend/src/pages/VolumetricDashboard.tsx").read()
+    # Mid-side prev/next buttons + dot indicator + active label.
+    for tid in [
+        "vol-carousel-prev",
+        "vol-carousel-next",
+        "vol-carousel-indicator",
+        "vol-carousel-active-label",
+    ]:
+        assert tid in page, f"PlanetCarouselNav missing testid: {tid}"
+    # Per-planet dot testids use template-literal `vol-carousel-dot-${c.id}`.
+    assert "vol-carousel-dot-${c.id}" in page
+
+    # Keyboard shortcuts must be wired so a desktop user can ← / → / Esc.
+    for key in ['"ArrowRight"', '"ArrowLeft"', '"Escape"']:
+        assert key in page, f"carousel keyboard shortcut missing: {key}"
+
+    # Wrap-around math: (selectedIndex + 1) % total / (selectedIndex - 1 + total) % total
+    assert "(selectedIndex + 1) % total" in page, "next must wrap modulo total"
+    assert "(selectedIndex - 1 + total) % total" in page, "prev must wrap modulo total"
+
