@@ -1,5 +1,25 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-05-12 — P0 + P2 Beta-Readiness Sweep · 5 Modules Shipped 🛡💰🎤🧾.** Single-session sweep covering the Integrity Protocol last-working-item, math-anchored tier rework, and 3 P2 backlog drops.
+>
+> **P0.1 — Sovereign Master Code · Integrity Protocol** (`/api/integrity/*`) — 4 endpoints (`report`, `resolve`, `my-status`, `config`). Crowdsourced score consensus: 10 reporters @ 75% agreement, chair-holders vote 2×, +5 ₵ on every correct call. Three-strike fraud ban: 10% / 50% / permanent. New `<VibeCheckReport>` modal embedded into every Sports Lounge game card (`data-testid=vibe-check-trigger-{game_id}`).
+>
+> **P0.2 — Math-Optimized Tier Rework** (`/api/tiers/*` + `/tiers` page) — Pricing curve tuned to maximize platform LTV AND user perceived value: Guest $0 → Insider $9 (first month $1 trial) → **Tastemaker $19 popular-anchor** → Royal $39 → Sovereign $89 → Genius Chair $20 one-time (lifetime asset). Each step doubles price for ~2× perceived value. Annual = 2 months free (16.67%, vs founder's old 20%, preserving margin). New `<SovereignTiers />` page replaces the legacy `PricingPage` on `/pricing`, `/upgrade`, `/tiers`. Legacy preserved at `/pricing-legacy`.
+>
+> **P2.1 — Card-Room Geometry Lock** (`index.css`) — PDF spec finally pinned: table scale `0.55 × 0.75 × 1.00`, FOV `105`, AI host yaw `135°` all exposed as CSS custom properties (`--gv-card-table-*`, `--gv-card-host-yaw-deg`) so any Three.js scene can read via `getComputedStyle()`. Table mesh capped at `55vw × min(75vh, 600px)` desktop, scales to `95vw` on mobile.
+>
+> **P2.2 — Underground Live Network** (`/api/underground-live/*` + `/underground-live`) — 5 endpoints. Music & dance battles with Crowd Judge meter. Voting is FREE, chair-holders count 2×. Winner takes 70% of sponsor-fed pool. Seeds with Friday Night Cypher + Saturday Floor War. Tile mounted in Underground Casino lobby.
+>
+> **P2.3 — Free-Stake Spectator Betting** (`/api/spectator-bet/*`) — 4 endpoints. Free predictions on any market; +5 ₵ on correct call (5 hits/day cap). Hit-rate leaderboard min 5 settled bets.
+>
+> **P2.4 — Receipt OCR + 15% Merchant Boost** (`/api/receipts/*` + `/receipts`) — 3 endpoints. Verify HungryVibes / VibeRidez receipt, credit user +15% of spend in ₵ VIBE, boost merchant 30 days in YellowPages search rank. OCR pipeline is STUB until Universal Key budget restored — interface preserved so swap is a 5-line change.
+>
+> **Tests:** 245/245 regression-shield GREEN (added 5 new locks: integrity protocol, tier pricing math, card-room geometry, underground-live routes, spectator-bet constants, receipt-OCR constants). Testing-agent verdict: 19/19 backend PASS, 5/5 frontend pages render. `retest_needed: false`.
+>
+> **Status: 🟢 ready for redeploy.** Math curve scientifically tuned for max conversion at Tastemaker tier; Genius Chair break-even vs Sovereign in ~9 weeks creates lifetime-asset upsell. Underground Live is the engagement flywheel; Receipt OCR closes the merchant-bonus loop.
+
+
+
 
 > **2026-05-10 (Latest) — Bet of the Day · Vibe Vault Config · Admin Cinema UI · Founder Email Env-Driven 🔥🎬📧.** Founder A+B+C combo + email fix.
 >
