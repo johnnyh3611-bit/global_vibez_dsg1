@@ -481,7 +481,7 @@ export default function Dashboard() {
               data-testid="dashboard-try-volumetric"
             >
               <Sparkles className="w-3 h-3" />
-              <span className="hidden sm:inline">Volumetric View</span>
+              <span className="hidden sm:inline">Try Volumetric</span>
               <span className="sm:hidden">3D</span>
             </Button>
 

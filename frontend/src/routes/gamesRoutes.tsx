@@ -517,8 +517,11 @@ export const gamesRoutes = (ProtectedRoute) => (
       path="/vibe-654/legacy-table/:tableId"
       element={<ProtectedRoute><Vibe654TournamentTable /></ProtectedRoute>}
     />
+    {/* 2026-05-12: /wallet route consolidated under miscRoutes.tsx so the
+        new Wallet.tsx (with Phantom Connect row) renders instead of the
+        legacy VibeWallet. Legacy preserved at /wallet-legacy for now. */}
     <Route 
-      path="/wallet" 
+      path="/wallet-legacy" 
       element={<ProtectedRoute><VibeWallet /></ProtectedRoute>} 
     />
     <Route 

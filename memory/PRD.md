@@ -1,5 +1,20 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-05-12 — Pre-redeploy beta verification PASSED 🟢.** Founder asks bundled into one final pass:
+>
+> 1. **JFTN Season Pass** ($25/mo, 30-day, Stripe subscription) — endpoints `/api/just-for-the-night/season-pass/{subscribe,verify,me}`. Backend join-transaction now checks active pass BEFORE deducting tokens — pass holders unlock any room for free.
+> 2. **JFTN Room Password** — owner sets optional 4-64 char `room_password` at create. Stored as bcrypt hash via passlib CryptContext (same scheme as `/api/auth`). Join-transaction now verifies password BEFORE charging or revealing stream URL → double-security gate (account breach alone can't enter).
+> 3. **JFTN Gift Unlocks** — `/api/just-for-the-night/rooms/gift` lets a user buy a room unlock for another user (70/30 split goes to the host, gifter pays). Recipient sees the unlock in `/api/just-for-the-night/gifts/my-inbox` → `POST /api/just-for-the-night/gifts/{gift_id}/redeem` returns the stream URL.
+> 4. **`/wallet` route collision FIXED** — testing agent caught a duplicate `<Route path="/wallet">` in `gamesRoutes.tsx` shadowing the new Wallet.tsx with Phantom row. Legacy preserved at `/wallet-legacy`. Verified visually: `/wallet` now renders the new page with the "Connect Phantom Wallet" row.
+> 5. **Classic header pill copy** — "Volumetric View" → "Try Volumetric" (matches spec).
+> 6. **RoomInfoCube positioned** — moved from `top-16` to `top-[8.5rem]` so it never overlaps back buttons.
+>
+> **Test results:** 251/251 regression-shield pytest GREEN. Testing agent: 16/16 backend PASS, 13/13 frontend PASS after the /wallet route fix.
+>
+> **Beta verification screenshots captured** (Volumetric default, Classic dashboard, Wallet, Tiers, Sports Lounge, Underground Live, Vibe Ridez, Login no-Privy). All flows reachable and rendering.
+
+
+
 > **2026-05-12 — Wallet login dropped · Phantom moved to /wallet.** Founder ask: "let's go with C [drop wallet login at sign-in, link wallet AFTER login at /wallet]."
 > - Removed `<PrivyLoginButton />` import + render from `/app/frontend/src/pages/LoginPage.tsx` (no more giant-modal CSP crash).
 > - Removed `<PhantomConnectButton />` from the landing header (`LandingHeaderEnhanced.tsx`).
