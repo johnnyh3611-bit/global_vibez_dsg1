@@ -18,13 +18,18 @@
  * Toggle from the classic Dashboard pill. To disable globally, remove the
  * route registration in miscRoutes.tsx.
  */
-import { useState, useRef, useMemo, Suspense } from "react";
+import { useState, useRef, useMemo, useEffect, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Stars, Html, Text } from "@react-three/drei";
 import { Vector3 } from "three";
 import type { Mesh, Group } from "three";
 import { ArrowLeft, Sparkles } from "lucide-react";
+import { authFetch } from "@/utils/secureAuth";
+
+const API = process.env.REACT_APP_BACKEND_URL;
+
+type Homeworld = { path: string; label: string; emoji: string; visits: number };
 
 const CATEGORIES = [
   {
@@ -121,12 +126,14 @@ function Planet({
   total,
   selected,
   onSelect,
+  homeworld,
 }: {
   category: typeof CATEGORIES[number];
   index: number;
   total: number;
   selected: boolean;
   onSelect: () => void;
+  homeworld?: Homeworld | null;
 }) {
   const navigate = useNavigate();
   const meshRef = useRef<Mesh>(null);
@@ -259,9 +266,11 @@ function Planet({
           onClick={(e) => {
             e.stopPropagation();
             // 2026-05-12 founder enhancement: tap-thumbnail = jump to
-            // most-recent room in this category (we use the first room
-            // as a stand-in until per-user recent-room tracking ships).
-            if (category.rooms.length > 0) navigate(category.rooms[0].path);
+            // the user's personal "homeworld" (most-played room in this
+            // category). Falls back to the first room if no homeworld
+            // is known yet.
+            const target = homeworld?.path ?? category.rooms[0]?.path;
+            if (target) navigate(target);
           }}
           onMouseEnter={() => setThumbHover(true)}
           onMouseLeave={() => setThumbHover(false)}
@@ -282,13 +291,38 @@ function Planet({
             lineHeight: 1,
             transform: thumbHover ? "scale(1.12)" : "scale(1)",
             transition: "transform 0.2s, box-shadow 0.2s",
+            position: "relative",
           }}
-          title={`Jump to ${category.rooms[0]?.label ?? category.label}`}
+          title={homeworld
+            ? `Jump to your homeworld: ${homeworld.label}`
+            : `Jump to ${category.rooms[0]?.label ?? category.label}`}
         >
           {renderIcon(category.id)}
           <span style={{ filter: `drop-shadow(0 0 6px ${category.color})` }}>
-            {categoryEmoji(category.id)}
+            {homeworld?.emoji || categoryEmoji(category.id)}
           </span>
+          {homeworld && (
+            <span
+              style={{
+                position: "absolute",
+                bottom: "-8px",
+                left: "50%",
+                transform: "translateX(-50%)",
+                fontSize: "8px",
+                lineHeight: 1,
+                padding: "2px 6px",
+                borderRadius: "999px",
+                background: category.color,
+                color: "white",
+                fontWeight: 900,
+                letterSpacing: "0.15em",
+                textTransform: "uppercase",
+                boxShadow: `0 0 8px ${category.color}`,
+              }}
+            >
+              HOME
+            </span>
+          )}
         </div>
       </Html>
       {/* Orbiting room tiles (only when selected) */}
@@ -405,7 +439,15 @@ function CameraRig({ selectedIndex }: { selectedIndex: number | null }) {
   return null;
 }
 
-function GalaxyScene({ selectedIndex, setSelectedIndex }: { selectedIndex: number | null; setSelectedIndex: (i: number | null) => void }) {
+function GalaxyScene({
+  selectedIndex,
+  setSelectedIndex,
+  homeworlds,
+}: {
+  selectedIndex: number | null;
+  setSelectedIndex: (i: number | null) => void;
+  homeworlds: Record<string, Homeworld>;
+}) {
   return (
     <>
       <color attach="background" args={["#040208"]} />
@@ -424,6 +466,7 @@ function GalaxyScene({ selectedIndex, setSelectedIndex }: { selectedIndex: numbe
           total={CATEGORIES.length}
           selected={selectedIndex === i}
           onSelect={() => setSelectedIndex(selectedIndex === i ? null : i)}
+          homeworld={homeworlds[c.id] ?? null}
         />
       ))}
     </>
@@ -433,6 +476,26 @@ function GalaxyScene({ selectedIndex, setSelectedIndex }: { selectedIndex: numbe
 export default function VolumetricDashboard() {
   const navigate = useNavigate();
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [homeworlds, setHomeworlds] = useState<Record<string, Homeworld>>({});
+
+  // 2026-05-12 founder enhancement: fetch user's per-category top room
+  // ("Personal Homeworld") so the planet thumbnails reflect their habits.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await authFetch(`${API}/api/recent-rooms/me`);
+        if (!r.ok) return;
+        const d = await r.json();
+        if (!cancelled && d?.homeworlds) {
+          setHomeworlds(d.homeworlds);
+        }
+      } catch {
+        /* anonymous / network — leave homeworlds empty */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const setClassicMode = () => {
     // 2026-05-12: switch the persistent dashboard preference and reload
@@ -470,7 +533,7 @@ export default function VolumetricDashboard() {
         gl={{ antialias: true, alpha: false }}
       >
         <Suspense fallback={null}>
-          <GalaxyScene selectedIndex={selectedIndex} setSelectedIndex={setSelectedIndex} />
+          <GalaxyScene selectedIndex={selectedIndex} setSelectedIndex={setSelectedIndex} homeworlds={homeworlds} />
         </Suspense>
         <OrbitControls
           enableZoom

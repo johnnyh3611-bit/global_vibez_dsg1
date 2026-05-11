@@ -61,6 +61,7 @@ import NotFound from "@/pages/NotFound";
 import CinemaRoom from "@/pages/CinemaRoom";
 import InRoomCommsLauncher from "@/components/common/InRoomCommsLauncher";
 import RoomInfoCube from "@/components/common/RoomInfoCube";
+import RoomVisitLogger from "@/components/common/RoomVisitLogger";
 import LandscapeRotateHint from "@/components/common/LandscapeRotateHint";
 
 // Routes that own the entire viewport (h-[100dvh] + overflow-hidden) —
@@ -251,6 +252,7 @@ function AppRouter() {
       <ChromebarActiveDispatcher />
       <GlobalCommsMounter />
       <RoomInfoCube />
+      <RoomVisitLogger />
       <FreshDropsLauncher />
       <WhatsNewBanner />
       <CommHubDropdown />

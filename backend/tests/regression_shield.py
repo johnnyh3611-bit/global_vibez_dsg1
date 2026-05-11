@@ -4683,3 +4683,39 @@ def test_volumetric_dashboard_default_and_opt_out():
 
     # Volumetric exposes the back-to-classic toggle.
     assert 'localStorage.setItem("gv_dashboard_view", "classic")' in page
+
+
+def test_personal_homeworld_wired_end_to_end():
+    """2026-05-12 founder enhancement: 'Personal Homeworld' — backend
+    tracks per-user room visits, Volumetric Galaxy overlays each planet
+    thumbnail with the user's most-played room in that category.
+    Regression-locks the contract so neither end drifts."""
+    from server import app
+    from routes.recent_rooms import COOLDOWN_SECONDS
+
+    # Backend endpoints mounted.
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    for ep in [
+        "/api/recent-rooms/log",
+        "/api/recent-rooms/me",
+        "/api/recent-rooms/leaderboard",
+    ]:
+        assert ep in paths, f"Recent-rooms endpoint missing: {ep}"
+    # Cooldown locked at 5s to dedupe React StrictMode double-fires.
+    assert COOLDOWN_SECONDS == 5
+
+    # RoomVisitLogger mounted globally + uses authFetch + cooldown contract.
+    logger = open("/app/frontend/src/components/common/RoomVisitLogger.tsx").read()
+    assert "/api/recent-rooms/log" in logger
+    assert "useLocation" in logger
+    assert "PATH_TO_CATEGORY" in logger
+
+    app_js = open("/app/frontend/src/App.js").read()
+    assert "RoomVisitLogger" in app_js
+    assert "<RoomVisitLogger />" in app_js
+
+    # VolumetricDashboard reads homeworlds from /me and overlays.
+    vol = open("/app/frontend/src/pages/VolumetricDashboard.tsx").read()
+    assert "/api/recent-rooms/me" in vol
+    assert "homeworld" in vol
+    assert "HOME" in vol  # the "HOME" badge on the thumbnail

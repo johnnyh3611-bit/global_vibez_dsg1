@@ -563,6 +563,13 @@ def register_all_routes(
     except Exception as _e:
         log.warning(f"Receipt OCR routes not mounted: {_e}")
 
+    # Recent Rooms — Personal Homeworld feature (May 2026 enhancement)
+    try:
+        from routes.recent_rooms import router as recent_rooms_router  # noqa: PLC0415
+        api_router.include_router(recent_rooms_router, tags=["recent-rooms"])
+    except Exception as _e:
+        log.warning(f"Recent Rooms routes not mounted: {_e}")
+
     try:
         from routes.cinema_room import router as cinema_room_router
         api_router.include_router(cinema_room_router, tags=["cinema-room"])
