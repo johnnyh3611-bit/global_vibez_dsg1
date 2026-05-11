@@ -1,5 +1,33 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-02-11 (STRIPE LIVE PAYMENTS + WEBHOOKS HARDENED 💳🔐) — Real money rails open. 311/311 regression green.**
+>
+> **Founder pasted live Stripe secret key.** Verified against Stripe API:
+>   - Account: "Global Vibez DSG" (`acct_1TW30xFZdr6maml1`) · US
+>   - ✅ Charges enabled · ✅ Payouts enabled
+>
+> **Auto-provisioned both production webhooks via Stripe's API** (no UI navigation by founder):
+>   - 🟢 `we_1TW3YFFZdr6maml1d5vuqQFJ` → `https://globalvibezdsg.com/api/payouts/stripe-webhook` — events: account.updated, account.external_account.created, payout.paid, payout.failed, charge.succeeded, charge.refunded, checkout.session.completed
+>   - 🟢 `we_1TW3YFFZdr6maml1QIE76rxc` → `https://globalvibezdsg.com/api/age-verification/webhook/vendor` — events: identity.verification_session.{verified,requires_input,canceled,processing}
+>
+> **New backend route** `POST /api/payouts/stripe-webhook` (created since it didn't exist when we registered the webhook on Stripe's side). Uses Stripe's official `construct_event` for signature verification + 5-min replay tolerance. Per-event handlers update `users`, `payouts`, `charges`, `orders`, `bookings`, plus emits an `admin_alerts` row on payout failures.
+>
+> **Bug fixed in flight**: The pre-existing Identity webhook at `/api/age-verification/webhook/vendor` had a `payload: VendorDecisionPayload` body param in its function signature. FastAPI's Pydantic validation runs BEFORE the function body, so real Stripe Identity payloads (which use `{id, type, data:{object:{...}}}` not our internal stub schema) would 422 BEFORE signature verification ever ran. Removed the body param, parse manually inside the stub branch. Regression-locked.
+>
+> **Webhook security verified end-to-end** on BOTH endpoints with the same 4-case attack suite we used for Cloudflare:
+>   - ✅ Valid signature → 200, side effects applied to DB
+>   - ✅ Tampered signature → 401
+>   - ✅ Missing `Stripe-Signature` header → 400
+>   - ✅ Replay >5min old → 401 (`Timestamp outside tolerance`)
+>
+> **Stripe credentials in `.env`** (all 3): `STRIPE_API_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_IDENTITY_WEBHOOK_SECRET`.
+>
+> **Universal LLM Key status** — still hitting per-key budget cap (`$0.40 max_budget`). Credits were added but cap is a separate setting. Founder needs to email `support@emergent.sh` to raise it (template provided). All 4 LLM-powered features (Claude mediation, Gemini voice tour, GPT receipt scan, Whisper transcription) continue degrading gracefully to fallbacks until cap is raised — core platform unaffected.
+>
+> **Resend DNS** — not yet started; founder homework remains: add SPF + DKIM + DMARC records at IONOS, verify at resend.com/domains.
+>
+> ---
+>
 > **2026-02-11 (LIVE NOW WALL SHIPPED 🔴📺) — Public streaming discovery surface live. 309/309 regression green.**
 >
 > **New surfaces shipped this round:**

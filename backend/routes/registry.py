@@ -775,6 +775,15 @@ def register_all_routes(
     except Exception as _e:
         log.warning(f"Cloudflare Stream routes not mounted: {_e}")
 
+    # Stripe Connect / Payouts webhook — receives charge.succeeded,
+    # payout.paid, account.updated, etc. Signature-verified by Stripe's
+    # official SDK using STRIPE_WEBHOOK_SECRET.
+    try:
+        from routes.stripe_payouts_webhook import router as stripe_payouts_router
+        api_router.include_router(stripe_payouts_router)
+    except Exception as _e:
+        log.warning(f"Stripe payouts webhook not mounted: {_e}")
+
     # $VIBEZ Activity Multiplier reward formula (Roadmap PDF §1).
     # SIMULATED mints until the founder confirms project_complete.
     try:

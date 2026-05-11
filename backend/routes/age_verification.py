@@ -250,7 +250,6 @@ class VendorDecisionPayload(BaseModel):
 @router.post("/webhook/vendor")
 async def webhook_vendor(
     request: Request,
-    payload: Optional[VendorDecisionPayload] = None,
     user=Depends(get_current_user),
 ) -> Dict[str, Any]:
     """KYC vendor → DSG webhook surface.
@@ -267,9 +266,13 @@ async def webhook_vendor(
          identity.verification_session.canceled         → REJECTED
          identity.verification_session.processing       → PENDING
 
-    2. **Stub mode** (current default) — admin-JWT-gated. Lets admins
-       hand-fire vendor decisions while Stripe Identity provisioning
-       is pending. Same code path, just a different authn front door.
+    2. **Stub mode** (admin-JWT-gated) — lets admins hand-fire vendor
+       decisions while Stripe Identity provisioning is pending. Same
+       code path, just a different authn front door.
+
+    Body is parsed MANUALLY (no Pydantic body param) so the Stripe
+    Identity payload shape — which has no `user_id`/`decision` at the
+    top level — doesn't trigger 422 before signature verification runs.
     """
     db = get_database()
     secret = os.environ.get("STRIPE_IDENTITY_WEBHOOK_SECRET", "").strip()
@@ -350,13 +353,14 @@ async def webhook_vendor(
 
     # ──────── Mode 2: Admin-gated stub (no Stripe secret yet) ────────
     _require_admin(user)
-    if payload is None:
-        # Tolerate either pydantic-parsed body or raw JSON in stub mode.
-        try:
-            raw = await request.json()
-            payload = VendorDecisionPayload(**raw)
-        except Exception:
-            raise HTTPException(status_code=400, detail="Invalid stub payload")
+    # Stub mode: payload is now parsed manually here (Pydantic body
+    # param was removed from the function signature so Stripe Identity
+    # webhooks in mode 1 don't 422-fail on schema mismatch).
+    try:
+        raw = await request.json()
+        payload = VendorDecisionPayload(**raw)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid stub payload")
     if payload.provider not in avp.SUPPORTED_KYC_PROVIDERS:
         raise HTTPException(status_code=400, detail=f"Unsupported provider: {payload.provider}")
     try:

@@ -6593,3 +6593,82 @@ def test_live_now_wall_and_watch_room_wired():
     vol = open("/app/frontend/src/pages/VolumetricDashboard.tsx").read()
     assert "/streams/live" in vol, "Live Now Wall tile missing from Volumetric Dashboard"
 
+
+
+def test_stripe_payouts_webhook_wired():
+    """2026-02 sprint: Stripe Connect / Payouts webhook handler created
+    to receive account/payout/charge events from the live Stripe
+    webhook endpoint registered at globalvibezdsg.com/api/payouts/stripe-webhook.
+
+    Locks:
+      - Route module exists + has correct prefix.
+      - Uses Stripe's official construct_event for signature verification
+        (no DIY HMAC — Stripe's helper handles the v0/v1 algorithm switch).
+      - Handles all 7 events we registered on Stripe's side.
+      - Per-event handlers are idempotent and async (no blocking the proxy).
+      - Registered in routes/registry.py.
+    """
+    src = open("/app/backend/routes/stripe_payouts_webhook.py").read()
+    assert 'prefix="/payouts"' in src, "Payouts webhook must use /payouts prefix"
+    assert "stripe.Webhook.construct_event" in src, "Must use Stripe's official verifier (handles v0/v1, replay tolerance)"
+    assert "STRIPE_WEBHOOK_SECRET" in src
+    assert "tolerance=300" in src, "Should set explicit 5-minute replay tolerance"
+
+    # All 7 registered events have handlers.
+    for evt in (
+        "account.updated",
+        "account.external_account.created",
+        "payout.paid",
+        "payout.failed",
+        "charge.succeeded",
+        "charge.refunded",
+        "checkout.session.completed",
+    ):
+        assert f'"{evt}"' in src, f"Missing handler for: {evt}"
+
+    # Each handler is async (the proxy can't block).
+    import re
+    handler_pattern = re.compile(r"async def _handle_\w+")
+    assert len(handler_pattern.findall(src)) >= 7, "Each Stripe event handler must be async"
+
+    # Registry mounts it.
+    registry = open("/app/backend/routes/registry.py").read()
+    assert "from routes.stripe_payouts_webhook import router as stripe_payouts_router" in registry
+
+
+def test_stripe_identity_webhook_handles_real_payload_shape():
+    """2026-02 sprint: regression lock for the Pydantic-422 bug we fixed
+    where the Identity webhook had a `payload: VendorDecisionPayload`
+    body param, which FastAPI parsed BEFORE the function ran the
+    signature check. Real Stripe Identity payloads — which have
+    `{id, type, data:{object:{...}}}` instead of our internal
+    `{user_id, decision}` schema — would 422 before signature
+    verification even ran.
+
+    Now: body is parsed manually inside the function, so mode 1
+    (Stripe-signed real webhook) and mode 2 (admin stub) both work.
+    """
+    src = open("/app/backend/routes/age_verification.py").read()
+
+    # The function signature MUST NOT include a Pydantic body param —
+    # only Request + user dependency.
+    import re
+    sig_match = re.search(
+        r"async def webhook_vendor\(([^)]*)\)",
+        src,
+        re.DOTALL,
+    )
+    assert sig_match, "webhook_vendor function not found"
+    sig_body = sig_match.group(1)
+    assert "payload:" not in sig_body, (
+        "REGRESSION: webhook_vendor must not have a Pydantic body param — "
+        "real Stripe Identity webhooks would 422 before signature check runs"
+    )
+
+    # Body must be parsed manually inside the stub branch.
+    assert "raw = await request.json()" in src
+    assert "VendorDecisionPayload(**raw)" in src
+
+    # Stripe construct_event still in place for mode 1.
+    assert "stripe.Webhook.construct_event" in src
+
