@@ -487,6 +487,65 @@ async def get_state(game_id: str, http_request: Request):
     return game
 
 
+@router.get("/vibez-654/hot-side-bet")
+async def hot_side_bet():
+    """Surfaces the highest-paying side-bet HIT in the last 60 minutes.
+    Returns null if nothing has hit. Powers the small ticker above the
+    Side Bets drawer to nudge players into actually using side bets.
+    """
+    db = get_database()
+    cutoff = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
+    # Pull recent games that have side-bet wins. Use a small limit and filter
+    # in Python — keeps the index profile simple and the query fast at our
+    # current volume.
+    cursor = db.vibez_654_games.find(
+        {
+            "status": "ended",
+            "ended_at": {"$gte": cutoff},
+            "side_bet_payout": {"$gt": 0},
+        },
+        {
+            "_id": 0,
+            "user_id": 1,
+            "side_bet_results": 1,
+            "side_bet_payout": 1,
+            "ended_at": 1,
+        },
+    ).sort("side_bet_payout", -1).limit(20)
+    rows = await cursor.to_list(length=20)
+    if not rows:
+        return {"hit": None}
+
+    # Walk results to find the single biggest winning row across all games.
+    best: Optional[Dict[str, Any]] = None
+    best_at: str = ""
+    for g in rows:
+        for r in g.get("side_bet_results") or []:
+            if not r.get("won"):
+                continue
+            if best is None or int(r.get("payout", 0)) > int(best.get("payout", 0)):
+                best = r
+                best_at = g.get("ended_at", "")
+    if best is None:
+        return {"hit": None}
+
+    # Compute minutes_ago from the parent game's ended_at.
+    try:
+        ended = datetime.fromisoformat(best_at.replace("Z", "+00:00"))
+        minutes_ago = max(0, int((datetime.now(timezone.utc) - ended).total_seconds() / 60))
+    except Exception:
+        minutes_ago = 0
+
+    return {
+        "hit": {
+            "type": best.get("type"),
+            "amount": int(best.get("amount", 0)),
+            "payout": int(best.get("payout", 0)),
+            "minutes_ago": minutes_ago,
+        }
+    }
+
+
 @router.get("/vibez-654/leaderboard")
 async def leaderboard():
     """Top 10 highest non-zero scores in the last 24h."""

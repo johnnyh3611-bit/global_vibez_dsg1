@@ -104,7 +104,10 @@ export default function Vibez654Game() {
   const [recentLoading, setRecentLoading] = useState(false);
   const [recent, setRecent] = useState<HistoryRow[]>([]);
 
-  // Catalog + leaderboard on mount.
+  // Hot side bet ticker (last 60 min).
+  const [hotBet, setHotBet] = useState<{ type: string; payout: number; amount: number; minutes_ago: number } | null>(null);
+
+  // Catalog + leaderboard + hot ticker on mount.
   useEffect(() => {
     fetch(`${API}/api/vibez-654/leaderboard`)
       .then((r) => r.json())
@@ -113,6 +116,10 @@ export default function Vibez654Game() {
     fetch(`${API}/api/vibez-654/side-bet-types`)
       .then((r) => r.json())
       .then((d) => setSideBetTypes(d?.types || []))
+      .catch(() => undefined);
+    fetch(`${API}/api/vibez-654/hot-side-bet`)
+      .then((r) => r.json())
+      .then((d) => setHotBet(d?.hit || null))
       .catch(() => undefined);
   }, []);
 
@@ -443,6 +450,30 @@ export default function Vibez654Game() {
           )}
         </div>
 
+        {/* HOT SIDE BET TICKER */}
+        {hotBet && (
+          <div
+            data-testid="v654-hot-side-bet"
+            className="mt-4 rounded-xl bg-gradient-to-r from-rose-600/15 via-amber-500/15 to-fuchsia-600/15 border border-amber-400/30 px-4 py-2 flex items-center justify-between gap-3 text-xs"
+          >
+            <span className="flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              <span className="uppercase tracking-widest font-black text-amber-200">
+                Hot Side Bet
+              </span>
+              <span className="text-white/80 font-bold">
+                {hotBet.type.replace(/_/g, " ")}
+              </span>
+              <span className="text-emerald-300 font-black tabular-nums">
+                +₵{hotBet.payout.toLocaleString()}
+              </span>
+            </span>
+            <span className="text-white/40 tabular-nums">
+              {hotBet.minutes_ago === 0 ? "just now" : `${hotBet.minutes_ago}m ago`}
+            </span>
+          </div>
+        )}
+
         {/* SIDE BETS DRAWER */}
         <Drawer
           testId="v654-side-bets"
@@ -714,3 +745,4 @@ export const __dev_side_bet_examples: Record<string, string> = {
 };
 // Suppress unused-import warning when Sparkles isn't rendered.
 void Sparkles;
+void useMemo;
