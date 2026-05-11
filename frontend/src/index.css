@@ -344,6 +344,58 @@ code {
 
 /* Responsive Casino Games */
 
+/* ─────────────────────────────────────────────────────────────────
+   FORCE LANDSCAPE — CSS rotation override for any device.
+   Triggered by <LandscapeRotateHint /> when the user taps "Force".
+   Founder ask 2026-05-10 (PDF Implementation Guide §5: Camera viewport
+   should always present the room in landscape regardless of device).
+   ───────────────────────────────────────────────────────────────── */
+body.gv-force-landscape {
+  overflow: hidden;
+}
+@media (orientation: portrait) {
+  body.gv-force-landscape #root > div {
+    transform: rotate(90deg);
+    transform-origin: left top;
+    width: 100vh;
+    height: 100vw;
+    overflow-x: hidden;
+    position: absolute;
+    top: 100vh;
+    left: 0;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   CARD ROOM LAYOUT — Implementation Guide PDF §1-2.
+   Apply via `.card-room-frame` on any multiplayer card room wrapper.
+   • Table is capped to 55vw × 75vh (so it never bleeds on landscape).
+   • Played-card stack offset toward center-top (+25px Y) to avoid
+     overlap with the player's hand.
+   • Player hand anchored to the bottom safe area.
+   ───────────────────────────────────────────────────────────────── */
+.card-room-frame {
+  max-height: calc(100vh - env(safe-area-inset-bottom, 0px) - env(safe-area-inset-top, 0px));
+  overflow: hidden;
+}
+.card-room-frame .table-mesh {
+  max-width: 95vw;
+  max-height: min(75vh, 600px);
+  margin-left: auto;
+  margin-right: auto;
+}
+.card-room-frame .trick-play-area {
+  /* Push trick area toward center-top to avoid hand overlap. */
+  transform: translateY(-25px);
+}
+.card-room-frame .player-hand {
+  /* Anchor hand to bottom safe area. */
+  position: sticky;
+  bottom: env(safe-area-inset-bottom, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 8px);
+  z-index: 2;
+}
+
 /* Landscape Mobile Optimization */
 @media (orientation: landscape) and (max-height: 500px) {
   .landscape-mode {

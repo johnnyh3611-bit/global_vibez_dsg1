@@ -60,6 +60,7 @@ import PageActionStrip from "@/components/common/PageActionStrip";
 import NotFound from "@/pages/NotFound";
 import CinemaRoom from "@/pages/CinemaRoom";
 import InRoomCommsLauncher from "@/components/common/InRoomCommsLauncher";
+import LandscapeRotateHint from "@/components/common/LandscapeRotateHint";
 
 // Routes that own the entire viewport (h-[100dvh] + overflow-hidden) —
 // e.g. card rooms, dice games, casino tables, full-screen tools. The
@@ -78,6 +79,7 @@ const FULLSCREEN_GAME_ROUTES = [
   "/cinema-room",  // The Cinema Room — sync-watch viewer
   "/cyber-casino", "/games/cyber-casino", "/casino-war",
   "/lottery", "/dsg6",  // DSG 6 Quantum Vault (May 2026)
+  "/underground-casino", "/underground",  // Private high-limit lounge
 ];
 
 function useIsFullscreenGameRoute() {
@@ -231,7 +233,12 @@ function ChromebarActiveDispatcher() {
 function GlobalCommsMounter() {
   const isFullscreenGame = useIsFullscreenGameRoute();
   if (!isFullscreenGame) return null;
-  return <InRoomCommsLauncher />;
+  return (
+    <>
+      <InRoomCommsLauncher />
+      <LandscapeRotateHint />
+    </>
+  );
 }
 
 // Main App Router

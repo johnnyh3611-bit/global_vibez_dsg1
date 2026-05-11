@@ -136,6 +136,7 @@ import Vibe654TournamentTable from "@/pages/games/Vibe654TournamentTable";
 import VibeColiseum from "@/pages/games/VibeColiseum";
 import VibeSoloHighRoller from "@/pages/games/VibeSoloHighRoller";
 import DSG6Lottery from "@/pages/games/DSG6Lottery";
+import UndergroundCasino from "@/pages/UndergroundCasino";
 import VibeWallet from "@/pages/VibeWallet";
 import CommunitySlots from "@/pages/CommunitySlots";
 import SmartTables from "@/pages/SmartTables";
@@ -368,6 +369,10 @@ export const gamesRoutes = (ProtectedRoute) => (
     {/* DSG 6 Quantum Vault Lottery — Genius Phase PDF (May 2026) */}
     <Route path="/lottery" element={<ProtectedRoute><DSG6Lottery /></ProtectedRoute>} />
     <Route path="/dsg6" element={<Navigate to="/lottery" replace />} />
+
+    {/* The Underground — Private high-limit lounge (May 2026 founder ask) */}
+    <Route path="/underground-casino" element={<ProtectedRoute><UndergroundCasino /></ProtectedRoute>} />
+    <Route path="/underground" element={<Navigate to="/underground-casino" replace />} />
     
     {/* AAA Casino Games - Updated to use WebSocket-enabled components */}
     <Route path="/practice/play/blackjack-aaa" element={<ProtectedRoute><BlackjackGameAAA /></ProtectedRoute>} />

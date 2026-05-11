@@ -24,6 +24,7 @@ const HIDDEN_EXACT = [
   "/vibe-654", "/vibez-654", "/vibe-654/solo",
   "/games/vibez-654",
   "/lottery", "/dsg6",
+  "/underground-casino", "/underground",
   "/cinema-room",
 ];
 
