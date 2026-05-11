@@ -521,6 +521,13 @@ def register_all_routes(
     except Exception as _e:
         log.warning(f"Chess Hall routes not mounted: {_e}")
 
+    # Sports Lounge — Vibe Sports Book "Social Stakes" (May 2026)
+    try:
+        from routes.sports_lounge import router as sports_lounge_router
+        api_router.include_router(sports_lounge_router, tags=["sports-lounge"])
+    except Exception as _e:
+        log.warning(f"Sports Lounge routes not mounted: {_e}")
+
     try:
         from routes.cinema_room import router as cinema_room_router
         api_router.include_router(cinema_room_router, tags=["cinema-room"])

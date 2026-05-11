@@ -1,7 +1,13 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
 
-> **2026-05-10 (Latest) — Chess Hall + Blitz + Daily Puzzle + Tournament Bracket ♟️.** Founder ask continuation (Chess 4b+c from earlier session).
+> **2026-05-10 (Latest) — Vibe Sports Book Social Stakes Lounge 🏈🏀⚽.** Founder dropped 2 new PDFs; I picked the highest-impact one (Sports Lounge Blueprint) over the polish P1s.
+>
+> 1. **`/sports-lounge`** — Vibe Sports Book MVP. 3 seeded games on the board (NFL Chiefs/Bills, NBA Lakers/Celtics, EPL ManCity/Arsenal). Each game is a "Betting Pit" with team-color-driven hue, decimal odds, click-to-bet. Stake presets ₵50/250/1k/5k. Jumbotron ticker shows last 8 settlements across all users. "My Bets" section auto-refreshes every 30s. Top-right comms + landscape pills mounted globally.
+> 2. **Backend `/api/sports/*`** — 5 endpoints. `games` (seeded + optional RapidAPI live), `place-bet` (locks ₵ in vault), `my-bets`, `settle` (admin only — distributes vault with 13.5% Sovereign Tax applied to net winnings), `jumbotron` (public feed). Verified end-to-end via curl: ₵250 LAL bet placed, vaulted, listed.
+> 3. **RapidAPI graceful degrade** — when `RAPIDAPI_SPORTS_KEY` is unset the seed catalog ships as-is; when set, live fixtures merge in. No user action required for beta.
+>
+> **Status: 🟢 ready for redeploy.** 265/265 pytest GREEN. Sports Lounge is the 4th new room in this run alongside Chess Hall, The Underground, and DSG 6 Lottery.
 >
 > **NEW: 1 backend module + 4 frontend pages, all live + verified end-to-end:**
 > 1. **`/chess-hall`** — lobby grid with 5 modes (Classic AI · 5-min Blitz · Daily Puzzle · Tournament · Multiplayer). Shows per-mode tally (W/L/D) from `/api/chess/stats`.
