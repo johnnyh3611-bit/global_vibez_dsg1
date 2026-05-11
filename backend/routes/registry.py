@@ -528,6 +528,13 @@ def register_all_routes(
     except Exception as _e:
         log.warning(f"Sports Lounge routes not mounted: {_e}")
 
+    # Vibe Integrity & Ban Protocol — crowdsourced consensus + 3-strike ban (May 2026)
+    try:
+        from routes.integrity_protocol import router as integrity_router
+        api_router.include_router(integrity_router, tags=["integrity"])
+    except Exception as _e:
+        log.warning(f"Integrity Protocol routes not mounted: {_e}")
+
     try:
         from routes.cinema_room import router as cinema_room_router
         api_router.include_router(cinema_room_router, tags=["cinema-room"])
