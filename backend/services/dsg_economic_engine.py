@@ -46,10 +46,11 @@ STABILIZATION_TARGET_SUPPLY: int = 1_500_000_000
 # managed elsewhere (see services/ai_governor.py).
 GOLDEN_ASSET_SUPPLY: int = 750_000_000
 
-# Burn rate bounds per spec.
-INITIAL_BURN_RATE: float = 0.04      # 4 % at 3 B supply
-MINIMUM_BURN_RATE: float = 0.005     # 0.5 % once supply <= 1.5 B target
-BURN_RATE_SPREAD: float = INITIAL_BURN_RATE - MINIMUM_BURN_RATE  # 0.035
+# Burn rate bounds per Definitive Economy spec (Global_Vibez_DSG_Definitive_Economy.pdf, May 2026).
+# Curve runs 5.0 % (at 3 B initial supply) down to 0.5 % (once supply reaches the 1.5 B floor).
+INITIAL_BURN_RATE: float = 0.05      # 5 % at 3 B supply (raised from 4 %)
+MINIMUM_BURN_RATE: float = 0.005     # 0.5 % once supply <= 1.5 B floor
+BURN_RATE_SPREAD: float = INITIAL_BURN_RATE - MINIMUM_BURN_RATE  # 0.045
 
 # 50/50 revenue allocation: half to buyback+burn, half to USD liquidity floor.
 REVENUE_SPLIT_RATIO: float = 0.50
@@ -59,7 +60,19 @@ REVENUE_SPLIT_RATIO: float = 0.50
 DEFAULT_UTILITY_COST_USD: float = 10.00
 
 # Parity target the engine optimizes around.
-PARITY_USD: float = 1.00
+# Definitive Economy May-2026: 1 Coin = 10 Credits, $1 USD = 100 Credits
+# → 1 Coin = $0.10 (10 Coins = $1.00, 1 Credit = $0.01).
+PARITY_USD: float = 0.10
+
+# ───────────────────────────────────────── Credits — Standard Utility Unit ──
+# Definitive Economy May-2026 introduces "Credits" as the universal unit
+# every utility room transacts in. Conversion table from the spec:
+#   1 Coin   = 10 Credits
+#   $1 USD   = 100 Credits   (i.e. 10 Credits = $0.10)
+# Coins remain the user-held asset; Credits are the display+spend unit so
+# users see stable prices regardless of coin price volatility.
+COIN_TO_CREDITS_RATIO: int = 10
+USD_TO_CREDITS_RATIO: int = 100
 
 
 # ───────────────────────────────────────── Pure-math helpers ──
@@ -75,8 +88,8 @@ def calculate_dynamic_burn_rate(current_supply: float) -> float:
         return round(min_rate + spread * progress, 4)
 
     Endpoints:
-      * current_supply == 3 B  → 4 %   (max burn, fight inflation)
-      * current_supply == 1.5 B → 0.5 % (parity reached, low burn)
+      * current_supply == 3 B   → 5 %   (max burn, fight inflation)
+      * current_supply == 1.5 B → 0.5 % (floor reached, low burn)
       * current_supply < 1.5 B  → 0.5 % (floor, never lower)
     """
     if current_supply <= STABILIZATION_TARGET_SUPPLY:
@@ -116,6 +129,61 @@ def split_revenue(amount_usd: float) -> Dict[str, float]:
     liquidity = round(amount_usd * REVENUE_SPLIT_RATIO, 6)
     buyback = round(amount_usd - liquidity, 6)
     return {"liquidity_usd": liquidity, "buyback_usd": buyback}
+
+
+# ───────────────────────────────────────── Credits conversion ──
+
+def coins_to_credits(coin_amount: float) -> float:
+    """Convert Coins → Credits (Definitive Economy: 1 Coin = 10 Credits)."""
+    if coin_amount < 0:
+        raise ValueError("coin_amount must be >= 0")
+    return round(coin_amount * COIN_TO_CREDITS_RATIO, 6)
+
+
+def credits_to_coins(credit_amount: float) -> float:
+    """Convert Credits → Coins (10 Credits = 1 Coin)."""
+    if credit_amount < 0:
+        raise ValueError("credit_amount must be >= 0")
+    return round(credit_amount / COIN_TO_CREDITS_RATIO, 6)
+
+
+def usd_to_credits(amount_usd: float) -> float:
+    """Convert USD → Credits (Definitive Economy: $1 = 100 Credits)."""
+    if amount_usd < 0:
+        raise ValueError("amount_usd must be >= 0")
+    return round(amount_usd * USD_TO_CREDITS_RATIO, 6)
+
+
+def credits_to_usd(credit_amount: float) -> float:
+    """Convert Credits → USD (100 Credits = $1, 10 Credits = $0.10)."""
+    if credit_amount < 0:
+        raise ValueError("credit_amount must be >= 0")
+    return round(credit_amount / USD_TO_CREDITS_RATIO, 6)
+
+
+def process_conversion(coin_amount: float) -> Dict[str, float]:
+    """
+    Spec function from `Global_Vibez_DSG_Definitive_Economy.pdf`:
+    given a coin amount, compute the USD value AND Credits equivalent.
+
+    At parity ($0.10 coin price · the Definitive Economy peg):
+      * 1 Coin   = $0.10 USD =   10 Credits
+      * 10 Coins = $1.00 USD =  100 Credits
+      * 100 Coins = $10.00 USD = 1,000 Credits
+
+    The Credits column powers utility-room price tags so a user sees a
+    stable "1,000 Credits" label no matter what the coin price does.
+    """
+    if coin_amount < 0:
+        raise ValueError("coin_amount must be >= 0")
+    value_usd = round(coin_amount * PARITY_USD, 6)
+    credits = coins_to_credits(coin_amount)
+    return {
+        "coin_amount": round(coin_amount, 6),
+        "value_usd": value_usd,
+        "credits": credits,
+    }
+
 
 
 # ───────────────────────────────────────── Stateful engine (Mongo) ──
@@ -233,6 +301,12 @@ async def snapshot(db) -> Dict[str, Any]:
             "revenue_split_ratio": REVENUE_SPLIT_RATIO,
             "default_utility_cost_usd": DEFAULT_UTILITY_COST_USD,
             "parity_usd": PARITY_USD,
+            # Definitive Economy May 2026 — Credits Standard Utility Unit.
+            "coin_to_credits_ratio": COIN_TO_CREDITS_RATIO,
+            "usd_to_credits_ratio": USD_TO_CREDITS_RATIO,
+            # Global revenue sources (Rides · Restaurants · Gaming) per spec.
+            "global_revenue_sources": ["Rides", "Restaurants", "Gaming"],
+            "protocol_version": "Definitive Economy · May 2026",
         },
         "current_supply": supply,
         "lifetime_burned_coins": float(state.get("lifetime_burned_coins", 0.0)),

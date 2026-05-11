@@ -102,7 +102,7 @@ const FALLBACK_CAPTIONS: Cue[] = [
   { t:  56.0, text: "Drive VibeRidez · keep 70% · Hungry VIBEZ · Vibe Artisan · Vibe Venue · DSG TV 24/7." },
   { t:  70.0, text: "70/30 Music Revolution · Beat Vault · Freestyle Battles · Collab Matchmaker · Totem Pole." },
   { t:  80.0, text: "Vibe Yellow Pages · Mom & Pop · hyper-local · DSG Guard safety protocol." },
-  { t:  88.0, text: "3 BILLION VIBEZ · hard-capped · 13.5% Sovereign Tax recirculates back to the players." },
+  { t:  88.0, text: "3 B VIBEZ burning to 1.5 B · 50/50 Buyback & Liquidity · 13.5% Sovereign Tax · 1 Coin = 10 Credits." },
   { t:  98.0, text: "5× mining multiplier for chair holders · $VIBEZ bridges to Solana 4:1." },
   { t: 105.0, text: "Chair Hall is OPEN · Genius · Genesis · Apex · 1,000,000 seats · forever." },
   { t: 115.0, text: "First cohort to sit at the table owns the network." },

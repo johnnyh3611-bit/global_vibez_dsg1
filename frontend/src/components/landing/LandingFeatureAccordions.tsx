@@ -297,7 +297,9 @@ const LandingFeatureAccordions: React.FC = () => {
               <Stat label="24h Burned"    value={`${fmt(burn?.burned_24h ?? 0)} ₵`}                accent="text-orange-300" />
             </div>
             <p className="text-[11px] text-slate-400 mt-3">
-              Locked rate: 2,000 ₵ = $1 USD · Mint mode:{" "}
+              Definitive Economy rate: 10 Coins = $1 USD = 100 Credits ·{" "}
+              <span className="text-amber-300 font-bold">1 Coin = 10 Credits</span> ·
+              Mint mode:{" "}
               <span className="text-amber-300 font-bold">
                 {constants?.mint_mode || "SIMULATED"}
               </span>{" "}

@@ -42,7 +42,7 @@ Independent artists keep seventy percent. Beat Vault. Freestyle Battles. Collab 
 
 Local Mom and Pop earn back. Vibe Yellow Pages — geo-pinned, verified businesses. Hyper-local sponsorship. Backed by the DSG Guard safety protocol.
 
-The economy. Three billion VIBEZ coins. Hard-capped forever. A thirteen-point-five percent Sovereign Tax recirculates every transaction back to the players. A five-times mining multiplier locked in for chair holders. $VIBEZ bridges to Solana at four-to-one.
+The economy. Three billion VIBEZ coins, burning down to one-point-five billion. Five percent dynamic burn rate, dropping to zero-point-five as supply meets the floor. Every fee dollar from rides, restaurants, and gaming splits fifty-fifty: half buys VIBEZ off the open market and burns it. Half strengthens the liquidity pool that protects the one-dollar parity. The Credits standard. One coin equals ten Credits. One dollar equals one hundred Credits. A thirteen-point-five percent Sovereign Tax recirculates every win back to the players. A five-times mining multiplier locked in for chair holders. $VIBEZ bridges to Solana at four-to-one.
 
 Speaking of chairs — the Chair Hall is open. Three tiers. Genius. Genesis. Apex. One million seats. Globally. Forever. Eight hundred thousand reserve seats unlock after Chair number fifty thousand. The first cohort to sit at the table owns the network.
 

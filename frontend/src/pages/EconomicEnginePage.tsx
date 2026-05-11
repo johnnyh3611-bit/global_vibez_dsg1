@@ -42,10 +42,13 @@ export default function EconomicEnginePage() {
           </div>
         </div>
         <p className="text-sm text-purple-200/80 mb-8 max-w-2xl">
-          A self-regulating dual-asset economy: a high-velocity Vibez Coin pegged at $1.00
-          parity, plus a 750 M DSG Token "Golden Asset". Burn rate scales dynamically as
-          supply approaches the 1.5 B stabilization target, and every fee dollar is split
-          50/50 between buying-and-burning Vibez Coin and refilling the USD liquidity floor.
+          A self-regulating dual-asset economy calibrated to a{" "}
+          <b className="text-fuchsia-200">premium standard</b> — engineered to accelerate
+          project valuation and community wealth. Every fee dollar from Rides, Restaurants
+          &amp; Gaming splits 50/50 between Buyback &amp; Burn and Liquidity Injection,
+          producing a <b className="text-fuchsia-200">rising price floor and constant scarcity</b>.
+          Users transact in Credits — the Standard Utility Unit — so prices stay stable
+          regardless of token volatility.
         </p>
 
         {/* Live state */}
@@ -56,22 +59,22 @@ export default function EconomicEnginePage() {
           <Pillar
             icon={Coins}
             title="Dual-Asset Shield"
-            body="Vibez Coin (3 B initial, $1 parity) drives day-to-day spending. DSG Token (750 M Golden Asset) accrues long-term value to chair-holders + stakers."
+            body="Vibez Coin (3 B initial, $0.10 floor parity) drives day-to-day spending. DSG Token (750 M Golden Asset) accrues long-term value to chair-holders + stakers. Credits — the Standard Utility Unit — keep prices stable in every utility room."
           />
           <Pillar
             icon={Flame}
             title="Dynamic Burn"
-            body="At 3 B supply we burn 4%. As supply approaches the 1.5 B target, burn drops linearly to 0.5%. The closer we get to parity, the gentler the burn — preventing over-deflation."
+            body="At 3 B supply we burn 5%. As supply approaches the 1.5 B stabilization floor, burn drops linearly to 0.5%. The closer we get to parity, the gentler the burn — preventing over-deflation while keeping pressure on supply."
           />
           <Pillar
             icon={Droplets}
             title="50 / 50 Revenue Split"
-            body="Every fee dollar splits cleanly: 50% buys Vibez Coin off the market and burns it, 50% deposits to a permanent USD liquidity floor that backstops the $1 peg."
+            body="Global revenue from Rides · Restaurants · Gaming splits cleanly: 50% Buyback & Burn — active market purchases that remove supply and drive price. 50% Liquidity Injection — strengthens the pool and protects against volatility."
           />
           <Pillar
             icon={Target}
             title="Dynamic Utility Pricing"
-            body="A $10 ride is always a $10 ride. The number of coins required is computed live from the coin price oracle so users see stable dollar costs regardless of token volatility."
+            body="A $10 ride is always a $10 ride. Coins required are computed live so users see stable dollar costs regardless of token volatility. 1 Coin = 10 Credits. $1 USD = 100 Credits."
           />
         </div>
 

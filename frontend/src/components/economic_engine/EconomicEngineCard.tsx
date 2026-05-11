@@ -24,6 +24,10 @@ interface Snapshot {
     revenue_split_ratio: number;
     default_utility_cost_usd: number;
     parity_usd: number;
+    coin_to_credits_ratio?: number;
+    usd_to_credits_ratio?: number;
+    global_revenue_sources?: string[];
+    protocol_version?: string;
   };
   current_supply: number;
   lifetime_burned_coins: number;
@@ -87,11 +91,16 @@ export default function EconomicEngineCard() {
       <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
         <div>
           <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-fuchsia-400/90">
-            DSG Economic Engine · Dual-Asset Shield
+            DSG Economic Engine · Global Value Parity
           </p>
           <h3 className="text-xl md:text-2xl font-black text-white mt-0.5">
-            Vibez Coin · ${c.parity_usd.toFixed(2)} parity target
+            Vibez Coin · ${c.parity_usd.toFixed(2)} floor · Rising price · Constant scarcity
           </h3>
+          {c.protocol_version && (
+            <p className="text-[10px] font-mono text-purple-400/60 mt-0.5">
+              {c.protocol_version}
+            </p>
+          )}
         </div>
         <span
           className={`px-2.5 py-1 rounded-full text-[10px] uppercase tracking-widest font-bold border ${
@@ -104,6 +113,31 @@ export default function EconomicEngineCard() {
           {snap.stabilization_reached ? "Stabilized" : "Burning down"}
         </span>
       </div>
+
+      {/* Credits standard strip — universal utility unit. */}
+      {c.coin_to_credits_ratio && c.usd_to_credits_ratio && (
+        <div
+          className="rounded-lg bg-black/30 border border-fuchsia-500/15 px-3 py-2 mb-4 flex flex-wrap items-center justify-between gap-2 text-[11px]"
+          data-testid="economic-engine-credits-strip"
+        >
+          <span className="font-mono uppercase tracking-widest text-[9px] text-purple-300/70 font-bold">
+            Credits · Standard Utility Unit
+          </span>
+          <div className="flex items-center gap-3 font-mono text-purple-100">
+            <span>
+              1 Coin = <b className="text-fuchsia-300">{c.coin_to_credits_ratio} Credits</b>
+            </span>
+            <span className="text-purple-400/40">·</span>
+            <span>
+              $1 = <b className="text-fuchsia-300">{c.usd_to_credits_ratio} Credits</b>
+            </span>
+            <span className="text-purple-400/40">·</span>
+            <span>
+              10 Credits = <b className="text-fuchsia-300">$0.10</b>
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Progress bar */}
       <div className="mb-5">
@@ -137,7 +171,7 @@ export default function EconomicEngineCard() {
         <StatTile
           label="Burn rate (live)"
           value={`${burnPct}%`}
-          suffix={`max ${(c.initial_burn_rate * 100).toFixed(0)}% · min ${(c.minimum_burn_rate * 100).toFixed(1)}%`}
+          suffix={`max ${(c.initial_burn_rate * 100).toFixed(1)}% · floor ${(c.minimum_burn_rate * 100).toFixed(1)}%`}
           icon={Flame}
           accent="text-orange-300"
           testid="economic-engine-burn-rate"
@@ -182,8 +216,14 @@ export default function EconomicEngineCard() {
             {(c.initial_burn_rate - c.minimum_burn_rate).toFixed(3)} × progress)
           </p>
           <p className="text-purple-300/50 mt-1.5">
-            Revenue split: {(c.revenue_split_ratio * 100).toFixed(0)}% buyback+burn ·{" "}
-            {(100 - c.revenue_split_ratio * 100).toFixed(0)}% USD liquidity floor.
+            Revenue split — global revenue from{" "}
+            <b className="text-purple-200">
+              {(c.global_revenue_sources || ["Rides", "Restaurants", "Gaming"]).join(" · ")}
+            </b>{" "}
+            — {(c.revenue_split_ratio * 100).toFixed(0)}% Buyback &amp; Burn (active market
+            purchases, drives price) ·{" "}
+            {(100 - c.revenue_split_ratio * 100).toFixed(0)}% Liquidity Injection (strengthens
+            the pool, protects against volatility).
           </p>
         </div>
       </details>

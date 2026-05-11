@@ -5675,30 +5675,63 @@ def test_offline_service_worker_versioned():
 # ═══════════════════════════════════════════════════════════════════════
 
 def test_economic_engine_constants_match_spec():
-    """Spec-locked constants from the Economic Engine PDF must not drift."""
+    """Definitive Economy May-2026 spec-locked constants. Spec drift fails CI."""
     from services import dsg_economic_engine as engine
     assert engine.INITIAL_SUPPLY == 3_000_000_000
     assert engine.STABILIZATION_TARGET_SUPPLY == 1_500_000_000
     assert engine.GOLDEN_ASSET_SUPPLY == 750_000_000
-    assert engine.INITIAL_BURN_RATE == 0.04
+    # Definitive Economy raised initial burn 4% → 5% and spread 0.035 → 0.045.
+    assert engine.INITIAL_BURN_RATE == 0.05
     assert engine.MINIMUM_BURN_RATE == 0.005
+    assert engine.BURN_RATE_SPREAD == pytest.approx(0.045, abs=1e-9)
     assert engine.REVENUE_SPLIT_RATIO == 0.50
     assert engine.DEFAULT_UTILITY_COST_USD == 10.00
-    assert engine.PARITY_USD == 1.00
+    # Definitive Economy: 1 Coin = 10 Credits, $1 = 100 Credits → 1 Coin = $0.10.
+    assert engine.PARITY_USD == 0.10
+    assert engine.COIN_TO_CREDITS_RATIO == 10
+    assert engine.USD_TO_CREDITS_RATIO == 100
 
 
 def test_economic_engine_burn_rate_curve_endpoints():
-    """Burn-rate curve: 4% at 3B, 0.5% at 1.5B (and below)."""
+    """Burn-rate curve: 5% at 3B, 0.5% at 1.5B (and below). Linear midpoint."""
     from services.dsg_economic_engine import calculate_dynamic_burn_rate
     # Spec endpoints.
-    assert calculate_dynamic_burn_rate(3_000_000_000) == 0.04
+    assert calculate_dynamic_burn_rate(3_000_000_000) == 0.05
     assert calculate_dynamic_burn_rate(1_500_000_000) == 0.005
-    # Below target → floored at minimum.
+    # Below floor → clamped at minimum.
     assert calculate_dynamic_burn_rate(500_000_000) == 0.005
     assert calculate_dynamic_burn_rate(0) == 0.005
-    # Linear midpoint: 2.25B → halfway between min + max.
+    # Linear midpoint: 2.25B → halfway between min + max → 0.005 + 0.0225 = 0.0275.
     midpoint = calculate_dynamic_burn_rate(2_250_000_000)
-    assert midpoint == 0.0225, f"midpoint expected 0.0225 got {midpoint}"
+    assert midpoint == 0.0275, f"midpoint expected 0.0275 got {midpoint}"
+
+
+def test_economic_engine_credits_conversion_helpers():
+    """Definitive Economy Credits Standard Utility Unit conversion."""
+    from services.dsg_economic_engine import (
+        coins_to_credits, credits_to_coins,
+        usd_to_credits, credits_to_usd,
+        process_conversion,
+    )
+    # 1 Coin = 10 Credits
+    assert coins_to_credits(1) == 10
+    assert credits_to_coins(10) == 1
+    # $1 = 100 Credits
+    assert usd_to_credits(1) == 100
+    assert credits_to_usd(100) == 1
+    # 10 Credits = $0.10
+    assert credits_to_usd(10) == 0.10
+    # process_conversion full row
+    row = process_conversion(10)
+    assert row["coin_amount"] == 10
+    assert row["credits"] == 100      # 10 Coins × 10
+    assert row["value_usd"] == 1.0    # 10 Coins × $0.10
+    # Reject negative inputs.
+    try:
+        coins_to_credits(-1)
+        assert False, "coins_to_credits must reject negative"
+    except ValueError:
+        pass
 
 
 def test_economic_engine_revenue_split_50_50():
@@ -5719,10 +5752,10 @@ def test_economic_engine_revenue_split_50_50():
 def test_economic_engine_dynamic_price_formula():
     """Dynamic pricing — $10 ride is always $10 regardless of coin price."""
     from services.dsg_economic_engine import calculate_dynamic_price
-    # At parity → 10 coins for $10.
+    # At Definitive parity ($0.10/coin) → 100 coins for $10.
+    assert calculate_dynamic_price(10.0, 0.10) == 100.0
+    # Coin at $1 → 10 coins for $10.
     assert calculate_dynamic_price(10.0, 1.0) == 10.0
-    # Coin at $2 → 5 coins for $10.
-    assert calculate_dynamic_price(10.0, 2.0) == 5.0
     # Coin at $0.50 → 20 coins for $10.
     assert calculate_dynamic_price(10.0, 0.50) == 20.0
     # Reject non-positive coin price.
@@ -5744,6 +5777,7 @@ def test_economic_engine_routes_registered():
         "/api/economic-engine/dynamic-price",
         "/api/economic-engine/process-revenue",
         "/api/economic-engine/events",
+        "/api/economic-engine/convert",
     ]:
         assert ep in paths, f"Economic Engine endpoint missing: {ep}"
 
@@ -5777,3 +5811,66 @@ def test_economic_engine_card_and_page_mounted():
 
     misc = open("/app/frontend/src/routes/miscRoutes.tsx").read()
     assert '"/economic-engine"' in misc
+
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# 2026-05-13 — Definitive Economy positioning (visible app-wide)
+# ═══════════════════════════════════════════════════════════════════════
+
+def test_definitive_economy_positioning_app_wide():
+    """The Definitive Economy spec must show through in EVERY user surface
+    that mentions tokenomics — landing tour video, narration script,
+    feature accordions, economic engine card + page. Spec drift fails."""
+    # 1. EconomicEngineCard: Credits strip + Global Value Parity headline.
+    card = open("/app/frontend/src/components/economic_engine/EconomicEngineCard.tsx").read()
+    assert "economic-engine-credits-strip" in card
+    assert "Global Value Parity" in card
+    assert "Standard Utility Unit" in card
+    assert "Rising price" in card and "Constant scarcity" in card
+
+    # 2. EconomicEnginePage: Definitive Economy mission copy.
+    page = open("/app/frontend/src/pages/EconomicEnginePage.tsx").read()
+    assert "premium standard" in page
+    assert "rising price floor" in page
+    assert "constant scarcity" in page
+    assert "Rides" in page and "Restaurants" in page and "Gaming" in page
+
+    # 3. Landing tour video caption: new economy line replacing hard-cap copy.
+    tour = open("/app/frontend/src/components/landing/LandingTourVideo.tsx").read()
+    assert "Buyback" in tour
+    assert "1 Coin = 10 Credits" in tour
+
+    # 4. Narration script reflects new burn rate + Credits standard.
+    narration = open("/app/backend/scripts/generate_landing_tour_narration.py").read()
+    assert "Five percent dynamic burn rate" in narration
+    assert "fifty-fifty" in narration
+    assert "Credits standard" in narration
+    assert "One coin equals ten Credits" in narration
+
+    # 5. LandingFeatureAccordions tokenomics card uses Definitive Economy rate.
+    acc = open("/app/frontend/src/components/landing/LandingFeatureAccordions.tsx").read()
+    assert "Definitive Economy rate" in acc
+    assert "10 Coins = $1 USD = 100 Credits" in acc
+    # Legacy "2,000 ₵ = $1" must be gone.
+    assert "2,000 ₵" not in acc
+
+
+def test_definitive_economy_convert_endpoint_round_trips():
+    """`/api/economic-engine/convert` must produce a consistent 3-unit row."""
+    from services.dsg_economic_engine import (
+        coins_to_credits, credits_to_coins,
+        usd_to_credits, credits_to_usd,
+        PARITY_USD, COIN_TO_CREDITS_RATIO, USD_TO_CREDITS_RATIO,
+    )
+    # Spec example: 10 Coins = 100 Credits = $1.00
+    assert coins_to_credits(10) == 100
+    assert credits_to_usd(100) == 1.00
+    # Round-trip identity (no precision loss within 6dp).
+    for n in (0, 1, 10, 100, 1000):
+        assert credits_to_coins(coins_to_credits(n)) == n
+        assert credits_to_usd(usd_to_credits(n)) == n
+    # Definitive Economy invariant: parity == 1 / coin_to_credits × usd_to_credits / 100.
+    derived_parity = (USD_TO_CREDITS_RATIO / COIN_TO_CREDITS_RATIO) ** -1 * 1.0
+    # i.e., USD per coin = 10 / 100 = 0.10
+    assert round(COIN_TO_CREDITS_RATIO / USD_TO_CREDITS_RATIO, 4) == PARITY_USD

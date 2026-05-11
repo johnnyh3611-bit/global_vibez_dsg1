@@ -1,5 +1,39 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-05-13 (Pre-redeploy v2) — Definitive Economy installed app-wide 🎯💎.** Founder uploaded `Global_Vibez_DSG_Definitive_Economy.pdf` with: "this information I need you to put throughout the app and get it done. And if you need to change the commercial to make sure everything fit, if this is not included into that information, add that." Executed end-to-end:
+>
+> **Constants reset to Definitive Economy May-2026 spec** (`services/dsg_economic_engine.py`):
+> - `INITIAL_BURN_RATE` 4 % → **5 %** (calibrated to a premium standard)
+> - `BURN_RATE_SPREAD` 0.035 → **0.045** (steeper curve toward the floor)
+> - `PARITY_USD` $1.00 → **$0.10** (re-derived from the spec's conversion table: 1 Coin = 10 Credits AND $1 = 100 Credits ⇒ 1 Coin = $0.10)
+> - `COIN_TO_CREDITS_RATIO = 10` (new — Credits is the **Standard Utility Unit**)
+> - `USD_TO_CREDITS_RATIO = 100` (new — $0.01 = 1 Credit)
+> - Added `GLOBAL_REVENUE_SOURCES = ["Rides", "Restaurants", "Gaming"]`
+> - Added `protocol_version = "Definitive Economy · May 2026"` stamp on every snapshot
+>
+> **Credits conversion helpers** (`services/dsg_economic_engine.py`): `coins_to_credits`, `credits_to_coins`, `usd_to_credits`, `credits_to_usd`, `process_conversion(coin_amount)` returning the full {coins, credits, usd} row. New endpoint `GET /api/economic-engine/convert?coins=10|credits=100|usd=1` returns the equivalent value in all three units in one shot — pass exactly one of the three and it computes the other two at the live parity rate.
+>
+> **Frontend surfaces updated**:
+> - **`EconomicEngineCard.tsx`**: new headline ("DSG Economic Engine · Global Value Parity" + "Vibez Coin · $0.10 floor · Rising price · Constant scarcity"), new `protocol_version` stamp, new Credits Standard Utility Unit strip ("1 Coin = 10 Credits · $1 = 100 Credits · 10 Credits = $0.10"). Burn-rate suffix changed from "max 4 % · min 0.5 %" → "max 5.0 % · floor 0.5 %". Formula reference body rewritten to spell out the new revenue language: "Buyback & Burn (active market purchases, drives price)" + "Liquidity Injection (strengthens the pool, protects against volatility)", with global revenue sources Rides · Restaurants · Gaming inline.
+> - **`EconomicEnginePage.tsx`** (public `/economic-engine`): mission paragraph rewritten to lead with "premium standard · rising price floor · constant scarcity"; the 4 pillars rewritten — Dual-Asset Shield mentions Credits + $0.10 floor parity; Dynamic Burn opens with "At 3 B supply we burn 5 %" and references "1.5 B stabilization floor"; 50/50 split section now reads "Global revenue from Rides · Restaurants · Gaming" with the active-market-purchase + pool-strengthening language; Dynamic Utility Pricing closes with "1 Coin = 10 Credits. $1 USD = 100 Credits."
+> - **Commercial / Landing tour narration script** (`backend/scripts/generate_landing_tour_narration.py`): the economy paragraph rewritten end-to-end to match the new spec — "three billion VIBEZ coins, burning down to one-point-five billion · five percent dynamic burn rate, dropping to zero-point-five · fee dollar splits fifty-fifty: half buys back and burns, half strengthens the liquidity pool · One coin equals ten Credits · One dollar equals one hundred Credits." (Original Sovereign Tax + Solana bridge lines preserved.)
+> - **Landing tour video caption** (`LandingTourVideo.tsx` at t=88s): swapped legacy "3 BILLION VIBEZ · hard-capped" copy for "3 B VIBEZ burning to 1.5 B · 50/50 Buyback & Liquidity · 13.5 % Sovereign Tax · 1 Coin = 10 Credits."
+> - **Legacy LandingFeatureAccordions tokenomics card** (`LandingFeatureAccordions.tsx`): replaced the obsolete "Locked rate: 2,000 ₵ = $1 USD" line with the new Definitive Economy rate: "10 Coins = $1 USD = 100 Credits · 1 Coin = 10 Credits".
+>
+> **Verified live via curl + screenshot**:
+> - `GET /constants` returns 5 % initial burn + 0.5 % floor + parity 0.10 + coin/usd → credits ratios + Rides/Restaurants/Gaming revenue sources + "Definitive Economy · May 2026" version stamp.
+> - `GET /convert?coins=10` → `{coins:10, credits:100, usd:1.0}` ✅
+> - `GET /convert?usd=10` → `{coins:100, credits:1000, usd:10.0}` ✅
+> - `GET /burn-rate?supply=3000000000` → 5 % ✅
+> - `GET /burn-rate?supply=2250000000` (midpoint) → 2.75 % ✅ (linear: 0.005 + 0.045 × 0.5)
+> - `GET /burn-rate?supply=1500000000` → 0.5 % ✅ (floor)
+> - `/economic-engine` page screenshot: all 14 testids render, Credits strip visible, burn tile shows 5.00 %, pillars contain Rides/Restaurants/Gaming + $0.10 floor.
+>
+> **🔒 Regression Shield: 283/283 GREEN** (+3 new locks vs the previous 280: `test_economic_engine_credits_conversion_helpers`, `test_definitive_economy_positioning_app_wide` — asserts the new copy across card, page, landing tour caption, narration script, and legacy tokenomics accordion — `test_definitive_economy_convert_endpoint_round_trips`). The 4 earlier Economic Engine tests were updated in-place to match the new 5 % / 0.045 spread / $0.10 parity / 0.0275 midpoint constants. Spec drift fails CI.
+>
+> **Status: 🟢 DEFINITIVE ECONOMY IS IN THE SYSTEM AND VISIBLE EVERYWHERE. Safe to redeploy.**
+
+
 > **2026-05-13 (Pre-redeploy) — DSG Economic Engine encoded into the system 💰⚙️.** Founder uploaded `Global_Vibez_DSG_Economic_Engine.pdf` and asked: "Last thing before I deploy, I wanna put this in the system to make sure that we have it." Done — full spec is now live and auditable:
 >
 > **Backend** (`services/dsg_economic_engine.py` + `routes/economic_engine.py`):

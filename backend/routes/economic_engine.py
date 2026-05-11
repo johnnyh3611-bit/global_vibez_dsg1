@@ -54,6 +54,56 @@ async def get_constants() -> Dict[str, Any]:
         "revenue_split_ratio": engine.REVENUE_SPLIT_RATIO,
         "default_utility_cost_usd": engine.DEFAULT_UTILITY_COST_USD,
         "parity_usd": engine.PARITY_USD,
+        "coin_to_credits_ratio": engine.COIN_TO_CREDITS_RATIO,
+        "usd_to_credits_ratio": engine.USD_TO_CREDITS_RATIO,
+        "global_revenue_sources": ["Rides", "Restaurants", "Gaming"],
+        "protocol_version": "Definitive Economy · May 2026",
+    }
+
+
+@router.get("/convert")
+async def convert(
+    coins: Optional[float] = Query(default=None, ge=0),
+    credits: Optional[float] = Query(default=None, ge=0),
+    usd: Optional[float] = Query(default=None, ge=0),
+) -> Dict[str, Any]:
+    """
+    Definitive Economy Credits conversion helper. Pass exactly ONE of
+    `coins`, `credits`, or `usd` — get the equivalent value in all three
+    units at $1.00 parity.
+
+    Examples:
+      /convert?coins=1   →  {coins:1,   credits:10,  usd:1.00}
+      /convert?credits=500 → {coins:50, credits:500, usd:5.00}
+      /convert?usd=10    →  {coins:10,  credits:1000, usd:10.00}
+    """
+    provided = [v for v in (coins, credits, usd) if v is not None]
+    if len(provided) != 1:
+        raise HTTPException(
+            status_code=400,
+            detail="Pass exactly one of `coins`, `credits`, or `usd`.",
+        )
+    if coins is not None:
+        out_coins = coins
+        out_credits = engine.coins_to_credits(coins)
+        out_usd = round(coins * engine.PARITY_USD, 6)
+    elif credits is not None:
+        out_credits = credits
+        out_coins = engine.credits_to_coins(credits)
+        out_usd = engine.credits_to_usd(credits)
+    else:
+        out_usd = usd  # type: ignore[assignment]
+        out_credits = engine.usd_to_credits(usd)  # type: ignore[arg-type]
+        out_coins = round(out_credits / engine.COIN_TO_CREDITS_RATIO, 6)
+    return {
+        "coins": round(out_coins, 6),
+        "credits": round(out_credits, 6),
+        "usd": round(out_usd, 6),
+        "rates": {
+            "coin_to_credits": engine.COIN_TO_CREDITS_RATIO,
+            "usd_to_credits": engine.USD_TO_CREDITS_RATIO,
+            "parity_usd": engine.PARITY_USD,
+        },
     }
 
 
