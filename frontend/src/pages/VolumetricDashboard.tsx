@@ -28,6 +28,7 @@ import { ArrowLeft, Sparkles } from "lucide-react";
 import { authFetch } from "@/utils/secureAuth";
 import LiveActivityTicker from "@/components/common/LiveActivityTicker";
 import { switchDashboardView } from "@/pages/DashboardRouter";
+import UnifiedEarningsWidget from "@/components/common/UnifiedEarningsWidget";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -529,6 +530,13 @@ export default function VolumetricDashboard() {
         <div className="text-[10px] uppercase tracking-widest text-white/40 hidden md:block">
           {selectedIndex === null ? "Tap a planet to dive in" : "Tap planet again to exit · drag to orbit"}
         </div>
+      </div>
+
+      {/* 💸 Unified Earnings widget — floats bottom-left over the canvas.
+          Auto-hides if user has no income / venues / streams so first-time
+          guests aren't confused. Compact variant to keep the galaxy hero. */}
+      <div className="absolute bottom-16 left-3 z-20 w-72 max-w-[calc(100vw-1.5rem)] pointer-events-auto">
+        <UnifiedEarningsWidget compact />
       </div>
 
       {/* The R3F canvas */}

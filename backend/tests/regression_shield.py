@@ -5108,3 +5108,50 @@ def test_vibe_venues_host_dashboard_wired():
     assert '"host"' in role
     assert '/vibe-venues/host-dashboard' in role
 
+
+
+def test_unified_earnings_widget_wired():
+    """2026-05-12 founder ask: 'unified earnings widget on the main
+    dashboard that rolls up income across every role you wear.'
+
+    Locks:
+      - GET /api/me/unified-earnings exists, 401 for anonymous.
+      - Returns rollup of 4 roles (driver/host/merchant/streamer) with
+        lifetime + last_7d windows.
+      - Widget component mounted on BOTH Classic + Volumetric dashboards.
+      - Auto-hides for guests / zero-income accounts (no noise).
+    """
+    from server import app
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    assert "/api/me/unified-earnings" in paths, "unified-earnings endpoint missing"
+
+    backend = open("/app/backend/routes/unified_earnings.py").read()
+    assert "STREAMER_GIFT_SHARE = 0.70" in backend, "streamer share must mirror StreamerDashboard's 70%"
+    # 4 role aggregators present.
+    for fn in ["_driver_totals", "_host_totals", "_merchant_totals", "_streamer_totals"]:
+        assert f"async def {fn}" in backend, f"role aggregator missing: {fn}"
+    # 7d cutoff helper.
+    assert "_iso_now_minus(7)" in backend
+
+    widget = open("/app/frontend/src/components/common/UnifiedEarningsWidget.tsx").read()
+    for tid in [
+        "unified-earnings-widget",
+        "unified-earnings-total",
+        "unified-earnings-roles",
+        "unified-earnings-window-7d",
+        "unified-earnings-window-lifetime",
+        "unified-earnings-chip-driver",
+        "unified-earnings-chip-host",
+        "unified-earnings-chip-merchant",
+        "unified-earnings-chip-streamer",
+    ]:
+        assert tid in widget, f"UnifiedEarningsWidget missing testid: {tid}"
+    # Self-hiding rule for zero-state accounts so we don't pollute the
+    # dashboard for brand-new users.
+    assert "allZero" in widget
+
+    classic = open("/app/frontend/src/pages/DashboardNew.tsx").read()
+    assert "UnifiedEarningsWidget" in classic, "widget must mount on classic dashboard"
+    vol = open("/app/frontend/src/pages/VolumetricDashboard.tsx").read()
+    assert "UnifiedEarningsWidget" in vol, "widget must mount on volumetric dashboard"
+

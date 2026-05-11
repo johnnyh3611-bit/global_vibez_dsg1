@@ -23,6 +23,7 @@ import NotificationBanner from '@/components/NotificationBanner';
 import ChairHolderVoteBanner from '@/components/dashboard/ChairHolderVoteBanner';
 import RideHomeButton from '@/components/common/RideHomeButton';
 import { switchDashboardView } from '@/pages/DashboardRouter';
+import UnifiedEarningsWidget from '@/components/common/UnifiedEarningsWidget';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -541,6 +542,14 @@ export default function Dashboard() {
             Choose your destination in the Global Vibez DSG universe
           </p>
         </motion.div>
+
+        {/* 💸 Unified Earnings widget — auto-hides if user has zero income
+            across every role and zero properties / streams. Surfaces income
+            roll-up so multi-role users (driver + host + merchant + streamer)
+            see one number instead of hunting between dashboards. */}
+        <div className="max-w-3xl mx-auto mb-8">
+          <UnifiedEarningsWidget />
+        </div>
 
         {/* 🌌 Volumetric preview banner — founder ask 2026-05-12 ("build it
             first to see what it looks like; if I don't like it, take it

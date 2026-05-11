@@ -807,3 +807,7 @@ def _register_hungryvibes_smartstack(api_router) -> None:
     api_router.include_router(smartstack_router)
     api_router.include_router(smartstack_admin_router)
     api_router.include_router(hungryvibes_orders_router)
+
+    # 2026-05-12 — unified earnings rollup powering the main-dashboard widget.
+    from routes.unified_earnings import router as unified_earnings_router  # noqa: PLC0415
+    api_router.include_router(unified_earnings_router)
