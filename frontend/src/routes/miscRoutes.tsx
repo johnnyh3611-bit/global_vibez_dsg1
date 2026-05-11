@@ -8,6 +8,9 @@ import Referral from "@/pages/Referral";
 import CreditsWallet from "@/pages/CreditsWallet";
 import Wallet from "@/pages/Wallet";
 import PricingPage from "@/pages/PricingPage";
+import SovereignTiers from "@/pages/SovereignTiers";
+import UndergroundLive from "@/pages/UndergroundLive";
+import ReceiptsPage from "@/pages/ReceiptsPage";
 import PaymentSuccess from "@/pages/PaymentSuccess";
 import PaymentCancel from "@/pages/PaymentCancel";
 import CelebrationDemo from "@/pages/CelebrationDemo";
@@ -67,8 +70,12 @@ export const miscRoutes = (ProtectedRoute) => (
     <Route path="/referral" element={<ProtectedRoute><Referral /></ProtectedRoute>} />
     <Route path="/wallet-legacy" element={<ProtectedRoute><CreditsWallet /></ProtectedRoute>} />
     <Route path="/wallet" element={<ProtectedRoute><Wallet /></ProtectedRoute>} />
-    <Route path="/pricing" element={<ProtectedRoute><PricingPage /></ProtectedRoute>} />
-    <Route path="/upgrade" element={<ProtectedRoute><PricingPage /></ProtectedRoute>} />
+    <Route path="/pricing" element={<ProtectedRoute><SovereignTiers /></ProtectedRoute>} />
+    <Route path="/upgrade" element={<ProtectedRoute><SovereignTiers /></ProtectedRoute>} />
+    <Route path="/tiers" element={<ProtectedRoute><SovereignTiers /></ProtectedRoute>} />
+    <Route path="/pricing-legacy" element={<ProtectedRoute><PricingPage /></ProtectedRoute>} />
+    <Route path="/underground-live" element={<ProtectedRoute><UndergroundLive /></ProtectedRoute>} />
+    <Route path="/receipts" element={<ProtectedRoute><ReceiptsPage /></ProtectedRoute>} />
     <Route path="/payment/success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
     <Route path="/payment/cancel" element={<ProtectedRoute><PaymentCancel /></ProtectedRoute>} />
 

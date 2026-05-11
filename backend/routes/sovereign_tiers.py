@@ -28,6 +28,29 @@ from utils.database import get_database, get_current_user
 router = APIRouter()
 
 
+# ─── PRICING MATH (2026-05-12 founder ask: "best for me AND for users") ───
+# Curve: each step is ~2× price for ~2× perceived value. Middle tier is
+# anchored as the obvious sweet spot. Whales get a non-trivial Sovereign
+# delta so the ceiling never feels capped. Genius Chair (one-time $20)
+# is the long-tail asset play — "subscribers consume, owners hold".
+#
+# Annual = 2 months free (16.67% off, not 20% — protects margin while
+# still feeling like a real discount). Frontend renders `price_usd_year`
+# as the headline annual figure.
+#
+# Featured/popular_anchor toggles let the frontend highlight Tastemaker
+# without hard-coding which tier is "MOST POPULAR".
+
+ANNUAL_DISCOUNT_PCT = 16.67  # 2 months free
+
+
+def _annual(price_usd: int) -> int:
+    """Compute the annual price applying the 2-months-free discount."""
+    if not price_usd:
+        return 0
+    return int(round(price_usd * 12 * (1 - ANNUAL_DISCOUNT_PCT / 100)))
+
+
 # Ordered, lowest → highest. Each tier lists ONLY the deltas vs the
 # tier below it (the frontend renders cumulative perks).
 TIERS: List[Dict[str, Any]] = [
@@ -36,9 +59,11 @@ TIERS: List[Dict[str, Any]] = [
         "label": "Guest",
         "type_of_premium": "exploring",
         "price_usd": 0,
+        "price_usd_year": 0,
         "interval": None,
         "stripe_price_env": None,
         "tagline": "Try the floor before you take a seat.",
+        "popular_anchor": False,
         "perks": [
             "All public rooms",
             "₵50 daily allowance",
@@ -48,29 +73,36 @@ TIERS: List[Dict[str, Any]] = [
     {
         "id": "insider",
         "label": "Insider",
-        "type_of_premium": "Access Premium · you skip the door fee",
-        "price_usd": 10,
+        "type_of_premium": "Starter Premium · you skip the door fee",
+        "price_usd": 9,
+        "price_usd_year": _annual(9),
         "interval": "month",
         "stripe_price_env": "STRIPE_PRICE_INSIDER",
         "tagline": "You're in the room.",
+        "popular_anchor": False,
+        "trial_intro_usd": 1,  # first-month $1 trial — funnel hook
         "perks": [
-            "₵250 daily allowance",
+            "₵250 daily allowance (5× Guest)",
             "5% bonus on every wallet top-up",
             "No pre-game ads",
-            "2% maintenance fee",
+            "2% maintenance fee (33% lower)",
             "Premium badge in chat",
             "Daily Puzzle hint preview",
+            "First month $1 · cancel anytime",
         ],
     },
     {
         "id": "tastemaker",
         "label": "Tastemaker",
         "type_of_premium": "Influence Premium · you shape the rooms",
-        "price_usd": 20,
+        "price_usd": 19,
+        "price_usd_year": _annual(19),
         "interval": "month",
         "stripe_price_env": "STRIPE_PRICE_TASTEMAKER",
         "tagline": "You set the rhythm.",
+        "popular_anchor": True,  # ANCHOR — frontend marks "MOST POPULAR"
         "perks": [
+            "₵750 daily allowance (15× Guest)",
             "Private room invites",
             "10% bonus on every winning bet",
             "Custom username color",
@@ -84,37 +116,43 @@ TIERS: List[Dict[str, Any]] = [
         "id": "royal",
         "label": "Royal",
         "type_of_premium": "Elevated Premium · you walk the velvet rope",
-        "price_usd": 29,
+        "price_usd": 39,
+        "price_usd_year": _annual(39),
         "interval": "month",
         "stripe_price_env": "STRIPE_PRICE_ROYAL",
         "tagline": "Doors open before you ask.",
+        "popular_anchor": False,
         "perks": [
             "The Underground without the ₵5k floor",
             "Voice-coach across every game room",
             "Highlight reels auto-saved to your gallery",
             "0% maintenance fee on top-ups",
             "Direct line to Lou (AI host)",
-            "₵500/mo VibeRidez ride credit",
+            "₵500/mo VibeRidez ride credit ($5 retail)",
             "Custom landing-page tour audio (when i18n unlocks)",
+            "15% Owner Fee Reduction on Sports Lounge wins",
         ],
     },
     {
         "id": "sovereign",
         "label": "Sovereign",
         "type_of_premium": "Sovereign Premium · everything, every room",
-        "price_usd": 65,
+        "price_usd": 89,
+        "price_usd_year": _annual(89),
         "interval": "month",
         "stripe_price_env": "STRIPE_PRICE_SOVEREIGN",
         "tagline": "Unlock the whole floor.",
+        "popular_anchor": False,
         "perks": [
-            "DSG 6 Lottery: free daily ticket (1/day)",
-            "Sports Lounge: ₵100 free-stake credit weekly",
+            "DSG 6 Lottery: free daily ticket (1/day · ~$60/mo retail)",
+            "Sports Lounge: ₵250 free-stake credit weekly",
             "All Cinema Room admin previews (unreleased films)",
             "2× rewards on Vibe Check correct reports",
             "Permanent custom name + emoji prefix in chat",
             "Founder Mailbox · direct DM to the founder",
             "Beta feature flag — opt in to everything pre-launch",
             "SOVEREIGN status badge across every room",
+            "Bridge bonus 1.5× → 1.75× on ₵→DSG conversion",
             "ALL Royal · Tastemaker · Insider perks included",
         ],
     },
@@ -123,10 +161,12 @@ TIERS: List[Dict[str, Any]] = [
         "label": "Genius Chair",
         "type_of_premium": "Ownership Premium · you own a piece",
         "price_usd": 20,
+        "price_usd_year": 0,  # one-time
         "interval": "one_time",
         "supply_cap": 50_000,
         "stripe_price_env": "STRIPE_PRICE_GENIUS_CHAIR",
         "tagline": "Lifetime asset · subscribers consume, owners hold.",
+        "popular_anchor": False,
         "perks": [
             "ALL Sovereign perks for life (no recurring fee)",
             "2× voting weight in Vibe Check consensus",
@@ -134,6 +174,7 @@ TIERS: List[Dict[str, Any]] = [
             "Custom emissive gold name badge",
             "Future TGE airdrop allocation",
             "Tradeable on secondary market once supply caps",
+            "Break-even vs Sovereign in ~9 weeks · pure upside after",
         ],
     },
 ]
@@ -148,7 +189,12 @@ class SubscribePayload(BaseModel):
 async def catalog():
     """Public read of every tier + perks. The frontend renders this as
     the /pricing page."""
-    return {"count": len(TIERS), "tiers": TIERS}
+    return {
+        "count": len(TIERS),
+        "tiers": TIERS,
+        "annual_discount_pct": ANNUAL_DISCOUNT_PCT,
+        "annual_discount_label": "2 months free",
+    }
 
 
 @router.get("/tiers/me")

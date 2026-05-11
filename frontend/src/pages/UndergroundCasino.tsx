@@ -30,6 +30,7 @@ const TABLES = [
   { id: "three-card-poker", label: "Garnet 3-Card", path: "/three-card-poker", icon: Heart, sub: "₵5k ante · pair-plus on" },
   { id: "vibez-654", label: "Obsidian 654", path: "/vibez-654", icon: Crown, sub: "₵5k stake · max 12 score" },
   { id: "lottery", label: "Quantum Vault", path: "/lottery", icon: Diamond, sub: "Multi-ticket bundles" },
+  { id: "live-network", label: "Underground Live", path: "/underground-live", icon: Crown, sub: "Music & dance battles · crowd judge" },
 ];
 
 export default function UndergroundCasino() {

@@ -145,6 +145,7 @@ import HttpMultiplayerChess from "@/pages/games/HttpMultiplayerChess";
 import SportsLounge from "@/pages/SportsLounge";
 import AdminCinemaCatalog from "@/pages/AdminCinemaCatalog";
 import PricingTiers from "@/pages/PricingTiers";
+import SovereignTiers from "@/pages/SovereignTiers";
 import VibeWallet from "@/pages/VibeWallet";
 import CommunitySlots from "@/pages/CommunitySlots";
 import SmartTables from "@/pages/SmartTables";
@@ -396,9 +397,10 @@ export const gamesRoutes = (ProtectedRoute) => (
     {/* Admin Cinema Catalog CRUD (May 2026) */}
     <Route path="/admin/cinema-catalog" element={<ProtectedRoute><AdminCinemaCatalog /></ProtectedRoute>} />
 
-    {/* Sovereign Tiers — 5-tier premium pricing page (May 2026) */}
-    <Route path="/pricing" element={<PricingTiers />} />
-    <Route path="/tiers" element={<Navigate to="/pricing" replace />} />
+    {/* Sovereign Tiers — math-anchored 6-tier premium pricing page (May 2026 rework) */}
+    <Route path="/pricing" element={<ProtectedRoute><SovereignTiers /></ProtectedRoute>} />
+    <Route path="/tiers" element={<ProtectedRoute><SovereignTiers /></ProtectedRoute>} />
+    <Route path="/pricing-legacy" element={<PricingTiers />} />
     
     {/* AAA Casino Games - Updated to use WebSocket-enabled components */}
     <Route path="/practice/play/blackjack-aaa" element={<ProtectedRoute><BlackjackGameAAA /></ProtectedRoute>} />

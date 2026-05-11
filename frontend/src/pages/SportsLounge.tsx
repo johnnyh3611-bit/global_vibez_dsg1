@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Trophy, Loader2, TrendingUp, Tv } from "lucide-react";
 import { authFetch } from "@/utils/secureAuth";
+import VibeCheckReport from "@/components/sports/VibeCheckReport";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -166,6 +167,15 @@ export default function SportsLounge() {
                     <span className="font-black tabular-nums">{g.odds.draw.toFixed(2)}x</span>
                   </button>
                 )}
+                <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-end">
+                  <VibeCheckReport
+                    gameId={g.game_id}
+                    homeName={g.home.name}
+                    awayName={g.away.name}
+                    homeId={g.home.id}
+                    awayId={g.away.id}
+                  />
+                </div>
               </div>
             ))}
           </div>

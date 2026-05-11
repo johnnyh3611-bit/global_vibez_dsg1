@@ -4446,3 +4446,145 @@ def test_landing_tour_supports_multilanguage_manifest():
     # RTL captions for Arabic / Hebrew get `dir="rtl"`.
     assert 'dir={isRtl ? "rtl" : "ltr"}' in comp
 
+
+
+def test_integrity_protocol_routes_and_constants_locked():
+    """Sovereign Master Code §2 + Integrity Protocol PDF (May 2026).
+    Vibe Check parameters must stay locked: 10 reporters / 75% consensus
+    / 2× chair-holder weight / 5 ₵ reward / 3-strike ban with 10%-50%-perma
+    tax tiers. If any constant drifts the fraud-ban math goes off the rails."""
+    from server import app
+    from routes.integrity_protocol import VIBE_CHECK
+
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    for ep in [
+        "/api/integrity/report", "/api/integrity/resolve",
+        "/api/integrity/my-status", "/api/integrity/config",
+    ]:
+        assert ep in paths, f"Integrity endpoint missing: {ep}"
+
+    assert VIBE_CHECK["Min_Reporters"] == 10
+    assert VIBE_CHECK["Consensus_Threshold"] == 0.75
+    assert VIBE_CHECK["Genius_Chair_Weight"] == 2.0
+    assert VIBE_CHECK["Reward_Per_Correct_Report_Vibe"] == 5
+    assert VIBE_CHECK["Strike_1"]["tax_pct"] == 0.10
+    assert VIBE_CHECK["Strike_2"]["tax_pct"] == 0.50
+    assert VIBE_CHECK["Strike_3"]["permanent_ban"] is True
+
+    # Frontend widget wired into Sports Lounge.
+    sl = open("/app/frontend/src/pages/SportsLounge.tsx").read()
+    assert "VibeCheckReport" in sl, "Sports Lounge lost VibeCheckReport import"
+
+
+def test_sovereign_tiers_pricing_math_locked():
+    """2026-05-12 founder ask: math-anchored tier curve. Each step ~2× the
+    previous one's price for ~2× the perceived value. Tastemaker is the
+    single popular_anchor. Insider carries the $1 first-month trial.
+    Annual = 2 months free (16.67%). Any drift breaks the conversion math."""
+    from routes.sovereign_tiers import TIERS, ANNUAL_DISCOUNT_PCT
+    by_id = {t["id"]: t for t in TIERS}
+    assert by_id["insider"]["price_usd"] == 9
+    assert by_id["tastemaker"]["price_usd"] == 19
+    assert by_id["royal"]["price_usd"] == 39
+    assert by_id["sovereign"]["price_usd"] == 89
+    assert by_id["genius_chair"]["price_usd"] == 20
+    assert by_id["insider"].get("trial_intro_usd") == 1
+
+    anchors = [t for t in TIERS if t.get("popular_anchor")]
+    assert len(anchors) == 1 and anchors[0]["id"] == "tastemaker"
+    assert round(ANNUAL_DISCOUNT_PCT, 2) == 16.67
+
+    # Frontend renders the catalog with the expected testids.
+    page = open("/app/frontend/src/pages/SovereignTiers.tsx").read()
+    for tid in [
+        "sovereign-tiers-page", "tiers-grid",
+        "tiers-interval-month", "tiers-interval-year",
+        "tier-card-${t.id}", "tier-popular-${t.id}",
+        "tier-subscribe-${t.id}",
+    ]:
+        assert tid in page, f"SovereignTiers page missing testid: {tid}"
+
+
+def test_card_room_geometry_pdf_spec_locked():
+    """Implementation Guide PDF §2 §3 §5 (May 2026): card-room table
+    geometry must stay at 0.55 × 0.75 × 1.00, FOV 105, AI host yaw 135°.
+    Exposed as CSS custom properties so any Three.js scene can pick them
+    up via `getComputedStyle()`. Drift here breaks the AAA mobile
+    landscape preset across every card room at once."""
+    css = open("/app/frontend/src/index.css").read()
+    # CSS custom properties (PDF-locked).
+    for var, val in [
+        ("--gv-card-table-fov", "105"),
+        ("--gv-card-table-scale-x", "0.55"),
+        ("--gv-card-table-scale-y", "0.75"),
+        ("--gv-card-table-scale-z", "1.00"),
+        ("--gv-card-host-yaw-deg", "135"),
+    ]:
+        assert f"{var}: {val}" in css, f"Card room CSS var {var} drifted from PDF spec ({val})"
+    # Table mesh max-width = 55vw on desktop, max-height min(75vh, 600px).
+    assert "max-width: 55vw" in css
+    assert "max-height: min(75vh, 600px)" in css
+    # Trick-play area still offset −25px per PDF §2.
+    assert "translateY(-25px)" in css
+
+
+def test_p2_underground_live_routes_wired():
+    """P2 (May 2026): Underground Live Network — Music + Dance battles
+    with Crowd Judge. Endpoints must stay reachable so the UndergroundCasino
+    lobby tile never 404s."""
+    from server import app
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    for ep in [
+        "/api/underground-live/battles",
+        "/api/underground-live/active",
+        "/api/underground-live/vote",
+        "/api/underground-live/admin/seed",
+        "/api/underground-live/admin/close",
+    ]:
+        assert ep in paths, f"Underground Live endpoint missing: {ep}"
+    # Frontend page exists with the testids the testing agent checks.
+    page = open("/app/frontend/src/pages/UndergroundLive.tsx").read()
+    for tid in ["underground-live", "ul-active-battle", "ul-lineup", "ul-back"]:
+        assert tid in page, f"UndergroundLive missing testid: {tid}"
+    # Underground Casino lobby exposes the live-network tile.
+    ugc = open("/app/frontend/src/pages/UndergroundCasino.tsx").read()
+    assert "live-network" in ugc
+    assert "/underground-live" in ugc
+
+
+def test_p2_free_spectator_bet_routes_wired():
+    """P2 (May 2026): Free-stake spectator predictions. Bonus 5 ₵ per
+    correct call capped at 5/day. Helps engagement without inflating float."""
+    from server import app
+    from routes.spectator_bet import BONUS_PER_HIT, DAILY_BONUS_CAP
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    for ep in [
+        "/api/spectator-bet/place",
+        "/api/spectator-bet/settle",
+        "/api/spectator-bet/my-bets",
+        "/api/spectator-bet/leaderboard",
+    ]:
+        assert ep in paths, f"Spectator-bet endpoint missing: {ep}"
+    assert BONUS_PER_HIT == 5
+    assert DAILY_BONUS_CAP == 5
+
+
+def test_p2_receipt_ocr_routes_and_constants_locked():
+    """P2 (May 2026): Receipt OCR + 15% bonus + 30-day merchant boost.
+    Spec-locked constants — drift here breaks user economics."""
+    from server import app
+    from routes.receipts_ocr import BONUS_PCT, BOOST_DAYS, DAILY_RECEIPT_CAP
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    for ep in [
+        "/api/receipts/submit",
+        "/api/receipts/my-receipts",
+        "/api/receipts/merchant-boosts",
+    ]:
+        assert ep in paths, f"Receipts endpoint missing: {ep}"
+    assert BONUS_PCT == 0.15
+    assert BOOST_DAYS == 30
+    assert DAILY_RECEIPT_CAP == 5
+    # Frontend wired.
+    page = open("/app/frontend/src/pages/ReceiptsPage.tsx").read()
+    for tid in ["receipts-page", "receipts-form", "receipts-submit", "receipts-image-url"]:
+        assert tid in page, f"ReceiptsPage missing testid: {tid}"

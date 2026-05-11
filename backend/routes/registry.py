@@ -537,10 +537,31 @@ def register_all_routes(
 
     # Sovereign Tiers — 5-tier premium ladder (May 2026)
     try:
-        from routes.sovereign_tiers import router as sovereign_tiers_router
+        from routes.sovereign_tiers import router as sovereign_tiers_router  # noqa: PLC0415
         api_router.include_router(sovereign_tiers_router, tags=["tiers"])
     except Exception as _e:
         log.warning(f"Sovereign Tiers routes not mounted: {_e}")
+
+    # Underground Live Network — Music & Dance Battles + Crowd Judge (May 2026 P2)
+    try:
+        from routes.underground_live import router as underground_live_router  # noqa: PLC0415
+        api_router.include_router(underground_live_router, tags=["underground-live"])
+    except Exception as _e:
+        log.warning(f"Underground Live routes not mounted: {_e}")
+
+    # Free-Stake Spectator Betting (May 2026 P2)
+    try:
+        from routes.spectator_bet import router as spectator_bet_router  # noqa: PLC0415
+        api_router.include_router(spectator_bet_router, tags=["spectator-bet"])
+    except Exception as _e:
+        log.warning(f"Spectator-bet routes not mounted: {_e}")
+
+    # Receipt OCR + 15% Merchant Boost (May 2026 P2)
+    try:
+        from routes.receipts_ocr import router as receipts_ocr_router  # noqa: PLC0415
+        api_router.include_router(receipts_ocr_router, tags=["receipts"])
+    except Exception as _e:
+        log.warning(f"Receipt OCR routes not mounted: {_e}")
 
     try:
         from routes.cinema_room import router as cinema_room_router

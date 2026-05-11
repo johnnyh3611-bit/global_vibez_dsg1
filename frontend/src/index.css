@@ -367,22 +367,44 @@ body.gv-force-landscape {
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   CARD ROOM LAYOUT — Implementation Guide PDF §1-2.
+   CARD ROOM LAYOUT — Implementation Guide PDF §1-2 (locked spec).
    Apply via `.card-room-frame` on any multiplayer card room wrapper.
-   • Table is capped to 55vw × 75vh (so it never bleeds on landscape).
+   • Table geometry scale strictly 0.55 × 0.75 × 1.00 (PDF §2 §3).
    • Played-card stack offset toward center-top (+25px Y) to avoid
-     overlap with the player's hand.
-   • Player hand anchored to the bottom safe area.
+     overlap with the player's hand (PDF §2).
+   • Player hand anchored to the bottom safe area (PDF §5).
+   • CSS vars exposed so any Three.js scene can read:
+        --gv-card-table-fov         = 105
+        --gv-card-table-scale-x     = 0.55
+        --gv-card-table-scale-y     = 0.75
+        --gv-card-table-scale-z     = 1.00
+        --gv-card-host-yaw-deg      = 135
    ───────────────────────────────────────────────────────────────── */
+:root {
+  --gv-card-table-fov: 105;
+  --gv-card-table-scale-x: 0.55;
+  --gv-card-table-scale-y: 0.75;
+  --gv-card-table-scale-z: 1.00;
+  --gv-card-host-yaw-deg: 135;
+}
 .card-room-frame {
   max-height: calc(100vh - env(safe-area-inset-bottom, 0px) - env(safe-area-inset-top, 0px));
   overflow: hidden;
 }
 .card-room-frame .table-mesh {
-  max-width: 95vw;
+  /* PDF §2: table = 55vw × 75vh, capped so it never bleeds. */
+  max-width: 55vw;
   max-height: min(75vh, 600px);
+  aspect-ratio: 1.467 / 1;  /* 0.55/0.75 ≈ 0.733 → table reads wider than tall */
   margin-left: auto;
   margin-right: auto;
+}
+@media (max-width: 768px) {
+  /* On phones the PDF allows the table to scale up to 95vw so it stays
+     readable; the 0.55 ratio is desktop-canonical. */
+  .card-room-frame .table-mesh {
+    max-width: 95vw;
+  }
 }
 .card-room-frame .trick-play-area {
   /* Push trick area toward center-top to avoid hand overlap. */
@@ -394,6 +416,17 @@ body.gv-force-landscape {
   bottom: env(safe-area-inset-bottom, 0px);
   padding-bottom: env(safe-area-inset-bottom, 8px);
   z-index: 2;
+}
+/* AI host side-car (135° yaw means right-rear quadrant — translate via
+   trig: x=cos(135°)≈-0.707, y=sin(135°)≈+0.707, scaled down). Reserve
+   the slot even when the component hasn't mounted. */
+.card-room-frame .ai-host-sidecar {
+  position: absolute;
+  top: 12%;
+  right: 8%;
+  transform: rotate(-15deg);
+  pointer-events: none;
+  z-index: 1;
 }
 
 /* Landscape Mobile Optimization */

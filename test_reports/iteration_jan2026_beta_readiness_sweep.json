@@ -1,0 +1,36 @@
+{
+  "summary": "Beta-Readiness sweep — P0.1 Integrity Protocol, P0.2 Sovereign Tiers, P2.2 Underground Live, P2.3 Spectator Bet, P2.4 Receipts OCR. 19/19 backend tests PASS. All 5 frontend pages render correctly (tiers, underground-live, receipts, sports-lounge vibe-check modal, underground-casino tile).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/tiers and /underground-live", "issues": ["Lazy-loaded chunks show 'Loading tiers…' / 'Loading battles…' spinner for ~1-2s before rendering grid. Not a bug — but external smoke tests need >=10s wait on the [data-testid=tiers-grid] / [data-testid=ul-lineup] selectors. Worth noting for any future CI test author."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_beta_readiness_sweep_jan2026.py",
+    "/app/test_reports/pytest/beta_readiness_sweep_jan2026.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "sovereign_tiers.py POST /tiers/subscribe correctly bifurcates subscription-mode vs payment-mode based on tier.interval — Stripe rejects 'recurring' on payment mode and this is handled correctly. Verified live: returns cs_test_… session for tastemaker.",
+    "integrity_protocol.py: /report is correctly idempotent on (game_id, user_id). _is_banned() reads suspended_until safely. Good.",
+    "underground_live.py auto-promotes the next scheduled battle to 'live' when its kickoff timestamp passes (active_battle endpoint). Tested live — works.",
+    "receipts_ocr.py _stub_ocr uses regex to validate URL extension — clearly marked as STUB; will swap to OpenAI vision when budget restored. Documented in module docstring.",
+    "spectator_bet.py settle endpoint caps daily bonus at 5/user — anti-abuse logic verified by reading code; not exercised in this sweep (admin-only)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_beta_readiness_sweep_jan2026.py (new)"
+  ],
+  "success_rate": {"backend": "100% (19/19)", "frontend": "100% (5/5 pages + vibe-check modal)"},
+  "test_credentials": "Demo Login button at /login (data-testid=login-demo-btn) — anonymous session, used for all auth-gated tests. Demo user_id format: demo_xxxxxxxx.",
+  "seed_data_creation": "Backend auto-seeds the 2 Underground Live battles (ul_seed_music_friday + ul_seed_dance_saturday) on first read of /api/underground-live/battles. Verified during this run.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend at https://social-connect-953.preview.emergentagent.com is fully wired for the 5 beta-readiness modules. Demo Login (POST /api/auth/demo-login with empty body) returns a bearer token usable for ALL the new endpoints. The Underground Live tile inside /underground-casino lives BEHIND a passphrase gate ('I understand') — type the phrase + click ENTER THE UNDERGROUND, then scroll to last tile labeled 'Underground Live'. Tile uses onClick→navigate, NOT an <a href>, so don't grep for the literal href. Frontend lazy-loads /tiers and /underground-live (~1-2s spinner) before rendering data-testid=tiers-grid / data-testid=ul-lineup.",
+  "rca of the issue": "No issues found. All 19 backend tests pass on first run. All 5 frontend pages render. The math-anchored tier pricing (insider $9, tastemaker $19 anchored, royal $39, sovereign $89, genius_chair $20 one-time, annual = 12*monthly*0.8333) matches both the request spec AND the live catalog endpoint exactly. Receipt OCR stub returns +15% bonus (375 ₵ for $25 receipt = 25*100*0.15). Integrity Protocol consensus parameters locked (10 reporters, 75%, 2× chair weight, 5₵ reward, 10%/50%/permanent strike tiers)."
+}
