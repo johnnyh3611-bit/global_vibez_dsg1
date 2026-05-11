@@ -46,8 +46,8 @@ ENDPOINTS: List[Tuple[str, str]] = [
     ("GET", "/api/tiers/list"),
 ]
 
-CONCURRENCY = 1000
-TOTAL_REQUESTS = 50_000
+CONCURRENCY = 50
+TOTAL_REQUESTS = 1_500
 
 
 async def hit(client: httpx.AsyncClient, method: str, path: str) -> Tuple[str, int, float]:

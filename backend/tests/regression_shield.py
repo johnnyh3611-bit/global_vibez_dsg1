@@ -6307,6 +6307,7 @@ def test_dmca_designated_agent_registered():
     assert os.environ.get("DMCA_AGENT_NAME") == "H&S Solutions Group"
     assert "Rockford" in os.environ.get("DMCA_AGENT_ADDRESS", "")
     assert os.environ.get("DMCA_AGENT_PAYGOV_TRACKING_ID") == "28277U36"
+    assert os.environ.get("DMCA_AGENT_EMAIL") == "customerservice@globalvibezdsg.com"
 
     # Service code reads the env vars into the policy snapshot.
     svc = open("/app/backend/services/content_rights.py").read()
