@@ -14,6 +14,7 @@ import UndergroundLive from "@/pages/UndergroundLive";
 import ReceiptsPage from "@/pages/ReceiptsPage";
 import StripeConnectWizard from "@/pages/payouts/StripeConnectWizard";
 import EconomicEnginePage from "@/pages/EconomicEnginePage";
+import AgeVerificationPage from "@/pages/AgeVerificationPage";
 // Lazy-load Volumetric Galaxy bundle (Three.js ~500KB) — only loaded when user
 // actually visits the volumetric route or has it as their dashboard view.
 const VolumetricDashboard = lazy(() => import("@/pages/VolumetricDashboard"));
@@ -89,6 +90,9 @@ export const miscRoutes = (ProtectedRoute) => (
     <Route path="/payouts/setup" element={<ProtectedRoute><StripeConnectWizard /></ProtectedRoute>} />
     {/* Public DSG Economic Engine spec page — investor / user transparency. */}
     <Route path="/economic-engine" element={<EconomicEnginePage />} />
+    {/* 21+ Age Verification Protocol — restricted goods (alcohol/tobacco).
+        Distinct from the platform-wide 18+ gate at /age-verification. */}
+    <Route path="/restricted-goods-verification" element={<ProtectedRoute><AgeVerificationPage /></ProtectedRoute>} />
     <Route path="/dashboard-volumetric" element={<ProtectedRoute><Suspense fallback={<div data-testid="volumetric-route-loading" className="fixed inset-0 z-[1000] flex items-center justify-center bg-[#0d1117] text-fuchsia-300 text-sm uppercase tracking-[0.3em]">Loading Galaxy…</div>}><VolumetricDashboard /></Suspense></ProtectedRoute>} />
     <Route path="/payment/success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
     <Route path="/payment/cancel" element={<ProtectedRoute><PaymentCancel /></ProtectedRoute>} />

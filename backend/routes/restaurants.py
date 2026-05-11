@@ -127,8 +127,14 @@ async def get_promoted_restaurants(limit: int = 10) -> Dict[str, Any]:
 
 
 @router.get("/{restaurant_id}")
-async def get_restaurant_detail(restaurant_id: str) -> Dict[str, Any]:
-    """Get restaurant details including menu and reviews"""
+async def get_restaurant_detail(restaurant_id: str, request: Request) -> Dict[str, Any]:
+    """Get restaurant details including menu and reviews.
+
+    Shadow-gates restricted-category menu items (alcohol / tobacco) for
+    users who haven't completed the 21+ Age Verification Protocol. Items
+    are STRIPPED from the response (not just disabled) per the
+    Legal_Age_Verification_Protocol.pdf spec.
+    """
     db = get_database()
     
     restaurant = await db.restaurants.find_one(
@@ -162,6 +168,38 @@ async def get_restaurant_detail(restaurant_id: str) -> Dict[str, Any]:
             review["user_picture"] = user.get("picture")
     
     restaurant["reviews"] = reviews
+
+    # Age-verification shadow-gate. Logged-out users + unverified users
+    # have alcohol/tobacco items removed entirely from the response.
+    try:
+        from services.age_verification import shadow_filter_menu, is_eligible_for_restricted, get_status as avp_status  # noqa: PLC0415
+        viewer = await get_current_user(request)
+        eligible = False
+        if viewer:
+            uid = getattr(viewer, "user_id", None) or getattr(viewer, "id", None)
+            if uid:
+                rec = await avp_status(db, str(uid))
+                eligible = is_eligible_for_restricted(rec.get("age"), rec.get("status", "not_submitted"))
+        menu_items = restaurant.get("menu_items") or []
+        restaurant["menu_items"] = shadow_filter_menu(menu_items, eligible)
+        restaurant["age_gate"] = {
+            "eligible_for_restricted": eligible,
+            "min_age": 21,
+            "restricted_categories": ["alcohol", "tobacco"],
+        }
+    except Exception:
+        # Never block the restaurant page on AVP plumbing issues — fall
+        # back to filtering out restricted items if the gate can't decide.
+        menu_items = restaurant.get("menu_items") or []
+        restaurant["menu_items"] = [
+            i for i in menu_items
+            if str(i.get("category", "")).lower() not in ("alcohol", "tobacco")
+        ]
+        restaurant["age_gate"] = {
+            "eligible_for_restricted": False,
+            "min_age": 21,
+            "restricted_categories": ["alcohol", "tobacco"],
+        }
     
     return restaurant
 

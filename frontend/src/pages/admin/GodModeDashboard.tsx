@@ -34,6 +34,7 @@ import ActivityPulseCard from '@/components/admin/ActivityPulseCard';
 import ProductionSmokeTestCard from '@/components/admin/ProductionSmokeTestCard';
 import BetaCohortReportCard from '@/components/admin/BetaCohortReportCard';
 import EconomicEngineCard from '@/components/economic_engine/EconomicEngineCard';
+import AgeVerificationQueueCard from '@/components/admin/AgeVerificationQueueCard';
 import EmergencyOverride from '@/components/admin/EmergencyOverride';
 import ApexEvolutionControls from '@/components/admin/ApexEvolutionControls';
 import ChairHolderVoting from '@/components/admin/ChairHolderVoting';
@@ -209,6 +210,10 @@ export const GodModeDashboard = () => {
           Global_Vibez_DSG_Economic_Engine.pdf spec. Single source of
           truth for Vibez Coin supply, dynamic burn, liquidity fund. */}
       <EconomicEngineCard />
+
+      {/* 2026-05-13 — 21+ Age Verification queue (Restricted Goods
+          Delivery Standard 2026). Pending submissions + approve/reject. */}
+      <AgeVerificationQueueCard />
 
       <TabGroup index={selectedTab} onIndexChange={setSelectedTab}>
         <TabList className="mb-6">

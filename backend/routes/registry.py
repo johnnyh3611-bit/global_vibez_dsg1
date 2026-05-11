@@ -826,3 +826,9 @@ def _register_hungryvibes_smartstack(api_router) -> None:
     # burn (4% → 0.5%) + 50/50 revenue split (buyback/burn + liquidity).
     from routes.economic_engine import router as economic_engine_router  # noqa: PLC0415
     api_router.include_router(economic_engine_router)
+
+    # 2026-05-13 — Legal Age Verification Protocol (21+ restricted goods).
+    # Encodes Legal_Age_Verification_Protocol.pdf: alcohol + tobacco gate,
+    # menu shadow-gating, driver eligibility, audit trail, admin override.
+    from routes.age_verification import router as age_verification_router  # noqa: PLC0415
+    api_router.include_router(age_verification_router)

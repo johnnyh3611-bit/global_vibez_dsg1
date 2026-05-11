@@ -1,5 +1,31 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-05-13 (Pre-redeploy v3) — Legal Age Verification Protocol shipped 🛡️🆔.** Founder uploaded `Legal_Age_Verification_Protocol.pdf` (Restricted Goods Delivery Standard 2026). 21+ alcohol/tobacco gate now live end-to-end:
+>
+> **Backend** (`services/age_verification.py` + `routes/age_verification.py`):
+> - **Spec constants** locked: `RESTRICTED_GOODS_MIN_AGE = 21`, `RESTRICTED_CATEGORIES = ["alcohol", "tobacco"]`.
+> - **5-state lifecycle**: `not_submitted` → `pending` → `verified` / `rejected` → `appeal`.
+> - **7-reason decline taxonomy** (with user-facing copy): underage, id_unreadable, id_expired, selfie_mismatch, dob_mismatch, duplicate, policy.
+> - **Pure helpers** (deterministic + audit-friendly): `calculate_age(dob_iso)`, `is_eligible_for_restricted(age, status)`, `shadow_filter_menu(items, eligible)` — strips alcohol/tobacco items from the menu when the viewer isn't 21+ verified.
+> - **Stateful flow** (Mongo `age_verification` singleton-per-user + `age_verification_events` append-only audit log): `submit(dob, id_url, selfie_url)` with auto-decision when DOB < 21, `appeal(message)`, admin `admin_decide(user_id, decision, rejected_reason)`, `driver_can_deliver_restricted(driver_user_id)` — dispatch rule that only routes restricted-goods orders to 21+ verified drivers.
+> - **9 endpoints** under `/api/age-verification`: `/constants` (public), `/status`, `/submit`, `/appeal`, `/eligibility/{category}`, `/driver-can-deliver`, `/admin/queue`, `/admin/events`, `/admin/decide`.
+> - **HungryVibes menu shadow-gating wired** (`routes/restaurants.py` `/restaurants/{id}`): on every restaurant detail fetch we look up the viewer's eligibility and STRIP alcohol/tobacco items from the menu array before responding (not just disabling them — they're invisible per the spec's "shadow-gating" rule). Response also includes an `age_gate: {eligible_for_restricted, min_age, restricted_categories}` block for the client. Robust against KYC plumbing failures (defaults to filtered).
+>
+> **Frontend** (provider-agnostic — drops into Persona/Stripe Identity/Veriff/Onfido later):
+> - **`/restricted-goods-verification`** (new page `pages/AgeVerificationPage.tsx`): status banner (5 states: not_submitted / pending / verified / rejected / appeal), submission form (DOB date input + government ID `<DirectUpload>` + selfie `<DirectUpload>` with camera capture), conditional appeal form when rejected, 4 pillars (21+ Requirement · Menu Shadow-Gate · Point-of-Delivery Check · Audit Trail), "Restricted Goods Delivery Standard · 2026" version stamp. **Route deliberately distinct** from the existing `/age-verification` 18+ baseline gate — two separate flows that coexist.
+> - **`<AgeVerificationGate category="alcohol|tobacco">`** wrapper component (`components/age_verification/AgeVerificationGate.tsx`): polls `/eligibility/{category}` and either renders children (if eligible) or a status-aware fallback (not_verified → amber CTA banner with "Verify now" button · pending_review → cyan "Awaiting review" banner · rejected → red banner with "Appeal" CTA · underage → 21+ required message). Hits the gate test ids `avp-gate-loading|not-verified|pending|rejected|appeal|verify-{category}`.
+> - **`<AgeVerificationQueueCard />`** admin tool (`components/admin/AgeVerificationQueueCard.tsx`) mounted on God Mode dashboard right after the Economic Engine card: 4 filter tabs (Pending · Appeals · Approved · Rejected), each row shows user_id + age + DOB + submitted_at + ID/selfie thumbnail links + Approve / Reject (with reason dropdown from the decline taxonomy) buttons + appeal message if present. Pages immutably to `/admin/queue` + writes audit rows on every decision.
+>
+> **Verified via curl + screenshot**:
+> - `GET /constants` (public, no auth) → returns min_age=21, restricted_categories=[alcohol,tobacco], 5 statuses, 7 decline reasons + copy, protocol_version.
+> - `GET /status` / `/eligibility/alcohol` → 401 unauthenticated (auth correctly required).
+> - `/restricted-goods-verification` page rendered authed → all testids present, all 4 pillars visible, "Not yet verified" amber banner showing, DOB + ID + selfie uploads functional.
+>
+> **🔒 Regression Shield: 290/290 GREEN** (+7 new Age Verification Protocol locks: `test_avp_constants_match_spec`, `test_avp_age_calc_and_eligibility` (28yo/20yo edge cases), `test_avp_menu_shadow_gate_strips_restricted_items` (case-insensitive category match + non-restricted preserved), `test_avp_routes_registered` (all 9 endpoints), `test_avp_constants_endpoint_public` (no auth required for landing copy), `test_avp_frontend_surfaces_wired` (page + gate + admin card + God Mode mount + route registered), `test_avp_restaurant_detail_shadow_gates_restricted` (server-side menu filter). Spec drift fails CI.
+>
+> **Status: 🟢 RESTRICTED GOODS DELIVERY STANDARD INSTALLED. Safe to redeploy.**
+
+
 > **2026-05-13 (Pre-redeploy v2) — Definitive Economy installed app-wide 🎯💎.** Founder uploaded `Global_Vibez_DSG_Definitive_Economy.pdf` with: "this information I need you to put throughout the app and get it done. And if you need to change the commercial to make sure everything fit, if this is not included into that information, add that." Executed end-to-end:
 >
 > **Constants reset to Definitive Economy May-2026 spec** (`services/dsg_economic_engine.py`):

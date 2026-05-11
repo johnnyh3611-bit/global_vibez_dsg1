@@ -5874,3 +5874,146 @@ def test_definitive_economy_convert_endpoint_round_trips():
     derived_parity = (USD_TO_CREDITS_RATIO / COIN_TO_CREDITS_RATIO) ** -1 * 1.0
     # i.e., USD per coin = 10 / 100 = 0.10
     assert round(COIN_TO_CREDITS_RATIO / USD_TO_CREDITS_RATIO, 4) == PARITY_USD
+
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# 2026-05-13 — Legal Age Verification Protocol (21+ restricted goods)
+# Encodes Legal_Age_Verification_Protocol.pdf
+# ═══════════════════════════════════════════════════════════════════════
+
+def test_avp_constants_match_spec():
+    """21+ Restricted Goods Delivery Standard constants — locked."""
+    from services import age_verification as avp
+    assert avp.RESTRICTED_GOODS_MIN_AGE == 21
+    assert avp.RESTRICTED_CATEGORIES == ["alcohol", "tobacco"]
+    # All 5 lifecycle statuses present.
+    assert set(avp.ALL_STATUSES) == {
+        "not_submitted", "pending", "verified", "rejected", "appeal",
+    }
+    # Standardized decline-reason taxonomy.
+    for key in ("underage", "id_unreadable", "id_expired",
+                "selfie_mismatch", "dob_mismatch", "duplicate", "policy"):
+        assert key in avp.DECLINE_REASONS, f"Missing decline reason: {key}"
+
+
+def test_avp_age_calc_and_eligibility():
+    """Years-old math + 21+ eligibility predicate."""
+    from datetime import date
+    from services.age_verification import (
+        calculate_age, is_eligible_for_restricted,
+        STATUS_VERIFIED, STATUS_PENDING, STATUS_REJECTED, STATUS_NOT_SUBMITTED,
+    )
+    # 30yo, verified → eligible.
+    ref = date(2026, 5, 13)
+    assert calculate_age("1995-01-01", ref) == 31
+    assert is_eligible_for_restricted(31, STATUS_VERIFIED) is True
+    # 20yo, even verified → not eligible (under 21).
+    assert is_eligible_for_restricted(20, STATUS_VERIFIED) is False
+    # 25yo, pending review → not eligible until decision.
+    assert is_eligible_for_restricted(25, STATUS_PENDING) is False
+    assert is_eligible_for_restricted(25, STATUS_REJECTED) is False
+    assert is_eligible_for_restricted(25, STATUS_NOT_SUBMITTED) is False
+    # None / negative age → not eligible.
+    assert is_eligible_for_restricted(None, STATUS_VERIFIED) is False
+
+
+def test_avp_menu_shadow_gate_strips_restricted_items():
+    """Spec: alcohol/tobacco items HIDDEN (not just disabled) from
+    ineligible users. The list is rebuilt without restricted items."""
+    from services.age_verification import shadow_filter_menu
+    menu = [
+        {"id": "1", "name": "Margherita", "category": "pizza"},
+        {"id": "2", "name": "IPA", "category": "alcohol"},
+        {"id": "3", "name": "Marlboro Reds", "category": "tobacco"},
+        {"id": "4", "name": "Tiramisu", "category": "dessert"},
+        # Case-insensitive matching.
+        {"id": "5", "name": "Whiskey", "category": "Alcohol"},
+    ]
+    # Ineligible viewer → only non-restricted items survive.
+    filtered = shadow_filter_menu(menu, is_eligible=False)
+    cats = {i["category"].lower() for i in filtered}
+    assert "alcohol" not in cats
+    assert "tobacco" not in cats
+    assert len(filtered) == 2
+    # Eligible viewer → full menu.
+    full = shadow_filter_menu(menu, is_eligible=True)
+    assert len(full) == 5
+
+
+def test_avp_routes_registered():
+    """All Age Verification endpoints mounted under /api."""
+    from server import app
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    expected = [
+        "/api/age-verification/constants",
+        "/api/age-verification/status",
+        "/api/age-verification/submit",
+        "/api/age-verification/appeal",
+        "/api/age-verification/eligibility/{category}",
+        "/api/age-verification/driver-can-deliver",
+        "/api/age-verification/admin/queue",
+        "/api/age-verification/admin/events",
+        "/api/age-verification/admin/decide",
+    ]
+    for ep in expected:
+        assert ep in paths, f"Age Verification endpoint missing: {ep}"
+
+
+def test_avp_constants_endpoint_public():
+    """The constants endpoint must be open (unauthenticated) so the
+    landing page can render the 21+ disclosure copy."""
+    from fastapi.testclient import TestClient
+    from server import app
+    client = TestClient(app)
+    r = client.get("/api/age-verification/constants")
+    assert r.status_code == 200
+    d = r.json()
+    assert d["minimum_age"] == 21
+    assert d["restricted_categories"] == ["alcohol", "tobacco"]
+    assert "decline_reasons" in d
+    assert d["protocol_version"].startswith("Restricted Goods Delivery Standard")
+
+
+def test_avp_frontend_surfaces_wired():
+    """AgeVerificationPage + AgeVerificationGate + AgeVerificationQueueCard
+    all present + admin card mounted on God Mode dashboard."""
+    page = open("/app/frontend/src/pages/AgeVerificationPage.tsx").read()
+    for tid in [
+        "age-verification-page",
+        "age-verification-form",
+        "age-verification-dob",
+        "age-verification-id-upload",
+        "age-verification-selfie-upload",
+        "age-verification-submit-btn",
+        "age-verification-pillars",
+    ]:
+        assert tid in page, f"AgeVerificationPage missing testid: {tid}"
+
+    gate = open("/app/frontend/src/components/age_verification/AgeVerificationGate.tsx").read()
+    assert "/api/age-verification/eligibility/" in gate
+    assert "data-testid={`avp-gate-" in gate or "avp-gate-not-verified" in gate
+
+    queue = open("/app/frontend/src/components/admin/AgeVerificationQueueCard.tsx").read()
+    for tid in [
+        "age-verification-queue-card",
+        "avp-queue-filters",
+        "avp-queue-filter-${f.id}",
+    ]:
+        assert tid in queue, f"AgeVerificationQueueCard missing testid: {tid}"
+
+    god = open("/app/frontend/src/pages/admin/GodModeDashboard.tsx").read()
+    assert "AgeVerificationQueueCard" in god
+    assert "<AgeVerificationQueueCard />" in god
+
+    misc = open("/app/frontend/src/routes/miscRoutes.tsx").read()
+    assert '"/restricted-goods-verification"' in misc
+
+
+def test_avp_restaurant_detail_shadow_gates_restricted():
+    """The /restaurants/{id} endpoint applies the shadow-gate so alcohol
+    + tobacco are stripped for unverified viewers."""
+    detail = open("/app/backend/routes/restaurants.py").read()
+    assert "shadow_filter_menu" in detail
+    assert '"alcohol"' in detail and '"tobacco"' in detail
+    assert "age_gate" in detail
