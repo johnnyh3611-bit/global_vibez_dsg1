@@ -46,6 +46,19 @@ const CLIPS: string[] = [
   "https://customer-assets.emergentagent.com/job_social-connect-953/artifacts/4r7dg2zf_mp_.mp4",
 ];
 
+// Per-clip caption tags — 2026-05-12 founder enhancement: silent-autoplay
+// scrollers (the majority of social-feed traffic) get a 2-3 word "what
+// you're seeing" overlay so they understand each scene without sound.
+// Order MUST match CLIPS[].
+const CLIP_TAGS: Array<{ kicker: string; line: string; tint: string }> = [
+  { kicker: "Roll the dice", line: "Vibez 654 · live tables", tint: "from-fuchsia-400 to-violet-500" },
+  { kicker: "Game on", line: "30+ casino rooms · social play", tint: "from-amber-400 to-rose-500" },
+  { kicker: "Just for the Night", line: "Season pass · creator rooms", tint: "from-cyan-400 to-fuchsia-500" },
+  { kicker: "Earn on every hat", line: "Drive · host · stream · sell", tint: "from-emerald-400 to-cyan-500" },
+  { kicker: "All-new wow", line: "More rooms · more vibes", tint: "from-pink-400 to-fuchsia-500" },
+  { kicker: "Welcome home", line: "Your Vibez universe awaits", tint: "from-violet-400 to-indigo-500" },
+];
+
 const MANIFEST_URL = "/landing-tour-i18n.json";
 
 type Cue = { t: number; text: string };
@@ -290,6 +303,35 @@ const LandingTourVideo: React.FC<Props> = ({ onJoinBeta }) => {
 
           {/* Vignette overlay so captions stay legible */}
           <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/85 via-black/20 to-black/40" />
+
+          {/* 2026-05-12 founder enhancement: per-clip caption tag overlay.
+              Silent-autoplay scrollers get a 2-3 word "what you're seeing"
+              tag so each scene communicates even without sound. Keyed on
+              clipIdx so it animates on every clip transition. */}
+          {hasStarted && CLIP_TAGS[clipIdx] && (
+            <motion.div
+              key={`clip-tag-${clipIdx}`}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.5 }}
+              className="absolute top-4 left-4 md:top-6 md:left-6 pointer-events-none"
+              data-testid={`landing-tour-clip-tag-${clipIdx}`}
+            >
+              <div
+                className={`inline-block bg-gradient-to-br ${CLIP_TAGS[clipIdx].tint} px-3 py-1 rounded-full text-[9px] md:text-[10px] uppercase tracking-[0.3em] font-black text-white shadow-[0_4px_20px_rgba(0,0,0,0.5)] mb-2`}
+                data-testid="landing-tour-clip-tag-kicker"
+              >
+                {CLIP_TAGS[clipIdx].kicker}
+              </div>
+              <p
+                className="text-white text-sm md:text-base font-black drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] leading-tight max-w-xs"
+                data-testid="landing-tour-clip-tag-line"
+              >
+                {CLIP_TAGS[clipIdx].line}
+              </p>
+            </motion.div>
+          )}
 
           {/* PLAY CTA overlay — gates first interaction (browser autoplay block) */}
           {!hasStarted && (

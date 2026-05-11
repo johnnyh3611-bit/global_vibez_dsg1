@@ -5339,7 +5339,13 @@ def test_landing_tour_video_clips_extended_keeping_dice_first():
     want the dice to just be the first thing you see in the front 'cause
     I like that, but I want you to add this so it adds more wow factor."
     Two founder-uploaded clips appended (positions 5 + 6); existing 4
-    clips stay in their existing order with the dice intro first."""
+    clips stay in their existing order with the dice intro first.
+
+    2026-05-12 (later): per-clip caption tag overlays added — silent
+    autoplay scrollers get a 2-3 word "what you're seeing" tag on every
+    scene. CLIP_TAGS array must stay in lockstep with CLIPS (same length,
+    same order).
+    """
     src = open("/app/frontend/src/components/landing/LandingTourVideo.tsx").read()
     # Dice intro stays at position #1 — must be the FIRST entry in CLIPS.
     dice_url = "aeaebfxp_e_c_a_d_d_db_c_e_videomp_.mp4"
@@ -5353,9 +5359,7 @@ def test_landing_tour_video_clips_extended_keeping_dice_first():
         "4r7dg2zf_mp_.mp4",  # NEW 2026-05-12
     ]:
         assert clip_marker in src, f"missing clip in tour video: {clip_marker}"
-    # Dice must appear BEFORE every other clip in the CLIPS array
-    # (founder explicitly wants it first; this guarantees future edits
-    # can't accidentally re-order).
+    # Dice must appear BEFORE every other clip in the CLIPS array.
     dice_pos = src.find(dice_url)
     for later in [
         "8s795ybg_mp_",
@@ -5368,4 +5372,19 @@ def test_landing_tour_video_clips_extended_keeping_dice_first():
         assert 0 < dice_pos < later_pos, (
             f"dice clip MUST appear before '{later}' in CLIPS array"
         )
+
+    # Per-clip caption tags wired with same length as CLIPS.
+    assert "CLIP_TAGS" in src, "per-clip caption tags array missing"
+    assert "landing-tour-clip-tag-kicker" in src
+    assert "landing-tour-clip-tag-line" in src
+    # 6 tag entries — one per clip. Match the `kicker: "..."` pattern
+    # which only appears in the CLIP_TAGS array literal (the JSX uses
+    # `CLIP_TAGS[clipIdx].kicker` so the colon is followed by a quote
+    # only in the array, not in the access expression).
+    import re
+    tag_entries = re.findall(r'kicker:\s*"', src)
+    assert len(tag_entries) == 6, f"CLIP_TAGS must have exactly 6 entries, got {len(tag_entries)}"
+    # Dice tag must mention the rolling/dice theme so the founder's
+    # explicit "I like the dice first" ask is preserved visually too.
+    assert "Roll the dice" in src
 
