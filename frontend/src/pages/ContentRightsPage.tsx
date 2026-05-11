@@ -41,6 +41,14 @@ interface PolicySnapshot {
   dmca_notices_filed: number;
   sellers_terminated: number;
   user_rights_agreement: string;
+  dmca_agent?: {
+    name?: string;
+    address?: string;
+    email?: string;
+    phone?: string;
+    registration_date?: string;
+    paygov_tracking_id?: string;
+  };
 }
 
 export default function ContentRightsPage() {
@@ -151,6 +159,61 @@ export default function ContentRightsPage() {
             <p className="text-xs text-cyan-100/85 leading-relaxed">
               {policy.user_rights_agreement}
             </p>
+          </div>
+        )}
+
+        {/* DMCA Designated Agent — registered with US Copyright Office */}
+        {policy?.dmca_agent?.name && (
+          <div
+            className="rounded-xl border border-emerald-400/25 bg-emerald-500/5 p-4 mb-6"
+            data-testid="content-rights-dmca-agent"
+          >
+            <div className="flex items-start gap-2.5 mb-2">
+              <ShieldCheck className="w-4 h-4 text-emerald-300 mt-0.5 flex-shrink-0" />
+              <p className="text-[10px] font-mono uppercase tracking-[0.3em] text-emerald-300/90 font-bold">
+                Registered DMCA Designated Agent · US Copyright Office
+              </p>
+            </div>
+            <div className="text-xs text-emerald-100/90 space-y-0.5 pl-6.5">
+              <p>
+                <span className="text-emerald-300/70 font-mono uppercase tracking-widest text-[9px]">Agent:</span>{" "}
+                <span className="font-bold" data-testid="content-rights-dmca-agent-name">
+                  {policy.dmca_agent.name}
+                </span>
+              </p>
+              {policy.dmca_agent.address && (
+                <p>
+                  <span className="text-emerald-300/70 font-mono uppercase tracking-widest text-[9px]">Address:</span>{" "}
+                  <span data-testid="content-rights-dmca-agent-address">{policy.dmca_agent.address}</span>
+                </p>
+              )}
+              {policy.dmca_agent.email && (
+                <p>
+                  <span className="text-emerald-300/70 font-mono uppercase tracking-widest text-[9px]">Email:</span>{" "}
+                  <a
+                    href={`mailto:${policy.dmca_agent.email}`}
+                    className="underline text-emerald-200"
+                    data-testid="content-rights-dmca-agent-email"
+                  >
+                    {policy.dmca_agent.email}
+                  </a>
+                </p>
+              )}
+              {policy.dmca_agent.phone && (
+                <p>
+                  <span className="text-emerald-300/70 font-mono uppercase tracking-widest text-[9px]">Phone:</span>{" "}
+                  <span data-testid="content-rights-dmca-agent-phone">{policy.dmca_agent.phone}</span>
+                </p>
+              )}
+              {(policy.dmca_agent.registration_date || policy.dmca_agent.paygov_tracking_id) && (
+                <p className="text-[10px] font-mono text-emerald-200/60 mt-1.5">
+                  {policy.dmca_agent.registration_date &&
+                    `Registered ${policy.dmca_agent.registration_date}`}
+                  {policy.dmca_agent.paygov_tracking_id &&
+                    ` · Pay.gov Tracking #${policy.dmca_agent.paygov_tracking_id}`}
+                </p>
+              )}
+            </div>
           </div>
         )}
 

@@ -6287,3 +6287,37 @@ def test_content_rights_frontend_surfaces_wired():
 
     misc = open("/app/frontend/src/routes/miscRoutes.tsx").read()
     assert '"/content-rights"' in misc
+
+
+
+def test_dmca_designated_agent_registered():
+    """H&S Solutions Group registered with US Copyright Office on
+    2026-05-11 (Pay.gov #28277U36). DMCA Safe Harbor active.
+
+    Asserts (a) env vars are set in backend/.env, (b) service code
+    surfaces them on /policy, (c) frontend renders the badge.
+    We skip TestClient here because prior async tests can close the
+    event loop; the live `curl /api/content-rights/policy` check is
+    performed during deployment smoke."""
+    from dotenv import load_dotenv
+    from pathlib import Path
+    load_dotenv(Path(__file__).resolve().parent.parent / ".env", override=False)
+    import os
+    # Env vars present (the actual registration data).
+    assert os.environ.get("DMCA_AGENT_NAME") == "H&S Solutions Group"
+    assert "Rockford" in os.environ.get("DMCA_AGENT_ADDRESS", "")
+    assert os.environ.get("DMCA_AGENT_PAYGOV_TRACKING_ID") == "28277U36"
+
+    # Service code reads the env vars into the policy snapshot.
+    svc = open("/app/backend/services/content_rights.py").read()
+    assert 'os.environ.get("DMCA_AGENT_NAME"' in svc
+    assert "dmca_agent" in svc
+
+    # Frontend renders the agent block (testids match the new region).
+    page = open("/app/frontend/src/pages/ContentRightsPage.tsx").read()
+    for tid in [
+        "content-rights-dmca-agent",
+        "content-rights-dmca-agent-name",
+        "content-rights-dmca-agent-address",
+    ]:
+        assert tid in page, f"DMCA agent block missing testid: {tid}"

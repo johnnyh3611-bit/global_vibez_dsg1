@@ -452,6 +452,21 @@ async def policy_snapshot(db) -> Dict[str, Any]:
     dmca_count = await db.content_rights_dmca.count_documents({})
     terminated_count = await db.content_rights_strikes.count_documents({"terminated": True})
 
+    # DMCA Designated Agent registration (US Copyright Office) — required
+    # for DMCA Safe Harbor per Spec §1a. Sourced from environment so the
+    # registration info can be updated without a code change on renewal.
+    dmca_agent: Dict[str, Any] = {}
+    name = os.environ.get("DMCA_AGENT_NAME", "").strip()
+    if name:
+        dmca_agent = {
+            "name": name,
+            "address": os.environ.get("DMCA_AGENT_ADDRESS", "").strip() or None,
+            "email": os.environ.get("DMCA_AGENT_EMAIL", "").strip() or None,
+            "phone": os.environ.get("DMCA_AGENT_PHONE", "").strip() or None,
+            "registration_date": os.environ.get("DMCA_AGENT_REGISTRATION_DATE", "").strip() or None,
+            "paygov_tracking_id": os.environ.get("DMCA_AGENT_PAYGOV_TRACKING_ID", "").strip() or None,
+        }
+
     return {
         "dmca_takedown_sla_hours": DMCA_TAKEDOWN_SLA_HOURS,
         "repeat_infringer_strike_threshold": REPEAT_INFRINGER_STRIKE_THRESHOLD,
@@ -464,6 +479,7 @@ async def policy_snapshot(db) -> Dict[str, Any]:
         "lifetime_purchases": purchase_count,
         "dmca_notices_filed": dmca_count,
         "sellers_terminated": terminated_count,
+        "dmca_agent": dmca_agent,
         "user_rights_agreement": (
             "By uploading content to this platform, you grant the platform a limited "
             "license to host and distribute the file, while warranting that you are "
