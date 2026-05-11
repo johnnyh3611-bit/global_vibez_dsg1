@@ -816,3 +816,7 @@ def _register_hungryvibes_smartstack(api_router) -> None:
     # auto-degrades to `configured: false` until live keys are added).
     from routes.stripe_connect import router as stripe_connect_router  # noqa: PLC0415
     api_router.include_router(stripe_connect_router)
+
+    # 2026-05-12 — Beta Cohort Report for God Mode.
+    from routes.admin_beta_cohort import router as admin_beta_cohort_router  # noqa: PLC0415
+    api_router.include_router(admin_beta_cohort_router)

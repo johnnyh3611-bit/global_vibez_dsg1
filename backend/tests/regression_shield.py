@@ -5477,3 +5477,41 @@ def test_volumetric_planet_labels_visible_from_overview():
     for cat_id in ["games", "dating", "rides", "food", "streaming", "vault"]:
         assert f'id: "{cat_id}"' in page, f"CATEGORIES missing id: {cat_id}"
 
+
+
+def test_beta_cohort_report_card_wired():
+    """2026-05-12 founder ask: 'auto-aggregates first 50-500 user metrics
+    — signups · which role they picked · their first action · drop-off
+    page · time-to-first-spend.' Backend endpoint plus God Mode card.
+    """
+    from server import app
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    assert "/api/admin/beta-cohort" in paths, "beta-cohort endpoint missing"
+
+    backend = open("/app/backend/routes/admin_beta_cohort.py").read()
+    # Admin-gated.
+    assert "_require_admin" in backend
+    # Rollups: signups + roles + revenue (incl. TTFS) + engagement.
+    for key in [
+        "total_paid_usd",
+        "median_time_to_first_spend_min",
+        "weakest_rooms_by_7d_visits",
+        "activation_rate_pct",
+        "jftn_season_passes_active",
+    ]:
+        assert key in backend, f"beta-cohort missing metric: {key}"
+
+    fe = open("/app/frontend/src/components/admin/BetaCohortReportCard.tsx").read()
+    for tid in [
+        "beta-cohort-card",
+        "beta-cohort-headline",
+        "beta-cohort-roles",
+        "beta-cohort-weakest-rooms",
+    ]:
+        assert tid in fe, f"BetaCohortReportCard missing testid: {tid}"
+    assert "/api/admin/beta-cohort" in fe
+
+    god = open("/app/frontend/src/pages/admin/GodModeDashboard.tsx").read()
+    assert "BetaCohortReportCard" in god
+    assert "<BetaCohortReportCard />" in god
+

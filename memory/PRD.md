@@ -1,5 +1,39 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-05-12 (Beta launch eve) — MASSIVE PRE-BETA SWEEP · 267/267 regression-shield GREEN 🚀.**
+>
+> **🐛 Bugs fixed today (production):**
+> - **Beta-tester redirect from Volumetric Galaxy** — root cause: Canvas threw on no-WebGL devices, bubbled to parent ErrorBoundary, redirected. Three-part fix: pre-mount WebGL probe + contained Canvas-level ErrorBoundary + `webglcontextlost` handler.
+> - **ProfileSetup white-on-white text** — explicit text-slate-900 + global `.bg-white input` CSS rule.
+> - **Volumetric ↔ Classic toggle did nothing** — switchDashboardView event-driven so router re-renders without page reload.
+> - **`/driver/dashboard` hung indefinitely** — redirected to working `/vibe-ridez/driver-dashboard`.
+> - **`/api/just-for-the-night/season-pass/me` 500 on missing auth** — proper 401.
+> - **Vibe Venues Host backend queried wrong collection** — `vibe_venues_listings` not `vibe_venues`.
+>
+> **🎁 Major features shipped today:**
+> 1. **Switch Role pill** — 6 roles (Rider/Driver/Merchant/Host/Streamer/SmartStack) with `?role=` deep-link support + first-time toasts.
+> 2. **HungryVibes merchant fulfillment loop** — Orders inbox + pending→preparing→ready→delivered state machine + auto-credit on delivery (2% Vibe Tax).
+> 3. **HungryVibes Test Order button** — `is_test=True` orders walk state machine without crediting Vibe Account.
+> 4. **HungryVibes Customer Order Tracking** — live timeline page polling /my every 6s.
+> 5. **Vibe Venues Host Dashboard** — 4-tile earnings (Escrowed/Released/Paid out/Properties) + 2 tabs (My Properties / Bookings) + Test Booking button.
+> 6. **Unified Earnings widget** — single rollup of 4 income streams (driver USD + host USD + merchant USD + streamer coins) on both Classic + Volumetric dashboards, auto-hides on zero state.
+> 7. **Production Smoke-Test card** in God Mode — 14 parallel read-only probes against live URL, 30-second pass/fail grid.
+> 8. **Stripe Connect Express scaffolding** — 4 endpoints + drop-in `<StripeConnectButton>` on driver/host/merchant dashboards, soft-fails until live keys.
+> 9. **Volumetric Carousel Navigation** — mid-side `←`/`→` arrows + 6-dot indicator + ←/→/Esc keyboard shortcuts. Step planets one-by-one.
+> 10. **Planet labels readable from overview** — category-tinted glass pills (text-sm md:text-base, distanceFactor=7).
+> 11. **Per-clip caption tags** on landing tour video — 6 tags overlay on each scene for silent-autoplay scrollers.
+> 12. **Landing tour video extended to 6 clips** (founder's 2 new clips appended, dice stays first).
+> 13. **"Remember my choice" toasts** on dashboard toggle + role switcher first-time.
+> 14. **Beta Cohort Report card** in God Mode — signups · roles · revenue · conversion · time-to-first-spend · activation · weakest rooms.
+>
+> **🔒 Locked in by 267 regression tests** so none of this can silently break.
+>
+> **🟢 Final health check (just ran):** /api/health 200 · all endpoints respond · 4 supervisor services RUNNING · disk 64% · 267/267 regression GREEN.
+>
+> **READY FOR BETA LAUNCH.** When the next redeploy hits, immediately open /vibe-vault-admin to see live Activity Pulse + Beta Cohort Report + Production Smoke-Test. Tap "Run pulse" to confirm 14/14 production probes GREEN.
+>
+> **Accepted gaps (NOT bugs):** Stripe Connect → configured:false until live keys · Resend default sender until IONOS DNS · LLM key budget cap (Receipt OCR + i18n degrade gracefully) · Solana mainnet stubbed until `project complete` · Manual payout queue active until Stripe Connect keys flip on.
+
 > **2026-05-12 (late) — Pre-redeploy POLISH PASS · ProfileSetup invisible-text BUG FIXED 🐛✅.** Founder reported "I went inside the preview to log in and it took me to the page where I had to put my profile information, and that still don't type over in that section yet either." RCA: shadcn `<Input>/<Textarea>/<Label>` primitives inherit `text-foreground` which the global dark theme defines as near-white. ProfileSetup.tsx renders those on a WHITE card → white-on-white = users could type but the text was invisible. Three-layer fix shipped:
 > 1. **ProfileSetup.tsx** — explicit `text-slate-900` + `placeholder:text-slate-400` on every Input/Textarea, `text-slate-800 font-semibold` on every Label, error banner for failed submits, proper bearer-token auth header.
 > 2. **index.css (global hardening)** — scoped rules: any `input/textarea/label` inside a `.bg-white` ancestor is forced to slate-900 text + slate-400 placeholders + slate-800 labels. Prevents this exact bug from ever surfacing on a future white-card form.

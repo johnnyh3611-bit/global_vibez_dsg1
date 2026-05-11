@@ -32,6 +32,7 @@ import SmartStackOpsTab from '@/components/admin/tabs/SmartStackOpsTab';
 import SystemStressMeter from '@/components/admin/SystemStressMeter';
 import ActivityPulseCard from '@/components/admin/ActivityPulseCard';
 import ProductionSmokeTestCard from '@/components/admin/ProductionSmokeTestCard';
+import BetaCohortReportCard from '@/components/admin/BetaCohortReportCard';
 import EmergencyOverride from '@/components/admin/EmergencyOverride';
 import ApexEvolutionControls from '@/components/admin/ApexEvolutionControls';
 import ChairHolderVoting from '@/components/admin/ChairHolderVoting';
@@ -193,6 +194,10 @@ export const GodModeDashboard = () => {
 
       {/* 2026-05-12 founder enhancement: live business pulse card */}
       <ActivityPulseCard />
+
+      {/* 2026-05-12 backlog: Beta Cohort Report — first 50-500 user
+          metrics so v1.1 planning has hard data instead of vibes. */}
+      <BetaCohortReportCard />
 
       {/* 2026-05-12 backlog #3: one-click production smoke test —
           14 read-only probes against the live URL. Catches regressions
