@@ -4912,3 +4912,46 @@ def test_dashboard_view_toggle_uses_switch_helper():
     assert "switchDashboardView" in new, "DashboardNew must use switchDashboardView()"
     assert 'switchDashboardView("volumetric")' in new
 
+
+
+def test_role_switcher_globally_mounted():
+    """2026-05-12 founder enhancement: a global 'Switch Role' pill at
+    top-right that drops down 5 role options (Rider, Driver, Merchant,
+    Streamer, SmartStack) and instantly navigates to that role's home
+    route. Persists last selection in `localStorage.gv_active_role` and
+    auto-syncs the active label from the URL.
+
+    Locked here so the global mount can't accidentally regress.
+    """
+    import os
+    comp_path = "/app/frontend/src/components/common/RoleSwitcher.tsx"
+    assert os.path.exists(comp_path), "RoleSwitcher component missing"
+    comp = open(comp_path).read()
+    for tid in [
+        "role-switcher",
+        "role-switcher-trigger",
+        "role-switcher-menu",
+    ]:
+        assert tid in comp, f"RoleSwitcher missing testid: {tid}"
+    # Per-option testid is built via template literal — assert the
+    # template + the 5 role keys exist instead of the rendered strings.
+    assert "role-switcher-option-${r.key}" in comp, "per-option testid template missing"
+    for key in ["rider", "driver", "merchant", "streamer", "smartstack"]:
+        assert f'"{key}"' in comp, f"RoleSwitcher missing role key: {key}"
+    # Canonical role home routes — single source of truth.
+    for href in [
+        '"/dashboard"',
+        '"/vibe-ridez/driver-dashboard"',
+        '"/hungryvibes/merchant"',
+        '"/my-streams"',
+        '"/smartstack"',
+    ]:
+        assert href in comp, f"RoleSwitcher missing canonical href: {href}"
+    # Persists selection so role survives reload.
+    assert "gv_active_role" in comp
+
+    # Globally mounted in App.js (so every protected page surfaces it).
+    app_js = open("/app/frontend/src/App.js").read()
+    assert "import RoleSwitcher" in app_js, "RoleSwitcher not imported"
+    assert "<RoleSwitcher />" in app_js, "RoleSwitcher not mounted in AppRouter"
+
