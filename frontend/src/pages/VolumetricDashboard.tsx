@@ -27,6 +27,7 @@ import type { Mesh, Group } from "three";
 import { ArrowLeft, Sparkles } from "lucide-react";
 import { authFetch } from "@/utils/secureAuth";
 import LiveActivityTicker from "@/components/common/LiveActivityTicker";
+import { switchDashboardView } from "@/pages/DashboardRouter";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -499,9 +500,12 @@ export default function VolumetricDashboard() {
   }, []);
 
   const setClassicMode = () => {
-    // 2026-05-12: switch the persistent dashboard preference and reload
-    // /dashboard so the DashboardRouter picks up the Classic view.
-    localStorage.setItem("gv_dashboard_view", "classic");
+    // 2026-05-12 (fix v2): switchDashboardView() writes localStorage AND
+    // dispatches a custom event that DashboardRouter listens for, so the
+    // router re-renders the Classic view instantly. Previously we only
+    // wrote localStorage + navigated to /dashboard, which is a no-op when
+    // already on /dashboard → the toggle did nothing.
+    switchDashboardView("classic");
     localStorage.removeItem("gv_volumetric_v1");
     navigate("/dashboard");
   };

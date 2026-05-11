@@ -4677,12 +4677,22 @@ def test_volumetric_dashboard_default_and_opt_out():
     assert '"/dashboard"' in routes
 
     # Classic dashboard still has the toggle pill back to Volumetric.
+    # 2026-05-12 fix v2: toggle now uses switchDashboardView() helper
+    # (writes localStorage AND dispatches gv-dashboard-view event so the
+    # router re-renders without a no-op navigate). Accept either pattern
+    # so older snapshots stay compatible.
     dash = open("/app/frontend/src/pages/DashboardNew.tsx").read()
     assert "dashboard-try-volumetric" in dash
-    assert 'localStorage.setItem("gv_dashboard_view", "volumetric")' in dash
+    assert (
+        'switchDashboardView("volumetric")' in dash
+        or 'localStorage.setItem("gv_dashboard_view", "volumetric")' in dash
+    )
 
     # Volumetric exposes the back-to-classic toggle.
-    assert 'localStorage.setItem("gv_dashboard_view", "classic")' in page
+    assert (
+        'switchDashboardView("classic")' in page
+        or 'localStorage.setItem("gv_dashboard_view", "classic")' in page
+    )
 
 
 def test_personal_homeworld_wired_end_to_end():
@@ -4864,4 +4874,41 @@ def test_profile_setup_white_card_text_visible():
     # Testids preserved so the test agent can fill the form end-to-end.
     for tid in ["bio-input", "age-input", "location-input", "interests-input", "submit-profile-btn"]:
         assert tid in src, f"ProfileSetup missing testid: {tid}"
+
+
+def test_dashboard_view_toggle_uses_switch_helper():
+    """2026-05-12 — founder reported "Still in the preview, I can't change
+    the view so I know automatically when I deploy it don't work."
+
+    Root cause: both toggle buttons used to do
+        localStorage.setItem('gv_dashboard_view', X);
+        navigate('/dashboard');
+    But you're ALREADY on /dashboard, so navigate() is a no-op (React
+    Router won't re-render). The `storage` event by spec does NOT fire in
+    the same tab that wrote the key. So clicking the toggle did nothing
+    visible — DashboardRouter was stuck on the cached initial view.
+
+    Fix: DashboardRouter exports `switchDashboardView(view)` which writes
+    localStorage AND dispatches a custom `gv-dashboard-view` window event.
+    DashboardRouter listens for that event and re-reads the preference.
+    Every toggle button MUST call this helper instead of writing localStorage
+    directly. This test enforces that contract.
+    """
+    router = open("/app/frontend/src/pages/DashboardRouter.tsx").read()
+    # Helper + event constant must be exported.
+    assert "export function switchDashboardView" in router
+    assert "DASHBOARD_VIEW_EVENT" in router
+    assert 'gv-dashboard-view' in router
+    # Router must listen for the custom event.
+    assert "addEventListener(DASHBOARD_VIEW_EVENT" in router
+
+    # Both toggle pages must import and use the helper (raw localStorage
+    # writes to gv_dashboard_view in the toggle button onClick are a bug).
+    vol = open("/app/frontend/src/pages/VolumetricDashboard.tsx").read()
+    assert "switchDashboardView" in vol, "VolumetricDashboard must use switchDashboardView()"
+    assert 'switchDashboardView("classic")' in vol
+
+    new = open("/app/frontend/src/pages/DashboardNew.tsx").read()
+    assert "switchDashboardView" in new, "DashboardNew must use switchDashboardView()"
+    assert 'switchDashboardView("volumetric")' in new
 

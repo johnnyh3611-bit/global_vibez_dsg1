@@ -22,6 +22,7 @@ import AppFooter from '@/components/AppFooter';
 import NotificationBanner from '@/components/NotificationBanner';
 import ChairHolderVoteBanner from '@/components/dashboard/ChairHolderVoteBanner';
 import RideHomeButton from '@/components/common/RideHomeButton';
+import { switchDashboardView } from '@/pages/DashboardRouter';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -473,8 +474,11 @@ export default function Dashboard() {
               variant="ghost"
               className="flex items-center gap-2 text-fuchsia-200 hover:text-white hover:bg-fuchsia-500/20 border border-fuchsia-400/40 rounded-full px-3 md:px-4 py-1.5 text-[10px] md:text-xs uppercase tracking-widest animate-pulse"
               onClick={() => {
-                // 2026-05-12: persist Volumetric as the user's preferred dashboard.
-                localStorage.setItem("gv_dashboard_view", "volumetric");
+                // 2026-05-12 (fix v2): switchDashboardView writes localStorage
+                // AND dispatches the gv-dashboard-view event so the router
+                // re-renders instantly. localStorage.setItem alone was a
+                // no-op while already on /dashboard.
+                switchDashboardView("volumetric");
                 navigate("/dashboard");
               }}
               aria-label="Switch to volumetric view"
@@ -544,7 +548,7 @@ export default function Dashboard() {
         <motion.button
           type="button"
           onClick={() => {
-            localStorage.setItem("gv_dashboard_view", "volumetric");
+            switchDashboardView("volumetric");
             navigate("/dashboard");
           }}
           data-testid="dashboard-volumetric-banner"
