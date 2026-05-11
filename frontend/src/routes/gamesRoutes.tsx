@@ -137,6 +137,11 @@ import VibeColiseum from "@/pages/games/VibeColiseum";
 import VibeSoloHighRoller from "@/pages/games/VibeSoloHighRoller";
 import DSG6Lottery from "@/pages/games/DSG6Lottery";
 import UndergroundCasino from "@/pages/UndergroundCasino";
+import ChessHall from "@/pages/games/ChessHall";
+import ChessBlitz from "@/pages/games/ChessBlitz";
+import ChessPuzzle from "@/pages/games/ChessPuzzle";
+import ChessTournament from "@/pages/games/ChessTournament";
+import HttpMultiplayerChess from "@/pages/games/HttpMultiplayerChess";
 import VibeWallet from "@/pages/VibeWallet";
 import CommunitySlots from "@/pages/CommunitySlots";
 import SmartTables from "@/pages/SmartTables";
@@ -373,6 +378,13 @@ export const gamesRoutes = (ProtectedRoute) => (
     {/* The Underground — Private high-limit lounge (May 2026 founder ask) */}
     <Route path="/underground-casino" element={<ProtectedRoute><UndergroundCasino /></ProtectedRoute>} />
     <Route path="/underground" element={<Navigate to="/underground-casino" replace />} />
+
+    {/* Chess Hall — lobby + Blitz / Daily Puzzle / Tournament / Multiplayer (May 2026) */}
+    <Route path="/chess-hall" element={<ProtectedRoute><ChessHall /></ProtectedRoute>} />
+    <Route path="/chess/blitz" element={<ProtectedRoute><ChessBlitz /></ProtectedRoute>} />
+    <Route path="/chess/puzzle" element={<ProtectedRoute><ChessPuzzle /></ProtectedRoute>} />
+    <Route path="/chess/tournament" element={<ProtectedRoute><ChessTournament /></ProtectedRoute>} />
+    <Route path="/chess/multiplayer" element={<ProtectedRoute><HttpMultiplayerChess /></ProtectedRoute>} />
     
     {/* AAA Casino Games - Updated to use WebSocket-enabled components */}
     <Route path="/practice/play/blackjack-aaa" element={<ProtectedRoute><BlackjackGameAAA /></ProtectedRoute>} />

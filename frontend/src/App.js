@@ -75,6 +75,7 @@ const FULLSCREEN_GAME_ROUTES = [
   "/vibe-654", "/vibez-654",
   "/games/vibez-654",
   "/chess", "/checkers", "/connect4", "/practice/play",
+  "/chess-hall", "/chess/blitz", "/chess/puzzle", "/chess/tournament", "/chess/multiplayer",
   "/card-mp",  // multiplayer card rooms
   "/cinema-room",  // The Cinema Room — sync-watch viewer
   "/cyber-casino", "/games/cyber-casino", "/casino-war",

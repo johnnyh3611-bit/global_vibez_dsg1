@@ -132,6 +132,7 @@ const FULLSCREEN_PREFIXES = [
   '/baccarat-aaa', '/blackjack', '/poker', '/three-card-poker',
   '/vibe-654', '/vibez-654', '/games/vibez-654',
   '/chess', '/checkers', '/connect4', '/practice/play',
+  '/chess-hall', '/chess/blitz', '/chess/puzzle', '/chess/tournament', '/chess/multiplayer',
   '/card-mp', '/cinema-room',
   '/cyber-casino', '/games/cyber-casino', '/casino-war',
   '/lottery', '/dsg6',  // DSG 6 Quantum Vault Lottery (May 2026)

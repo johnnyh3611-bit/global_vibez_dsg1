@@ -514,6 +514,13 @@ def register_all_routes(
     except Exception as _e:
         log.warning(f"Vibe Core orchestrator not mounted: {_e}")
 
+    # Chess Hall — puzzles, blitz results, tournament queue (May 2026)
+    try:
+        from routes.chess_hall import router as chess_hall_router
+        api_router.include_router(chess_hall_router, tags=["chess-hall"])
+    except Exception as _e:
+        log.warning(f"Chess Hall routes not mounted: {_e}")
+
     try:
         from routes.cinema_room import router as cinema_room_router
         api_router.include_router(cinema_room_router, tags=["cinema-room"])

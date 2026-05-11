@@ -1,7 +1,19 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
 
-> **2026-05-10 (Latest) — The Underground Casino + Universal Landscape Toggle 🎰♠️.** Founder's three asks shipped.
+> **2026-05-10 (Latest) — Chess Hall + Blitz + Daily Puzzle + Tournament Bracket ♟️.** Founder ask continuation (Chess 4b+c from earlier session).
+>
+> **NEW: 1 backend module + 4 frontend pages, all live + verified end-to-end:**
+> 1. **`/chess-hall`** — lobby grid with 5 modes (Classic AI · 5-min Blitz · Daily Puzzle · Tournament · Multiplayer). Shows per-mode tally (W/L/D) from `/api/chess/stats`.
+> 2. **`/chess/blitz`** — full chess.js + react-chessboard, dual 5:00 clocks ticking at 100ms, simple capture-biased AI move generator, auto-records result to `/api/chess/results` on terminal state.
+> 3. **`/chess/puzzle`** — pulls daily puzzle from `/api/chess/puzzles/daily` (6 curated FEN positions, rotates by UTC day), submits each move to `/api/chess/puzzles/submit` for validation, shows hint toggle + retry on wrong move.
+> 4. **`/chess/tournament`** — join 4-player bracket queue, polls `/api/chess/tournament/status` every 3s, instantly creates bracket when 4th player joins, shows live bracket (round 1 + final + champion).
+> 5. **`/chess/multiplayer`** — wired existing `HttpMultiplayerChess` to a proper top-level route (was only reachable via deep nav before).
+> 6. **Backend (`/api/chess/*`)** — 7 endpoints: `puzzles/daily`, `puzzles/list`, `puzzles/submit`, `results` POST + `stats` GET, `tournament/join`, `tournament/status`. Verified by curl: correct/wrong submit, result record, tally lookup, queue join.
+>
+> All 4 pages mount the global `LandscapeRotateHint` + `InRoomCommsLauncher` pills at top-right. 265/265 pytest green. Frontend smoke screenshots verified each page renders correctly.
+>
+> **i18n update**: Universal Key still budget-capped — top-up has not propagated. Founder must re-confirm before i18n run.
 >
 > 1. **The Underground** (`/underground-casino`) — brand-new unique high-limit private lounge. Deep wine/burgundy velvet base + amber brass accents (visually distinct from cyan `/cyber-casino`). Pass-phrase gate ("I understand") + ₵5,000 balance floor. AI host Lou greets in the lobby. 6 themed tables: Velvet Blackjack, Sapphire Baccarat, Brass Roulette, Garnet 3-Card, Obsidian 654, Quantum Vault — each navigates to its underlying game with `?stake_floor=5000&lounge=underground` so future stake-floor enforcement is one-line wire-up away. testids: `ugc-entry-gate`, `ugc-balance`, `ugc-pass-phrase`, `ugc-enter`, `ugc-lobby`, `ugc-tables`, `ugc-table-{id}`.
 > 2. **Universal Landscape Toggle** (`<LandscapeRotateHint />`) — top-right pill (data-testid=`landscape-toggle`) mounted globally on every fullscreen game route via `<GlobalCommsMounter />`. 3 states: AUTO/portrait/Forced. Auto-shows a centered hint overlay (`landscape-hint-overlay`) with Force + Continue-in-Portrait buttons when the device is portrait+mobile. Forced state applies `body.gv-force-landscape` CSS rotation that works on ANY device regardless of OS orientation. Persisted in `localStorage.gv_force_landscape`. **Verified live on all 13 fullscreen routes.**
