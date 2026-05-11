@@ -27,6 +27,7 @@ import type { Mesh, Group } from "three";
 import { ArrowLeft, Sparkles } from "lucide-react";
 import { authFetch } from "@/utils/secureAuth";
 import LiveActivityTicker from "@/components/common/LiveActivityTicker";
+import ErrorBoundary from "@/components/common/ErrorBoundary";
 import { switchDashboardView } from "@/pages/DashboardRouter";
 import UnifiedEarningsWidget from "@/components/common/UnifiedEarningsWidget";
 
@@ -244,12 +245,21 @@ function Planet({
           <meshStandardMaterial color={category.aura} emissive={category.aura} emissiveIntensity={0.7} />
         </mesh>
       </group>
-      {/* Label */}
-      <Html position={[0, -1.4, 0]} center distanceFactor={10}>
+      {/* Label — 2026-05-12 founder enhancement: subtle but more readable
+          planet labels visible from the overview. Bumped distanceFactor
+          from 10 → 7 (slightly larger), added a category-tinted glass
+          pill background, and dropped from text-xs to text-sm so first-
+          time visitors don't have to tap a planet to find out what it is. */}
+      <Html position={[0, -1.5, 0]} center distanceFactor={7} zIndexRange={[60, 0]}>
         <div
           data-testid={`vol-planet-${category.id}`}
-          className="text-white text-xs uppercase tracking-[0.3em] font-black whitespace-nowrap pointer-events-none select-none"
-          style={{ textShadow: `0 0 12px ${category.color}` }}
+          className="text-white text-sm md:text-base uppercase tracking-[0.3em] font-black whitespace-nowrap pointer-events-none select-none px-3 py-1 rounded-full"
+          style={{
+            textShadow: `0 0 14px ${category.color}, 0 2px 8px rgba(0,0,0,0.9)`,
+            background: `linear-gradient(180deg, rgba(0,0,0,0.55), rgba(0,0,0,0.85))`,
+            border: `1px solid ${category.color}aa`,
+            boxShadow: `0 0 24px ${category.color}55`,
+          }}
         >
           {category.label}
         </div>
@@ -481,6 +491,47 @@ export default function VolumetricDashboard() {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [homeworlds, setHomeworlds] = useState<Record<string, Homeworld>>({});
 
+  // 2026-05-12 PRODUCTION BUG (beta-tester reports): "when they go into
+  // the volumetric view, they cannot see that page. It redirects them
+  // back out." Root cause: the `<Canvas>` throws on devices where WebGL
+  // is unavailable (older Android browsers, low-memory iOS, hardware
+  // accel disabled in Chrome flags). The throw bubbles up to the parent
+  // ErrorBoundary which redirects out.
+  //
+  // Fix: detect WebGL availability at mount BEFORE rendering the Canvas.
+  // If unavailable: persist preference to classic, dispatch the router
+  // event, AND show a friendly toast so the user knows what happened
+  // (no silent redirect — they understand and can come back later from
+  // a WebGL-capable device).
+  const [webglOk, setWebglOk] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    let ok = false;
+    try {
+      const canvas = document.createElement("canvas");
+      ok = !!(
+        window.WebGLRenderingContext &&
+        (canvas.getContext("webgl") || canvas.getContext("experimental-webgl"))
+      );
+    } catch {
+      ok = false;
+    }
+    setWebglOk(ok);
+    if (!ok) {
+      // Flip to Classic + tell the user why. We don't navigate() because
+      // the DashboardRouter listens for `gv-dashboard-view` and re-renders
+      // in-place — no extra mount thrash.
+      switchDashboardView("classic");
+      import("sonner").then(({ toast }) => {
+        toast.info("Volumetric Galaxy needs WebGL", {
+          description:
+            "Your browser doesn't support 3D acceleration — showing Classic view instead. Try Chrome / Safari with hardware acceleration on.",
+          duration: 6000,
+        });
+      });
+    }
+  }, []);
+
   // 2026-05-12 founder enhancement: fetch user's per-category top room
   // ("Personal Homeworld") so the planet thumbnails reflect their habits.
   useEffect(() => {
@@ -499,6 +550,20 @@ export default function VolumetricDashboard() {
     })();
     return () => { cancelled = true; };
   }, []);
+
+  // While we're probing WebGL or after we determined it's unavailable,
+  // render a minimal placeholder. The router will swap to Classic via
+  // the event we fired above, so this only shows for one paint.
+  if (webglOk === false) {
+    return (
+      <div
+        className="fixed inset-0 bg-[#040208] text-white flex items-center justify-center"
+        data-testid="volumetric-webgl-unavailable"
+      >
+        <p className="text-fuchsia-200/70 text-sm">Switching to Classic view…</p>
+      </div>
+    );
+  }
 
   const setClassicMode = () => {
     // 2026-05-12 (fix v2): switchDashboardView() writes localStorage AND
@@ -552,24 +617,63 @@ export default function VolumetricDashboard() {
         <UnifiedEarningsWidget compact />
       </div>
 
-      {/* The R3F canvas */}
-      <Canvas
-        camera={{ position: [0, 4, 12], fov: 60 }}
-        dpr={[1, 2]}
-        gl={{ antialias: true, alpha: false }}
+      {/* The R3F canvas — wrapped in a dedicated ErrorBoundary so a
+          runtime WebGL crash (e.g. context lost, GPU OOM, driver hang on
+          beta-tester devices) falls back to Classic view in-place
+          instead of bubbling to the app-level boundary which would
+          redirect the user out of /dashboard. */}
+      <ErrorBoundary
+        name="volumetric-canvas"
+        fallback={
+          <div
+            className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-30"
+            data-testid="volumetric-canvas-crashed"
+          >
+            <div className="text-center max-w-sm px-4">
+              <p className="text-fuchsia-200 text-sm font-bold mb-2">
+                The 3D galaxy hit a snag on your device.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  switchDashboardView("classic");
+                  navigate("/dashboard");
+                }}
+                className="px-4 py-2 rounded-full bg-fuchsia-500 hover:bg-fuchsia-400 text-white text-xs font-bold uppercase tracking-widest"
+                data-testid="volumetric-canvas-crashed-classic-btn"
+              >
+                Switch to Classic view
+              </button>
+            </div>
+          </div>
+        }
       >
-        <Suspense fallback={null}>
-          <GalaxyScene selectedIndex={selectedIndex} setSelectedIndex={setSelectedIndex} homeworlds={homeworlds} />
-        </Suspense>
-        <OrbitControls
-          enableZoom
-          enablePan={false}
-          minDistance={8}
-          maxDistance={20}
-          autoRotate={selectedIndex === null}
-          autoRotateSpeed={0.5}
-        />
-      </Canvas>
+        <Canvas
+          camera={{ position: [0, 4, 12], fov: 60 }}
+          dpr={[1, 2]}
+          gl={{ antialias: true, alpha: false, failIfMajorPerformanceCaveat: false }}
+          onCreated={({ gl }) => {
+            // 2026-05-12 — auto-recover from WebGL context loss instead
+            // of letting the canvas go blank. Browsers fire this on tab
+            // backgrounding, GPU driver hiccups, or low-memory swaps.
+            gl.domElement.addEventListener("webglcontextlost", (e) => {
+              e.preventDefault();
+            });
+          }}
+        >
+          <Suspense fallback={null}>
+            <GalaxyScene selectedIndex={selectedIndex} setSelectedIndex={setSelectedIndex} homeworlds={homeworlds} />
+          </Suspense>
+          <OrbitControls
+            enableZoom
+            enablePan={false}
+            minDistance={8}
+            maxDistance={20}
+            autoRotate={selectedIndex === null}
+            autoRotateSpeed={0.5}
+          />
+        </Canvas>
+      </ErrorBoundary>
 
       {/* 2026-05-12 founder fix: "the rotation don't actually rotate one
           by one... if you spin it, you spin it by wanting to go over one

@@ -5421,3 +5421,59 @@ def test_volumetric_planet_carousel_nav_wired():
     assert "(selectedIndex + 1) % total" in page, "next must wrap modulo total"
     assert "(selectedIndex - 1 + total) % total" in page, "prev must wrap modulo total"
 
+
+
+def test_volumetric_webgl_unavailable_fallback_wired():
+    """2026-05-12 PRODUCTION BUG (beta-tester reports): "when they go
+    into the volumetric view, they cannot see that page. It redirects
+    them back out." Root cause: the <Canvas> threw on devices where
+    WebGL is unavailable, bubbling to the parent ErrorBoundary which
+    redirected.
+
+    Fix has THREE parts, all locked here:
+      1. Pre-mount WebGL probe — if unavailable, swap to Classic in-place
+         + show a clear toast so the user knows why.
+      2. Canvas wrapped in its own ErrorBoundary with a contained
+         "Switch to Classic view" fallback (no full-page redirect).
+      3. ErrorBoundary accepts a `fallback` prop so nested boundaries
+         can render contained recovery UI.
+      4. Canvas listens to `webglcontextlost` to prevent context-loss
+         from turning the page blank on tab backgrounding.
+    """
+    page = open("/app/frontend/src/pages/VolumetricDashboard.tsx").read()
+    # WebGL probe at mount.
+    assert "WebGLRenderingContext" in page, "WebGL detection missing"
+    assert 'getContext("webgl")' in page or "getContext('webgl')" in page
+    # Contained ErrorBoundary around the Canvas with a friendly fallback.
+    assert "<ErrorBoundary" in page, "ErrorBoundary wrapper missing on canvas"
+    assert "volumetric-canvas-crashed" in page
+    assert "volumetric-canvas-crashed-classic-btn" in page
+    # webglcontextlost recovery hook.
+    assert "webglcontextlost" in page
+    # Detect-failure path swaps to Classic in-place (no navigate redirect).
+    assert 'switchDashboardView("classic")' in page
+    # Friendly placeholder during the swap.
+    assert "volumetric-webgl-unavailable" in page
+
+    # ErrorBoundary supports the `fallback` prop.
+    boundary = open("/app/frontend/src/components/common/ErrorBoundary.tsx").read()
+    assert "fallback?: React.ReactNode" in boundary, "ErrorBoundary must accept fallback prop"
+    assert "this.props.fallback" in boundary
+
+
+def test_volumetric_planet_labels_visible_from_overview():
+    """2026-05-12 founder enhancement: planet labels readable from the
+    galaxy overview so first-time visitors don't have to tap a planet
+    just to find out what it is. Label gets a category-tinted glass
+    pill background + bumped from text-xs to text-sm and distanceFactor
+    from 10 → 7 (slightly larger / closer to camera)."""
+    page = open("/app/frontend/src/pages/VolumetricDashboard.tsx").read()
+    # Slightly larger size class + pill chrome.
+    assert "text-sm md:text-base uppercase tracking-[0.3em]" in page
+    # distanceFactor brought closer so labels render at readable size.
+    assert "distanceFactor={7}" in page
+    # All 6 testids (template-literal but with stable category ids)
+    # confirmed by searching the CATEGORIES const for the id list.
+    for cat_id in ["games", "dating", "rides", "food", "streaming", "vault"]:
+        assert f'id: "{cat_id}"' in page, f"CATEGORIES missing id: {cat_id}"
+

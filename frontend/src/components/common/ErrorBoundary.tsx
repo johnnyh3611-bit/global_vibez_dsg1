@@ -8,6 +8,11 @@ import { errorLogger } from '@/utils/errorLogger';
 interface ErrorBoundaryProps {
   name?: string;
   children?: React.ReactNode;
+  // 2026-05-12 — allow a caller-supplied fallback so nested boundaries
+  // (e.g. the volumetric R3F canvas) can render a contained, friendly
+  // recovery UI instead of the full-page "Oops!" screen which would
+  // appear to redirect the user out of the page they were on.
+  fallback?: React.ReactNode;
 }
 
 interface ErrorBoundaryState {
@@ -67,6 +72,11 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 
   render() {
     if (this.state.hasError) {
+      // 2026-05-12 — prefer caller-supplied fallback when present so we
+      // don't whitewash the entire page on a contained error.
+      if (this.props.fallback !== undefined) {
+        return this.props.fallback;
+      }
       return (
         <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 to-black flex items-center justify-center p-4">
           <motion.div
