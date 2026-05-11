@@ -830,7 +830,7 @@ async def _send_receipt_email(sub: Dict[str, Any]) -> None:
 async def host_my_venues(user_id: str) -> Dict[str, Any]:
     """List every venue the host has put on the platform."""
     db = get_database()
-    venues = await db.vibe_venues.find(
+    venues = await db.vibe_venues_listings.find(
         {"host_user_id": user_id}, {"_id": 0}
     ).sort("created_at", -1).to_list(length=100)
     return {"success": True, "count": len(venues), "venues": venues}
@@ -842,7 +842,7 @@ async def host_my_bookings(user_id: str, status: Optional[str] = None) -> Dict[s
     Optional `?status=pending|escrowed|prep_released|in_progress|completed|paid_out|cancelled|disputed`."""
     db = get_database()
     # 1. Resolve every venue_id the host owns.
-    venue_docs = await db.vibe_venues.find(
+    venue_docs = await db.vibe_venues_listings.find(
         {"host_user_id": user_id}, {"_id": 0, "venue_id": 1, "name": 1}
     ).to_list(length=200)
     if not venue_docs:
@@ -852,14 +852,20 @@ async def host_my_bookings(user_id: str, status: Optional[str] = None) -> Dict[s
     # 2. Find every booking against those venues.
     q: Dict[str, Any] = {"venue_id": {"$in": list(venue_id_to_name.keys())}}
     if status:
-        q["state"] = status
+        q["lifecycle_state"] = status
     bookings = await db.vibe_venues_bookings.find(q, {"_id": 0}).sort(
         "created_at", -1
     ).limit(200).to_list(length=200)
 
     # 3. Decorate each booking with the venue name (saves a frontend join).
     for b in bookings:
-        b["venue_name"] = venue_id_to_name.get(b.get("venue_id"), "")
+        b["venue_name"] = venue_id_to_name.get(b.get("venue_id"), b.get("venue_name", ""))
+        # Mirror lifecycle_state into `state` for the frontend pill helper.
+        b["state"] = b.get("lifecycle_state", "pending")
+        # Project pricing.host_payout (frontend expects pricing.host_payout, not _usd suffix).
+        if "pricing" in b and "host_payout_usd" in b["pricing"]:
+            b["pricing"]["host_payout"] = b["pricing"]["host_payout_usd"]
+            b["pricing"]["grand_total"] = b["pricing"].get("grand_total_usd")
 
     return {"success": True, "count": len(bookings), "bookings": bookings}
 
@@ -874,7 +880,7 @@ async def host_earnings_summary(user_id: str) -> Dict[str, Any]:
       - all_time_count:  every completed/paid_out booking
     """
     db = get_database()
-    venue_docs = await db.vibe_venues.find(
+    venue_docs = await db.vibe_venues_listings.find(
         {"host_user_id": user_id}, {"_id": 0, "venue_id": 1}
     ).to_list(length=200)
     if not venue_docs:
@@ -894,8 +900,8 @@ async def host_earnings_summary(user_id: str) -> Dict[str, Any]:
         {"$match": {"venue_id": {"$in": venue_ids}}},
         {
             "$group": {
-                "_id": "$state",
-                "total_payout": {"$sum": {"$ifNull": ["$pricing.host_payout", 0]}},
+                "_id": "$lifecycle_state",
+                "total_payout": {"$sum": {"$ifNull": ["$pricing.host_payout_usd", 0]}},
                 "count": {"$sum": 1},
             }
         },
@@ -923,4 +929,63 @@ async def host_earnings_summary(user_id: str) -> Dict[str, Any]:
         "platform_fee_pct": PLATFORM_RENTAL_FEE_PCT,
         "prep_fee_pct": PREP_FEE_PCT,
     }
+
+
+
+@router.post("/host/test-booking/{user_id}")
+async def host_drop_test_booking(user_id: str) -> Dict[str, Any]:
+    """2026-05-12 — mirror of HungryVibes Test Order. Drops a synthetic
+    6-hour booking onto the host's NEWEST venue so they can practice the
+    pending → escrowed → prep_released → in_progress → completed flow
+    without needing a real customer to spin up Solflare and lock USDC.
+
+    The booking is marked `is_test=True` so reporting + earnings widgets
+    can exclude it. If host has no venues yet, returns 404."""
+    db = get_database()
+    venue = await db.vibe_venues_listings.find_one(
+        {"host_user_id": user_id},
+        {"_id": 0},
+        sort=[("created_at", -1)],
+    )
+    if not venue:
+        raise HTTPException(
+            status_code=404,
+            detail="List a property first via /api/vibe-venues/venues/list",
+        )
+
+    block_hours = 6
+    house_rental_total = float(venue["base_hourly_rate_usd"]) * block_hours
+    platform_fee = round(house_rental_total * PLATFORM_RENTAL_FEE_PCT, 2)
+    host_payout = round(house_rental_total - platform_fee, 2)
+    booking_id = f"bk_test_{uuid.uuid4().hex[:8]}"
+    now_iso = _utc_iso()
+    doc = {
+        "booking_id": booking_id,
+        "customer_user_id": "test-customer",
+        "venue_id": venue["venue_id"],
+        "venue_name": venue["name"],
+        "host_user_id": user_id,
+        "artisan_id": None,
+        "artisan_name": None,
+        "start_at": now_iso,
+        "block_hours": block_hours,
+        "pricing": {
+            "house_rental_total_usd": round(house_rental_total, 2),
+            "platform_fee_usd": platform_fee,
+            "host_payout_usd": host_payout,
+            "artisan_service_total_usd": 0.0,
+            "artisan_prep_fee_usd": 0.0,
+            "artisan_balance_usd": 0.0,
+            "grand_total_usd": round(house_rental_total, 2),
+        },
+        "lifecycle_state": "pending",
+        "lifecycle_history": [{"state": "pending", "at": now_iso}],
+        "review": None,
+        "vibe_check_passed_at": None,
+        "is_test": True,
+        "created_at": now_iso,
+    }
+    await db.vibe_venues_bookings.insert_one(doc)
+    doc.pop("_id", None)
+    return {"success": True, "booking": doc}
 

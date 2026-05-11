@@ -160,6 +160,36 @@ export default function VibeVenuesHostDashboard() {
           </button>
         </div>
 
+        {/* Test Booking — drops a synthetic 6h booking onto the host's newest
+            venue so a brand-new host can practice the escrow loop without
+            needing a real customer to lock USDC via Solflare. Only renders
+            once the host has at least one property. */}
+        {venues.length > 0 && (
+          <div className="mb-4 flex justify-end">
+            <button
+              type="button"
+              onClick={async () => {
+                const res = await authFetch(
+                  `${API}/api/vibe-venues/host/test-booking/${userId}`,
+                  { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" },
+                );
+                if (!res.ok) {
+                  const err = await res.json().catch(() => ({}));
+                  toast.error(err.detail || "Could not drop test booking");
+                  return;
+                }
+                toast.success("Test booking dropped — open it to walk the escrow loop");
+                await load();
+                setTab("bookings");
+              }}
+              data-testid="vvhd-drop-test-booking"
+              className="text-[10px] uppercase tracking-widest font-bold bg-fuchsia-400/15 text-fuchsia-200 hover:bg-fuchsia-400 hover:text-white border border-fuchsia-400/40 px-3 py-1 rounded-full transition-colors"
+            >
+              + Drop test booking
+            </button>
+          </div>
+        )}
+
         {/* Earnings summary tiles */}
         <div
           className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6"

@@ -128,6 +128,21 @@ export default function RoleSwitcher() {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<RoleKey>(() => {
     if (typeof window === "undefined") return "rider";
+    // 2026-05-12 backlog #7: deep-link role pre-selection. If the URL
+    // carries `?role=driver` (or any valid key), use that — overrides
+    // localStorage and the path-derived fallback. Lets you SMS a driver
+    // onboarding link to a new recruit and have them land on the right
+    // dashboard automatically.
+    const qs = new URLSearchParams(window.location.search);
+    const fromQuery = (qs.get("role") || "").toLowerCase();
+    if (ROLES.find((r) => r.key === fromQuery)) {
+      try {
+        localStorage.setItem("gv_active_role", fromQuery);
+      } catch {
+        /* private mode — silent */
+      }
+      return fromQuery as RoleKey;
+    }
     const saved = (localStorage.getItem("gv_active_role") || "") as RoleKey;
     return ROLES.find((r) => r.key === saved)?.key || activeRoleFromPath(pathname);
   });
@@ -143,6 +158,21 @@ export default function RoleSwitcher() {
       /* private mode — silent */
     }
   }, [pathname]);
+
+  // 2026-05-12 backlog #7: on first mount, if the URL carries ?role=X
+  // AND the user is already on /dashboard, auto-navigate to that role's
+  // home so a deep-link recipient lands on the right page without a tap.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const qs = new URLSearchParams(window.location.search);
+    const fromQuery = (qs.get("role") || "").toLowerCase();
+    const target = ROLES.find((r) => r.key === fromQuery);
+    if (target && pathname === "/dashboard") {
+      navigate(target.href, { replace: true });
+    }
+    // Intentionally no deps — run once.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Close on outside click / Escape.
   useEffect(() => {
@@ -234,6 +264,17 @@ export default function RoleSwitcher() {
                 onClick={() => {
                   try {
                     localStorage.setItem("gv_active_role", r.key);
+                    // 2026-05-12 backlog #8: confirm persistence with a toast
+                    // the first time a user actively swaps roles, so they
+                    // know the platform remembers which hat they're wearing.
+                    if (localStorage.getItem("gv_active_role_toast_seen") !== "1") {
+                      localStorage.setItem("gv_active_role_toast_seen", "1");
+                      import("sonner").then(({ toast }) => {
+                        toast.success(`Switched to ${r.short}`, {
+                          description: "We'll remember next time you sign in.",
+                        });
+                      });
+                    }
                   } catch {
                     /* private mode — silent */
                   }

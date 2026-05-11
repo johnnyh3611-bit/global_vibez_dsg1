@@ -475,11 +475,19 @@ export default function Dashboard() {
               variant="ghost"
               className="flex items-center gap-2 text-fuchsia-200 hover:text-white hover:bg-fuchsia-500/20 border border-fuchsia-400/40 rounded-full px-3 md:px-4 py-1.5 text-[10px] md:text-xs uppercase tracking-widest animate-pulse"
               onClick={() => {
-                // 2026-05-12 (fix v2): switchDashboardView writes localStorage
-                // AND dispatches the gv-dashboard-view event so the router
-                // re-renders instantly. localStorage.setItem alone was a
-                // no-op while already on /dashboard.
+                // 2026-05-12 (fix v2 + backlog #8): write localStorage AND
+                // dispatch event so the router re-renders instantly. Show
+                // a "Saved as default" toast on first volumetric toggle.
+                const seen = localStorage.getItem("gv_dashboard_view_seen") === "1";
                 switchDashboardView("volumetric");
+                if (!seen) {
+                  localStorage.setItem("gv_dashboard_view_seen", "1");
+                  import("sonner").then(({ toast }) => {
+                    toast.success("Volumetric Galaxy saved as your default", {
+                      description: "Switch back anytime from Classic View.",
+                    });
+                  });
+                }
                 navigate("/dashboard");
               }}
               aria-label="Switch to volumetric view"

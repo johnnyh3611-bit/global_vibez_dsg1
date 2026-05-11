@@ -31,6 +31,7 @@ import SmartStackOpsTab from '@/components/admin/tabs/SmartStackOpsTab';
 
 import SystemStressMeter from '@/components/admin/SystemStressMeter';
 import ActivityPulseCard from '@/components/admin/ActivityPulseCard';
+import ProductionSmokeTestCard from '@/components/admin/ProductionSmokeTestCard';
 import EmergencyOverride from '@/components/admin/EmergencyOverride';
 import ApexEvolutionControls from '@/components/admin/ApexEvolutionControls';
 import ChairHolderVoting from '@/components/admin/ChairHolderVoting';
@@ -192,6 +193,11 @@ export const GodModeDashboard = () => {
 
       {/* 2026-05-12 founder enhancement: live business pulse card */}
       <ActivityPulseCard />
+
+      {/* 2026-05-12 backlog #3: one-click production smoke test —
+          14 read-only probes against the live URL. Catches regressions
+          in 30 seconds right after each redeploy. */}
+      <ProductionSmokeTestCard />
 
       <TabGroup index={selectedTab} onIndexChange={setSelectedTab}>
         <TabList className="mb-6">

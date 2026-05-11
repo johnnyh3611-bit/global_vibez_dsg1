@@ -75,7 +75,7 @@ async def _host_totals(db, user_id: str) -> Dict[str, float]:
     """Lifetime + last-7d host earnings in USD (Vibe Venues host_payout)."""
     venue_ids = [
         v["venue_id"]
-        for v in await db.vibe_venues.find(
+        for v in await db.vibe_venues_listings.find(
             {"host_user_id": user_id}, {"_id": 0, "venue_id": 1}
         ).to_list(length=200)
     ]
@@ -87,10 +87,10 @@ async def _host_totals(db, user_id: str) -> Dict[str, float]:
         {
             "$match": {
                 "venue_id": {"$in": venue_ids},
-                "state": {"$in": ["completed", "paid_out", "in_progress"]},
+                "lifecycle_state": {"$in": ["completed", "paid_out", "in_progress"]},
             }
         },
-        {"$group": {"_id": None, "total": {"$sum": {"$ifNull": ["$pricing.host_payout", 0]}}}},
+        {"$group": {"_id": None, "total": {"$sum": {"$ifNull": ["$pricing.host_payout_usd", 0]}}}},
     ]
     all_rows = await db.vibe_venues_bookings.aggregate(pipeline_all).to_list(length=1)
     lifetime = round(float(all_rows[0]["total"] if all_rows else 0), 2)
@@ -101,11 +101,11 @@ async def _host_totals(db, user_id: str) -> Dict[str, float]:
         {
             "$match": {
                 "venue_id": {"$in": venue_ids},
-                "state": {"$in": ["completed", "paid_out", "in_progress"]},
+                "lifecycle_state": {"$in": ["completed", "paid_out", "in_progress"]},
                 "created_at": {"$gte": cutoff},
             }
         },
-        {"$group": {"_id": None, "total": {"$sum": {"$ifNull": ["$pricing.host_payout", 0]}}}},
+        {"$group": {"_id": None, "total": {"$sum": {"$ifNull": ["$pricing.host_payout_usd", 0]}}}},
     ]
     week_rows = await db.vibe_venues_bookings.aggregate(pipeline_7d).to_list(length=1)
     last_7d = round(float(week_rows[0]["total"] if week_rows else 0), 2)

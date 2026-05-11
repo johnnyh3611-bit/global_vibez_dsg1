@@ -5155,3 +5155,129 @@ def test_unified_earnings_widget_wired():
     vol = open("/app/frontend/src/pages/VolumetricDashboard.tsx").read()
     assert "UnifiedEarningsWidget" in vol, "widget must mount on volumetric dashboard"
 
+
+
+def test_hungryvibes_customer_order_tracking_wired():
+    """2026-05-12 backlog #1: customer-side order tracking page —
+    live status timeline (Order placed → Restaurant preparing → On the
+    way → Delivered). Polls /api/hungryvibes/orders/my every 6s."""
+    page = open("/app/frontend/src/pages/HungryVibezOrderTracking.tsx").read()
+    for tid in [
+        "hv-tracking-page",
+        "hv-tracking-empty",
+        "hv-tracking-toggle-archive",
+    ]:
+        assert tid in page, f"OrderTracking missing testid: {tid}"
+    # Stage testid is template-literal — verify the template + the 4 stage keys.
+    assert "hv-tracking-stage-${stage.key}" in page, "stage testid template missing"
+    for stage in ["pending", "preparing", "ready", "delivered"]:
+        assert f'"{stage}"' in page, f"OrderTracking missing stage: {stage}"
+    assert "/api/hungryvibes/orders/my" in page, "must poll customer /my endpoint"
+    # Route registered in monetizationRoutes.
+    routes = open("/app/frontend/src/routes/monetizationRoutes.tsx").read()
+    assert '"/hungryvibes/orders"' in routes
+    assert "HungryVibezOrderTracking" in routes
+
+
+def test_vibe_venues_test_booking_endpoint_wired():
+    """2026-05-12 backlog #4: 'Test Booking' button on the Host Dashboard
+    mirrors HungryVibes Test Order — drops a synthetic 6h booking onto
+    the host's newest property so they can practice the escrow loop
+    without needing a real customer locking USDC via Solflare."""
+    from server import app
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    assert "/api/vibe-venues/host/test-booking/{user_id}" in paths
+
+    src = open("/app/backend/routes/vibe_venues.py").read()
+    # is_test marker + uses the canonical collection name.
+    assert "vibe_venues_listings" in src
+    assert "host_drop_test_booking" in src
+    assert '"is_test": True' in src
+
+    page = open("/app/frontend/src/pages/vibe-venues/VibeVenuesHostDashboard.tsx").read()
+    assert "vvhd-drop-test-booking" in page
+    assert "/api/vibe-venues/host/test-booking/" in page
+
+
+def test_dashboard_view_remember_toast_wired():
+    """2026-05-12 backlog #8: first-time toggle shows a 'saved as default'
+    toast so users know the platform remembers their preference."""
+    vol = open("/app/frontend/src/pages/VolumetricDashboard.tsx").read()
+    new = open("/app/frontend/src/pages/DashboardNew.tsx").read()
+    assert "gv_dashboard_view_seen" in vol
+    assert "gv_dashboard_view_seen" in new
+    assert "Classic view saved as your default" in vol
+    assert "Volumetric Galaxy saved as your default" in new
+
+    role = open("/app/frontend/src/components/common/RoleSwitcher.tsx").read()
+    assert "gv_active_role_toast_seen" in role
+
+
+def test_role_aware_deep_link_url_wired():
+    """2026-05-12 backlog #7: ?role=driver in any URL pre-selects driver
+    mode and (when landing on /dashboard) auto-navigates to that role's
+    home. Makes SMS onboarding links land on the right page."""
+    role = open("/app/frontend/src/components/common/RoleSwitcher.tsx").read()
+    # Parse the query string + use it as initial active.
+    assert 'URLSearchParams(window.location.search)' in role
+    assert 'qs.get("role")' in role
+    # Auto-navigate when landing on /dashboard with a deep-link role.
+    assert 'pathname === "/dashboard"' in role
+    assert 'navigate(target.href, { replace: true })' in role
+
+
+def test_production_smoke_test_card_wired():
+    """2026-05-12 backlog #3: God Mode card runs 14 read-only probes
+    against the live REACT_APP_BACKEND_URL so the founder can verify
+    the deploy in 30s right after pushing."""
+    card = open("/app/frontend/src/components/admin/ProductionSmokeTestCard.tsx").read()
+    for tid in [
+        "prod-smoke-test-card",
+        "prod-smoke-test-run",
+        "prod-smoke-test-grid",
+        "prod-smoke-test-summary",
+    ]:
+        assert tid in card, f"SmokeTestCard missing testid: {tid}"
+    # Probes hit the canonical health + read-only endpoints.
+    for probe in [
+        "/api/health",
+        "/api/live-activity/recent",
+        "/api/sports/games",
+        "/api/just-for-the-night/rooms",
+        "/api/hungryvibes/restaurants",
+        "/api/vibe-venues/venues",
+        "/api/ridez/active-drivers",
+        "/api/streaming/live-feeds",
+        "/api/me/unified-earnings",
+    ]:
+        assert probe in card, f"SmokeTestCard missing probe path: {probe}"
+    # Card is mounted in God Mode.
+    god = open("/app/frontend/src/pages/admin/GodModeDashboard.tsx").read()
+    assert "ProductionSmokeTestCard" in god
+    assert "<ProductionSmokeTestCard />" in god
+
+
+def test_geo_proximity_ride_matching_already_wired():
+    """2026-05-12 backlog #2: geo-proximity ride matching was already
+    implemented via `_top_matches` (top-3 nearest drivers within
+    max_radius_km, haversine distance). Locked here so a future refactor
+    can't strip the proximity logic and silently fall back to broadcast."""
+    src = open("/app/backend/routes/vibe_ridez_dispatch.py").read()
+    assert "_top_matches" in src
+    assert "max_radius_km" in src
+    # Top-3 cascade documented in request_ride docstring.
+    assert "Top-3 cascade dispatch" in src or "top-3 cascade" in src.lower()
+    # Haversine helper either lives here or in a shared utility.
+    assert "haversine" in src.lower() or "asin" in src
+
+
+def test_smartstack_driver_delivery_offer_already_wired():
+    """2026-05-12 backlog #9: SmartStack driver↔delivery offer surface
+    was already wired. Driver dashboard polls best_offer + accept/dismiss
+    routes. Lock so the surface UI can't silently disappear."""
+    fe = open("/app/frontend/src/pages/SmartStackDashboard.tsx").read()
+    assert "best_offer" in fe
+    assert "/api/smartstack/driver/dashboard" in fe
+    assert "/api/smartstack/driver/accept-stack" in fe
+    assert "/api/smartstack/driver/dismiss-offer" in fe
+

@@ -24,6 +24,7 @@ import JoinByInvite from '@/pages/JoinByInvite';
 
 import Referral from '@/pages/Referral';
 import HungryVibez from '@/pages/HungryVibez';
+import HungryVibezOrderTracking from '@/pages/HungryVibezOrderTracking';
 import HungryVibesMerchant from '@/pages/HungryVibesMerchant';
 import SmartStackDashboard from '@/pages/SmartStackDashboard';
 
@@ -176,6 +177,15 @@ export const monetizationRoutes = (ProtectedRoute) => (
       element={
         <ProtectedRoute>
           <HungryVibez />
+        </ProtectedRoute>
+      }
+    />
+    {/* Customer-side order tracking — live status timeline polling /my. */}
+    <Route
+      path="/hungryvibes/orders"
+      element={
+        <ProtectedRoute>
+          <HungryVibezOrderTracking />
         </ProtectedRoute>
       }
     />

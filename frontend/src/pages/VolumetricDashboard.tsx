@@ -506,8 +506,21 @@ export default function VolumetricDashboard() {
     // router re-renders the Classic view instantly. Previously we only
     // wrote localStorage + navigated to /dashboard, which is a no-op when
     // already on /dashboard → the toggle did nothing.
+    //
+    // 2026-05-12 (backlog #8): show a "Saved as default" toast the first
+    // time so the user knows their preference persists.
+    const seen = localStorage.getItem("gv_dashboard_view_seen") === "1";
     switchDashboardView("classic");
     localStorage.removeItem("gv_volumetric_v1");
+    if (!seen) {
+      localStorage.setItem("gv_dashboard_view_seen", "1");
+      // Lazy-import toast to avoid pulling sonner into the R3F chunk.
+      import("sonner").then(({ toast }) => {
+        toast.success("Classic view saved as your default", {
+          description: "Switch back anytime from Try Volumetric.",
+        });
+      });
+    }
     navigate("/dashboard");
   };
 
