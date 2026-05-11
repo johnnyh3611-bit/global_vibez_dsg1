@@ -1,7 +1,19 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
 
-> **2026-05-09 (Latest) — Vibe 654 Side Bets + Recent Rolls + Whole-App FAB Sweep 🎲🔧.** Founder pre-beta sweep round 2.
+> **2026-05-10 (Latest) — Tier A PDF Features Shipped + Launch Readiness GREEN 🚀.** Founder ran the comprehensive launch sweep.
+>
+> **NEW MODULES (3 backend + 1 frontend, all live):**
+> 1. **DSG 6 Quantum Vault Lottery** (`/api/dsg6/*`, page `/lottery`) — 5+1 ball draw (5 core 1-50 + 1 Vibe Ball RUBY/SAPPHIRE/EMERALD/GOLD/DIAMOND). $2 VIBE ticket, 10% maintenance at entry, 13.5% Sovereign Tax on winnings. Tier payouts: 5-match=JACKPOT, 4-match=10% of pool, 3-match=3% of pool. RUBY/correct-ball=2× multiplier, partial-ball=1.5×. Admin draw endpoint settles all tickets, credits winners. Lottery `/lottery` page with picker grid + ball selector + my-tickets list + last-draw display.
+> 2. **Vibe Spots 35% Cancellation Protection** (`/api/vibe-spots/*`) — book/cancel/complete bookings. Cancellation auto-applies the EXACT 65/35 split (₵650 refund to guest, ₵350 to host on ₵1000 booking — verified by curl). Solana escrow stubbed behind `SOLANA_MAINNET_UNLOCKED=0` env flag — off-chain ledger today, flip flag post-TGE.
+> 3. **Vibe Core Master Orchestrator** (`POST /api/vibe-core/process-event`) — single funnel for cross-module events. Pipeline: (a) AI mediation via Claude Haiku (gracefully degrades to NEEDS_HUMAN when budget capped), (b) settlement (Solana stub → offchain_<hex> tx), (c) Vibe Court broadcast to `db.vibe_court_broadcasts`, (d) optional founder email via Resend. Plus `GET /api/vibe-court/feed` for the public DSG TV ticker.
+>
+> **LAUNCH READINESS REPORT** (testing agent verdict):
+> - **NO launch blockers found.** 14 critical user-journey routes render clean. All public catalog endpoints 200 OK. Auth flow end-to-end works. Stripe checkout returns valid `cs_test_…` URLs. **265/265 pytest tests passing.**
+> - Mocked-but-acceptable: Solana escrow → offchain ledger (intentional, env-gated); AI mediation → NEEDS_HUMAN fallback (LLM key capped); Stripe in test mode.
+> - **v1.1 polish (4 items, all addressed except 1):** ✅ `log-design-lesson-toggle` now gated `NODE_ENV==='production'`; ✅ `voice-coach-trigger` FAB hidden on fullscreen rooms via `chromeBarActive` body dataset; ✅ `InRoomCommsLauncher` lifted to global `<GlobalCommsMounter />` so it appears on unprotected fullscreen routes (incl. `/games/cyber-casino`); ⏸ Blackjack `live-status` / `game-log-toggle` / `players-toggle` are actually gameplay controls, not orphans — reskin to inline strip in v1.1.
+>
+> **Status: 🟢 LAUNCH READY for beta** — founder may hit Deploy at any time.
 >
 > 1. **Vibe 654 single-player (`/vibez-654`) restored** — full rewrite. Layout: stat bar → qualifier ladder → centred dice arena → **collapsible Side Bets drawer** (11 bet types from new `/api/vibez-654/side-bet-types` catalog: TRIPLE_6, ONE_AND_DONE, ANY_STRAIGHT, STRAIGHT_1-6, SMALL_STRAIGHT, LARGE_STRAIGHT — each with ₵10/25/100/500 quick picks + custom +/-) → **collapsible Recent Rolls drawer** (last 10 from new `/api/vibez-654/history?limit=10`) → Roll/Stand controls. Drawer locks read-only once a game starts. Outcome card now always shows `data-testid=v654-payout`.
 > 2. **Backend `/api/vibez-654/start`** now accepts `side_bets[]` (max 11). Stake + side-bet stakes debited up-front. `/roll` evaluates side bets only on roll #1, populates `side_bet_results` + `side_bet_payout`. `/stand` credits both main winnings AND side-bet payouts. New endpoints: `/history`, `/side-bet-types`. 8/8 new pytest tests + 232 regression-shield tests = **240/240 GREEN**.

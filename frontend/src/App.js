@@ -189,16 +189,11 @@ function ProtectedRouteContent({ children }) {
 
   if (isFullscreenGame) {
     // Founder directive 2026-05-09 — every game/cinema room gets a
-    // top-right "Chat & Video" pill that opens a Jitsi Meet iframe
-    // for shared text + audio + video. The pill is anchored over
-    // the game viewport so it never steals vertical space (which
-    // would push Ante-In / Bid Now / Roll buttons off-screen).
-    return (
-      <>
-        <InRoomCommsLauncher />
-        {children}
-      </>
-    );
+    // top-right "Chat & Video" pill via the global <GlobalCommsMounter />
+    // higher up the tree. Inside ProtectedRoute we just render children
+    // (the global mounter handles the pill for protected + unprotected
+    // routes alike). No PageActionStrip in fullscreen rooms.
+    return <>{children}</>;
   }
   return (
     <>
@@ -228,11 +223,23 @@ function ChromebarActiveDispatcher() {
   return null;
 }
 
+// Global comms launcher mount — top-right Chat & Video pill appears on
+// EVERY fullscreen game route, including unprotected ones like
+// /games/cyber-casino. Replaces the previous ProtectedRouteContent-only
+// mount that left the cyber-casino tree without comms (flagged by the
+// 2026-05 launch-readiness sweep).
+function GlobalCommsMounter() {
+  const isFullscreenGame = useIsFullscreenGameRoute();
+  if (!isFullscreenGame) return null;
+  return <InRoomCommsLauncher />;
+}
+
 // Main App Router
 function AppRouter() {
   return (
     <>
       <ChromebarActiveDispatcher />
+      <GlobalCommsMounter />
       <FreshDropsLauncher />
       <WhatsNewBanner />
       <CommHubDropdown />

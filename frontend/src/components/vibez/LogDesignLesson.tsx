@@ -58,6 +58,11 @@ export const LogDesignLesson = () => {
 
   if (!open) {
     if (hiddenByDock) return null;
+    // Production gate (May 2026 launch-readiness): dev-only widget. The
+    // testing-agent flagged this floating at 10% opacity across every
+    // page; we keep it visible in dev for design-lesson capture but
+    // hide it in prod builds.
+    if (process.env.NODE_ENV === 'production') return null;
     return (
       <button
         onClick={() => setOpen(true)}

@@ -141,6 +141,14 @@ export const VoiceCoachButton: React.FC<Props> = ({
 
   if (disabled) return null;
 
+  // Launch-readiness fix (May 2026): hide the floating Coach FAB on
+  // fullscreen game rooms. Founder rule: only the top-right
+  // InRoomCommsLauncher pill is allowed. The Coach is a UX nice-to-have
+  // that can be re-surfaced inside the in-room drawer.
+  if (typeof document !== 'undefined' && document.body.dataset.chromeBarActive === '1') {
+    return null;
+  }
+
   return (
     <>
       {/* Floating button — small, anchored bottom-left of game area */}
