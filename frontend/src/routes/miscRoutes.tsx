@@ -11,6 +11,7 @@ import PricingPage from "@/pages/PricingPage";
 import SovereignTiers from "@/pages/SovereignTiers";
 import UndergroundLive from "@/pages/UndergroundLive";
 import ReceiptsPage from "@/pages/ReceiptsPage";
+import VolumetricDashboard from "@/pages/VolumetricDashboard";
 import PaymentSuccess from "@/pages/PaymentSuccess";
 import PaymentCancel from "@/pages/PaymentCancel";
 import CelebrationDemo from "@/pages/CelebrationDemo";
@@ -76,6 +77,7 @@ export const miscRoutes = (ProtectedRoute) => (
     <Route path="/pricing-legacy" element={<ProtectedRoute><PricingPage /></ProtectedRoute>} />
     <Route path="/underground-live" element={<ProtectedRoute><UndergroundLive /></ProtectedRoute>} />
     <Route path="/receipts" element={<ProtectedRoute><ReceiptsPage /></ProtectedRoute>} />
+    <Route path="/dashboard-volumetric" element={<ProtectedRoute><VolumetricDashboard /></ProtectedRoute>} />
     <Route path="/payment/success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
     <Route path="/payment/cancel" element={<ProtectedRoute><PaymentCancel /></ProtectedRoute>} />
 

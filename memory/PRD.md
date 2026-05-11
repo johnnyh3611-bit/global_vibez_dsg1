@@ -1,5 +1,17 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-05-12 (latest) — Volumetric Galaxy Dashboard · OPT-IN PREVIEW 🌌.** Founder uploaded `Global_Vibez_Volumetric_UI_Master.pdf` and asked: "build it first to see what it looks like; if I don't like it, take it off". Shipped as a SAFE A/B toggle:
+>
+> 1. **`<VolumetricDashboard />`** at `/dashboard-volumetric` — Three.js + React Three Fiber translation of the PDF's UE5.5 Galaxy UI spec. 6 planets (Games · Dating · Rides · Food · Streaming · Vault) on a starfield, each bobbing (sin wave freq 2, amp 0.3 per PDF), each emissive-glowing. Dating planet ships with the spec-mandated `Pulsing_Pink_Aura`. Drag-to-spin via OrbitControls + slow auto-rotation when idle.
+> 2. **Click a planet** → camera lerps toward it (~0.8s per PDF spec) + the planet's child rooms orbit around it as click-to-launch tiles. Tap any tile → React Router navigates to that route. Tap the planet again to exit and the camera returns to galaxy view.
+> 3. **Opt-in only** — Classic `/dashboard` is unchanged. Founder enters Volumetric via the new "✨ Try Volumetric" pill in the dashboard header (`data-testid=dashboard-try-volumetric`). The Volumetric page itself has a "Classic view" back button that clears the localStorage flag and returns home. **One route deletion removes the entire feature** if the founder rejects it.
+> 4. **WebGL safe** — Wrapped in `<Suspense>` and `<Canvas dpr={[1,2]} alpha={false}>`. Devices without WebGL fall back to the regular dashboard (the toggle never sticks).
+> 5. **Tests:** 248/248 pytest GREEN (+1 new lock: `test_volumetric_dashboard_opt_in_only`). Smoke screenshot at 1280×720 confirmed all 6 planets render correctly with labels (Games · Dating · Rides · Food · Streaming · Vault).
+>
+> **Status: 🟢 ready for founder review.** Visit `/dashboard` → "Try Volumetric" pill → make the call.
+
+
+
 > **2026-05-12 (later) — Universal Room Info Cube + RapidAPI dependency dropped 📘🛡.** Founder ask: "every tab or room needs an information cube — some rooms I go in I don't even know what it is" + "we don't need the RapidAPI Sports key anymore — the people are the oracle".
 >
 > 1. **`<RoomInfoCube />`** — new top-right info pill (`data-testid=room-info-cube-trigger`) mounted GLOBALLY in App.js. Auto-detects the current route via `useLocation()`, looks up content from `/app/frontend/src/data/roomInfo.ts`, and opens a modal with 4 sections: Title + tagline · How it works (numbered steps) · How you earn (bulleted) · optional Social hook + Fairness/Safety. Hides itself on auth pages and when no content matches.

@@ -469,6 +469,16 @@ export default function Dashboard() {
           <div className="flex items-center gap-4">
             <CreditBalance />
             
+            <Button
+              variant="ghost"
+              className="hidden md:flex items-center gap-2 text-fuchsia-200 hover:text-white hover:bg-fuchsia-500/20 border border-fuchsia-400/30 rounded-full px-4 py-1.5 text-xs uppercase tracking-widest"
+              onClick={() => { localStorage.setItem("gv_volumetric_v1", "1"); navigate("/dashboard-volumetric"); }}
+              aria-label="Try volumetric view"
+              data-testid="dashboard-try-volumetric"
+            >
+              <Sparkles className="w-3 h-3" /> Try Volumetric
+            </Button>
+
             <GlassCard className="px-4 py-2" hoverable={false}>
               <div className="text-white text-sm">
                 <span className="font-semibold">{user?.name}</span>

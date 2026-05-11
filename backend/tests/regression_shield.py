@@ -4637,3 +4637,26 @@ def test_sports_lounge_no_longer_depends_on_rapidapi():
     fe = open("/app/frontend/src/pages/SportsLounge.tsx").read()
     assert "Seed catalog" not in fe
     assert "Crowd-judged" in fe or "Vibe Check oracle" in fe
+
+
+def test_volumetric_dashboard_opt_in_only():
+    """2026-05-12 founder ask: 'build it first to see what it looks like;
+    if I don't like it, take it off'. The Volumetric Galaxy view must be
+    a SEPARATE route (not replace /dashboard), and the classic dashboard
+    must expose a 'Try Volumetric' toggle. If the founder dislikes it,
+    a single route-deletion removes the entire feature."""
+    page_path = "/app/frontend/src/pages/VolumetricDashboard.tsx"
+    assert os.path.exists(page_path)
+    page = open(page_path).read()
+    for tid in ["volumetric-dashboard", "vol-back-classic", "vol-planet-", "vol-room-"]:
+        assert tid in page, f"VolumetricDashboard missing testid: {tid}"
+    # Route registered at /dashboard-volumetric.
+    routes = open("/app/frontend/src/routes/miscRoutes.tsx").read()
+    assert '"/dashboard-volumetric"' in routes
+    assert "VolumetricDashboard" in routes
+    # Classic dashboard has the toggle pill.
+    dash = open("/app/frontend/src/pages/DashboardNew.tsx").read()
+    assert "dashboard-try-volumetric" in dash
+    assert "/dashboard-volumetric" in dash
+    # The toggle MUST navigate to the new route, NOT replace /dashboard.
+    assert 'navigate("/dashboard-volumetric")' in dash or "navigate('/dashboard-volumetric')" in dash
