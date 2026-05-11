@@ -32,10 +32,12 @@ export default function RoomInfoCube() {
         onClick={() => setOpen(true)}
         data-testid="room-info-cube-trigger"
         aria-label="What is this room?"
-        className="fixed top-3 right-[88px] z-[55] flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-black/70 backdrop-blur-md px-3 py-1.5 text-[10px] uppercase tracking-widest text-cyan-200 hover:bg-cyan-500/20 hover:border-cyan-400 transition shadow-lg"
+        className="fixed top-16 left-3 z-[55] flex items-center gap-2 rounded-full border-2 border-cyan-400/50 bg-black/80 backdrop-blur-md pl-1.5 pr-3 py-1.5 text-[11px] uppercase tracking-widest text-cyan-200 hover:bg-cyan-500/30 hover:border-cyan-300 hover:text-white transition shadow-[0_0_20px_-4px_rgba(34,211,238,0.6)] group"
       >
-        <Info className="w-3.5 h-3.5" />
-        <span className="hidden sm:inline">Info</span>
+        <span className="flex items-center justify-center w-6 h-6 rounded-full bg-cyan-500/30 border border-cyan-300/60 group-hover:bg-cyan-400 group-hover:text-black transition">
+          <Info className="w-3.5 h-3.5" />
+        </span>
+        <span className="font-black">What is this room?</span>
       </button>
 
       {open && (

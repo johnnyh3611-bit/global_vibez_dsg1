@@ -326,6 +326,297 @@ export const ROOM_INFO: Record<string, RoomInfo> = {
       "Shoot the Moon: take ALL hearts + QofS in one hand → everyone else takes 26 points.",
     ],
   },
+  "/voice-mirror": {
+    title: "Voice Mirror",
+    tagline: "Train your inner dealer / coach voice · paired AI feedback room.",
+    howItWorks: [
+      "Speak into the mic — the AI mirrors your voice back with cleaner cadence and confidence cues.",
+      "Pair with another user via `/voice-mirror/pair` for synchronized practice sessions.",
+      "Used by streamers, dealers, and dating-portal candidates to sharpen presence.",
+    ],
+    socialHook: "Used heavily during Speed Dating prep — the better your mirror score, the higher you rank in match algorithms.",
+  },
+  "/dsg/beat-vault": {
+    title: "Beat Vault",
+    tagline: "Sealed-bid beat marketplace · artists keep 70% forever.",
+    howItWorks: [
+      "Browse the catalog of available beats from verified producers.",
+      "Place a sealed bid — highest bid wins when the auction window closes.",
+      "Winner gets exclusive rights to the beat. Producer keeps 70% of the sale forever (no recoupment).",
+      "Already-finished tracks can mint as Beat DLC NFTs for collectors.",
+    ],
+    earn: ["13.5% Sovereign Tax applies on the buyer's payment. Producer's 70% is post-tax."],
+  },
+  "/beat-vault/dlc": {
+    title: "Beat Vault DLC",
+    tagline: "Finished-track Vibe DLC minting flow.",
+    howItWorks: [
+      "Producers package a finished track as a DLC drop with rarity tiers.",
+      "Fans buy editions; SIMULATED mint until founder confirms project_complete safe phrase.",
+      "On-chain hand-off uses the identical schema once mainnet is armed.",
+    ],
+  },
+  "/dsg/memory-bank": {
+    title: "Memory Bank",
+    tagline: "Synced movie watching with your match · keep date-night memories.",
+    howItWorks: [
+      "Browse founder-curated films and create a private sync-watch room.",
+      "Both partners' video states stay in sync — pause one side, both pause.",
+      "Chat sidebar and reaction emojis preserve the moment.",
+      "Memorable clips can be saved to your shared 'Memory Bank' gallery.",
+    ],
+    socialHook: "Distinct from the public Cinema Room — Memory Bank is FOR DATES. Auto-promotes to private when both users are in a confirmed match.",
+  },
+  "/dsg/music-group": {
+    title: "Music Group",
+    tagline: "70/30 Revolution — beats, battles, collab matchmaker.",
+    howItWorks: [
+      "Producers, artists, and battlers all share one rail.",
+      "Live freestyle battles judged by the crowd.",
+      "Collab Matchmaker pairs you with complementary artists for studio sessions.",
+    ],
+  },
+  "/dsg/matchmaking": {
+    title: "DSG Matchmaking",
+    tagline: "98% synergy matching across games AND dating.",
+    howItWorks: [
+      "Calibrated to your ELO, language, cultural profile, and play style.",
+      "Cross-domain: queues for card games + matchmaking for dates use the same synergy engine.",
+    ],
+  },
+  "/music/collab-matchmaker": {
+    title: "Collab Matchmaker",
+    tagline: "Duo Up voting · Private Studios.",
+    howItWorks: [
+      "Vote on which two artists should collab next.",
+      "When two artists hit critical mass, they spawn a Private Studio together.",
+    ],
+  },
+  "/music/glasshouse": {
+    title: "Lyric Glasshouse",
+    tagline: "3D bardic arena · songwriting battles in a translucent dome.",
+    howItWorks: [
+      "Enter the glass dome — your lyric performance is visualized as crystal-pulse fragments.",
+      "Audience reacts with crowd applause; loudest reaction wins the round.",
+    ],
+  },
+  "/music/sound-check": {
+    title: "Sound-Check Gauntlet",
+    tagline: "5-stage live mic gauntlet — survive all 5, advance.",
+    howItWorks: [
+      "Each stage tightens the time limit and raises the crowd judge bar.",
+      "Survive all 5 stages to unlock featured slot on Vibe TV Totem Pole.",
+    ],
+  },
+  "/music/totem-battles": {
+    title: "Totem Pole Battles",
+    tagline: "Survival-format music battles · 70/30 split locked.",
+    howItWorks: [
+      "Climb the totem pole — beat the artist above you to take their slot.",
+      "Top of the pole wins the weekly prize pool. 70% to the artist, 30% to the network.",
+    ],
+  },
+  "/music/vibe-suite": {
+    title: "Vibe Suite",
+    tagline: "Agora RTC private studio · 4-mic capacity.",
+    howItWorks: [
+      "Create a private suite, invite up to 4 mics, record the session.",
+      "Real-time low-latency audio for cypher sessions, podcast tapings, collabs.",
+    ],
+  },
+  "/vibe-tv": {
+    title: "Vibe TV",
+    tagline: "24/7 channel — your continuity stream.",
+    howItWorks: [
+      "Always-on broadcast assembles the best of the platform: highlights, battles, ads.",
+      "Tip-to-Shield ($2 / 5min) blocks ads for everyone watching that segment.",
+    ],
+  },
+  "/tv/totem-pole": {
+    title: "Vibe TV Totem Pole",
+    tagline: "Survival-format TV slots — same rail as music battles.",
+    howItWorks: [
+      "Streamers climb the pole. Top streamer gets prime-time slot.",
+      "Crowd kicks the boring ones off via vote.",
+    ],
+  },
+  "/jftn": {
+    title: "Just for the Night",
+    tagline: "One-shot premium events · pay once, party tonight.",
+    howItWorks: [
+      "Browse tonight's events; each is a one-shot premium room (no monthly commitment).",
+      "Includes hosted card tables, themed parties, late-night cinema.",
+    ],
+  },
+  "/just-for-the-night": { title: "Just for the Night", tagline: "Same as /jftn.", howItWorks: ["See /jftn."] },
+  "/vibe-stakes": {
+    title: "Vibe Stakes",
+    tagline: "Watch-and-wager spectator betting on live game rooms.",
+    howItWorks: [
+      "Spectators place free predictions on which player will win.",
+      "Correct calls earn +5 ₵ (5/day cap). Helps build the social proof loop.",
+    ],
+  },
+  "/watch-and-wager": {
+    title: "Watch & Wager",
+    tagline: "Live free-stake spectator betting.",
+    howItWorks: [
+      "Open any active card or dice room — bet free on the outcome.",
+      "Hit-rate leaderboard rewards consistent spectators.",
+    ],
+  },
+  "/sports-betting": { title: "Sports Betting", tagline: "See /sports-lounge.", howItWorks: ["Routes to /sports-lounge."] },
+  "/sportsbook": { title: "Sports Book", tagline: "See /sports-lounge.", howItWorks: ["Same as Sports Lounge."] },
+  "/vr-dating": {
+    title: "VR Dating",
+    tagline: "WebXR · meet in 3D before you meet in person.",
+    howItWorks: [
+      "Put on your VR headset (or use mouse-look on desktop).",
+      "Pick a room — beach, lounge, cinema. Walk around, talk via voice chat.",
+      "Persistent state preserves your room layout for return visits.",
+    ],
+  },
+  "/streamer/setup-guide": {
+    title: "Streamer Setup Guide",
+    tagline: "Step-by-step onboarding for new streamers.",
+    howItWorks: [
+      "Wires your OBS / Streamlabs overlay to your tip-to-action rail.",
+      "DSG Guard verification badge + Tip-to-Shield $2/5min ad block.",
+    ],
+  },
+  "/live": {
+    title: "Live Streaming",
+    tagline: "Go live or browse other live streams.",
+    howItWorks: [
+      "Tap 'Go Live' to start broadcasting. Real-time chat + reactions.",
+      "Viewers can tip in ₵; streamer keeps 70% after the 13.5% Sovereign Tax.",
+    ],
+  },
+  "/live-streaming": { title: "Live Streaming", tagline: "See /live.", howItWorks: ["Same as /live."] },
+  "/browse-streams": {
+    title: "Browse Streams",
+    tagline: "Discover live streamers across the network.",
+    howItWorks: [
+      "Filter by category. Tap a card to enter the stream.",
+      "Tip the streamer; 70% to creator after Sovereign Tax.",
+    ],
+  },
+  "/tournaments": {
+    title: "Tournaments",
+    tagline: "Bracketed competitions across every game room.",
+    howItWorks: [
+      "Browse open tournaments — each has a buy-in, prize pool, and bracket size.",
+      "Top finishers split the pool (70% to winners, 30% to the network).",
+    ],
+  },
+  "/trivia": {
+    title: "Trivia",
+    tagline: "Solo or live multiplayer trivia rounds.",
+    howItWorks: [
+      "Pick a difficulty; multiple-choice questions auto-advance.",
+      "Top scores hit the global leaderboard.",
+    ],
+  },
+  "/card-royale": {
+    title: "Card Royale",
+    tagline: "Battle Royale across card-game disciplines.",
+    howItWorks: [
+      "32 players · last survivor wins · format changes each round.",
+      "Run-based — survive multiple matches to claim the prize pool.",
+    ],
+  },
+  "/speed-dating": {
+    title: "Speed Dating",
+    tagline: "Cycle through 3-minute video dates with verified matches.",
+    howItWorks: [
+      "Enter the lobby — system pairs you 1:1 in 3-minute rounds.",
+      "After each round you both rate; mutual yes triggers a follow-up chat.",
+    ],
+  },
+  "/cultural-onboarding": {
+    title: "Cultural Onboarding",
+    tagline: "4-step quiz that unlocks the Dating match feed.",
+    howItWorks: [
+      "Origin → Linguistic → Dialect → Cultural Values.",
+      "Quiz feeds the 98% synergy engine — better answers, better matches.",
+    ],
+  },
+  "/dating/cultural-onboarding": { title: "Cultural Onboarding", tagline: "See /cultural-onboarding.", howItWorks: ["Same as /cultural-onboarding."] },
+  "/age-verification": {
+    title: "Age Verification",
+    tagline: "Required once before card / casino rooms unlock.",
+    howItWorks: [
+      "Upload a photo ID. Verification is one-time; status persists across sessions.",
+    ],
+  },
+  "/verification": { title: "Verification", tagline: "Your identity check status.", howItWorks: ["View pending / approved verifications. Required for high-stake rooms + tournament payouts ≥ $600."] },
+  "/profile/edit": {
+    title: "Edit Profile",
+    tagline: "Your face to the network.",
+    howItWorks: [
+      "Update name, photo, bio, location.",
+      "Your profile carries across Dating, Card rooms, Streaming, and VibeRidez (driver view).",
+    ],
+  },
+  "/settings": {
+    title: "Settings",
+    tagline: "Notifications · privacy · accessibility.",
+    howItWorks: [
+      "Toggle photosensitive-safe mode (WCAG 2.3.1 compliant).",
+      "Manage notification preferences per channel.",
+      "Connect external accounts (Spotify, Smartcar, etc).",
+    ],
+  },
+  "/treasury": {
+    title: "Treasury",
+    tagline: "Public 40-30-30 split transparency dashboard.",
+    howItWorks: [
+      "See real-time treasury balance and recent inflows.",
+      "Split: 40% rewards · 30% liquidity · 30% growth.",
+    ],
+  },
+  "/chess": { title: "Chess", tagline: "Routes to Chess Hall.", howItWorks: ["See /chess-hall."] },
+  "/practice": { title: "Practice", tagline: "Free practice mode for every card game.", howItWorks: ["No-stake practice rooms across Spades, Bid Whist, Hearts, Blackjack, Baccarat, Poker, Uno, Euchre, Pinochle, Gin Rummy, War, Crazy Eights, Go Fish, Rummy."] },
+  "/practice/play": { title: "Practice Play", tagline: "Pick a game and play vs AI.", howItWorks: ["Tap the game you want; AI calibrates to your skill."] },
+  "/admin": {
+    title: "Admin · God Mode",
+    tagline: "Founder-only control tower.",
+    howItWorks: [
+      "Treasury operations · Bridge / Burn / Reap (dry-run by default).",
+      "Beta waitlist · bulk invites · weekly digest dispatch.",
+      "Staff management · audit logs · game lock status.",
+    ],
+    safety: "Every Sovereign operation requires a 'project complete' safe-phrase before going live on mainnet.",
+  },
+  "/vibe-vault-admin": { title: "Vibe Vault Admin", tagline: "Same as /admin.", howItWorks: ["See /admin."] },
+  "/vibe-drive": {
+    title: "Vibe Drive",
+    tagline: "Driver-side dispatch HUD for Vibe Ridez.",
+    howItWorks: [
+      "See pending fares + accept within 15 seconds.",
+      "Tip-to-Skip / Tip-to-Add events trigger live ₵ credits to your wallet.",
+      "1.5-mi route deviation lock prevents off-route abuse.",
+    ],
+  },
+  "/vibe-tv/main": { title: "Vibe TV · Main", tagline: "See /vibe-tv.", howItWorks: ["Main 24/7 stream — see /vibe-tv."] },
+  "/yellow-pages/new": {
+    title: "New Yellow Pages Listing",
+    tagline: "Add a Mom & Pop business to the directory.",
+    howItWorks: [
+      "Enter business name, category, address, hours, photos.",
+      "DSG Guard verification kicks off automatically; badge appears once approved.",
+    ],
+  },
+  "/dashboard-volumetric": {
+    title: "Volumetric Galaxy",
+    tagline: "3D dashboard alternative · drag the galaxy to navigate.",
+    howItWorks: [
+      "6 planets float around a star — each is a category.",
+      "Drag to spin the galaxy. Tap a planet to dive in and see its rooms orbit.",
+      "Tap any orbiting room tile to launch it.",
+      "Top-left 'Classic view' returns you to the standard dashboard.",
+    ],
+  },
 };
 
 /**

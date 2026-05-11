@@ -28,7 +28,7 @@ import { ArrowLeft, Sparkles } from "lucide-react";
 
 const CATEGORIES = [
   {
-    id: "games", label: "Games", color: "#22d3ee", aura: "#22d3ee",
+    id: "games", label: "Games", emoji: "🎮", color: "#22d3ee", aura: "#22d3ee",
     rooms: [
       { id: "spades", label: "Spades", path: "/spades" },
       { id: "vibez-654", label: "Vibe 654", path: "/vibez-654" },
@@ -38,7 +38,7 @@ const CATEGORIES = [
     ],
   },
   {
-    id: "dating", label: "Dating", color: "#ec4899", aura: "#f0abfc",
+    id: "dating", label: "Dating", emoji: "❤️", color: "#ec4899", aura: "#f0abfc",
     pulsing: true,  // PDF spec: "Pulsing_Pink_Aura"
     rooms: [
       { id: "dating", label: "Universe", path: "/dating" },
@@ -48,13 +48,13 @@ const CATEGORIES = [
     ],
   },
   {
-    id: "rides", label: "Rides", color: "#f59e0b", aura: "#fbbf24",
+    id: "rides", label: "Rides", emoji: "🚗", color: "#f59e0b", aura: "#fbbf24",
     rooms: [
       { id: "ridez", label: "Vibe Ridez", path: "/vibe-ridez" },
     ],
   },
   {
-    id: "food", label: "Food", color: "#84cc16", aura: "#a3e635",
+    id: "food", label: "Food", emoji: "🍕", color: "#84cc16", aura: "#a3e635",
     rooms: [
       { id: "hungry", label: "Hungry VIBEZ", path: "/hungryvibes" },
       { id: "yellow", label: "Yellow Pages", path: "/yellow-pages" },
@@ -62,20 +62,23 @@ const CATEGORIES = [
     ],
   },
   {
-    id: "streaming", label: "Streaming", color: "#a855f7", aura: "#c084fc",
+    id: "streaming", label: "Streaming", emoji: "📺", color: "#a855f7", aura: "#c084fc",
     rooms: [
       { id: "live", label: "Live", path: "/live" },
       { id: "underground-live", label: "Underground Live", path: "/underground-live" },
       { id: "sports", label: "Sports Lounge", path: "/sports-lounge" },
+      { id: "memory", label: "Memory Bank", path: "/dsg/memory-bank" },
+      { id: "beats", label: "Beat Vault", path: "/dsg/beat-vault" },
     ],
   },
   {
-    id: "vault", label: "Vault", color: "#fde047", aura: "#facc15",
+    id: "vault", label: "Vault", emoji: "💎", color: "#fde047", aura: "#facc15",
     rooms: [
       { id: "lottery", label: "DSG 6 Lottery", path: "/lottery" },
       { id: "tiers", label: "Tiers", path: "/tiers" },
       { id: "wallet", label: "Wallet", path: "/wallet" },
       { id: "chair", label: "Chair Hall", path: "/chair-hall" },
+      { id: "voice", label: "Voice Mirror", path: "/voice-mirror" },
     ],
   },
 ];
@@ -135,6 +138,11 @@ function Planet({
         <sphereGeometry args={[radius, 32, 32]} />
         <meshBasicMaterial color={category.aura} transparent opacity={hover ? 0.25 : 0.15} />
       </mesh>
+      {/* Saturn-style ring tilted ~20° — makes the orbs feel like planets */}
+      <mesh rotation={[Math.PI / 2 - 0.35, 0, 0]}>
+        <ringGeometry args={[radius * 1.5, radius * 2.0, 64]} />
+        <meshBasicMaterial color={category.aura} transparent opacity={0.35} side={2} />
+      </mesh>
       {/* Core planet */}
       <mesh
         ref={meshRef}
@@ -159,6 +167,19 @@ function Planet({
           style={{ textShadow: `0 0 12px ${category.color}` }}
         >
           {category.label}
+        </div>
+      </Html>
+      {/* Giant identifying emoji sprite — billboarded above the planet */}
+      <Html position={[0, 1.3, 0]} center distanceFactor={6} occlude={false}>
+        <div
+          className="text-5xl pointer-events-none select-none"
+          style={{
+            filter: `drop-shadow(0 0 14px ${category.color}) drop-shadow(0 0 22px ${category.aura})`,
+            transform: hover ? "scale(1.15)" : "scale(1)",
+            transition: "transform 0.2s",
+          }}
+        >
+          {category.emoji}
         </div>
       </Html>
       {/* Orbiting room tiles (only when selected) */}

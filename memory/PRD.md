@@ -1,5 +1,23 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-05-12 (volumetric polish + info-cube expansion).** Founder follow-up: "planets need their own little pictures and the info tab somewhere visible but not in the way of anything · I need it in all the rooms — voice mirror, vibe ridez, etc."
+>
+> **Planet identity icons** — every category planet now sports a giant identifying emoji billboard (🎮 Games · ❤️ Dating · 🚗 Rides · 🍕 Food · 📺 Streaming · 💎 Vault) with category-tinted drop-shadows. Added a Saturn-style ring (tilted 20°) around each planet so they read as planets, not just colored spheres. Hover scales the emoji 1.15×. Verified live at `/dashboard-volumetric`.
+>
+> **Info Cube repositioned + restyled** — moved from top-right (was overlapping Comm/Landscape pills) to **top-left at `top-16 left-3`** with a 2px cyan border, glowing shadow, and now reads **"WHAT IS THIS ROOM?"** in full so users don't have to guess what the "i" pill does. Verified visible on `/voice-mirror`.
+>
+> **Info catalog expanded to 60+ rooms** — `roomInfo.ts` now covers everything the founder mentioned + a long-tail sweep:
+> - **Music & beats:** Beat Vault (`/dsg/beat-vault`), Beat Vault DLC, Music Group, Collab Matchmaker, Lyric Glasshouse, Sound-Check Gauntlet, Totem Pole Battles, Vibe Suite
+> - **Voice & dating:** Voice Mirror, Memory Bank (`/dsg/memory-bank`), DSG Matchmaking, Speed Dating, Cultural Onboarding, VR Dating
+> - **Streaming:** Vibe TV, Vibe TV Totem Pole, Live Streaming, Browse Streams, Streamer Setup Guide
+> - **Events:** Just for the Night, Vibe Stakes, Watch & Wager, Tournaments, Trivia, Card Royale
+> - **Admin / utility:** Vibe Drive, Vibe Vault Admin, Treasury, Profile Edit, Settings, Age Verification, Yellow Pages New Listing
+> - **+ the new `/dashboard-volumetric` itself** has an entry explaining how to navigate the galaxy
+>
+> **Tests:** 241/241 regression-shield GREEN.
+
+
+
 > **2026-05-12 (latest) — Volumetric Galaxy Dashboard · OPT-IN PREVIEW 🌌.** Founder uploaded `Global_Vibez_Volumetric_UI_Master.pdf` and asked: "build it first to see what it looks like; if I don't like it, take it off". Shipped as a SAFE A/B toggle:
 >
 > 1. **`<VolumetricDashboard />`** at `/dashboard-volumetric` — Three.js + React Three Fiber translation of the PDF's UE5.5 Galaxy UI spec. 6 planets (Games · Dating · Rides · Food · Streaming · Vault) on a starfield, each bobbing (sin wave freq 2, amp 0.3 per PDF), each emissive-glowing. Dating planet ships with the spec-mandated `Pulsing_Pink_Aura`. Drag-to-spin via OrbitControls + slow auto-rotation when idle.
