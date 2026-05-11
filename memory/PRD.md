@@ -1,5 +1,21 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-02-11 (CLOUDFLARE STREAM FULLY SECURED 🔐🟢) — Webhook signature verification active. All 4 credentials live. End-to-end attack surface tested.**
+>
+> **Latest update**: Used the existing API token to programmatically register the webhook URL via `PUT /accounts/{id}/stream/webhook`. Cloudflare auto-returned a signing secret, which is now stored in `.env`. **No founder UI navigation needed.**
+>
+> **Webhook security verified by 4-case stress test:**
+>   - ✅ Valid HMAC-SHA256 signature → 200, `is_live` flag flips in Mongo
+>   - ✅ Tampered signature → 401 `Invalid webhook signature`
+>   - ✅ Missing `Webhook-Signature` header → 401 reject
+>   - ✅ Replay attack (timestamp >10 min old) → 401 reject
+>
+> **DB round-trip confirmed**: `stream.connected` event → `is_live: true` → catalog count 1 → `stream.disconnected` → `is_live: false` → catalog count 0. The Volumetric Dashboard "Streaming" pillar and any future "Live Now" wall now have real-time accuracy with zero polling.
+>
+> **All 4 Cloudflare credentials present**: account_id ✅, api_token ✅, subdomain ✅, webhook_secret ✅.
+>
+> ---
+>
 > **2026-02-11 (CLOUDFLARE STREAM LIVE 🟢) — Every-device → every-audience streaming infrastructure shipped end-to-end. 308/308 regression green.**
 >
 > **Founder enabled Cloudflare Stream subscription**, pasted API token (`cfut_2Pvcb...26af5fbe`), platform auto-discovered subdomain (`customer-i634rqcpn9lgnaho.cloudflarestream.com`) by provisioning a verification input then deleting it. Backend `_is_live()` now returns `True`; Streamer Studio renders real RTMP/SRT credentials with no stub banner; HLS player connects to Cloudflare's edge network.
