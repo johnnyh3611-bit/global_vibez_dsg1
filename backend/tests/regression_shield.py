@@ -6322,3 +6322,30 @@ def test_dmca_designated_agent_registered():
         "content-rights-dmca-agent-address",
     ]:
         assert tid in page, f"DMCA agent block missing testid: {tid}"
+
+
+
+def test_volumetric_dashboard_every_tile_has_a_route():
+    """Every clickable planet/tile in the Volumetric Galaxy MUST land
+    on a real registered route. Catches the bug we shipped in beta
+    where /dating, /cinema-room, /vibe-spots were tiles that 404'd."""
+    import re, glob
+
+    vol = open("/app/frontend/src/pages/VolumetricDashboard.tsx").read()
+    tile_paths = set(re.findall(r'path:\s*"(/[^"]+)"', vol))
+
+    all_routes = set()
+    for f in glob.glob("/app/frontend/src/routes/*.tsx") + ["/app/frontend/src/App.tsx"]:
+        try:
+            for m in re.finditer(r'<Route\s+path="(/[^"]+)"', open(f).read()):
+                all_routes.add(m.group(1))
+        except FileNotFoundError:
+            pass
+
+    missing = tile_paths - all_routes
+    assert not missing, f"Volumetric tile paths with no matching <Route>: {sorted(missing)}"
+
+    # And spot-check the 4 we explicitly wired in this round.
+    for path in ("/dating", "/cinema-room", "/vibe-spots", "/my-vibez"):
+        assert path in tile_paths, f"Expected tile path not present: {path}"
+        assert path in all_routes, f"Expected route not registered: {path}"

@@ -88,6 +88,7 @@ const CATEGORIES = [
       { id: "wallet", label: "Vibez Wallet", emoji: "💰", path: "/wallet" },
       { id: "chair", label: "Chair Hall", emoji: "🪑", path: "/chair-hall" },
       { id: "voice", label: "Voice Mirror", emoji: "🎙️", path: "/voice-mirror" },
+      { id: "myvibez", label: "My Vibez", emoji: "🌟", path: "/my-vibez" },
     ],
   },
 ];

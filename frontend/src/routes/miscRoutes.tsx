@@ -16,6 +16,8 @@ import StripeConnectWizard from "@/pages/payouts/StripeConnectWizard";
 import EconomicEnginePage from "@/pages/EconomicEnginePage";
 import AgeVerificationPage from "@/pages/AgeVerificationPage";
 import ContentRightsPage from "@/pages/ContentRightsPage";
+import CinemaRoom from "@/pages/CinemaRoom";
+import VibeSpotsPage from "@/pages/VibeSpotsPage";
 // Lazy-load Volumetric Galaxy bundle (Three.js ~500KB) — only loaded when user
 // actually visits the volumetric route or has it as their dashboard view.
 const VolumetricDashboard = lazy(() => import("@/pages/VolumetricDashboard"));
@@ -96,6 +98,10 @@ export const miscRoutes = (ProtectedRoute) => (
     <Route path="/restricted-goods-verification" element={<ProtectedRoute><AgeVerificationPage /></ProtectedRoute>} />
     {/* Public Content Rights & IP Anti-Piracy Policy + DMCA filing form. */}
     <Route path="/content-rights" element={<ContentRightsPage />} />
+    {/* Volumetric Dashboard "Cinema Date" tile lands here. */}
+    <Route path="/cinema-room" element={<ProtectedRoute><CinemaRoom /></ProtectedRoute>} />
+    {/* Volumetric Dashboard "Vibez Spots" tile lands here. */}
+    <Route path="/vibe-spots" element={<ProtectedRoute><VibeSpotsPage /></ProtectedRoute>} />
     <Route path="/dashboard-volumetric" element={<ProtectedRoute><Suspense fallback={<div data-testid="volumetric-route-loading" className="fixed inset-0 z-[1000] flex items-center justify-center bg-[#0d1117] text-fuchsia-300 text-sm uppercase tracking-[0.3em]">Loading Galaxy…</div>}><VolumetricDashboard /></Suspense></ProtectedRoute>} />
     <Route path="/payment/success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
     <Route path="/payment/cancel" element={<ProtectedRoute><PaymentCancel /></ProtectedRoute>} />

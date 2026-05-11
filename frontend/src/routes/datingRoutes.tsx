@@ -30,6 +30,8 @@ export const datingRoutes = (ProtectedRoute) => (
     <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
     <Route path="/discover-category/:categoryType/:categoryId" element={<ProtectedRoute><DiscoverByCategory /></ProtectedRoute>} />
     <Route path="/speed-dating" element={<ProtectedRoute><SpeedDating /></ProtectedRoute>} />
+    {/* Volumetric Dashboard "Dating · Universe" tile lands here. */}
+    <Route path="/dating" element={<ProtectedRoute><DatingDiscovery /></ProtectedRoute>} />
     <Route path="/speed-dating/room" element={<ProtectedRoute><SpeedDatingRoom /></ProtectedRoute>} />
     <Route path="/speed-dating/lobby" element={<ProtectedRoute><SpeedDatingLobby /></ProtectedRoute>} />
     <Route path="/dating/profile/setup" element={<ProtectedRoute><DatingProfileSetup /></ProtectedRoute>} />
