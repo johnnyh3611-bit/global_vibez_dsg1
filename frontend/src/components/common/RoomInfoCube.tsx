@@ -9,21 +9,89 @@
  * Mounted globally inside App.js so EVERY room — protected or public,
  * fullscreen-game or normal — gets the helper without per-page wiring.
  */
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
-import { Info, X, Sparkles, Coins, HeartHandshake, Shield } from "lucide-react";
-import { matchInfo } from "@/data/roomInfo";
+import { Info, X, Sparkles, Coins, HeartHandshake, Shield, Volume2, VolumeX } from "lucide-react";
+import { matchInfo, type RoomInfo } from "@/data/roomInfo";
 
 // Paths where the cube would feel intrusive (login/signup/landing).
 const HIDDEN_PREFIXES = ["/login", "/signup", "/forgot-password", "/reset-password"];
 
+/**
+ * Speak the room's overview using the browser's native Web Speech API.
+ * This is FREE, requires no API key, and ships with every modern browser
+ * (Chrome, Safari, Edge, Firefox). Falls back silently on unsupported
+ * environments. When the Universal LLM Key budget is restored we can
+ * swap to OpenAI TTS (Onyx voice) for a richer cadence — the interface
+ * here will stay identical.
+ */
+function speakRoomInfo(info: RoomInfo): SpeechSynthesisUtterance | null {
+  if (typeof window === "undefined" || !window.speechSynthesis) return null;
+  window.speechSynthesis.cancel();
+  const lines = [
+    `${info.title}. ${info.tagline}`,
+    "How it works.",
+    ...info.howItWorks,
+    ...(info.earn?.length ? ["How you earn.", ...info.earn] : []),
+    ...(info.socialHook ? ["Social hook.", info.socialHook] : []),
+    ...(info.safety ? ["Fairness and safety.", info.safety] : []),
+  ];
+  const utter = new SpeechSynthesisUtterance(lines.join(" "));
+  utter.rate = 1.05;
+  utter.pitch = 1.0;
+  utter.volume = 0.95;
+  // Prefer an English voice if available.
+  const voices = window.speechSynthesis.getVoices();
+  const englishVoice = voices.find((v) => v.lang.startsWith("en") && v.default) ||
+                        voices.find((v) => v.lang.startsWith("en"));
+  if (englishVoice) utter.voice = englishVoice;
+  window.speechSynthesis.speak(utter);
+  return utter;
+}
+
 export default function RoomInfoCube() {
   const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
+  const utterRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+  // Stop speech whenever the modal closes or the route changes.
+  useEffect(() => {
+    return () => {
+      if (typeof window !== "undefined" && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!open && typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      setSpeaking(false);
+    }
+  }, [open]);
 
   if (HIDDEN_PREFIXES.some((p) => pathname.startsWith(p))) return null;
   const info = matchInfo(pathname);
   if (!info) return null;
+
+  const toggleSpeak = () => {
+    if (speaking) {
+      if (typeof window !== "undefined" && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+      setSpeaking(false);
+      return;
+    }
+    const utter = speakRoomInfo(info);
+    if (!utter) return;
+    utterRef.current = utter;
+    setSpeaking(true);
+    utter.onend = () => setSpeaking(false);
+    utter.onerror = () => setSpeaking(false);
+  };
+
+  const supportsSpeech = typeof window !== "undefined" && !!window.speechSynthesis;
 
   return (
     <>
@@ -135,6 +203,21 @@ export default function RoomInfoCube() {
             >
               Got it
             </button>
+            {supportsSpeech && (
+              <button
+                type="button"
+                onClick={toggleSpeak}
+                data-testid="room-info-cube-speak"
+                className={`mt-2 w-full py-2 rounded-lg border text-xs uppercase tracking-widest font-bold transition flex items-center justify-center gap-2 ${
+                  speaking
+                    ? "bg-rose-500/20 border-rose-400/50 text-rose-100 hover:bg-rose-500/30"
+                    : "bg-cyan-500/10 border-cyan-400/40 text-cyan-200 hover:bg-cyan-500/20"
+                }`}
+              >
+                {speaking ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+                {speaking ? "Stop reading" : "Read this aloud"}
+              </button>
+            )}
           </div>
         </div>
       )}

@@ -4603,9 +4603,14 @@ def test_room_info_cube_globally_mounted():
         "room-info-cube-trigger", "room-info-cube-modal",
         "room-info-cube-title", "room-info-cube-tagline",
         "room-info-cube-close", "room-info-cube-got-it",
+        "room-info-cube-speak",
     ]:
         assert tid in comp, f"RoomInfoCube missing testid: {tid}"
     assert "matchInfo" in comp, "RoomInfoCube must use matchInfo()"
+    # Voice readout via Web Speech API (free, browser-native, works
+    # without LLM key budget).
+    assert "speechSynthesis" in comp
+    assert "SpeechSynthesisUtterance" in comp
 
     # Content catalog exists with the must-cover rooms.
     cat_path = "/app/frontend/src/data/roomInfo.ts"
@@ -4616,6 +4621,8 @@ def test_room_info_cube_globally_mounted():
         "/lottery", "/chess-hall", "/vibez-654", "/cinema-room", "/dating",
         "/vibe-ridez", "/hungryvibes", "/yellow-pages", "/receipts", "/tiers",
         "/chair-hall", "/wallet", "/spades", "/bid-whist", "/hearts", "/baccarat",
+        # 2026-05-12 founder ask: explicitly mentioned rooms must have entries.
+        "/voice-mirror", "/dsg/beat-vault", "/dsg/memory-bank",
     ]:
         assert f'"{room}"' in cat, f"roomInfo.ts missing entry for {room}"
     assert "export function matchInfo" in cat

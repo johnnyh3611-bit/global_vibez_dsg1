@@ -28,7 +28,7 @@ import { ArrowLeft, Sparkles } from "lucide-react";
 
 const CATEGORIES = [
   {
-    id: "games", label: "Games", emoji: "🎮", color: "#22d3ee", aura: "#22d3ee",
+    id: "games", label: "Games", color: "#22d3ee", aura: "#22d3ee",
     rooms: [
       { id: "spades", label: "Spades", path: "/spades" },
       { id: "vibez-654", label: "Vibe 654", path: "/vibez-654" },
@@ -38,7 +38,7 @@ const CATEGORIES = [
     ],
   },
   {
-    id: "dating", label: "Dating", emoji: "❤️", color: "#ec4899", aura: "#f0abfc",
+    id: "dating", label: "Dating", color: "#ec4899", aura: "#f0abfc",
     pulsing: true,  // PDF spec: "Pulsing_Pink_Aura"
     rooms: [
       { id: "dating", label: "Universe", path: "/dating" },
@@ -48,13 +48,13 @@ const CATEGORIES = [
     ],
   },
   {
-    id: "rides", label: "Rides", emoji: "🚗", color: "#f59e0b", aura: "#fbbf24",
+    id: "rides", label: "Rides", color: "#f59e0b", aura: "#fbbf24",
     rooms: [
       { id: "ridez", label: "Vibe Ridez", path: "/vibe-ridez" },
     ],
   },
   {
-    id: "food", label: "Food", emoji: "🍕", color: "#84cc16", aura: "#a3e635",
+    id: "food", label: "Food", color: "#84cc16", aura: "#a3e635",
     rooms: [
       { id: "hungry", label: "Hungry VIBEZ", path: "/hungryvibes" },
       { id: "yellow", label: "Yellow Pages", path: "/yellow-pages" },
@@ -62,7 +62,7 @@ const CATEGORIES = [
     ],
   },
   {
-    id: "streaming", label: "Streaming", emoji: "📺", color: "#a855f7", aura: "#c084fc",
+    id: "streaming", label: "Streaming", color: "#a855f7", aura: "#c084fc",
     rooms: [
       { id: "live", label: "Live", path: "/live" },
       { id: "underground-live", label: "Underground Live", path: "/underground-live" },
@@ -72,7 +72,7 @@ const CATEGORIES = [
     ],
   },
   {
-    id: "vault", label: "Vault", emoji: "💎", color: "#fde047", aura: "#facc15",
+    id: "vault", label: "Vault", color: "#fde047", aura: "#facc15",
     rooms: [
       { id: "lottery", label: "DSG 6 Lottery", path: "/lottery" },
       { id: "tiers", label: "Tiers", path: "/tiers" },
@@ -84,6 +84,36 @@ const CATEGORIES = [
 ];
 
 const RING_RADIUS = 6;
+
+/**
+ * Render the right Lucide icon for a category. Kept as an explicit
+ * function (vs `<category.Icon />` destructure) so TypeScript narrowing
+ * through `typeof CATEGORIES[number]` doesn't lose the React.FC type
+ * and silently render as undefined.
+ */
+function renderIcon(_categoryId: string) {
+  // Kept as a future hook for Lucide-based icons once drei's Html portal
+  // SVG-namespace issue is resolved upstream. Today we use emoji glyphs
+  // via categoryEmoji() — they survive the portal cleanly.
+  return null;
+}
+
+/**
+ * Pictorial emoji for the category — rendered inside the planet's "coin"
+ * frame above. Unicode glyphs survive drei's Html portal cleanly where
+ * SVG components rendered at zero width.
+ */
+function categoryEmoji(categoryId: string): string {
+  switch (categoryId) {
+    case "games": return "🎲";
+    case "dating": return "💞";
+    case "rides": return "🚗";
+    case "food": return "🍕";
+    case "streaming": return "🍿";
+    case "vault": return "💎";
+    default: return "✦";
+  }
+}
 
 function Planet({
   category,
@@ -169,17 +199,37 @@ function Planet({
           {category.label}
         </div>
       </Html>
-      {/* Giant identifying emoji sprite — billboarded above the planet */}
-      <Html position={[0, 1.3, 0]} center distanceFactor={6} occlude={false}>
+      {/* Crisp icon thumbnail — billboarded above the planet. We use
+          high-fidelity Unicode emoji glyphs (font-rendered, work inside
+          drei's Html portal) inside a category-colored "coin" circle.
+          Tested fallback: Lucide SVG components rendered as 0-width
+          inside Html portals on this drei version. */}
+      <Html
+        position={[0, 1.5, 0]}
+        center
+        distanceFactor={8}
+        zIndexRange={[100, 0]}
+        style={{ pointerEvents: "none" }}
+      >
         <div
-          className="text-5xl pointer-events-none select-none"
           style={{
-            filter: `drop-shadow(0 0 14px ${category.color}) drop-shadow(0 0 22px ${category.aura})`,
-            transform: hover ? "scale(1.15)" : "scale(1)",
-            transition: "transform 0.2s",
+            width: "76px",
+            height: "76px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            borderRadius: "50%",
+            background: `radial-gradient(circle at 50% 30%, ${category.color}cc, ${category.aura}40 60%, transparent 75%)`,
+            border: `2px solid ${category.color}`,
+            boxShadow: `0 0 22px ${category.color}, 0 0 40px ${category.aura}`,
+            fontSize: "44px",
+            lineHeight: 1,
           }}
         >
-          {category.emoji}
+          {renderIcon(category.id)}
+          <span style={{ filter: `drop-shadow(0 0 6px ${category.color})` }}>
+            {categoryEmoji(category.id)}
+          </span>
         </div>
       </Html>
       {/* Orbiting room tiles (only when selected) */}

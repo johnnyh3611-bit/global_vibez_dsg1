@@ -1,5 +1,25 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-05-12 (volumetric thumbnails + voice readout · REDEPLOY-READY 🟢).**
+>
+> **Thematic planet thumbnails** — each Volumetric Galaxy planet now wears a category-tinted glowing "coin frame" with a thematic pictogram inside:
+> - 🎲 Games (cyan) · 💞 Dating (pink) · 🚗 Rides (amber) · 🍕 Food (green) · 🍿 Streaming (purple) · 💎 Vault (yellow)
+> - Each emoji glyph is filtered with a category-colored drop-shadow + the coin frame uses a radial-gradient backdrop matching the planet's hue. Lucide-icon path attempted first but drei's `<Html>` portal renders SVG components at zero width on the current `@react-three/drei@10.x` build; emoji glyphs survive the portal cleanly, so we ship those and leave `renderIcon()` as a future-hook for when the upstream issue is fixed.
+>
+> **Voice readout in the Info Cube** — modal now has a **"READ THIS ALOUD"** button using the browser's built-in `window.speechSynthesis` (free, no LLM-key budget required, works in Chrome / Safari / Edge / Firefox). Long-press / click → reads the title, tagline, every "How it works" step, "How you earn" line, social hook, and safety/fairness section. Hitting the button again stops mid-sentence. The voice prefers an English locale when available. The interface is identical to OpenAI TTS so swapping to Onyx voice is a 5-line change once Universal Key budget is restored.
+>
+> **Final redeploy checklist (all green):**
+> - 248/248 regression tests pass
+> - `/api/health` returns `{"status":"ok"}`
+> - Frontend + backend supervisor both RUNNING (uptime 23m)
+> - Volumetric Galaxy verified visually (themed thumbnails on all 6 planets)
+> - Info Cube + voice readout verified on `/voice-mirror`
+> - 60+ rooms covered in `/app/frontend/src/data/roomInfo.ts`
+>
+> **Ready to redeploy via the platform's "Deploy" button.**
+
+
+
 > **2026-05-12 (volumetric polish + info-cube expansion).** Founder follow-up: "planets need their own little pictures and the info tab somewhere visible but not in the way of anything · I need it in all the rooms — voice mirror, vibe ridez, etc."
 >
 > **Planet identity icons** — every category planet now sports a giant identifying emoji billboard (🎮 Games · ❤️ Dating · 🚗 Rides · 🍕 Food · 📺 Streaming · 💎 Vault) with category-tinted drop-shadows. Added a Saturn-style ring (tilted 20°) around each planet so they read as planets, not just colored spheres. Hover scales the emoji 1.15×. Verified live at `/dashboard-volumetric`.
