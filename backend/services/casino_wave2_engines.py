@@ -512,16 +512,18 @@ def play_chuck_a_luck(picked_number: int, stake: float, seed: Optional[int] = No
 
 
 # ──────────────────────────────────────────────────────────────────────────
-# 8. BIG SIX WHEEL (54 segment money wheel)
+# 8. BIG SIX WHEEL (54-segment wheel of fortune)
 # ──────────────────────────────────────────────────────────────────────────
-# Standard payout segments + counts (industry standard):
+# Standard payout segments + counts. Labels are payout multipliers
+# (1×, 2×, 5×, 10×, 20×, Joker 40×, Logo 40×) — never fiat amounts.
+# All stakes settle in Vibez Coins.
 BIG_SIX_LAYOUT: List[Tuple[str, int, int]] = [
     # (label, payout_ratio, count_on_wheel)
-    ("$1", 1, 24),
-    ("$2", 2, 15),
-    ("$5", 5, 7),
-    ("$10", 10, 4),
-    ("$20", 20, 2),
+    ("1", 1, 24),
+    ("2", 2, 15),
+    ("5", 5, 7),
+    ("10", 10, 4),
+    ("20", 20, 2),
     ("Joker", 40, 1),
     ("Logo", 40, 1),
 ]

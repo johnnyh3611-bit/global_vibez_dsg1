@@ -65,7 +65,7 @@ class PlayRequest(BaseModel):
 class TableConfig(BaseModel):
     table_id: str
     max_players: int = 30
-    min_bet: float = 5.0
+    min_bet: float = 50.0  # platform-wide 50-coin floor
     max_bet: float = 500.0
     rake_percent: float = 0.10  # 10% house rake
     dealer_envy_percent: float = 0.05  # 5% on big wins
@@ -385,7 +385,7 @@ async def play_vibez_654(request: PlayRequest) -> Dict[str, Any]:
         default_config = TableConfig(
             table_id=request.table_id,
             max_players=30,
-            min_bet=5.0,
+            min_bet=50.0,
             max_bet=500.0
         )
         await create_table(default_config)

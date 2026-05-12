@@ -6791,3 +6791,125 @@ def test_cloudflare_stream_analytics_wired():
     deps = {**pkg.get("dependencies", {}), **pkg.get("devDependencies", {})}
     assert "recharts" in deps, "recharts must be installed for analytics charts"
 
+
+
+def test_streamer_wrap_up_emails_wired():
+    """2026-02 final-final pre-beta sprint: Monday-morning per-streamer
+    wrap-up emails. Pairs with the Cloudflare Stream Analytics dashboard
+    to give streamers a recurring reason to come back to the platform.
+
+    Locks:
+      - Service module exists + has compute/render/dispatch trio.
+      - HTTP routes exist + correct prefix.
+      - Background loop auto-starts via lifespan kickoff list.
+      - Frontend analytics page has the "Email me" button.
+      - Resend is the delivery mechanism (not hand-rolled SMTP).
+      - Idempotent per ISO week via streamer_wrap_up_runs audit.
+    """
+    svc = open("/app/backend/services/streamer_wrap_up_service.py").read()
+    assert "async def compute_streamer_wrap_up" in svc
+    assert "def render_wrap_up_email_html" in svc
+    assert "async def dispatch_one_wrap_up" in svc
+    assert "async def dispatch_weekly_wrap_ups" in svc
+    assert "async def streamer_wrap_up_loop" in svc
+    assert "WRAP_UP_HOUR_UTC = 9" in svc
+    assert "streamer_wrap_up_runs" in svc, "Idempotency audit collection name missing"
+    assert "iso_week" in svc, "Should dedupe by ISO week"
+    assert "resend.Emails.send" in svc, "Should use Resend SDK, not raw SMTP"
+
+    routes = open("/app/backend/routes/streamer_wrap_up.py").read()
+    assert 'prefix="/streamer-wrap-up"' in routes
+    assert "preview/{streamer_id}" in routes
+    assert "send/{streamer_id}" in routes
+    assert "dispatch-weekly" in routes
+
+    # Registry mounts it.
+    registry = open("/app/backend/routes/registry.py").read()
+    assert "from routes.streamer_wrap_up import router as wrap_up_router" in registry
+
+    # Background loop is auto-started via the lifespan kickoff list.
+    lifespan = open("/app/backend/lifespan.py").read()
+    assert "_start_streamer_wrap_up" in lifespan
+    assert "streamer_wrap_up_loop" in lifespan
+
+    # Frontend exposes the manual-send button on the analytics page.
+    analytics = open("/app/frontend/src/pages/streaming/StreamerAnalytics.tsx").read()
+    assert "streamer-analytics-email-wrap-up" in analytics
+    assert "/api/streamer-wrap-up/send/" in analytics
+
+
+def test_games_have_no_fiat_signs():
+    """2026-02 pre-beta polish: founder requirement — 'no money signs on
+    no games'. Games settle exclusively in Vibez Coins, so $ next to a
+    number on any game UI is a regression.
+
+    Allowed: $ as part of valid JS/TS template literals (${...}),
+    Tailwind arbitrary value syntax (\\$[...]), and inside comments
+    is tolerated (we still strip the obvious ones, but a code comment
+    won't reach the user). This test guards against the user-visible
+    occurrences.
+    """
+    import re, pathlib
+    pattern = re.compile(r"(?<![\\${])\$[0-9]")  # $ directly followed by digit, NOT inside ${} or \\$ tw-arbitrary
+    offenders = []
+    games_dirs = [
+        pathlib.Path("/app/frontend/src/pages/games"),
+        pathlib.Path("/app/frontend/src/components/games"),
+    ]
+    for d in games_dirs:
+        if not d.exists():
+            continue
+        for path in d.rglob("*.tsx"):
+            txt = path.read_text()
+            for ln, line in enumerate(txt.splitlines(), 1):
+                # Skip lines that are clearly comments.
+                stripped = line.lstrip()
+                if stripped.startswith("//") or stripped.startswith("*"):
+                    continue
+                # Skip lines inside multiline /* */ — approximate but
+                # good enough: skip if line contains `/*` or `*/`.
+                if "/*" in line or "*/" in line:
+                    continue
+                if pattern.search(line):
+                    offenders.append(f"{path.name}:{ln}: {line.strip()[:120]}")
+    assert not offenders, (
+        "Founder rule: no fiat $ signs on games. All bets settle in "
+        "Vibez Coins. Offending lines:\n  " + "\n  ".join(offenders)
+    )
+
+
+def test_games_enforce_50_coin_min_bet_floor():
+    """Founder rule: 50-coin minimum bet platform-wide. Lock the
+    canonical defaults so nobody silently re-lowers them.
+    """
+    bj = open("/app/backend/services/blackjack_multiplayer.py").read()
+    # The factory defaults to 50 + clamps anything lower to 50.
+    assert "min_bet: int = 50" in bj, "Blackjack default min_bet must be 50 coins"
+    assert "max(int(min_bet or 50), 50)" in bj, "Blackjack must hard-floor min_bet at 50"
+
+    slots = open("/app/backend/routes/multiplayer_slots.py").read()
+    # Default rooms must not have a min_bet under 50.
+    import re
+    for m in re.finditer(r"'min_bet':\s*(\d+)", slots):
+        val = int(m.group(1))
+        assert val >= 50, f"Slots default min_bet={val} violates 50-coin floor"
+
+    v654 = open("/app/backend/routes/vibez_654_prescription.py").read()
+    assert "min_bet: float = 50.0" in v654, "Vibez 654 default min_bet must be 50.0"
+
+    bj_svc = open("/app/backend/services/games/blackjack.py").read()
+    assert "min_bet: int = 50" in bj_svc, "Blackjack service default min_bet must be 50"
+    assert "max(min_bet, 50)" in bj_svc
+
+    mp = open("/app/backend/services/multiplayer.py").read()
+    assert "max(int(data.get('min_bet', 50) or 50), 50)" in mp, "Multiplayer must hard-floor at 50"
+
+
+def test_blackjack_error_message_uses_coin_glyph_not_dollar():
+    """Founder rule: error/result strings on games render coin amounts
+    with the ₵ glyph, never $. Locks the previously-fixed line."""
+    src = open("/app/backend/services/blackjack_multiplayer.py").read()
+    # The old `f"Minimum bet is ${...}"` is gone, new ₵{...} version is in.
+    assert "Minimum bet is $" not in src, "Blackjack error must not use $ sign"
+    assert "Minimum bet is ₵" in src, "Blackjack error must use ₵ coin glyph"
+

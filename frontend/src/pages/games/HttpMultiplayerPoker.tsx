@@ -22,11 +22,11 @@ import { useSafeTimeout } from "@/hooks/useSafeTimeout";
 // Chip Component with denominations
 const PokerChip = ({ value, count = 1, size = 'normal', animate = false }) => {
   const getChipColor = (val) => {
-    if (val >= 100) return 'from-gray-900 to-gray-700'; // Black - $100+
-    if (val >= 50) return 'from-green-700 to-green-900'; // Green - $50
-    if (val >= 25) return 'from-blue-700 to-blue-900'; // Blue - $25
-    if (val >= 10) return 'from-red-700 to-red-900'; // Red - $10
-    return 'from-white to-gray-300'; // White - $1-5
+    if (val >= 100) return 'from-gray-900 to-gray-700'; // Black - 100+ coin chip
+    if (val >= 50) return 'from-green-700 to-green-900'; // Green - 50 coin chip
+    if (val >= 25) return 'from-blue-700 to-blue-900'; // Blue - 25 coin chip
+    if (val >= 10) return 'from-red-700 to-red-900'; // Red - 10 coin chip
+    return 'from-white to-gray-300'; // White - low denomination chip
   };
 
   const sizeClasses = size === 'small' ? 'w-8 h-8 text-xs' : size === 'large' ? 'w-16 h-16 text-lg' : 'w-12 h-12 text-sm';

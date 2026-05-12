@@ -1,6 +1,54 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
-> **2026-02-11 (BETA-REDEPLOY READY ✅ · Cloudflare Stream Analytics shipped) — 313/313 regression green. Founder cleared to deploy.**
+> **2026-02-11 (BETA-REDEPLOY CLEARED 🚀 · Wrap-Ups + Game Audit) — 317/317 regression green. Founder cleared to ship beta.**
+>
+> ### Final pre-beta sprint completed:
+>
+> **1. Streamer Wrap-Up Emails (Monday 09:00 UTC)**
+>   - New service `services/streamer_wrap_up_service.py` + routes `routes/streamer_wrap_up.py`
+>   - 3 endpoints: `GET /preview/{streamer_id}` (renders HTML in-browser), `POST /send/{streamer_id}` (manual single send), `POST /dispatch-weekly` (loops every streamer with a live input + email)
+>   - Background loop auto-started via `lifespan._start_streamer_wrap_up`. Idempotent per ISO week via `streamer_wrap_up_runs` audit collection.
+>   - Email design: cyan/fuchsia/amber KPI tiles, inline sparkline (HTML/CSS bars), top-3 countries, dynamic Featured Streamer upsell (or "You're Featured · N days left" banner when active), Stripe-Featured cross-promo CTA.
+>   - Frontend: "Email me" button on `/streamer/analytics` for instant self-trigger + verification toast.
+>   - Resend integration uses existing `RESEND_API_KEY`. Sender domain still needs DNS records (founder homework) — emails work today, will look fully native after DNS verification.
+>
+> **2. Game audit — "No money signs on games" rule enforced**
+>   - Replaced fiat `$` signs with coin glyph `₵` on user-visible game UI (BigSixWheel, DSG6Lottery, blackjack error message)
+>   - BigSixWheel label scheme migrated `$1/$2/$5/$10/$20` → `1/2/5/10/20` (multipliers, not fiat amounts). Updated backend `BIG_SIX_LAYOUT` + 2 game tests to match.
+>   - Updated HttpMultiplayerPoker chip-color comments + UniversalGameRoom historical comment.
+>   - Regression lock: `test_games_have_no_fiat_signs` scans every `.tsx` under `/games` directories for `$<digit>` in non-comment code, fails the build if any appear.
+>
+> **3. 50-coin minimum bet floor enforced platform-wide**
+>   - `services/blackjack_multiplayer.py` default `min_bet: int = 50` + hard-clamps lower bids
+>   - `services/games/blackjack.py` factory enforces `max(min_bet, 50)`
+>   - `services/multiplayer.py` clamps incoming `min_bet` to `max(50, ...)`
+>   - `routes/multiplayer_slots.py` default rooms bumped: cosmic_lounge 10→50, dating_bonus 25→50, high_rollers 100→500
+>   - `routes/vibez_654_prescription.py` `min_bet: float = 50.0`
+>   - `pages/games/VibeDice654Premium.tsx` default min 5→50
+>   - Regression lock: `test_games_enforce_50_coin_min_bet_floor` scans all 5 files + asserts the floor stays put
+>
+> **4. Game numbers consistency**
+>   - Blackjack error string updated `$<n>` → `₵{n:,} coins` — locked by `test_blackjack_error_message_uses_coin_glyph_not_dollar`
+>   - Game tests audited and updated to match new label scheme (55 game tests passing)
+>
+> ### Regression Shield: 317/317 GREEN (+4 new locks this sprint)
+>
+> ### 🚀 BETA-READY · Final capability inventory
+> - 💳 Real-money Stripe (charges + payouts enabled, both webhooks signature-verified)
+> - 🆔 Stripe Identity 21+ verification (alcohol/cannabis gated, signature-verified)
+> - 📡 RTMP/SRT/HLS streaming via Cloudflare Stream
+> - 🔴 Public Live Now Wall (SEO-friendly)
+> - ⭐ Featured Streamers $5/30-day monetization tier (Stripe Checkout)
+> - 📊 Cloudflare-powered Streamer Analytics dashboard
+> - 📧 Weekly Monday Wrap-Up emails (Resend)
+> - 🎵 Beat Vault + 🎬 Video Vault with DMCA + signed downloads
+> - 🏢 Vibe Venues + Stripe Connect onboarding
+> - 🪙 50-coin minimum bet floor; coin-only game economy (no fiat signs)
+> - 🛡️ 317 regression-locked behaviors
+>
+> ---
+>
+> **2026-02-11 (BETA-REDEPLOY READY ✅ · Cloudflare Stream Analytics shipped) — 313/313 regression green.**
 >
 > **Final pre-beta feature shipped** — Cloudflare Stream Analytics dashboard at `/streamer/analytics`:
 >   - Backend: `GET /api/streaming/cloudflare/analytics/:input_id?days=N` (N clamped 1-90)

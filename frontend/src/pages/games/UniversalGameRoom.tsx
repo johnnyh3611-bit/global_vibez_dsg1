@@ -36,7 +36,7 @@ const UniversalGameRoom = () => {
   const [gameState, setGameState] = useState(null);
   const [currentPlayerId, setCurrentPlayerId] = useState(null);
   const [validActions, setValidActions] = useState([]);
-  const [betAmount, setBetAmount] = useState(20000); // Start with 20,000 Coins (was $10)
+  const [betAmount, setBetAmount] = useState(20000); // 20,000 Coin default (50 Coin floor enforced)
   const [revealedCards, setRevealedCards] = useState(new Set()); // Track which cards are revealed
   
   // Split hand state (for Blackjack split feature)

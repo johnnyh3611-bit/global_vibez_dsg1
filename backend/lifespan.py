@@ -86,6 +86,8 @@ def register_startup_tasks(app, logger: logging.Logger) -> None:
                   _start_perf_alerts, logger)
         _kick_off("Beta Waitlist weekly digest scheduler",
                   _start_weekly_digest, logger)
+        _kick_off("Streamer wrap-up Monday dispatcher",
+                  _start_streamer_wrap_up, logger)
         _kick_off("Beta Tester seeder",
                   _start_beta_tester_seeder, logger)
         _kick_off("JFTN demo-room seeder",
@@ -164,6 +166,19 @@ def _start_weekly_digest() -> None:
     Idempotent via the iso-week audit row in `beta_digest_runs`."""
     from services.weekly_digest_service import weekly_digest_loop  # noqa: PLC0415
     asyncio.create_task(weekly_digest_loop())
+
+
+def _start_streamer_wrap_up() -> None:
+    """Per-streamer analytics wrap-up — dispatches every Monday at 09:00
+    UTC to every streamer with a provisioned Cloudflare live input + an
+    email on file. Idempotent via `streamer_wrap_up_runs` audit collection."""
+    import os  # noqa: PLC0415
+    from motor.motor_asyncio import AsyncIOMotorClient  # noqa: PLC0415
+    from services.streamer_wrap_up_service import streamer_wrap_up_loop  # noqa: PLC0415
+
+    _client = AsyncIOMotorClient(os.environ.get("MONGO_URL"))
+    _db = _client[os.environ.get("DB_NAME", "global_vibez_dsg")]
+    asyncio.create_task(streamer_wrap_up_loop(lambda: _db))
 
 
 def _start_beta_tester_seeder() -> None:

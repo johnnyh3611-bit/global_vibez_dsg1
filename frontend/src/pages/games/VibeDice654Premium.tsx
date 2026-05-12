@@ -151,7 +151,7 @@ export default function VibeDice654Premium() {
         body: JSON.stringify({
           table_id: `tbl_${Date.now().toString(36)}`,
           name: 'Vibe Dice 654',
-          min_bet: 5,
+          min_bet: 50, // 50-coin platform floor
           max_bet: 500,
         }),
       });

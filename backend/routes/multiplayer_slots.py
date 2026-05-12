@@ -54,9 +54,9 @@ SYMBOLS = {
 
 # Default rooms
 DEFAULT_ROOMS = [
-    {'room_id': 'cosmic_lounge', 'name': 'Cosmic Lounge', 'min_bet': 10, 'max_bet': 100, 'max_players': 10},
-    {'room_id': 'high_rollers', 'name': 'High Rollers VIP', 'min_bet': 100, 'max_bet': 1000, 'max_players': 6},
-    {'room_id': 'dating_bonus_room', 'name': 'Dating Bonus Special', 'min_bet': 25, 'max_bet': 250, 'max_players': 8}
+    {'room_id': 'cosmic_lounge', 'name': 'Cosmic Lounge', 'min_bet': 50, 'max_bet': 500, 'max_players': 10},
+    {'room_id': 'high_rollers', 'name': 'High Rollers VIP', 'min_bet': 500, 'max_bet': 5000, 'max_players': 6},
+    {'room_id': 'dating_bonus_room', 'name': 'Dating Bonus Special', 'min_bet': 50, 'max_bet': 500, 'max_players': 8}
 ]
 
 def initialize_room(room_id: str):

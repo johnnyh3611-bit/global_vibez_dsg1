@@ -934,7 +934,7 @@ async def create_blackjack_room(sid, data):
     try:
         player_name = data.get('player_name', 'Player')
         user_id = data.get('user_id', None)  # Get user_id from frontend
-        min_bet = data.get('min_bet', 10)
+        min_bet = max(int(data.get('min_bet', 50) or 50), 50)  # 50-coin platform floor
         max_bet = data.get('max_bet', 500)
         
         room_code = generate_room_code()

@@ -68,8 +68,8 @@ def test_big_six_wheel_layout_total() -> None:
 
 
 def test_big_six_wheel_play() -> None:
-    out = w2.play_big_six(bet_label="$1", stake=10, seed=11)
-    assert out["bet"] == "$1"
+    out = w2.play_big_six(bet_label="1", stake=10, seed=11)
+    assert out["bet"] == "1"
 
 
 def test_jacks_or_better_evaluates_royal() -> None:

@@ -793,6 +793,15 @@ def register_all_routes(
     except Exception as _e:
         log.warning(f"Featured Streamers routes not mounted: {_e}")
 
+    # Streamer Wrap-Up emails — Monday 09:00 UTC per-streamer analytics
+    # digest. The loop itself is started during server startup (see
+    # server.py); these routes provide preview + manual-send surfaces.
+    try:
+        from routes.streamer_wrap_up import router as wrap_up_router
+        api_router.include_router(wrap_up_router)
+    except Exception as _e:
+        log.warning(f"Streamer Wrap-Up routes not mounted: {_e}")
+
     # $VIBEZ Activity Multiplier reward formula (Roadmap PDF §1).
     # SIMULATED mints until the founder confirms project_complete.
     try:

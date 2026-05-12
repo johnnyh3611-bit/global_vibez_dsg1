@@ -111,7 +111,7 @@ export default function VibeDice654() {
       if (data.success) {
         setBalance(data.balance);
         
-        // Auto-credit demo balance if user has $0
+        // Auto-credit demo balance if user has 0 coins
         if (data.balance === 0) {
           const creditRes = await fetch(`${API_URL}/api/wallet/credit/${userId}?amount=1000`, {
             method: 'POST'

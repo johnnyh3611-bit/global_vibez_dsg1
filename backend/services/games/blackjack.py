@@ -31,8 +31,9 @@ class BlackjackGame:
     """Blackjack game handler — thin static wrapper over the multiplayer module."""
 
     @staticmethod
-    def create_table(room_code: str, session_id: str, player_name: str, min_bet: int = 10) -> Dict[str, Any]:
-        return create_blackjack_table(room_code, session_id, player_name, min_bet)
+    def create_table(room_code: str, session_id: str, player_name: str, min_bet: int = 50) -> Dict[str, Any]:
+        # 50-coin floor enforced platform-wide (2026-02 pre-beta sweep).
+        return create_blackjack_table(room_code, session_id, player_name, max(min_bet, 50))
 
     @staticmethod
     def join_table(room_code: str, session_id: str, player_name: str) -> Dict[str, Any]:

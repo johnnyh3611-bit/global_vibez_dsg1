@@ -26,7 +26,7 @@ PLAY_CASES = [
     ("european-roulette", "play", {"bet_type": "straight", "bet_value": 17, "stake": 10, "seed": 1}),
     ("hazard", "play", {"main": 7, "stake": 10, "seed": 1}),
     ("chuck-a-luck", "play", {"picked_number": 3, "stake": 10, "seed": 1}),
-    ("big-six-wheel", "play", {"bet_label": "$1", "stake": 10, "seed": 1}),
+    ("big-six-wheel", "play", {"bet_label": "1", "stake": 10, "seed": 1}),
     ("fan-tan", "play", {"pick": 1, "stake": 10, "seed": 1}),
     ("faro", "play", {"picked_rank": "7", "stake": 10, "seed": 1}),
     ("vibes-darts", "throw", {"distance_from_bullseye": 0.05, "stake": 10}),

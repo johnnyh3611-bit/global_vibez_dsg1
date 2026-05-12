@@ -98,7 +98,7 @@ export default function DSG6Lottery() {
         <h1 className="text-base md:text-xl tracking-[0.3em] uppercase text-amber-300 flex items-center gap-2">
           <Gem className="w-5 h-5" /> DSG 6 Quantum Vault
         </h1>
-        <div className="text-[10px] uppercase tracking-widest text-white/40 hidden md:block">5 + 1 · $2 / ticket</div>
+        <div className="text-[10px] uppercase tracking-widest text-white/40 hidden md:block">5 + 1 · 100 Coins / ticket</div>
       </header>
 
       <main className="max-w-3xl mx-auto px-4 py-6">

@@ -21,7 +21,7 @@ import {
 } from "recharts";
 import {
   ArrowLeft, Activity, Loader2, AlertTriangle,
-  Globe, Clock, RefreshCcw, Sparkles, Radio,
+  Globe, Clock, RefreshCcw, Sparkles, Radio, Mail,
 } from "lucide-react";
 import { getUserId } from "@/utils/secureAuth";
 
@@ -107,6 +107,36 @@ export default function StreamerAnalytics() {
     if (input) loadAnalytics(input.input_id, windowDays);
   };
 
+  const [emailing, setEmailing] = useState(false);
+  const [emailToast, setEmailToast] = useState<string | null>(null);
+  const emailMyWrapUp = async () => {
+    if (!input) return;
+    setEmailing(true);
+    setEmailToast(null);
+    try {
+      const r = await fetch(
+        `${API}/api/streamer-wrap-up/send/${input.streamer_id}`,
+        { method: "POST" },
+      );
+      const data = await r.json();
+      if (!r.ok || (!data.ok && !data.skipped)) {
+        throw new Error(data?.detail || data?.error || `HTTP ${r.status}`);
+      }
+      if (data.skipped) {
+        setEmailToast(`Skipped — ${data.reason}`);
+      } else {
+        setEmailToast(`📩 Wrap-up sent to ${data.email}`);
+      }
+    } catch (e: unknown) {
+      setEmailToast(
+        `Failed: ${(e as Error)?.message || "send error"}`,
+      );
+    } finally {
+      setEmailing(false);
+      setTimeout(() => setEmailToast(null), 6000);
+    }
+  };
+
   return (
     <div
       className="min-h-screen bg-[#070012] text-white font-mono"
@@ -162,11 +192,29 @@ export default function StreamerAnalytics() {
             >
               <RefreshCcw className="w-4 h-4" />
             </button>
+            <button
+              onClick={emailMyWrapUp}
+              disabled={emailing || !input}
+              className="px-3 py-2 rounded-full border border-cyan-500/30 hover:bg-cyan-500/10 text-cyan-100 text-[10px] uppercase tracking-widest inline-flex items-center gap-1 disabled:opacity-50"
+              data-testid="streamer-analytics-email-wrap-up"
+              aria-label="Email me this wrap-up"
+            >
+              {emailing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
+              Email me
+            </button>
           </div>
         </div>
       </header>
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+        {emailToast && (
+          <div
+            className="rounded-xl border border-cyan-400/40 bg-cyan-500/10 text-cyan-100 px-3 py-2 text-xs"
+            data-testid="streamer-analytics-email-toast"
+          >
+            {emailToast}
+          </div>
+        )}
         {err && (
           <div
             className="rounded-xl border border-red-500/40 bg-red-900/20 text-red-200 px-3 py-2 text-xs flex items-center gap-2"

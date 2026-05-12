@@ -102,7 +102,9 @@ def is_bust(cards: List[Dict]) -> bool:
     """Check if hand is bust (over 21)"""
     return calculate_hand_value(cards) > 21
 
-def create_blackjack_table(room_code: str, host_session_id: str, host_name: str, min_bet: int = 10, max_bet: int = 500, host_user_id: str = None) -> Dict:
+def create_blackjack_table(room_code: str, host_session_id: str, host_name: str, min_bet: int = 50, max_bet: int = 500, host_user_id: str = None) -> Dict:
+    # 50-coin minimum bet enforced platform-wide (2026-02 pre-beta sweep).
+    min_bet = max(int(min_bet or 50), 50)
     """Create a new blackjack table"""
     table = {
         'room_code': room_code,
@@ -230,7 +232,7 @@ def place_bet(room_code: str, session_id: str, amount: int) -> Optional[Dict]:
     
     # Validate bet amount
     if amount < table['min_bet']:
-        return {'error': f"Minimum bet is ${table['min_bet']}"}
+        return {'error': f"Minimum bet is ₵{table['min_bet']:,} coins"}
     if amount > table['max_bet']:
         return {'error': f"Maximum bet is ${table['max_bet']}"}
     if amount > player['balance']:
