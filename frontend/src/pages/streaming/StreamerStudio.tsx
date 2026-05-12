@@ -17,7 +17,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Radio, Copy, Check, Eye, EyeOff, ShieldCheck, RefreshCcw, Loader2, AlertTriangle, Sparkles, Cast, Star, X } from "lucide-react";
+import { ArrowLeft, Radio, Copy, Check, Eye, EyeOff, ShieldCheck, RefreshCcw, Loader2, AlertTriangle, Sparkles, Cast, Star, X, BarChart3 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { getUserId } from "@/utils/secureAuth";
 import HLSPlayer from "@/components/streaming/HLSPlayer";
 
@@ -140,6 +141,13 @@ export default function StreamerStudio() {
           >
             <RefreshCcw className="w-4 h-4" />
           </button>
+          <Link
+            to="/streamer/analytics"
+            className="px-3 py-2 rounded-full border border-cyan-500/30 hover:bg-cyan-500/10 text-cyan-200 text-[10px] uppercase tracking-widest inline-flex items-center gap-1"
+            data-testid="streamer-studio-analytics-link"
+          >
+            <BarChart3 className="w-3.5 h-3.5" /> Analytics
+          </Link>
         </div>
       </header>
 

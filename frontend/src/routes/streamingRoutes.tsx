@@ -2,6 +2,7 @@ import { Route } from 'react-router-dom';
 import LiveStreamingPage from '@/pages/LiveStreamingPage';
 import StreamerDashboard from '@/pages/StreamerDashboard';
 import StreamerStudio from '@/pages/streaming/StreamerStudio';
+import StreamerAnalytics from '@/pages/streaming/StreamerAnalytics';
 import LiveNowWall from '@/pages/streaming/LiveNowWall';
 import WatchRoom from '@/pages/streaming/WatchRoom';
 
@@ -28,6 +29,14 @@ export const streamingRoutes = (ProtectedRoute) => (
       element={
         <ProtectedRoute>
           <StreamerStudio />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/streamer/analytics"
+      element={
+        <ProtectedRoute>
+          <StreamerAnalytics />
         </ProtectedRoute>
       }
     />

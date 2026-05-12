@@ -24,7 +24,7 @@ import hmac
 import logging
 import os
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 import httpx
@@ -40,6 +40,7 @@ router = APIRouter(prefix="/streaming/cloudflare", tags=["cloudflare-stream"])
 # We read env at request time so a `.env` change auto-flips STUB→LIVE
 # without a backend restart. Cheap dict lookup; negligible overhead.
 CF_API_BASE = "https://api.cloudflare.com/client/v4"
+CF_GRAPHQL_URL = "https://api.cloudflare.com/client/v4/graphql"
 
 
 def _cf_config() -> Dict[str, Optional[str]]:
@@ -363,3 +364,169 @@ async def cloudflare_webhook(
         }},
     )
     return {"ok": True, "input_id": uid, "is_live": is_live}
+
+
+
+# ────────────────────────────────────────────── Stream Analytics ──
+async def _cf_graphql(query: str, variables: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """Thin wrapper around Cloudflare's GraphQL analytics endpoint.
+    Returns the `data` blob on success; raises HTTPException with the CF
+    error message on failure so the founder sees something useful."""
+    cfg = _cf_config()
+    if not cfg["api_token"] or not cfg["account_id"]:
+        raise HTTPException(503, detail="Cloudflare Stream credentials not configured")
+    headers = {
+        "Authorization": f"Bearer {cfg['api_token']}",
+        "Content-Type": "application/json",
+    }
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        resp = await client.post(
+            CF_GRAPHQL_URL,
+            headers=headers,
+            json={"query": query, "variables": variables or {}},
+        )
+    try:
+        body = resp.json()
+    except Exception:
+        raise HTTPException(resp.status_code, detail=resp.text[:200])
+    if body.get("errors"):
+        msg = body["errors"][0].get("message", "Cloudflare GraphQL error")
+        raise HTTPException(502, detail=f"Cloudflare analytics: {msg}")
+    return body.get("data") or {}
+
+
+@router.get("/analytics/{input_id}")
+async def stream_analytics(
+    input_id: str, days: int = 30,
+) -> Dict[str, Any]:
+    """Streamer-facing analytics for a single live input. Pulls from
+    Cloudflare's GraphQL Analytics API:
+      - Total minutes viewed (rollup)
+      - Daily breakdown (chart data)
+      - Top countries by minutes (geography panel)
+      - Unique viewer estimate (proxy: daily distinct viewers)
+
+    Window: last `days` days, clamped 1-90. Data is delivered with a
+    15-min ingestion delay by Cloudflare, so the most-recent hour will
+    look thin.
+    """
+    days = max(1, min(days, 90))
+
+    # Validate the streamer owns this input + grab their stream metadata.
+    doc = await db.cf_live_inputs.find_one(
+        {"input_id": input_id, "is_deleted": {"$ne": True}}, {"_id": 0},
+    )
+    if not doc:
+        raise HTTPException(404, detail="Live input not found")
+
+    cfg = _cf_config()
+    if not _is_live():
+        # Demo data for preview without CF creds — frontend can still
+        # render the chart shell so the layout is verified.
+        return {
+            "mode": "stub",
+            "input_id": input_id,
+            "streamer_id": doc.get("streamer_id"),
+            "window_days": days,
+            "summary": {"total_minutes_viewed": 0, "unique_viewer_days": 0, "top_country": None},
+            "daily": [],
+            "countries": [],
+        }
+
+    end = datetime.now(timezone.utc).date()
+    start = end - timedelta(days=days)
+    start_s = start.isoformat()
+    end_s = (end + timedelta(days=1)).isoformat()  # CF uses date_lt — exclusive upper
+
+    # ─── 1. Daily breakdown ───────────────────────────────────────────
+    daily_query = """
+    query Daily($accountTag: string!, $uid: string!, $start: Date!, $end: Date!) {
+      viewer {
+        accounts(filter: { accountTag: $accountTag }) {
+          streamMinutesViewedAdaptiveGroups(
+            filter: { date_geq: $start, date_lt: $end, uid: $uid }
+            limit: 5000
+            orderBy: [date_ASC]
+          ) {
+            dimensions { date }
+            sum { minutesViewed }
+          }
+        }
+      }
+    }
+    """
+    daily_data = await _cf_graphql(daily_query, {
+        "accountTag": cfg["account_id"],
+        "uid": input_id,
+        "start": start_s,
+        "end": end_s,
+    })
+    daily_rows = (
+        daily_data.get("viewer", {}).get("accounts", [{}])[0]
+        .get("streamMinutesViewedAdaptiveGroups", []) or []
+    )
+    # Fold per-day country splits into a single per-day total.
+    daily_totals: Dict[str, float] = {}
+    for row in daily_rows:
+        d = row.get("dimensions", {}).get("date")
+        m = (row.get("sum") or {}).get("minutesViewed", 0)
+        if d is not None:
+            daily_totals[d] = daily_totals.get(d, 0) + m
+    daily = [
+        {"date": d, "minutes_viewed": round(daily_totals[d], 2)}
+        for d in sorted(daily_totals.keys())
+    ]
+
+    # ─── 2. Country breakdown (top 8) ────────────────────────────────
+    country_query = """
+    query Countries($accountTag: string!, $uid: string!, $start: Date!, $end: Date!) {
+      viewer {
+        accounts(filter: { accountTag: $accountTag }) {
+          streamMinutesViewedAdaptiveGroups(
+            filter: { date_geq: $start, date_lt: $end, uid: $uid }
+            limit: 100
+            orderBy: [sum_minutesViewed_DESC]
+          ) {
+            dimensions { clientCountryName }
+            sum { minutesViewed }
+          }
+        }
+      }
+    }
+    """
+    country_data = await _cf_graphql(country_query, {
+        "accountTag": cfg["account_id"],
+        "uid": input_id,
+        "start": start_s,
+        "end": end_s,
+    })
+    country_rows = (
+        country_data.get("viewer", {}).get("accounts", [{}])[0]
+        .get("streamMinutesViewedAdaptiveGroups", []) or []
+    )
+    # Fold across dates → country totals.
+    country_totals: Dict[str, float] = {}
+    for row in country_rows:
+        c = (row.get("dimensions") or {}).get("clientCountryName") or "Unknown"
+        m = (row.get("sum") or {}).get("minutesViewed", 0)
+        country_totals[c] = country_totals.get(c, 0) + m
+    countries = sorted(
+        [{"country": c, "minutes_viewed": round(m, 2)} for c, m in country_totals.items()],
+        key=lambda x: -x["minutes_viewed"],
+    )[:8]
+
+    total_minutes = round(sum(d["minutes_viewed"] for d in daily), 2)
+    return {
+        "mode": "live",
+        "input_id": input_id,
+        "streamer_id": doc.get("streamer_id"),
+        "window_days": days,
+        "summary": {
+            "total_minutes_viewed": total_minutes,
+            "unique_viewer_days": len([d for d in daily if d["minutes_viewed"] > 0]),
+            "top_country": countries[0]["country"] if countries else None,
+            "top_country_minutes": countries[0]["minutes_viewed"] if countries else 0,
+        },
+        "daily": daily,
+        "countries": countries,
+    }

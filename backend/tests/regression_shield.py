@@ -6730,3 +6730,64 @@ def test_featured_streamers_tier_wired():
         assert tid in studio, f"Studio missing testid: {tid}"
     assert "/api/featured-streamers/checkout" in studio
 
+
+
+def test_cloudflare_stream_analytics_wired():
+    """2026-02 final pre-beta-redeploy sprint: Cloudflare Stream Analytics
+    dashboard for streamers. Pulls from the GraphQL analytics endpoint
+    using the same API token we use for live-input provisioning (already
+    has GraphQL read permission — verified via curl).
+
+    Locks:
+      - Backend GET /api/streaming/cloudflare/analytics/:input_id route.
+      - Calls Cloudflare GraphQL endpoint (not REST — analytics live there).
+      - Returns daily + countries + summary shape the frontend expects.
+      - Frontend StreamerAnalytics page mounted at /streamer/analytics.
+      - Charts use recharts (already installed) — no new deps.
+      - Volumetric Dashboard tile + Studio header link both present.
+    """
+    src = open("/app/backend/routes/cloudflare_stream.py").read()
+    assert "CF_GRAPHQL_URL" in src and "api.cloudflare.com/client/v4/graphql" in src
+    assert "async def _cf_graphql" in src
+    assert "@router.get(\"/analytics/{input_id}\")" in src
+    # Two distinct GraphQL queries — daily breakdown + country breakdown.
+    assert "streamMinutesViewedAdaptiveGroups" in src
+    assert "orderBy: [date_ASC]" in src, "Daily query must sort chronologically"
+    assert "orderBy: [sum_minutesViewed_DESC]" in src, "Country query must rank by viewers"
+    # Returns the shape the frontend renders.
+    for key in ('"daily":', '"countries":', '"summary":', '"window_days":'):
+        assert key in src, f"Analytics response missing key: {key}"
+
+    # Frontend page mounted + uses recharts.
+    page = open("/app/frontend/src/pages/streaming/StreamerAnalytics.tsx").read()
+    assert "from \"recharts\"" in page or "from 'recharts'" in page
+    assert "/api/streaming/cloudflare/analytics/" in page
+    for tid in (
+        "streamer-analytics-root",
+        "streamer-analytics-refresh",
+        "streamer-analytics-window-picker",
+        "streamer-analytics-daily-chart",
+        "streamer-analytics-country-chart",
+        "streamer-analytics-kpi-row",
+    ):
+        assert tid in page, f"StreamerAnalytics missing testid: {tid}"
+
+    # Router + dashboard tile.
+    routes = open("/app/frontend/src/routes/streamingRoutes.tsx").read()
+    assert "/streamer/analytics" in routes
+    assert "StreamerAnalytics" in routes
+
+    vol = open("/app/frontend/src/pages/VolumetricDashboard.tsx").read()
+    assert "/streamer/analytics" in vol, "Stream Analytics tile missing from Volumetric Dashboard"
+
+    # Studio links to analytics so streamers discover the new surface.
+    studio = open("/app/frontend/src/pages/streaming/StreamerStudio.tsx").read()
+    assert "/streamer/analytics" in studio
+    assert "streamer-studio-analytics-link" in studio
+
+    # recharts dep declared.
+    import json
+    pkg = json.load(open("/app/frontend/package.json"))
+    deps = {**pkg.get("dependencies", {}), **pkg.get("devDependencies", {})}
+    assert "recharts" in deps, "recharts must be installed for analytics charts"
+

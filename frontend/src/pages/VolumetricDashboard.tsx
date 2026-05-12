@@ -76,6 +76,7 @@ const CATEGORIES = [
       { id: "live", label: "Live", emoji: "📡", path: "/live" },
       { id: "live-now", label: "Live Now Wall", emoji: "🔴", path: "/streams/live" },
       { id: "go-live", label: "Go Live", emoji: "🎥", path: "/streamer/studio" },
+      { id: "stream-analytics", label: "Stream Analytics", emoji: "📊", path: "/streamer/analytics" },
       { id: "underground-live", label: "Underground Live", emoji: "🎤", path: "/underground-live" },
       { id: "sports", label: "Vibez Sports", emoji: "🏆", path: "/sports-lounge" },
       { id: "memory", label: "Memory Bank", emoji: "🎞️", path: "/dsg/memory-bank" },

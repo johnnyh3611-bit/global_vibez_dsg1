@@ -1,6 +1,23 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
-> **2026-02-11 (FINAL PRE-BETA-REDEPLOY · FEATURED STREAMERS TIER ⭐) — Revenue lever shipped. 312/312 regression green. READY TO REDEPLOY FOR BETA.**
+> **2026-02-11 (BETA-REDEPLOY READY ✅ · Cloudflare Stream Analytics shipped) — 313/313 regression green. Founder cleared to deploy.**
+>
+> **Final pre-beta feature shipped** — Cloudflare Stream Analytics dashboard at `/streamer/analytics`:
+>   - Backend: `GET /api/streaming/cloudflare/analytics/:input_id?days=N` (N clamped 1-90)
+>   - Calls Cloudflare's **GraphQL Analytics API** (verified the token has `Cloudflare GraphQL Read` permission baked into the "Edit Cloudflare Stream" template)
+>   - Returns 4 KPIs + daily area chart data + top-8 country bar chart data
+>   - Frontend: recharts-powered dashboard with cyan/fuchsia/amber/emerald tones, window picker (7/30/90d), graceful empty states
+>   - Cross-promo: footer strip pitches Featured Streamer tier → ties analytics insight loop to revenue lever
+>   - Studio header now has an "Analytics" link → discovery from the studio surface
+>   - Volumetric Dashboard "Stream Analytics" tile added to the Streaming planet
+>
+> **Verified live**: API call returns `mode: "live"` (real Cloudflare GraphQL response, not stub). Empty states render correctly when there's no viewer data yet. UI screenshots captured in production preview.
+>
+> **Regression Shield: 313/313 GREEN** (+1 new lock: `test_cloudflare_stream_analytics_wired`).
+>
+> ---
+>
+> **2026-02-11 (FINAL PRE-BETA-REDEPLOY · FEATURED STREAMERS TIER ⭐) — Revenue lever shipped. 312/312 regression green.**
 >
 > Founder's request: "this is the last thing before I redeploy for beta." Shipped:
 >
