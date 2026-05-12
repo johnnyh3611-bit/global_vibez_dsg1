@@ -1,11 +1,11 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Crown, Dices, Zap } from 'lucide-react';
+import { Dices, Zap, Shield, Sparkles, X, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import MetalChip from './MetalChip';
 
 const CHIP_AMOUNTS = [5, 10, 25, 50, 100];
 
-const InsuranceToggle = ({
+const AssurancePill = ({
   sideBets,
   sideBetInsurance,
   setSideBetInsurance,
@@ -25,32 +25,30 @@ const InsuranceToggle = ({
     });
     setSideBetInsurance(updated);
     setDealerMessage(
-      newState ? 'Insurance ON for all side bets! (1:1 bonus)' : 'Insurance OFF'
+      newState ? 'Assurance ON for all side bets! (1:1 bonus)' : 'Assurance OFF'
     );
   };
 
   return (
-    <div className="mb-4">
-      <button
-        data-testid="insurance-toggle"
-        onClick={onToggle}
-        disabled={disabled}
-        className={`w-full metal-button p-3 rounded-lg font-bold text-sm transition-all ${
-          anyActive
-            ? 'bg-blue-500 border-blue-400 text-white'
-            : 'bg-neutral-800 border-neutral-600 text-neutral-300'
-        } ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'}`}
-      >
-        <div className="flex items-center justify-center gap-2">
-          {anyActive ? '✓' : '○'} Insurance (1:1)
-        </div>
-        <div className="text-xs mt-1 opacity-75">
-          {hasSideBets
-            ? `${anyActive ? 'ON' : 'OFF'} - Cost: $${totalCost}`
-            : 'Place side bets first'}
-        </div>
-      </button>
-    </div>
+    <button
+      data-testid="insurance-toggle"
+      onClick={onToggle}
+      disabled={disabled}
+      title={
+        hasSideBets
+          ? `Assurance ${anyActive ? 'ON' : 'OFF'} · Cost: ₵${totalCost}`
+          : 'Place a side bet first to enable Assurance'
+      }
+      className={`h-10 px-3 rounded-full text-[11px] font-black uppercase tracking-wider border-2 flex items-center gap-1.5 transition-all whitespace-nowrap ${
+        anyActive
+          ? 'bg-gradient-to-br from-amber-500 to-yellow-600 border-amber-300 text-black shadow-[0_0_12px_rgba(251,191,36,0.6)]'
+          : 'bg-black/60 border-white/20 text-gray-300 hover:border-amber-400/50'
+      } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+    >
+      <Shield className="w-3.5 h-3.5" />
+      Assurance
+      {anyActive && <span className="text-[9px] opacity-80">1:1</span>}
+    </button>
   );
 };
 
@@ -72,69 +70,105 @@ export const BettingControls = ({
   handleStand,
   handleReRoll,
   setDealerMessage,
+  showSideBetsPanel,
+  setShowSideBetsPanel,
 }) => (
-  <div className="glass-card p-4 sm:p-5 rounded-2xl bg-black/55 backdrop-blur-md border border-amber-500/25" data-testid="betting-controls">
-    <div className="flex items-center justify-between mb-3 sm:mb-4">
-      <h3 className="text-sm sm:text-lg font-black text-metal flex items-center gap-2">
-        <Crown className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500" /> Select Chip Value
-      </h3>
-    </div>
-
-    <InsuranceToggle
-      sideBets={sideBets}
-      sideBetInsurance={sideBetInsurance}
-      setSideBetInsurance={setSideBetInsurance}
-      gamePhase={gamePhase}
-      setDealerMessage={setDealerMessage}
-    />
-
-    <div className="flex gap-2 sm:gap-3 mb-4 overflow-x-auto pb-1 -mx-1 px-1 snap-x">
-      {CHIP_AMOUNTS.map((amt) => (
-        <div key={`chip-${amt}`} className="snap-start shrink-0">
-          <MetalChip
-            amount={amt}
-            selected={selectedChip === amt}
-            onClick={() => setSelectedChip(amt)}
-          />
-        </div>
-      ))}
-    </div>
-
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
-      <div>
-        <label className="text-[11px] sm:text-sm text-neutral-400 mb-2 block uppercase tracking-wide">
-          Main Bet (Required)
-        </label>
-        <div
-          data-testid="main-bet-zone"
-          onClick={handleMainBet}
-          className="betting-zone metal-button cursor-pointer rounded-xl p-4 sm:p-6 text-center hover:scale-105 transition-transform"
-        >
-          <p className="text-xl sm:text-3xl font-black text-amber-400">₵{mainBet}</p>
-          <p className="text-[10px] sm:text-xs text-neutral-400 mt-1">Tap to add chip</p>
-        </div>
+  <div
+    className="glass-card p-3 sm:p-4 rounded-2xl bg-black/55 backdrop-blur-md border border-amber-500/25 space-y-3"
+    data-testid="betting-controls"
+  >
+    {/* ROW 1 — Chip strip + Assurance + Side Bets dropdown trigger */}
+    <div className="flex items-center gap-2 flex-wrap">
+      <span className="text-[10px] uppercase tracking-[0.3em] text-amber-300/80 mr-0.5">
+        Chip
+      </span>
+      <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-1 -mx-1 px-1 snap-x">
+        {CHIP_AMOUNTS.map((amt) => (
+          <div key={`chip-${amt}`} className="snap-start shrink-0">
+            <MetalChip
+              amount={amt}
+              size="sm"
+              selected={selectedChip === amt}
+              onClick={() => setSelectedChip(amt)}
+            />
+          </div>
+        ))}
       </div>
 
-      <div className="flex flex-col gap-2 sm:gap-3">
-        <Button
-          data-testid="roll-dice-btn"
-          onClick={handleRollDice}
-          disabled={mainBet === 0 || gamePhase !== 'IDLE'}
-          className={`metal-button flex-1 text-base sm:text-lg font-black ${
-            mainBet > 0 ? 'action-ready-nova action-button' : 'opacity-50 cursor-not-allowed'
+      <AssurancePill
+        sideBets={sideBets}
+        sideBetInsurance={sideBetInsurance}
+        setSideBetInsurance={setSideBetInsurance}
+        gamePhase={gamePhase}
+        setDealerMessage={setDealerMessage}
+      />
+
+      {setShowSideBetsPanel && (
+        <button
+          type="button"
+          data-testid="sidebets-dropdown-trigger"
+          onClick={() => setShowSideBetsPanel((v) => !v)}
+          className={`ml-auto h-10 px-3 rounded-full text-[11px] font-black uppercase tracking-wider border-2 flex items-center gap-1.5 transition-all whitespace-nowrap ${
+            showSideBetsPanel
+              ? 'bg-fuchsia-500/30 border-fuchsia-300 text-fuchsia-100'
+              : 'bg-black/60 border-fuchsia-400/40 text-fuchsia-200 hover:border-fuchsia-300'
           }`}
         >
-          <Dices className="w-5 h-5 mr-2" /> ROLL DICE
-        </Button>
-        <Button
-          data-testid="clear-bets-btn"
-          onClick={handleClearBets}
-          className="metal-button border-red-500 text-red-400 hover:bg-red-500/10 text-sm sm:text-base"
-          disabled={mainBet === 0 && Object.keys(sideBets).length === 0}
-        >
-          Clear Bets
-        </Button>
-      </div>
+          <Sparkles className="w-3.5 h-3.5 text-yellow-300" />
+          Side Bets
+          {Object.keys(sideBets).length > 0 && (
+            <span className="bg-yellow-400 text-black rounded-full px-1.5 py-0 text-[9px] font-black">
+              {Object.keys(sideBets).length}
+            </span>
+          )}
+          <ChevronDown
+            className={`w-3.5 h-3.5 transition-transform ${
+              showSideBetsPanel ? 'rotate-180' : ''
+            }`}
+          />
+        </button>
+      )}
+    </div>
+
+    {/* ROW 2 — Main Bet pad + ROLL + Clear */}
+    <div className="flex items-center gap-2 flex-wrap">
+      <button
+        data-testid="main-bet-zone"
+        onClick={handleMainBet}
+        disabled={gamePhase !== 'IDLE'}
+        className="flex-1 min-w-[140px] bg-gradient-to-br from-amber-600/30 to-amber-800/30 border-2 border-amber-500/50 rounded-xl px-3 py-2 text-left hover:scale-[1.02] transition-transform disabled:opacity-60"
+      >
+        <p className="text-[10px] uppercase tracking-[0.25em] text-amber-300/80">
+          Main Bet · Required
+        </p>
+        <p className="text-xl sm:text-2xl font-black text-amber-300 leading-tight">
+          ₵{mainBet}
+        </p>
+      </button>
+
+      <Button
+        data-testid="roll-dice-btn"
+        onClick={handleRollDice}
+        disabled={mainBet === 0 || gamePhase !== 'IDLE'}
+        className={`h-12 px-5 metal-button text-base font-black ${
+          mainBet > 0
+            ? 'action-ready-nova action-button'
+            : 'opacity-50 cursor-not-allowed'
+        }`}
+      >
+        <Dices className="w-4 h-4 mr-1" /> ROLL
+      </Button>
+
+      <Button
+        data-testid="clear-bets-btn"
+        onClick={handleClearBets}
+        size="sm"
+        className="h-12 px-3 metal-button border-red-500 text-red-400 hover:bg-red-500/10 text-xs font-bold"
+        disabled={mainBet === 0 && Object.keys(sideBets).length === 0}
+      >
+        <X className="w-3.5 h-3.5 mr-1" />
+        Clear
+      </Button>
     </div>
 
     {gamePhase === 'COMPLETE' && (
@@ -156,9 +190,9 @@ export const BettingControls = ({
         <Button
           data-testid="roll-again-btn"
           onClick={handleRollAgain}
-          className="w-full py-6 text-2xl metal-button action-ready-nova action-button font-black bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 border-4 border-green-400 shadow-[0_0_30px_rgba(34,197,94,0.6)]"
+          className="w-full py-5 text-xl metal-button action-ready-nova action-button font-black bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 border-4 border-green-400 shadow-[0_0_30px_rgba(34,197,94,0.6)]"
         >
-          <Dices className="w-6 h-6 mr-2 animate-bounce" />
+          <Dices className="w-5 h-5 mr-2 animate-bounce" />
           ROLL AGAIN ({rollsRemaining} {rollsRemaining === 1 ? 'roll' : 'rolls'} remaining)
         </Button>
       </motion.div>
@@ -170,24 +204,24 @@ export const BettingControls = ({
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.8, opacity: 0 }}
-          className="grid grid-cols-2 gap-4"
+          className="grid grid-cols-2 gap-3"
         >
           <Button
             data-testid="stand-btn"
             onClick={handleStand}
-            className="metal-button px-10 py-4 rounded-lg border-2 border-blue-500/50 text-blue-400 hover:bg-blue-500/10 flex flex-col items-center"
+            className="metal-button px-6 py-3 rounded-lg border-2 border-blue-500/50 text-blue-400 hover:bg-blue-500/10 flex flex-col items-center"
           >
-            <span className="text-lg font-black">STAND</span>
-            <span className="text-2xl font-black text-blue-300">{currentPointScore} POINTS</span>
+            <span className="text-base font-black">STAND</span>
+            <span className="text-xl font-black text-blue-300">{currentPointScore} POINTS</span>
           </Button>
 
           <Button
             data-testid="reroll-btn"
             onClick={handleReRoll}
-            className="metal-button action-ready-nova action-button px-10 py-4 rounded-lg flex flex-col items-center"
+            className="metal-button action-ready-nova action-button px-6 py-3 rounded-lg flex flex-col items-center"
           >
-            <span className="text-lg font-black">RE-ROLL</span>
-            <span className="text-sm text-black/70">{rollsRemaining} LEFT</span>
+            <span className="text-base font-black">RE-ROLL</span>
+            <span className="text-xs text-black/70">{rollsRemaining} LEFT</span>
           </Button>
         </motion.div>
       </AnimatePresence>

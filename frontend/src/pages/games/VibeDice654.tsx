@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Dices, TrendingUp, Crown, DollarSign, Sparkles, Zap, Trophy } from 'lucide-react';
+import { Dices, TrendingUp, Crown, DollarSign, Sparkles, Zap, Trophy, Shield, ChevronDown, ChevronUp, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import MetaHumanDealer from '@/components/MetaHumanDealer';
 import { useNavigate } from 'react-router-dom';
@@ -40,7 +40,7 @@ const Dice = ({ value, rolling }) => {
   );
 };
 
-// Chip Component
+// Compact Chip Component
 const BettingChip = ({ amount, selected, onClick }) => {
   const colors: Record<number, string> = {
     5: 'from-blue-500 to-blue-700',
@@ -55,11 +55,12 @@ const BettingChip = ({ amount, selected, onClick }) => {
       onClick={onClick}
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.95 }}
-      className={`w-14 h-14 rounded-full bg-gradient-to-br ${colors[amount]} border-4 ${
-        selected ? 'border-yellow-400 shadow-[0_0_20px_rgba(255,215,0,0.8)]' : 'border-white/30'
-      } flex items-center justify-center font-black text-white text-sm shadow-xl transition-all`}
+      data-testid={`chip-${amount}`}
+      className={`w-10 h-10 rounded-full bg-gradient-to-br ${colors[amount]} border-2 ${
+        selected ? 'border-yellow-400 shadow-[0_0_12px_rgba(255,215,0,0.8)]' : 'border-white/30'
+      } flex items-center justify-center font-black text-white text-[11px] shadow-lg transition-all`}
     >
-      ${amount}
+      ₵{amount}
     </motion.button>
   );
 };
@@ -88,6 +89,9 @@ export default function VibeDice654() {
   });
   const [rollHistory, setRollHistory] = useState([]);
   const [dealerStats, setDealerStats] = useState({ total_hands: 0, total_envy: 0 });
+  const [assuranceOn, setAssuranceOn] = useState(false);
+  const [sideBetsOpen, setSideBetsOpen] = useState(false);
+  const [recentRollsOpen, setRecentRollsOpen] = useState(false);
   
   // Side bet options
   const sideBetOptions = [
@@ -147,7 +151,7 @@ export default function VibeDice654() {
 
   const handleMainBet = () => {
     if (selectedChip > balance) {
-      alert(`Insufficient balance! You have $${balance.toFixed(2)} but need $${selectedChip}. Click "Top Up" to add credits.`);
+      alert(`Insufficient balance! You have ₵${balance.toFixed(2)} but need ₵${selectedChip}. Click "Top Up" to add credits.`);
       return;
     }
     if (gameState.status === 'betting') {
@@ -158,7 +162,7 @@ export default function VibeDice654() {
 
   const handleSideBet = (betId) => {
     if (selectedChip > balance) {
-      alert(`Insufficient balance! You have $${balance.toFixed(2)} but need $${selectedChip}. Click "Top Up" to add credits.`);
+      alert(`Insufficient balance! You have ₵${balance.toFixed(2)} but need ₵${selectedChip}. Click "Top Up" to add credits.`);
       return;
     }
     if (gameState.status === 'betting') {
@@ -266,7 +270,7 @@ export default function VibeDice654() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto p-6 grid lg:grid-cols-[1fr_400px] gap-6">
+      <div className="max-w-5xl mx-auto p-6 space-y-6">
         {/* Main Game Area */}
         <div className="space-y-6">
           {/* Dealer */}
@@ -325,7 +329,7 @@ export default function VibeDice654() {
                           <h3 className="text-3xl font-black text-yellow-400">QUALIFIED!</h3>
                           <p className="text-xl mt-2">Point: <span className="font-black">{gameState.point}</span></p>
                           {gameState.dealerEnvy > 0 && (
-                            <p className="text-sm text-yellow-300 mt-2">Dealer Envy: ${gameState.dealerEnvy}</p>
+                            <p className="text-sm text-yellow-300 mt-2">Dealer Envy: ₵{gameState.dealerEnvy}</p>
                           )}
                         </div>
                       ) : (
@@ -348,116 +352,178 @@ export default function VibeDice654() {
             </AnimatePresence>
           </div>
 
-          {/* Betting Controls */}
-          <div className="bg-gradient-to-br from-black/80 to-purple-900/20 border border-purple-500/30 rounded-2xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-black">Select Chip Value</h3>
-              <div className="flex gap-2">
-                {[5, 10, 25, 50, 100].map(amt => (
-                  <BettingChip
-                    key={amt}
-                    amount={amt}
-                    selected={selectedChip === amt}
-                    onClick={() => setSelectedChip(amt)}
-                  />
-                ))}
-              </div>
+          {/* COMPACT BETTING CONTROL STRIP */}
+          <div className="bg-gradient-to-br from-black/80 to-purple-900/20 border border-purple-500/30 rounded-2xl p-4 space-y-3">
+            {/* Row 1: Chip Strip + Assurance */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[11px] uppercase tracking-wider text-purple-300 mr-1">Chip</span>
+              {[5, 10, 25, 50, 100].map(amt => (
+                <BettingChip
+                  key={amt}
+                  amount={amt}
+                  selected={selectedChip === amt}
+                  onClick={() => setSelectedChip(amt)}
+                />
+              ))}
+              <button
+                data-testid="assurance-toggle"
+                onClick={() => setAssuranceOn(v => !v)}
+                className={`ml-2 h-10 px-3 rounded-full text-[11px] font-black uppercase tracking-wide border-2 flex items-center gap-1 transition-all ${
+                  assuranceOn
+                    ? 'bg-gradient-to-br from-yellow-500 to-amber-600 border-yellow-300 text-black shadow-[0_0_12px_rgba(255,215,0,0.6)]'
+                    : 'bg-black/60 border-white/20 text-gray-300 hover:border-yellow-400/50'
+                }`}
+                title="Assurance: side-bet protection pays 1:1 if you bust"
+              >
+                <Shield className="w-3.5 h-3.5" />
+                Assurance
+              </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="text-sm text-gray-400 mb-2 block">Main Bet (Required)</label>
-                <div
-                  onClick={handleMainBet}
-                  className="bg-gradient-to-br from-purple-600 to-pink-600 border-2 border-purple-400 rounded-xl p-4 text-center cursor-pointer hover:scale-105 transition-transform"
-                >
-                  <p className="text-2xl font-black">₵{mainBet.toLocaleString()}</p>
-                  <p className="text-xs text-purple-200">Click to add chip</p>
-                </div>
-              </div>
+            {/* Row 2: Main Bet + Roll + Clear + Side Bets dropdown trigger */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={handleMainBet}
+                data-testid="main-bet-pad"
+                disabled={gameState.status !== 'betting'}
+                className="flex-1 min-w-[140px] bg-gradient-to-br from-purple-600 to-pink-600 border-2 border-purple-400 rounded-xl px-4 py-2 text-left hover:scale-[1.02] transition-transform disabled:opacity-60"
+              >
+                <p className="text-[10px] uppercase tracking-wider text-purple-200">Main Bet (Required)</p>
+                <p className="text-xl font-black leading-tight">₵{mainBet.toLocaleString()}</p>
+              </button>
 
-              <div className="flex flex-col gap-2">
-                <Button
-                  onClick={rollDice}
-                  disabled={mainBet === 0 || gameState.status !== 'betting'}
-                  className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-lg font-black disabled:opacity-50"
-                >
-                  <Dices className="w-5 h-5 mr-2" /> ROLL DICE
-                </Button>
-                <Button
-                  onClick={clearBets}
-                  variant="outline"
-                  className="border-red-500 text-red-500 hover:bg-red-500/10"
-                  disabled={mainBet === 0 && Object.keys(sideBets).length === 0}
-                >
-                  Clear Bets
-                </Button>
-              </div>
+              <Button
+                onClick={rollDice}
+                disabled={mainBet === 0 || gameState.status !== 'betting'}
+                data-testid="roll-dice-btn"
+                className="h-12 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 font-black px-5 disabled:opacity-50"
+              >
+                <Dices className="w-4 h-4 mr-1" /> ROLL
+              </Button>
+
+              <Button
+                onClick={clearBets}
+                data-testid="clear-bets-btn"
+                variant="outline"
+                size="sm"
+                className="h-12 border-red-500 text-red-500 hover:bg-red-500/10 px-3"
+                disabled={mainBet === 0 && Object.keys(sideBets).length === 0}
+              >
+                <X className="w-3.5 h-3.5 mr-1" />
+                Clear
+              </Button>
+
+              <button
+                onClick={() => setSideBetsOpen(v => !v)}
+                data-testid="side-bets-toggle"
+                className="h-12 px-3 rounded-md bg-black/60 border border-purple-500/40 hover:border-purple-400 text-sm font-bold flex items-center gap-1"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-yellow-400" />
+                Side Bets
+                {Object.keys(sideBets).length > 0 && (
+                  <span className="ml-1 text-[10px] bg-yellow-400 text-black rounded-full px-1.5 py-0.5 font-black">
+                    {Object.keys(sideBets).length}
+                  </span>
+                )}
+                {sideBetsOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              </button>
             </div>
+
+            {/* Side Bets dropdown panel */}
+            <AnimatePresence>
+              {sideBetsOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-2 border-t border-purple-500/20">
+                    {sideBetOptions.map(bet => (
+                      <button
+                        key={bet.id}
+                        onClick={() => handleSideBet(bet.id)}
+                        data-testid={`sidebet-${bet.id}`}
+                        className="text-left bg-gradient-to-r from-purple-900/40 to-pink-900/40 border border-purple-500/20 rounded-lg p-2 cursor-pointer hover:border-purple-400 transition-all"
+                      >
+                        <div className="flex justify-between items-start">
+                          <p className="font-bold text-xs">{bet.name}</p>
+                          <span className="text-yellow-400 text-[10px] font-black">{bet.payout}</span>
+                        </div>
+                        <p className="text-[10px] text-gray-400 truncate">{bet.description}</p>
+                        {sideBets[bet.id] > 0 && (
+                          <p className="text-[10px] text-green-400 mt-0.5">Bet: ₵{sideBets[bet.id]}</p>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {gameState.status === 'result' && (
-              <Button onClick={newRound} className="w-full bg-gradient-to-r from-purple-600 to-pink-600">
+              <Button onClick={newRound} data-testid="new-round-btn" className="w-full bg-gradient-to-r from-purple-600 to-pink-600">
                 New Round
               </Button>
             )}
           </div>
-        </div>
 
-        {/* Sidebar */}
-        <div className="space-y-4">
-          {/* Side Bets */}
-          <div className="bg-black/60 border border-purple-500/30 rounded-2xl p-4">
-            <h3 className="text-lg font-black mb-3 flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-yellow-400" /> Side Bets
-            </h3>
-            <div className="space-y-2">
-              {sideBetOptions.map(bet => (
-                <div
-                  key={bet.id}
-                  onClick={() => handleSideBet(bet.id)}
-                  className="bg-gradient-to-r from-purple-900/40 to-pink-900/40 border border-purple-500/20 rounded-lg p-3 cursor-pointer hover:border-purple-400 transition-all"
+          {/* Recent Rolls Collapsible Bar */}
+          <div className="bg-black/60 border border-purple-500/30 rounded-xl overflow-hidden">
+            <button
+              onClick={() => setRecentRollsOpen(v => !v)}
+              data-testid="recent-rolls-toggle"
+              className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-white/5 transition-colors"
+            >
+              <span className="text-sm font-bold flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-purple-400" />
+                Recent Rolls
+                {rollHistory.length > 0 && (
+                  <span className="text-[10px] bg-purple-500/30 text-purple-200 rounded-full px-2 py-0.5">
+                    {rollHistory.length}
+                  </span>
+                )}
+              </span>
+              {recentRollsOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+            <AnimatePresence>
+              {recentRollsOpen && (
+                <motion.div
+                  initial={{ height: 0 }}
+                  animate={{ height: 'auto' }}
+                  exit={{ height: 0 }}
+                  className="overflow-hidden border-t border-purple-500/20"
                 >
-                  <div className="flex justify-between items-start mb-1">
-                    <p className="font-bold text-sm">{bet.name}</p>
-                    <span className="text-yellow-400 text-xs font-black">{bet.payout}</span>
+                  <div className="p-3 max-h-[300px] overflow-y-auto">
+                    {rollHistory.length === 0 ? (
+                      <p className="text-gray-500 text-sm text-center py-4">No rolls yet</p>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {rollHistory.map((roll, idx) => (
+                          <div key={`roll-${idx}-${roll.game_result?.point || idx}`} className="bg-purple-900/20 border border-purple-500/20 rounded-lg p-2">
+                            <div className="flex justify-between items-center mb-1">
+                              <span className={`text-xs font-bold ${roll.game_result.status === 'QUALIFIED' ? 'text-green-400' : 'text-red-400'}`}>
+                                {roll.game_result.status}
+                              </span>
+                              {roll.game_result.point > 0 && (
+                                <span className="text-xs text-yellow-400">Point: {roll.game_result.point}</span>
+                              )}
+                            </div>
+                            <div className="flex gap-1">
+                              {roll.game_result.rolls[0]?.map((val, i) => (
+                                <div key={`dice-${idx}-${i}`} className="w-6 h-6 bg-red-600 rounded text-xs flex items-center justify-center font-bold">
+                                  {val}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <p className="text-xs text-gray-400">{bet.description}</p>
-                  {sideBets[bet.id] > 0 && (
-                    <p className="text-xs text-green-400 mt-1">Bet: ${sideBets[bet.id]}</p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Recent Rolls */}
-          <div className="bg-black/60 border border-purple-500/30 rounded-2xl p-4 max-h-[400px] overflow-y-auto">
-            <h3 className="text-lg font-black mb-3">Recent Rolls</h3>
-            {rollHistory.length === 0 ? (
-              <p className="text-gray-500 text-sm">No rolls yet</p>
-            ) : (
-              <div className="space-y-2">
-                {rollHistory.map((roll, idx) => (
-                  <div key={`item-${idx}-${Date.now()}`} className="bg-purple-900/20 border border-purple-500/20 rounded-lg p-2">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className={`text-xs font-bold ${roll.game_result.status === 'QUALIFIED' ? 'text-green-400' : 'text-red-400'}`}>
-                        {roll.game_result.status}
-                      </span>
-                      {roll.game_result.point > 0 && (
-                        <span className="text-xs text-yellow-400">Point: {roll.game_result.point}</span>
-                      )}
-                    </div>
-                    <div className="flex gap-1">
-                      {roll.game_result.rolls[0]?.map((val, i) => (
-                        <div key={`item-${i}-${Math.random()}`} className="w-6 h-6 bg-red-600 rounded text-xs flex items-center justify-center font-bold">
-                          {val}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </div>

@@ -14,16 +14,20 @@ const selectedAccent = (dealerTheme) => {
   return 'blue';
 };
 
-export const MetalChip = ({ amount, selected, onClick, dealerTheme = 'nova' }) => {
+export const MetalChip = ({ amount, selected, onClick, dealerTheme = 'nova', size = 'lg' }) => {
   const accent = selectedAccent(dealerTheme);
+  const sizeCls =
+    size === 'sm'
+      ? 'w-10 h-10 border-2 text-[11px]'
+      : 'w-16 h-16 border-4 text-lg';
   return (
     <motion.button
       onClick={onClick}
-      whileHover={{ scale: 1.15, y: -5 }}
+      whileHover={{ scale: 1.15, y: -3 }}
       whileTap={{ scale: 0.95 }}
-      className={`metal-button chip-stack w-16 h-16 rounded-full bg-gradient-to-br ${CHIP_COLORS[amount]} border-4 flex items-center justify-center font-black text-white text-lg shadow-xl transition-all ${
+      className={`metal-button chip-stack ${sizeCls} rounded-full bg-gradient-to-br ${CHIP_COLORS[amount]} flex items-center justify-center font-black text-white shadow-xl transition-all ${
         selected
-          ? `border-${accent}-400 ring-4 ring-${accent}-400/50`
+          ? `border-${accent}-400 ring-2 ring-${accent}-400/50`
           : 'border-white/30'
       }`}
       data-testid={`metal-chip-${amount}`}

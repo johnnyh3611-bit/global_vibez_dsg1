@@ -526,38 +526,6 @@ export default function VibeDice654Premium() {
 
       <NovaDealerRetiredHeader />
 
-      {/* Floating drawer toggles — always visible, open the side panels
-          as overlays so the main play area stays compressed. */}
-      <div
-        className="shrink-0 px-3 sm:px-5 mt-2 flex items-center justify-center gap-2 flex-wrap"
-        data-testid="vibe654-drawer-toggles"
-      >
-        <button
-          type="button"
-          onClick={() => setShowSideBetsPanel((v) => !v)}
-          className={`px-3 py-1 rounded-full text-[10px] uppercase tracking-[0.3em] border transition ${
-            showSideBetsPanel
-              ? 'bg-fuchsia-500/30 border-fuchsia-300 text-fuchsia-100'
-              : 'bg-black/40 border-fuchsia-400/30 text-fuchsia-200 hover:bg-fuchsia-500/15'
-          }`}
-          data-testid="vibe654-toggle-sidebets"
-        >
-          Side Bets ({Object.keys(sideBets).length})
-        </button>
-        <button
-          type="button"
-          onClick={() => setShowRecentRollsPanel((v) => !v)}
-          className={`px-3 py-1 rounded-full text-[10px] uppercase tracking-[0.3em] border transition ${
-            showRecentRollsPanel
-              ? 'bg-cyan-500/30 border-cyan-300 text-cyan-100'
-              : 'bg-black/40 border-cyan-400/30 text-cyan-200 hover:bg-cyan-500/15'
-          }`}
-          data-testid="vibe654-toggle-recent"
-        >
-          Recent Rolls
-        </button>
-      </div>
-
       {/* MAIN — locked-height scrollable play area; only this region
           scrolls if content overflows on very small phones. Founder
           confirmed the original "perfect" build kept overflow-y-auto
@@ -624,7 +592,33 @@ export default function VibeDice654Premium() {
             handleStand={handleStand}
             handleReRoll={handleReRoll}
             setDealerMessage={setDealerMessage}
+            showSideBetsPanel={showSideBetsPanel}
+            setShowSideBetsPanel={setShowSideBetsPanel}
           />
+
+          {/* Recent Rolls — slim collapsible bar at the bottom of the strip */}
+          <button
+            type="button"
+            data-testid="vibe654-toggle-recent"
+            onClick={() => setShowRecentRollsPanel((v) => !v)}
+            className={`w-full flex items-center justify-between px-4 py-2 rounded-xl border transition ${
+              showRecentRollsPanel
+                ? 'bg-cyan-500/20 border-cyan-300/60 text-cyan-100'
+                : 'bg-black/40 border-cyan-400/30 text-cyan-200 hover:bg-cyan-500/10'
+            }`}
+          >
+            <span className="text-[11px] font-black uppercase tracking-[0.3em] flex items-center gap-2">
+              📜 Recent Rolls
+              {rollHistory.length > 0 && (
+                <span className="text-[9px] bg-cyan-400/40 text-cyan-50 rounded-full px-2 py-0.5">
+                  {rollHistory.length}
+                </span>
+              )}
+            </span>
+            <span className={`text-xs transition-transform ${showRecentRollsPanel ? 'rotate-180' : ''}`}>
+              ▾
+            </span>
+          </button>
         </div>
       </main>
 

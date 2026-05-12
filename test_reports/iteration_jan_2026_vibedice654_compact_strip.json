@@ -1,0 +1,49 @@
+{
+  "summary": "Frontend-only UI/UX verification of VibeDice 654 (/dice) compact betting strip reformat. All 13 review_request testcases PASS. Compact strip renders with 5 chips (sm size), Assurance pill, Side Bets dropdown trigger on Row 1; Main Bet pad + ROLL + Clear on Row 2. Old vibe654-drawer-toggles strip is fully removed (count=0). Recent Rolls collapsible bar present at bottom and drawer opens on click. Auth (betatester1) via /api/auth/login successful; localStorage injection bypassed ProtectedRoute cleanly. Bet flow: chip=10 × 5 main-bet-zone clicks → mainBet=₵50 → ROLL → game advanced to a complete round (dice 6,5,4 — QUALIFIED, Point=4 visible in screenshot). ROLL button correctly disabled when mainBet=0 and enabled after a bet is placed. Visual smoke test at 1280px desktop and 375px mobile both wrap gracefully. No JS crashes, no white-screen, no API 5xx.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "/dice — compact strip Row 2 (1280px)",
+        "issues": [
+          "ROLL button width feels slightly tight when 'Main Bet · Required' label is on a long line; visually fine but could use min-w-[80px] on the ROLL button for breathing room. Non-blocking, cosmetic only."
+        ]
+      },
+      {
+        "screen": "/dice — mobile 375px",
+        "issues": [
+          "Strip wraps gracefully but the duplicate 'Side Bets 0/5' large card and 'Recent Rolls' large card below the compact strip create two redundant entry points to the same drawers (one is the compact pill in the strip, another is the legacy big card). Consider hiding the legacy big cards on /dice now that the compact pills + bottom toggle exist. Not a regression — pre-existing layout."
+        ]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/test_reports/screenshots/dice_compact_strip_1280.png",
+    "/app/test_reports/screenshots/dice_compact_strip_mobile.png",
+    "/app/test_reports/screenshots/dice_rolling.png"
+  ],
+  "action_items": [
+    "OPTIONAL polish: consider hiding the legacy big 'Side Bets' and 'Recent Rolls' card panels on /dice since the compact strip pills + bottom Recent Rolls bar already expose those drawers (DRY violation in UX).",
+    "OPTIONAL polish: bump ROLL button min-width to ~88px to keep label visually centered when nested next to the wide Main Bet pad."
+  ],
+  "critical_code_review_comments": [
+    "BettingControls.tsx (233 lines) is clean, single-purpose, well under the 700-line limit. Good use of MetalChip size='sm' prop.",
+    "VibeDice654Premium.tsx imports both SideBetsPanel + RecentRollsPanel and passes show/setShow props correctly — drawer state hoisted to page is the right pattern.",
+    "Old vibe654-drawer-toggles selector confirmed removed (count=0 in DOM) — matches spec.",
+    "Console emits several WebSocket warnings ('/api/ws/vibe-phone', '/api/ws/friend-events') unrelated to this iteration but worth tracking separately — these connections close before establishing. Not blocking this feature.",
+    "VigilantAgent dev-overlay logs warnings like 'BUTTON[metal-chip-5] is occluded by P.text-xs text-neutral-400'. These are false positives from the in-app dev click-blocker observer (the 'Made with Emergent' footer overlay). Functional clicks still land correctly via Playwright force-click; production users won't have VigilantAgent loaded."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (not tested per request)", "frontend": "100% (16/16 assertions PASS)"},
+  "test_credentials": "betatester1@globalvibez.com / BetaTester2026! — confirmed working via POST /api/auth/login (returns token + user_id)",
+  "seed_data_creation": "None — beta tester is auto-seeded by backend startup hook",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "VibeDice 654 compact strip reformat is verified green. Next iteration on /dice should re-run the same playwright flow to catch regressions on: (1) chip strip data-testid='metal-chip-{5,10,25,50,100}', (2) insurance-toggle / sidebets-dropdown-trigger / main-bet-zone / roll-dice-btn / clear-bets-btn / vibe654-toggle-recent — all present, (3) absence of legacy 'vibe654-drawer-toggles' testid. Auth pattern that works: POST /api/auth/login, then localStorage.setItem for keys ('token','auth_token','userId','user_id','user') before page.goto('/dice'). The /dice route uses ProtectedRoute which calls /api/auth/me with the bearer token.",
+  "rca of the issue": "N/A — no bugs found in this iteration. One detection in test ('phase_idle_to_rolling') reported CHECK because the body innerText scan for the word 'ROLLING' missed the brief animation phase, but the post-roll screenshot definitively shows the game advanced to a QUALIFIED state with Point=4 visible — the integration is working end-to-end."
+}
