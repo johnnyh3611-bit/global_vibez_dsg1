@@ -11,7 +11,7 @@ export const DiceTable = ({
   dealerEnvy,
 }) => (
   <div
-    className="game-table-surface bg-black/60 border-2 border-neutral-800 rounded-3xl p-3 sm:p-5 min-h-[200px] sm:min-h-[280px] flex flex-col items-center justify-center"
+    className="game-table-surface bg-black/60 border-2 border-neutral-800 rounded-3xl p-2 sm:p-3 min-h-[140px] sm:min-h-[180px] flex flex-col items-center justify-center"
     data-testid="dice-table"
   >
     <AnimatePresence mode="wait">
@@ -48,7 +48,7 @@ export const DiceTable = ({
                   </p>
                   {dealerEnvy > 0 && (
                     <p className="text-sm text-amber-300 mt-1 flex items-center justify-center gap-2">
-                      <Sparkles className="w-4 h-4" /> Dealer Envy: ${dealerEnvy}
+                      <Sparkles className="w-4 h-4" /> Dealer Envy: ₵{dealerEnvy}
                     </p>
                   )}
                 </div>

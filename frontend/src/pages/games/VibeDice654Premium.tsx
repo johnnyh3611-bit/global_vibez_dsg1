@@ -594,46 +594,46 @@ export default function VibeDice654Premium() {
             setDealerMessage={setDealerMessage}
             showSideBetsPanel={showSideBetsPanel}
             setShowSideBetsPanel={setShowSideBetsPanel}
+            showRecentRollsPanel={showRecentRollsPanel}
+            setShowRecentRollsPanel={setShowRecentRollsPanel}
+            rollHistoryCount={rollHistory.length}
           />
-
-          {/* Recent Rolls — slim collapsible bar at the bottom of the strip */}
-          <button
-            type="button"
-            data-testid="vibe654-toggle-recent"
-            onClick={() => setShowRecentRollsPanel((v) => !v)}
-            className={`w-full flex items-center justify-between px-4 py-2 rounded-xl border transition ${
-              showRecentRollsPanel
-                ? 'bg-cyan-500/20 border-cyan-300/60 text-cyan-100'
-                : 'bg-black/40 border-cyan-400/30 text-cyan-200 hover:bg-cyan-500/10'
-            }`}
-          >
-            <span className="text-[11px] font-black uppercase tracking-[0.3em] flex items-center gap-2">
-              📜 Recent Rolls
-              {rollHistory.length > 0 && (
-                <span className="text-[9px] bg-cyan-400/40 text-cyan-50 rounded-full px-2 py-0.5">
-                  {rollHistory.length}
-                </span>
-              )}
-            </span>
-            <span className={`text-xs transition-transform ${showRecentRollsPanel ? 'rotate-180' : ''}`}>
-              ▾
-            </span>
-          </button>
         </div>
       </main>
 
-      {/* Side panels — render on demand as drawer overlays. Keep the
-          existing components untouched so their internal toggle state
-          continues to work. */}
-      <SideBetsPanel
-        showPanel={showSideBetsPanel}
-        setShowPanel={setShowSideBetsPanel}
-        sideBets={sideBets}
-        sideBetInsurance={sideBetInsurance}
-        predictedPoint={predictedPoint}
-        gamePhase={gamePhase}
-        handleSideBet={handleSideBet}
-      />
+      {/* Side Bets — true popup overlay, only mounted when triggered */}
+      <AnimatePresence>
+        {showSideBetsPanel && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowSideBetsPanel(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+              data-testid="sidebets-popup-backdrop"
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[min(92vw,520px)] max-h-[70vh] overflow-y-auto z-50 rounded-2xl border border-fuchsia-400/40 bg-black/95 shadow-2xl"
+              data-testid="sidebets-popup"
+            >
+              <SideBetsPanel
+                showPanel={true}
+                setShowPanel={() => setShowSideBetsPanel(false)}
+                sideBets={sideBets}
+                sideBetInsurance={sideBetInsurance}
+                predictedPoint={predictedPoint}
+                gamePhase={gamePhase}
+                handleSideBet={handleSideBet}
+              />
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       <PointPredictionModal
         open={showPointSelector}
@@ -641,11 +641,35 @@ export default function VibeDice654Premium() {
         onSelect={selectPredictedPoint}
       />
 
-      <RecentRollsPanel
-        showPanel={showRecentRollsPanel}
-        setShowPanel={setShowRecentRollsPanel}
-        rollHistory={rollHistory}
-      />
+      {/* Recent Rolls — true popup overlay, only mounted when triggered */}
+      <AnimatePresence>
+        {showRecentRollsPanel && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowRecentRollsPanel(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+              data-testid="recent-rolls-popup-backdrop"
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[min(92vw,520px)] max-h-[70vh] overflow-y-auto z-50 rounded-2xl border border-cyan-400/40 bg-black/95 shadow-2xl"
+              data-testid="recent-rolls-popup"
+            >
+              <RecentRollsPanel
+                showPanel={true}
+                setShowPanel={() => setShowRecentRollsPanel(false)}
+                rollHistory={rollHistory}
+              />
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       <WinCelebrationModal open={showWinCelebration} totalWinAmount={totalWinAmount} />
     </div>
