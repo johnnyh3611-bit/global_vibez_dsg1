@@ -621,6 +621,15 @@ export default function VibeDice654Premium() {
               className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[min(92vw,520px)] max-h-[70vh] overflow-y-auto z-50 rounded-2xl border border-fuchsia-400/40 bg-black/95 shadow-2xl"
               data-testid="sidebets-popup"
             >
+              <button
+                type="button"
+                data-testid="sidebets-popup-close"
+                onClick={() => setShowSideBetsPanel(false)}
+                className="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-black/70 border border-fuchsia-400/40 text-fuchsia-200 hover:bg-fuchsia-500/30 flex items-center justify-center text-sm font-bold"
+                aria-label="Close side bets"
+              >
+                ×
+              </button>
               <SideBetsPanel
                 showPanel={true}
                 setShowPanel={() => setShowSideBetsPanel(false)}
@@ -661,6 +670,15 @@ export default function VibeDice654Premium() {
               className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[min(92vw,520px)] max-h-[70vh] overflow-y-auto z-50 rounded-2xl border border-cyan-400/40 bg-black/95 shadow-2xl"
               data-testid="recent-rolls-popup"
             >
+              <button
+                type="button"
+                data-testid="recent-rolls-popup-close"
+                onClick={() => setShowRecentRollsPanel(false)}
+                className="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-black/70 border border-cyan-400/40 text-cyan-200 hover:bg-cyan-500/30 flex items-center justify-center text-sm font-bold"
+                aria-label="Close recent rolls"
+              >
+                ×
+              </button>
               <RecentRollsPanel
                 showPanel={true}
                 setShowPanel={() => setShowRecentRollsPanel(false)}

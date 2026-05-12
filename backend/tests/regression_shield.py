@@ -700,23 +700,40 @@ def test_vibedice_premium_drawer_toggles_present() -> None:
     """
     Feb 5 2026: standalone /dice room moved Side Bets + Recent Rolls into
     floating drawer toggles so the main play column stays compressed.
-    Lock the toggle buttons + the 'flex-1 min-h-0' scrollable main.
+
+    May 12 2026: founder reformat — both toggles were folded into the
+    compact betting strip (BettingControls.tsx) so they live inside
+    Row 1 right beside the Assurance pill. The page-level pills are gone;
+    Premium.tsx now only mounts the AnimatePresence popups. Lock the new
+    locations so we never regress.
     """
     from pathlib import Path
-    src = Path("/app/frontend/src/pages/games/VibeDice654Premium.tsx").read_text()
-    assert 'data-testid="vibe654-toggle-sidebets"' in src, (
-        "Standalone /dice lost the Side Bets drawer toggle"
+    page_src = Path("/app/frontend/src/pages/games/VibeDice654Premium.tsx").read_text()
+    bc_src = Path("/app/frontend/src/components/games/vibedice654/BettingControls.tsx").read_text()
+
+    # New contract — pills live inside the compact betting strip.
+    assert 'data-testid="sidebets-dropdown-trigger"' in bc_src, (
+        "Compact betting strip lost the Side Bets dropdown trigger pill"
     )
-    assert 'data-testid="vibe654-toggle-recent"' in src, (
-        "Standalone /dice lost the Recent Rolls drawer toggle"
+    assert 'data-testid="vibe654-toggle-recent"' in bc_src, (
+        "Compact betting strip lost the Recent Rolls toggle pill"
     )
+
+    # Premium page mounts the popups via AnimatePresence only when toggled.
+    assert 'data-testid="sidebets-popup"' in page_src, (
+        "/dice page lost the Side Bets popup overlay"
+    )
+    assert 'data-testid="recent-rolls-popup"' in page_src, (
+        "/dice page lost the Recent Rolls popup overlay"
+    )
+
     # May 2026: Founder originally asked to eliminate scrolling on this
     # room. Feb 2026 follow-up: that `overflow-hidden` change made the
     # game unplayable on smaller phones — chip drawer + sidebets fell
     # off-screen with no way to reach them. Founder said "fix this game
     # back to when it was perfect", so we restored `overflow-y-auto`
     # (the original "perfect" state). Lock the scrollable variant in.
-    assert "flex-1 min-h-0 overflow-y-auto" in src, (
+    assert "flex-1 min-h-0 overflow-y-auto" in page_src, (
         "Standalone /dice lost the scrollable main region — founder said "
         "the original 'perfect' build kept overflow-y-auto so all controls "
         "stay reachable on mobile."
