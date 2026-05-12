@@ -63,9 +63,11 @@ export default function SignupPage() {
   // ── Streamer Referral Program (P3) ────────────────────────────────────
   // Validate `?ref=VIBE-XXXXXXXX` against the lookup endpoint so we can
   // show a "You were invited by Beta Tester 1 — earn rewards together"
-  // banner before the user finishes signing up.
+  // banner before the user finishes signing up. We attempt validation
+  // for ANY ref value (not just VIBE-prefixed) so a garbage code surfaces
+  // the invalid-amber banner rather than silently disappearing.
   useEffect(() => {
-    if (!refCode || !refCode.startsWith('VIBE-')) return;
+    if (!refCode) return;
     fetch(`${API}/api/streamer-referral/lookup/${encodeURIComponent(refCode)}`)
       .then(async (r) => {
         if (!r.ok) {

@@ -164,6 +164,14 @@ export default function StreamerStudio() {
           </div>
         )}
 
+        {/* Referral card — always visible so streamers can share BEFORE
+            they ever provision an ingest. Drives viral sign-ups from
+            day-zero of the beta. Uses the auth user_id which equals
+            streamer_id on the cf_live_input record. */}
+        {!loading && (
+          <ReferralCard streamerId={getUserId() || ""} />
+        )}
+
         {!loading && !input && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -297,9 +305,6 @@ export default function StreamerStudio() {
 
             {/* Featured-tier upsell */}
             <FeaturedUpsell streamerId={input.streamer_id} />
-
-            {/* Streamer Referral Program — viral loop card */}
-            <ReferralCard streamerId={input.streamer_id} />
           </>
         )}
       </main>
@@ -325,6 +330,7 @@ function ReferralCard({ streamerId }: { streamerId: string }) {
   const [shareErr, setShareErr] = useState<string | null>(null);
 
   const load = async () => {
+    if (!streamerId) return;
     try {
       // First call /my-code to mint+return; then hit /stats for counters.
       await fetch(`${API}/api/streamer-referral/my-code/${streamerId}`);
@@ -339,6 +345,8 @@ function ReferralCard({ streamerId }: { streamerId: string }) {
     void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [streamerId]);
+
+  if (!streamerId) return null;
 
   const copyShare = async () => {
     if (!stats?.share_url) return;
