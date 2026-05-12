@@ -35,6 +35,8 @@ interface LiveStream {
   hls_playback_url: string | null;
   dash_playback_url: string | null;
   is_live: boolean;
+  is_featured?: boolean;
+  featured_until?: string | null;
   last_status?: string;
   last_status_at?: string;
   created_at: string;
@@ -201,14 +203,27 @@ export default function LiveNowWall() {
 // ────────────────────────────────────────────── Tile ──
 function LiveTile({ stream, muted }: { stream: LiveStream; muted: boolean }) {
   const [viewerHover, setViewerHover] = useState(false);
+  const featured = !!stream.is_featured;
 
   return (
     <div
-      className="group rounded-2xl border border-red-500/20 bg-black/40 overflow-hidden hover:border-red-400/60 transition-colors"
+      className={`group rounded-2xl border ${
+        featured
+          ? "border-amber-300/60 shadow-[0_0_28px_rgba(251,191,36,0.45)] ring-1 ring-amber-300/40"
+          : "border-red-500/20 hover:border-red-400/60"
+      } bg-black/40 overflow-hidden transition-colors relative`}
       onMouseEnter={() => setViewerHover(true)}
       onMouseLeave={() => setViewerHover(false)}
       data-testid={`live-now-tile-${stream.input_id}`}
     >
+      {featured && (
+        <div
+          className="absolute top-2 right-2 z-10 px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-300 to-amber-500 text-black text-[9px] font-black uppercase tracking-widest flex items-center gap-1 shadow-lg"
+          data-testid={`live-now-featured-badge-${stream.input_id}`}
+        >
+          ★ Featured
+        </div>
+      )}
       <HLSPlayer
         src={stream.hls_playback_url}
         isLive

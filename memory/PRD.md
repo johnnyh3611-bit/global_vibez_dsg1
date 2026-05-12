@@ -1,5 +1,40 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-02-11 (FINAL PRE-BETA-REDEPLOY · FEATURED STREAMERS TIER ⭐) — Revenue lever shipped. 312/312 regression green. READY TO REDEPLOY FOR BETA.**
+>
+> Founder's request: "this is the last thing before I redeploy for beta." Shipped:
+>
+> **💰 Featured Streamers Tier ($5 / 30 days):**
+>   - `POST /api/featured-streamers/checkout` → returns real live Stripe Checkout URL (`cs_live_...`, hosted, PCI-compliant)
+>   - `GET /api/featured-streamers/status/{streamer_id}` + `GET /api/featured-streamers/all-active`
+>   - `apply_feature_grant(streamer_id, stripe_session_id)` → async, idempotent (same session_id = no-op on retry), extends future windows (renewal doesn't waste days)
+>   - Wired into `stripe_payouts_webhook._handle_checkout_completed` — refs starting with `feature:` route to the grant fn
+>   - Cloudflare `list_live_inputs` now annotates every stream with `is_featured` + `featured_until` in one round-trip, then sorts featured-first
+>
+> **⭐ Frontend (Live Now Wall):**
+>   - Gold "★ FEATURED" badge top-right of every featured tile
+>   - Amber glow ring around featured tiles (`shadow-[0_0_28px_rgba(251,191,36,0.45)]`)
+>   - Featured streamers auto-pinned to top of grid
+>
+> **💎 Frontend (Streamer Studio upsell card):**
+>   - Amber gradient panel below the device cheat-sheet
+>   - Dynamic copy: "Get Featured" CTA when off, "Extend 30 Days" CTA when active
+>   - Renders `featured_until` countdown for already-featured users
+>   - Trust signals: "Stripe Checkout · PCI-compliant · Cancel anytime · No card on file required"
+>
+> **End-to-end verified:**
+>   - ✅ Live Stripe Checkout session created (`cs_live_a1d6i2JiBc2LUM...`)
+>   - ✅ Signed webhook delivery → grant applied → `is_featured: true` + `grant_count: 1`
+>   - ✅ Idempotency: re-firing same session = no double-grant
+>   - ✅ Wall renders amber-glow pinned tile in production preview screenshot
+>   - ✅ Studio renders upsell card with $5 price tag in production preview screenshot
+>
+> **Regression Shield: 312/312 GREEN** (+1 new lock: `test_featured_streamers_tier_wired`).
+>
+> **🚀 BETA-REDEPLOY READY**: All P0/P1 work for beta complete. Stripe live + Cloudflare Stream live + Live Now Wall public + Featured Streamers revenue lever shipped. Founder can redeploy to production.
+>
+> ---
+>
 > **2026-02-11 (STRIPE LIVE PAYMENTS + WEBHOOKS HARDENED 💳🔐) — Real money rails open. 311/311 regression green.**
 >
 > **Founder pasted live Stripe secret key.** Verified against Stripe API:

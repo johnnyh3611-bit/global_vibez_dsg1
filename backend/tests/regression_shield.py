@@ -6672,3 +6672,61 @@ def test_stripe_identity_webhook_handles_real_payload_shape():
     # Stripe construct_event still in place for mode 1.
     assert "stripe.Webhook.construct_event" in src
 
+
+
+def test_featured_streamers_tier_wired():
+    """2026-02 sprint: $5/30-day Featured Streamers tier — paid pin to
+    the top of the Live Now Wall. Direct revenue lever using the live
+    Stripe key + Stripe Checkout.
+
+    Locks:
+      - Backend route file present + registered + correct prefix.
+      - Pricing constants spec'd: $5 / 30 days.
+      - apply_feature_grant is async + idempotent + extends future windows.
+      - Stripe Checkout uses client_reference_id=feature:<streamer_id>.
+      - stripe_payouts_webhook routes `feature:` refs to apply_feature_grant.
+      - Live Now Wall annotates is_featured + sorts featured first.
+      - Studio page surfaces the upsell card with the right testids.
+    """
+    src = open("/app/backend/routes/featured_streamers.py").read()
+    assert 'prefix="/featured-streamers"' in src
+    assert "FEATURED_PRICE_USD = 5.00" in src
+    assert "FEATURED_DURATION_DAYS = 30" in src
+    assert "FEATURED_REF_PREFIX = \"feature:\"" in src
+    assert "async def apply_feature_grant" in src
+    # Idempotency lock: same session_id no-ops on retry.
+    assert "last_grant_session_id" in src
+    # Stripe Checkout with client_reference_id.
+    assert "stripe.checkout.Session.create" in src
+    assert "client_reference_id=f\"{FEATURED_REF_PREFIX}{req.streamer_id}\"" in src
+
+    # Registry mounts it.
+    registry = open("/app/backend/routes/registry.py").read()
+    assert "from routes.featured_streamers import router as featured_router" in registry
+
+    # Payouts webhook routes feature: refs.
+    payouts = open("/app/backend/routes/stripe_payouts_webhook.py").read()
+    assert 'ref.startswith("feature:")' in payouts
+    assert "apply_feature_grant" in payouts
+
+    # Cloudflare live-inputs listing layers in feature metadata.
+    cf = open("/app/backend/routes/cloudflare_stream.py").read()
+    assert "featured_streamers" in cf
+    assert "is_featured" in cf
+    assert "featured_until" in cf
+
+    # Frontend: wall renders featured badge + glow style.
+    wall = open("/app/frontend/src/pages/streaming/LiveNowWall.tsx").read()
+    assert "is_featured" in wall
+    assert "live-now-featured-badge-" in wall, "Featured badge testid missing"
+    assert "featured_until" in wall
+
+    # Frontend: studio page has the upsell card.
+    studio = open("/app/frontend/src/pages/streaming/StreamerStudio.tsx").read()
+    for tid in (
+        "streamer-studio-featured-upsell",
+        "streamer-studio-featured-purchase",
+    ):
+        assert tid in studio, f"Studio missing testid: {tid}"
+    assert "/api/featured-streamers/checkout" in studio
+

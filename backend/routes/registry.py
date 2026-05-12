@@ -784,6 +784,15 @@ def register_all_routes(
     except Exception as _e:
         log.warning(f"Stripe payouts webhook not mounted: {_e}")
 
+    # Featured Streamers — paid promotion tier for the Live Now Wall.
+    # $5/30 days via Stripe Checkout. Webhook grants are handled by the
+    # stripe_payouts_webhook module's _handle_checkout_completed branch.
+    try:
+        from routes.featured_streamers import router as featured_router
+        api_router.include_router(featured_router)
+    except Exception as _e:
+        log.warning(f"Featured Streamers routes not mounted: {_e}")
+
     # $VIBEZ Activity Multiplier reward formula (Roadmap PDF §1).
     # SIMULATED mints until the founder confirms project_complete.
     try:

@@ -212,13 +212,30 @@ async def _handle_charge_refunded(obj: Dict[str, Any]) -> None:
 async def _handle_checkout_completed(obj: Dict[str, Any]) -> None:
     """Stripe Checkout sessions flip orders/bookings to paid.
     `client_reference_id` is set by the originating feature to our
-    internal record ID."""
+    internal record ID.
+
+    Special case: refs starting with `feature:` belong to the Featured
+    Streamers tier and route to a dedicated grant function so the
+    `featured_until` window extends idempotently.
+    """
     ref = obj.get("client_reference_id")
     if not ref:
         return
-    # Try to land the success on whichever collection owns the ref.
-    # We update every plausible collection; the matching one wins, the
-    # others no-op (this stays trivially fast because of $set + idempotency).
+
+    # Featured Streamers tier — route to dedicated grant fn.
+    if isinstance(ref, str) and ref.startswith("feature:"):
+        streamer_id = ref.split(":", 1)[1]
+        try:
+            from routes.featured_streamers import apply_feature_grant  # noqa: PLC0415
+            await apply_feature_grant(
+                streamer_id=streamer_id,
+                stripe_session_id=obj.get("id"),
+            )
+        except Exception as e:
+            logger.exception("Failed to apply feature grant for %s: %s", streamer_id, e)
+        return
+
+    # Generic order/booking paid flip.
     now = datetime.now(timezone.utc).isoformat()
     for coll in ("orders", "bookings", "venue_bookings", "smartstack_orders"):
         await _db[coll].update_one(

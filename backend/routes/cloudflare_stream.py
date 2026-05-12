@@ -226,18 +226,46 @@ async def get_my_live_input(streamer_id: str) -> Dict[str, Any]:
 async def list_live_inputs(only_live: bool = False, limit: int = 60) -> Dict[str, Any]:
     """Public catalog of streamers who currently have a live input
     provisioned. When `only_live=true`, restrict to streams Cloudflare
-    has confirmed are actively broadcasting via webhook events."""
+    has confirmed are actively broadcasting via webhook events.
+
+    Annotates each stream with `is_featured` + `featured_until` in one
+    round-trip so the Live Now Wall can pin featured streamers without
+    N+1 API calls.
+    """
     q: Dict[str, Any] = {"is_deleted": {"$ne": True}}
     if only_live:
         q["is_live"] = True
     cursor = db.cf_live_inputs.find(q, {"_id": 0}).sort("created_at", -1)
     items = await cursor.to_list(limit)
+
+    # Pull all active features in one query, build a lookup.
+    now_iso = datetime.now(timezone.utc).isoformat()
+    feat_cursor = db.featured_streamers.find(
+        {"featured_until": {"$gt": now_iso}}, {"_id": 0},
+    )
+    feat_map = {f["streamer_id"]: f for f in await feat_cursor.to_list(500)}
+
     # Strip the RTMP key from the public list — that's a write-credential
-    # and only the owning streamer should ever see it.
-    safe = [
-        {k: v for k, v in d.items() if k not in ("rtmps_key", "srt_passphrase")}
-        for d in items
-    ]
+    # and only the owning streamer should ever see it. Layer in feature flags.
+    safe = []
+    for d in items:
+        feat = feat_map.get(d.get("streamer_id"))
+        clean = {k: v for k, v in d.items() if k not in ("rtmps_key", "srt_passphrase")}
+        clean["is_featured"] = bool(feat)
+        clean["featured_until"] = feat.get("featured_until") if feat else None
+        safe.append(clean)
+
+    # Featured streamers float to the top; ties broken by last_status_at,
+    # then created_at. Done server-side so any client (web / mobile / API
+    # consumer) gets consistent ordering.
+    safe.sort(
+        key=lambda s: (
+            not s.get("is_featured"),  # featured first (False sorts before True)
+            -((s.get("last_status_at") or s.get("created_at") or "") and 1),
+            s.get("last_status_at") or s.get("created_at") or "",
+        ),
+        reverse=False,
+    )
     return {"streams": safe, "count": len(safe)}
 
 

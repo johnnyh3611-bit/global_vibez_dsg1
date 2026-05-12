@@ -17,10 +17,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import {
-  ArrowLeft, Radio, Copy, Check, Eye, EyeOff,
-  ShieldCheck, RefreshCcw, Loader2, AlertTriangle, Sparkles, Cast,
-} from "lucide-react";
+import { ArrowLeft, Radio, Copy, Check, Eye, EyeOff, ShieldCheck, RefreshCcw, Loader2, AlertTriangle, Sparkles, Cast, Star, X } from "lucide-react";
 import { getUserId } from "@/utils/secureAuth";
 import HLSPlayer from "@/components/streaming/HLSPlayer";
 
@@ -289,10 +286,140 @@ export default function StreamerStudio() {
                 <li><b>vMix / XSplit / Wirecast:</b> Add stream destination → Custom RTMP → paste credentials.</li>
               </ul>
             </section>
+
+            {/* Featured-tier upsell */}
+            <FeaturedUpsell streamerId={input.streamer_id} />
           </>
         )}
       </main>
     </div>
+  );
+}
+
+// ────────────────────────────────────────────── Featured upsell ──
+interface FeatureStatus {
+  streamer_id: string;
+  is_featured: boolean;
+  featured_until: string | null;
+}
+
+function FeaturedUpsell({ streamerId }: { streamerId: string }) {
+  const [status, setStatus] = useState<FeatureStatus | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch(`${API}/api/featured-streamers/status/${streamerId}`)
+      .then((r) => r.json())
+      .then(setStatus)
+      .catch(() => {});
+  }, [streamerId]);
+
+  const purchase = async () => {
+    setBusy(true);
+    setErr(null);
+    try {
+      const r = await fetch(`${API}/api/featured-streamers/checkout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          streamer_id: streamerId,
+          return_url: `${window.location.origin}/streams/live`,
+        }),
+      });
+      const data = await r.json();
+      if (!r.ok || !data.checkout_url) {
+        throw new Error(data?.detail || "Checkout failed");
+      }
+      // Redirect to Stripe-hosted page for the payment.
+      window.location.href = data.checkout_url;
+    } catch (e: unknown) {
+      setErr((e as Error)?.message || "Checkout failed");
+      setBusy(false);
+    }
+  };
+
+  const daysLeft = status?.featured_until
+    ? Math.max(
+        0,
+        Math.ceil(
+          (new Date(status.featured_until).getTime() - Date.now()) / 86_400_000,
+        ),
+      )
+    : 0;
+
+  return (
+    <section
+      className="rounded-2xl border border-amber-300/40 bg-gradient-to-br from-amber-900/20 via-fuchsia-900/15 to-black/40 p-5 relative overflow-hidden"
+      data-testid="streamer-studio-featured-upsell"
+    >
+      <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-amber-400/15 blur-3xl pointer-events-none" />
+      <div className="relative flex items-start justify-between gap-4 flex-wrap">
+        <div className="min-w-0 flex-1">
+          <h3 className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-amber-100">
+            <Star className="w-4 h-4 text-amber-300" />
+            {status?.is_featured ? "You're Featured" : "Featured Streamer Tier"}
+          </h3>
+          {status?.is_featured ? (
+            <p
+              className="text-xs text-amber-100/90 mt-2 leading-relaxed"
+              data-testid="streamer-studio-featured-active"
+            >
+              You're pinned to the top of the Live Now Wall with a glowing
+              gold badge. {daysLeft} day{daysLeft === 1 ? "" : "s"} left on
+              your current grant. Extend now to stack 30 more days on top —
+              no overlap penalty.
+            </p>
+          ) : (
+            <p className="text-xs text-amber-100/80 mt-2 leading-relaxed">
+              Get a glowing pinned position at the top of the Live Now Wall
+              for 30 days. Featured streamers float above every other live
+              broadcast, get a gold "★ Featured" badge, and become the first
+              thing every new visitor to /streams/live sees.
+            </p>
+          )}
+          {err && (
+            <p
+              className="mt-2 text-[11px] text-red-300"
+              data-testid="streamer-studio-featured-error"
+            >
+              {err}
+            </p>
+          )}
+        </div>
+        <div className="flex flex-col items-end gap-2 shrink-0">
+          <div className="text-right">
+            <div className="text-3xl font-black text-amber-200 leading-none">
+              $5
+            </div>
+            <div className="text-[10px] uppercase tracking-widest text-amber-300/70 mt-1">
+              / 30 days
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={purchase}
+            disabled={busy}
+            className="px-4 py-2 rounded-full bg-gradient-to-r from-amber-400 to-amber-300 text-black text-xs font-black uppercase tracking-widest inline-flex items-center gap-2 hover:from-amber-300 hover:to-amber-200 disabled:opacity-50 transition-colors"
+            data-testid="streamer-studio-featured-purchase"
+          >
+            {busy ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Star className="w-4 h-4" />
+            )}
+            {status?.is_featured ? "Extend 30 Days" : "Get Featured"}
+          </button>
+        </div>
+      </div>
+      <div className="mt-3 flex items-center gap-3 text-[10px] uppercase tracking-widest text-amber-300/60">
+        <span className="flex items-center gap-1">
+          <ShieldCheck className="w-3 h-3" /> Stripe Checkout · PCI-compliant
+        </span>
+        <span>·</span>
+        <span>Cancel anytime · No card on file required</span>
+      </div>
+    </section>
   );
 }
 
