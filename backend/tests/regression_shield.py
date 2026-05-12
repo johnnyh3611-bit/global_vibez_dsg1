@@ -710,11 +710,16 @@ def test_vibedice_premium_drawer_toggles_present() -> None:
     assert 'data-testid="vibe654-toggle-recent"' in src, (
         "Standalone /dice lost the Recent Rolls drawer toggle"
     )
-    # May 2026: Founder asked to eliminate scrolling on this room.
-    # `overflow-y-auto` was swapped for `overflow-hidden` so the round
-    # always fits one viewport on phone. Keep the locked-height wrapper.
-    assert "flex-1 min-h-0 overflow-hidden" in src, (
-        "Standalone /dice lost the locked-height single-viewport main region"
+    # May 2026: Founder originally asked to eliminate scrolling on this
+    # room. Feb 2026 follow-up: that `overflow-hidden` change made the
+    # game unplayable on smaller phones — chip drawer + sidebets fell
+    # off-screen with no way to reach them. Founder said "fix this game
+    # back to when it was perfect", so we restored `overflow-y-auto`
+    # (the original "perfect" state). Lock the scrollable variant in.
+    assert "flex-1 min-h-0 overflow-y-auto" in src, (
+        "Standalone /dice lost the scrollable main region — founder said "
+        "the original 'perfect' build kept overflow-y-auto so all controls "
+        "stay reachable on mobile."
     )
 
 
@@ -6895,7 +6900,15 @@ def test_games_enforce_50_coin_min_bet_floor():
         assert val >= 50, f"Slots default min_bet={val} violates 50-coin floor"
 
     v654 = open("/app/backend/routes/vibez_654_prescription.py").read()
-    assert "min_bet: float = 50.0" in v654, "Vibez 654 default min_bet must be 50.0"
+    # Founder-locked exception to the 50-coin floor: Vibe Dice 654 was
+    # designed around the [5, 10, 25, 50, 100] chip ladder and the
+    # original "perfect" play feel depends on the 5-coin starter chip.
+    # Every other game (blackjack, slots, etc.) keeps the 50-coin floor.
+    assert "min_bet: float = 5.0" in v654, "Vibe Dice 654 default min_bet must be 5.0 (founder exception)"
+    assert "exception to the platform" in v654.lower() or "founder-locked exception" in v654.lower(), (
+        "Vibe Dice 654's 5-coin floor must be documented as an explicit "
+        "exception, otherwise it looks like the 50-coin rule was forgotten."
+    )
 
     bj_svc = open("/app/backend/services/games/blackjack.py").read()
     assert "min_bet: int = 50" in bj_svc, "Blackjack service default min_bet must be 50"

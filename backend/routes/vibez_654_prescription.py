@@ -65,7 +65,11 @@ class PlayRequest(BaseModel):
 class TableConfig(BaseModel):
     table_id: str
     max_players: int = 30
-    min_bet: float = 50.0  # platform-wide 50-coin floor
+    min_bet: float = 5.0
+    # Founder-locked exception to the platform-wide 50-coin floor: Vibe Dice
+    # 654 was designed with a [5, 10, 25, 50, 100] chip ladder and the
+    # original "perfect" play feel depends on the 5-coin starter chip.
+    # Every other game (blackjack, slots, etc.) stays at the 50-coin floor.
     max_bet: float = 500.0
     rake_percent: float = 0.10  # 10% house rake
     dealer_envy_percent: float = 0.05  # 5% on big wins
@@ -385,7 +389,7 @@ async def play_vibez_654(request: PlayRequest) -> Dict[str, Any]:
         default_config = TableConfig(
             table_id=request.table_id,
             max_players=30,
-            min_bet=50.0,
+            min_bet=5.0,  # Vibe Dice 654 exception (see TableConfig)
             max_bet=500.0
         )
         await create_table(default_config)
@@ -393,7 +397,7 @@ async def play_vibez_654(request: PlayRequest) -> Dict[str, Any]:
     
     # Validate bet
     if request.main_bet < table["min_bet"] or request.main_bet > table["max_bet"]:
-        raise HTTPException(400, f"Bet must be between ${table['min_bet']} and ${table['max_bet']}")
+        raise HTTPException(400, f"Bet must be between ₵{table['min_bet']:,.0f} and ₵{table['max_bet']:,.0f} coins")
 
     # ------------------------------------------------------------------
     # Wallet handling — accept either the legacy ``users.credits_balance``
