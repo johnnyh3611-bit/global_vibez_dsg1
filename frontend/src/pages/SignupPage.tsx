@@ -17,8 +17,11 @@ export default function SignupPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const inviteToken = searchParams.get('invite');
+  const refCode = (searchParams.get('ref') || '').toUpperCase().trim();
   const [inviteValid, setInviteValid] = useState<boolean | null>(null);
   const [inviteName, setInviteName] = useState<string>('');
+  const [refReferrerName, setRefReferrerName] = useState<string | null>(null);
+  const [refValid, setRefValid] = useState<boolean | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -56,6 +59,25 @@ export default function SignupPage() {
         setError('Could not verify your invite link — please try again.');
       });
   }, [inviteToken]);
+
+  // ── Streamer Referral Program (P3) ────────────────────────────────────
+  // Validate `?ref=VIBE-XXXXXXXX` against the lookup endpoint so we can
+  // show a "You were invited by Beta Tester 1 — earn rewards together"
+  // banner before the user finishes signing up.
+  useEffect(() => {
+    if (!refCode || !refCode.startsWith('VIBE-')) return;
+    fetch(`${API}/api/streamer-referral/lookup/${encodeURIComponent(refCode)}`)
+      .then(async (r) => {
+        if (!r.ok) {
+          setRefValid(false);
+          return;
+        }
+        const body = await r.json();
+        setRefValid(true);
+        setRefReferrerName(body.referrer_display_name || 'a Vibez streamer');
+      })
+      .catch(() => setRefValid(false));
+  }, [refCode]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -169,6 +191,25 @@ export default function SignupPage() {
         }
       }
 
+      // Streamer Referral Program (P3) — if the user landed with a valid
+      // `?ref=CODE` link, record the redemption so the referrer gets
+      // paid the moment this account goes live for the first time.
+      const newUserId = userObj?.user_id || userObj?.id;
+      if (refCode && refValid && newUserId) {
+        try {
+          await fetch(`${API}/api/streamer-referral/redeem`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              code: refCode,
+              new_user_id: newUserId,
+            }),
+          });
+        } catch {
+          // Best-effort — don't block signup on referral plumbing.
+        }
+      }
+
       // Success! Redirect to profile setup
       navigate('/profile/setup');
     } catch (err) {
@@ -232,6 +273,33 @@ export default function SignupPage() {
                 className="mb-6 rounded-xl border border-rose-500/40 bg-rose-500/10 p-4 text-sm text-rose-200"
               >
                 Your invite link is invalid or expired. You can still sign up below — just join the regular waitlist.
+              </div>
+            )}
+
+            {/* Streamer Referral banner — shown when /signup?ref=VIBE-XXXX is valid. */}
+            {refCode && refValid === true && (
+              <div
+                data-testid="signup-ref-banner"
+                className="mb-6 rounded-2xl border-2 border-emerald-400/50 bg-gradient-to-r from-emerald-500/15 to-cyan-500/15 p-5 text-center"
+              >
+                <div className="text-[10px] uppercase tracking-[0.4em] text-emerald-300 font-black mb-1">
+                  Referred Streamer
+                </div>
+                <p className="text-white text-sm">
+                  You were invited by <b>{refReferrerName}</b>. Go live for the
+                  first time after signing up and they earn <b>1,000 ₵</b> + 5 days Featured.
+                </p>
+                <p className="text-[10px] text-emerald-300/70 mt-2 font-mono">
+                  CODE: {refCode}
+                </p>
+              </div>
+            )}
+            {refCode && refValid === false && (
+              <div
+                data-testid="signup-ref-banner-invalid"
+                className="mb-6 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-200"
+              >
+                The referral code <b>{refCode}</b> isn't recognized — you can still create an account below.
               </div>
             )}
 

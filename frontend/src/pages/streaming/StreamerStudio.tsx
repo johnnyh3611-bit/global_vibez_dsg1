@@ -297,9 +297,157 @@ export default function StreamerStudio() {
 
             {/* Featured-tier upsell */}
             <FeaturedUpsell streamerId={input.streamer_id} />
+
+            {/* Streamer Referral Program — viral loop card */}
+            <ReferralCard streamerId={input.streamer_id} />
           </>
         )}
       </main>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────── Referral card ──
+interface ReferralStats {
+  user_id: string;
+  code: string | null;
+  share_url: string | null;
+  invites_signed_up: number;
+  invites_paid: number;
+  coins_earned_lifetime: number;
+  featured_days_earned_lifetime: number;
+  reward_per_qualified: { coins: number; featured_days: number };
+}
+
+function ReferralCard({ streamerId }: { streamerId: string }) {
+  const [stats, setStats] = useState<ReferralStats | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [shareErr, setShareErr] = useState<string | null>(null);
+
+  const load = async () => {
+    try {
+      // First call /my-code to mint+return; then hit /stats for counters.
+      await fetch(`${API}/api/streamer-referral/my-code/${streamerId}`);
+      const r = await fetch(`${API}/api/streamer-referral/stats/${streamerId}`);
+      if (r.ok) setStats(await r.json());
+    } catch {
+      setShareErr("Could not load referral stats");
+    }
+  };
+
+  useEffect(() => {
+    void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [streamerId]);
+
+  const copyShare = async () => {
+    if (!stats?.share_url) return;
+    try {
+      await navigator.clipboard.writeText(stats.share_url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      setShareErr("Clipboard blocked — long-press to copy");
+    }
+  };
+
+  const nativeShare = async () => {
+    if (!stats?.share_url) return;
+    if ((navigator as Navigator & { share?: (d: ShareData) => Promise<void> }).share) {
+      try {
+        await (navigator as Navigator & { share: (d: ShareData) => Promise<void> }).share({
+          title: "Join me on Global Vibez DSG",
+          text: `Sign up with my code for early-access streamer perks: ${stats.code}`,
+          url: stats.share_url,
+        });
+      } catch {
+        // user cancelled — silent
+      }
+    } else {
+      void copyShare();
+    }
+  };
+
+  const reward = stats?.reward_per_qualified;
+
+  return (
+    <section
+      className="rounded-2xl border border-emerald-400/40 bg-gradient-to-br from-emerald-950/60 via-black/70 to-cyan-950/60 p-5 sm:p-6"
+      data-testid="streamer-studio-referral-card"
+    >
+      <div className="flex items-center gap-2 mb-1">
+        <Sparkles className="w-4 h-4 text-emerald-300" />
+        <h2 className="text-xs font-black uppercase tracking-widest text-emerald-100">
+          Your Viral Loop · Streamer Referral
+        </h2>
+      </div>
+      <p className="text-[11px] text-emerald-200/70 mb-4">
+        Share your code. When a streamer signs up and goes live for the first
+        time, you earn <b className="text-emerald-200">{reward?.coins ?? 1000} ₵</b>{" "}
+        + <b className="text-emerald-200">{reward?.featured_days ?? 5} days Featured</b>.
+        Unlimited fanout.
+      </p>
+
+      {/* Share row */}
+      <div className="flex items-center gap-2 mb-4">
+        <code
+          className="flex-1 px-3 py-2 rounded-lg bg-black/60 border border-emerald-500/30 text-xs text-emerald-100 truncate"
+          data-testid="referral-share-url"
+        >
+          {stats?.share_url || "Generating your link…"}
+        </code>
+        <button
+          type="button"
+          onClick={copyShare}
+          disabled={!stats?.share_url}
+          className="px-2.5 py-2 rounded-lg border border-emerald-500/30 text-emerald-200 hover:bg-emerald-500/10 disabled:opacity-30"
+          aria-label="Copy share link"
+          data-testid="referral-copy-btn"
+        >
+          {copied ? <Check className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4" />}
+        </button>
+        <button
+          type="button"
+          onClick={nativeShare}
+          disabled={!stats?.share_url}
+          className="px-3 py-2 rounded-lg bg-gradient-to-r from-emerald-400 to-cyan-300 text-black text-[10px] font-black uppercase tracking-widest hover:from-emerald-300 hover:to-cyan-200 disabled:opacity-30"
+          data-testid="referral-share-btn"
+        >
+          Share
+        </button>
+      </div>
+
+      {/* Stats grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3" data-testid="referral-stats-grid">
+        <Stat label="Code" value={stats?.code || "—"} mono />
+        <Stat label="Sign-ups" value={String(stats?.invites_signed_up ?? 0)} />
+        <Stat label="Paid out" value={String(stats?.invites_paid ?? 0)} />
+        <Stat label="₵ Earned" value={`₵${(stats?.coins_earned_lifetime ?? 0).toLocaleString()}`} />
+      </div>
+
+      {(stats?.featured_days_earned_lifetime ?? 0) > 0 && (
+        <p className="text-[11px] mt-3 text-amber-200/90" data-testid="referral-feature-credit">
+          <Star className="w-3 h-3 inline mr-1" />
+          You've earned <b>{stats?.featured_days_earned_lifetime}</b> days of Featured status from referrals.
+        </p>
+      )}
+
+      {shareErr && (
+        <p className="text-[11px] mt-2 text-red-300" data-testid="referral-err">{shareErr}</p>
+      )}
+    </section>
+  );
+}
+
+function Stat({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div className="rounded-lg bg-black/40 border border-emerald-500/15 p-2.5">
+      <div className="text-[9px] uppercase tracking-widest text-emerald-300/70">{label}</div>
+      <div
+        className={`mt-0.5 text-sm font-black text-emerald-100 leading-tight ${mono ? "font-mono" : ""}`}
+      >
+        {value}
+      </div>
     </div>
   );
 }

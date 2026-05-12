@@ -802,6 +802,16 @@ def register_all_routes(
     except Exception as _e:
         log.warning(f"Streamer Wrap-Up routes not mounted: {_e}")
 
+    # Streamer Referral Program (P3) — viral acquisition loop. Streamer
+    # shares ?ref=CODE → new user signs up → on their FIRST live event
+    # the original streamer earns 1,000 ₵ + 5 days Featured. Payout is
+    # triggered by the Cloudflare Stream webhook (`cloudflare_stream.py`).
+    try:
+        from routes.streamer_referral import router as referral_router
+        api_router.include_router(referral_router)
+    except Exception as _e:
+        log.warning(f"Streamer Referral routes not mounted: {_e}")
+
     # $VIBEZ Activity Multiplier reward formula (Roadmap PDF §1).
     # SIMULATED mints until the founder confirms project_complete.
     try:

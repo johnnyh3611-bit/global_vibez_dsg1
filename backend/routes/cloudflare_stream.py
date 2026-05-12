@@ -363,7 +363,27 @@ async def cloudflare_webhook(
             "last_status_at": datetime.now(timezone.utc).isoformat(),
         }},
     )
-    return {"ok": True, "input_id": uid, "is_live": is_live}
+
+    # Referral payout hook (P3) — fire when a stream first transitions
+    # to LIVE. Idempotent per-user via SIGNED_UP→PAID atomic update so
+    # repeated connect events cannot double-pay the referrer.
+    referral_result = None
+    if is_live:
+        try:
+            input_doc = await db.cf_live_inputs.find_one(
+                {"input_id": uid}, {"_id": 0, "streamer_id": 1},
+            )
+            streamer_id = (input_doc or {}).get("streamer_id")
+            if streamer_id:
+                from routes.streamer_referral import qualify_on_live  # noqa: PLC0415
+                referral_result = await qualify_on_live(streamer_id)
+        except Exception as _e:
+            # Never let a referral-side bug 5xx the CF webhook (Stripe-
+            # style discipline: critical webhook stays 2xx so CF doesn't
+            # retry the whole event).
+            logger.warning("Referral payout hook failed for %s: %s", uid, _e)
+
+    return {"ok": True, "input_id": uid, "is_live": is_live, "referral": referral_result}
 
 
 

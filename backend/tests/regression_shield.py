@@ -6943,3 +6943,85 @@ def test_blackjack_error_message_uses_coin_glyph_not_dollar():
     assert "Minimum bet is $" not in src, "Blackjack error must not use $ sign"
     assert "Minimum bet is ₵" in src, "Blackjack error must use ₵ coin glyph"
 
+
+
+
+# --- LOCKED 2026-05-12: Streamer Referral Program (P3) ----------------------
+
+def test_streamer_referral_module_imports_and_routes_mount() -> None:
+    """Referral module must exist, be importable, expose the 5 public
+    endpoints, and be mounted on the API router with /streamer-referral
+    prefix."""
+    from routes import streamer_referral as sr
+    # Reward contract must not silently change.
+    assert sr.REWARD_COINS == 1000, "Referral coin reward must be 1000 ₵"
+    assert sr.REWARD_FEATURED_DAYS == 5, "Referral Featured days must be 5"
+
+    # 5 endpoints + 1 internal helper.
+    paths = {r.path for r in sr.router.routes}
+    assert "/streamer-referral/my-code/{user_id}" in paths
+    assert "/streamer-referral/redeem" in paths
+    assert "/streamer-referral/qualify-on-live/{user_id}" in paths
+    assert "/streamer-referral/stats/{user_id}" in paths
+    assert "/streamer-referral/lookup/{code}" in paths
+
+    # Internal helper used by the CF webhook hook
+    assert hasattr(sr, "qualify_on_live"), (
+        "Referral module lost the internal qualify_on_live helper that the "
+        "Cloudflare webhook calls to trigger payouts."
+    )
+
+    # Mounted into the main registry?
+    from pathlib import Path
+    registry = Path("/app/backend/routes/registry.py").read_text()
+    assert "from routes.streamer_referral import router as referral_router" in registry, (
+        "Streamer Referral router not mounted in registry.py"
+    )
+
+
+def test_cloudflare_webhook_triggers_referral_payout() -> None:
+    """The CF Stream webhook MUST import + invoke `qualify_on_live`
+    when a stream transitions to LIVE — otherwise the viral loop never
+    actually fires."""
+    from pathlib import Path
+    src = Path("/app/backend/routes/cloudflare_stream.py").read_text()
+    assert "from routes.streamer_referral import qualify_on_live" in src, (
+        "CF webhook lost the referral_payout import — referrals never pay out."
+    )
+    assert "await qualify_on_live(streamer_id)" in src, (
+        "CF webhook lost the qualify_on_live invocation — referrals never pay out."
+    )
+
+
+def test_signup_page_captures_ref_query_param() -> None:
+    """SignupPage must read `?ref=VIBE-XXXX`, validate via /lookup,
+    show a banner, and POST /redeem after successful signup so the
+    referrer can be paid when the new user later goes live."""
+    from pathlib import Path
+    src = Path("/app/frontend/src/pages/SignupPage.tsx").read_text()
+    assert "searchParams.get('ref')" in src, (
+        "Signup page lost the ?ref= query-param capture"
+    )
+    assert "/api/streamer-referral/lookup/" in src, (
+        "Signup page lost the referral lookup call"
+    )
+    assert "/api/streamer-referral/redeem" in src, (
+        "Signup page lost the referral redeem call"
+    )
+    assert 'data-testid="signup-ref-banner"' in src, (
+        "Signup page lost the valid-referral banner"
+    )
+
+
+def test_streamer_studio_renders_referral_card() -> None:
+    """Streamer Studio dashboard MUST include the Referral viral-loop
+    card with copy + share buttons + stats grid."""
+    from pathlib import Path
+    src = Path("/app/frontend/src/pages/streaming/StreamerStudio.tsx").read_text()
+    assert 'data-testid="streamer-studio-referral-card"' in src, (
+        "Streamer Studio lost the referral card"
+    )
+    assert 'data-testid="referral-share-url"' in src
+    assert 'data-testid="referral-copy-btn"' in src
+    assert 'data-testid="referral-share-btn"' in src
+    assert 'data-testid="referral-stats-grid"' in src
