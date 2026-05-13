@@ -1,0 +1,61 @@
+{
+  "summary": "Pre-redeploy audit (May 12 2026). Confirmed 13 distinct 50-coin floor violations and 4 currency-glyph ('$') violations via live REST hits on preview backend. Only the 3 endpoints the main agent recently patched (cyber-casino slots, cyber-casino blackjack, watch-and-wager) actually enforce the 50-coin floor. Vibe Dice 654 exception remains correctly carved out at 5 coins. /api/slots/spin returns 500 (CRITICAL) — secondary bug. Math spot-checks (roulette 35:1, pai-gow 5% commission, casino-war 1:1) all internally consistent.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "POST /api/slots/spin", "issue": "Floor is 10 (not 50). Also returns 500 Internal Server Error when called with bet_amount=10 + user_id (route also uses '$' glyph in error message). routes/slots.py:175-176", "priority": "CRITICAL"},
+      {"endpoint": "POST /api/baccarat/play", "issue": "NO 50-coin floor — only checks bet_amount <= 0. Accepted bet_amount=10 with HTTP 200 (game played, balance deducted). routes/baccarat.py:55-56", "priority": "CRITICAL"},
+      {"endpoint": "POST /api/blackjack/deal (legacy /api/blackjack)", "issue": "NO 50-coin floor — only checks bet_amount <= 0. routes/blackjack.py:215-216", "priority": "CRITICAL"},
+      {"endpoint": "POST /api/games/vibes-slots/spin", "issue": "Floor is gt=0 only. Live hit: stake=10 returned 200 with full spin result. routes/vibes_slots_routes.py:37", "priority": "CRITICAL"},
+      {"endpoint": "POST /api/games/pai-gow/play", "issue": "Floor is gt=0. Live hit: stake=10 returned 200. routes/casino_wave2_routes.py:82", "priority": "HIGH"},
+      {"endpoint": "POST /api/games/casino-war/play", "issue": "Floor is gt=0. Live hit: stake=10 returned 200. routes/casino_wave2_routes.py:106", "priority": "HIGH"},
+      {"endpoint": "POST /api/games/chemin-de-fer/play", "issue": "Floor is gt=0. Live hit: stake=10 returned 200. routes/casino_wave2_routes.py:132", "priority": "HIGH"},
+      {"endpoint": "POST /api/games/european-roulette/play", "issue": "Floor is gt=0. Live hit: stake=10 returned 200 (payout_ratio 35 confirmed correct). routes/casino_wave2_routes.py:158", "priority": "HIGH"},
+      {"endpoint": "POST /api/games/hazard/play", "issue": "Floor is gt=0. Live hit: stake=10 returned 200. routes/casino_wave2_routes.py:189", "priority": "HIGH"},
+      {"endpoint": "POST /api/games/chuck-a-luck/play", "issue": "Floor is gt=0. Live hit: stake=10 returned 200. routes/casino_wave2_routes.py:214", "priority": "HIGH"},
+      {"endpoint": "POST /api/games/big-six-wheel/play", "issue": "Floor is gt=0. Live hit: stake=10 returned 200. routes/casino_wave2_routes.py:239", "priority": "HIGH"},
+      {"endpoint": "POST /api/games/jacks-or-better/deal", "issue": "Floor is gt=0. Live hit: stake=10 returned 200. routes/casino_wave2_routes.py:273", "priority": "HIGH"},
+      {"endpoint": "POST /api/games/fan-tan/play", "issue": "Floor is gt=0. Live hit: stake=10 returned 200. routes/casino_wave2_routes.py:309", "priority": "HIGH"},
+      {"endpoint": "POST /api/games/faro/play", "issue": "Floor is gt=0. Live hit: stake=10 returned 200. routes/casino_wave2_routes.py:334", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "POST /api/multiplayer-slots/spin", "issue": "Floor enforced correctly (min 50) BUT error string uses '$' glyph: `Bet must be between ${min} and ${max}`. routes/multiplayer_slots.py:199"},
+      {"endpoint": "POST /api/slots/spin", "issue": "Error string uses '$' glyph: `Bet must be between $10 and $1000`. routes/slots.py:176"},
+      {"endpoint": "POST /api/games/vibe654/.../stand", "issue": "Payout response uses '$' glyph: `Standing on {pts}. Payout: ${payout}`. routes/vibez_654_prescription.py:784"},
+      {"endpoint": "/api/vibe-654-tournament/* messages", "issue": "Multiple tournament messages render '$' in pot/payout strings. routes/vibe_654_tournament.py lines 261, 392, 414"},
+      {"endpoint": "/api/metahuman-control/*", "issue": "Dealer dialogue strings use '$' for bet amounts/winnings. routes/metahuman_control.py:224,239,306,375 (cosmetic, dealer voice)"}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_casino_50coin_floor_audit_may2026.py",
+    "/app/test_reports/pytest/floor_audit_may2026.xml"
+  ],
+  "action_items": [
+    "Add a global helper PLATFORM_MIN_BET=50 + a validator and apply to every game POST endpoint listed in critical[]. Wave-2 games all share `stake: float = Field(..., gt=0)` — change to `ge=50` (or import a shared constant).",
+    "Fix /api/slots/spin 500 Internal Server Error (root cause likely a missing user record or unhandled mongo error). Also raise floor 10 -> 50 and replace '$' glyph with '₵' in the error message.",
+    "Replace '$' with '₵' in user-facing strings at: routes/slots.py:176, routes/multiplayer_slots.py:199, routes/vibez_654_prescription.py:784, routes/vibe_654_tournament.py (3 lines), routes/metahuman_control.py (4 lines).",
+    "routes/baccarat.py:55, routes/blackjack.py:215 — change `if bet_amount <= 0` to `if bet_amount < 50` with cedi-formatted error.",
+    "Confirm Vibe Dice 654 carve-out (5 coins) is intentional and document it as an inline code comment so future devs don't 'fix' it.",
+    "After fixes, re-run /app/backend/tests/test_casino_50coin_floor_audit_may2026.py and expect all 24 tests green."
+  ],
+  "critical_code_review_comments": [
+    "Wave-2 casino routes (10 games) all duplicate the same Pydantic validator `stake: float = Field(..., gt=0)` — extract a shared `BetMixin`/`StakeField` constant (DRY).",
+    "Floor enforcement is currently scattered across route files and engine files (services/games/blackjack.py default min_bet=50, services/multiplayer.py line 937 = 50). A single source of truth (e.g. `services/constants.py::PLATFORM_MIN_BET=50`) would prevent regressions like these.",
+    "/api/slots/spin returns 500 — missing try/except + structured error logging. Caller can't distinguish missing-user from server-bug.",
+    "Currency glyph leakage suggests there's no central money-formatter. Add a `format_coins(n: int) -> str` helper that always emits `₵{n:,}` and import it everywhere money is rendered in API responses.",
+    "Wallet atomicity: live testing showed each wave2 endpoint returns gross/tax/net but does NOT round-trip through wallet API in same request — bookkeeping happens client-side or in a follow-up call. Confirm idempotency is actually enforced (suggest a settlement_id + UNIQUE index)."
+  ],
+  "updated_files": ["/app/backend/tests/test_casino_50coin_floor_audit_may2026.py"],
+  "success_rate": {"backend": "12/24 = 50% (13 floor bugs + 1 happy 500 surfaced as real defects, not test bugs)", "frontend": "n/a (backend-only audit)"},
+  "test_credentials": "betatester1@globalvibez.com / BetaTester2026! (login worked, JWT issued).",
+  "seed_data_creation": "None. Used pre-seeded beta tester #1.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "main_agent_can_self_test": false,
+  "context_for_next_testing_agent": "After E1 applies the floor fixes (wave2 routes, slots.py, baccarat.py, blackjack.py, vibes_slots_routes.py), re-run /app/backend/tests/test_casino_50coin_floor_audit_may2026.py. All 24 tests should pass green. Additionally: (a) extend the suite with round-by-round play assertions (3-5 real spins per game, balance-delta + ₵ glyph + payout-table math) — currently the suite only proves the floor & smoke math; (b) WALLET ATOMICITY was NOT tested under retry (idempotency_key not present in any payload schema reviewed) — flag as a follow-up audit.",
+  "rca of the issue": "Root cause: floor enforcement was added ad-hoc in 3 files (cyber_casino.py, watch_and_wager.py, blackjack_multiplayer.py) but NOT propagated to the 14 other casino route files. The wave-2 games file (casino_wave2_routes.py) was added later and re-used a `Field(..., gt=0)` pattern that no one updated. Recommend a single `PLATFORM_MIN_BET` constant + a Pydantic mixin imported by every BetRequest model. Reproduction: `curl -X POST $API/api/games/european-roulette/play -H 'Authorization: Bearer <jwt>' -d '{\"stake\":10,\"bet_type\":\"straight\",\"bet_value\":\"17\"}'` returns 200 OK with full payout payload (proves bet=10 was accepted)."
+}

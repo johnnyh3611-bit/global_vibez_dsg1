@@ -81,14 +81,14 @@ PAYOUTS_3X: Dict[str, int] = {
 # 2-of-a-kind WILD anywhere on the line still pays a small consolation.
 PAYOUT_2X_WILD = 2
 
-SLOTS_MIN_BET = 10
+SLOTS_MIN_BET = 50
 SLOTS_MAX_BET = 5_000
 
 # ============================================================================
 # BLACKJACK — house rules
 # ============================================================================
 
-BJ_MIN_BET = 25
+BJ_MIN_BET = 50
 BJ_MAX_BET = 5_000
 # Single-shoe-per-session. Reshuffled if penetration drops below 1 deck.
 BJ_DECKS_PER_SHOE = 6

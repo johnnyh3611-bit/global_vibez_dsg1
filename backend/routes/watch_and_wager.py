@@ -47,7 +47,7 @@ class BettingPool(BaseModel):
 # ==================== CONSTANTS ====================
 
 HOUSE_EDGE = 5  # 5% house edge
-MIN_BET = 10  # $0.005 value
+MIN_BET = 50  # 50-coin floor (founder rule, May 2026)
 MAX_BET = 100  # $0.05 value
 COINS_PER_DOLLAR = 2000  # 2,000 coins = $1
 
