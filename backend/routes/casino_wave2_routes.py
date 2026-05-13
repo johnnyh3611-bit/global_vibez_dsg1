@@ -35,7 +35,7 @@ three_card_router = APIRouter(prefix="/games/three-card-poker", tags=["three-car
 
 
 class ThreeCardIn(BaseModel):
-    ante: float = Field(..., gt=0)
+    ante: float = Field(..., ge=50)
     raise_play: bool
     pair_plus: float = 0.0
     seed: Optional[int] = None
