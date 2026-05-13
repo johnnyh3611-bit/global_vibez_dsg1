@@ -7025,3 +7025,73 @@ def test_streamer_studio_renders_referral_card() -> None:
     assert 'data-testid="referral-copy-btn"' in src
     assert 'data-testid="referral-share-btn"' in src
     assert 'data-testid="referral-stats-grid"' in src
+
+
+# --- LOCKED 2026-05-13: 50-coin global floor + ₵ glyph audit -----------------
+
+def test_platform_min_bet_constant_exists_and_is_50() -> None:
+    """Single source of truth for the 50-coin floor."""
+    from services.game_economy_constants import PLATFORM_MIN_BET, format_coins
+    assert PLATFORM_MIN_BET == 50, "Platform-wide minimum bet must be 50 ₵"
+    assert format_coins(1234) == "₵1,234", "Currency formatter must emit ₵, never $"
+    assert "$" not in format_coins(99), "Currency formatter must never emit $"
+
+
+def test_wave2_casino_routes_enforce_50_floor() -> None:
+    """All Wave 2 casino games (11 routes) gate stakes at ge=50."""
+    from pathlib import Path
+    src = Path("/app/backend/routes/casino_wave2_routes.py").read_text()
+    # NO stake validators below 50 should remain.
+    assert "ge=0" not in src or src.count("stake: float = Field(..., gt=0)") == 0, (
+        "Wave 2 casino still has a stake validator that accepts bets below the floor"
+    )
+    assert src.count("stake: float = Field(..., ge=50)") >= 10, (
+        "Wave 2 casino lost some of its 50-coin floor validators"
+    )
+
+
+def test_core_casino_floors_locked_at_50() -> None:
+    """Slots, blackjack, baccarat, watch_and_wager, cyber_casino — all 50."""
+    from pathlib import Path
+    blackjack = Path("/app/backend/routes/blackjack.py").read_text()
+    baccarat = Path("/app/backend/routes/baccarat.py").read_text()
+    cyber = Path("/app/backend/routes/cyber_casino.py").read_text()
+    wager = Path("/app/backend/routes/watch_and_wager.py").read_text()
+    vibes_slots = Path("/app/backend/routes/vibes_slots_routes.py").read_text()
+    slots = Path("/app/backend/routes/slots.py").read_text()
+
+    assert "PLATFORM_MIN_BET" in blackjack, "Blackjack route lost the PLATFORM_MIN_BET import"
+    assert "PLATFORM_MIN_BET" in baccarat, "Baccarat route lost the PLATFORM_MIN_BET import"
+    assert "PLATFORM_MIN_BET" in slots, "Slots route lost the PLATFORM_MIN_BET import"
+    assert "SLOTS_MIN_BET = 50" in cyber, "Cyber casino slots floor must be 50"
+    assert "BJ_MIN_BET = 50" in cyber, "Cyber casino blackjack floor must be 50"
+    assert "MIN_BET = 50" in wager, "Watch & Wager floor must be 50"
+    assert "ge=50" in vibes_slots, "Vibes Slots stake validator lost its ge=50 floor"
+
+
+def test_no_dollar_glyph_in_user_facing_game_strings() -> None:
+    """Sweep all casino game route + tournament + metahuman files for
+    leftover '$' currency glyphs in user-facing strings. Allowlist
+    only MongoDB operators ($set, $inc, $push, $eq) and code-side $
+    inside non-currency contexts."""
+    from pathlib import Path
+    import re
+    paths = [
+        "/app/backend/routes/multiplayer_slots.py",
+        "/app/backend/routes/vibez_654_prescription.py",
+        "/app/backend/routes/vibe_654_tournament.py",
+        "/app/backend/routes/metahuman_control.py",
+    ]
+    # Match $<digit> / $<{var}> / $<space-then-uppercase>  but allow $set, $inc, etc.
+    bad = re.compile(r'(\$\{[a-z_]|"\$[0-9]|\) \$[a-zA-Z]|pot.*: \$\{|f"[^"]*\$\{(?!set|inc|push|pull|eq)[a-z_])')
+    leaks = []
+    for p in paths:
+        src = Path(p).read_text()
+        for i, line in enumerate(src.splitlines(), 1):
+            if bad.search(line):
+                leaks.append(f"{p}:{i}  {line.strip()[:120]}")
+    assert not leaks, (
+        "Found '$' currency glyph leaks in user-facing strings (use ₵):\n"
+        + "\n".join(leaks)
+    )
+
