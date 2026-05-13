@@ -4,6 +4,7 @@ from typing import List, Optional, Dict, Any
 import secrets
 secure_random = secrets.SystemRandom()
 import hashlib
+from services.game_economy_constants import PLATFORM_MIN_BET, format_coins
 
 router = APIRouter()
 
@@ -212,8 +213,11 @@ async def deal_initial_hand(request: DealRequest) -> Dict[str, Any]:
         for old_id in session_ids[:50]:
             del game_sessions[old_id]
     
-    if request.bet_amount <= 0:
-        raise HTTPException(status_code=400, detail="Invalid bet amount")
+    if request.bet_amount < PLATFORM_MIN_BET:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Minimum bet is {format_coins(PLATFORM_MIN_BET)}",
+        )
     
     # Initialize engine and calculators
     engine = BlackjackEngine()

@@ -3,6 +3,7 @@ from typing import Optional, Dict, Any
 from pydantic import BaseModel
 from utils.database import get_database, get_current_user
 from utils.baccarat_game import BaccaratGame
+from services.game_economy_constants import PLATFORM_MIN_BET, format_coins
 from datetime import datetime, timezone
 import uuid
 
@@ -51,9 +52,12 @@ async def play_baccarat(bet_data: BaccaratBet, request: Request) -> Dict[str, An
     if bet_data.bet_type not in ['player', 'banker', 'tie']:
         raise HTTPException(status_code=400, detail="Invalid bet type. Must be 'player', 'banker', or 'tie'")
     
-    # Validate bet amount
-    if bet_data.bet_amount <= 0:
-        raise HTTPException(status_code=400, detail="Bet amount must be positive")
+    # Validate bet amount — 50-coin platform floor (founder rule).
+    if bet_data.bet_amount < PLATFORM_MIN_BET:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Minimum bet is {format_coins(PLATFORM_MIN_BET)}",
+        )
     
     # Check user balance
     user = await db.users.find_one({"user_id": current_user.user_id}, {"_id": 0})

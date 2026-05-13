@@ -221,7 +221,7 @@ async def get_dealer_response(event: str, data: dict) -> dict:
         },
         "bet_placed": {
             "animation": "acknowledge",
-            "dialogue": f"${data.get('amount')} on {data.get('bet_type')}. Good luck!",
+            "dialogue": f"₵{data.get('amount')} on {data.get('bet_type')}. Good luck!",
             "emotion": "neutral"
         },
         "cards_dealt": {
@@ -236,7 +236,7 @@ async def get_dealer_response(event: str, data: dict) -> dict:
         },
         "winner_announced": {
             "animation": "celebrate",
-            "dialogue": f"Congratulations {data.get('winner_name')}! You've won ${data.get('winnings')}!",
+            "dialogue": f"Congratulations {data.get('winner_name')}! You've won ₵{data.get('winnings')}!",
             "emotion": "excited"
         }
     }
@@ -303,7 +303,7 @@ async def start_winner_interview(request: WinnerInterview) -> Dict[str, Any]:
     
     await dealer_speak(DealerDialogue(
         table_id=table_id,
-        text=f"Thank you {request.winner_name}! Enjoy your ${request.winnings} winnings!",
+        text=f"Thank you {request.winner_name}! Enjoy your ₵{request.winnings} winnings!",
         emotion="celebratory"
     ))
     
@@ -372,7 +372,7 @@ async def broadcast_to_table(table_id: str, message: dict) -> Dict[str, Any]:
 def get_default_interview_questions(game_type: str, winnings: float) -> List[str]:
     """Generate default interview questions based on game and winnings"""
     questions = [
-        f"Congratulations on winning ${winnings}! How does it feel?",
+        f"Congratulations on winning ₵{winnings}! How does it feel?",
         f"What's your strategy for playing {game_type}?",
         "Is this your biggest win on Global Vibez DSG?",
         "What will you do with your winnings?",

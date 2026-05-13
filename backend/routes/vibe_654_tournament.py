@@ -258,7 +258,7 @@ async def join_tournament_table(request: JoinTableRequest) -> Dict[str, Any]:
     
     return {
         "success": True,
-        "message": f"{request.player_name} joined! Pot: ${updated_table['total_pot']}",
+        "message": f"{request.player_name} joined! Pot: ₵{updated_table['total_pot']}",
         "players_count": len(updated_table["current_players"]),
         "total_pot": updated_table["total_pot"]
     }
@@ -389,7 +389,7 @@ async def play_tournament_round(table_id: str) -> Dict[str, Any]:
             "payout": payout_info,
             "sidebets": sidebet_summary,
             "hit_654": hit_654,
-            "message": f"🏆 {winner['player_name']} WINS ${payout_info['winner_payout']}!"
+            "message": f"🏆 {winner['player_name']} WINS ₵{payout_info['winner_payout']}!"
         }
     
     elif round_result["outcome"] == "NO_QUALIFIERS":
@@ -411,7 +411,7 @@ async def play_tournament_round(table_id: str) -> Dict[str, Any]:
         return {
             "success": True,
             "outcome": "NO_QUALIFIERS",
-            "message": f"NO QUALIFIERS! Everyone re-ups ${table['buy_in']}. New pot: ${new_pot}",
+            "message": f"NO QUALIFIERS! Everyone re-ups ₵{table['buy_in']}. New pot: ₵{new_pot}",
             "new_pot": new_pot,
             "round_results": round_result["round_results"]
         }

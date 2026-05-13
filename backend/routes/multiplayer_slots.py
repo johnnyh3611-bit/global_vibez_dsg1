@@ -196,7 +196,7 @@ async def multiplayer_spin(request: MultiplayerSpinRequest) -> Dict[str, Any]:
         if request.bet_amount < room_config['min_bet'] or request.bet_amount > room_config['max_bet']:
             raise HTTPException(
                 status_code=400, 
-                detail=f"Bet must be between ${room_config['min_bet']} and ${room_config['max_bet']}"
+                detail=f"Bet must be between ₵{room_config['min_bet']} and ₵{room_config['max_bet']}"
             )
         
         # Contribute 10% of bet to shared jackpot

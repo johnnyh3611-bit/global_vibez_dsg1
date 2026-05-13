@@ -34,7 +34,7 @@ _jackpot = JackpotPool()
 
 
 class SpinRequest(BaseModel):
-    stake: float = Field(..., gt=0)
+    stake: float = Field(..., ge=50)
     user_id: Optional[str] = None
     seed: Optional[int] = None
     active_user_count: int = Field(0, ge=0)

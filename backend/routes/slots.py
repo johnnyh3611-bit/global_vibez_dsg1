@@ -4,6 +4,7 @@ from typing import List, Dict, Any
 from datetime import datetime, timezone
 from uuid import uuid4
 import secrets
+from services.game_economy_constants import PLATFORM_MIN_BET, format_coins
 secure_random = secrets.SystemRandom()
 
 router = APIRouter()
@@ -171,9 +172,12 @@ async def spin_slots(request: SpinRequest) -> Dict[str, Any]:
     - Final payout
     """
     try:
-        # Validate bet amount
-        if request.bet_amount < 10 or request.bet_amount > 1000:
-            raise HTTPException(status_code=400, detail="Bet must be between $10 and $1000")
+        # Validate bet amount — 50-coin platform floor + 1000-coin per-spin ceiling.
+        if request.bet_amount < PLATFORM_MIN_BET or request.bet_amount > 1000:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Bet must be between {format_coins(PLATFORM_MIN_BET)} and {format_coins(1000)}",
+            )
         
         # Generate 5 symbols for the slot machine
         symbols = [generate_weighted_symbol() for _ in range(5)]
@@ -202,6 +206,8 @@ async def spin_slots(request: SpinRequest) -> Dict[str, Any]:
                 'multiplier': dating_multiplier
             })
         
+        with open("/tmp/slots_err.log", "a") as _f:
+            _f.write(f"BEFORE_RESULT base={base_payout} mult={dating_multiplier} final={final_payout} jp={is_jackpot} matches={len(nearby_matches)}\n")
         result = SpinResult(
             spin_id=str(uuid4()),
             symbols=symbols,
@@ -216,8 +222,7 @@ async def spin_slots(request: SpinRequest) -> Dict[str, Any]:
             ],
             timestamp=datetime.now(timezone.utc).isoformat()
         )
-        
-        return result
+        return result.model_dump()
         
     except HTTPException:
         raise

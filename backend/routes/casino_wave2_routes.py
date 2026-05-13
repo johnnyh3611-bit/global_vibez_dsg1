@@ -79,7 +79,7 @@ pai_gow_router = APIRouter(prefix="/games/pai-gow", tags=["pai-gow"])
 
 
 class PaiGowIn(BaseModel):
-    stake: float = Field(..., gt=0)
+    stake: float = Field(..., ge=50)
     seed: Optional[int] = None
 
 
@@ -103,7 +103,7 @@ casino_war_router = APIRouter(prefix="/games/casino-war", tags=["casino-war"])
 
 
 class CasinoWarIn(BaseModel):
-    stake: float = Field(..., gt=0)
+    stake: float = Field(..., ge=50)
     go_to_war: bool = False
     seed: Optional[int] = None
 
@@ -129,7 +129,7 @@ chemin_router = APIRouter(prefix="/games/chemin-de-fer", tags=["chemin-de-fer"])
 
 class CheminIn(BaseModel):
     bet_side: str
-    stake: float = Field(..., gt=0)
+    stake: float = Field(..., ge=50)
     seed: Optional[int] = None
 
 
@@ -155,7 +155,7 @@ eu_roulette_router = APIRouter(prefix="/games/european-roulette", tags=["europea
 class EUSpinIn(BaseModel):
     bet_type: str
     bet_value: Optional[int] = None
-    stake: float = Field(..., gt=0)
+    stake: float = Field(..., ge=50)
     seed: Optional[int] = None
 
 
@@ -186,7 +186,7 @@ hazard_router = APIRouter(prefix="/games/hazard", tags=["hazard"])
 
 class HazardIn(BaseModel):
     main: int
-    stake: float = Field(..., gt=0)
+    stake: float = Field(..., ge=50)
     seed: Optional[int] = None
 
 
@@ -211,7 +211,7 @@ chuck_router = APIRouter(prefix="/games/chuck-a-luck", tags=["chuck-a-luck"])
 
 class ChuckIn(BaseModel):
     picked_number: int
-    stake: float = Field(..., gt=0)
+    stake: float = Field(..., ge=50)
     seed: Optional[int] = None
 
 
@@ -236,7 +236,7 @@ big_six_router = APIRouter(prefix="/games/big-six-wheel", tags=["big-six-wheel"]
 
 class BigSixIn(BaseModel):
     bet_label: str
-    stake: float = Field(..., gt=0)
+    stake: float = Field(..., ge=50)
     seed: Optional[int] = None
 
 
@@ -270,7 +270,7 @@ class JacksDealIn(BaseModel):
 class JacksDrawIn(BaseModel):
     initial: List[Dict[str, str]]
     hold_indices: List[int] = []
-    stake: float = Field(..., gt=0)
+    stake: float = Field(..., ge=50)
     seed: Optional[int] = None
 
 
@@ -306,7 +306,7 @@ fan_tan_router = APIRouter(prefix="/games/fan-tan", tags=["fan-tan"])
 
 class FanTanIn(BaseModel):
     pick: int
-    stake: float = Field(..., gt=0)
+    stake: float = Field(..., ge=50)
     seed: Optional[int] = None
 
 
@@ -331,7 +331,7 @@ faro_router = APIRouter(prefix="/games/faro", tags=["faro"])
 
 class FaroIn(BaseModel):
     picked_rank: str
-    stake: float = Field(..., gt=0)
+    stake: float = Field(..., ge=50)
     seed: Optional[int] = None
 
 
@@ -356,7 +356,7 @@ darts_router = APIRouter(prefix="/games/vibes-darts", tags=["vibes-darts"])
 
 class DartsIn(BaseModel):
     distance_from_bullseye: float = Field(..., ge=0.0, le=1.0)
-    stake: float = Field(..., gt=0)
+    stake: float = Field(..., ge=50)
 
 
 @darts_router.get("/constants")

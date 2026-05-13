@@ -781,7 +781,7 @@ async def stand_with_score(roll_id: str, user_id: str) -> Dict[str, Any]:
         "final_score": point_score,
         "payout": payout,
         "nova_reaction": nova,
-        "message": f"Standing on {point_score}. Payout: ${payout}"
+        "message": f"Standing on {point_score}. Payout: ₵{payout}"
     }
 
 @router.get("/history/{user_id}")
