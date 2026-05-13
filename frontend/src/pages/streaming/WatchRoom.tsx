@@ -6,8 +6,9 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ChevronLeft, Radio, AlertTriangle, Share2 } from "lucide-react";
+import { ChevronLeft, Radio, AlertTriangle, Share2, Bell, BellOff } from "lucide-react";
 import HLSPlayer from "@/components/streaming/HLSPlayer";
+import { getUserId } from "@/utils/secureAuth";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -26,6 +27,9 @@ export default function WatchRoom() {
   const [stream, setStream] = useState<LiveStream | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [following, setFollowing] = useState<boolean | null>(null);
+  const [followBusy, setFollowBusy] = useState(false);
+  const me = getUserId();
 
   useEffect(() => {
     if (!inputId) return;
@@ -62,6 +66,33 @@ export default function WatchRoom() {
       setTimeout(() => setCopied(false), 1500);
     } catch {
       /* clipboard blocked — silent */
+    }
+  };
+
+  // Follow state — preload on mount so the Bell icon reflects reality.
+  useEffect(() => {
+    if (!me || !stream?.streamer_id) return;
+    fetch(`${API}/api/streamer-follow/is-following/${me}/${stream.streamer_id}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => j && setFollowing(Boolean(j.following)))
+      .catch(() => {});
+  }, [me, stream?.streamer_id]);
+
+  const toggleFollow = async () => {
+    if (!me || !stream?.streamer_id || followBusy) return;
+    setFollowBusy(true);
+    const path = following ? "unfollow" : "follow";
+    try {
+      const r = await fetch(`${API}/api/streamer-follow/${path}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: me, streamer_id: stream.streamer_id }),
+      });
+      if (r.ok) setFollowing(!following);
+    } catch {
+      /* silent — user can retry */
+    } finally {
+      setFollowBusy(false);
     }
   };
 
@@ -126,14 +157,36 @@ export default function WatchRoom() {
                   {stream.is_live ? "Live" : stream.last_status || "Offline"}
                 </p>
               </div>
-              <button
-                onClick={share}
-                className="px-3 py-2 rounded-full border border-red-500/30 hover:bg-red-500/10 text-[10px] uppercase tracking-widest flex items-center gap-1.5"
-                data-testid="watch-room-share"
-              >
-                <Share2 className="w-3.5 h-3.5" />
-                {copied ? "Copied!" : "Share"}
-              </button>
+              <div className="flex items-center gap-2">
+                {me && stream.streamer_id !== me && (
+                  <button
+                    onClick={toggleFollow}
+                    disabled={followBusy || following === null}
+                    className={`px-3 py-2 rounded-full border text-[10px] uppercase tracking-widest flex items-center gap-1.5 transition-all ${
+                      following
+                        ? "bg-amber-500/15 border-amber-400/50 text-amber-200 hover:bg-amber-500/25"
+                        : "bg-emerald-500/15 border-emerald-400/60 text-emerald-100 hover:bg-emerald-500/30"
+                    } disabled:opacity-60`}
+                    data-testid="watch-room-follow-btn"
+                    title={
+                      following
+                        ? "You'll get a phone-buzz next time this creator goes live"
+                        : "Follow to get a push notification when this creator goes live"
+                    }
+                  >
+                    {following ? <Bell className="w-3.5 h-3.5" /> : <BellOff className="w-3.5 h-3.5" />}
+                    {following === null ? "…" : following ? "Following" : "Follow"}
+                  </button>
+                )}
+                <button
+                  onClick={share}
+                  className="px-3 py-2 rounded-full border border-red-500/30 hover:bg-red-500/10 text-[10px] uppercase tracking-widest flex items-center gap-1.5"
+                  data-testid="watch-room-share"
+                >
+                  <Share2 className="w-3.5 h-3.5" />
+                  {copied ? "Copied!" : "Share"}
+                </button>
+              </div>
             </div>
           </>
         )}

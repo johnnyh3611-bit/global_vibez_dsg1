@@ -368,6 +368,7 @@ async def cloudflare_webhook(
     # to LIVE. Idempotent per-user via SIGNED_UP→PAID atomic update so
     # repeated connect events cannot double-pay the referrer.
     referral_result = None
+    live_notif_result = None
     if is_live:
         try:
             input_doc = await db.cf_live_inputs.find_one(
@@ -377,13 +378,22 @@ async def cloudflare_webhook(
             if streamer_id:
                 from routes.streamer_referral import qualify_on_live  # noqa: PLC0415
                 referral_result = await qualify_on_live(streamer_id)
+
+                # Live Push Notifications — buzz every follower's phone
+                # right after the stream goes live. Internal idempotency
+                # via the cf_live_inputs.last_live_notif_at cooldown.
+                try:
+                    from routes.streamer_follow import notify_followers_of_live_stream  # noqa: PLC0415
+                    live_notif_result = await notify_followers_of_live_stream(streamer_id)
+                except Exception as _e:
+                    logger.warning("Live notif fan-out failed for %s: %s", streamer_id, _e)
         except Exception as _e:
             # Never let a referral-side bug 5xx the CF webhook (Stripe-
             # style discipline: critical webhook stays 2xx so CF doesn't
             # retry the whole event).
             logger.warning("Referral payout hook failed for %s: %s", uid, _e)
 
-    return {"ok": True, "input_id": uid, "is_live": is_live, "referral": referral_result}
+    return {"ok": True, "input_id": uid, "is_live": is_live, "referral": referral_result, "live_notif": live_notif_result}
 
 
 

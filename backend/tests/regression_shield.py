@@ -7095,3 +7095,55 @@ def test_no_dollar_glyph_in_user_facing_game_strings() -> None:
         + "\n".join(leaks)
     )
 
+
+
+
+# --- LOCKED 2026-05-13: Live Push Notifications (streamer-follow) ------------
+
+def test_streamer_follow_module_mounted() -> None:
+    """Follow module wired + the 5 endpoints exposed at /streamer-follow."""
+    from routes import streamer_follow as sf
+    paths = {r.path for r in sf.router.routes}
+    assert "/streamer-follow/follow" in paths
+    assert "/streamer-follow/unfollow" in paths
+    assert "/streamer-follow/following/{user_id}" in paths
+    assert "/streamer-follow/followers/{streamer_id}" in paths
+    assert "/streamer-follow/notify-live/{streamer_id}" in paths
+    assert hasattr(sf, "notify_followers_of_live_stream"), (
+        "Follow module lost the helper called by the CF webhook on go-live."
+    )
+
+    from pathlib import Path
+    reg = Path("/app/backend/routes/registry.py").read_text()
+    assert "from routes.streamer_follow import router as follow_router" in reg, (
+        "Streamer Follow router not mounted in registry.py"
+    )
+
+
+def test_cloudflare_webhook_fires_live_push_fanout() -> None:
+    """CF Stream webhook MUST call notify_followers_of_live_stream when
+    a stream first goes live — otherwise followers never get buzzed."""
+    from pathlib import Path
+    src = Path("/app/backend/routes/cloudflare_stream.py").read_text()
+    assert "from routes.streamer_follow import notify_followers_of_live_stream" in src, (
+        "CF webhook lost the follow-push import"
+    )
+    assert "notify_followers_of_live_stream(streamer_id)" in src, (
+        "CF webhook lost the follow-push invocation"
+    )
+
+
+def test_watch_room_has_follow_button() -> None:
+    """The watch page MUST render the Follow/Following bell so viewers
+    can opt in for live pings."""
+    from pathlib import Path
+    src = Path("/app/frontend/src/pages/streaming/WatchRoom.tsx").read_text()
+    assert 'data-testid="watch-room-follow-btn"' in src, (
+        "WatchRoom lost the Follow button"
+    )
+    assert "/api/streamer-follow/" in src, (
+        "WatchRoom no longer calls the streamer-follow API"
+    )
+    assert "is-following" in src, (
+        "WatchRoom no longer pre-loads the follow state"
+    )

@@ -812,6 +812,15 @@ def register_all_routes(
     except Exception as _e:
         log.warning(f"Streamer Referral routes not mounted: {_e}")
 
+    # Streamer Follow + Live Push Notifications — follow/unfollow API
+    # plus the CF-webhook fan-out helper that buzzes every follower's
+    # phone the moment a streamer goes live.
+    try:
+        from routes.streamer_follow import router as follow_router
+        api_router.include_router(follow_router)
+    except Exception as _e:
+        log.warning(f"Streamer Follow routes not mounted: {_e}")
+
     # $VIBEZ Activity Multiplier reward formula (Roadmap PDF §1).
     # SIMULATED mints until the founder confirms project_complete.
     try:
