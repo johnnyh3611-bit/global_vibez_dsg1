@@ -1,5 +1,51 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-05-15 (HIGH ROLLER WAVE 2 🎲🃏 · ROULETTE + BACCARAT + VIP CROWN BADGE) — 349/349 regression green. 14/14 wave-2 tests pass.**
+>
+> ### What shipped this session:
+>
+> **🎲 VIP Roulette** — full European 0-36 wheel at `/casino/high-roller/roulette`:
+>   - `POST /api/high-roller/roulette/spin` — VIP-gated, ₵10,000 minimum on **total chip stake** (multi-chip per round), reuses the existing public route's provably-fair HMAC-SHA512 wheel.
+>   - 9 bet types: red/black/odd/even/low/high/dozen1/dozen2/dozen3/straight. Payout table locked: straight 35:1, dozens 2:1, evens/colors 1:1. Standard Vegas European-red number set locked by regression test.
+>   - `POST /api/high-roller/roulette/server-hash` for the pre-spin commitment hash.
+>   - Frontend: amber/rose ambient gradient, animated chip placement, hit/miss reveal with motion-animated winning-number tile.
+>
+> **🃏 VIP Baccarat** — Punto Banco at `/casino/high-roller/baccarat`:
+>   - `POST /api/high-roller/baccarat/play` — VIP-gated, ₵10,000 minimum, reuses `utils/baccarat_game.py` engine (deal → third-card rules → winner determination).
+>   - Vegas payouts locked: Player 2×, Banker 1.95× (5% commission), Tie 9×.
+>   - Frontend: side-by-side hand reveal with staggered card-flip animation, Player/Banker/Tie selectors with payout-multiplier hints.
+>
+> **👑 VIP Crown Badge** (the "potential improvement" from last session) — global floating crown indicator:
+>   - Component at `components/vip/VipCrownBadge.tsx`, mounted globally in `App.js`.
+>   - Polls `/api/high-roller/eligibility/{user_id}` every 60s — freshly-granted VIP sees the badge appear without hard refresh.
+>   - Gold ambient pulse halo (`animate-ping`) on the crown icon. Hover reveals tier label + days-left tooltip. Tap deep-links to `/casino/high-roller`.
+>   - Self-hides on `/casino/high-roller*` routes (no redundant chrome) and for non-VIP users.
+>
+> **🛠️ Master Blueprint PDF spec drift fixes** (uploaded this session):
+>   - Gunicorn default config bumped 4×5000 → **8 workers × 10,000 connections** (Master Blueprint §5). The 4×5K config remains overridable via env vars for slimmer nodes.
+>   - Stress suite TEST 1 timeout 2s → **1.5s** (Master Blueprint §1 spec).
+>
+> **VIP Lounge upgrade**: the High Roller page now shows **3 entry tiles** instead of 1 — Blackjack (emerald glow), Roulette (rose ambient), Baccarat (fuchsia ambient). Each tile deep-links to its dedicated table.
+>
+> ### 🛡️ Regression Shield: **349/349 GREEN** (+9 wave-2 locks)
+> ### 🧪 Wave-2 suite: 14/14 pass in `tests/test_high_roller_wave2_roulette_baccarat.py`
+> ### 🔒 Critical isolation guarantee re-verified: standard `/api/baccarat/play` and `/api/roulette/spin` STILL enforce the platform 50-coin floor (NOT 10k). The VIP wrappers don't leak.
+>
+> ### Outstanding PDFs reviewed this session
+>   - **Master Blueprint PDF** — mostly already implemented; only spec drift was Gunicorn config + stress timeout (both fixed).
+>   - **Media Master PDF** — a brand-new domain (DSG TV Network, Vibe Radio, AI Scout, DSG Music Group, Affiliate Chairs sponsoring artists). **Not started** — needs its own sprint. P1 backlog.
+>
+> ### Next Action Items
+>   - **P0**: Provision Redis in production (`REDIS_URL=redis://…`) → caching activates automatically
+>   - **P0**: Validate ONE real Stripe payment through `/casino/high-roller` → confirm `vip_until` flips post-webhook
+>   - **P1**: Run master stress suite: `GVDSG_STRESS_ENABLE=1 python -m scripts.master_stress_suite` (against staging)
+>   - **P1**: **NEW** — Build out the Media Master ecosystem (DSG TV channels + Vibe Radio + AI Scout + Music Group studio + Affiliate Chairs)
+>   - **P2 (BLOCKED)**: Mainnet TGE & Solana Bridge — stays stubbed until founder types `project complete`
+>   - **P3**: LLM Universal Key budget cap — Emergent Support follow-up
+>
+> ---
+>
+
 > **2026-05-15 (HIGH ROLLER MVP 👑 + 100K SCALING FOUNDATION 🛡️) — 340/340 regression green. VIP tier live with Stripe live-key checkout.**
 >
 > ### Two big wins this sprint:
