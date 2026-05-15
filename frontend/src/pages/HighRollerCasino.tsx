@@ -211,31 +211,45 @@ export default function HighRollerCasino() {
             <h2 className="text-lg md:text-lg font-medium text-white/85 mb-4">
               Your VIP Lounge
             </h2>
-            <div className="grid sm:grid-cols-2 gap-6">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               <button
                 data-testid="high-roller-enter-blackjack"
                 onClick={() => navigate('/casino/high-roller/blackjack')}
                 className={`group text-left rounded-2xl p-7 bg-gradient-to-br from-[#0f0a1d] to-[#0c1810] ring-1 ring-emerald-400/30 hover:ring-amber-300/60 transition-all ${TIER_THEME[eligibility?.tier || 'genius'].glow}`}
               >
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-xs uppercase tracking-widest text-amber-200/80">
-                    VIP Blackjack
-                  </span>
+                  <span className="text-xs uppercase tracking-widest text-amber-200/80">VIP Blackjack</span>
                   <ArrowRight className="w-5 h-5 text-amber-200 group-hover:translate-x-1 transition-transform" />
                 </div>
                 <h3 className="text-2xl font-light text-white">Private Table · 8-Deck Shoe</h3>
-                <p className="mt-3 text-white/60 text-sm">
-                  ₵10,000 minimum. Concierge dealer. Animated chip stacks.
-                </p>
+                <p className="mt-3 text-white/60 text-sm">₵10,000 minimum. Concierge dealer.</p>
               </button>
 
-              <div className="rounded-2xl p-7 bg-gradient-to-br from-[#0f0a1d] to-[#0a1320] ring-1 ring-white/10">
-                <Sparkles className="w-6 h-6 text-amber-300 mb-3" />
-                <h3 className="text-2xl font-light text-white">More VIP rooms unlocking</h3>
-                <p className="mt-3 text-white/60 text-sm">
-                  Roulette · Baccarat · Three-Card Poker — all rolling out in the VIP pipeline.
-                </p>
-              </div>
+              <button
+                data-testid="high-roller-enter-roulette"
+                onClick={() => navigate('/casino/high-roller/roulette')}
+                className={`group text-left rounded-2xl p-7 bg-gradient-to-br from-[#1a0a0a] to-[#0c0a18] ring-1 ring-rose-400/30 hover:ring-amber-300/60 transition-all`}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-xs uppercase tracking-widest text-amber-200/80">VIP Roulette</span>
+                  <ArrowRight className="w-5 h-5 text-amber-200 group-hover:translate-x-1 transition-transform" />
+                </div>
+                <h3 className="text-2xl font-light text-white">European Wheel · 0-36</h3>
+                <p className="mt-3 text-white/60 text-sm">Provably-fair HMAC-SHA512. 35:1 on straights.</p>
+              </button>
+
+              <button
+                data-testid="high-roller-enter-baccarat"
+                onClick={() => navigate('/casino/high-roller/baccarat')}
+                className={`group text-left rounded-2xl p-7 bg-gradient-to-br from-[#15071a] to-[#0c0a14] ring-1 ring-fuchsia-400/30 hover:ring-amber-300/60 transition-all`}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-xs uppercase tracking-widest text-amber-200/80">VIP Baccarat</span>
+                  <ArrowRight className="w-5 h-5 text-amber-200 group-hover:translate-x-1 transition-transform" />
+                </div>
+                <h3 className="text-2xl font-light text-white">Punto Banco · 8-Deck</h3>
+                <p className="mt-3 text-white/60 text-sm">Player 2× · Banker 1.95× · Tie 9×.</p>
+              </button>
             </div>
           </section>
         )}

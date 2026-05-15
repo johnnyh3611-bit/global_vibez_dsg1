@@ -14,6 +14,8 @@ import VIPRooms from '@/pages/VIPRooms';
 import SeasonalEvents from '@/pages/SeasonalEvents';
 import HighRollerCasino from '@/pages/HighRollerCasino';
 import HighRollerBlackjack from '@/pages/HighRollerBlackjack';
+import HighRollerRoulette from '@/pages/HighRollerRoulette';
+import HighRollerBaccarat from '@/pages/HighRollerBaccarat';
 import NFTMarketplace from '@/pages/NFTMarketplace';
 import AffiliateProgram from '@/pages/AffiliateProgram';
 import FoundersPass from '@/pages/FoundersPass';
@@ -136,6 +138,22 @@ export const monetizationRoutes = (ProtectedRoute) => (
       element={
         <ProtectedRoute>
           <HighRollerBlackjack />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/casino/high-roller/roulette"
+      element={
+        <ProtectedRoute>
+          <HighRollerRoulette />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/casino/high-roller/baccarat"
+      element={
+        <ProtectedRoute>
+          <HighRollerBaccarat />
         </ProtectedRoute>
       }
     />

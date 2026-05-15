@@ -7377,3 +7377,100 @@ def test_master_stress_suite_exists() -> None:
     assert "test3_geolocation_throughput" in body
     assert "test4_unreal_engine_tick_audit" in body
 
+
+
+# ════════════════════════════════════════════════════════════════════
+# HIGH ROLLER VIP — Roulette + Baccarat + Crown Badge (May 2026 wave 2)
+# Per `Global_Vibez_DSG_Master_Blueprint.pdf` Glasshouse VIP expansion.
+# ════════════════════════════════════════════════════════════════════
+def test_vip_roulette_endpoints_registered() -> None:
+    from server import app
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    assert "/api/high-roller/roulette/spin" in paths
+    assert "/api/high-roller/roulette/server-hash" in paths
+
+
+def test_vip_baccarat_endpoint_registered() -> None:
+    from server import app
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    assert "/api/high-roller/baccarat/play" in paths
+
+
+def test_vip_roulette_payout_table_locked() -> None:
+    """Standard Vegas payouts. Drift = silent player rip-off."""
+    from routes.high_roller import _ROULETTE_PAYOUTS
+    assert _ROULETTE_PAYOUTS["straight"] == 35
+    assert _ROULETTE_PAYOUTS["red"] == 1 == _ROULETTE_PAYOUTS["black"]
+    assert _ROULETTE_PAYOUTS["odd"] == 1 == _ROULETTE_PAYOUTS["even"]
+    assert _ROULETTE_PAYOUTS["dozen1"] == 2 == _ROULETTE_PAYOUTS["dozen2"] == _ROULETTE_PAYOUTS["dozen3"]
+
+
+def test_vip_roulette_red_number_set_matches_european_wheel() -> None:
+    """Standard European roulette red numbers — locked so a future
+    refactor can't accidentally rotate the wheel coloring."""
+    from routes.high_roller import _RED_NUMBERS
+    assert _RED_NUMBERS == {1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36}
+
+
+def test_vip_roulette_and_baccarat_frontend_pages_exist() -> None:
+    from pathlib import Path
+    rou = Path("/app/frontend/src/pages/HighRollerRoulette.tsx").read_text()
+    bac = Path("/app/frontend/src/pages/HighRollerBaccarat.tsx").read_text()
+    for tid in ["vip-roulette-page", "vip-roulette-spin-btn", "vip-roulette-clear-btn", "vip-roulette-chip-input"]:
+        assert f'data-testid="{tid}"' in rou, f"Roulette page missing testid {tid}"
+    for tid in ["vip-baccarat-page", "vip-baccarat-deal-btn", "vip-baccarat-bet-input"]:
+        assert f'data-testid="{tid}"' in bac, f"Baccarat page missing testid {tid}"
+    routes = Path("/app/frontend/src/routes/monetizationRoutes.tsx").read_text()
+    assert 'path="/casino/high-roller/roulette"' in routes
+    assert 'path="/casino/high-roller/baccarat"' in routes
+
+
+def test_high_roller_lounge_surfaces_all_three_games() -> None:
+    """The VIP Lounge must show entry tiles for Blackjack, Roulette,
+    and Baccarat — locked so we don't regress the lounge to just one game."""
+    from pathlib import Path
+    page = Path("/app/frontend/src/pages/HighRollerCasino.tsx").read_text()
+    for tid in [
+        "high-roller-enter-blackjack",
+        "high-roller-enter-roulette",
+        "high-roller-enter-baccarat",
+    ]:
+        assert f'data-testid="{tid}"' in page, f"VIP Lounge missing {tid} tile"
+
+
+def test_vip_crown_badge_globally_mounted() -> None:
+    """Floating crown for active VIPs must be mounted globally in App.js
+    so it appears across every authed page (besides the High Roller pages
+    themselves where it self-hides)."""
+    from pathlib import Path
+    app_js = Path("/app/frontend/src/App.js").read_text()
+    assert 'import VipCrownBadge from "@/components/vip/VipCrownBadge"' in app_js
+    assert "<VipCrownBadge />" in app_js
+    component = Path("/app/frontend/src/components/vip/VipCrownBadge.tsx").read_text()
+    assert 'data-testid="vip-crown-badge"' in component
+    assert "/api/high-roller/eligibility/" in component, (
+        "VIP badge must poll the eligibility endpoint"
+    )
+    # Self-hide on /casino/high-roller* to avoid redundant chrome
+    assert "/casino/high-roller" in component
+
+
+def test_production_gunicorn_matches_master_blueprint() -> None:
+    """Master Blueprint §5: 8 workers × 10,000 worker-connections.
+    Earlier 4×5K config is acceptable as env fallback but the default
+    must be the upgraded spec."""
+    from pathlib import Path
+    sh = Path("/app/backend/scripts/run_production.sh").read_text()
+    assert 'GUNICORN_WORKERS:-8' in sh, "Default worker count drifted from Master Blueprint"
+    assert 'GUNICORN_WORKER_CONNECTIONS:-10000' in sh, (
+        "Default worker-connections drifted from Master Blueprint"
+    )
+
+
+def test_stress_suite_timeout_matches_master_blueprint() -> None:
+    """Master Blueprint §1 specifies 1.5s timeout per stress request."""
+    from pathlib import Path
+    py = Path("/app/backend/scripts/master_stress_suite.py").read_text()
+    assert "ClientTimeout(total=1.5)" in py, (
+        "Stress suite timeout drifted from Master Blueprint §1 spec"
+    )

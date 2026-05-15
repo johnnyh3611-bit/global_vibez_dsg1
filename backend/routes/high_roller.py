@@ -17,11 +17,12 @@ from __future__ import annotations
 
 import logging
 import os
+import uuid
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import stripe
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
 
@@ -66,6 +67,24 @@ class BlackjackActionRequest(BaseModel):
     session_id: str
     action: str  # 'hit', 'stand', 'double', 'split', 'insurance'
     hand_index: Optional[int] = 0
+
+
+class RouletteBet(BaseModel):
+    bet_type: str  # 'red', 'black', 'odd', 'even', 'low', 'high', 'straight', 'dozen1', 'dozen2', 'dozen3'
+    bet_amount: float
+    bet_value: Optional[int] = None  # for 'straight' (0-36)
+
+
+class RouletteSpinRequest(BaseModel):
+    user_id: str
+    client_seed: str
+    bets: List[RouletteBet]  # placed all at once
+
+
+class BaccaratPlayRequest(BaseModel):
+    user_id: str
+    bet_type: str  # 'player' | 'banker' | 'tie'
+    bet_amount: float
 
 
 # ────────────────────────────────────────────── Helpers ──
@@ -245,6 +264,172 @@ async def vip_blackjack_action(req: BlackjackActionRequest) -> Dict[str, Any]:
     if isinstance(result, dict):
         result["vip"] = True
     return result
+
+
+# ────────────────────────────────────────────── VIP ROULETTE ──
+# Bet-type payout multipliers (European 0-36 wheel). Straight pays 35:1,
+# dozens/columns 2:1, red/black/even/odd/low/high 1:1. Standard Vegas rules.
+_ROULETTE_PAYOUTS: Dict[str, int] = {
+    "red": 1, "black": 1, "odd": 1, "even": 1,
+    "low": 1, "high": 1,          # 1-18 / 19-36
+    "dozen1": 2, "dozen2": 2, "dozen3": 2,
+    "straight": 35,
+}
+_RED_NUMBERS = {1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36}
+
+
+def _roulette_bet_wins(bet: RouletteBet, winning: int) -> bool:
+    """Resolve a single roulette bet against the winning number."""
+    if winning == 0:
+        # 0 is house (green) — only `straight 0` wins. All others lose.
+        return bet.bet_type == "straight" and bet.bet_value == 0
+    t = bet.bet_type
+    if t == "red":     return winning in _RED_NUMBERS
+    if t == "black":   return winning not in _RED_NUMBERS
+    if t == "odd":     return winning % 2 == 1
+    if t == "even":    return winning % 2 == 0
+    if t == "low":     return 1 <= winning <= 18
+    if t == "high":    return 19 <= winning <= 36
+    if t == "dozen1":  return 1 <= winning <= 12
+    if t == "dozen2":  return 13 <= winning <= 24
+    if t == "dozen3":  return 25 <= winning <= 36
+    if t == "straight":return bet.bet_value == winning
+    return False
+
+
+@router.post("/roulette/spin")
+async def vip_roulette_spin(req: RouletteSpinRequest) -> Dict[str, Any]:
+    """VIP-gated European roulette spin. Reuses the public route's
+    provably-fair HMAC-SHA512 wheel and enforces the ₵10,000 floor on
+    the sum of all chips placed in the round.
+
+    Returns per-bet payout details so the frontend can render hit/miss
+    rings around each placed chip, plus the standard provably-fair proof.
+    """
+    await _require_vip(req.user_id)
+    if not req.bets:
+        raise HTTPException(400, detail="At least one bet required")
+
+    total_stake = sum(b.bet_amount for b in req.bets)
+    if total_stake < HIGH_ROLLER_MIN_BET:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "below_high_roller_min",
+                "message": (
+                    f"High Roller minimum is ₵{HIGH_ROLLER_MIN_BET:,}. "
+                    f"You staked ₵{int(total_stake):,}."
+                ),
+                "min_bet": HIGH_ROLLER_MIN_BET,
+            },
+        )
+    # Validate every bet_type is recognised — cheaper to fail early than
+    # to settle and find out we paid the wrong multiplier.
+    for b in req.bets:
+        if b.bet_type not in _ROULETTE_PAYOUTS:
+            raise HTTPException(400, detail=f"Unknown roulette bet_type '{b.bet_type}'")
+        if b.bet_type == "straight" and (b.bet_value is None or not 0 <= b.bet_value <= 36):
+            raise HTTPException(400, detail="straight bet requires bet_value 0-36")
+
+    from routes.roulette import SpinRequest, spin_roulette  # noqa: PLC0415
+    spin_result = await spin_roulette(SpinRequest(clientSeed=req.client_seed))
+    winning = int(spin_result["winningNumber"])
+
+    settled = []
+    total_payout = 0
+    for b in req.bets:
+        won = _roulette_bet_wins(b, winning)
+        # Payout = stake × (multiplier+1) so the player gets back stake + winnings on a hit.
+        payout = int(b.bet_amount * (_ROULETTE_PAYOUTS[b.bet_type] + 1)) if won else 0
+        total_payout += payout
+        settled.append({
+            "bet_type": b.bet_type,
+            "bet_value": b.bet_value,
+            "bet_amount": int(b.bet_amount),
+            "won": won,
+            "payout": payout,
+            "multiplier": _ROULETTE_PAYOUTS[b.bet_type] if won else 0,
+        })
+
+    return {
+        "vip": True,
+        "min_bet": HIGH_ROLLER_MIN_BET,
+        "winning_number": winning,
+        "color": "green" if winning == 0 else ("red" if winning in _RED_NUMBERS else "black"),
+        "bets": settled,
+        "total_stake": int(total_stake),
+        "total_payout": total_payout,
+        "net": total_payout - int(total_stake),
+        "proof": spin_result.get("proof"),
+        "next_server_hash": spin_result.get("nextServerHash"),
+    }
+
+
+@router.post("/roulette/server-hash")
+async def vip_roulette_server_hash(user_id: str) -> Dict[str, Any]:
+    """Pre-spin commitment hash + nonce. VIP-gated so non-members can't
+    leak the next-round seed by polling."""
+    await _require_vip(user_id)
+    from routes.roulette import get_server_hash  # noqa: PLC0415
+    out = await get_server_hash()
+    out["vip"] = True
+    return out
+
+
+# ────────────────────────────────────────────── VIP BACCARAT ──
+@router.post("/baccarat/play")
+async def vip_baccarat_play(req: BaccaratPlayRequest, request: Request) -> Dict[str, Any]:
+    """VIP-gated Baccarat. Enforces the ₵10,000 floor before delegating
+    to the public Baccarat engine. Keeps the standard 50-coin floor on
+    the public `/api/baccarat/play` endpoint untouched."""
+    await _require_vip(req.user_id)
+    if req.bet_amount < HIGH_ROLLER_MIN_BET:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "below_high_roller_min",
+                "message": (
+                    f"High Roller minimum is ₵{HIGH_ROLLER_MIN_BET:,}. "
+                    f"You bet ₵{int(req.bet_amount):,}."
+                ),
+                "min_bet": HIGH_ROLLER_MIN_BET,
+            },
+        )
+    if req.bet_type not in ("player", "banker", "tie"):
+        raise HTTPException(400, detail="bet_type must be player/banker/tie")
+
+    # Use the BaccaratGame engine directly so we don't depend on the
+    # public route's auth flow (it requires a cookie-based current_user).
+    from utils.baccarat_game import BaccaratGame  # noqa: PLC0415
+    game = BaccaratGame()
+    game.deal_initial_cards()
+    game.apply_third_card_rules()
+    game.determine_winner()
+    state = game.get_game_state()
+    winner = state.get("winner")
+    payout = 0
+    if winner == req.bet_type:
+        # 1:1 on player, 19:20 on banker (5% house commission), 8:1 on tie.
+        if req.bet_type == "player":
+            payout = int(req.bet_amount * 2)
+        elif req.bet_type == "banker":
+            payout = int(req.bet_amount * 1.95)
+        else:  # tie
+            payout = int(req.bet_amount * 9)
+    return {
+        "vip": True,
+        "min_bet": HIGH_ROLLER_MIN_BET,
+        "game_id": str(uuid.uuid4()),
+        "player_hand": state.get("player_hand"),
+        "banker_hand": state.get("banker_hand"),
+        "player_score": state.get("player_score"),
+        "banker_score": state.get("banker_score"),
+        "winner": winner,
+        "bet_type": req.bet_type,
+        "bet_amount": int(req.bet_amount),
+        "payout": payout,
+        "net": payout - int(req.bet_amount),
+    }
 
 
 # ────────────────────────────────────────────── Grant fn (webhook) ──

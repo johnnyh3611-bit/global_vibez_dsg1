@@ -48,7 +48,7 @@ async def test1_api_signaling_load() -> Dict[str, Any]:
     log.info("TEST 1 — API & Signaling load: %d concurrent requests", TEST1_CONCURRENT_REQUESTS)
     payload = {"user_id": "user_id", "action": "join_casino"}
     sem = asyncio.Semaphore(500)   # bound socket use even at 10k tasks
-    timeout = aiohttp.ClientTimeout(total=2)
+    timeout = aiohttp.ClientTimeout(total=1.5)  # Master Blueprint §1: 1.5s per request
 
     success = 0
     error = 0
