@@ -1,5 +1,61 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-05-15 (MEDIA MASTER ECOSYSTEM 📺📻🎼🤖 + VIP CONCIERGE 🎧) — 358/358 regression green · Testing agent: 0 critical bugs, 0 frontend bugs.**
+>
+> ### What shipped this session — a whole new product domain:
+>
+> **📺 DSG TV Network** (`/media-master` hub + `/dsg-tv/:channelId` viewer):
+>   - **5 channels** in `services/media_master_constants.DSG_TV_CHANNELS` — all numbers PDF-locked:
+>     - 🆓 **The Arena** — 24/7 AAA Card & Board Games
+>     - 🆓 **Spotlight Lounge** — Live Dating & Spotlight Dates
+>     - 🆓 **DSG Radio TV** — non-stop music videos, AI Scout curated
+>     - 🔒 **After Dark** — 21+ verified · ₵500 / 24h pass · requires secondary PIN
+>     - 🔒 **Nightmare Club** — 21+ verified · ₵250 / 24h pass · requires secondary PIN
+>   - Triple-gated unlock flow: age_verification status check → SHA-256 hashed secondary PIN match → atomic coin_wallet debit. Fails closed if any verification service is unreachable.
+>
+> **📻 Vibe Radio** (`/vibe-radio/:stationId` player):
+>   - **3 stations** (The Grind / Neon Drift / Romance FM) — each with per-station now-playing + active skip-bid pool.
+>   - **Skip-bidding economy**: ₵25 floor to open a bid; counter-bids to KEEP the track must exceed `keep_pool + 10`. Each `skip-bid` or `keep-bid` is an atomic `debit_coins` call — fail-fast on insufficient balance.
+>   - **Instant-buy track**: ₵100 per purchase, receipt logged for the library.
+>
+> **🎼 DSG Music Group** (`/music-group`):
+>   - **3 studios** with PDF-locked hourly rates: Casino Vault ₵2,000/h · Glasshouse Mirror ₵3,000/h · Rooftop Aurora ₵5,000/h. Booking spans 1–24h, total deducted upfront.
+>   - **Artist Rolodex** wired to `yellow_pages_entries` filtered by `category=musicians + is_verified=true`. Empty-state copy when no verified musicians yet.
+>   - **Affiliate Chair sponsorship**: chair holder pairs with a verified artist for a **30% revenue cut** (`AFFILIATE_CHAIR_REVENUE_SHARE_BPS=3_000` locked). Idempotent — re-sponsoring the same artist is a no-op.
+>
+> **🤖 AI Scout** (`/api/media-master/scout/*`):
+>   - **Hype Score formula** (PDF-locked + regression-tested): `score = gifts × 1.0 + chat_msgs_per_minute × 2.5`
+>   - **Verdict buckets**: `< 1,000 = ambient`, `1,000–9,999 = auto_clip` (mints 30-sec highlight), `≥ 10,000 = break_in` (network-wide alert, 2-min TTL).
+>   - Auto-clip idempotency via `(room_id, minute_bucket)` unique index — same hot moment can't mint duplicate clips.
+>
+> **🎧 VIP Concierge bubble** (the previous session's "potential improvement"):
+>   - New `components/vip/VipConcierge.tsx` mounted globally in `App.js`.
+>   - Visible only to **Genesis + Apex** members (Genius gets the entry-tier crown badge only — natural upsell path).
+>   - Apex sees "average response under 15 minutes"; Genesis sees "under 2 hours". Mailto-driven priority ticket + founder message buttons. Polls eligibility every 60s.
+>
+> ### Infrastructure for the Ecosystem
+>   - **19 new endpoints** under `/api/media-master/*` — registered in `routes/registry.py` and verified live via curl
+>   - **12 new Mongo indexes** appended to `lifespan._INDEX_SPECS` — unique compound indexes on `(user_id, channel_id)`, `(chair_user_id, artist_id)`, `(room_id, minute_bucket)` enforce idempotency at the DB layer
+>   - **PIN security**: secondary PIN stored as SHA-256 hash only, never round-trips plaintext
+>
+> ### 🛡️ Regression Shield: **358/358 GREEN** (+9 Media Master + Concierge locks)
+> ### 🧪 Testing agent: 0 critical / 0 minor product issues / 0 frontend bugs. Only flag was a test-isolation issue in their own generated test file (not a product bug).
+> ### 🔬 21+ safety gate VERIFIED — `/tv/unlock/after-dark` correctly returns 403 `age_verification_required` for un-verified users.
+>
+> ### Outstanding (P0 user-action-blocked)
+>   - 🟡 Provision Redis in production (`REDIS_URL=…`) → caching auto-activates
+>   - 🟡 Validate ONE real Stripe payment → `/casino/high-roller` → confirm `vip_until` flips post-webhook
+>
+> ### Future / Backlog
+>   - **P1**: Hook Vibe Radio skip/keep auto-resolution — when skip_pool > keep_pool by N% and bid age > Ts, automatically advance the track (current build accepts bids but doesn't auto-resolve them yet — manual DJ override is fine for the MVP).
+>   - **P1**: Wire AI Scout Auto-Clip 30s rendering — currently records the clip metadata; needs a CF Stream segmentation worker to actually cut the video.
+>   - **P1**: DSG TV Network — Cloudflare Stream HLS embed wiring (currently a styled placeholder once unlocked).
+>   - **P2**: Live Now Wall break-in banner — render `/scout/break-ins/active` rows as an interruption overlay across `/casino`, `/dating`, `/games` (currently rendered on `/media-master` only).
+>   - **P2 (BLOCKED)**: Mainnet TGE / Solana Bridge — locked until founder types `project complete`
+>
+> ---
+>
+
 > **2026-05-15 (HIGH ROLLER WAVE 2 🎲🃏 · ROULETTE + BACCARAT + VIP CROWN BADGE) — 349/349 regression green. 14/14 wave-2 tests pass.**
 >
 > ### What shipped this session:
