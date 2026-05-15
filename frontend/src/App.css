@@ -128,3 +128,16 @@ body {
     transform: rotate(360deg);
   }
 }
+
+/* ─────────────────────────────────────────────────────────────────────
+   Landscape hint gating — Feb 2026 (Diagnostic Scanner Pattern A fix).
+   When the full-screen "Rotate for the table" hint is active, every
+   underlying in-room widget that would be physically blocked (the
+   comms pill at z=55, etc.) is hidden so the user only sees the
+   hint's own CTAs (Force landscape / Continue in portrait). The hint
+   dismisses on rotate / force / continue, restoring the widgets.
+   ───────────────────────────────────────────────────────────────── */
+body.gv-landscape-hint-active [data-testid="in-room-comms-pill"],
+body.gv-landscape-hint-active [data-testid="in-room-comms-launcher"] {
+  display: none !important;
+}

@@ -61,22 +61,40 @@ export default function LandscapeRotateHint() {
     };
   }, [forced]);
 
+  // Body-class broadcast so other in-room widgets (comms pill, etc.) can
+  // hide themselves while the hint overlay is up. The hint occupies the
+  // full screen at z=57, so anything below it would be physically
+  // un-tappable — better to remove them from the DOM until dismiss.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    if (showHint) document.body.classList.add("gv-landscape-hint-active");
+    else document.body.classList.remove("gv-landscape-hint-active");
+    return () => document.body.classList.remove("gv-landscape-hint-active");
+  }, [showHint]);
+
   return (
     <>
-      {/* Inline toggle pill — top-right, BELOW the comms launcher. */}
-      <button
-        type="button"
-        onClick={() => setForced((v) => !v)}
-        data-testid="landscape-toggle"
-        aria-pressed={forced}
-        aria-label={forced ? "Disable forced landscape" : "Force landscape orientation"}
-        className="fixed top-14 right-3 z-[54] flex items-center gap-1 px-2 py-0.5 rounded-full
-                   bg-black/70 hover:bg-black/90 backdrop-blur border border-amber-400/40
-                   text-white text-[10px] font-black uppercase tracking-wider transition-colors"
-      >
-        <RotateCcw className={`w-3 h-3 ${forced ? "text-amber-300" : "text-white/60"}`} />
-        <span className="hidden md:inline text-[9px]">{forced ? "Forced" : orientation}</span>
-      </button>
+      {/* Inline toggle pill — top-right, BELOW the comms launcher.
+          HIDDEN while the centered hint overlay is up (founder ask
+          2026-02-15 diagnostic Pattern A — the overlay was physically
+          blocking this button, creating a "see it but can't tap it"
+          dead-zone. Hint already exposes its own Force-Landscape CTA,
+          so this pill is redundant during that window.) */}
+      {!showHint && (
+        <button
+          type="button"
+          onClick={() => setForced((v) => !v)}
+          data-testid="landscape-toggle"
+          aria-pressed={forced}
+          aria-label={forced ? "Disable forced landscape" : "Force landscape orientation"}
+          className="fixed top-14 right-3 z-[54] flex items-center gap-1 px-2 py-0.5 rounded-full
+                     bg-black/70 hover:bg-black/90 backdrop-blur border border-amber-400/40
+                     text-white text-[10px] font-black uppercase tracking-wider transition-colors"
+        >
+          <RotateCcw className={`w-3 h-3 ${forced ? "text-amber-300" : "text-white/60"}`} />
+          <span className="hidden md:inline text-[9px]">{forced ? "Forced" : orientation}</span>
+        </button>
+      )}
 
       {/* Centered hint overlay — only on portrait + mobile + not forced. */}
       {showHint && (

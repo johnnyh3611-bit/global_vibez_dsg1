@@ -8068,7 +8068,7 @@ def test_mobile_quiet_chrome_hides_floating_widgets_below_md() -> None:
         ("/app/frontend/src/components/common/WhatsNewBanner.tsx", "hidden md:block transition-all"),
         ("/app/frontend/src/components/vibez/LogDesignLesson.tsx", "z-50 transition-opacity hidden md:block"),
         ("/app/frontend/src/components/vibez/LogDesignLesson.tsx", "z-50 space-y-3 hidden md:block"),
-        ("/app/frontend/src/components/NotificationBanner.tsx", "fixed bottom-4 right-4 z-40 hidden md:block"),
+        ("/app/frontend/src/components/NotificationBanner.tsx", "fixed bottom-20 right-4 z-40 hidden md:block"),
         ("/app/frontend/src/pages/VolumetricDashboard.tsx", "pointer-events-auto hidden md:block"),
     ]
     for path, needle in cases:
@@ -8422,3 +8422,55 @@ def test_landing_tour_narration_updated_to_v3_energetic() -> None:
     assert mp3.stat().st_size > 500_000, (
         f"Narration MP3 suspiciously small: {mp3.stat().st_size} bytes"
     )
+
+
+def test_landscape_hint_no_longer_blocks_in_room_controls() -> None:
+    """Founder ask 2026-02-15 (Diagnostic Scanner Pattern A): the
+    full-screen landscape-hint-overlay must not physically block the
+    underlying landscape-toggle pill and in-room-comms-pill on mobile
+    card rooms (Spades / Bid Whist / Cyber Casino).
+
+    Fix shipped:
+      • LandscapeRotateHint hides its own toggle while the hint overlay
+        is up (button rendered inside `{!showHint && ...}`).
+      • LandscapeRotateHint broadcasts `body.gv-landscape-hint-active`.
+      • App.css adds a global rule that hides `[data-testid='in-room-
+        comms-pill']` and `[data-testid='in-room-comms-launcher']` while
+        that body class is present.
+    """
+    from pathlib import Path
+    hint = Path("/app/frontend/src/components/common/LandscapeRotateHint.tsx").read_text()
+    # Toggle is gated on !showHint.
+    assert "{!showHint && (" in hint, (
+        "landscape-toggle must be hidden while the hint overlay is visible"
+    )
+    # Body class broadcast is wired.
+    assert "gv-landscape-hint-active" in hint
+    assert 'classList.add("gv-landscape-hint-active")' in hint
+
+    # Global CSS rule hides the comms pill when the body class is set.
+    css = Path("/app/frontend/src/App.css").read_text()
+    assert "body.gv-landscape-hint-active" in css, (
+        "App.css must define the body.gv-landscape-hint-active rule"
+    )
+    assert '[data-testid="in-room-comms-pill"]' in css
+    assert "display: none !important" in css
+
+
+def test_desktop_bottom_left_stack_no_longer_overlaps() -> None:
+    """Founder ask 2026-02-15 (Diagnostic Scanner Pattern B): on desktop
+    the LogDesignLesson admin pill (z=50) was sitting under the Network
+    Pulse Mini Widget (z=55) at the same `bottom-4 left-4` anchor. Fix:
+    bumped LogDesignLesson to `bottom-32 left-4` (above the network
+    pulse widget) so the two are no longer co-located."""
+    from pathlib import Path
+    src = Path("/app/frontend/src/components/vibez/LogDesignLesson.tsx").read_text()
+    assert "fixed bottom-32 left-4 opacity-10" in src, (
+        "LogDesignLesson trigger must be at bottom-32 (above NetworkPulse)"
+    )
+    assert "fixed bottom-32 left-4 w-80" in src, (
+        "LogDesignLesson form panel must also lift to bottom-32"
+    )
+    # Sanity: the OLD bottom-4 anchor (which caused the overlap) is gone.
+    assert "fixed bottom-4 left-4 opacity-10" not in src
+    assert "fixed bottom-4 left-4 w-80" not in src

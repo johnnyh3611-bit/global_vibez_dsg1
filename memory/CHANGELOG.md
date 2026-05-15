@@ -5284,3 +5284,57 @@ Files touched (6):
 - `frontend/src/components/landing/LandingTourVideo.tsx` (captions + 3-min copy)
 - `backend/scripts/generate_landing_tour_narration.py` (Nova voice + new script)
 - `frontend/public/landing-tour-narration.mp3` (regenerated, 4 MB)
+
+## 2026-02-15 — 🧹 Diagnostic Scanner Fix Pass (Pattern A + Pattern B)
+
+**Founder ask**: "Everything that needs to be fixed, go through one by one
+and fix everything without messing up what we already have going on."
+
+**Pattern A — 🔴 CRITICAL fix (3 card rooms, mobile)**:
+The full-screen `landscape-hint-overlay` (z=57) was physically blocking
+both the `landscape-toggle` (z=54) and `in-room-comms-pill` (z=55)
+underneath it on Spades / Bid Whist / Cyber Casino mobile views. Players
+saw the buttons but couldn't tap them.
+
+Fix shipped (3 files):
+- `LandscapeRotateHint.tsx` — wraps the inline toggle in `{!showHint &&
+  …}` so it's removed from the DOM while the hint is up, plus
+  broadcasts `body.gv-landscape-hint-active` for sibling widgets to
+  react to.
+- `App.css` — global rule hides `[data-testid="in-room-comms-pill"]`
+  and `[data-testid="in-room-comms-launcher"]` when the body class is
+  present.
+- Result: the hint dismisses on rotate / force / continue, restoring
+  the widgets to their normal position. Zero functional regression.
+
+**Pattern B — ⚠️ WARNING fix (Desktop / Tablet, every page)**:
+- `LogDesignLesson.tsx` — admin-only debug pill was anchored at
+  `bottom-4 left-4` (z=50), sitting under `NetworkPulseMiniWidget` at
+  the same corner (z=55). Bumped to `bottom-32 left-4` so the two are
+  no longer co-located.
+- `NotificationBanner.tsx` — "Notifications Blocked" status chip was
+  at `bottom-4 right-4` (z=40), partially behind the Emergent platform
+  badge (z=9999). Bumped to `bottom-20 right-4` so it sits cleanly
+  above the badge.
+
+**Post-fix rescan (10 room×viewport combinations)**:
+| Room | Desktop | Mobile |
+|---|---|---|
+| Dashboard | ✅ 0 overlaps | ✅ 0 overlaps |
+| High Roller VIP | ✅ 0 overlaps | ✅ 0 overlaps |
+| Spades | ✅ 0 overlaps | ✅ (only z=9999 badge cosmetic) |
+| Bid Whist | ✅ 0 overlaps | ✅ (same cosmetic) |
+| Cyber Casino | ✅ 0 overlaps | ✅ (same cosmetic) |
+
+**Regression Shield**: 388 → **390 tests** GREEN.
+Cross-suite: **410/410 PASS**.
+New permanent guards:
+1. `test_landscape_hint_no_longer_blocks_in_room_controls` — Pattern A.
+2. `test_desktop_bottom_left_stack_no_longer_overlaps` — Pattern B.
+
+Files touched (5):
+- `frontend/src/components/common/LandscapeRotateHint.tsx`
+- `frontend/src/components/vibez/LogDesignLesson.tsx`
+- `frontend/src/components/NotificationBanner.tsx`
+- `frontend/src/App.css`
+- `backend/tests/regression_shield.py`

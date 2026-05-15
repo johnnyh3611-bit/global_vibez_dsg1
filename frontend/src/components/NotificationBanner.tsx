@@ -110,8 +110,11 @@ export default function NotificationBanner() {
 
       {/* Notification Status Indicator (Bottom Right) — hidden on mobile
           to prevent overlap with content cards / inline strip (founder
-          ask 2026-02-15: "stop stuff intruding on buttons on phone"). */}
-      <div className="fixed bottom-4 right-4 z-40 hidden md:block">
+          ask 2026-02-15: "stop stuff intruding on buttons on phone").
+          Bumped from bottom-4 → bottom-20 on desktop so it no longer
+          sits behind the Emergent platform badge (z=9999) which lives
+          in the bottom-right corner. */}
+      <div className="fixed bottom-20 right-4 z-40 hidden md:block">
         {permissionStatus === 'granted' ? (
           <div className="flex items-center gap-2 bg-green-600 text-white px-3 py-2 rounded-lg shadow-lg text-sm">
             <Bell className="w-4 h-4" />
