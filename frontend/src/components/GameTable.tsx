@@ -129,8 +129,7 @@ const PlayerSeat = ({ player, isCurrentPlayer, isTheirTurn, position }) => {
               <img 
                 src={player.picture} 
                 alt={player.name}
-                className="w-full h-full rounded-full object-cover"
-              />
+                className="w-full h-full rounded-full object-cover" loading="lazy" />
             ) : (
               <span>{player.name?.charAt(0).toUpperCase()}</span>
             )}

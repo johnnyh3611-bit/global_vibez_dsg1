@@ -205,7 +205,7 @@ export function GamesMenu() {
                         src={game.image} 
                         alt={game.name}
                         className="w-full h-full object-contain"
-                        onError={(e) => {
+                        onError={(e) = loading="lazy"> {
                           // Fallback to text if image doesn't exist
                           const imgEl = e.target as HTMLImageElement;
                           imgEl.style.display = 'none';

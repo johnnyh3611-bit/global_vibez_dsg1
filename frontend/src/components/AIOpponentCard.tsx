@@ -22,8 +22,7 @@ export function AIOpponentCard({ opponent, compact = false }) {
           <img 
             src={opponent.avatar} 
             alt={opponent.name}
-            className="w-12 h-12 rounded-full object-cover border-2 border-purple-400 shadow-lg"
-          />
+            className="w-12 h-12 rounded-full object-cover border-2 border-purple-400 shadow-lg" loading="lazy" />
           <div className="absolute -bottom-1 -right-1 bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full border border-white">
             {opponent.level}
           </div>
@@ -55,8 +54,7 @@ export function AIOpponentCard({ opponent, compact = false }) {
         <img 
           src={opponent.avatar} 
           alt={opponent.name}
-          className="w-full h-full rounded-full object-cover border-4 border-purple-400 shadow-2xl"
-        />
+          className="w-full h-full rounded-full object-cover border-4 border-purple-400 shadow-2xl" loading="lazy" />
         <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-sm font-black px-3 py-1 rounded-full border-2 border-white shadow-lg">
           LVL {opponent.level}
         </div>

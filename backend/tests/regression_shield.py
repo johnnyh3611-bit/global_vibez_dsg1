@@ -5409,7 +5409,13 @@ def test_landing_tour_video_clips_extended_keeping_dice_first():
     # only in the array, not in the access expression).
     import re
     tag_entries = re.findall(r'kicker:\s*"', src)
-    assert len(tag_entries) == 6, f"CLIP_TAGS must have exactly 6 entries, got {len(tag_entries)}"
+    # 2026-05-13: founder added 2 more clips (host-talk + closing wow) →
+    # now 8 total. CLIP_TAGS must keep length-parity with CLIPS.
+    clip_entries = re.findall(r'https://customer-assets\.emergentagent\.com/[^"\']+\.mp4', src)
+    assert len(tag_entries) == len(clip_entries), (
+        f"CLIP_TAGS must match CLIPS length (tags={len(tag_entries)} clips={len(clip_entries)})"
+    )
+    assert len(tag_entries) >= 6, f"At least 6 clips required, got {len(tag_entries)}"
     # Dice tag must mention the rolling/dice theme so the founder's
     # explicit "I like the dice first" ask is preserved visually too.
     assert "Roll the dice" in src
@@ -6002,11 +6008,8 @@ def test_avp_constants_endpoint_public():
 
 
 def test_avp_frontend_surfaces_wired():
-    """AgeVerificationPage + AgeVerificationQueueCard wired into God
-    Mode. May 2026 — the AgeVerificationGate WRAPPER component was
-    deleted (it never got mounted as a route gate; the platform now
-    enforces age via DOB capture during signup + the dedicated
-    /age-verification page)."""
+    """AgeVerificationPage + AgeVerificationGate (rebuilt May 13 2026 for
+    page-level compliance) + AgeVerificationQueueCard wired into God Mode."""
     page = open("/app/frontend/src/pages/AgeVerificationPage.tsx").read()
     for tid in [
         "age-verification-page",
@@ -6018,6 +6021,15 @@ def test_avp_frontend_surfaces_wired():
         "age-verification-pillars",
     ]:
         assert tid in page, f"AgeVerificationPage missing testid: {tid}"
+
+    gate = open("/app/frontend/src/components/age_verification/AgeVerificationGate.tsx").read()
+    assert "/api/age-verification/eligibility/" in gate, (
+        "AgeVerificationGate lost its eligibility lookup"
+    )
+    assert 'data-testid="avp-gate-not-verified"' in gate, (
+        "AgeVerificationGate lost the not-verified CTA testid"
+    )
+    assert 'data-testid="avp-gate-loading"' in gate
 
     queue = open("/app/frontend/src/components/admin/AgeVerificationQueueCard.tsx").read()
     for tid in [

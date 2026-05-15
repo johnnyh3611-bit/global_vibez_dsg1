@@ -383,7 +383,7 @@ function OpponentAvatar({ avatar, cardCount = 0, color = 'blue', name = 'Player'
                 </div>
               ) : typeof avatar === 'string' && avatar.startsWith('http') ? (
                 // If avatar is an image URL
-                <img src={avatar} alt={name} className="w-full h-full object-cover" />
+                <img src={avatar} alt={name} className="w-full h-full object-cover" loading="lazy" />
               ) : (
                 // If avatar is just an emoji string
                 <div className="text-center">

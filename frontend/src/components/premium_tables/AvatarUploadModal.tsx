@@ -105,8 +105,7 @@ export function AvatarUploadModal({ isOpen, onClose, onSave, currentAvatar }: { 
                           <img 
                             src={uploadPreview} 
                             alt="Preview" 
-                            className="w-full h-full object-cover"
-                          />
+                            className="w-full h-full object-cover" loading="lazy" />
                         ) : (
                           <Camera className="w-12 h-12 text-gray-600" />
                         )}

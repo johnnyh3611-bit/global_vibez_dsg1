@@ -114,7 +114,7 @@ export function CommentsOverlay({ isOpen, onClose, videoId, onCommentAdded }) {
                   {/* Avatar */}
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-fuchsia-500 to-pink-500 flex items-center justify-center flex-shrink-0 overflow-hidden">
                     {comment.user_avatar ? (
-                      <img src={comment.user_avatar} alt={comment.username} className="w-full h-full object-cover" />
+                      <img src={comment.user_avatar} alt={comment.username} className="w-full h-full object-cover" loading="lazy" />
                     ) : (
                       <span className="text-white font-bold">{comment.username[0]}</span>
                     )}

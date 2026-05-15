@@ -414,7 +414,7 @@ export default function Chat() {
                 src={message.content}
                 alt="Shared"
                 className="max-w-full rounded-lg cursor-pointer hover:opacity-90"
-                onClick={() => window.open(message.content, '_blank')}
+                onClick={() = loading="lazy"> window.open(message.content, '_blank')}
               />
             )}
 
@@ -423,8 +423,7 @@ export default function Chat() {
               <img
                 src={message.content}
                 alt="GIF"
-                className="max-w-full rounded-lg"
-              />
+                className="max-w-full rounded-lg" loading="lazy" />
             )}
 
             <div className={`flex items-center gap-1 mt-1 ${isOwn ? 'justify-end' : 'justify-start'}`}>
@@ -468,7 +467,7 @@ export default function Chat() {
           <div className="flex items-center gap-3 flex-1">
             <div className="relative">
               {otherUser?.photos?.[0] ? (
-                <img src={otherUser.photos[0]} alt={otherUser.name} className="w-10 h-10 rounded-full object-cover border-2 border-cyan-500/50" />
+                <img src={otherUser.photos[0]} alt={otherUser.name} className="w-10 h-10 rounded-full object-cover border-2 border-cyan-500/50" loading="lazy" />
               ) : (
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-600 to-blue-600 flex items-center justify-center text-white font-bold border-2 border-cyan-500/50">
                   {otherUser?.name?.charAt(0) || '?'}

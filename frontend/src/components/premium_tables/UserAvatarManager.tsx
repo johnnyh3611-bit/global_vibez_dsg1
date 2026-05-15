@@ -52,7 +52,7 @@ export function UserAvatarManager() {
       >
         {userAvatar ? (
           userAvatar.type === 'upload' && userAvatar.url ? (
-            <img src={userAvatar.url} alt="Your avatar" className="w-full h-full object-cover rounded-xl" />
+            <img src={userAvatar.url} alt="Your avatar" className="w-full h-full object-cover rounded-xl" loading="lazy" />
           ) : userAvatar.emoji ? (
             <span className="text-3xl">{userAvatar.emoji}</span>
           ) : (

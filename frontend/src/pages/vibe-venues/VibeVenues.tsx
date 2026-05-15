@@ -263,7 +263,7 @@ const VenueCard: React.FC<{ v: Venue }> = ({ v }) => {
       data-testid={`venue-card-${v.venue_id}`}
     >
       {v.cover_photo ? (
-        <img src={v.cover_photo} alt={v.name} className="w-full h-48 object-cover" />
+        <img src={v.cover_photo} alt={v.name} className="w-full h-48 object-cover" loading="lazy" />
       ) : (
         <div className="w-full h-48 bg-gradient-to-br from-fuchsia-900/60 to-purple-900/60 flex items-center justify-center">
           <Home className="w-16 h-16 text-fuchsia-300/70" />

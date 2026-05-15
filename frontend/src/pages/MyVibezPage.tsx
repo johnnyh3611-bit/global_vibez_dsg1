@@ -188,7 +188,7 @@ export default function MyVibezPage() {
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-500 to-purple-500 flex items-center justify-center">
                   {post.user_avatar ? (
-                    <img src={post.user_avatar} alt={post.username} className="w-full h-full rounded-full" />
+                    <img src={post.user_avatar} alt={post.username} className="w-full h-full rounded-full" loading="lazy" />
                   ) : (
                     <span className="text-xl font-bold">{post.username[0]}</span>
                   )}

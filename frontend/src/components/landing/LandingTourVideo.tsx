@@ -44,6 +44,10 @@ const CLIPS: string[] = [
   "https://customer-assets.emergentagent.com/job_social-connect-953/artifacts/jhcw8qgh_Now_could_you_make_me_another.mp4",
   // 6 — 2026-05-12 founder-added wow-factor clip ("mp_")
   "https://customer-assets.emergentagent.com/job_social-connect-953/artifacts/4r7dg2zf_mp_.mp4",
+  // 7 — 2026-05-13 founder-added talking-host clip
+  "https://customer-assets.emergentagent.com/job_social-connect-953/artifacts/p3dccmdd_Okay_make_me_one_more_talk_ab.mp4",
+  // 8 — 2026-05-13 founder-added closing wow clip
+  "https://customer-assets.emergentagent.com/job_social-connect-953/artifacts/fdv0cph9_bmp_.mp4",
 ];
 
 // Per-clip caption tags — 2026-05-12 founder enhancement: silent-autoplay
@@ -57,6 +61,8 @@ const CLIP_TAGS: Array<{ kicker: string; line: string; tint: string }> = [
   { kicker: "Earn on every hat", line: "Drive · host · stream · sell", tint: "from-emerald-400 to-cyan-500" },
   { kicker: "All-new wow", line: "More rooms · more vibes", tint: "from-pink-400 to-fuchsia-500" },
   { kicker: "Welcome home", line: "Your Vibez universe awaits", tint: "from-violet-400 to-indigo-500" },
+  { kicker: "Meet your host", line: "Founder talks the vision", tint: "from-orange-400 to-amber-500" },
+  { kicker: "Sit at the table", line: "Apex · Genesis · Genius chairs", tint: "from-yellow-400 to-emerald-500" },
 ];
 
 const MANIFEST_URL = "/landing-tour-i18n.json";
