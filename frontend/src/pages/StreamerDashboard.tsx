@@ -142,6 +142,25 @@ const StreamerDashboard = () => {
           <p className="text-gray-300">Manage your streams & track earnings</p>
         </div>
 
+        {/* Broadcast Director CTA — quick deep-link into the DSG TV
+            channel programming surface so streamers can attach their
+            live input to a network channel in one click. */}
+        <a
+          data-testid="streamer-dashboard-broadcast-director-cta"
+          href="/dashboard/streamer/broadcast-director"
+          className="group block mb-8 rounded-2xl p-5 bg-gradient-to-br from-amber-500/15 via-fuchsia-500/15 to-emerald-500/15 ring-1 ring-amber-300/30 hover:ring-amber-300/60 transition-all"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-300 to-emerald-300 flex items-center justify-center text-black text-xl">📡</div>
+            <div className="flex-1">
+              <div className="text-xs uppercase tracking-widest text-amber-200/80">DSG TV · Broadcast Director</div>
+              <div className="text-white text-lg font-semibold">Push your live feed to a Network channel</div>
+              <div className="text-white/65 text-sm mt-0.5">5 channels · gated channels charge viewers ₵ for a 24h pass</div>
+            </div>
+            <div className="text-amber-200 text-sm group-hover:translate-x-1 transition-transform">→</div>
+          </div>
+        </a>
+
         {/* Streaming Status */}
         {isStreaming ? (
           <div className="bg-gradient-to-r from-red-900/30 to-pink-900/30 border-2 border-red-500 rounded-2xl p-6 mb-8">

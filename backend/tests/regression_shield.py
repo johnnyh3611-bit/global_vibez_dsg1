@@ -7757,3 +7757,69 @@ def test_media_master_pulse_frontend_page_exists() -> None:
         assert f'testId="{tid}"' in page, f"Pulse page missing testId={tid} (Card prop)"
     routes = Path("/app/frontend/src/routes/mediaMasterRoutes.tsx").read_text()
     assert 'path="/admin/media-master-pulse"' in routes
+
+
+
+# ════════════════════════════════════════════════════════════════════
+# MEDIA MASTER · Sprint 4 — Broadcast Director + Break-In Banner
+# ════════════════════════════════════════════════════════════════════
+def test_broadcast_director_page_exists_and_routed() -> None:
+    """Streamers must have a UI to program a channel without curl."""
+    from pathlib import Path
+    page = Path("/app/frontend/src/pages/BroadcastDirectorPage.tsx").read_text()
+    for tid in [
+        "broadcast-director-page",
+        "broadcast-director-input-status",
+        "broadcast-director-channels",
+        "broadcast-director-broadcast-btn",
+    ]:
+        assert f'data-testid="{tid}"' in page, f"Page missing testid {tid}"
+    # Page must call the channel programming endpoint we shipped in sprint 3.
+    assert "/api/media-master/tv/program" in page
+    # Route registration
+    routes = Path("/app/frontend/src/routes/mediaMasterRoutes.tsx").read_text()
+    assert 'path="/dashboard/streamer/broadcast-director"' in routes
+    assert "BroadcastDirectorPage" in routes
+
+
+def test_streamer_dashboard_links_to_broadcast_director() -> None:
+    """The Streamer Dashboard must surface a CTA into the new
+    Broadcast Director — otherwise streamers can't discover the page."""
+    from pathlib import Path
+    src = Path("/app/frontend/src/pages/StreamerDashboard.tsx").read_text()
+    assert 'data-testid="streamer-dashboard-broadcast-director-cta"' in src
+    assert '/dashboard/streamer/broadcast-director' in src
+
+
+def test_break_in_banner_globally_mounted() -> None:
+    """Break-in banner must be wired into App.js so it surfaces
+    network-wide alerts across casino/dating/games/media-master."""
+    from pathlib import Path
+    app_js = Path("/app/frontend/src/App.js").read_text()
+    assert 'import BreakInBanner from "@/components/media/BreakInBanner"' in app_js
+    assert "<BreakInBanner />" in app_js
+    comp = Path("/app/frontend/src/components/media/BreakInBanner.tsx").read_text()
+    assert 'data-testid="break-in-banner"' in comp
+    # The trigger-paths whitelist must include the founder-specified routes.
+    for path in ("/casino", "/dating", "/games", "/media-master"):
+        assert f"'{path}'" in comp, f"Break-in banner missing trigger path {path}"
+    # Banner polls the alerts endpoint.
+    assert "/api/media-master/scout/break-ins/active" in comp
+    # And exposes a dismiss button + jump CTA.
+    assert 'data-testid="break-in-banner-dismiss"' in comp
+    assert 'data-testid="break-in-banner-jump"' in comp
+
+
+def test_break_in_banner_does_not_leak_into_non_trigger_paths() -> None:
+    """The TRIGGER_PATHS list must be tight — banner only renders on
+    high-traffic surfaces; not on /profile, /login, /dashboard, etc.
+    so we don't spam the rest of the app."""
+    from pathlib import Path
+    comp = Path("/app/frontend/src/components/media/BreakInBanner.tsx").read_text()
+    # Sanity-check: these paths must NOT be in the trigger list literal
+    # (the banner can hide itself anyway, but we don't want the polling
+    # cycle running on every page).
+    for off_path in ("/login", "/profile", "/wallet", "/admin"):
+        assert f"'{off_path}'" not in comp, (
+            f"Break-in banner should not poll on {off_path} — adds load to non-game pages"
+        )

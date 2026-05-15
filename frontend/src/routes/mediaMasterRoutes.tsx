@@ -8,6 +8,7 @@ import DsgTvChannelPage from '@/pages/DsgTvChannelPage';
 import VibeRadioStationPage from '@/pages/VibeRadioStationPage';
 import MusicGroupPage from '@/pages/MusicGroupPage';
 import MediaMasterPulsePage from '@/pages/MediaMasterPulsePage';
+import BroadcastDirectorPage from '@/pages/BroadcastDirectorPage';
 
 export const mediaMasterRoutes = (ProtectedRoute) => (
   <>
@@ -48,6 +49,14 @@ export const mediaMasterRoutes = (ProtectedRoute) => (
       element={
         <ProtectedRoute>
           <MediaMasterPulsePage />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/dashboard/streamer/broadcast-director"
+      element={
+        <ProtectedRoute>
+          <BroadcastDirectorPage />
         </ProtectedRoute>
       }
     />
