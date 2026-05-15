@@ -1,5 +1,42 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-05-15 (MEDIA MASTER · SPRINT 3 — HLS embed live · AI Scout real clipping · Founder Pulse) — 367/367 regression green. Testing agent: 0 critical, 0 frontend bugs.**
+>
+> ### What shipped this session:
+>
+> **📺 DSG TV Channel HLS embed** (previously a styled placeholder):
+>   - New endpoints: `POST /api/media-master/tv/program` (attach a CF live input to a channel for N hours) + `GET /api/media-master/tv/now-playing/{channel_id}` (HLS URL resolver).
+>   - New collection `media_tv_channel_programs` with compound index `(channel_id, programmed_until DESC)` so the resolver is O(log n) at scale.
+>   - Privacy property: `/tv/now-playing` returns `live:false` and `live_input:null` when the programmed CF live input has `is_live=false` — HLS URLs never leak for offline streams.
+>   - Frontend: `DsgTvChannelPage` now imports `HLSPlayer` (reuses existing hls.js component) and polls `/tv/now-playing` every 12s. Renders the real video when live, "Off air" state when no streamer is broadcasting.
+>
+> **🤖 AI Scout — Cloudflare Stream Live Clipping**:
+>   - New `services/cf_stream_clipper.py` issues `POST /accounts/{id}/stream/live_inputs/{input_id}/clip` for a real 30-sec clip when the hype crosses the auto-clip threshold.
+>   - `HypeIngestRequest` gained optional `cf_input_id` field — if supplied, the clip record gets `cf_clip_uid` + `playback_url` (HLS) stamped onto it. Backwards-compatible: omitting the field keeps the previous metadata-only behavior.
+>   - Graceful no-op on every failure mode: missing CF creds → `cf_status="cf_not_configured"`, stub preview inputs → `cf_status="stub_input"`, CF API HTTP errors → normalized `cf_status="cf_http_404"` (no raw HTML leaks into the doc), network errors → `cf_status="network_error: ..."`. AI Scout ingest never crashes regardless of CF state.
+>
+> **🔥 Founder Pulse Dashboard** (`/admin/media-master-pulse`):
+>   - New `routes/media_master_pulse.py::get_snapshot` returns a single-shot read with 6 sections + a totals block: hottest rooms by Hype Score, Vibe Radio bid pools (most-pressured first), DSG TV channel lifetime revenue (aggregated from coin_ledger), Affiliate Chair sponsor leaderboard, active break-in alerts, recent auto-clips.
+>   - Frontend page polls every 10s. Top KPI strip (lifetime channel ₵, active sponsorships, break-ins live, recent clips count) + 4 stacked Cards + Recent Clips strip.
+>   - Read-only — trusts the existing `/admin/*` route guard (same pattern as `admin.py`, `admin_dashboard.py`).
+>
+> ### 🛡️ Regression Shield: **367/367 GREEN** (+9 sprint-3 locks)
+> ### 🧪 Testing agent: 0 critical / 0 frontend / 1 minor (HTML error leak in cf_status) — FIXED in this session
+> ### 🔒 Privacy guarantee verified: HLS URLs never expose for offline streams
+>
+> ### Outstanding (P0 user-action-blocked, unchanged)
+>   - 🟡 Provision Redis in production (`REDIS_URL=…`)
+>   - 🟡 Validate ONE real Stripe payment → `/casino/high-roller`
+>
+> ### Future / Backlog
+>   - **P1**: Streamer Dashboard UI to call `/tv/program` (today the endpoint is curl-only — needs a "Broadcast to channel X" picker in the streamer's tooling)
+>   - **P1**: Auto-resolve Vibe Radio skip-vs-keep pools server-side (currently accepts bids; manual DJ override OK for MVP)
+>   - **P2**: Break-in banner rendered across `/casino`, `/dating`, `/games` (currently only `/media-master`)
+>   - **P2 (BLOCKED)**: Mainnet TGE / Solana Bridge — locked until founder types `project complete`
+>
+> ---
+>
+
 > **2026-05-15 (MEDIA MASTER ECOSYSTEM 📺📻🎼🤖 + VIP CONCIERGE 🎧) — 358/358 regression green · Testing agent: 0 critical bugs, 0 frontend bugs.**
 >
 > ### What shipped this session — a whole new product domain:

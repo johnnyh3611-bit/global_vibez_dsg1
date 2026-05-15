@@ -660,4 +660,6 @@ _INDEX_SPECS = [
     {"coll": "media_scout_clips", "key": [("room_id", 1), ("minute_bucket", 1)], "unique": True, "background": True},
     {"coll": "media_scout_clips", "key": [("created_at", -1)], "background": True},
     {"coll": "media_scout_alerts", "key": [("expires_at", -1)], "background": True},
+    # Channel programming — hot read for HLS resolver
+    {"coll": "media_tv_channel_programs", "key": [("channel_id", 1), ("programmed_until", -1)], "background": True},
 ]

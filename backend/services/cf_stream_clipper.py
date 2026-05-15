@@ -92,9 +92,13 @@ async def clip_live_input(
     try:
         data = resp.json()
     except Exception:
+        # CF can return HTML error pages (404/502) instead of JSON.
+        # Normalize so downstream UIs render a clean status instead of
+        # leaking raw HTML into the clip doc.
         return {
             "ok": False, "clip_uid": None, "hls_url": None,
-            "duration_seconds": duration_seconds, "reason": resp.text[:200],
+            "duration_seconds": duration_seconds,
+            "reason": f"cf_http_{resp.status_code}",
         }
     if not data.get("success"):
         errs = (data.get("errors") or [{}])[0]
