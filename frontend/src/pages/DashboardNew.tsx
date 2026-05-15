@@ -14,6 +14,8 @@ import {
   Joystick,
   // Feb 2026 — High Roller VIP Casino + Media Master ecosystem + Broadcast Director
   Diamond, Antenna, Clapperboard,
+  // Feb 2026 — Equity Master (Crewmate Architecture / 30% Revenue Split)
+  Gem,
 } from 'lucide-react';
 import { RoomLayout } from '@/components/RoomLayout';
 import { GlassCard } from '@/components/GlassCard';
@@ -470,6 +472,17 @@ export default function Dashboard() {
       image: 'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?crop=entropy&cs=srgb&fm=jpg',
       path: '/dashboard/streamer/broadcast-director',
       stats: { count: 'LIVE', label: 'Programmer' }
+    },
+    {
+      id: 'equity_master',
+      name: 'Equity & Governance',
+      description: 'Crewmate Architecture · 30% revenue split · Diamond Market Logic',
+      icon: Gem,
+      gradient: 'from-amber-300 via-fuchsia-400 to-cyan-300',
+      glow: 'rgba(251,191,36,0.6)',
+      image: 'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?crop=entropy&cs=srgb&fm=jpg',
+      path: '/equity',
+      stats: { count: '30%', label: 'To Owners' }
     },
   ];
 

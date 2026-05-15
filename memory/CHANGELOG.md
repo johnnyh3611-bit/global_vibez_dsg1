@@ -5041,3 +5041,61 @@ Files touched (7):
 - RoleSwitcher.tsx, RoomInfoCube.tsx, NetworkPulseMiniWidget.tsx,
   OrientationToggle.tsx, WhatsNewBanner.tsx, LogDesignLesson.tsx,
   NotificationBanner.tsx, VolumetricDashboard.tsx
+
+## 2026-02-15 — 💎 Equity Master Implementation (PDF → Code)
+
+**Founder ask**: "Implement this knowledge throughout the whole app, commercials,
+everything, and make sure the numbers are correct in the system."
+Source: `Global_Vibez_DSG_Equity_Master.pdf`.
+
+**Locked constants** (encoded as `typing.Final` in `routes/equity_master.py`,
+cross-verified at boot by `routes/immutable_core.py` — server refuses to
+start if any drift is detected):
+
+| Constant | Value | PDF Reference |
+|---|---|---|
+| `OWNERSHIP_REVENUE_SHARE` | 0.30 | 30% of gross to ownership pool |
+| `DIVIDEND_DISTRIBUTION_MONTHS` | 3 | Quarterly payouts |
+| `VIBEZ_PAYOUT_BONUS` | 0.05 | +5% if user picks $VIBEZ |
+| `YIELD_BASIS` | 0.10 | `price = annual_div / 0.10` |
+| `GENIUS_PHASE_FLOOR_USD` | 20 | Walking Ads |
+| `GENESIS_PHASE_FLOOR_USD` | 100 | Genesis floor |
+| `DIAMOND_VALUE_REFERENCE_USD` | 180 | @ $5M/mo gross |
+| `SCARCITY_PREMIUM_MIN/MAX` | 0.20 / 0.30 | Locked chairs |
+| `TOTAL_CHAIRS_BASELINE` | 1,000,000 | Total supply |
+| `WALKING_ADS_COHORT_SIZE` | 50,000 | Original ambassadors |
+| Crewmate caps | Founder ∞, Pit Boss 250, Vibe Scout 250, Treasurer 250 | §Roles |
+| Revenue categories | casino · ridez · tv_ads · yellow_pages | §Sources |
+
+**New backend API** (`/api/equity-master/*`):
+- `GET /constants` — every locked number as a single JSON payload.
+- `GET /crewmate-roles` — 4 tier cards with caps + focus areas.
+- `GET /dividend?monthly_gross=N` — quick dividend calc.
+- `POST /valuation` — custom (gross, chairs) → price math.
+
+Anchor scenario validated: **$5M monthly gross → $1.50/chair/mo → $18/yr →
+$180 chair price** (PDF Diamond reference).
+
+**New frontend page**: `/equity` (and `/equity-master`) → `EquityMasterPage.tsx`
+- Hero: "Crewmate Architecture · 30% Revenue Split · Diamond Market Logic"
+- 4-tile stats strip: 30% / 1M chairs / +5% $VIBEZ / 20–30% scarcity premium
+- 4 Crewmate cards (Founder Crown · Pit Boss Dices · Vibe Scout Radio · Treasurer Key)
+- Phase ladder ($20 / $100 / $180)
+- **Live dividend calculator** wired to the real backend `/valuation` POST
+- Revenue category chips
+
+**Dashboard wiring**:
+- Classic dashboard: new "Equity & Governance" tile (amber→fuchsia→cyan gradient, `Gem` icon)
+- Volumetric Galaxy: new orbit-room under the Vault planet
+- `/equity` URL freed up from legacy VibeStakesPortal; Vibe Stakes still
+  reachable via `/vibe-stakes`, `/profit-share`, `/invest`.
+
+**Regression Shield**: 381 → **384 tests** GREEN.
+Cross-suite total: **404/404 PASS** (regression_shield + feb3_full_sweep).
+New permanent guards:
+1. `test_equity_master_constants_locked_to_pdf` — every number locked, formula validated.
+2. `test_equity_master_router_registered` — registry + immutable_core wired.
+3. `test_equity_master_frontend_page_wired` — page rendered, routed, dashboards expose it.
+
+**Smoke test (live)**: $10M monthly gross scenario → calculator returns **$360.00**
+(verifies 10M × 0.30 / 1M × 12 / 0.10 = $360 ✓).

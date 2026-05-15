@@ -84,6 +84,15 @@ def verify_locks() -> None:
                 f"{k} expected {EXPECTED[k]}, got {v}"
             )
 
+    # Cross-check Equity Master locks (PDF: Crewmate Architecture, 30%
+    # Revenue Split, Diamond Market Logic). Module's own verify_equity_locks
+    # also runs at import time — this is the belt-and-suspenders check.
+    try:
+        from routes.equity_master import verify_equity_locks
+        verify_equity_locks()
+    except ImportError:
+        log.warning("equity_master not yet importable at boot")
+
     log.info("✅ Immutable Core verified — Sovereign Tax 13.5% & 70/30 Split locked")
 
 

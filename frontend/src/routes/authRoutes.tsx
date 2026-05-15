@@ -24,8 +24,9 @@ export const authRoutes = (
     {/* Vibe Stakes — profit-sharing program (NOT a security). */}
     <Route path="/vibe-stakes" element={<VibeStakesPortal />} />
     <Route path="/profit-share" element={<VibeStakesPortal />} />
-    {/* Legacy equity URLs redirect to Vibe Stakes (we removed the stock-market path). */}
-    <Route path="/equity" element={<VibeStakesPortal />} />
+    {/* /equity is now owned by the new Equity Master page (Feb 2026 PDF —
+        Crewmate Architecture). Vibe Stakes remains at /vibe-stakes,
+        /profit-share, and /invest. */}
     <Route path="/invest" element={<VibeStakesPortal />} />
     {/* Public Beta Tester waitlist (Feb 2026). */}
     <Route path="/beta-tester" element={<BetaTester />} />

@@ -8093,3 +8093,116 @@ def test_conftest_autoloads_react_app_backend_url() -> None:
     # Detect the unguarded call to _autoload_env() at module scope.
     lines = [ln for ln in conftest.splitlines() if ln.strip() == "_autoload_env()"]
     assert lines, "conftest must invoke _autoload_env() at import time"
+
+
+def test_equity_master_constants_locked_to_pdf() -> None:
+    """Founder ask 2026-02-15: every number from
+    Global_Vibez_DSG_Equity_Master.pdf must be exactly as specified and
+    immutable. Server refuses to start if any drift occurs."""
+    from routes.equity_master import (
+        OWNERSHIP_REVENUE_SHARE,
+        DIVIDEND_DISTRIBUTION_MONTHS,
+        VIBEZ_PAYOUT_BONUS,
+        YIELD_BASIS,
+        GENIUS_PHASE_FLOOR_USD,
+        GENESIS_PHASE_FLOOR_USD,
+        DIAMOND_VALUE_REFERENCE_USD,
+        SCARCITY_PREMIUM_MIN,
+        SCARCITY_PREMIUM_MAX,
+        TOTAL_CHAIRS_BASELINE,
+        WALKING_ADS_COHORT_SIZE,
+        CREWMATE_CHAIR_CAPS,
+        REVENUE_CATEGORIES,
+        compute_dividend,
+        verify_equity_locks,
+    )
+
+    # PDF locked numbers — every assertion is a launch-blocker.
+    assert OWNERSHIP_REVENUE_SHARE == 0.30
+    assert DIVIDEND_DISTRIBUTION_MONTHS == 3
+    assert VIBEZ_PAYOUT_BONUS == 0.05
+    assert YIELD_BASIS == 0.10
+    assert GENIUS_PHASE_FLOOR_USD == 20
+    assert GENESIS_PHASE_FLOOR_USD == 100
+    assert DIAMOND_VALUE_REFERENCE_USD == 180
+    assert SCARCITY_PREMIUM_MIN == 0.20
+    assert SCARCITY_PREMIUM_MAX == 0.30
+    assert TOTAL_CHAIRS_BASELINE == 1_000_000
+    assert WALKING_ADS_COHORT_SIZE == 50_000
+
+    # Crewmate chair caps — Founder = infinite (None); other 3 = 250.
+    assert CREWMATE_CHAIR_CAPS["founder"] is None
+    assert CREWMATE_CHAIR_CAPS["pit_boss"] == 250
+    assert CREWMATE_CHAIR_CAPS["vibe_scout"] == 250
+    assert CREWMATE_CHAIR_CAPS["treasurer"] == 250
+
+    # Revenue categories — exactly the 4 the PDF names.
+    assert set(REVENUE_CATEGORIES) == {"casino", "ridez", "tv_ads", "yellow_pages"}
+
+    # Boot-time verify must pass and re-run cleanly.
+    verify_equity_locks()
+
+    # PDF anchor math: $5M monthly gross @ 1M chairs → $180 price.
+    res = compute_dividend(5_000_000)
+    assert res["monthly_dividend_per_chair_usd"] == 1.5
+    assert res["annual_dividend_per_chair_usd"] == 18.0
+    assert res["current_price_usd"] == 180.0
+    assert res["effective_price_usd"] == 180.0
+    assert res["floor_phase"] == "diamond"
+
+    # Phase ladder: $1M gross → $36 → genius (under $100), but effective
+    # snaps to Genesis $100 only if math justifies it. At $1M:
+    # monthly_div = 1M * 0.30 / 1M = 0.30 → annual = 3.60 → price = $36.
+    # That's the Genius phase (price < $100), effective stays $36.
+    low = compute_dividend(1_000_000)
+    assert low["current_price_usd"] == 36.0
+    assert low["floor_phase"] == "genius"
+
+
+def test_equity_master_router_registered() -> None:
+    """The Equity Master router must be mounted under /api/equity-master."""
+    from pathlib import Path
+    reg = Path("/app/backend/routes/registry.py").read_text()
+    assert "equity_master" in reg, "registry.py must mount equity_master"
+    assert "EQUITY MASTER MOUNT FAILED" in reg, "mount block must be fatal on failure"
+
+    # Immutable Core cross-verifies the equity locks.
+    core = Path("/app/backend/routes/immutable_core.py").read_text()
+    assert "verify_equity_locks" in core, (
+        "Immutable Core must cross-call verify_equity_locks at boot"
+    )
+
+
+def test_equity_master_frontend_page_wired() -> None:
+    """The Equity & Governance page must exist, be routed, and surface
+    every locked tile/number for users."""
+    from pathlib import Path
+
+    page = Path("/app/frontend/src/pages/EquityMasterPage.tsx").read_text()
+    # Every PDF section is rendered.
+    for needle in (
+        "Crewmate Architecture",
+        "30% Revenue Split",
+        "Diamond Market Logic",
+        "/api/equity-master/constants",
+        "/api/equity-master/crewmate-roles",
+        "/api/equity-master/valuation",
+        'data-testid="equity-master-page"',
+        'data-testid="equity-gross-input"',
+        'data-testid="equity-recalc-btn"',
+    ):
+        assert needle in page, f"EquityMasterPage missing: {needle}"
+
+    # Routed at /equity and /equity-master.
+    routes = Path("/app/frontend/src/routes/miscRoutes.tsx").read_text()
+    assert 'path="/equity"' in routes
+    assert 'path="/equity-master"' in routes
+    assert "EquityMasterPage" in routes
+
+    # Dashboard exposes the new tile on both surfaces.
+    classic = Path("/app/frontend/src/pages/DashboardNew.tsx").read_text()
+    assert "Equity & Governance" in classic
+    assert "path: '/equity'" in classic
+
+    vol = Path("/app/frontend/src/pages/VolumetricDashboard.tsx").read_text()
+    assert 'path: "/equity"' in vol

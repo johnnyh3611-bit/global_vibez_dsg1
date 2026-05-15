@@ -723,6 +723,16 @@ def register_all_routes(
         log.error(f"❌ IMMUTABLE CORE VIOLATION: {_e}")
         raise
 
+    # Equity Master — Crewmate Architecture, 30% Revenue Split, Diamond
+    # Market Logic (Global_Vibez_DSG_Equity_Master.pdf). Locked numbers
+    # for the ownership pool, dividend math, and chair tier caps.
+    try:
+        from routes.equity_master import router as equity_master_router
+        api_router.include_router(equity_master_router)
+    except Exception as _e:
+        log.error(f"❌ EQUITY MASTER MOUNT FAILED: {_e}")
+        raise
+
     # Cinematic Landing Video — Sora 2 generated walkthrough.
     try:
         from routes.landing_video import router as landing_video_router
