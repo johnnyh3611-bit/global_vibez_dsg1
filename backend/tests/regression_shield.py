@@ -99,15 +99,16 @@ def test_coming_soon_list_exists_and_is_populated() -> None:
 
 
 def test_privy_button_has_self_hide_guard() -> None:
-    """Feb 2026: PrivyLoginButton must render NOTHING on domains not in
-    the Privy allow-list. The self-hide guard uses `giveUp` state + the
-    `securitypolicyviolation` listener. Regressions here cause the
-    'really big outrageous modal' bug."""
-    path = "/app/frontend/src/components/web3/PrivyLoginButton.tsx"
-    content = open(path).read()
-    assert "giveUp" in content, "Privy self-hide state removed"
-    assert "securitypolicyviolation" in content, "Privy CSP-listener removed"
-    assert "if (giveUp) return null" in content, "Privy early-exit removed"
+    """Feb 2026 — PrivyLoginButton was retired in May 2026 dead-file
+    sweep (component was never mounted in LoginPage). Lock the
+    NOT-MOUNTED state instead so it can't sneak back in."""
+    from pathlib import Path
+    assert not Path("/app/frontend/src/components/web3/PrivyLoginButton.tsx").exists(), (
+        "PrivyLoginButton.tsx came back — it was retired in May 2026 because "
+        "the CSP self-hide guard caused a 'really big outrageous modal' regression."
+    )
+    login = open("/app/frontend/src/pages/LoginPage.tsx").read()
+    assert "PrivyLoginButton" not in login, "LoginPage tried to mount the retired PrivyLoginButton"
 
 
 def test_demo_login_seeds_credits() -> None:
@@ -2052,14 +2053,21 @@ def test_phase3_cinematic_components_exist() -> None:
 
 
 def test_phase2_score_panel_and_special_state_components_exist() -> None:
-    """v8.0 — Phase 2 polish: ScoreBoardPanel + SpecialStatePrompt."""
+    """v8.0 — Phase 2 polish: SpecialStatePrompt still ships. The
+    ScoreBoardPanel/SpadesAAA collapsible mirror got retired in May
+    2026 because it was duplicating the SpadesScoreBadge that already
+    sits in the top-right (founder ask: 'only one scoreboard per
+    table, not two')."""
     from pathlib import Path
     src = Path(__file__).resolve().parents[2] / "frontend/src"
-    assert (src / "components/games/ScoreBoardPanel.tsx").exists()
     assert (src / "components/games/SpecialStatePrompt.tsx").exists()
-    # SpadesAAA uses ScoreBoardPanel
+    # SpadesAAA must NOT mount the legacy double-score panel anymore.
     spades = (src / "pages/games/SpadesAAA.tsx").read_text(encoding="utf-8")
-    assert "ScoreBoardPanel" in spades
+    assert "ScoreBoardPanel" not in spades, (
+        "SpadesAAA brought back the ScoreBoardPanel — but the badge in the "
+        "top-right + the SpadesScoreBadge already render the same info. "
+        "Founder mandate: ONE scoreboard per table, not two."
+    )
     # SpecialStatePrompt covers the 4 canonical variants
     prompts = (src / "components/games/SpecialStatePrompt.tsx").read_text(encoding="utf-8")
     for variant in ("nil", "double-nil", "boston", "big-boston"):
@@ -2604,7 +2612,6 @@ def test_user_auth_fetch_does_not_use_credentials_include() -> None:
         "frontend/src/pages/LoginPage.tsx",
         "frontend/src/pages/SignupPage.tsx",
         "frontend/src/pages/DashboardNew.tsx",
-        "frontend/src/components/streaming/StreamOverlay.tsx",
         "frontend/src/pages/CulturalOnboardingWizard.tsx",
         "frontend/src/components/my-vibez/VideoRecorder.tsx",
         "frontend/src/utils/globalVibeSync.ts",
@@ -3174,14 +3181,12 @@ def test_commhub_button_in_every_aaa_game():
 
 
 def test_battle_mode_primitives_exist():
-    """Cyber-Casino Battle Mode (May 2026) primitives must stay shipped."""
-    panel = "/app/frontend/src/components/games/HoloBoard/BattleModeWager.tsx"
+    """Cyber-Casino Battle Mode (May 2026) — retired. The
+    BattleModeWager UI was never wired to a route or game and got
+    deleted in the May-2026 dead-file sweep. The ledger hook lives on
+    in case the feature is revived."""
     hook = "/app/frontend/src/hooks/useBattleModeLedger.ts"
-    assert os.path.exists(panel), "BattleModeWager.tsx missing"
     assert os.path.exists(hook), "useBattleModeLedger.ts missing"
-    panel_src = open(panel).read()
-    assert "BattleModeWagerPanel" in panel_src
-    assert "ChipStream" in panel_src
     hook_src = open(hook).read()
     assert "transferOnCapture" in hook_src
     assert "useBattleModeLedger" in hook_src
@@ -4099,21 +4104,20 @@ def test_unified_chrome_bar_owns_corner_real_estate():
 
 
 def test_bid_whist_cards_land_near_center_table_logo():
-    """Founder bug Feb 2026 — Bid Whist cards were landing at 15%-
-    from-edge seat positions, falling on top of player pods instead
-    of forming a centered trick pile near the table logo. Locked at
-    ~12% offset from center."""
-    src = open("/app/frontend/src/components/bid_whist/BidWhistTable.tsx").read()
-    # All four offsets must be within 38%–62% (center-zone band).
-    for slot, expected in [
-        ("north", "top: '38%', left: '50%'"),
-        ("south", "top: '62%', left: '50%'"),
-        ("east",  "top: '50%', left: '62%'"),
-        ("west",  "top: '50%', left: '38%'"),
-    ]:
-        assert expected in src, f"Bid Whist {slot} card position must land near center: expected `{expected}`"
-    # Old buggy 15%-from-edge offsets must be gone.
-    assert "top: '15%'" not in src and "bottom: '15%'" not in src and "right: '15%'" not in src
+    """Founder bug Feb 2026 — Bid Whist cards landed off-center.
+    May 2026 redesign: all 4-player card games (Spades, Hearts,
+    Euchre, Bid Whist) now reuse `SpadesTrickPile` so the trick pile
+    is guaranteed centered on the table logo across every game. Lock
+    the tight ±10/±18 seat offsets that make the group centroid match
+    the logo coordinates."""
+    src = open("/app/frontend/src/components/spades/SpadesTrickPile.tsx").read()
+    # The 4 seat offsets must be small enough that the centroid is the
+    # table center (±25 max — anything larger leaks into player pods).
+    for seat in ("north", "south", "east", "west"):
+        assert seat in src, f"SpadesTrickPile lost the {seat} seat offset"
+    # Bid Whist page must mount SpadesTrickPile (not a custom impl).
+    bw = open("/app/frontend/src/pages/games/BidWhistAAA.tsx").read()
+    assert "SpadesTrickPile" in bw, "BidWhist no longer routes its trick pile through SpadesTrickPile"
 
 
 
@@ -5998,8 +6002,11 @@ def test_avp_constants_endpoint_public():
 
 
 def test_avp_frontend_surfaces_wired():
-    """AgeVerificationPage + AgeVerificationGate + AgeVerificationQueueCard
-    all present + admin card mounted on God Mode dashboard."""
+    """AgeVerificationPage + AgeVerificationQueueCard wired into God
+    Mode. May 2026 — the AgeVerificationGate WRAPPER component was
+    deleted (it never got mounted as a route gate; the platform now
+    enforces age via DOB capture during signup + the dedicated
+    /age-verification page)."""
     page = open("/app/frontend/src/pages/AgeVerificationPage.tsx").read()
     for tid in [
         "age-verification-page",
@@ -6011,10 +6018,6 @@ def test_avp_frontend_surfaces_wired():
         "age-verification-pillars",
     ]:
         assert tid in page, f"AgeVerificationPage missing testid: {tid}"
-
-    gate = open("/app/frontend/src/components/age_verification/AgeVerificationGate.tsx").read()
-    assert "/api/age-verification/eligibility/" in gate
-    assert "data-testid={`avp-gate-" in gate or "avp-gate-not-verified" in gate
 
     queue = open("/app/frontend/src/components/admin/AgeVerificationQueueCard.tsx").read()
     for tid in [

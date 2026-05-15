@@ -581,3 +581,41 @@ html, body {
   color: rgb(30 41 59); /* slate-800 */
 }
 
+/* ─────────────────────────────────────────────────────────────────────
+   MOBILE-OVERLAP GLOBAL FIXES (founder ask, May 2026)
+   These rules apply only on phone-sized viewports so desktop layouts
+   are untouched. Two surfaces get the treatment:
+
+   1. Any element with classes `fixed bottom-0` / `sticky bottom-0` /
+      `bottom-0 left-0 right-0` gets padded by the iOS gesture-bar safe
+      area so the bottom-nav, action bar, or in-game controls never sit
+      under the home indicator.
+
+   2. Any `fixed inset-0` modal/overlay gets a max-h-[90vh] cap so its
+      content never bleeds past the viewport on small phones.
+
+   To opt out (rare — e.g. true full-screen video player), add the
+   class `no-safe-bottom` or `no-mobile-cap`.
+   ───────────────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .fixed.bottom-0:not(.no-safe-bottom),
+  .sticky.bottom-0:not(.no-safe-bottom),
+  .gv-safe-bottom {
+    padding-bottom: max(env(safe-area-inset-bottom, 12px), 12px);
+  }
+
+  /* Cap any backdrop-style overlay so the modal body inside it can
+     scroll when content is taller than the phone. */
+  .fixed.inset-0:not(.no-mobile-cap) > * {
+    max-height: 92vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Pages that mount a full game table benefit from a "main scroller"
+     container — opt-in by adding `gv-room-scroll` to the outer wrapper. */
+  .gv-room-scroll {
+    padding-bottom: max(env(safe-area-inset-bottom, 16px), 16px);
+  }
+}
+

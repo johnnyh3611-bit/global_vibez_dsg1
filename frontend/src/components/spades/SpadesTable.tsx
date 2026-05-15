@@ -233,15 +233,17 @@ export const SpadesTable: React.FC<Props> = ({
     }
   }
 
-  // 2-player density narrows the long-axis so the head-to-head feels
-  // intimate rather than sparse. We also reduce the corner radius so
-  // the table reads more like a card-room booth than an arena.
+  // Founder spec (May 2026): 4-player table must be ~1.5–2× shorter
+  // lengthwise and ~1× narrower than the previous build so the chip
+  // strip, seats, and trick pile all fit a single phone viewport
+  // without scrolling. We dropped the long-axis from 420 → 280 (1.5×
+  // shorter) and the width from 720 → 640 (1.1× narrower).
   const sizeClass = density === "2p"
-    ? "w-[78vw] max-w-[560px] h-[44vw] max-h-[320px] md:h-[320px] rounded-[110px] md:rounded-[160px]"
-    : "w-[90vw] max-w-[720px] h-[52vw] max-h-[420px] md:h-[420px] rounded-[150px] md:rounded-[210px]";
+    ? "w-[72vw] max-w-[440px] h-[36vw] max-h-[240px] md:h-[240px] rounded-[90px] md:rounded-[130px]"
+    : "w-[86vw] max-w-[640px] h-[40vw] max-h-[280px] md:h-[280px] rounded-[120px] md:rounded-[160px]";
   const innerRadius = density === "2p"
-    ? "rounded-[100px] md:rounded-[150px]"
-    : "rounded-[140px] md:rounded-[200px]";
+    ? "rounded-[80px] md:rounded-[120px]"
+    : "rounded-[110px] md:rounded-[150px]";
 
   return (
     <div

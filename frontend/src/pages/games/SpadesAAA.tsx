@@ -51,7 +51,6 @@ import CommHubButton from "@/components/common/CommHubButton";
 import SpadesPlayerProfile from "@/components/spades/SpadesPlayerProfile";
 import SpadesCommunityChat from "@/components/spades/SpadesCommunityChat";
 import TurnIndicator, { type TurnRole } from "@/components/games/TurnIndicator";
-import ScoreBoardPanel from "@/components/games/ScoreBoardPanel";
 import SpecialStatePrompt, { type SpecialStateVariant } from "@/components/games/SpecialStatePrompt";
 import type {
   SpadesCard,
@@ -610,31 +609,6 @@ export default function SpadesAAA() {
             tricksPlayed={game.tricks_played}
           />
         </div>
-
-        {/* ── Phase 2 polish: collapsible scoreboard panel (LOCKED 2026-02-16) ── */}
-        <ScoreBoardPanel
-          rows={[
-            {
-              id: 'us',
-              label: `Us · ${game.players?.south?.name ?? 'You'} + ${game.players?.north?.name ?? 'Partner'}`,
-              color: '#FFD33D',
-              score: game.scores?.team1?.points ?? 0,
-              bid: game.scores?.team1?.bid,
-              tricks: game.scores?.team1?.tricks_taken,
-              bags: game.scores?.team1?.bags,
-            },
-            {
-              id: 'them',
-              label: `Them · ${game.players?.east?.name ?? 'Opp'} + ${game.players?.west?.name ?? 'Opp'}`,
-              color: '#9CA3AF',
-              score: game.scores?.team2?.points ?? 0,
-              bid: game.scores?.team2?.bid,
-              tricks: game.scores?.team2?.tricks_taken,
-              bags: game.scores?.team2?.bags,
-            },
-          ]}
-          title="Scoreboard"
-        />
 
         {/* ── Status banner ── */}
         <SpadesStatusBanner message={statusMsg} />
