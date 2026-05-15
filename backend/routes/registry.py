@@ -743,6 +743,16 @@ def register_all_routes(
     except Exception as _e:
         log.error(f"⚠️ DSG_CORE_SYSTEM mount failed: {_e}")
 
+    # My Vibez Optimization Module + Room Redefinition Blueprint
+    # (Feb 2026 PDFs). Dynamic theming (Celestial Glasshouse /
+    # Underground Club), regional ad injection, cinema premiere walls,
+    # ambassador attribution. Imports & feeds the DSG Core House Pool.
+    try:
+        from routes.my_vibez_optimization import router as my_vibez_opt_router
+        api_router.include_router(my_vibez_opt_router)
+    except Exception as _e:
+        log.error(f"⚠️ MY_VIBEZ_OPTIMIZATION mount failed: {_e}")
+
     # Cinematic Landing Video — Sora 2 generated walkthrough.
     try:
         from routes.landing_video import router as landing_video_router

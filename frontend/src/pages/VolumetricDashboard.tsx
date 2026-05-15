@@ -98,6 +98,7 @@ const CATEGORIES = [
       { id: "chair", label: "Chair Hall", emoji: "🪑", path: "/chair-hall" },
       { id: "voice", label: "Voice Mirror", emoji: "🎙️", path: "/voice-mirror" },
       { id: "myvibez", label: "My Vibez", emoji: "🌟", path: "/my-vibez" },
+      { id: "myvibez-themed", label: "My Vibez Themed", emoji: "🎨", path: "/my-vibez/themed" },
       { id: "equity", label: "Equity & Governance", emoji: "💎", path: "/equity" },
       { id: "ambassador", label: "Ambassador Care", emoji: "🏅", path: "/ambassador" },
     ],

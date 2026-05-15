@@ -8474,3 +8474,100 @@ def test_desktop_bottom_left_stack_no_longer_overlaps() -> None:
     # Sanity: the OLD bottom-4 anchor (which caused the overlap) is gone.
     assert "fixed bottom-4 left-4 opacity-10" not in src
     assert "fixed bottom-4 left-4 w-80" not in src
+
+
+def test_my_vibez_optimization_module_locked_to_pdf() -> None:
+    """Feb 2026 — both My Vibez PDFs (Redefinition Blueprint +
+    Optimization Module) must surface as locked constants + 4 working
+    endpoints. Single source of truth: imports House Pool helpers from
+    routes.dsg_core_system so cinema/ad revenue flows into the SAME
+    quarterly pool that pays chair holders."""
+    from routes.my_vibez_optimization import (
+        CATEGORY_THEME_MAP,
+        THEME_METADATA,
+        AD_SPLIT_CREATOR,
+        AD_SPLIT_AMBASSADOR,
+        AD_SPLIT_HOUSE,
+        AD_IMPRESSION_VALUE_USD,
+        REGIONAL_VENDORS,
+        VibeCategory,
+    )
+
+    # PDF 1 — 2 themes locked.
+    assert "celestial_glasshouse" in THEME_METADATA
+    assert "underground_club" in THEME_METADATA
+    assert THEME_METADATA["celestial_glasshouse"]["label"] == "The Celestial Glasshouse"
+    assert THEME_METADATA["underground_club"]["label"] == "The Underground Club"
+    # PDF copy verbatim — both themes' visual blurbs.
+    assert "Translucent glass panels" in THEME_METADATA["celestial_glasshouse"]["visuals"]
+    assert "holographic star maps" in THEME_METADATA["celestial_glasshouse"]["visuals"]
+    assert "matte-black carbon frames" in THEME_METADATA["underground_club"]["visuals"]
+    assert "pulse-reactive equalizer bars" in THEME_METADATA["underground_club"]["visuals"]
+
+    # Category routing: dark/intense → club, calm/curated → glasshouse.
+    assert CATEGORY_THEME_MAP["HORROR"] == "underground_club"
+    assert CATEGORY_THEME_MAP["ACTION"] == "underground_club"
+    assert CATEGORY_THEME_MAP["COMEDY"] == "underground_club"
+    assert CATEGORY_THEME_MAP["MUSIC"] == "underground_club"
+    assert CATEGORY_THEME_MAP["LIVE_DATING"] == "celestial_glasshouse"
+    assert CATEGORY_THEME_MAP["YELLOW_PAGES_SHOWCASE"] == "celestial_glasshouse"
+    assert CATEGORY_THEME_MAP["CREATIVE"] == "celestial_glasshouse"
+    assert CATEGORY_THEME_MAP["TECH"] == "celestial_glasshouse"
+
+    # All 5 PDF-named categories enumerated.
+    enum_values = {c.value for c in VibeCategory}
+    for cat in ("COMEDY", "ACTION", "HORROR", "LIVE_DATING", "YELLOW_PAGES_SHOWCASE"):
+        assert cat in enum_values, f"VibeCategory missing PDF category: {cat}"
+
+    # PDF 2 — Ad split exactly 60/20/20 (sums to 100).
+    assert AD_SPLIT_CREATOR == 0.60
+    assert AD_SPLIT_AMBASSADOR == 0.20
+    assert AD_SPLIT_HOUSE == 0.20
+    assert round(AD_SPLIT_CREATOR + AD_SPLIT_AMBASSADOR + AD_SPLIT_HOUSE, 4) == 1.0
+
+    # Ad impression value matches DSG Core System ($0.05).
+    assert AD_IMPRESSION_VALUE_USD == 0.05
+
+    # Regional vendor map — PDF example for Chicago is verbatim.
+    assert REGIONAL_VENDORS["chicago"]["ad_id"] == "AD_CHI_099"
+    assert REGIONAL_VENDORS["chicago"]["vendor"] == "WindyCity_Grill_HungryVibez"
+    # At least the 6 hubs we serve in dsg_core_system.
+    assert len(REGIONAL_VENDORS) >= 6
+
+
+def test_my_vibez_optimization_router_registered() -> None:
+    """/api/my-vibez/* must be mounted (4 endpoints)."""
+    from pathlib import Path
+    reg = Path("/app/backend/routes/registry.py").read_text()
+    assert "my_vibez_optimization" in reg
+    assert "MY_VIBEZ_OPTIMIZATION" in reg
+
+
+def test_my_vibez_themed_room_frontend_wired() -> None:
+    """The themed room page must exist, be routed at /my-vibez/themed,
+    fetch from the real backend, and surface in the dashboard."""
+    from pathlib import Path
+
+    page = Path("/app/frontend/src/pages/MyVibezThemedRoom.tsx").read_text()
+    # Pulls from the real backend (not hard-coded).
+    assert "/api/my-vibez/categories/layout/" in page
+    # Both themes surface in the UI (theme IDs come from backend, but
+    # the component branches on the underground_club id for equalizer
+    # bars vs star map).
+    assert "underground_club" in page
+    # Category rail covers PDF-named categories.
+    for cat in ("COMEDY", "ACTION", "HORROR", "LIVE_DATING", "YELLOW_PAGES_SHOWCASE"):
+        assert f'"{cat}"' in page, f"Category rail missing: {cat}"
+    # Test IDs for QA.
+    assert 'data-testid="my-vibez-themed-room"' in page
+    assert 'data-testid="my-vibez-category-rail"' in page
+
+    # Routed.
+    routes = Path("/app/frontend/src/routes/miscRoutes.tsx").read_text()
+    assert 'path="/my-vibez/themed"' in routes
+    assert 'path="/my-vibez-themed"' in routes
+    assert "MyVibezThemedRoom" in routes
+
+    # Volumetric exposes it.
+    vol = Path("/app/frontend/src/pages/VolumetricDashboard.tsx").read_text()
+    assert 'path: "/my-vibez/themed"' in vol

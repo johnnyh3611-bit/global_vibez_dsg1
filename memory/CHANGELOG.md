@@ -5338,3 +5338,64 @@ Files touched (5):
 - `frontend/src/components/NotificationBanner.tsx`
 - `frontend/src/App.css`
 - `backend/tests/regression_shield.py`
+
+## 2026-02-15 — 🎨 My Vibez Redefinition + Optimization Module
+
+**Founder ask**: "Last thing I want to wire in before redeploy."
+Sources: `My_Vibez_Room_Redefinition_Blueprint.pdf` + `My_Vibez_Optimization_Module.pdf`.
+
+**PDF 1 (Redefinition Blueprint)** — Dynamic theming for the My Vibez room:
+- **Celestial Glasshouse** theme: translucent glass panels, holographic
+  star maps (60 twinkling sprites), neon-blue accents. For Creative,
+  Tech, Live Dating, Yellow Pages Showcase.
+- **Underground Club** theme: matte-black carbon frames, 36 pulse-
+  reactive equalizer bars, purple/crimson glow. For Comedy, Action,
+  Horror, Music.
+- Backend endpoint `/api/my-vibez/categories/layout/{video_id}` returns
+  the assigned theme + palette per category.
+
+**PDF 2 (Optimization Module)** — 3 backend wrappers + ledger:
+- `POST /stream/initiate` — maps viewer → ambassador wallet tree;
+  persists session with `tracking_mode` ("Direct Unlisted View" or
+  "Attributed to Ambassador: …").
+- `GET /video/{video_id}/next-ad` — Hyper-Localized Sponsor Injection.
+  Returns regional vendor metadata (Chicago → AD_CHI_099 /
+  WindyCity_Grill_HungryVibez per PDF). Background-tasks pool injection.
+- `POST /cinema/unlock` — Cinema Premiere Wall. 80% creator / 20% house
+  (mirrors DSG Core), 1% of house cut auto-flows into the same
+  quarterly House Revenue Pool that pays chair holders. Returns
+  `unreal_trigger: Instantiate_Avatar_Cinema_Seat`.
+
+**Single source of truth**: this module imports `update_house_pool`,
+`CINEMA_CREATOR_SPLIT`, `CINEMA_HOUSE_SPLIT`, `HOUSE_TO_POOL_RATE`, and
+`REGIONS` from `routes/dsg_core_system.py`. No constant duplication.
+
+**New frontend page** `/my-vibez/themed` (`MyVibezThemedRoom.tsx`):
+- Live skin morphs as user taps the category rail
+- Real animated equalizer bars (Underground Club) + twinkling star map
+  (Celestial Glasshouse)
+- All 8 categories pillable; bottom-sheet drawer on mobile
+- Fetches theme from real backend on every category change
+
+**Wired into**: Volumetric Galaxy as new orbit-room (`🎨 My Vibez Themed`)
+under the Vault planet.
+
+**Smoke test (live)**:
+- COMEDY → Underground Club ✓ (purple frame, equalizer bars at bottom)
+- LIVE_DATING → Celestial Glasshouse ✓ (cyan frame, star map sprinkled)
+- Theme transition is smooth (Framer AnimatePresence fade)
+
+**Regression Shield**: 390 → **393 tests** GREEN.
+Cross-suite: **413/413 PASS**.
+New permanent guards:
+1. `test_my_vibez_optimization_module_locked_to_pdf` — every PDF
+   constant (themes, splits, regional vendors, ad value, category map).
+2. `test_my_vibez_optimization_router_registered` — registry mount.
+3. `test_my_vibez_themed_room_frontend_wired` — page, route, dashboard.
+
+Files touched (5):
+- `backend/routes/my_vibez_optimization.py` (NEW — 230 LOC, 4 endpoints)
+- `backend/routes/registry.py` (mount, non-fatal fallback)
+- `frontend/src/pages/MyVibezThemedRoom.tsx` (NEW — 260 LOC)
+- `frontend/src/routes/miscRoutes.tsx` (+2 routes)
+- `frontend/src/pages/VolumetricDashboard.tsx` (+ orbit-room)
