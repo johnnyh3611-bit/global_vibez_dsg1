@@ -70,6 +70,33 @@ def _channel(channel_id: str) -> Dict[str, Any]:
     raise HTTPException(404, detail=f"Unknown channel '{channel_id}'")
 
 
+async def _resolve_channel_live_input(channel_id: str) -> Optional[Dict[str, Any]]:
+    """Find the CF live input currently programmed onto this DSG TV channel.
+
+    Programming model: a streamer (or an admin) attaches their CF live
+    input to a channel by inserting a row into `media_tv_channel_programs`
+    with `{channel_id, input_id, programmed_until}`. We pick the most
+    recent program whose window is still open and whose source live input
+    is `is_live=true`. Returns the live input doc with HLS URL, or None
+    when nothing is currently broadcasting on this channel.
+    """
+    now_iso = datetime.now(timezone.utc).isoformat()
+    program = await _db.media_tv_channel_programs.find_one(
+        {"channel_id": channel_id, "programmed_until": {"$gt": now_iso}},
+        sort=[("programmed_at", -1)],
+        projection={"_id": 0},
+    )
+    if not program:
+        return None
+    live_input = await _db.cf_live_inputs.find_one(
+        {"input_id": program["input_id"], "is_deleted": {"$ne": True}},
+        {"_id": 0, "rtmps_key": 0, "srt_passphrase": 0},
+    )
+    if not live_input or not live_input.get("is_live"):
+        return None
+    return {**live_input, "program": program}
+
+
 def _station(station_id: str) -> Dict[str, Any]:
     for s in VIBE_RADIO_STATIONS:
         if s["station_id"] == station_id:
@@ -232,6 +259,64 @@ async def set_secondary_pin(req: SetPinRequest) -> Dict[str, Any]:
         upsert=True,
     )
     return {"ok": True, "user_id": req.user_id}
+
+
+# ─── Channel programming: attach a CF live input to a DSG TV channel ──
+class ProgramRequest(BaseModel):
+    channel_id: str
+    input_id: str       # CF live input UID (`cf_live_inputs.input_id`)
+    streamer_id: str
+    duration_hours: int = Field(default=4, ge=1, le=72)
+
+
+@router.post("/tv/program")
+async def program_channel(req: ProgramRequest) -> Dict[str, Any]:
+    """Attach a streamer's CF live input to a DSG TV channel for the
+    next `duration_hours`. The DSG TV viewer will surface this input
+    via HLS when the streamer goes live. Multiple programs can stack;
+    the most recent one with an open window wins."""
+    _channel(req.channel_id)  # 404 unknown
+    # Validate the CF live input exists.
+    live_input = await _db.cf_live_inputs.find_one(
+        {"input_id": req.input_id, "is_deleted": {"$ne": True}}, {"_id": 0},
+    )
+    if not live_input:
+        raise HTTPException(404, detail=f"Unknown CF live input '{req.input_id}'")
+
+    now = datetime.now(timezone.utc)
+    program = {
+        "program_id": str(uuid.uuid4()),
+        "channel_id": req.channel_id,
+        "input_id": req.input_id,
+        "streamer_id": req.streamer_id,
+        "programmed_at": now.isoformat(),
+        "programmed_until": (now + timedelta(hours=req.duration_hours)).isoformat(),
+    }
+    await _db.media_tv_channel_programs.insert_one(dict(program))
+    return {"ok": True, "program": program}
+
+
+@router.get("/tv/now-playing/{channel_id}")
+async def tv_now_playing(channel_id: str) -> Dict[str, Any]:
+    """Return the currently-broadcasting CF live input for this channel
+    + its HLS playback URL. Empty payload when no streamer is live."""
+    _channel(channel_id)
+    live_input = await _resolve_channel_live_input(channel_id)
+    if not live_input:
+        return {"channel_id": channel_id, "live": False, "live_input": None}
+    return {
+        "channel_id": channel_id,
+        "live": True,
+        "live_input": {
+            "input_id": live_input.get("input_id"),
+            "streamer_id": live_input.get("streamer_id"),
+            "name": live_input.get("name"),
+            "hls_playback_url": live_input.get("hls_playback_url"),
+            "dash_playback_url": live_input.get("dash_playback_url"),
+            "started_at": live_input.get("last_status_at"),
+        },
+        "program": live_input.get("program"),
+    }
 
 
 # ════════════════════════════════════════════════════════════════════
@@ -510,6 +595,7 @@ class HypeIngestRequest(BaseModel):
     room_id: str
     gift_volume_coins: float
     chat_messages_per_minute: float
+    cf_input_id: Optional[str] = None   # if set, AI Scout cuts a real CF clip
 
 
 @router.post("/scout/ingest")
@@ -517,6 +603,11 @@ async def scout_ingest(req: HypeIngestRequest) -> Dict[str, Any]:
     """Report current per-minute metrics for a live room. Returns the
     computed Hype Score + verdict bucket. Persists the latest snapshot
     so the dashboard tile can read it without recomputing.
+
+    When `cf_input_id` is supplied AND the hype crosses the auto-clip
+    threshold, the AI Scout fires a real Cloudflare Stream Live Clip
+    request (30-sec window) and stamps `playback_url` onto the clip row.
+    No CF input → metadata-only clip (preview-env friendly).
     """
     score = compute_hype_score(req.gift_volume_coins, req.chat_messages_per_minute)
     verdict = classify_hype(score)
@@ -529,6 +620,7 @@ async def scout_ingest(req: HypeIngestRequest) -> Dict[str, Any]:
         "chat_messages_per_minute": req.chat_messages_per_minute,
         "verdict": verdict,
         "updated_at": now_iso,
+        "cf_input_id": req.cf_input_id,
     }
     await _db.media_scout_hype.update_one(
         {"room_id": req.room_id}, {"$set": snapshot}, upsert=True,
@@ -545,6 +637,14 @@ async def scout_ingest(req: HypeIngestRequest) -> Dict[str, Any]:
             {"room_id": req.room_id, "minute_bucket": minute_bucket}, {"_id": 0},
         )
         if not existing:
+            # Optionally cut a real CF Stream clip if the room is wired
+            # to a live input. Failure here doesn't block clip recording —
+            # the metadata still lands, just without a playback URL.
+            cf_result = None
+            if req.cf_input_id:
+                from services.cf_stream_clipper import clip_live_input  # noqa: PLC0415
+                cf_result = await clip_live_input(req.cf_input_id, AUTO_CLIP_DURATION_SECONDS)
+
             clip = {
                 "clip_id": str(uuid.uuid4()),
                 "room_id": req.room_id,
@@ -553,6 +653,12 @@ async def scout_ingest(req: HypeIngestRequest) -> Dict[str, Any]:
                 "duration_seconds": AUTO_CLIP_DURATION_SECONDS,
                 "created_at": now_iso,
                 "verdict": verdict,
+                "cf_input_id": req.cf_input_id,
+                "cf_clip_uid": (cf_result or {}).get("clip_uid"),
+                "playback_url": (cf_result or {}).get("hls_url"),
+                "cf_status": "rendered" if (cf_result or {}).get("ok") else (
+                    (cf_result or {}).get("reason") or "metadata_only"
+                ),
             }
             await _db.media_scout_clips.insert_one(dict(clip))
             auto_clip = clip

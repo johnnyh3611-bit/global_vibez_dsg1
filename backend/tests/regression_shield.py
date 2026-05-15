@@ -7631,3 +7631,129 @@ def test_vip_concierge_globally_mounted_for_higher_tiers() -> None:
     # Genesis + Apex only — Genius is the entry tier and doesn't get concierge.
     assert "el.tier !== 'genesis'" in comp
     assert "el.tier !== 'apex'" in comp
+
+
+
+# ════════════════════════════════════════════════════════════════════
+# MEDIA MASTER — CF Stream HLS wiring + AI Scout real clipping +
+# Pulse founder dashboard (May 2026 — sprint 3)
+# ════════════════════════════════════════════════════════════════════
+def test_media_master_tv_channel_programming_endpoints() -> None:
+    """Channel programming endpoints must be live: POST /tv/program to
+    attach a CF live input, GET /tv/now-playing/{channel_id} for the
+    HLS resolver consumed by the viewer."""
+    from server import app
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    assert "/api/media-master/tv/program" in paths
+    assert "/api/media-master/tv/now-playing/{channel_id}" in paths
+
+
+def test_cf_stream_clipper_gracefully_no_ops_without_creds() -> None:
+    """Without CF env vars, the clipper must return {ok:False} with a
+    structured reason so AI Scout never crashes the ingest pipeline."""
+    import asyncio, os
+    from services.cf_stream_clipper import clip_live_input
+    if os.environ.get("CLOUDFLARE_API_TOKEN") and os.environ.get("CLOUDFLARE_ACCOUNT_ID"):
+        # In a live env we can't safely fire a real CF clip request as
+        # a regression test — just confirm the module imports.
+        return
+    res = asyncio.run(clip_live_input("any_input", 30))
+    assert res["ok"] is False
+    assert res["reason"] == "cf_not_configured"
+    assert res["clip_uid"] is None
+    assert res["duration_seconds"] == 30
+
+
+def test_cf_stream_clipper_skips_stub_inputs() -> None:
+    """Preview-env live inputs prefixed `stub_` should never hit the CF
+    API — they have no real video to clip."""
+    import asyncio, os
+    from services.cf_stream_clipper import clip_live_input
+    # Force the path that requires CF creds to short-circuit on stub.
+    if not (os.environ.get("CLOUDFLARE_API_TOKEN") and os.environ.get("CLOUDFLARE_ACCOUNT_ID")):
+        # Skip when creds missing — the `cf_not_configured` branch
+        # already prevents API calls so the stub guard is moot.
+        return
+    res = asyncio.run(clip_live_input("stub_xyz", 30))
+    assert res["ok"] is False
+    assert res["reason"] == "stub_input"
+
+
+def test_ai_scout_ingest_accepts_cf_input_id_for_real_clipping() -> None:
+    """The hype-ingest endpoint must accept an optional `cf_input_id`
+    so that real CF Stream clips get cut when the room is wired to a
+    live broadcast."""
+    from pathlib import Path
+    src = Path("/app/backend/routes/media_master.py").read_text()
+    assert "cf_input_id: Optional[str]" in src, "HypeIngestRequest missing cf_input_id field"
+    assert "from services.cf_stream_clipper import clip_live_input" in src
+    # Clip docs MUST store the CF clip UID + playback URL when rendered.
+    assert "cf_clip_uid" in src
+    assert "playback_url" in src
+    assert "cf_status" in src
+
+
+def test_dsg_tv_channel_page_uses_hls_player() -> None:
+    """The viewer must embed the real HLS player (hls.js) — no longer
+    a styled placeholder."""
+    from pathlib import Path
+    src = Path("/app/frontend/src/pages/DsgTvChannelPage.tsx").read_text()
+    assert "import HLSPlayer" in src, "Page lost HLSPlayer import"
+    assert "<HLSPlayer" in src, "Page lost HLSPlayer mount"
+    assert 'data-testid="dsg-tv-player"' in src
+    assert 'data-testid="dsg-tv-player-offline"' in src, (
+        "Off-air state must remain rendered when channel program has no live input"
+    )
+    # The viewer must poll the channel's now-playing endpoint while unlocked.
+    assert "/api/media-master/tv/now-playing/" in src
+
+
+def test_media_master_pulse_endpoint_registered() -> None:
+    from server import app
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    assert "/api/media-master-pulse/snapshot" in paths
+
+
+def test_media_master_pulse_module_mounted() -> None:
+    from pathlib import Path
+    reg = Path("/app/backend/routes/registry.py").read_text()
+    assert "from routes.media_master_pulse import router as media_master_pulse_router" in reg
+
+
+def test_media_master_pulse_returns_all_required_sections() -> None:
+    """The founder dashboard endpoint must surface exactly the 6 panels
+    + totals — drift would break the dashboard's render contract."""
+    import asyncio
+    from routes.media_master_pulse import get_snapshot
+    out = asyncio.run(get_snapshot(5, 8))
+    for key in (
+        "generated_at", "hottest_rooms", "station_bid_pools",
+        "channel_revenue", "sponsor_leaderboard", "active_break_ins",
+        "recent_clips", "totals",
+    ):
+        assert key in out, f"Pulse snapshot missing section: {key}"
+    # Channel-revenue row count must equal channel count (5).
+    assert len(out["channel_revenue"]) == 5
+    # Station-pool row count must equal station count (3).
+    assert len(out["station_bid_pools"]) == 3
+    # Totals must always exist + be integers.
+    for k in ("total_lifetime_channel_coins", "active_sponsorships", "active_break_in_count"):
+        assert isinstance(out["totals"][k], int)
+
+
+def test_media_master_pulse_frontend_page_exists() -> None:
+    from pathlib import Path
+    page = Path("/app/frontend/src/pages/MediaMasterPulsePage.tsx").read_text()
+    # Literal-string testids
+    for tid in ["media-master-pulse-page", "pulse-kpis", "pulse-recent-clips"]:
+        assert f'data-testid="{tid}"' in page, f"Pulse page missing literal testid {tid}"
+    # Card helper passes testId prop
+    for tid in [
+        "pulse-hottest-rooms",
+        "pulse-station-pools",
+        "pulse-channel-revenue",
+        "pulse-sponsor-leaderboard",
+    ]:
+        assert f'testId="{tid}"' in page, f"Pulse page missing testId={tid} (Card prop)"
+    routes = Path("/app/frontend/src/routes/mediaMasterRoutes.tsx").read_text()
+    assert 'path="/admin/media-master-pulse"' in routes

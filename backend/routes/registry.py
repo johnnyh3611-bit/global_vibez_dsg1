@@ -810,6 +810,13 @@ def register_all_routes(
     except Exception as _e:
         log.warning(f"Media Master routes not mounted: {_e}")
 
+    # Media Master Pulse — founder analytics dashboard (read-only).
+    try:
+        from routes.media_master_pulse import router as media_master_pulse_router
+        api_router.include_router(media_master_pulse_router)
+    except Exception as _e:
+        log.warning(f"Media Master Pulse routes not mounted: {_e}")
+
     # Streamer Wrap-Up emails — Monday 09:00 UTC per-streamer analytics
     # digest. The loop itself is started during server startup (see
     # server.py); these routes provide preview + manual-send surfaces.

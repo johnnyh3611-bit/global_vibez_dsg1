@@ -1,0 +1,60 @@
+{
+  "summary": "Sprint 3 of Media Master ecosystem verified end-to-end. Backend: 13/13 new pytest cases pass for /tv/program, /tv/now-playing, AI Scout cf_input_id integration, and /api/media-master-pulse/snapshot. Regression shield 367/367 green. Frontend: /dsg-tv/arena renders Off-Air state with correct testid; /admin/media-master-pulse renders all 6 sections (4 KPI tiles + Hottest Rooms + Radio Bid Pools + Channel Revenue + Sponsor Leaderboard + Recent Clips). Critical privacy property verified: /tv/now-playing returns live:false and hides hls_playback_url when CF live input is_live=false. Pulse snapshot contains no Mongo _id leaks.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/media-master/scout/ingest", "issue": "Preview env has CLOUDFLARE_API_TOKEN configured, so non-stub cf_input_id values that don't exist on CF cause the clipper to receive a 404 HTML response which lands as cf_status containing the raw HTML text (e.g. '404 page not found'). cf_stream_clipper.py line 96-98 returns resp.text[:200] verbatim when JSON parse fails. Cosmetic — playback_url stays None, status is non-rendered. Consider returning a normalized reason like 'cf_http_404' for cleaner downstream UI."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_media_master_sprint3_jan2026.py",
+    "/app/test_reports/pytest/media_master_sprint3_jan2026.xml",
+    "/app/test_reports/pytest/regression_shield_sprint3.xml"
+  ],
+  "action_items": [
+    "(Optional polish) Normalize cf_status reason strings in cf_stream_clipper when CF returns non-JSON HTML errors — currently leaks the raw HTML snippet into the clip doc.",
+    "(Optional) Index media_tv_channel_programs on (channel_id, programmed_until) — current _resolve_channel_live_input does a sort on programmed_at without an index; fine at preview scale, will matter at load."
+  ],
+  "critical_code_review_comments": [
+    "_resolve_channel_live_input correctly enforces the privacy property: even with an active program row, if the underlying cf_live_inputs.is_live is False it returns None, so /tv/now-playing exposes no HLS URL. Test verified by flipping is_live=true and observing the URL appear. SAFETY VERIFIED.",
+    "_resolve_channel_live_input projects out rtmps_key and srt_passphrase from cf_live_inputs — good — those are streamer-only secrets.",
+    "media_master_pulse.py uses {_id: 0} projection in every find_one/find call and in the aggregate pipeline output is reshaped — no _id leak verified in raw response body.",
+    "ProgramRequest validates duration_hours via Pydantic Field(ge=1, le=72) — good. But duration_hours has default=4 even though the test req sent 4 explicitly; verify the default actually triggers when omitted (not blocking).",
+    "cf_stream_clipper.clip_live_input never raises — graceful no-op pattern is correct. Stub input short-circuit at line 67 is critical to prevent preview env from burning CF quota on synthetic IDs. VERIFIED working.",
+    "Pulse channel_revenue aggregation matches on exact reason string 'DSG TV unlock · {name}'. If unlock endpoint ever renames a channel, lifetime totals silently zero out. Consider tagging ledger rows with channel_id directly rather than free-text matching."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_media_master_sprint3_jan2026.py"
+  ],
+  "success_rate": {"backend": "100% (13/13 sprint3 + 367/367 regression shield)", "frontend": "100% (both target pages render with correct testids)"},
+  "test_credentials": "betatester1@globalvibez.com / BetaTester2026!",
+  "seed_data_creation": "Tests insert TEST_input_<uuid> CF live input docs into cf_live_inputs and TEST_room_<uuid> hype rows. test_program_valid_input_returns_record_with_4h_window cleans up its own rows. Other rows (TEST_room_* hype snapshots and clips) are left in test_database for inspection but use TEST_ prefix.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Run: `cd /app/backend && python -m pytest tests/test_media_master_sprint3_jan2026.py tests/regression_shield.py -v`. The Sprint 3 tests rely on /app/backend/.env CLOUDFLARE_API_TOKEN being configured — preview env has it set. To simulate a true 'no CF creds' env, unset the token and the bogus-input test would shift from cf_http_404 to cf_not_configured. Test isolation: test_program_valid_input cleans up after itself; AI Scout tests rely on minute_bucket idempotency (one auto-clip per room per minute), so re-running within 60s for the same TEST_room won't mint a 2nd clip — that's by design.",
+  "verified_features": [
+    "GET /tv/now-playing/arena returns {live:false, live_input:null} when no program",
+    "GET /tv/now-playing/no-such-channel returns 404",
+    "POST /tv/program with unknown channel_id -> 404",
+    "POST /tv/program with unknown input_id -> 404",
+    "POST /tv/program with valid channel+input -> 200, program record, programmed_until ~4h ahead",
+    "After /tv/program, while is_live=false: /tv/now-playing still returns live=false, live_input=null (PRIVACY SHIELD VERIFIED)",
+    "After flipping cf_live_inputs.is_live=true: /tv/now-playing returns live=true with hls_playback_url",
+    "POST /scout/ingest with cf_input_id='stub_xyz' -> cf_status='stub_input' (no CF API call)",
+    "POST /scout/ingest without cf_input_id -> clip persisted with cf_clip_uid=null, playback_url=null",
+    "POST /scout/ingest with real-looking cf_input_id while CF token configured -> cf_status != 'rendered', playback_url=null for bogus input",
+    "GET /media-master-pulse/snapshot returns all 8 keys",
+    "Pulse channel_revenue has exactly 5 rows",
+    "Pulse station_bid_pools has exactly 3 rows",
+    "Pulse totals has 3 integer keys",
+    "Pulse response contains no '_id' anywhere",
+    "Frontend /dsg-tv/arena renders dsg-tv-player-offline testid with 'Off air · The Arena · No streamer is broadcasting' copy",
+    "Frontend /admin/media-master-pulse renders media-master-pulse-page with pulse-kpis, pulse-hottest-rooms, pulse-station-pools, pulse-channel-revenue, pulse-sponsor-leaderboard, pulse-recent-clips testids and live data",
+    "Regression shield 367/367 green"
+  ]
+}

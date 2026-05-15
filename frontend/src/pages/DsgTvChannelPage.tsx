@@ -12,8 +12,10 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Lock, Shield, KeyRound, ArrowRight } from 'lucide-react';
 import BackButton from '@/components/BackButton';
+import HLSPlayer from '@/components/streaming/HLSPlayer';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
+const NOW_PLAYING_POLL_MS = 12_000;
 
 type AccessState = {
   channel_id: string;
@@ -36,18 +38,49 @@ type Channel = {
   coin_price: number;
 };
 
+type NowPlaying = {
+  channel_id: string;
+  live: boolean;
+  live_input: null | {
+    input_id: string;
+    streamer_id: string;
+    name: string;
+    hls_playback_url: string | null;
+    dash_playback_url: string | null;
+    started_at: string | null;
+  };
+};
+
 export default function DsgTvChannelPage() {
   const navigate = useNavigate();
   const { channelId } = useParams<{ channelId: string }>();
   const [userId, setUserId] = useState<string>('');
   const [channel, setChannel] = useState<Channel | null>(null);
   const [access, setAccess] = useState<AccessState | null>(null);
+  const [nowPlaying, setNowPlaying] = useState<NowPlaying | null>(null);
   const [pin, setPin] = useState<string>('');
   const [newPin, setNewPin] = useState<string>('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => { void load(); }, [channelId]);
+
+  // Poll the channel's now-playing endpoint while unlocked so the
+  // viewer auto-attaches when a streamer goes live mid-session.
+  useEffect(() => {
+    if (!channelId || !access?.access) return;
+    void pollNowPlaying();
+    const t = setInterval(pollNowPlaying, NOW_PLAYING_POLL_MS);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [channelId, access?.access]);
+
+  async function pollNowPlaying() {
+    if (!channelId) return;
+    const data = await fetch(`${API_URL}/api/media-master/tv/now-playing/${channelId}`)
+      .then((r) => r.json()).catch(() => null);
+    if (data) setNowPlaying(data);
+  }
 
   async function load() {
     if (!channelId) return;
@@ -129,22 +162,43 @@ export default function DsgTvChannelPage() {
         )}
 
         {isUnlocked ? (
-          <div
-            data-testid="dsg-tv-player"
-            className="rounded-3xl aspect-video bg-gradient-to-br from-[#0a1318] to-[#0c0a14] ring-1 ring-emerald-400/30 flex items-center justify-center"
-          >
-            <div className="text-center">
-              <div className="text-xs uppercase tracking-widest text-emerald-300/80 mb-2">Live now</div>
-              <div className="text-xl text-white">{channel.name}</div>
-              <div className="text-white/50 text-sm mt-2">
-                The Cloudflare HLS stream attaches as soon as a streamer goes live on this channel.
-              </div>
-              {access?.expires_at && (
-                <div className="text-amber-200/70 text-xs mt-3">
-                  Pass valid until {new Date(access.expires_at).toLocaleString()}
+          <div data-testid="dsg-tv-player">
+            {nowPlaying?.live && nowPlaying.live_input?.hls_playback_url ? (
+              <div className="rounded-3xl overflow-hidden ring-1 ring-emerald-400/30 bg-black">
+                <HLSPlayer
+                  src={nowPlaying.live_input.hls_playback_url}
+                  isLive
+                  autoPlay
+                  className="w-full"
+                />
+                <div className="px-4 py-3 text-xs text-emerald-200/80 border-t border-emerald-500/20 bg-black/40">
+                  Live · {nowPlaying.live_input.name || channel.name}
+                  {access?.expires_at && (
+                    <span className="ml-2 text-amber-200/70">
+                      · pass until {new Date(access.expires_at).toLocaleString()}
+                    </span>
+                  )}
                 </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div
+                data-testid="dsg-tv-player-offline"
+                className="rounded-3xl aspect-video bg-gradient-to-br from-[#0a1318] to-[#0c0a14] ring-1 ring-emerald-400/30 flex items-center justify-center"
+              >
+                <div className="text-center">
+                  <div className="text-xs uppercase tracking-widest text-emerald-300/80 mb-2">Off air</div>
+                  <div className="text-xl text-white">{channel.name}</div>
+                  <div className="text-white/50 text-sm mt-2 max-w-md mx-auto">
+                    No streamer is broadcasting on this channel right now. We'll attach the live feed automatically when one goes live.
+                  </div>
+                  {access?.expires_at && (
+                    <div className="text-amber-200/70 text-xs mt-3">
+                      Pass valid until {new Date(access.expires_at).toLocaleString()}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div

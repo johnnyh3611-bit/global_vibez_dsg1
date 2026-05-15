@@ -7,6 +7,7 @@ import MediaMasterHub from '@/pages/MediaMasterHub';
 import DsgTvChannelPage from '@/pages/DsgTvChannelPage';
 import VibeRadioStationPage from '@/pages/VibeRadioStationPage';
 import MusicGroupPage from '@/pages/MusicGroupPage';
+import MediaMasterPulsePage from '@/pages/MediaMasterPulsePage';
 
 export const mediaMasterRoutes = (ProtectedRoute) => (
   <>
@@ -39,6 +40,14 @@ export const mediaMasterRoutes = (ProtectedRoute) => (
       element={
         <ProtectedRoute>
           <MusicGroupPage />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/admin/media-master-pulse"
+      element={
+        <ProtectedRoute>
+          <MediaMasterPulsePage />
         </ProtectedRoute>
       }
     />
