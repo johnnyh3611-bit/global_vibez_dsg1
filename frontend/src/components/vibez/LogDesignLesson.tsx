@@ -67,7 +67,7 @@ export const LogDesignLesson = () => {
       <button
         onClick={() => setOpen(true)}
         data-testid="log-design-lesson-toggle"
-        className="fixed bottom-4 left-4 opacity-10 hover:opacity-100 text-[10px] text-cyan-400 uppercase tracking-widest bg-black/70 border border-cyan-500/30 px-3 py-1 rounded-full backdrop-blur-md z-50 transition-opacity"
+        className="fixed bottom-4 left-4 opacity-10 hover:opacity-100 text-[10px] text-cyan-400 uppercase tracking-widest bg-black/70 border border-cyan-500/30 px-3 py-1 rounded-full backdrop-blur-md z-50 transition-opacity hidden md:block"
       >
         Log design lesson
       </button>
@@ -77,7 +77,7 @@ export const LogDesignLesson = () => {
   return (
     <div
       data-testid="log-design-lesson-panel"
-      className="fixed bottom-4 left-4 w-80 bg-black/80 border border-cyan-500/40 rounded-xl p-4 backdrop-blur-xl z-50 space-y-3"
+      className="fixed bottom-4 left-4 w-80 bg-black/80 border border-cyan-500/40 rounded-xl p-4 backdrop-blur-xl z-50 space-y-3 hidden md:block"
     >
       <div className="flex items-center justify-between">
         <h4 className="text-sm text-cyan-400 uppercase tracking-widest">Design Lesson</h4>

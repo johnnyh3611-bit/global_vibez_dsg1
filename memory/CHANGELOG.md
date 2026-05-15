@@ -5007,3 +5007,37 @@ New guard: `test_galaxy_guided_tour_mounted_and_wired`.
 - ✅ Pause/Next CTAs functional.
 
 App is fully wired AND has a delightful first-run experience.
+
+## 2026-02-15 — 🧹 Mobile Quiet Chrome (no more widget-on-button intrusion)
+
+**Founder ask** (with screenshot evidence): "Every page throughout the app,
+especially when I'm on my cell phone — stuff is overlapping buttons. I don't
+want stuff to intrude with the view of other buttons to be pressed."
+
+**Root cause**: 8+ `position: fixed` widgets stacking on top of each other AND
+on top of real clickable elements on mobile viewports:
+- top band: WhatsNewBanner + RoleSwitcher pill overlapping the logo
+- left edge: RoomInfoCube "WHAT IS THIS ROOM?" pill covering tile content
+- bottom-left stack: NetworkPulseMiniWidget + OrientationFAB + LogDesignLesson
+- bottom-right: NotificationBanner ("Notifications Blocked" red box)
+- volumetric: compact UnifiedEarningsWidget overlapping the planets
+
+**Fix**: Added `hidden md:flex` / `hidden md:block` Tailwind utilities to each
+leaking widget. On viewports < 768px (phone) all of these self-mute. On desktop
+they keep their current placement. Functionality stays reachable via the
+inline `PageActionStrip` (auto-mounted at top of every protected page) and the
+tile grid itself.
+
+**Verification (before vs after)**:
+- BEFORE: 8 stacked fixed elements on mobile dashboard, "Practice Mode" button
+  covered by Hot pill, "LIVE Programmer" badge covered by RoomInfoCube.
+- AFTER: 1 remaining fixed element (Emergent platform badge — corner, harmless).
+  Every "Enter" CTA fully clickable. Logo + welcome message fully visible.
+
+**Regression Shield**: 379 → **380 tests** GREEN.
+New guard: `test_mobile_quiet_chrome_hides_floating_widgets_below_md`.
+
+Files touched (7):
+- RoleSwitcher.tsx, RoomInfoCube.tsx, NetworkPulseMiniWidget.tsx,
+  OrientationToggle.tsx, WhatsNewBanner.tsx, LogDesignLesson.tsx,
+  NotificationBanner.tsx, VolumetricDashboard.tsx

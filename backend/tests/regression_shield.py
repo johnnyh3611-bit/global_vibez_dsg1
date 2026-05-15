@@ -8049,3 +8049,30 @@ def test_galaxy_guided_tour_mounted_and_wired() -> None:
     vol = Path("/app/frontend/src/pages/VolumetricDashboard.tsx").read_text()
     assert "GalaxyGuidedTour" in vol, "VolumetricDashboard must import GalaxyGuidedTour"
     assert "<GalaxyGuidedTour" in vol, "VolumetricDashboard must render GalaxyGuidedTour"
+
+
+def test_mobile_quiet_chrome_hides_floating_widgets_below_md() -> None:
+    """Founder ask 2026-02-15: 'stuff is overlapping... I don't want stuff
+    to intrude with the view of other buttons to be pressed.'
+
+    Audit on phone-viewport screenshots showed 7+ position-fixed widgets
+    stacking on top of each other (and on top of real clickable tiles).
+    Each leaking widget must now self-mute on viewports below md (768px).
+    """
+    from pathlib import Path
+    cases = [
+        ("/app/frontend/src/components/common/RoleSwitcher.tsx", "fixed top-3 right-36 z-[60] hidden md:flex"),
+        ("/app/frontend/src/components/common/RoomInfoCube.tsx", "z-[55] hidden md:flex items-center"),
+        ("/app/frontend/src/components/media/NetworkPulseMiniWidget.tsx", "z-[55] hidden md:block"),
+        ("/app/frontend/src/components/common/OrientationToggle.tsx", "z-40 hidden md:inline-flex"),
+        ("/app/frontend/src/components/common/WhatsNewBanner.tsx", "hidden md:block transition-all"),
+        ("/app/frontend/src/components/vibez/LogDesignLesson.tsx", "z-50 transition-opacity hidden md:block"),
+        ("/app/frontend/src/components/vibez/LogDesignLesson.tsx", "z-50 space-y-3 hidden md:block"),
+        ("/app/frontend/src/components/NotificationBanner.tsx", "fixed bottom-4 right-4 z-40 hidden md:block"),
+        ("/app/frontend/src/pages/VolumetricDashboard.tsx", "pointer-events-auto hidden md:block"),
+    ]
+    for path, needle in cases:
+        src = Path(path).read_text()
+        assert needle in src, (
+            f"{path} should mute on mobile — expected substring missing: {needle!r}"
+        )

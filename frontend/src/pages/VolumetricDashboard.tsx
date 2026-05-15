@@ -622,8 +622,11 @@ export default function VolumetricDashboard() {
 
       {/* 💸 Unified Earnings widget — floats bottom-left over the canvas.
           Auto-hides if user has no income / venues / streams so first-time
-          guests aren't confused. Compact variant to keep the galaxy hero. */}
-      <div className="absolute bottom-16 left-3 z-20 w-72 max-w-[calc(100vw-1.5rem)] pointer-events-auto">
+          guests aren't confused. Compact variant to keep the galaxy hero.
+          Mobile-quiet (founder ask 2026-02-15): on phones (<768px) the
+          widget overlapped the planets, so we hide it there and rely on
+          the inline PageActionStrip / Classic-view Earnings card. */}
+      <div className="absolute bottom-16 left-3 z-20 w-72 max-w-[calc(100vw-1.5rem)] pointer-events-auto hidden md:block">
         <UnifiedEarningsWidget compact />
       </div>
 

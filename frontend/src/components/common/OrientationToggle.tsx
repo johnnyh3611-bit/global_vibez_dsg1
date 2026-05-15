@@ -228,7 +228,7 @@ export const OrientationFAB: React.FC = () => {
       // + log-design-lesson-toggle (VigilantAgent flagged 8+ click-block
       // warnings per page mount). bottom-20 keeps it visible without
       // stealing taps from the dev/owner dock buttons.
-      className="fixed bottom-20 left-4 z-40 inline-flex items-center gap-1.5 rounded-full border border-cyan-400/40 bg-black/80 backdrop-blur-md px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-cyan-200 shadow-lg shadow-cyan-500/20 hover:bg-black/90 transition"
+      className="fixed bottom-20 left-4 z-40 hidden md:inline-flex items-center gap-1.5 rounded-full border border-cyan-400/40 bg-black/80 backdrop-blur-md px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-cyan-200 shadow-lg shadow-cyan-500/20 hover:bg-black/90 transition"
       style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 0.5rem)' }}
     >
       <Icon className="w-4 h-4" />

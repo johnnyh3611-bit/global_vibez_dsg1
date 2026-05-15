@@ -108,8 +108,10 @@ export default function NotificationBanner() {
         </div>
       )}
 
-      {/* Notification Status Indicator (Bottom Right) */}
-      <div className="fixed bottom-4 right-4 z-40">
+      {/* Notification Status Indicator (Bottom Right) — hidden on mobile
+          to prevent overlap with content cards / inline strip (founder
+          ask 2026-02-15: "stop stuff intruding on buttons on phone"). */}
+      <div className="fixed bottom-4 right-4 z-40 hidden md:block">
         {permissionStatus === 'granted' ? (
           <div className="flex items-center gap-2 bg-green-600 text-white px-3 py-2 rounded-lg shadow-lg text-sm">
             <Bell className="w-4 h-4" />

@@ -93,7 +93,7 @@ export default function NetworkPulseMiniWidget() {
   return (
     <div
       data-testid="network-pulse-mini-widget"
-      className="fixed bottom-24 left-4 sm:bottom-6 sm:left-6 z-[55]"
+      className="fixed bottom-24 left-4 sm:bottom-6 sm:left-6 z-[55] hidden md:block"
     >
       <AnimatePresence>
         <motion.button

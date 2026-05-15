@@ -222,7 +222,7 @@ export default function RoleSwitcher() {
   return (
     <div
       ref={wrapRef}
-      className="fixed top-3 right-36 z-[60]"
+      className="fixed top-3 right-36 z-[60] hidden md:flex"
       data-testid="role-switcher"
     >
       <button

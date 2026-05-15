@@ -96,7 +96,7 @@ const WhatsNewBanner: React.FC = () => {
 
   return (
     <div
-      className={`fixed top-3 left-1/2 -translate-x-1/2 z-[55] w-[min(90vw,440px)] transition-all ${
+      className={`fixed top-3 left-1/2 -translate-x-1/2 z-[55] w-[min(90vw,440px)] hidden md:block transition-all ${
         dismissing ? "opacity-0 -translate-y-2" : "opacity-100"
       }`}
       data-testid="whats-new-banner"
