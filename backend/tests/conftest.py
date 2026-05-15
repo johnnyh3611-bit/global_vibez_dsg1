@@ -26,8 +26,47 @@ list of canonical values lives in ``/app/memory/test_credentials.md``.
 from __future__ import annotations
 
 import os
+from pathlib import Path
 
 import pytest
+
+
+# ─────────────────────────────────────────────────────────── env autoload
+#
+# Founder ask 2026-02 (Grithood CI report): "regression shield failed in
+# 17 seconds." Root cause: 5 test modules hard-asserted `os.environ[…]`
+# at import time, so collection blew up the moment any external runner
+# invoked pytest without first sourcing `frontend/.env`. The legacy
+# modules can stay (they're correct against a live preview backend) —
+# we just need the env value present at collection time.
+#
+# This block runs BEFORE any test module imports: if REACT_APP_BACKEND_URL
+# isn't in os.environ yet, read it from `frontend/.env` and inject it.
+# Idempotent and silent when already set.
+def _autoload_env() -> None:
+    if os.environ.get("REACT_APP_BACKEND_URL"):
+        return
+    here = Path(__file__).resolve()
+    # /app/backend/tests/conftest.py → /app/frontend/.env
+    env_path = here.parent.parent.parent / "frontend" / ".env"
+    if not env_path.exists():
+        return
+    try:
+        for raw in env_path.read_text().splitlines():
+            line = raw.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, _, val = line.partition("=")
+            key = key.strip()
+            val = val.strip().strip('"').strip("'")
+            if key and val and key not in os.environ:
+                os.environ[key] = val
+    except OSError:
+        # Don't let env autoload crash collection.
+        return
+
+
+_autoload_env()
 
 
 def _env(name: str) -> str | None:

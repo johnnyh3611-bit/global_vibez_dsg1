@@ -8076,3 +8076,20 @@ def test_mobile_quiet_chrome_hides_floating_widgets_below_md() -> None:
         assert needle in src, (
             f"{path} should mute on mobile — expected substring missing: {needle!r}"
         )
+
+
+def test_conftest_autoloads_react_app_backend_url() -> None:
+    """Founder/Grithood ask 2026-02-15: regression shield must not fail
+    at collection time when CI/fork agents invoke pytest without first
+    sourcing frontend/.env. conftest.py owns the env autoload — guard
+    that contract so it cannot regress."""
+    from pathlib import Path
+    conftest = Path("/app/backend/tests/conftest.py").read_text()
+    assert "_autoload_env" in conftest, "conftest must define _autoload_env"
+    assert '"frontend" / ".env"' in conftest, "autoload must point at frontend/.env"
+    assert "REACT_APP_BACKEND_URL" in conftest
+
+    # The function must run at import time (not just be defined).
+    # Detect the unguarded call to _autoload_env() at module scope.
+    lines = [ln for ln in conftest.splitlines() if ln.strip() == "_autoload_env()"]
+    assert lines, "conftest must invoke _autoload_env() at import time"
