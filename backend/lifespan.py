@@ -646,4 +646,18 @@ _INDEX_SPECS = [
     # Cloudflare live input → streamer mapping
     {"coll": "cloudflare_live_inputs", "key": "streamer_id", "background": True},
     {"coll": "cloudflare_live_inputs", "key": "cf_uid", "background": True},
+
+    # Media Master ecosystem indexes (DSG TV, Vibe Radio, Music Group, AI Scout)
+    {"coll": "media_tv_passes", "key": [("user_id", 1), ("channel_id", 1)], "unique": True, "background": True},
+    {"coll": "media_tv_passes", "key": [("expires_at", 1)], "background": True},
+    {"coll": "media_tv_pins", "key": "user_id", "unique": True, "background": True},
+    {"coll": "media_radio_tracks", "key": [("station_id", 1), ("is_current", 1)], "background": True},
+    {"coll": "media_radio_skip_bids", "key": [("station_id", 1), ("status", 1)], "background": True},
+    {"coll": "media_radio_purchases", "key": [("user_id", 1), ("purchased_at", -1)], "background": True},
+    {"coll": "media_studio_bookings", "key": [("user_id", 1), ("booked_at", -1)], "background": True},
+    {"coll": "media_artist_sponsorships", "key": [("chair_user_id", 1), ("artist_id", 1)], "unique": True, "background": True},
+    {"coll": "media_scout_hype", "key": "room_id", "unique": True, "background": True},
+    {"coll": "media_scout_clips", "key": [("room_id", 1), ("minute_bucket", 1)], "unique": True, "background": True},
+    {"coll": "media_scout_clips", "key": [("created_at", -1)], "background": True},
+    {"coll": "media_scout_alerts", "key": [("expires_at", -1)], "background": True},
 ]

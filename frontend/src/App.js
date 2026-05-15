@@ -27,7 +27,8 @@ import {
   streamingRoutes,
   justForTheNightRoutes,
   adminVaultRoutes,
-  dsgRoutes
+  dsgRoutes,
+  mediaMasterRoutes
 } from "@/routes";
 
 // Import notification components
@@ -52,6 +53,7 @@ import BetaFeedbackButton from "@/components/common/BetaFeedbackButton";
 import FriendEventToaster from "@/components/common/FriendEventToaster";
 import PushForegroundBridge from "@/components/notifications/PushForegroundBridge";
 import VipCrownBadge from "@/components/vip/VipCrownBadge";
+import VipConcierge from "@/components/vip/VipConcierge";
 import { LogDesignLesson } from "@/components/vibez/LogDesignLesson";
 // v8 — International Globalization Protocol v2.0 (Globe FAB / Cultural Hub)
 import GlobeFAB from "@/components/GlobeFAB";
@@ -270,6 +272,7 @@ function AppRouter() {
       <FriendEventToaster />
       <PushForegroundBridge />
       <VipCrownBadge />
+      <VipConcierge />
       <GlobeFAB />
       <GameVoiceDockMounter />
       <FloatingFoodMenu />
@@ -323,6 +326,9 @@ function AppRouter() {
 
         {/* DSG v6.5 / v7 Routes — Vigilant Matchmaking, Beat Vault, Memory Bank */}
         {dsgRoutes(ProtectedRoute)}
+
+        {/* Media Master ecosystem — DSG TV, Vibe Radio, DSG Music Group */}
+        {mediaMasterRoutes(ProtectedRoute)}
 
         {/* Tombstone redirects — 3D Poker rooms deleted 2026-02-16 (founder
             directive). Send any cached bookmark to /games so users land on

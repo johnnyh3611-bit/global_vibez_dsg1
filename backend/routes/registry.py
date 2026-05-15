@@ -802,6 +802,14 @@ def register_all_routes(
     except Exception as _e:
         log.warning(f"High Roller routes not mounted: {_e}")
 
+    # Media Master ecosystem — DSG TV Network, Vibe Radio, DSG Music
+    # Group, AI Scout. Layers on age_verification + coin_wallet + content_rights.
+    try:
+        from routes.media_master import router as media_master_router
+        api_router.include_router(media_master_router)
+    except Exception as _e:
+        log.warning(f"Media Master routes not mounted: {_e}")
+
     # Streamer Wrap-Up emails — Monday 09:00 UTC per-streamer analytics
     # digest. The loop itself is started during server startup (see
     # server.py); these routes provide preview + manual-send surfaces.

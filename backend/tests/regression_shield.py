@@ -7474,3 +7474,160 @@ def test_stress_suite_timeout_matches_master_blueprint() -> None:
     assert "ClientTimeout(total=1.5)" in py, (
         "Stress suite timeout drifted from Master Blueprint §1 spec"
     )
+
+
+
+# ════════════════════════════════════════════════════════════════════
+# MEDIA MASTER ECOSYSTEM (May 2026) — DSG TV / Vibe Radio /
+# DSG Music Group / AI Scout. Per `Global_Vibez_DSG_Media_Master.pdf`.
+# ════════════════════════════════════════════════════════════════════
+def test_media_master_constants_locked() -> None:
+    """Per the Media Master PDF: 5 TV channels (2 gated 21+), 3 radio
+    stations, 3 studios, 30% affiliate chair share. Locked."""
+    from services.media_master_constants import (
+        DSG_TV_CHANNELS, VIBE_RADIO_STATIONS, DSG_MUSIC_STUDIOS,
+        SKIP_BID_FLOOR, KEEP_BID_INCREMENT,
+        AFFILIATE_CHAIR_REVENUE_SHARE_BPS,
+        AUTO_CLIP_THRESHOLD, BREAK_IN_THRESHOLD, AUTO_CLIP_DURATION_SECONDS,
+        CHANNEL_PASS_DURATION_HOURS,
+    )
+    assert len(DSG_TV_CHANNELS) == 5
+    assert {c["channel_id"] for c in DSG_TV_CHANNELS} == {
+        "arena", "spotlight-lounge", "dsg-radio-tv", "after-dark", "nightmare-club",
+    }
+    gated = [c for c in DSG_TV_CHANNELS if c["requires_paywall"]]
+    assert len(gated) == 2, "Exactly two channels must be paywalled per PDF"
+    for ch in gated:
+        assert ch["requires_18_plus"] is True
+        assert ch["requires_secondary_pin"] is True
+        assert ch["coin_price"] > 0
+
+    assert len(VIBE_RADIO_STATIONS) == 3
+    assert {s["station_id"] for s in VIBE_RADIO_STATIONS} == {
+        "the-grind", "neon-drift", "romance-fm",
+    }
+
+    assert len(DSG_MUSIC_STUDIOS) == 3
+    assert SKIP_BID_FLOOR == 25
+    assert KEEP_BID_INCREMENT == 10
+    assert AFFILIATE_CHAIR_REVENUE_SHARE_BPS == 3_000, "Affiliate chair share locked at 30%"
+    assert AUTO_CLIP_THRESHOLD == 1_000
+    assert BREAK_IN_THRESHOLD == 10_000
+    assert AUTO_CLIP_DURATION_SECONDS == 30
+    assert CHANNEL_PASS_DURATION_HOURS == 24
+
+
+def test_media_master_hype_formula() -> None:
+    """Hype Score = gifts * 1.0 + chat_msgs_per_min * 2.5. Verdict
+    buckets: ambient < 1000 ≤ auto_clip < 10000 ≤ break_in."""
+    from services.media_master_constants import compute_hype_score, classify_hype
+    assert compute_hype_score(100, 5) == 100 * 1.0 + 5 * 2.5
+    assert classify_hype(999) == "ambient"
+    assert classify_hype(1_000) == "auto_clip"
+    assert classify_hype(9_999) == "auto_clip"
+    assert classify_hype(10_000) == "break_in"
+
+
+def test_media_master_routes_registered() -> None:
+    from server import app
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    must_have = [
+        "/api/media-master/constants",
+        "/api/media-master/tv/channels",
+        "/api/media-master/tv/access/{channel_id}/{user_id}",
+        "/api/media-master/tv/unlock/{channel_id}",
+        "/api/media-master/tv/set-pin",
+        "/api/media-master/radio/stations",
+        "/api/media-master/radio/now-playing/{station_id}",
+        "/api/media-master/radio/skip-bid",
+        "/api/media-master/radio/keep-bid",
+        "/api/media-master/radio/buy-track",
+        "/api/media-master/music/studios",
+        "/api/media-master/music/book-studio",
+        "/api/media-master/music/artists",
+        "/api/media-master/music/sponsor",
+        "/api/media-master/music/sponsorships/{chair_user_id}",
+        "/api/media-master/scout/ingest",
+        "/api/media-master/scout/clips/recent",
+        "/api/media-master/scout/break-ins/active",
+        "/api/media-master/scout/hype/{room_id}",
+    ]
+    for p in must_have:
+        assert p in paths, f"Media Master endpoint missing: {p}"
+
+
+def test_media_master_module_mounted_in_registry() -> None:
+    from pathlib import Path
+    reg = Path("/app/backend/routes/registry.py").read_text()
+    assert "from routes.media_master import router as media_master_router" in reg
+    assert "media_master_router" in reg
+
+
+def test_media_master_indexes_registered_in_lifespan() -> None:
+    """Hot read paths must have proper Mongo indexes."""
+    from pathlib import Path
+    src = Path("/app/backend/lifespan.py").read_text()
+    for coll in [
+        "media_tv_passes", "media_tv_pins", "media_radio_skip_bids",
+        "media_artist_sponsorships", "media_scout_hype",
+        "media_scout_clips", "media_scout_alerts",
+    ]:
+        assert f'"coll": "{coll}"' in src, f"Index for {coll} missing in lifespan"
+
+
+def test_media_master_pin_is_sha256_hashed() -> None:
+    """Secondary PIN must NEVER round-trip plaintext."""
+    from pathlib import Path
+    src = Path("/app/backend/routes/media_master.py").read_text()
+    assert "hashlib.sha256" in src
+    assert "pin_hash" in src
+
+
+def test_media_master_frontend_pages_exist_with_testids() -> None:
+    from pathlib import Path
+    hub = Path("/app/frontend/src/pages/MediaMasterHub.tsx").read_text()
+    tv = Path("/app/frontend/src/pages/DsgTvChannelPage.tsx").read_text()
+    radio = Path("/app/frontend/src/pages/VibeRadioStationPage.tsx").read_text()
+    music = Path("/app/frontend/src/pages/MusicGroupPage.tsx").read_text()
+    for tid in [
+        "media-master-hub", "media-master-section-tv", "media-master-section-radio",
+        "media-master-section-music", "media-master-section-scout",
+    ]:
+        assert f'data-testid="{tid}"' in hub, f"Hub missing {tid}"
+    for tid in [
+        "dsg-tv-channel-page", "dsg-tv-unlock-btn",
+    ]:
+        assert f'data-testid="{tid}"' in tv, f"DSG TV page missing {tid}"
+    for tid in [
+        "vibe-radio-station-page", "vibe-radio-skip-btn",
+        "vibe-radio-keep-btn", "vibe-radio-buy-btn",
+    ]:
+        assert f'data-testid="{tid}"' in radio, f"Vibe Radio page missing {tid}"
+    for tid in [
+        "music-group-page", "music-group-studios",
+        "music-group-sponsor", "music-group-sponsor-btn",
+    ]:
+        assert f'data-testid="{tid}"' in music, f"Music Group page missing {tid}"
+
+
+def test_media_master_routes_mounted_in_app_js() -> None:
+    from pathlib import Path
+    app_js = Path("/app/frontend/src/App.js").read_text()
+    assert "mediaMasterRoutes" in app_js
+    assert "{mediaMasterRoutes(ProtectedRoute)}" in app_js
+    idx = Path("/app/frontend/src/routes/index.js").read_text()
+    assert "mediaMasterRoutes" in idx
+
+
+def test_vip_concierge_globally_mounted_for_higher_tiers() -> None:
+    """VIP Concierge bubble must be in App.js and only appear for
+    Genesis/Apex (not Genius)."""
+    from pathlib import Path
+    app_js = Path("/app/frontend/src/App.js").read_text()
+    assert 'import VipConcierge from "@/components/vip/VipConcierge"' in app_js
+    assert "<VipConcierge />" in app_js
+    comp = Path("/app/frontend/src/components/vip/VipConcierge.tsx").read_text()
+    assert 'data-testid="vip-concierge-bubble"' in comp
+    # Genesis + Apex only — Genius is the entry tier and doesn't get concierge.
+    assert "el.tier !== 'genesis'" in comp
+    assert "el.tier !== 'apex'" in comp
