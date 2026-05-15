@@ -8096,8 +8096,8 @@ def test_conftest_autoloads_react_app_backend_url() -> None:
 
 
 def test_equity_master_constants_locked_to_pdf() -> None:
-    """Founder ask 2026-02-15: every number from
-    Global_Vibez_DSG_Equity_Master.pdf must be exactly as specified and
+    """Founder ask 2026-02-15 (v2 PDF): every number from
+    Global_Vibez_DSG_Equity_Master-v2.pdf must be exactly as specified and
     immutable. Server refuses to start if any drift occurs."""
     from routes.equity_master import (
         OWNERSHIP_REVENUE_SHARE,
@@ -8113,18 +8113,24 @@ def test_equity_master_constants_locked_to_pdf() -> None:
         WALKING_ADS_COHORT_SIZE,
         CREWMATE_CHAIR_CAPS,
         REVENUE_CATEGORIES,
+        BLOCK_RELEASE_SIZE,
+        MAJORITY_VOTE_THRESHOLD,
+        CREWMATE_LOCKUP_MONTHS,
+        PLATFORM_BUYBACK_FLOOR_USD,
+        EQUITY_VALUE_MATRIX,
         compute_dividend,
         verify_equity_locks,
     )
 
-    # PDF locked numbers — every assertion is a launch-blocker.
+    # v1 locked numbers — still in force.
     assert OWNERSHIP_REVENUE_SHARE == 0.30
     assert DIVIDEND_DISTRIBUTION_MONTHS == 3
     assert VIBEZ_PAYOUT_BONUS == 0.05
     assert YIELD_BASIS == 0.10
     assert GENIUS_PHASE_FLOOR_USD == 20
     assert GENESIS_PHASE_FLOOR_USD == 100
-    assert DIAMOND_VALUE_REFERENCE_USD == 180
+    # v2 reframes Diamond Status anchor to $360 @ $10M monthly.
+    assert DIAMOND_VALUE_REFERENCE_USD == 360
     assert SCARCITY_PREMIUM_MIN == 0.20
     assert SCARCITY_PREMIUM_MAX == 0.30
     assert TOTAL_CHAIRS_BASELINE == 1_000_000
@@ -8139,24 +8145,47 @@ def test_equity_master_constants_locked_to_pdf() -> None:
     # Revenue categories — exactly the 4 the PDF names.
     assert set(REVENUE_CATEGORIES) == {"casino", "ridez", "tv_ads", "yellow_pages"}
 
-    # Boot-time verify must pass and re-run cleanly.
+    # v2 additions: block-release governance + lock-up + buy-back floor.
+    assert BLOCK_RELEASE_SIZE == 50_000
+    assert MAJORITY_VOTE_THRESHOLD == 0.51
+    assert CREWMATE_LOCKUP_MONTHS == 12
+    assert PLATFORM_BUYBACK_FLOOR_USD == 20
+
+    # 4-tier Equity & Value Matrix — exact PDF anchors.
+    assert len(EQUITY_VALUE_MATRIX) == 4
+    by_id = {r["id"]: r for r in EQUITY_VALUE_MATRIX}
+    assert by_id["floor"]["monthly_rev_usd"] == 500_000
+    assert by_id["floor"]["market_value_usd"] == 18.00
+    assert by_id["floor"]["annual_div_per_chair_usd"] == 1.80
+    assert by_id["genesis"]["monthly_rev_usd"] == 2_750_000
+    assert by_id["genesis"]["market_value_usd"] == 99.00
+    assert by_id["genesis"]["annual_div_per_chair_usd"] == 9.90
+    assert by_id["diamond"]["monthly_rev_usd"] == 10_000_000
+    assert by_id["diamond"]["market_value_usd"] == 360.00
+    assert by_id["diamond"]["annual_div_per_chair_usd"] == 36.00
+    assert by_id["platinum"]["monthly_rev_usd"] == 50_000_000
+    assert by_id["platinum"]["market_value_usd"] == 1_800.00
+    assert by_id["platinum"]["annual_div_per_chair_usd"] == 180.00
+
+    # Boot-time verify must pass and re-run cleanly (it also walks the
+    # matrix and validates each row against the closed-form formula).
     verify_equity_locks()
 
-    # PDF anchor math: $5M monthly gross @ 1M chairs → $180 price.
-    res = compute_dividend(5_000_000)
-    assert res["monthly_dividend_per_chair_usd"] == 1.5
-    assert res["annual_dividend_per_chair_usd"] == 18.0
-    assert res["current_price_usd"] == 180.0
-    assert res["effective_price_usd"] == 180.0
+    # PDF Diamond anchor: $10M monthly → $360 (v2).
+    res = compute_dividend(10_000_000)
+    assert res["annual_dividend_per_chair_usd"] == 36.0
+    assert res["current_price_usd"] == 360.0
     assert res["floor_phase"] == "diamond"
 
-    # Phase ladder: $1M gross → $36 → genius (under $100), but effective
-    # snaps to Genesis $100 only if math justifies it. At $1M:
-    # monthly_div = 1M * 0.30 / 1M = 0.30 → annual = 3.60 → price = $36.
-    # That's the Genius phase (price < $100), effective stays $36.
-    low = compute_dividend(1_000_000)
-    assert low["current_price_usd"] == 36.0
-    assert low["floor_phase"] == "genius"
+    # Platinum: $50M monthly → $1,800.
+    plat = compute_dividend(50_000_000)
+    assert plat["current_price_usd"] == 1_800.0
+    assert plat["floor_phase"] == "platinum"
+
+    # Floor: $500K monthly → $18.
+    flr = compute_dividend(500_000)
+    assert flr["current_price_usd"] == 18.0
+    assert flr["floor_phase"] == "floor"
 
 
 def test_equity_master_router_registered() -> None:
@@ -8206,3 +8235,17 @@ def test_equity_master_frontend_page_wired() -> None:
 
     vol = Path("/app/frontend/src/pages/VolumetricDashboard.tsx").read_text()
     assert 'path: "/equity"' in vol
+
+    # v2: matrix table + governance section are rendered.
+    assert 'data-testid="equity-value-matrix"' in page
+    # The 4 row test IDs come from a template literal `value-matrix-row-${row.id}` —
+    # so we check for the template pattern itself.
+    assert "`value-matrix-row-${row.id}`" in page
+    # Each phase id must appear in the static fallback so we can prove
+    # all 4 PDF tiers will render.
+    for phase_id in ("floor", "genesis", "diamond", "platinum"):
+        assert f'"{phase_id}"' in page, f"matrix fallback missing phase {phase_id}"
+    assert 'data-testid="equity-governance-section"' in page
+    assert "Block-Release Governance" in page
+    assert "Crewmate Lock-Up" in page
+    assert "Platform Buy-Back Floor" in page

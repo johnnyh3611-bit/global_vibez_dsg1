@@ -1,34 +1,20 @@
 """
 Equity Master — Crewmate Architecture, 30% Revenue Split, Diamond Market Logic
-(Global_Vibez_DSG_Equity_Master.pdf, Feb 2026).
+v2 (Global_Vibez_DSG_Equity_Master-v2.pdf, Feb 2026).
 
-Locks every economic constant from the Equity Master PDF and exposes them
-as a public read-only API plus a deterministic dividend / valuation
+Adds on top of v1:
+  • 4-tier Equity & Value Matrix (Floor → Genesis → Diamond → Platinum)
+    with explicit (monthly_rev, annual_div, market_value) anchors.
+  • Block-Release Governance: 50K-chair blocks, >51% majority vote.
+  • Crewmate lock-up: 12 months before internal market trade.
+  • Platform Buy-Back: $20.00 floor from the House Treasury.
+  • Walking Advertisements branding + Affiliate Multiplier + Founder insignia.
+
+Locks every economic constant from the Equity Master v2 PDF and exposes
+them as a public read-only API plus a deterministic dividend / valuation
 calculator. Numbers are encoded as `Final` and cross-verified at boot
 inside `routes/immutable_core.py` so the server refuses to start if any
 drift is detected.
-
-Constants locked here (all from PDF):
-  • OWNERSHIP_REVENUE_SHARE          = 0.30   (30% of gross to ownership pool)
-  • DIVIDEND_DISTRIBUTION_QUARTERLY  = 3      (months between payouts)
-  • VIBEZ_PAYOUT_BONUS               = 0.05   (+5% vs SOL/USDC)
-  • YIELD_BASIS                      = 0.10   (Price = AnnualDiv / 0.10)
-  • GENIUS_PHASE_FLOOR_USD           = 20     ($20 Walking Ads)
-  • GENESIS_PHASE_FLOOR_USD          = 100    ($100 floor)
-  • DIAMOND_VALUE_REFERENCE_USD      = 180    ($180 @ $5M monthly gross)
-  • SCARCITY_PREMIUM_MIN             = 0.20   (20% on locked chairs)
-  • SCARCITY_PREMIUM_MAX             = 0.30   (30% on locked chairs)
-  • TOTAL_CHAIRS_BASELINE            = 1_000_000
-  • WALKING_ADS_COHORT_SIZE          = 50_000
-  • CREWMATE_CHAIR_CAPS              = Pit Boss / Vibe Scout / Treasurer = 250
-  • REVENUE_CATEGORIES               = ("casino", "ridez", "tv_ads", "yellow_pages")
-
-Endpoints:
-  GET  /api/equity-master/constants            → all locked numbers
-  GET  /api/equity-master/crewmate-roles       → 4 roles with caps & focus areas
-  GET  /api/equity-master/dividend?monthly_gross=5000000
-                                                → dividend / chair / valuation
-  POST /api/equity-master/valuation            → custom revenue → price
 """
 from __future__ import annotations
 
@@ -53,6 +39,62 @@ SCARCITY_PREMIUM_MAX: Final[float] = 0.30
 
 TOTAL_CHAIRS_BASELINE: Final[int] = 1_000_000
 WALKING_ADS_COHORT_SIZE: Final[int] = 50_000
+
+# ── v2 additions ────────────────────────────────────────────────────────
+# Block-release governance: new chair supply only mints in 50K-unit blocks
+# AND only after a >51% majority of existing chair owners vote yes AND
+# only when the yield math confirms new supply won't drop market price.
+BLOCK_RELEASE_SIZE: Final[int] = 50_000
+MAJORITY_VOTE_THRESHOLD: Final[float] = 0.51
+
+# Crewmate chair lock-up before internal-market trade is permitted.
+CREWMATE_LOCKUP_MONTHS: Final[int] = 12
+
+# Guaranteed floor buy-back from the House Treasury (protects early movers).
+PLATFORM_BUYBACK_FLOOR_USD: Final[int] = 20
+
+# 4-Tier Equity & Value Matrix — the canonical price table.
+# Formula per row: market_value = (monthly_rev * 0.30 / 1_000_000) * 12 / 0.10
+EQUITY_VALUE_MATRIX: Final[list[dict]] = [
+    {
+        "id": "floor",
+        "label": "Floor Level",
+        "monthly_rev_usd": 500_000,
+        "annual_div_per_chair_usd": 1.80,
+        "market_value_usd": 18.00,
+        "tagline": "Walking Advertisements live here · $20 buy-back floor protects you.",
+    },
+    {
+        "id": "genesis",
+        "label": "Genesis Target",
+        "monthly_rev_usd": 2_750_000,
+        "annual_div_per_chair_usd": 9.90,
+        "market_value_usd": 99.00,
+        "tagline": "First milestone — Genius cohort sees first dividend bumps.",
+    },
+    {
+        "id": "diamond",
+        "label": "Diamond Status",
+        "monthly_rev_usd": 10_000_000,
+        "annual_div_per_chair_usd": 36.00,
+        "market_value_usd": 360.00,
+        "tagline": "$10M / mo — Diamond Value transition; chair holders compound.",
+    },
+    {
+        "id": "platinum",
+        "label": "Platinum Scale",
+        "monthly_rev_usd": 50_000_000,
+        "annual_div_per_chair_usd": 180.00,
+        "market_value_usd": 1_800.00,
+        "tagline": "$50M / mo — Platinum top-tier; full multi-vertical maturity.",
+    },
+]
+
+# Legacy single-anchor reference from v1 PDF (kept for backward compat,
+# now superseded by EQUITY_VALUE_MATRIX). Diamond price at $5M monthly is
+# $90 by the formula — v1 used a different anchor for marketing copy.
+LEGACY_V1_DIAMOND_REFERENCE_USD: Final[int] = 180  # PDF v1 anchor — do not delete
+DIAMOND_VALUE_REFERENCE_USD: Final[int] = 360  # v2 PDF: Diamond Status row
 
 REVENUE_CATEGORIES: Final[tuple[str, ...]] = (
     "casino",
@@ -111,7 +153,7 @@ EXPECTED = {
     "YIELD_BASIS": 0.10,
     "GENIUS_PHASE_FLOOR_USD": 20,
     "GENESIS_PHASE_FLOOR_USD": 100,
-    "DIAMOND_VALUE_REFERENCE_USD": 180,
+    "DIAMOND_VALUE_REFERENCE_USD": 360,
     "SCARCITY_PREMIUM_MIN": 0.20,
     "SCARCITY_PREMIUM_MAX": 0.30,
     "TOTAL_CHAIRS_BASELINE": 1_000_000,
@@ -119,6 +161,11 @@ EXPECTED = {
     "PIT_BOSS_CAP": 250,
     "VIBE_SCOUT_CAP": 250,
     "TREASURER_CAP": 250,
+    # v2 governance
+    "BLOCK_RELEASE_SIZE": 50_000,
+    "MAJORITY_VOTE_THRESHOLD": 0.51,
+    "CREWMATE_LOCKUP_MONTHS": 12,
+    "PLATFORM_BUYBACK_FLOOR_USD": 20,
 }
 
 
@@ -140,11 +187,26 @@ def verify_equity_locks() -> None:
         "PIT_BOSS_CAP": CREWMATE_CHAIR_CAPS["pit_boss"],
         "VIBE_SCOUT_CAP": CREWMATE_CHAIR_CAPS["vibe_scout"],
         "TREASURER_CAP": CREWMATE_CHAIR_CAPS["treasurer"],
+        "BLOCK_RELEASE_SIZE": BLOCK_RELEASE_SIZE,
+        "MAJORITY_VOTE_THRESHOLD": MAJORITY_VOTE_THRESHOLD,
+        "CREWMATE_LOCKUP_MONTHS": CREWMATE_LOCKUP_MONTHS,
+        "PLATFORM_BUYBACK_FLOOR_USD": PLATFORM_BUYBACK_FLOOR_USD,
     }
     for k, v in actual.items():
         if v != EXPECTED[k]:
             raise RuntimeError(
                 f"EquityMaster lock violation: {k} expected {EXPECTED[k]}, got {v}"
+            )
+
+    # Matrix integrity — every row must satisfy the closed-form formula.
+    for row in EQUITY_VALUE_MATRIX:
+        expected_value = (
+            row["monthly_rev_usd"] * OWNERSHIP_REVENUE_SHARE / TOTAL_CHAIRS_BASELINE
+        ) * 12 / YIELD_BASIS
+        if round(expected_value, 2) != round(row["market_value_usd"], 2):
+            raise RuntimeError(
+                f"EquityMaster matrix row '{row['id']}': formula gives "
+                f"{expected_value:.2f}, locked at {row['market_value_usd']:.2f}"
             )
 
 
@@ -177,11 +239,20 @@ def compute_dividend(
     quarterly_div_per_chair = monthly_div_per_chair * DIVIDEND_DISTRIBUTION_MONTHS
 
     # Floor logic — never below Genesis once the math justifies it.
-    floor_phase = (
-        "diamond" if current_price >= DIAMOND_VALUE_REFERENCE_USD
-        else "genesis" if current_price >= GENESIS_PHASE_FLOOR_USD
-        else "genius"
-    )
+    # v2: classification is matrix-aware. Round to 2dp first so float
+    # noise (e.g. 0.15 * 12 = 1.7999999...) doesn't misclassify boundary
+    # values like the exact $18 Floor anchor.
+    price_for_phase = round(current_price, 2)
+    if price_for_phase >= 1_800:
+        floor_phase = "platinum"
+    elif price_for_phase >= 360:
+        floor_phase = "diamond"
+    elif price_for_phase >= 99:
+        floor_phase = "genesis"
+    elif price_for_phase >= 18:
+        floor_phase = "floor"
+    else:
+        floor_phase = "genius"
     effective_price = max(
         current_price,
         GENESIS_PHASE_FLOOR_USD if floor_phase != "genius" else GENIUS_PHASE_FLOOR_USD,
@@ -226,7 +297,7 @@ async def get_constants():
             "genius_floor_usd": GENIUS_PHASE_FLOOR_USD,
             "genesis_floor_usd": GENESIS_PHASE_FLOOR_USD,
             "diamond_reference_usd": DIAMOND_VALUE_REFERENCE_USD,
-            "diamond_reference_monthly_gross_usd": 5_000_000,
+            "diamond_reference_monthly_gross_usd": 10_000_000,
         },
         "scarcity_premium_pct": {
             "min": int(SCARCITY_PREMIUM_MIN * 100),
@@ -239,8 +310,50 @@ async def get_constants():
             k: (v if v is not None else "infinite")
             for k, v in CREWMATE_CHAIR_CAPS.items()
         },
+        # v2 governance + lock-up + buy-back floor.
+        "governance": {
+            "block_release_size": BLOCK_RELEASE_SIZE,
+            "majority_vote_threshold": MAJORITY_VOTE_THRESHOLD,
+            "majority_vote_threshold_pct": ">51%",
+            "milestone_barrier": (
+                "Vote only triggers when Yield Math confirms new supply "
+                "will not drop the current market price."
+            ),
+        },
+        "crewmate_lockup_months": CREWMATE_LOCKUP_MONTHS,
+        "platform_buyback_floor_usd": PLATFORM_BUYBACK_FLOOR_USD,
+        "value_matrix": EQUITY_VALUE_MATRIX,
         "locked": True,
-        "spec_doc": "Global_Vibez_DSG_Equity_Master.pdf",
+        "spec_doc": "Global_Vibez_DSG_Equity_Master-v2.pdf",
+    }
+
+
+@router.get("/value-matrix")
+async def get_value_matrix():
+    """4-tier (Floor → Genesis → Diamond → Platinum) canonical price table."""
+    return {
+        "matrix": EQUITY_VALUE_MATRIX,
+        "formula": "(monthly_rev * 0.30 / 1_000_000) * 12 / 0.10",
+        "total_chairs": TOTAL_CHAIRS_BASELINE,
+    }
+
+
+@router.get("/governance")
+async def get_governance():
+    """Block-Release Governance constants (50K-block, >51% vote)."""
+    return {
+        "block_release_size": BLOCK_RELEASE_SIZE,
+        "majority_vote_threshold": MAJORITY_VOTE_THRESHOLD,
+        "majority_vote_threshold_pct": ">51%",
+        "milestone_barrier": (
+            "Vote only triggers when Yield Math confirms new supply will "
+            "not drop the current market price."
+        ),
+        "crewmate_lockup_months": CREWMATE_LOCKUP_MONTHS,
+        "platform_buyback_floor_usd": PLATFORM_BUYBACK_FLOOR_USD,
+        "walking_ads_cohort_size": WALKING_ADS_COHORT_SIZE,
+        "founder_insignia": "Permanent Founder badge on DSG TV avatar for Genius Phase owners.",
+        "affiliate_multiplier": "Genius Phase owners earn bonus $VIBEZ for every active user they bring to the Underground Casino.",
     }
 
 

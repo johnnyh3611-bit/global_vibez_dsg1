@@ -5099,3 +5099,51 @@ New permanent guards:
 
 **Smoke test (live)**: $10M monthly gross scenario → calculator returns **$360.00**
 (verifies 10M × 0.30 / 1M × 12 / 0.10 = $360 ✓).
+
+## 2026-02-15 — 💎 Equity Master v2 (Value Matrix · Block-Release · Lock-Up)
+
+**Founder ask**: "This is an updated version… add it into all commercials."
+Source: `Global_Vibez_DSG_Equity_Master-v2.pdf`.
+
+**New v2 locked constants** (added on top of v1, all `Final` & boot-verified):
+
+| Constant | Value | PDF Reference |
+|---|---|---|
+| `BLOCK_RELEASE_SIZE` | 50,000 | New chairs mint only in 50K blocks |
+| `MAJORITY_VOTE_THRESHOLD` | 0.51 | >51% chair-owner vote required |
+| `CREWMATE_LOCKUP_MONTHS` | 12 | 12-mo lock before internal-market trade |
+| `PLATFORM_BUYBACK_FLOOR_USD` | 20 | House Treasury $20 floor buy-back |
+| `DIAMOND_VALUE_REFERENCE_USD` | **360** (was 180) | v2 reframes Diamond to $10M/$360 anchor |
+
+**EQUITY_VALUE_MATRIX** — 4-tier canonical price table (Floor → Genesis →
+Diamond → Platinum). Every row validated by the closed-form formula at
+boot. Server refuses to start if the formula drifts from the locked values.
+
+| Tier | Monthly Rev | Annual Div / Chair | Market Value (10% Yield) |
+|---|---|---|---|
+| Floor Level | $500,000 | $1.80 | **$18.00** |
+| Genesis Target | $2,750,000 | $9.90 | **$99.00** |
+| Diamond Status | $10,000,000 | $36.00 | **$360.00** |
+| Platinum Scale | $50,000,000 | $180.00 | **$1,800.00** |
+
+**New backend endpoints**:
+- `GET /api/equity-master/value-matrix` → 4-row matrix + formula + total chairs.
+- `GET /api/equity-master/governance` → block-release, lock-up, buy-back, founder insignia copy.
+- `GET /api/equity-master/constants` now returns full v2 payload (matrix + governance + lock-up + buy-back).
+
+**Frontend** (`EquityMasterPage.tsx`):
+- Replaced 3-card phase ladder with a **proper 4-row matrix table** (Tier · Monthly Rev · Annual Div · Market Value).
+- New 3-card **Governance / Lock-Up / Buy-Back** strip (Vote · Shield · Megaphone icons).
+- Walking Advertisements + Founder insignia commercial copy surfaced.
+
+**Regression Shield**: 384 → **384 tests** GREEN (3 existing equity tests
+upgraded to assert v2 numbers + new matrix rows + new governance constants).
+Cross-suite total: **404/404 PASS**.
+
+**Smoke test (live)**: Matrix table renders all 4 PDF rows with correct
+math. Governance cards show 50,000 / >51% / 12 months / $20 floor.
+
+Files touched (3):
+- `backend/routes/equity_master.py` (+150 LOC v2 additions)
+- `frontend/src/pages/EquityMasterPage.tsx` (matrix table + governance strip)
+- `backend/tests/regression_shield.py` (v2 anchor assertions)

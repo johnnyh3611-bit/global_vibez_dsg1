@@ -15,7 +15,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Crown, Gem, Dices, Radio, Key, TrendingUp, Lock } from "lucide-react";
+import { ArrowLeft, Crown, Gem, Dices, Radio, Key, TrendingUp, Lock, Shield, Vote, Megaphone } from "lucide-react";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -35,6 +35,23 @@ type Constants = {
   walking_ads_cohort_size: number;
   revenue_categories: string[];
   spec_doc: string;
+  governance?: {
+    block_release_size: number;
+    majority_vote_threshold_pct: string;
+    milestone_barrier: string;
+  };
+  crewmate_lockup_months?: number;
+  platform_buyback_floor_usd?: number;
+  value_matrix?: ValueRow[];
+};
+
+type ValueRow = {
+  id: string;
+  label: string;
+  monthly_rev_usd: number;
+  annual_div_per_chair_usd: number;
+  market_value_usd: number;
+  tagline: string;
 };
 
 type Role = {
@@ -245,56 +262,118 @@ export default function EquityMasterPage() {
           </div>
         </section>
 
-        {/* Phase ladder */}
+        {/* v2 Equity & Value Matrix — 4-tier canonical price ladder */}
         <section>
           <h2 className="text-lg font-bold uppercase tracking-[0.3em] text-white/80 mb-4">
-            💎 Genius → Genesis → Diamond
+            💎 Equity &amp; Value Matrix
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {[
-              {
-                id: "genius",
-                title: "Genius Phase",
-                price: constants?.phases.genius_floor_usd ?? 20,
-                blurb: "$20 Walking Ads · 50,000 founder ambassadors drive traffic via affiliate codes.",
-                grad: "from-emerald-400 via-cyan-500 to-blue-500",
-              },
-              {
-                id: "genesis",
-                title: "Genesis Floor",
-                price: constants?.phases.genesis_floor_usd ?? 100,
-                blurb: "$100 floor once revenue milestones lock in. Math forces the floor — not a promise.",
-                grad: "from-amber-400 via-orange-500 to-rose-500",
-              },
-              {
-                id: "diamond",
-                title: "Diamond Value",
-                price: constants?.phases.diamond_reference_usd ?? 180,
-                blurb: "$180 @ $5M monthly gross. 30% pool → $1.50/chair/mo → $18/yr → /0.10 yield = $180.",
-                grad: "from-cyan-300 via-fuchsia-400 to-amber-300",
-              },
-            ].map((p) => (
-              <div
-                key={p.id}
-                data-testid={`phase-card-${p.id}`}
-                className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 relative overflow-hidden"
-              >
-                <div
-                  className={`absolute -top-1 -right-1 w-24 h-24 rounded-full blur-3xl bg-gradient-to-br ${p.grad} opacity-30`}
-                />
-                <div className="relative">
-                  <div className="text-[10px] uppercase tracking-widest text-white/50">
-                    {p.title}
-                  </div>
-                  <div
-                    className={`text-4xl font-black mt-1 bg-gradient-to-r ${p.grad} bg-clip-text text-transparent`}
+          <p className="text-xs text-white/50 mb-4 max-w-3xl">
+            Every row is calculated from the same formula:{" "}
+            <span className="text-amber-300/80">
+              (monthly_rev × 0.30 / 1,000,000) × 12 / 0.10
+            </span>
+            . Server refuses to start if any row drifts from this math.
+          </p>
+          <div
+            data-testid="equity-value-matrix"
+            className="overflow-x-auto rounded-2xl border border-white/10 bg-white/[0.03]"
+          >
+            <table className="min-w-full text-sm">
+              <thead className="bg-white/5 text-[10px] uppercase tracking-widest text-white/50">
+                <tr>
+                  <th className="px-4 py-3 text-left">Tier</th>
+                  <th className="px-4 py-3 text-right">Monthly Platform Rev</th>
+                  <th className="px-4 py-3 text-right">Annual Div / Chair</th>
+                  <th className="px-4 py-3 text-right">Market Value (10% Yield)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(constants?.value_matrix ?? [
+                  { id: "floor", label: "Floor Level", monthly_rev_usd: 500_000, annual_div_per_chair_usd: 1.80, market_value_usd: 18, tagline: "" },
+                  { id: "genesis", label: "Genesis Target", monthly_rev_usd: 2_750_000, annual_div_per_chair_usd: 9.90, market_value_usd: 99, tagline: "" },
+                  { id: "diamond", label: "Diamond Status", monthly_rev_usd: 10_000_000, annual_div_per_chair_usd: 36, market_value_usd: 360, tagline: "" },
+                  { id: "platinum", label: "Platinum Scale", monthly_rev_usd: 50_000_000, annual_div_per_chair_usd: 180, market_value_usd: 1_800, tagline: "" },
+                ]).map((row) => (
+                  <tr
+                    key={row.id}
+                    data-testid={`value-matrix-row-${row.id}`}
+                    className="border-t border-white/5 hover:bg-white/[0.02] transition-colors"
                   >
-                    ${p.price}
-                  </div>
-                  <p className="text-xs text-white/60 mt-2 leading-relaxed">{p.blurb}</p>
-                </div>
-              </div>
-            ))}
+                    <td className="px-4 py-4">
+                      <div className="text-base font-black uppercase tracking-wide text-white">
+                        {row.label}
+                      </div>
+                      {row.tagline && (
+                        <div className="text-[10px] text-fuchsia-300/70 mt-1">
+                          {row.tagline}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-4 py-4 text-right text-amber-300/90 font-bold">
+                      {fmtUSD(row.monthly_rev_usd, 0)}
+                    </td>
+                    <td className="px-4 py-4 text-right text-cyan-300 font-bold">
+                      {fmtUSD(row.annual_div_per_chair_usd, 2)}
+                    </td>
+                    <td className="px-4 py-4 text-right">
+                      <span className="text-2xl font-black bg-gradient-to-r from-amber-300 via-fuchsia-400 to-cyan-300 bg-clip-text text-transparent">
+                        {fmtUSD(row.market_value_usd, 2)}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* v2 Block-Release Governance + Crewmate Lock-up */}
+        <section
+          data-testid="equity-governance-section"
+          className="grid grid-cols-1 md:grid-cols-3 gap-3"
+        >
+          <div className="rounded-2xl border-2 border-cyan-400/30 bg-gradient-to-br from-cyan-950/30 via-black/60 to-fuchsia-950/30 p-5">
+            <Vote className="w-7 h-7 text-cyan-300 mb-3" />
+            <div className="text-[10px] uppercase tracking-widest text-cyan-300">
+              Block-Release Governance
+            </div>
+            <div className="text-3xl font-black text-white mt-1">
+              {fmtInt(constants?.governance?.block_release_size ?? 50_000)} chairs
+            </div>
+            <p className="text-xs text-white/60 mt-2 leading-relaxed">
+              New supply mints only in strict {fmtInt(50_000)}-unit blocks, gated by a{" "}
+              <span className="text-cyan-300 font-bold">
+                {constants?.governance?.majority_vote_threshold_pct ?? ">51%"}
+              </span>{" "}
+              majority vote — and only when Yield Math confirms the price stays put.
+            </p>
+          </div>
+          <div className="rounded-2xl border-2 border-amber-300/30 bg-gradient-to-br from-amber-950/30 via-black/60 to-rose-950/30 p-5">
+            <Shield className="w-7 h-7 text-amber-300 mb-3" />
+            <div className="text-[10px] uppercase tracking-widest text-amber-300">
+              Crewmate Lock-Up
+            </div>
+            <div className="text-3xl font-black text-white mt-1">
+              {constants?.crewmate_lockup_months ?? 12} months
+            </div>
+            <p className="text-xs text-white/60 mt-2 leading-relaxed">
+              All Crewmate chairs are locked for {constants?.crewmate_lockup_months ?? 12}{" "}
+              months before internal-market trade. Skin-in-the-game built into the protocol.
+            </p>
+          </div>
+          <div className="rounded-2xl border-2 border-emerald-400/30 bg-gradient-to-br from-emerald-950/30 via-black/60 to-cyan-950/30 p-5">
+            <Megaphone className="w-7 h-7 text-emerald-300 mb-3" />
+            <div className="text-[10px] uppercase tracking-widest text-emerald-300">
+              Platform Buy-Back Floor
+            </div>
+            <div className="text-3xl font-black text-white mt-1">
+              {fmtUSD(constants?.platform_buyback_floor_usd ?? 20, 0)}
+            </div>
+            <p className="text-xs text-white/60 mt-2 leading-relaxed">
+              Guaranteed buy-back from the House Treasury protects Genius-Phase{" "}
+              <span className="text-emerald-300 font-bold">Walking Advertisements</span>{" "}
+              cohort. Permanent Founder badge on DSG TV avatar.
+            </p>
           </div>
         </section>
 
