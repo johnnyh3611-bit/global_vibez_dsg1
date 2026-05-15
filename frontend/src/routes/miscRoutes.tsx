@@ -17,6 +17,7 @@ import EconomicEnginePage from "@/pages/EconomicEnginePage";
 import EquityMasterPage from "@/pages/EquityMasterPage";
 import AmbassadorCarePackagePage from "@/pages/AmbassadorCarePackagePage";
 import MyVibezThemedRoom from "@/pages/MyVibezThemedRoom";
+import RoadmapHub from "@/pages/RoadmapHub";
 import AgeVerificationPage from "@/pages/AgeVerificationPage";
 import ContentRightsPage from "@/pages/ContentRightsPage";
 import CinemaRoom from "@/pages/CinemaRoom";
@@ -102,6 +103,8 @@ export const miscRoutes = (ProtectedRoute) => (
     <Route path="/ambassador-care-package" element={<ProtectedRoute><AmbassadorCarePackagePage /></ProtectedRoute>} />
     <Route path="/my-vibez/themed" element={<ProtectedRoute><MyVibezThemedRoom /></ProtectedRoute>} />
     <Route path="/my-vibez-themed" element={<ProtectedRoute><MyVibezThemedRoom /></ProtectedRoute>} />
+    <Route path="/roadmap" element={<ProtectedRoute><RoadmapHub /></ProtectedRoute>} />
+    <Route path="/roadmap-hub" element={<ProtectedRoute><RoadmapHub /></ProtectedRoute>} />
     {/* 21+ Age Verification Protocol — restricted goods (alcohol/tobacco).
         Distinct from the platform-wide 18+ gate at /age-verification. */}
     <Route path="/restricted-goods-verification" element={<ProtectedRoute><AgeVerificationPage /></ProtectedRoute>} />

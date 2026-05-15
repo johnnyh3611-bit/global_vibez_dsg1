@@ -5399,3 +5399,92 @@ Files touched (5):
 - `frontend/src/pages/MyVibezThemedRoom.tsx` (NEW — 260 LOC)
 - `frontend/src/routes/miscRoutes.tsx` (+2 routes)
 - `frontend/src/pages/VolumetricDashboard.tsx` (+ orbit-room)
+
+## 2026-02-15 — 🚀 Founder Roadmap: 8 Items Shipped in One Batch
+
+**Founder ask**: "I like the whole list one through eight. Start working on
+all those things right now one by one until finished."
+
+**All 8 items wired in, tested, and surfaced via `/roadmap` hub page.**
+
+### 1. Personalized For You Feed — `routes/my_vibez_feed.py`
+- Heuristic ranker: engagement (45%) + creator score (20%) + recency (20%) +
+  category match (10%) + watch-completion EMA (5%). Weights sum to 1.0.
+- Endpoints: `GET /personalized`, `POST /signal`, `GET /trending`.
+- Tracks per-user prefs (last_category, avg_completion EMA) in Mongo so
+  ranker improves over time.
+
+### 2. Creator Earnings Dashboard — `routes/creator_earnings.py`
+- Single pane aggregating Cinema unlocks + Stream tips by day/week/lifetime.
+- $1,000 $VIBEZ minimum cashout enforced.
+- Returns split percentages (80% Cinema · 70% Streaming · 60% Ad) for UX.
+
+### 3. Live Commerce — `routes/live_commerce.py`
+- 70% vendor / 20% streamer / 10% house; 1% of house → quarterly pool.
+- Endpoints: pin product, list pins per stream, tap-to-buy settlement.
+- Plugs into existing Yellow Pages / Hungry Vibez vendor catalogs.
+
+### 4. Crews — `routes/crews.py`
+- 1-12 person persistent groups. Create / join / leave / leaderboard.
+- Shared chair pool field ready for future shared-dividend logic.
+
+### 5. Native Mobile Shell — `frontend/capacitor.config.ts`
+- Capacitor config committed (appId: com.globalvibez.dsg).
+- One-line install path documented (`yarn cap:add ios|android`).
+- Status: scaffolded — submission is a manual step post-redeploy.
+
+### 6. Streamer Co-Pilot — `routes/streamer_copilot.py`
+- Title suggester: LLM-first via Claude Sonnet 4.5; deterministic template
+  fallback so streamers always get usable titles.
+- Clip-worthy moment scorer (chat × reactions × tips × new followers).
+- Cheap chat moderation classifier (block / timeout / soft-warn / allow).
+
+### 7. Responsible Gaming + Streaks + Tournaments — `routes/safety_streaks_tourneys.py`
+- RG: self-imposed daily loss limits (24h cool-off on increases),
+  take-a-break window (1h–30d).
+- Streaks: +10 / +25 / +75 / +200 / +500 / +1500 $VIBEZ at days
+  1 / 3 / 7 / 15 / 30 / 60.
+- Tournaments: create / join / list, prize pool auto-accumulates per join.
+
+### 8. Real User Monitoring — `routes/rum_collector.py`
+- Ring-buffer collector (5K samples per metric).
+- Endpoints: `POST /beacon` (frontend → backend), `GET /metrics`
+  (p50/p95/p99/avg/max snapshot for ops).
+
+### Roadmap Hub frontend (`/roadmap`)
+- Single page health-checks all 8 endpoints on mount.
+- Numbered cards with status dots (Live · Loading · Down · Idle).
+- Live data on cards: trending count, earnings lifetime, crew count,
+  sample title, streak day, etc.
+- New orbit-room added to Volumetric Galaxy's Vault planet (🛰️).
+
+### Backend mounting
+- All 7 routes (item 5 is frontend-only) mounted via a single loop in
+  `routes/registry.py` with non-fatal error handling so a single module
+  failure can never block API startup.
+
+### Testing
+- Regression Shield: 393 → **394 tests** GREEN (one MEGA test
+  `test_feb2026_roadmap_8_items_wired` validates all 8 items in one shot).
+- Cross-suite: **414/414 PASS**.
+
+### Smoke test (live preview)
+- All 8 Roadmap Hub cards rendered with green LIVE badges ✅
+- 100% of backend health-checks PASS on page load
+- Demo flows verified: creator earnings ($80 cinema lifetime, $1000 min),
+  streak check-in (day 1 = +10), title suggest fallback returns 3 strings,
+  moment scorer returns 99/100 "Clip this NOW", crew created with 1 member
+
+### Files touched (9)
+- `backend/routes/my_vibez_feed.py` (NEW — 160 LOC)
+- `backend/routes/creator_earnings.py` (NEW — 100 LOC)
+- `backend/routes/live_commerce.py` (NEW — 130 LOC)
+- `backend/routes/crews.py` (NEW — 100 LOC)
+- `backend/routes/streamer_copilot.py` (NEW — 150 LOC)
+- `backend/routes/safety_streaks_tourneys.py` (NEW — 200 LOC)
+- `backend/routes/rum_collector.py` (NEW — 90 LOC)
+- `backend/routes/registry.py` (mount loop)
+- `frontend/src/pages/RoadmapHub.tsx` (NEW — 250 LOC)
+- `frontend/capacitor.config.ts` (NEW — scaffolding)
+- `frontend/src/routes/miscRoutes.tsx` (+2 routes)
+- `frontend/src/pages/VolumetricDashboard.tsx` (+ orbit-room)

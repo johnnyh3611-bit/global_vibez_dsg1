@@ -8571,3 +8571,87 @@ def test_my_vibez_themed_room_frontend_wired() -> None:
     # Volumetric exposes it.
     vol = Path("/app/frontend/src/pages/VolumetricDashboard.tsx").read_text()
     assert 'path: "/my-vibez/themed"' in vol
+
+
+def test_feb2026_roadmap_8_items_wired() -> None:
+    """Feb 2026 founder roadmap — 8 engagement/revenue/retention modules
+    must all be importable, have routers registered, and surface in the
+    Roadmap Hub. One MEGA test instead of 8 separate tests so a single
+    fork agent run validates the whole roadmap in one shot."""
+    from pathlib import Path
+
+    # 1. Backend modules importable.
+    from routes.my_vibez_feed import router as r1, SCORE_WEIGHTS
+    from routes.creator_earnings import router as r2, MIN_CASHOUT_VIBEZ
+    from routes.live_commerce import (
+        router as r3, VENDOR_SPLIT, STREAMER_SPLIT, HOUSE_SPLIT,
+    )
+    from routes.crews import router as r4, MIN_CREW_SIZE, MAX_CREW_SIZE
+    from routes.streamer_copilot import router as r6, TITLE_TEMPLATES
+    from routes.safety_streaks_tourneys import (
+        router as r7, STREAK_REWARDS, DAILY_DEFAULT_LIMIT_VIBEZ,
+    )
+    from routes.rum_collector import router as r8
+
+    # 2. Locked numbers per the founder spec.
+    assert round(sum(SCORE_WEIGHTS.values()), 4) == 1.0
+    assert MIN_CASHOUT_VIBEZ == 1000
+    assert VENDOR_SPLIT == 0.70
+    assert STREAMER_SPLIT == 0.20
+    assert HOUSE_SPLIT == 0.10
+    assert round(VENDOR_SPLIT + STREAMER_SPLIT + HOUSE_SPLIT, 4) == 1.0
+    assert MIN_CREW_SIZE == 1
+    assert MAX_CREW_SIZE == 12
+    assert "casino" in TITLE_TEMPLATES
+    assert STREAK_REWARDS[1] == 10
+    assert STREAK_REWARDS[3] == 25
+    assert STREAK_REWARDS[7] == 75
+    assert STREAK_REWARDS[15] == 200
+    assert DAILY_DEFAULT_LIMIT_VIBEZ == 5_000
+
+    # 3. Routers mounted in registry.
+    reg = Path("/app/backend/routes/registry.py").read_text()
+    for needle in (
+        "routes.my_vibez_feed",
+        "routes.creator_earnings",
+        "routes.live_commerce",
+        "routes.crews",
+        "routes.streamer_copilot",
+        "routes.safety_streaks_tourneys",
+        "routes.rum_collector",
+    ):
+        assert needle in reg, f"Registry missing mount for {needle}"
+
+    # 4. Item 5 — Capacitor scaffolding committed.
+    cap = Path("/app/frontend/capacitor.config.ts")
+    assert cap.exists(), "capacitor.config.ts must exist"
+    cap_src = cap.read_text()
+    assert "com.globalvibez.dsg" in cap_src
+    assert "Global Vibez DSG" in cap_src
+
+    # 5. Frontend Roadmap Hub page surfaces all 8 items.
+    hub = Path("/app/frontend/src/pages/RoadmapHub.tsx").read_text()
+    # Top-level hub test ID is a string literal.
+    assert 'data-testid="roadmap-hub"' in hub
+    # Card test IDs are passed as a `testid` prop string literal,
+    # then rendered via `data-testid={testid}`.
+    for tid in (
+        "roadmap-card-feed",
+        "roadmap-card-earnings",
+        "roadmap-card-commerce",
+        "roadmap-card-crews",
+        "roadmap-card-native",
+        "roadmap-card-copilot",
+        "roadmap-card-safety",
+        "roadmap-card-rum",
+    ):
+        assert f'"{tid}"' in hub, f"Roadmap Hub missing card: {tid}"
+
+    # 6. Routed.
+    routes = Path("/app/frontend/src/routes/miscRoutes.tsx").read_text()
+    assert 'path="/roadmap"' in routes
+    assert "RoadmapHub" in routes
+
+    # 7. Volumetric exposes it.
+    vol = Path("/app/frontend/src/pages/VolumetricDashboard.tsx").read_text()
+    assert 'path: "/roadmap"' in vol

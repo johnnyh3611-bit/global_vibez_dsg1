@@ -753,6 +753,26 @@ def register_all_routes(
     except Exception as _e:
         log.error(f"⚠️ MY_VIBEZ_OPTIMIZATION mount failed: {_e}")
 
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    # Feb 2026 Founder Roadmap — 8-item engagement/revenue/retention push.
+    # All modules below are non-fatal so a single failure can't block the
+    # whole API startup.
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    for mod_name, label in (
+        ("routes.my_vibez_feed",            "MY_VIBEZ_FEED (item 1)"),
+        ("routes.creator_earnings",         "CREATOR_EARNINGS (item 2)"),
+        ("routes.live_commerce",            "LIVE_COMMERCE (item 3)"),
+        ("routes.crews",                    "CREWS (item 4)"),
+        ("routes.streamer_copilot",         "STREAMER_COPILOT (item 6)"),
+        ("routes.safety_streaks_tourneys",  "SAFETY/STREAKS/TOURNEYS (item 7)"),
+        ("routes.rum_collector",            "RUM (item 8)"),
+    ):
+        try:
+            mod = __import__(mod_name, fromlist=["router"])
+            api_router.include_router(mod.router)
+        except Exception as _e:
+            log.error(f"⚠️ {label} mount failed: {_e}")
+
     # Cinematic Landing Video — Sora 2 generated walkthrough.
     try:
         from routes.landing_video import router as landing_video_router
