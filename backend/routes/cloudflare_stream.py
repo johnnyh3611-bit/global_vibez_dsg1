@@ -232,7 +232,18 @@ async def list_live_inputs(only_live: bool = False, limit: int = 60) -> Dict[str
     Annotates each stream with `is_featured` + `featured_until` in one
     round-trip so the Live Now Wall can pin featured streamers without
     N+1 API calls.
+
+    Cached for 8s via `scale_cache` when Redis is configured (Production
+    Blueprint § Real-Time): clients poll this endpoint every 8s, so we
+    coalesce that pressure into one DB hit per 8s per process.
     """
+    # ---- Redis cache fast-path (Production Blueprint §Real-Time) ----
+    from services.scale_cache import cache_get, cache_set, TTL_LIVE_WALL  # noqa: PLC0415
+    cache_key = f"live_inputs:only_live={int(only_live)}:limit={limit}"
+    cached = await cache_get(cache_key)
+    if cached is not None:
+        return cached
+
     q: Dict[str, Any] = {"is_deleted": {"$ne": True}}
     if only_live:
         q["is_live"] = True
@@ -267,7 +278,10 @@ async def list_live_inputs(only_live: bool = False, limit: int = 60) -> Dict[str
         ),
         reverse=False,
     )
-    return {"streams": safe, "count": len(safe)}
+    payload = {"streams": safe, "count": len(safe)}
+    # Fire-and-forget: cache the response for 8s — matches Live Now Wall poll cadence
+    await cache_set(cache_key, payload, ttl=TTL_LIVE_WALL)
+    return payload
 
 
 @router.delete("/live-inputs/{input_id}")
@@ -363,6 +377,18 @@ async def cloudflare_webhook(
             "last_status_at": datetime.now(timezone.utc).isoformat(),
         }},
     )
+
+    # Invalidate cached Live Now Wall responses — followers polling
+    # every 8s should see this state change on the next poll, not after
+    # the cache TTL expires.
+    try:
+        from services.scale_cache import cache_bulk_delete  # noqa: PLC0415
+        await cache_bulk_delete([
+            "live_inputs:only_live=0:limit=60",
+            "live_inputs:only_live=1:limit=60",
+        ])
+    except Exception:
+        pass
 
     # Referral payout hook (P3) — fire when a stream first transitions
     # to LIVE. Idempotent per-user via SIGNED_UP→PAID atomic update so

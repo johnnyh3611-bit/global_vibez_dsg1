@@ -793,6 +793,15 @@ def register_all_routes(
     except Exception as _e:
         log.warning(f"Featured Streamers routes not mounted: {_e}")
 
+    # High Roller VIP tier — gated 10k-coin-minimum casino room.
+    # Tiered Stripe Checkout (Genius/Genesis/Apex) flips `vip_until`
+    # via the stripe_payouts_webhook's `vip:` ref-prefix handler.
+    try:
+        from routes.high_roller import router as high_roller_router
+        api_router.include_router(high_roller_router)
+    except Exception as _e:
+        log.warning(f"High Roller routes not mounted: {_e}")
+
     # Streamer Wrap-Up emails — Monday 09:00 UTC per-streamer analytics
     # digest. The loop itself is started during server startup (see
     # server.py); these routes provide preview + manual-send surfaces.

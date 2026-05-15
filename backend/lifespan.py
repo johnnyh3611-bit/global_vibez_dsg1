@@ -628,4 +628,22 @@ _INDEX_SPECS = [
     {"coll": "chair_burn_log", "key": [("burned_at", -1)], "background": True},
     {"coll": "chair_purchases", "key": [("status", 1), ("premium_lapsed_at", 1)], "background": True},
     {"coll": "chair_purchases", "key": "user_id_lookup", "background": True},
+
+    # 100K CCU Scaling indexes (Global Vibez 100K Production Blueprint, May 2026)
+    # High Roller VIP membership lookups
+    {"coll": "high_roller_vip", "key": "user_id", "unique": True, "background": True},
+    {"coll": "high_roller_vip", "key": [("vip_until", -1)], "background": True},
+    {"coll": "high_roller_vip", "key": "last_grant_session_id", "sparse": True, "background": True},
+    # Featured Streamers — sorted active list
+    {"coll": "featured_streamers", "key": "streamer_id", "unique": True, "background": True},
+    {"coll": "featured_streamers", "key": [("featured_until", -1)], "background": True},
+    # Streamer Follow fan-out (live push)
+    {"coll": "streamer_follows", "key": [("streamer_id", 1), ("created_at", -1)], "background": True},
+    {"coll": "streamer_follows", "key": "follower_id", "background": True},
+    # Live Now Wall hot read
+    {"coll": "streams", "key": [("is_live", -1), ("is_featured", -1), ("started_at", -1)], "background": True, "name": "live_wall_idx"},
+    {"coll": "streams", "key": "streamer_id", "background": True},
+    # Cloudflare live input → streamer mapping
+    {"coll": "cloudflare_live_inputs", "key": "streamer_id", "background": True},
+    {"coll": "cloudflare_live_inputs", "key": "cf_uid", "background": True},
 ]

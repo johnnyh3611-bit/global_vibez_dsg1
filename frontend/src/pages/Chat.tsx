@@ -414,7 +414,8 @@ export default function Chat() {
                 src={message.content}
                 alt="Shared"
                 className="max-w-full rounded-lg cursor-pointer hover:opacity-90"
-                onClick={() = loading="lazy"> window.open(message.content, '_blank')}
+                onClick={() => window.open(message.content, '_blank')}
+                loading="lazy"
               />
             )}
 

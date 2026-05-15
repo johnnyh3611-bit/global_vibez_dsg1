@@ -7162,3 +7162,199 @@ def test_watch_room_has_follow_button() -> None:
     assert "is-following" in src, (
         "WatchRoom no longer pre-loads the follow state"
     )
+
+
+# ════════════════════════════════════════════════════════════════════
+# HIGH ROLLER MVP — VIP tier (Genius/Genesis/Apex) at ₵10,000 min bet.
+# May 2026: founder-approved per High Roller PDF + 100K Blueprint PDF.
+# ════════════════════════════════════════════════════════════════════
+def test_high_roller_economy_constants_locked() -> None:
+    """The 10,000-coin floor is the entire point of the VIP tier. If
+    this constant drifts, the standard 50-coin platform games stop
+    feeling fundamentally different from the High Roller room."""
+    from services.high_roller_economy import (
+        HIGH_ROLLER_MIN_BET,
+        HIGH_ROLLER_GRANT_DAYS,
+        HIGH_ROLLER_REF_PREFIX,
+        VIP_TIERS,
+        VIP_TIER_NAMES,
+    )
+    assert HIGH_ROLLER_MIN_BET == 10_000, "VIP min bet must remain ₵10,000"
+    assert HIGH_ROLLER_GRANT_DAYS == 30, "VIP grant window must remain 30 days"
+    assert HIGH_ROLLER_REF_PREFIX == "vip:", "Stripe ref prefix must remain `vip:`"
+    assert VIP_TIER_NAMES == ["genius", "genesis", "apex"], (
+        "VIP tier order locked: genius → genesis → apex"
+    )
+    # Pricing locked per founder approval (Feb 2026)
+    assert VIP_TIERS["genius"]["price_usd"] == 49.00
+    assert VIP_TIERS["genesis"]["price_usd"] == 99.00
+    assert VIP_TIERS["apex"]["price_usd"] == 249.00
+    # Each tier exposes perks the upgrade page renders.
+    for tier in ("genius", "genesis", "apex"):
+        assert VIP_TIERS[tier]["perks"], f"Tier {tier} missing perks list"
+
+
+def test_high_roller_routes_registered() -> None:
+    """Every endpoint the frontend hits must be wired in the API router."""
+    from server import app
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    must_have = [
+        "/api/high-roller/tiers",
+        "/api/high-roller/eligibility/{user_id}",
+        "/api/high-roller/checkout",
+        "/api/high-roller/blackjack/deal",
+        "/api/high-roller/blackjack/action",
+    ]
+    for p in must_have:
+        assert p in paths, f"High Roller endpoint missing: {p}"
+
+
+def test_high_roller_webhook_handles_vip_prefix() -> None:
+    """The Stripe payouts webhook MUST route `vip:` refs to apply_vip_grant.
+    Without this, paid checkouts never flip vip_until and users pay for
+    nothing."""
+    from pathlib import Path
+    src = Path("/app/backend/routes/stripe_payouts_webhook.py").read_text()
+    assert 'ref.startswith("vip:")' in src, (
+        "Webhook lost the vip: branch — Stripe checkouts won't grant VIP"
+    )
+    assert "from routes.high_roller import apply_vip_grant" in src
+    assert "apply_vip_grant(" in src
+
+
+def test_high_roller_routes_mounted_in_registry() -> None:
+    from pathlib import Path
+    reg = Path("/app/backend/routes/registry.py").read_text()
+    assert "from routes.high_roller import router as high_roller_router" in reg, (
+        "High Roller router not mounted in registry.py"
+    )
+
+
+def test_high_roller_blackjack_isolates_min_bet_from_standard_games() -> None:
+    """Standard Blackjack must still enforce the platform 50-coin floor;
+    only the VIP wrapper bumps it to 10,000. Otherwise the regression
+    on test_games_enforce_50_coin_min_bet_floor would start failing."""
+    from pathlib import Path
+    standard = Path("/app/backend/routes/blackjack.py").read_text()
+    assert "PLATFORM_MIN_BET" in standard, (
+        "Standard Blackjack lost the 50-coin floor import"
+    )
+    vip = Path("/app/backend/routes/high_roller.py").read_text()
+    assert "HIGH_ROLLER_MIN_BET" in vip
+    assert "PLATFORM_MIN_BET" not in vip, (
+        "VIP route should not use the standard 50-coin constant"
+    )
+
+
+def test_high_roller_frontend_pages_and_routes_wired() -> None:
+    """The /casino/high-roller page and /casino/high-roller/blackjack
+    table must both be registered and self-test-id-locked."""
+    from pathlib import Path
+    page = Path("/app/frontend/src/pages/HighRollerCasino.tsx").read_text()
+    bj = Path("/app/frontend/src/pages/HighRollerBlackjack.tsx").read_text()
+    # Page test IDs — page uses template literals for per-tier IDs so
+    # we check for the dynamic pattern instead of literal strings.
+    for tid in [
+        "high-roller-page",
+        "high-roller-hero-title",
+        "high-roller-tiers",
+    ]:
+        assert f'data-testid="{tid}"' in page, f"Page missing testid {tid}"
+    # Dynamic per-tier testids (rendered via `data-testid={`high-roller-tier-${t.tier}`}`)
+    assert "data-testid={`high-roller-tier-${t.tier}`}" in page, (
+        "Page lost the per-tier card testid template"
+    )
+    assert "data-testid={`high-roller-upgrade-${t.tier}-btn`}" in page, (
+        "Page lost the per-tier upgrade button testid template"
+    )
+    # Blackjack test IDs
+    for tid in [
+        "vip-blackjack-page",
+        "vip-blackjack-deal-btn",
+        "vip-blackjack-bet-input",
+    ]:
+        assert f'data-testid="{tid}"' in bj, f"VIP Blackjack missing testid {tid}"
+    # Routes
+    routes = Path("/app/frontend/src/routes/monetizationRoutes.tsx").read_text()
+    assert 'path="/casino/high-roller"' in routes
+    assert 'path="/casino/high-roller/blackjack"' in routes
+
+
+# ════════════════════════════════════════════════════════════════════
+# 100K CCU SCALING FOUNDATION — Production Blueprint, May 2026
+# ════════════════════════════════════════════════════════════════════
+def test_scale_cache_helper_exists_and_is_safe_when_redis_disabled() -> None:
+    """The Blueprint mandates Redis for live-wall caching + driver geo,
+    but the helper MUST gracefully no-op when REDIS_URL is unset so we
+    never break the preview environment."""
+    import asyncio
+    from services.scale_cache import (
+        cache_get, cache_set, cache_delete, cache_bulk_delete,
+        geo_add_driver, geo_remove_driver, geo_nearby_drivers,
+        is_redis_enabled, TTL_LIVE_WALL,
+    )
+    assert TTL_LIVE_WALL == 8, "Live Now Wall TTL must match 8s client poll"
+
+    # When REDIS_URL is unset (preview env) every helper must return None/False
+    # without raising.
+    import os
+    if not os.environ.get("REDIS_URL"):
+        assert is_redis_enabled() is False
+        async def _check():
+            assert await cache_get("any_key") is None
+            assert await cache_set("any_key", {"a": 1}) is False
+            assert await cache_delete("any_key") is False
+            assert await cache_bulk_delete(["a", "b"]) == 0
+            assert await geo_add_driver("d1", -74.0, 40.7) is False
+            assert await geo_remove_driver("d1") is False
+            assert await geo_nearby_drivers(-74.0, 40.7) == []
+        asyncio.run(_check())
+
+
+def test_scale_cache_wired_into_live_now_wall() -> None:
+    """The Live Now Wall endpoint must consult Redis before hitting Mongo
+    and write back to the cache on miss (Blueprint §Real-Time)."""
+    from pathlib import Path
+    src = Path("/app/backend/routes/cloudflare_stream.py").read_text()
+    assert "from services.scale_cache import cache_get, cache_set, TTL_LIVE_WALL" in src
+    assert "live_inputs:only_live=" in src, "Cache key prefix lost"
+    assert "cache_bulk_delete" in src, "CF webhook must invalidate live-wall cache"
+
+
+def test_high_roller_indexes_registered_in_lifespan() -> None:
+    """Compound indexes for VIP membership + Live Now Wall hot paths
+    must be appended to the startup index set."""
+    from pathlib import Path
+    src = Path("/app/backend/lifespan.py").read_text()
+    # VIP collection
+    assert '"coll": "high_roller_vip"' in src
+    # Featured streamers + follow fan-out
+    assert '"coll": "featured_streamers"' in src
+    assert '"coll": "streamer_follows"' in src
+
+
+def test_production_launch_script_exists() -> None:
+    """Blueprint §1: Gunicorn cluster launch script with 4×5000 conn config.
+    Required for the production deploy outside the supervised preview pod."""
+    from pathlib import Path
+    sh = Path("/app/backend/scripts/run_production.sh")
+    assert sh.exists(), "Production launch script missing"
+    body = sh.read_text()
+    assert "gunicorn" in body
+    assert "uvicorn.workers.UvicornWorker" in body
+    assert "worker-connections" in body
+
+
+def test_master_stress_suite_exists() -> None:
+    """Master Test Suite PDF — 4 stress tests must be parameterised and
+    safety-gated by GVDSG_STRESS_ENABLE so they can't auto-fire."""
+    from pathlib import Path
+    py = Path("/app/backend/scripts/master_stress_suite.py")
+    assert py.exists(), "Master stress test suite missing"
+    body = py.read_text()
+    assert "GVDSG_STRESS_ENABLE" in body, "Safety toggle missing"
+    assert "test1_api_signaling_load" in body
+    assert "test2_gifting_ledger_speed" in body
+    assert "test3_geolocation_throughput" in body
+    assert "test4_unreal_engine_tick_audit" in body
+

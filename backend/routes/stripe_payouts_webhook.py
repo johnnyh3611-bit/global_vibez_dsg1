@@ -235,6 +235,25 @@ async def _handle_checkout_completed(obj: Dict[str, Any]) -> None:
             logger.exception("Failed to apply feature grant for %s: %s", streamer_id, e)
         return
 
+    # High Roller VIP tier — `vip:<user_id>:<tier>`.
+    if isinstance(ref, str) and ref.startswith("vip:"):
+        try:
+            _, payload = ref.split(":", 1)
+            user_id, tier = payload.split(":", 1)
+        except ValueError:
+            logger.warning("Malformed VIP ref %s; skipping", ref)
+            return
+        try:
+            from routes.high_roller import apply_vip_grant  # noqa: PLC0415
+            await apply_vip_grant(
+                user_id=user_id,
+                tier=tier,
+                stripe_session_id=obj.get("id"),
+            )
+        except Exception as e:
+            logger.exception("Failed to apply VIP grant for %s: %s", user_id, e)
+        return
+
     # Generic order/booking paid flip.
     now = datetime.now(timezone.utc).isoformat()
     for coll in ("orders", "bookings", "venue_bookings", "smartstack_orders"):

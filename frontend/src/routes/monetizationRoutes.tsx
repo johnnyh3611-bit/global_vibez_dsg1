@@ -12,6 +12,8 @@ import AchievementBadges from '@/pages/AchievementBadges';
 import DailyChallenges from '@/pages/DailyChallenges';
 import VIPRooms from '@/pages/VIPRooms';
 import SeasonalEvents from '@/pages/SeasonalEvents';
+import HighRollerCasino from '@/pages/HighRollerCasino';
+import HighRollerBlackjack from '@/pages/HighRollerBlackjack';
 import NFTMarketplace from '@/pages/NFTMarketplace';
 import AffiliateProgram from '@/pages/AffiliateProgram';
 import FoundersPass from '@/pages/FoundersPass';
@@ -117,6 +119,25 @@ export const monetizationRoutes = (ProtectedRoute) => (
           <VIPRooms />
         </ProtectedRoute>
       } 
+    />
+    {/* High Roller VIP Casino — 10,000-coin minimum tier with Stripe
+        Checkout upgrade (Genius/Genesis/Apex). Lives at /casino/high-roller
+        to keep it visually separate from the existing /vip-rooms suites. */}
+    <Route
+      path="/casino/high-roller"
+      element={
+        <ProtectedRoute>
+          <HighRollerCasino />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/casino/high-roller/blackjack"
+      element={
+        <ProtectedRoute>
+          <HighRollerBlackjack />
+        </ProtectedRoute>
+      }
     />
     <Route 
       path="/seasonal-events" 
