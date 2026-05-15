@@ -24,38 +24,39 @@ from emergentintegrations.llm.openai import OpenAITextToSpeech  # noqa: E402
 load_dotenv()
 
 # Founder-locked spelling: VIBEZ (with Z), DSG, $VIBEZ for the token.
-# Tone: ENTHUSIASTIC / hype / inviting — May-13-2026 founder ask:
-#   "the guy that's talking in the video should be more enthused, and
-#    make sure you give more information... more information on how the
-#    different ways you could earn and stream and make money, and what
-#    is the Vibe Yellow Pages, a little bit more detail about the app
-#    and how the functionality, and how it works."
-# Length: ~360 words → ~145-155s at Onyx 1.0× speed (2:25-2:35 min).
-# Voice: switched to "shimmer" for higher-energy delivery; falls back
-# to "onyx" on regenerate if shimmer ever gets deprecated.
-SCRIPT = """Welcome to GLOBAL VIBEZ DSG — and listen, this is not another app, this is your seat at a brand-new economy!
+# Tone: HIGH-ENERGY / hype / inviting — Feb-15-2026 founder ask:
+#   "Make sure the voice of the character that is talking is more
+#    energetic and alive and excited about Global Vibez DSG. The tour
+#    can be a little bit longer due to all the new information."
+# Length: ~520 words → ~3:00-3:15 at speed=1.10× (nova voice).
+# Voice: NOVA — OpenAI's most energetic / alive voice (higher pitch,
+# more dynamic prosody than shimmer or onyx). Speed bumped to 1.10
+# for an even more excited delivery.
+SCRIPT = """YO! Welcome to GLOBAL VIBEZ DSG — and listen up, because this is NOT another app. This is your seat at a brand-new economy that pays you back!
 
-Picture this: every single thing you do here puts coins in your pocket. Yes — every game you play, every ride you give, every meal you cook, every stream you go live on, every chair you book, every business you list. ALL of it earns. That's the whole point. That's the Vibez promise.
+Picture this: every single thing you do here puts coins in YOUR pocket. Every game played, every ride given, every meal cooked, every stream gone live, every chair booked, every business listed — ALL OF IT EARNS. That's the Vibez promise. That's the whole vibe!
 
-Let's break it down. First — the Cyber Casino. Thirty-plus AAA card rooms, neon-drenched, live multiplayer. Spades, Bid Whist, Hearts, UNO, Pinochle, Euchre, Gin Rummy — the way they're MEANT to be played. Plus our crown jewel — Vibez Six-Five-Four — chess, baccarat, blackjack, three-card poker, slots that pay in real currency. Every spin, every hand, every trick taken — you're earning $VIBEZ.
+Let's dive in. The Cyber Casino. Thirty-plus AAA card rooms — neon-drenched, live multiplayer. Spades, Bid Whist, Hearts, UNO, Pinochle, Euchre, Gin Rummy — the way they were MEANT to be played. Plus the crown jewel — Vibez Six-Five-Four! Chess, baccarat, blackjack, three-card poker, slots that pay in real currency. Every spin, every hand, every trick taken — you're earning real $VIBEZ.
 
-Now — STREAMING. This is huge. Go live on DSG TV in 30 seconds flat. Plug your phone in, hit the button, and you're broadcasting to the world. You keep seventy percent of every tip, every gift, every Featured tier unlock. We pin top streamers on the Live Now Wall — gold-bordered, instant visibility. Tag-team with another creator? You both earn. Get followed? Your followers get a push notification the SECOND you go live. That's retention. That's growth. That's money.
+Now let's talk HIGH ROLLER VIP — brand new! Ten-thousand-coin minimums. Diamond-tier blackjack, roulette, baccarat. VIP-gated. This is where the heavy hitters play, and the energy is UNREAL.
 
-The hustle hats. Drive a VibeRidez, you keep seventy percent of every fare. Deliver Hungry VIBEZ — seventy percent. Cook as a Vibe Artisan from your kitchen, build a customer base — seventy percent. Host a Vibe Venue, list your spot, book private parties — seventy percent.
+STREAMING. Go LIVE on DSG TV in thirty seconds flat. Plug your phone in, hit the button, and you're broadcasting to the world. Keep seventy percent of every tip, every gift, every Featured unlock. Top streamers get pinned on the Live Now Wall — gold-bordered, instant visibility. And the Media Master Hub? DSG TV, Vibe Radio, Music Group, AI Scout — your whole broadcast empire in one place. Plus we just dropped Regional Hubs — Chicago, Atlanta, NYC, LA, Miami, Houston — every impression feeds the House Revenue Pool.
 
-And here's a game-changer — the VIBE YELLOW PAGES. This is your local-business launchpad. Geo-pinned. Verified. Every Mom and Pop shop in your city gets a free profile, hyper-local sponsorship deals, in-app coupons, AND they earn coins every time a Vibez user books or buys. We backed it with the DSG Guard safety protocol so listings are real, people are real, transactions are real.
+The hustle hats. Drive a VibeRidez — keep seventy percent. Deliver Hungry VIBEZ — seventy percent. Cook as a Vibe Artisan from your kitchen — seventy percent. Host a Vibe Venue — seventy percent. Cinema creators? Eighty percent on every ticket sold!
 
-Independent artists — keep seventy percent of every beat, every track, every collab. Beat Vault. Freestyle Battles. Collab Matchmaker. The Totem Pole leaderboard. The seventy-thirty Revolution is HERE.
+Now the BIG one — the AMBASSADOR Care Package! This is YOU as a Walking Advertisement. Founder's Circle status. Scan a vendor, scan a sponsor, your Master QR Code walks them through onboarding. Restaurants get Hungry Vibez. Businesses get Yellow Pages. Sponsors get DSG TV ad slots. And you? You earn FOREVER. Chair Dividends quarterly. Referral Bounties instantly. Override Commissions on every transaction your vendors make. Hit the three-month Diamond Challenge — onboard three vendors, drive a thousand $VIBEZ, cast your first vote — and unlock Tier-Two Equity Status PLUS Pit Boss management rights!
 
-Now the economy itself — and this is what makes it work. Three billion VIBEZ coins, burning down to one-point-five billion. Five percent dynamic burn rate that drops as supply meets the floor. Every fee dollar from rides, restaurants, and gaming splits fifty-fifty — half goes straight into Buyback-and-burn, half strengthens the liquidity pool. The Credits standard locks in your value: One coin equals ten Credits. One dollar equals one hundred Credits. A thirteen-point-five percent Sovereign Tax recirculates every win back to the players. A five-times mining multiplier locked in for chair holders. $VIBEZ bridges to Solana at four-to-one.
+And here's where it gets serious — EQUITY MASTER v2! The four-tier Value Matrix. Floor Level: five-hundred-thousand monthly gross unlocks an eighteen-dollar chair. Genesis Target: two-point-seven-five million gross unlocks a NINETY-NINE-dollar chair! Diamond Status: ten million gross — three-hundred-sixty dollars per chair! Platinum Scale: fifty million gross — EIGHTEEN-HUNDRED dollars per chair! Block-Release Governance — new chairs ONLY mint in fifty-thousand-unit blocks, gated by a fifty-one-percent majority vote. Twelve-month Crewmate lock-up. Twenty-dollar House Treasury buy-back floor!
 
-And the chair. Apex. Genesis. Genius. One million seats. Globally. Forever. The first cohort to sit at the table owns the network.
+The economy. Three billion VIBEZ burning to one-point-five billion. Five percent dynamic burn rate that drops as supply meets the floor. Every fee dollar from rides, restaurants, and gaming splits fifty-fifty — half to Buyback-and-burn, half to liquidity. The Credits standard locks in your value: One coin equals ten Credits. Thirty percent of all gross revenue flows to chair holders — paid every ninety days. Five-times mining multiplier for chair holders. $VIBEZ bridges to Solana at four-to-one.
 
-This is the Sovereign Casino plus Social Network. One currency. One economy. You OWN it.
+ONE MILLION CHAIRS. Globally. Forever. The first cohort to sit at the table OWNS the network!
+
+This is the Sovereign Casino. The Social Network. The Walking Advertisement Economy. One currency. One economy. YOU OWN IT.
 
 Take your seat. RIGHT NOW.
 
-GLOBAL VIBEZ DSG. Own the network. Feel the VIBEZ.
+GLOBAL VIBEZ DSG. Own the network. Feel the VIBEZ. LET'S GOOO!
 """
 
 OUTPUT_PATH = Path("/app/frontend/public/landing-tour-narration.mp3")
@@ -67,14 +68,14 @@ async def main() -> None:
         raise SystemExit("EMERGENT_LLM_KEY missing from /app/backend/.env")
 
     tts = OpenAITextToSpeech(api_key=api_key)
-    print(f"[narration] generating {len(SCRIPT)} chars via OpenAI TTS (shimmer · tts-1-hd)…")
+    print(f"[narration] generating {len(SCRIPT)} chars via OpenAI TTS (nova · tts-1-hd · 1.10×)…")
 
     audio_bytes = await tts.generate_speech(
         text=SCRIPT.strip(),
         model="tts-1-hd",
-        voice="shimmer",
+        voice="nova",      # 🔥 most energetic / alive OpenAI voice
         response_format="mp3",
-        speed=1.05,
+        speed=1.10,        # higher tempo → more excited feel
     )
 
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)

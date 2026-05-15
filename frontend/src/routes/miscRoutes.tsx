@@ -15,6 +15,7 @@ import ReceiptsPage from "@/pages/ReceiptsPage";
 import StripeConnectWizard from "@/pages/payouts/StripeConnectWizard";
 import EconomicEnginePage from "@/pages/EconomicEnginePage";
 import EquityMasterPage from "@/pages/EquityMasterPage";
+import AmbassadorCarePackagePage from "@/pages/AmbassadorCarePackagePage";
 import AgeVerificationPage from "@/pages/AgeVerificationPage";
 import ContentRightsPage from "@/pages/ContentRightsPage";
 import CinemaRoom from "@/pages/CinemaRoom";
@@ -96,6 +97,8 @@ export const miscRoutes = (ProtectedRoute) => (
     <Route path="/economic-engine" element={<EconomicEnginePage />} />
     <Route path="/equity" element={<ProtectedRoute><EquityMasterPage /></ProtectedRoute>} />
     <Route path="/equity-master" element={<ProtectedRoute><EquityMasterPage /></ProtectedRoute>} />
+    <Route path="/ambassador" element={<ProtectedRoute><AmbassadorCarePackagePage /></ProtectedRoute>} />
+    <Route path="/ambassador-care-package" element={<ProtectedRoute><AmbassadorCarePackagePage /></ProtectedRoute>} />
     {/* 21+ Age Verification Protocol — restricted goods (alcohol/tobacco).
         Distinct from the platform-wide 18+ gate at /age-verification. */}
     <Route path="/restricted-goods-verification" element={<ProtectedRoute><AgeVerificationPage /></ProtectedRoute>} />

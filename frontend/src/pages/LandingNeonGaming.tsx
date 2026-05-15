@@ -683,6 +683,67 @@ export default function LandingNeonGaming() {
           clips · live captions · play / pause / mute / restart. */}
       <LandingTourVideo onJoinBeta={() => navigate('/beta-tester')} />
 
+      {/* 🏅 Ambassador Care Package — Founder's Circle landing pitch.
+          Added Feb 2026 (Ambassador_Care_Package.pdf): surfaces "Walking
+          Advertisements" + 3-Month Diamond Challenge + 4 ways to earn so
+          landing-page traffic sees the passive-income story before
+          scrolling further. CTA routes to /ambassador. */}
+      <section
+        id="ambassador-care"
+        data-testid="landing-ambassador-care"
+        className="relative z-10 px-6 py-20 md:py-24 bg-gradient-to-b from-black via-[#1a0a05] to-black border-y border-amber-400/15"
+      >
+        <div className="max-w-5xl mx-auto text-center">
+          <p className="text-xs md:text-sm uppercase tracking-[0.4em] text-amber-300 font-black mb-3">
+            🏅 Founder's Circle · Ambassador Care Package
+          </p>
+          <h2 className="text-4xl md:text-6xl font-black text-white mb-3">
+            You Don't Just Use the App.{" "}
+            <span className="bg-gradient-to-r from-amber-300 via-orange-400 to-rose-400 bg-clip-text text-transparent">
+              You Own the Streets.
+            </span>
+          </h2>
+          <p className="text-base md:text-lg text-white/70 max-w-2xl mx-auto mb-10">
+            Become a <span className="text-amber-300 font-black">Walking Advertisement</span>{" "}
+            — scan vendors, onboard sponsors, earn forever. Turn your Founder Chairs into a lifetime of passive income.
+          </p>
+
+          {/* 4 earnings preview */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">
+            {[
+              { num: "30%", label: "Chair Dividends · Quarterly" },
+              { num: "$VIBEZ", label: "Referral Bounty per Setup" },
+              { num: "%", label: "Override Commissions" },
+              { num: "90d", label: "Diamond Challenge · Tier-2" },
+            ].map((s) => (
+              <div
+                key={s.label}
+                className="rounded-2xl border border-amber-400/20 bg-amber-500/[0.03] p-4"
+              >
+                <div className="text-3xl md:text-4xl font-black bg-gradient-to-r from-amber-300 via-orange-400 to-rose-400 bg-clip-text text-transparent">
+                  {s.num}
+                </div>
+                <div className="text-[10px] uppercase tracking-widest text-white/50 mt-2">
+                  {s.label}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            data-testid="landing-ambassador-cta"
+            onClick={() => navigate("/ambassador")}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-amber-400 to-rose-500 hover:from-amber-300 hover:to-rose-400 text-black text-sm md:text-base font-black uppercase tracking-wider shadow-[0_0_30px_-8px_rgba(251,146,60,0.6)] transition-all"
+          >
+            Open Care Package →
+          </button>
+          <p className="text-[10px] uppercase tracking-[0.3em] text-white/30 mt-4">
+            3-Month Diamond Challenge · 50k Block Vote · Pit Boss Unlock
+          </p>
+        </div>
+      </section>
+
       {/* 🪑 Genius Phase — Chair Holder Network (LOCKED v8.0) */}
       <section
         id="genius-phase"

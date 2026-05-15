@@ -16,6 +16,8 @@ import {
   Diamond, Antenna, Clapperboard,
   // Feb 2026 — Equity Master (Crewmate Architecture / 30% Revenue Split)
   Gem,
+  // Feb 2026 — Ambassador Care Package (Walking Advertisements / Founder's Circle)
+  Award,
 } from 'lucide-react';
 import { RoomLayout } from '@/components/RoomLayout';
 import { GlassCard } from '@/components/GlassCard';
@@ -483,6 +485,17 @@ export default function Dashboard() {
       image: 'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?crop=entropy&cs=srgb&fm=jpg',
       path: '/equity',
       stats: { count: '30%', label: 'To Owners' }
+    },
+    {
+      id: 'ambassador_care',
+      name: 'Ambassador Care Package',
+      description: "Walking Advertisements · 3-Month Diamond Challenge · 4 ways to earn",
+      icon: Award,
+      gradient: 'from-amber-300 via-orange-500 to-rose-500',
+      glow: 'rgba(251,146,60,0.6)',
+      image: 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?crop=entropy&cs=srgb&fm=jpg',
+      path: '/ambassador',
+      stats: { count: '90d', label: 'Challenge' }
     },
   ];
 

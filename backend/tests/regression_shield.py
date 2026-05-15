@@ -8307,3 +8307,118 @@ def test_dsg_core_system_router_registered() -> None:
     reg = Path("/app/backend/routes/registry.py").read_text()
     assert "dsg_core_system" in reg, "registry.py must mount dsg_core_system"
     assert "DSG_CORE_SYSTEM" in reg, "mount block must log on failure"
+
+
+def test_ambassador_care_package_page_wired() -> None:
+    """Feb 2026 — Ambassador_Care_Package.pdf must surface as a
+    standalone page, a landing-page CTA section, and be reachable from
+    both dashboards. Locks all 4 earnings + 3 onboarding tracks + 3
+    monthly milestones from the PDF."""
+    from pathlib import Path
+
+    page = Path("/app/frontend/src/pages/AmbassadorCarePackagePage.tsx").read_text()
+
+    # Hero copy locked from the PDF (verbatim).
+    for needle in (
+        "Welcome to the High Table",
+        "Walking Advertisement",
+        "you own the streets",
+        "Founder Chairs into a lifetime of passive income",
+    ):
+        assert needle in page, f"Ambassador page missing PDF copy: {needle}"
+
+    # Master QR card + 3 onboarding tracks.
+    assert 'data-testid="ambassador-master-qr"' in page
+    for track in ("hungry_vibez", "yellow_pages", "vibe_sponsors"):
+        assert f'data-testid={{`ambassador-track-${{t.id}}`}}' in page or (
+            f'"{track}"' in page
+        ), f"Onboarding track missing: {track}"
+
+    # 3-Month Diamond Challenge milestones.
+    assert 'data-testid="ambassador-diamond-challenge"' in page
+    assert "Onboard 3 Vendors" in page
+    assert "Drive 1,000 $VIBEZ" in page
+    assert "Cast Your First Vote" in page
+    assert "Tier-2 Equity Status" in page
+    assert "Pit Boss management rights" in page
+
+    # 4 earnings.
+    assert 'data-testid="ambassador-earnings"' in page
+    for earn in ("chair_dividends", "referral_bounties", "override_commissions", "bonus_dsg_tokens"):
+        assert f'"{earn}"' in page, f"Earnings cell missing: {earn}"
+
+    # Routed at /ambassador and /ambassador-care-package.
+    routes = Path("/app/frontend/src/routes/miscRoutes.tsx").read_text()
+    assert 'path="/ambassador"' in routes
+    assert 'path="/ambassador-care-package"' in routes
+    assert "AmbassadorCarePackagePage" in routes
+
+    # Dashboard tile + Volumetric orbit-room expose it.
+    classic = Path("/app/frontend/src/pages/DashboardNew.tsx").read_text()
+    assert "Ambassador Care Package" in classic
+    assert "path: '/ambassador'" in classic
+
+    vol = Path("/app/frontend/src/pages/VolumetricDashboard.tsx").read_text()
+    assert 'path: "/ambassador"' in vol
+
+    # Landing page section.
+    landing = Path("/app/frontend/src/pages/LandingNeonGaming.tsx").read_text()
+    assert 'data-testid="landing-ambassador-care"' in landing
+    assert "You Don't Just Use the App" in landing
+    assert "You Own the Streets" in landing
+    assert 'data-testid="landing-ambassador-cta"' in landing
+
+
+def test_landing_tour_narration_updated_to_v3_energetic() -> None:
+    """Feb 2026 founder ask: tour script must be re-recorded with more
+    energetic voice + cover Ambassador Care + Equity Master v2 + High
+    Roller + Media Master + Regional TV Hubs. Voice switched from shimmer
+    to NOVA. Length bumped from ~2 min to ~3 min."""
+    from pathlib import Path
+
+    script = Path("/app/backend/scripts/generate_landing_tour_narration.py").read_text()
+    # Voice must be nova (most energetic).
+    assert 'voice="nova"' in script, "Narration must use Nova voice"
+    # Speed bumped for excitement.
+    assert "speed=1.10" in script
+    # New PDF content surfaces in the script.
+    for needle in (
+        "AMBASSADOR Care Package",
+        "Walking Advertisement",
+        "Diamond Challenge",
+        "EQUITY MASTER",   # Lock-in for the v2 matrix call-out (script SHOUTS it)
+        "Value Matrix",
+        "Floor",            # $500K → $18
+        "Genesis",          # $2.75M → $99
+        "Diamond",          # $10M → $360
+        "Platinum",         # $50M → $1,800
+        "Block-Release",
+        "HIGH ROLLER VIP",
+        "Media Master Hub",
+        "Regional Hubs",
+    ):
+        assert needle in script, f"Narration script missing: {needle}"
+
+    # Fallback captions in the component cover the same milestones so
+    # silent-autoplay scrollers (and pre-MP3 loads) still get the pitch.
+    comp = Path("/app/frontend/src/components/landing/LandingTourVideo.tsx").read_text()
+    for needle in (
+        "HIGH ROLLER VIP",
+        "AMBASSADOR Care Package",
+        "EQUITY MASTER v2",
+        "Diamond Challenge",
+        "Block-Release Governance",
+    ):
+        assert needle in comp, f"Fallback captions missing: {needle}"
+
+    # Marketing copy bumped from 2-min to 3-min tour.
+    assert "3 Minutes" in comp
+    assert "Nova" in comp, "Voiceover credit must read Nova"
+
+    # And the actual rendered MP3 must exist on disk (regenerated this session).
+    mp3 = Path("/app/frontend/public/landing-tour-narration.mp3")
+    assert mp3.exists(), "Narration MP3 not present at /landing-tour-narration.mp3"
+    # Sanity: at least 500KB so we know it's actual audio, not a placeholder.
+    assert mp3.stat().st_size > 500_000, (
+        f"Narration MP3 suspiciously small: {mp3.stat().st_size} bytes"
+    )

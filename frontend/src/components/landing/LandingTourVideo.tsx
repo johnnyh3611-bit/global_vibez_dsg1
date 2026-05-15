@@ -97,23 +97,34 @@ const pickInitialLang = (manifest: I18nManifest): string => {
 const NARRATION_SRC = "/landing-tour-narration.mp3";
 
 // Static fallback caption track — used until the i18n manifest loads
-// (or if it fails to fetch). Mirrors the English entry in the JSON.
+// (or if it fails to fetch). Mirrors the v3 (Feb-2026) narration script
+// in `backend/scripts/generate_landing_tour_narration.py`. Updated for
+// the energetic "nova" voice, Ambassador Care Package, Equity Master v2,
+// High Roller VIP, Media Master, and Regional TV Hubs.
 const FALLBACK_CAPTIONS: Cue[] = [
-  { t:   0.0, text: "GLOBAL VIBEZ DSG." },
-  { t:   3.0, text: "The world's first sovereign infrastructure network — built on Solana — where every interaction earns." },
-  { t:  13.0, text: "Six utility rooms · one currency · a real economy you actually own." },
-  { t:  22.0, text: "30+ AAA card rooms — Spades, Bid Whist, Hearts, UNO, Pinochle, Euchre, Gin Rummy." },
-  { t:  33.0, text: "Neon casino floor — chess, Vibez 6-5-4, baccarat, blackjack, three-card poker. Every win → $VIBEZ." },
-  { t:  44.0, text: "Find your Player Two · 98% synergy-logic matchmaking · Cinema Dates · culturally-aware AI dealer." },
-  { t:  56.0, text: "Drive VibeRidez · keep 70% · Hungry VIBEZ · Vibe Artisan · Vibe Venue · DSG TV 24/7." },
-  { t:  70.0, text: "70/30 Music Revolution · Beat Vault · Freestyle Battles · Collab Matchmaker · Totem Pole." },
-  { t:  80.0, text: "Vibe Yellow Pages · Mom & Pop · hyper-local · DSG Guard safety protocol." },
-  { t:  88.0, text: "3 B VIBEZ burning to 1.5 B · 50/50 Buyback & Liquidity · 13.5% Sovereign Tax · 1 Coin = 10 Credits." },
-  { t:  98.0, text: "5× mining multiplier for chair holders · $VIBEZ bridges to Solana 4:1." },
-  { t: 105.0, text: "Chair Hall is OPEN · Genius · Genesis · Apex · 1,000,000 seats · forever." },
-  { t: 115.0, text: "First cohort to sit at the table owns the network." },
-  { t: 120.0, text: "Right now is the best time to take your seat at the table." },
-  { t: 127.0, text: "GLOBAL VIBEZ DSG. Own the network. Feel the VIBEZ." },
+  { t:   0.0, text: "YO! Welcome to GLOBAL VIBEZ DSG — your seat at a brand-new economy that pays you back." },
+  { t:   8.0, text: "Every game, every ride, every meal, every stream, every chair — ALL of it earns." },
+  { t:  18.0, text: "Cyber Casino: 30+ AAA card rooms · Spades · Bid Whist · UNO · Pinochle · Euchre · Gin Rummy." },
+  { t:  30.0, text: "Vibez 6-5-4: chess · baccarat · blackjack · three-card poker · slots that pay real $VIBEZ." },
+  { t:  42.0, text: "HIGH ROLLER VIP — 10,000-coin minimums · Diamond blackjack, roulette, baccarat. VIP-gated." },
+  { t:  54.0, text: "Go LIVE on DSG TV in 30 seconds. Keep 70% of every tip, gift, and Featured unlock." },
+  { t:  64.0, text: "Media Master Hub: DSG TV · Vibe Radio · Music Group · AI Scout — your broadcast empire." },
+  { t:  74.0, text: "Regional Hubs: Chicago · Atlanta · NYC · LA · Miami · Houston feed the House Revenue Pool." },
+  { t:  86.0, text: "VibeRidez · Hungry VIBEZ · Vibe Artisan · Vibe Venue — every hustle hat pays 70%." },
+  { t:  98.0, text: "Cinema creators? 80% on every ticket sold!" },
+  { t: 104.0, text: "AMBASSADOR Care Package — you're a Walking Advertisement. Founder's Circle status." },
+  { t: 114.0, text: "Scan a vendor with your Master QR · Restaurants → Hungry Vibez · Businesses → Yellow Pages · Sponsors → DSG TV." },
+  { t: 126.0, text: "Chair Dividends · Referral Bounties · Override Commissions · forever." },
+  { t: 138.0, text: "3-Month Diamond Challenge: 3 vendors · 1,000 $VIBEZ · 50k vote → Tier-2 Equity + Pit Boss rights!" },
+  { t: 152.0, text: "EQUITY MASTER v2 — 4-tier Value Matrix." },
+  { t: 158.0, text: "Floor: $500K gross → $18/chair · Genesis: $2.75M → $99/chair." },
+  { t: 168.0, text: "Diamond: $10M → $360/chair · Platinum: $50M → $1,800/chair!" },
+  { t: 178.0, text: "Block-Release Governance: 50K-unit blocks · >51% majority vote · 12-month lock-up · $20 buy-back floor." },
+  { t: 190.0, text: "3B VIBEZ burning to 1.5B · 50/50 Buyback + Liquidity · 30% of gross to chair holders · paid every 90 days." },
+  { t: 200.0, text: "5× mining multiplier for chair holders · $VIBEZ bridges to Solana 4:1 · 1 Coin = 10 Credits." },
+  { t: 208.0, text: "ONE MILLION CHAIRS. Globally. Forever. The first cohort to sit at the table OWNS the network." },
+  { t: 220.0, text: "Take your seat. RIGHT NOW." },
+  { t: 225.0, text: "GLOBAL VIBEZ DSG. Own the network. Feel the VIBEZ. LET'S GOOO!" },
 ];
 
 interface Props {
@@ -247,7 +258,7 @@ const LandingTourVideo: React.FC<Props> = ({ onJoinBeta }) => {
     setHasStarted(true);
   };
 
-  const duration = audioRef.current?.duration || track?.duration || 122;
+  const duration = audioRef.current?.duration || track?.duration || 230;
   const pct = Math.min(100, (progress / duration) * 100);
   const currentCaption = captions[captionIdx]?.text || "";
   const langs = manifest?.languages ? Object.entries(manifest.languages) : [["en", { native: "English" } as LangTrack]];
@@ -266,13 +277,13 @@ const LandingTourVideo: React.FC<Props> = ({ onJoinBeta }) => {
         >
           <p className="text-xs uppercase tracking-[0.4em] text-fuchsia-300 font-black mb-2">
             <Sparkles className="inline w-3 h-3 mr-1.5 -mt-0.5" />
-            Watch · 2-min tour
+            Watch · ~3-min Founder's Tour
           </p>
           <h2 className="text-3xl md:text-5xl font-black text-white mb-2">
-            The Whole Vibe in <span className="bg-gradient-to-r from-fuchsia-400 to-cyan-400 bg-clip-text text-transparent">2 Minutes</span>
+            The Whole Vibe in <span className="bg-gradient-to-r from-fuchsia-400 to-cyan-400 bg-clip-text text-transparent">3 Minutes</span>
           </h2>
           <p className="text-sm md:text-base text-white/60 max-w-2xl mx-auto">
-            Don't feel like scrolling? Hit play. We'll walk you through every room, every payout, every reason to lock in your seat.
+            Don't feel like scrolling? Hit play. We'll walk you through every room, every payout, every reason to lock in your seat — Equity Matrix, Ambassador Care, and all.
           </p>
         </motion.div>
 
@@ -353,7 +364,7 @@ const LandingTourVideo: React.FC<Props> = ({ onJoinBeta }) => {
               <span className="mt-4 text-white font-black text-sm md:text-base uppercase tracking-[0.3em]">
                 Play the Tour
               </span>
-              <span className="text-white/60 text-xs mt-1">~2 min · narrated</span>
+              <span className="text-white/60 text-xs mt-1">~3 min · narrated</span>
             </button>
           )}
 
@@ -494,7 +505,7 @@ const LandingTourVideo: React.FC<Props> = ({ onJoinBeta }) => {
         </motion.div>
 
         <p className="text-center text-[11px] text-white/30 mt-4 font-mono uppercase tracking-widest">
-          Voiceover: AI-narrated · Onyx · {captions.length} cues · {CLIPS.length} clip loop · {manifest ? Object.keys(manifest.languages).length : 1} language{manifest && Object.keys(manifest.languages).length > 1 ? "s" : ""}
+          Voiceover: AI-narrated · Nova · {captions.length} cues · {CLIPS.length} clip loop · {manifest ? Object.keys(manifest.languages).length : 1} language{manifest && Object.keys(manifest.languages).length > 1 ? "s" : ""}
         </p>
 
         {/* Social-export row — direct download of the pre-rendered 9:16

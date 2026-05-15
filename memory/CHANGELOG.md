@@ -5220,3 +5220,67 @@ New guards:
 Files touched (2):
 - `backend/routes/dsg_core_system.py` (NEW — 260 LOC)
 - `backend/routes/registry.py` (mount block added, non-fatal fallback)
+
+## 2026-02-15 — 🏅 Ambassador Care Package + Tour v3 (Nova-voiced, 3-min)
+
+**Founder ask**: "Put this in the proper place in the app, also talk about
+this on the landing page, and re-record the 2-minute tour video (longer
+is fine due to all the new content). Make the voice more energetic and
+alive and excited about Global Vibez DSG."
+Source: `Ambassador_Care_Package.pdf`.
+
+**New page** `/ambassador` (also `/ambassador-care-package`):
+- Hero: "Welcome to the High Table · Walking Advertisement"
+- Master QR Code card (Step 1 · Universal Setup)
+- 3 onboarding tracks: Hungry Vibez · Yellow Pages · Vibe Sponsors
+- 3-Month Diamond Challenge milestones (Foundation / Volume / Governance)
+- 4 ways to earn (Chair Dividends · Referral Bounties · Override
+  Commissions · Bonus DSG Tokens) + Pit Boss unlock
+- CTA routing to `/equity` for the Value Matrix
+
+**Landing-page section** (between tour video and Genius Phase):
+- "You Don't Just Use the App · You Own the Streets" hero
+- 4-stat preview row (30% · $VIBEZ · % · 90d)
+- CTA → `/ambassador`
+
+**Dashboard integration**:
+- Classic dashboard: new "Ambassador Care Package" tile (Award icon,
+  amber→rose gradient, 90d Challenge stat)
+- Volumetric Galaxy: new orbit-room under Vault planet (🏅 emoji)
+
+**Tour Video v3** — energetic re-record:
+- Voice: **`shimmer` → `nova`** (OpenAI TTS most energetic / alive voice)
+- Speed: **`1.05` → `1.10×`** (more excited delivery)
+- Script: 3,781 chars (~520 words) → **~3:00 min** (was ~2:25)
+- New content covers: HIGH ROLLER VIP · Media Master Hub · Regional TV
+  Hubs · Cinema 80% creator split · Ambassador Care Package (Walking
+  Advertisements, 3-Month Diamond Challenge, all 4 earnings) · Equity
+  Master v2 Value Matrix (Floor $18 / Genesis $99 / Diamond $360 /
+  Platinum $1,800) · Block-Release Governance · 12-month lock-up.
+- Fresh **4 MB MP3 regenerated** (LLM budget came back online during
+  this session — Nova voice now actually shipping).
+- Marketing copy: "2-min tour" → "~3-min Founder's Tour".
+- Fallback captions array fully rewritten to mirror the new script
+  (silent-autoplay scrollers still see the pitch).
+
+**Regression Shield**: 386 → **388 tests** GREEN.
+Cross-suite: **408/408 PASS**.
+New permanent guards:
+1. `test_ambassador_care_package_page_wired` — page, routes, dashboards,
+   landing section, all PDF content (hero, QR, 3 tracks, 3 milestones, 4
+   earnings).
+2. `test_landing_tour_narration_updated_to_v3_energetic` — Nova voice +
+   1.10× speed + every new content topic + 3-min copy + MP3 on disk.
+
+**Smoke test (live)**: Ambassador page renders all 9 PDF sections
+correctly on first load.
+
+Files touched (6):
+- `frontend/src/pages/AmbassadorCarePackagePage.tsx` (NEW — 280 LOC)
+- `frontend/src/routes/miscRoutes.tsx` (+2 routes)
+- `frontend/src/pages/DashboardNew.tsx` (+ tile)
+- `frontend/src/pages/VolumetricDashboard.tsx` (+ orbit room)
+- `frontend/src/pages/LandingNeonGaming.tsx` (+ section)
+- `frontend/src/components/landing/LandingTourVideo.tsx` (captions + 3-min copy)
+- `backend/scripts/generate_landing_tour_narration.py` (Nova voice + new script)
+- `frontend/public/landing-tour-narration.mp3` (regenerated, 4 MB)
