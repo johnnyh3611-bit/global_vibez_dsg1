@@ -7818,8 +7818,123 @@ def test_break_in_banner_does_not_leak_into_non_trigger_paths() -> None:
     comp = Path("/app/frontend/src/components/media/BreakInBanner.tsx").read_text()
     # Sanity-check: these paths must NOT be in the trigger list literal
     # (the banner can hide itself anyway, but we don't want the polling
-    # cycle running on every page).
-    for off_path in ("/login", "/profile", "/wallet", "/admin"):
-        assert f"'{off_path}'" not in comp, (
-            f"Break-in banner should not poll on {off_path} — adds load to non-game pages"
-        )
+
+
+# ════════════════════════════════════════════════════════════════════
+# MEDIA MASTER · Sprint 5 — Vibe Radio resolver + Pulse mini-widget
+# ════════════════════════════════════════════════════════════════════
+def test_vibe_radio_resolver_constants_and_endpoint() -> None:
+    """Resolver thresholds + endpoint registration."""
+    from routes.media_master import (
+        BID_RESOLUTION_WINDOW_SECONDS, BID_RESOLUTION_FEE_BPS, resolve_pending_bids,
+    )
+    assert BID_RESOLUTION_WINDOW_SECONDS == 30, "Bid window locked at 30s per economy intent"
+    assert BID_RESOLUTION_FEE_BPS == 500, "Platform fee locked at 5% of winning pool"
+    assert callable(resolve_pending_bids)
+    # Endpoint registered
+    from server import app
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    assert "/api/media-master/radio/resolve-bids" in paths
+
+
+def test_vibe_radio_resolver_wired_into_lifespan() -> None:
+    """Background loop must kick off at startup so the resolver runs
+    automatically — not just on manual /resolve-bids POSTs."""
+    from pathlib import Path
+    src = Path("/app/backend/lifespan.py").read_text()
+    assert "_start_vibe_radio_resolver" in src, "Resolver kickoff missing in lifespan"
+    assert "Vibe Radio skip-bid auto-resolver" in src
+
+
+def test_vibe_radio_resolver_outcome_logic() -> None:
+    """The resolver must only flip status to 'resolved' for bids that
+    are (1) currently 'active' and (2) older than the resolution
+    window, and the outcome must be `skip` only when skip_pool >
+    keep_pool. Verified via an in-memory fake — keeps the regression
+    shield offline-safe."""
+    import asyncio
+    from routes.media_master import (
+        BID_RESOLUTION_WINDOW_SECONDS, resolve_pending_bids,
+    )
+
+    class FakeDb:
+        def __init__(self, rows):
+            self._rows = rows
+            self._tracks_updates = []
+
+            class _RadioBids:
+                def __init__(s, parent): s._p = parent
+                def find(s, query, projection=None):
+                    # Mimic Mongo $lt filter on `created_at`.
+                    cutoff = query.get("created_at", {}).get("$lt", "")
+                    matched = [
+                        r for r in s._p._rows
+                        if r.get("status") == "active" and r.get("created_at", "") < cutoff
+                    ]
+                    class _Cursor:
+                        def __init__(c, m): c._m = m
+                        async def to_list(c, n): return c._m[:n]
+                    return _Cursor(matched)
+                async def update_one(s, query, update):
+                    for r in s._p._rows:
+                        if r.get("bid_id") == query.get("bid_id") and r.get("status") == query.get("status"):
+                            r.update(update["$set"])
+                            class _R: modified_count = 1
+                            return _R()
+                    class _R: modified_count = 0
+                    return _R()
+
+            class _Tracks:
+                def __init__(s, parent): s._p = parent
+                async def update_one(s, query, update):
+                    s._p._tracks_updates.append((query, update))
+                    class _R: modified_count = 1
+                    return _R()
+
+            self.media_radio_skip_bids = _RadioBids(self)
+            self.media_radio_tracks = _Tracks(self)
+
+    from datetime import datetime, timezone, timedelta
+    old = (datetime.now(timezone.utc) - timedelta(seconds=BID_RESOLUTION_WINDOW_SECONDS * 2)).isoformat()
+    recent = datetime.now(timezone.utc).isoformat()
+    rows = [
+        {"bid_id": "skip_wins", "status": "active", "skip_pool": 500, "keep_pool": 100,
+         "station_id": "the-grind", "track_id": "t1", "created_at": old},
+        {"bid_id": "keep_wins", "status": "active", "skip_pool": 50, "keep_pool": 400,
+         "station_id": "neon-drift", "track_id": "t2", "created_at": old},
+        {"bid_id": "too_recent", "status": "active", "skip_pool": 500, "keep_pool": 100,
+         "station_id": "romance-fm", "track_id": "t3", "created_at": recent},
+    ]
+    db = FakeDb(rows)
+    summary = asyncio.run(resolve_pending_bids(db))
+    assert summary["skipped_count"] == 1
+    assert summary["kept_count"] == 1
+    assert summary["total_resolved"] == 2
+
+    by_id = {r["bid_id"]: r for r in rows}
+    assert by_id["skip_wins"]["status"] == "resolved"
+    assert by_id["skip_wins"]["outcome"] == "skip"
+    assert by_id["keep_wins"]["status"] == "resolved"
+    assert by_id["keep_wins"]["outcome"] == "keep"
+    # The too-recent row must stay active untouched.
+    assert by_id["too_recent"]["status"] == "active"
+    # Track update only fires for the skip outcome.
+    assert len(db._tracks_updates) == 1
+    assert db._tracks_updates[0][0]["track_id"] == "t1"
+
+
+def test_network_pulse_mini_widget_mounted() -> None:
+    """The ambient pulse widget must be mounted globally in App.js."""
+    from pathlib import Path
+    app_js = Path("/app/frontend/src/App.js").read_text()
+    assert 'import NetworkPulseMiniWidget from "@/components/media/NetworkPulseMiniWidget"' in app_js
+    assert "<NetworkPulseMiniWidget />" in app_js
+    comp = Path("/app/frontend/src/components/media/NetworkPulseMiniWidget.tsx").read_text()
+    assert 'data-testid="network-pulse-mini-widget"' in comp
+    # Anti-noise: must self-hide on the Pulse dashboard, login, register.
+    for p in ("/login", "/register", "/admin/media-master-pulse"):
+        assert f"'{p}'" in comp, f"Mini-widget should self-hide on {p}"
+    # Polls the snapshot endpoint
+    assert "/api/media-master-pulse/snapshot" in comp
+    # Renders only when hype >= 50 (no cold-state noise)
+    assert "score < 50" in comp

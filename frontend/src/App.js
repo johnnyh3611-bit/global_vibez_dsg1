@@ -55,6 +55,7 @@ import PushForegroundBridge from "@/components/notifications/PushForegroundBridg
 import VipCrownBadge from "@/components/vip/VipCrownBadge";
 import VipConcierge from "@/components/vip/VipConcierge";
 import BreakInBanner from "@/components/media/BreakInBanner";
+import NetworkPulseMiniWidget from "@/components/media/NetworkPulseMiniWidget";
 import { LogDesignLesson } from "@/components/vibez/LogDesignLesson";
 // v8 — International Globalization Protocol v2.0 (Globe FAB / Cultural Hub)
 import GlobeFAB from "@/components/GlobeFAB";
@@ -275,6 +276,7 @@ function AppRouter() {
       <VipCrownBadge />
       <VipConcierge />
       <BreakInBanner />
+      <NetworkPulseMiniWidget />
       <GlobeFAB />
       <GameVoiceDockMounter />
       <FloatingFoodMenu />

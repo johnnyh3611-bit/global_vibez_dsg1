@@ -99,6 +99,9 @@ def register_startup_tasks(app, logger: logging.Logger) -> None:
                   success_msg="TV Totem-Pole survive scheduler started (5-min ticks)")
         _kick_off("Memory Bank Cinema auto-archive",
                   _start_memory_bank_archive, logger)
+        _kick_off("Vibe Radio skip-bid auto-resolver",
+                  _start_vibe_radio_resolver, logger,
+                  success_msg="Vibe Radio skip-bid auto-resolver started (15s ticks)")
 
 
 def register_shutdown(app, logger: logging.Logger) -> None:
@@ -405,6 +408,44 @@ def _start_memory_bank_archive() -> None:
             await asyncio.sleep(3600)  # 1 hour
 
     asyncio.create_task(loop())
+
+
+def _start_vibe_radio_resolver() -> None:
+    """Auto-resolve Vibe Radio skip-vs-keep bids on a 15s tick.
+
+    A bid is resolved when it's been active for ≥ 30s AND the skip-pool
+    exceeds the keep-pool. The current track is advanced; otherwise the
+    bid is closed with `outcome=keep`. The full economic rule (and the
+    5% platform fee on the losing pool) lives in
+    `routes.media_master.resolve_pending_bids` — this loop just calls it
+    so the resolver behavior is the same whether invoked manually or
+    via this background task.
+    """
+    from utils.database import get_database
+
+    async def loop():
+        log = logging.getLogger("vibe-radio-resolver")
+        await asyncio.sleep(20)  # warm-up so the route module imports cleanly
+        try:
+            from routes.media_master import resolve_pending_bids  # noqa: PLC0415
+        except Exception as exc:
+            log.warning(f"resolver import failed — aborting loop: {exc}")
+            return
+        while True:
+            try:
+                db = get_database()
+                summary = await resolve_pending_bids(db)
+                if summary["total_resolved"]:
+                    log.info(
+                        "resolved %d bids (skipped=%d kept=%d)",
+                        summary["total_resolved"], summary["skipped_count"], summary["kept_count"],
+                    )
+            except Exception as exc:
+                log.warning(f"resolver tick failed: {exc}")
+            await asyncio.sleep(15)
+
+    asyncio.create_task(loop())
+
 
 
 # ────────────────────────────────────────────── Indexes

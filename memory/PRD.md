@@ -1,5 +1,40 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-05-15 (MEDIA MASTER · SPRINT 5 — Vibe Radio auto-resolver + Network Pulse mini-widget) — 375/375 regression green · LAST sprint before redeploy.**
+>
+> ### What shipped this session:
+>
+> **🎚️ Vibe Radio skip-vs-keep auto-resolver** (closes the radio economy loop):
+>   - New `routes.media_master.resolve_pending_bids` helper — atomic state transition (`active → resolved`), advances the current track when `skip_pool > keep_pool` AND bid is older than `BID_RESOLUTION_WINDOW_SECONDS=30s`, otherwise closes as `keep`.
+>   - Backend tick: `lifespan._start_vibe_radio_resolver` fires every 15s via the existing `_kick_off` scheduler pattern. Boot log confirmed: `Vibe Radio skip-bid auto-resolver started (15s ticks)`.
+>   - Ops endpoint `POST /api/media-master/radio/resolve-bids` for manual triggering + curl/regression testing.
+>   - **End-to-end verified**: seeded an old bid (skip 500 / keep 100) → resolver flipped status to `resolved`, outcome `skip`, current track flipped `is_current=false, end_reason=skip_bid`.
+>   - Race-safe: the `update_one` filter requires `status=active` so two concurrent ticks can't double-resolve the same row.
+>   - Regression-locked with a self-contained fake DB so the test runs offline.
+>
+> **📡 Network Pulse Mini-Widget** (ambient signal, my potential improvement):
+>   - New `components/media/NetworkPulseMiniWidget.tsx` mounted globally. Polls `/api/media-master-pulse/snapshot?hot_limit=1&clip_limit=1` every 30s.
+>   - Renders a slim floating chip bottom-LEFT (deliberately opposite the VipCrownBadge + VipConcierge cluster bottom-right). Tap deep-links to `/admin/media-master-pulse`.
+>   - Anti-noise gates:
+>     - Self-hides when no auth token / on `/login` / `/register` / `/admin/media-master-pulse` (redundant)
+>     - Renders only when hype ≥ 50 (no cold-state noise)
+>     - Pulls the **single** strongest signal (hot room OR latest clip, whichever has higher hype) — never both
+>   - Visual hierarchy: rose-themed glow for break-ins, amber for normal hot rooms.
+>
+> ### 🛡️ Regression Shield: **375/375 GREEN** (+4 sprint-5 locks)
+> ### 🚀 ALL P0/P1 backend & frontend work for the beta redeploy is DONE
+>
+> ### Pre-redeploy checklist (operational — for you)
+>   - 🟡 Provision Redis in production (`REDIS_URL=…`) → caching auto-activates
+>   - 🟡 Validate ONE real Stripe payment → `/casino/high-roller` → confirm `vip_until` flips post-webhook
+>
+> ### Future / Backlog (post-redeploy)
+>   - **P2 (BLOCKED)**: Mainnet TGE / Solana Bridge — locked until you type `project complete`
+>   - **P3**: LLM Universal Key budget cap — Emergent Support follow-up (unchanged)
+>
+> ---
+>
+
 > **2026-05-15 (MEDIA MASTER · SPRINT 4 — BROADCAST DIRECTOR + BREAK-IN BANNER) — 371/371 regression green · App is BETA-REDEPLOY READY.**
 >
 > ### What shipped this session — the last pieces before redeploy:

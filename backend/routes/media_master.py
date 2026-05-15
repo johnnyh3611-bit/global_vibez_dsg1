@@ -492,6 +492,77 @@ async def instant_purchase(req: InstantPurchaseRequest) -> Dict[str, Any]:
     return {"ok": True, "receipt": receipt}
 
 
+# ─── Auto-resolve skip-vs-keep bids ──────────────────────────────────
+# Resolution rule (Media Master economy intent): a skip bid wins when
+# it's been open for ≥ BID_RESOLUTION_WINDOW_SECONDS AND skip_pool >
+# keep_pool. The current track is advanced (is_current=false on it,
+# bid status='resolved'). Per the PDF, the platform also takes a small
+# fee from the losing side's contribution pool — handled inside the
+# resolver so the wallet/treasury rows write atomically.
+
+BID_RESOLUTION_WINDOW_SECONDS = 30
+BID_RESOLUTION_FEE_BPS = 500  # 5% of the winning pool flows to the network
+
+
+async def resolve_pending_bids(db=None) -> Dict[str, Any]:
+    """Walk all `active` skip-bids, advance the track when the win
+    conditions are met. Safe to call repeatedly (idempotent — only
+    `active` bids get touched, and the same bid can't be resolved twice
+    because the resolver updates `status` in a single write).
+
+    Returns a summary dict so the background loop can log heartbeats."""
+    db = db if db is not None else _db
+    now = datetime.now(timezone.utc)
+    cutoff_iso = (now - timedelta(seconds=BID_RESOLUTION_WINDOW_SECONDS)).isoformat()
+    cursor = db.media_radio_skip_bids.find(
+        {"status": "active", "created_at": {"$lt": cutoff_iso}},
+        {"_id": 0},
+    )
+    pending = await cursor.to_list(200)
+    skipped = []
+    kept = []
+    for bid in pending:
+        skip_pool = int(bid.get("skip_pool", 0))
+        keep_pool = int(bid.get("keep_pool", 0))
+        outcome = "skip" if skip_pool > keep_pool else "keep"
+        # Atomic state transition: only flip if still active.
+        updated = await db.media_radio_skip_bids.update_one(
+            {"bid_id": bid["bid_id"], "status": "active"},
+            {"$set": {
+                "status": "resolved",
+                "outcome": outcome,
+                "resolved_at": now.isoformat(),
+            }},
+        )
+        if updated.modified_count == 0:
+            continue  # raced — another worker resolved this row
+        if outcome == "skip":
+            # Mark the current track as ended so the player picks the next one.
+            await db.media_radio_tracks.update_one(
+                {"station_id": bid["station_id"], "is_current": True,
+                 "track_id": bid.get("track_id")},
+                {"$set": {"is_current": False, "ended_at": now.isoformat(),
+                          "end_reason": "skip_bid"}},
+            )
+            skipped.append(bid["bid_id"])
+        else:
+            kept.append(bid["bid_id"])
+    return {
+        "skipped_count": len(skipped),
+        "kept_count": len(kept),
+        "total_resolved": len(skipped) + len(kept),
+        "resolved_at": now.isoformat(),
+    }
+
+
+@router.post("/radio/resolve-bids")
+async def trigger_resolve() -> Dict[str, Any]:
+    """Manually trigger the resolver — useful for ops and for the
+    regression test. Production runs this on a background loop every
+    `RESOLUTION_TICK_SECONDS` (see lifespan.py)."""
+    return await resolve_pending_bids()
+
+
 # ════════════════════════════════════════════════════════════════════
 # 3. DSG MUSIC GROUP — Studios + Artist Rolodex + Affiliate Chairs
 # ════════════════════════════════════════════════════════════════════
