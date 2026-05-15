@@ -44,6 +44,7 @@ const CATEGORIES = [
       { id: "chess-hall", label: "Chess Hall", emoji: "♟️", path: "/chess-hall" },
       { id: "underground", label: "Underground", emoji: "🃏", path: "/underground-casino" },
       { id: "cyber", label: "Cyber Casino", emoji: "🎰", path: "/cyber-casino" },
+      { id: "high-roller", label: "High Roller VIP", emoji: "💎", path: "/casino/high-roller" },
     ],
   },
   {
@@ -82,6 +83,9 @@ const CATEGORIES = [
       { id: "memory", label: "Memory Bank", emoji: "🎞️", path: "/dsg/memory-bank" },
       { id: "beats", label: "Beat Vault", emoji: "🎧", path: "/dsg/beat-vault" },
       { id: "video-vault", label: "Video Vault", emoji: "🎬", path: "/dsg/video-vault" },
+      { id: "media-master", label: "Media Master", emoji: "📡", path: "/media-master" },
+      { id: "music-group", label: "Music Group", emoji: "🎵", path: "/music-group" },
+      { id: "broadcast-director", label: "Broadcast Director", emoji: "🎬", path: "/dashboard/streamer/broadcast-director" },
     ],
   },
   {

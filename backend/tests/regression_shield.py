@@ -7938,3 +7938,85 @@ def test_network_pulse_mini_widget_mounted() -> None:
     assert "/api/media-master-pulse/snapshot" in comp
     # Renders only when hype >= 50 (no cold-state noise)
     assert "score < 50" in comp
+
+def test_classic_dashboard_exposes_high_roller_and_media_master_rooms() -> None:
+    """Founder ask 2026-02 — every recently shipped room MUST be reachable
+    from the Classic dashboard tile grid so users can physically touch them.
+    Regression: previously the High Roller / Media Master / Broadcast Director
+    flows existed but had no entry point from the main dashboard."""
+    from pathlib import Path
+    src = Path('/app/frontend/src/pages/DashboardNew.tsx').read_text()
+    for path in (
+        '/casino/high-roller',
+        '/media-master',
+        '/dashboard/streamer/broadcast-director',
+    ):
+        assert f"path: '{path}'" in src, f'Classic dashboard missing tile for {path}'
+    # Tile copy must remain user-facing
+    assert 'High Roller VIP' in src
+    assert 'Media Master Hub' in src
+    assert 'Broadcast Director' in src
+
+
+def test_volumetric_dashboard_exposes_high_roller_and_media_master_rooms() -> None:
+    """Same guarantee for the Volumetric Galaxy view (default landing)."""
+    from pathlib import Path
+    src = Path('/app/frontend/src/pages/VolumetricDashboard.tsx').read_text()
+    for path in (
+        '/casino/high-roller',
+        '/media-master',
+        '/music-group',
+        '/dashboard/streamer/broadcast-director',
+    ):
+        assert f'path: "{path}"' in src, f'Volumetric dashboard missing planet-room for {path}'
+
+
+
+def test_every_dashboard_tile_path_resolves_to_a_real_route() -> None:
+    """Founder ask 2026-02: every room MUST be physically reachable.
+    Walks both dashboards, collects every tile path, then asserts each
+    one matches a Route path defined under /app/frontend/src/routes/*.tsx
+    or inline in App.js. Prevents future "I see the button but it 404s"
+    bugs at the launch level."""
+    import re as _re
+    from pathlib import Path as _P
+
+    route_files = list(_P("/app/frontend/src/routes").glob("*.tsx"))
+    defined_paths: set[str] = set()
+    PATH_RE = _re.compile(r'path=["\']([^"\']+)["\']')
+    for f in route_files:
+        for p in PATH_RE.findall(f.read_text()):
+            defined_paths.add(p)
+    app_js = _P("/app/frontend/src/App.js").read_text()
+    for p in PATH_RE.findall(app_js):
+        defined_paths.add(p)
+
+    def _matches(target: str) -> bool:
+        for r in defined_paths:
+            if not r:
+                continue
+            try:
+                pat = "^" + _re.sub(r":[^/]+", "[^/]+", r) + "$"
+                if _re.match(pat, target):
+                    return True
+            except _re.error:
+                continue
+        return False
+
+    dash_paths: set[str] = set()
+    for src in (
+        "/app/frontend/src/pages/DashboardNew.tsx",
+        "/app/frontend/src/pages/VolumetricDashboard.tsx",
+    ):
+        txt = _P(src).read_text()
+        for m in _re.findall(r"path:\s*['\"]([^'\"]+)['\"]", txt):
+            dash_paths.add(m)
+
+    broken = [p for p in sorted(dash_paths) if not _matches(p)]
+    assert not broken, (
+        f"Dashboard tiles pointing at non-existent React routes (would 404): {broken}"
+    )
+    # And sanity-check that we ARE walking something — we surface ~30+ rooms
+    # across both dashboards, so a regression that empties the array is also
+    # a launch blocker.
+    assert len(dash_paths) >= 30, f"Suspiciously few dashboard tiles: {len(dash_paths)}"

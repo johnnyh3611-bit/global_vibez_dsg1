@@ -12,6 +12,8 @@ import {
   Mic2, Tv, Headphones, Swords, Sparkle,
   // Cyber Casino tile (Unity WebGL, see CyberCasinoRoom.tsx)
   Joystick,
+  // Feb 2026 — High Roller VIP Casino + Media Master ecosystem + Broadcast Director
+  Diamond, Antenna, Clapperboard,
 } from 'lucide-react';
 import { RoomLayout } from '@/components/RoomLayout';
 import { GlassCard } from '@/components/GlassCard';
@@ -434,6 +436,40 @@ export default function Dashboard() {
       image: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?crop=entropy&cs=srgb&fm=jpg',
       path: '/cyber-casino',
       stats: { count: 'WebGL', label: 'Unity' }
+    },
+    // ─────── Feb 2026 — High Roller VIP Casino + Media Master ecosystem ───────
+    {
+      id: 'high_roller',
+      name: 'High Roller VIP',
+      description: '10,000₵ minimums · Blackjack · Roulette · Baccarat · VIP-gated',
+      icon: Diamond,
+      gradient: 'from-amber-300 via-yellow-500 to-orange-600',
+      glow: 'rgba(251,191,36,0.6)',
+      image: 'https://images.unsplash.com/photo-1606167668584-78701c57f13d?crop=entropy&cs=srgb&fm=jpg',
+      path: '/casino/high-roller',
+      stats: { count: 'VIP', label: '10K Min' }
+    },
+    {
+      id: 'media_master',
+      name: 'Media Master Hub',
+      description: 'DSG TV · Vibe Radio · Music Group · AI Scout — your broadcast empire',
+      icon: Antenna,
+      gradient: 'from-rose-500 via-fuchsia-500 to-indigo-600',
+      glow: 'rgba(244,63,94,0.5)',
+      image: 'https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?crop=entropy&cs=srgb&fm=jpg',
+      path: '/media-master',
+      stats: { count: '4', label: 'Channels' }
+    },
+    {
+      id: 'broadcast_director',
+      name: 'Broadcast Director',
+      description: 'Program DSG TV channels · break-in banners · live cut-ins',
+      icon: Clapperboard,
+      gradient: 'from-indigo-500 via-purple-600 to-rose-500',
+      glow: 'rgba(99,102,241,0.5)',
+      image: 'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?crop=entropy&cs=srgb&fm=jpg',
+      path: '/dashboard/streamer/broadcast-director',
+      stats: { count: 'LIVE', label: 'Programmer' }
     },
   ];
 
