@@ -1,5 +1,45 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-05-15 (MEDIA MASTER · SPRINT 4 — BROADCAST DIRECTOR + BREAK-IN BANNER) — 371/371 regression green · App is BETA-REDEPLOY READY.**
+>
+> ### What shipped this session — the last pieces before redeploy:
+>
+> **📡 Broadcast Director streamer panel** at `/dashboard/streamer/broadcast-director`:
+>   - Streamers pick 1 of the 5 DSG TV channels (with lock badges on gated ones), pick a duration (1/2/4/8/24h), and hit "Broadcast for Nh" — page calls `POST /api/media-master/tv/program` for them.
+>   - Auto-provisions a Cloudflare live input on the streamer's first broadcast (was previously API-only).
+>   - Shows current programming state per channel so the streamer knows whose feed is currently attached + sees collision warnings if their own input is already programmed elsewhere.
+>   - Status pill on the page surfaces `is_live` state ("🔴 Currently broadcasting" vs "⚪ Not broadcasting yet — start your encoder").
+>   - Discoverable: new CTA tile on `/my-streams` (Streamer Dashboard) deep-links into the Broadcast Director.
+>
+> **🚨 Network Break-In Banner** — global animated top-of-viewport interruption:
+>   - New `components/media/BreakInBanner.tsx` mounted in `App.js`. Polls `/api/media-master/scout/break-ins/active` every 30s.
+>   - **Anti-spam guard**: only polls + renders on `/casino*`, `/dating*`, `/games*`, `/media-master*` paths. Locked by `test_break_in_banner_does_not_leak_into_non_trigger_paths` so `/profile`, `/wallet`, `/dashboard`, `/admin` stay clean.
+>   - Renders only the **single highest-hype alert at a time** (never stacked). Dismissed alerts re-appear after 5 minutes — the founder's break-ins genuinely interrupt.
+>   - Tap-through "Watch" CTA deep-links to `/media-master`.
+>
+> ### 🛡️ Regression Shield: **371/371 GREEN** (+4 sprint-4 locks)
+> ### 🧪 Testing agent: **100% backend / 100% frontend · 0 critical · 0 minor product bugs**
+> ### ✅ Smoke pass on 7 major routes (`/casino`, `/dating`, `/games`, `/media-master`, `/dashboard`, `/casino/high-roller`, `/admin/media-master-pulse`) — no white-screens
+> ### 🚀 App is BETA-REDEPLOY READY
+>
+> ### Verified end-to-end via curl
+>   - CF live input provisioning returns real `input_id` (mode='live')
+>   - `/tv/program` sets `programmed_until` 4h ahead
+>   - **Privacy guard verified**: `/tv/now-playing/{channel}` returns `live:false, live_input:null` when the programmed input has `is_live=false`
+>   - Hype 15,750 ingest mints a break-in alert visible via `/scout/break-ins/active`
+>
+> ### Outstanding for redeploy
+>   - 🟡 **P0** (you do): Provision Redis in production (`REDIS_URL=…`)
+>   - 🟡 **P0** (you do): Validate ONE real Stripe payment → `/casino/high-roller`
+>
+> ### Future / Backlog
+>   - **P1**: Auto-resolve Vibe Radio skip-vs-keep pools server-side (today accepts bids, manual DJ override OK for MVP)
+>   - **P2 (BLOCKED)**: Mainnet TGE / Solana Bridge — locked until founder types `project complete`
+>   - **P3**: LLM Universal Key budget cap — Emergent Support follow-up (unchanged)
+>
+> ---
+>
+
 > **2026-05-15 (MEDIA MASTER · SPRINT 3 — HLS embed live · AI Scout real clipping · Founder Pulse) — 367/367 regression green. Testing agent: 0 critical, 0 frontend bugs.**
 >
 > ### What shipped this session:
