@@ -30,6 +30,7 @@ import LiveActivityTicker from "@/components/common/LiveActivityTicker";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
 import { switchDashboardView } from "@/pages/DashboardRouter";
 import UnifiedEarningsWidget from "@/components/common/UnifiedEarningsWidget";
+import GalaxyGuidedTour from "@/components/dashboard/GalaxyGuidedTour";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -693,6 +694,19 @@ export default function VolumetricDashboard() {
           Camera tween is automatic via the existing CameraRig lerp on
           selectedIndex change. */}
       <PlanetCarouselNav
+        selectedIndex={selectedIndex}
+        setSelectedIndex={setSelectedIndex}
+      />
+
+      {/* 30-second cinematic guided tour — auto-plays on first visit,
+          re-playable from the "Replay Tour" pill it renders itself. */}
+      <GalaxyGuidedTour
+        planets={CATEGORIES.map((c) => ({
+          id: c.id,
+          label: c.label,
+          color: c.color,
+          rooms: c.rooms.map((r) => ({ id: r.id, label: r.label })),
+        }))}
         selectedIndex={selectedIndex}
         setSelectedIndex={setSelectedIndex}
       />

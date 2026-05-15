@@ -8020,3 +8020,32 @@ def test_every_dashboard_tile_path_resolves_to_a_real_route() -> None:
     # across both dashboards, so a regression that empties the array is also
     # a launch blocker.
     assert len(dash_paths) >= 30, f"Suspiciously few dashboard tiles: {len(dash_paths)}"
+
+
+def test_galaxy_guided_tour_mounted_and_wired() -> None:
+    """Founder ask 2026-02 — 30-second cinematic auto-tour must:
+    1. Live as its own component (replayable + testable in isolation),
+    2. Be mounted inside VolumetricDashboard so first-time users see it,
+    3. Gate auto-play behind localStorage.gv_galaxy_tour_seen.
+    """
+    from pathlib import Path
+    comp = Path("/app/frontend/src/components/dashboard/GalaxyGuidedTour.tsx")
+    assert comp.exists(), "GalaxyGuidedTour component must exist"
+    src = comp.read_text()
+    assert "GALAXY_TOUR_SEEN_KEY" in src
+    assert "gv_galaxy_tour_seen" in src
+    # The replay event other surfaces can fire.
+    assert "gv-galaxy-tour-replay" in src
+    # Test IDs for the action surface.
+    for tid in (
+        "galaxy-tour-skip",
+        "galaxy-tour-pause",
+        "galaxy-tour-next",
+        "galaxy-tour-replay-pill",
+    ):
+        assert f'data-testid="{tid}"' in src, f"Missing data-testid={tid}"
+
+    # Mounted in the dashboard
+    vol = Path("/app/frontend/src/pages/VolumetricDashboard.tsx").read_text()
+    assert "GalaxyGuidedTour" in vol, "VolumetricDashboard must import GalaxyGuidedTour"
+    assert "<GalaxyGuidedTour" in vol, "VolumetricDashboard must render GalaxyGuidedTour"

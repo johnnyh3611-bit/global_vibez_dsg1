@@ -4983,3 +4983,27 @@ New permanent guards:
 
 App is fully wired, every category planet has touchable rooms, ready for
 beta redeploy.
+
+## 2026-02-15 — 🎬 Galaxy Guided Tour (cinematic 30s onboarding)
+
+**Founder ask**: "Drop a 30-second cinematic auto-tour on first-time login."
+
+**Built**: `/app/frontend/src/components/dashboard/GalaxyGuidedTour.tsx`
+- Auto-plays once per user (gated by `localStorage.gv_galaxy_tour_seen`).
+- 2.5s "Welcome to the Galaxy" intro → 4s dwell on each of 6 planets (~27s total).
+- HUD shows planet name, color-shadowed, taglines, top-6 room chips, progress dots.
+- Action surface: ⏯ Pause/Resume · ⏭ Next Planet · ✕ Skip.
+- Camera drives via the same `setSelectedIndex` rail as PlanetCarouselNav (CameraRig lerp).
+- "Replay Tour" pill auto-appears top-center after first completion — fires `gv-galaxy-tour-replay` custom event.
+- Listeners are namespaced via `window.dispatchEvent` so any other surface can replay it.
+
+**Regression Shield**: 378 → **379 tests** GREEN.
+New guard: `test_galaxy_guided_tour_mounted_and_wired`.
+
+**Smoke test (live)**:
+- ✅ Auto-fires 1.2s after page load on first visit.
+- ✅ Camera lerps between Games → Dating → Rides → Food → Streaming → Vault.
+- ✅ Skip persists `gv_galaxy_tour_seen=1`, replay pill renders.
+- ✅ Pause/Next CTAs functional.
+
+App is fully wired AND has a delightful first-run experience.
