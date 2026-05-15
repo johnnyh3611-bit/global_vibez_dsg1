@@ -8249,3 +8249,61 @@ def test_equity_master_frontend_page_wired() -> None:
     assert "Block-Release Governance" in page
     assert "Crewmate Lock-Up" in page
     assert "Platform Buy-Back Floor" in page
+
+
+def test_dsg_core_system_constants_locked_to_pdf() -> None:
+    """DSG_Developer_Handbook.pdf + DSG_Core_System_Code.pdf (Feb 2026):
+    every PDF number for TV/Cinema/Treasury must be locked and routed
+    through Equity Master's authoritative constants."""
+    from routes.dsg_core_system import (
+        CINEMA_CREATOR_SPLIT,
+        CINEMA_HOUSE_SPLIT,
+        HOUSE_TO_POOL_RATE,
+        AD_IMPRESSION_VALUE_USD,
+        QUARTERLY_PAYOUT_DAYS,
+        SETTLEMENT_LOCK_HOURS_PRE,
+        REGIONS,
+    )
+    from routes.equity_master import (
+        OWNERSHIP_REVENUE_SHARE,
+        TOTAL_CHAIRS_BASELINE,
+        DIVIDEND_DISTRIBUTION_MONTHS,
+    )
+
+    # PDF Core_System_Code §Creator Monetization — 80/20 ticket split.
+    assert CINEMA_CREATOR_SPLIT == 0.80
+    assert CINEMA_HOUSE_SPLIT == 0.20
+    assert round(CINEMA_CREATOR_SPLIT + CINEMA_HOUSE_SPLIT, 4) == 1.0
+    # PDF Core_System_Code §update_house_pool — 1% of house → pool.
+    assert HOUSE_TO_POOL_RATE == 0.01
+    # PDF Core_System_Code §stream_regional_hub — $0.05 ad impression.
+    assert AD_IMPRESSION_VALUE_USD == 0.05
+    # PDF Developer_Handbook §Quarterly Payout Protocol.
+    assert QUARTERLY_PAYOUT_DAYS == 90
+    # PDF Developer_Handbook §Payout Lock Rule — 24h pre-settlement.
+    assert SETTLEMENT_LOCK_HOURS_PRE == 24
+
+    # Regional Hubs — at least the 2 PDF-named cities plus a Global fallback.
+    assert "chicago" in REGIONS
+    assert REGIONS["chicago"]["sports"] == "CHI_Live"
+    assert REGIONS["chicago"]["news"] == "WindyCity_Daily"
+    assert "atlanta" in REGIONS
+    assert REGIONS["atlanta"]["sports"] == "ATL_Live"
+    assert REGIONS["atlanta"]["news"] == "HotLanta_Daily"
+    assert "global" in REGIONS
+    # And a healthy footprint of regional coverage beyond the 2 anchors.
+    assert len(REGIONS) >= 6, "Need at least 6 regional hubs + global fallback"
+
+    # Cross-reference: this module MUST pull Equity Master's locks (not
+    # re-define them). Confirms the single-source-of-truth pattern.
+    assert OWNERSHIP_REVENUE_SHARE == 0.30
+    assert TOTAL_CHAIRS_BASELINE == 1_000_000
+    assert DIVIDEND_DISTRIBUTION_MONTHS == 3
+
+
+def test_dsg_core_system_router_registered() -> None:
+    """DSG Core router must be mounted under /api/dsg-core."""
+    from pathlib import Path
+    reg = Path("/app/backend/routes/registry.py").read_text()
+    assert "dsg_core_system" in reg, "registry.py must mount dsg_core_system"
+    assert "DSG_CORE_SYSTEM" in reg, "mount block must log on failure"

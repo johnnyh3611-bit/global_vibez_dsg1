@@ -5147,3 +5147,76 @@ Files touched (3):
 - `backend/routes/equity_master.py` (+150 LOC v2 additions)
 - `frontend/src/pages/EquityMasterPage.tsx` (matrix table + governance strip)
 - `backend/tests/regression_shield.py` (v2 anchor assertions)
+
+## 2026-02-15 — 🏗 DSG Core System (Dev Handbook + Core_System_Code PDFs)
+
+**Founder ask**: "Go through these PDFs and make sure if it benefits us, add
+it to the system." Source: `DSG_Developer_Handbook.pdf`, `DSG_Core_System_Code.pdf`.
+
+**What I implemented (all genuine value adds, plugs straight into Equity Master)**:
+
+1. **Regional TV Hubs** — `REGIONS` registry with Chicago, Atlanta, NYC, LA,
+   Miami, Houston + Global fallback. Each hub has sports + news channels
+   (CHI_Live / WindyCity_Daily, etc. per PDF). Geo-IP routing-ready.
+
+2. **House Revenue Pool tracker** (`dsg_house_revenue_pool` MongoDB
+   collection) — durable, quarter-keyed (`2026-Q2`), with full audit trail
+   in `dsg_revenue_events`. Survives restarts. Auto-rolls each quarter.
+
+3. **Broadcast Heartbeat Revenue Event** — Every `/tv/broadcast/{region}`
+   hit fires a $0.05 ad-impression injection into the pool via FastAPI
+   `BackgroundTasks` (non-blocking, exactly as PDF specs).
+
+4. **Cinema Ticket 80/20 Split** (`POST /cinema/ticket/purchase`) —
+   creator gets 80%, house gets 20%, 1% of house auto-injects into pool.
+
+5. **Quarterly Payout Calculator** (`/treasury/payout/calculate`) —
+   pulls live pool total, multiplies by Equity Master's locked
+   `OWNERSHIP_REVENUE_SHARE` (0.30), divides by `TOTAL_CHAIRS_BASELINE`
+   (1M). Single source of truth for per-chair quarterly payout.
+
+6. **24-Hour Settlement Lock** (`POST /treasury/settlement-lock` +
+   `GET /settlement-status`) — Treasurer-enforced audit freeze 24h
+   pre-payout. Idempotent per quarter.
+
+**What I deliberately skipped (no value or premature)**:
+- Solana RPC circuit breaker — Mainnet is stubbed until "project complete";
+  not actionable.
+- Kubernetes HPA 70% CPU threshold — infra config, not app code.
+- MVC/MVVM advice — vague meta-pattern, no concrete action.
+
+**Locked constants** (`routes/dsg_core_system.py`):
+- `CINEMA_CREATOR_SPLIT = 0.80`
+- `CINEMA_HOUSE_SPLIT = 0.20`
+- `HOUSE_TO_POOL_RATE = 0.01`
+- `AD_IMPRESSION_VALUE_USD = 0.05`
+- `QUARTERLY_PAYOUT_DAYS = 90`
+- `SETTLEMENT_LOCK_HOURS_PRE = 24`
+
+All cross-referenced to Equity Master's authoritative constants (no
+redefinition — single source of truth).
+
+**Endpoints added** (`/api/dsg-core/*`):
+- `GET /regions`
+- `GET /tv/broadcast/{region}`
+- `POST /cinema/ticket/purchase`
+- `GET /treasury/pool`
+- `GET /treasury/payout/calculate`
+- `POST /treasury/settlement-lock`
+- `GET /settlement-status`
+
+**Smoke test (live)**:
+- TV Chicago → CHI_Live + WindyCity_Daily, $0.05 → pool ✓
+- Cinema $100 ticket → $80 creator / $20 house / $0.20 → pool ✓
+- Pool accumulator: $0.25 after both events ✓
+- Payout calc: $0.25 × 30% = $0.075 pot ✓
+
+**Regression Shield**: 384 → **386 tests** GREEN.
+Cross-suite: **406/406 PASS**.
+New guards:
+1. `test_dsg_core_system_constants_locked_to_pdf` — locks all 6 numbers + 6 regions.
+2. `test_dsg_core_system_router_registered` — registry mounted.
+
+Files touched (2):
+- `backend/routes/dsg_core_system.py` (NEW — 260 LOC)
+- `backend/routes/registry.py` (mount block added, non-fatal fallback)

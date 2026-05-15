@@ -733,6 +733,16 @@ def register_all_routes(
         log.error(f"❌ EQUITY MASTER MOUNT FAILED: {_e}")
         raise
 
+    # DSG Core System — Developer Handbook + Core_System_Code PDFs (Feb 2026).
+    # Regional TV Hubs, Cinema 80/20 split, House Revenue Pool tracking,
+    # Quarterly Payout Protocol, 24h Settlement Lock. Plugs into the
+    # Equity Master locked constants.
+    try:
+        from routes.dsg_core_system import router as dsg_core_router
+        api_router.include_router(dsg_core_router)
+    except Exception as _e:
+        log.error(f"⚠️ DSG_CORE_SYSTEM mount failed: {_e}")
+
     # Cinematic Landing Video — Sora 2 generated walkthrough.
     try:
         from routes.landing_video import router as landing_video_router
