@@ -1,5 +1,48 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-05-15 (HIGH ROLLER MVP 👑 + 100K SCALING FOUNDATION 🛡️) — 340/340 regression green. VIP tier live with Stripe live-key checkout.**
+>
+> ### Two big wins this sprint:
+>
+> **1. High Roller VIP MVP shipped end-to-end** (founder-approved per `Global_Vibez_DSG_HighRoller_Implementation.pdf`):
+>   - **3 VIP tiers**: Genius $49 / Genesis $99 / Apex $249 — each unlocks a 30-day VIP window via Stripe Checkout. One-shot grants (not subscriptions), so renewals stack additively.
+>   - **₵10,000 minimum bet** — completely isolated from the standard ₵50 platform floor. The High Roller route imports `HIGH_ROLLER_MIN_BET` from `services/high_roller_economy.py`; the standard Blackjack route keeps importing `PLATFORM_MIN_BET=50`. Both behaviors are regression-locked so neither leaks.
+>   - **8 endpoints** under `/api/high-roller/*`: `GET /tiers` (public pricing), `GET /eligibility/{user_id}`, `POST /checkout` (real `cs_live_…` Stripe URL), `POST /blackjack/deal` (VIP-gated, delegates to existing blackjack engine), `POST /blackjack/action` (hit/stand/double passthrough).
+>   - **Stripe webhook routing**: `client_reference_id=vip:<user_id>:<tier>` lands in `stripe_payouts_webhook._handle_checkout_completed` which delegates to `apply_vip_grant()` — idempotent per session_id, doesn't downgrade an active higher tier on a lower-tier renewal.
+>   - **Frontend `/casino/high-roller`** — premium dark theme (obsidian background, amber/emerald radial glows, gold-leaf chip skins). 3 motion-animated tier cards. Active-VIP state surfaces a "VIP Lounge" tile that deep-links to `/casino/high-roller/blackjack`.
+>   - **VIP Blackjack table** — 8-deck shoe, animated card reveal with framer-motion, tier-specific concierge dealer line ("Welcome back to the private floor…" for Apex). Renders a `vip-blackjack-locked` upsell when the viewer's VIP window has expired.
+>   - **All testid-locked**: `high-roller-page`, `high-roller-hero-title`, `high-roller-tiers`, per-tier card + upgrade buttons, `vip-blackjack-page`, `vip-blackjack-deal-btn`, `vip-blackjack-bet-input`, `vip-blackjack-locked`.
+>
+> **2. 100K CCU Scaling Foundation installed** (per `Global_Vibez_100K_Production_Blueprint.pdf` + `Global_Vibez_DSG_Master_Test_Suite.pdf`):
+>   - **`services/scale_cache.py`** — single Redis helper for the whole codebase. KV get/set/delete + bulk-delete + driver-geo (GEOADD/GEOSEARCH per Blueprint §3). Gracefully no-ops when `REDIS_URL` is unset so the preview environment is unaffected.
+>   - **Live Now Wall caching wired** — `/api/streaming/cloudflare/live-inputs` consults Redis first (8s TTL = client poll cadence). CF webhook `stream.connected/disconnected` invalidates the cache so followers see state changes on the next poll, not after the TTL.
+>   - **Critical compound indexes** added to `lifespan._INDEX_SPECS` — `high_roller_vip` (user_id unique + vip_until desc), `featured_streamers`, `streamer_follows`, `streams` (featured-first live wall hot path), `cloudflare_live_inputs`.
+>   - **`backend/scripts/run_production.sh`** — Gunicorn launch script per Blueprint §1 (4 workers × 5,000 worker-connections × 120s timeout = 20K simultaneous connections per node).
+>   - **`backend/scripts/master_stress_suite.py`** — exact PDF Master Test Suite: 4 stress tests (API signaling load 10K concurrent, $VIBEZ gifting at 5K hits with 0.01 s/tx target, Redis GEOADD throughput, UE5 tick audit explicitly skipped + documented). Safety-gated behind `GVDSG_STRESS_ENABLE=1` so it can't auto-fire.
+>   - **Bug fix surfaced by testing**: pre-existing `/api/streaming/cloudflare/live-inputs` 500 on rows missing both `last_status_at` and `created_at` — sort lambda `-((a or b or '') and 1)` produced `-''` (TypeError on string negation). Replaced with stable triple-sort. Regression-locked.
+>
+> ### Regression Shield: **340/340 GREEN** (+12 new locks: 6 High Roller + 5 Scaling + 1 sort-bug-fix lock)
+>
+> ### Build blocker cleanup (incoming session-fresh):
+>   - `pages/Chat.tsx` line 417 had a botched lazy-loading auto-insertion (`onClick={() = loading="lazy"> …}`) → fixed.
+>   - `components/GamesMenu.tsx` line 208 same pattern → fixed.
+>
+> ### Pricing + production launch readiness
+>   - Stripe live key returns real `cs_live_…` URLs — verified.
+>   - `gunicorn==26.0.0` added to `requirements.txt` for production cluster spin-up.
+>   - 100K CCU scaling is **opt-in** via `REDIS_URL` env var. Setting it activates the cache and Redis-side driver geo. Without it, behavior is identical to today.
+>
+> ### Next Action Items
+>   - **P0**: Founder to spin up Redis in production (`REDIS_URL=redis://…`), then run `bash /app/backend/scripts/run_production.sh` on each backend node.
+>   - **P0**: Validate one real Stripe payment through `/casino/high-roller` → confirm `vip_until` flips post-webhook.
+>   - **P1**: Run the master stress suite against staging with `GVDSG_STRESS_ENABLE=1 python -m scripts.master_stress_suite`.
+>   - **P1**: Add Roulette + Baccarat to the VIP Lounge (currently only Blackjack lives there).
+>   - **P2 (BLOCKED)**: Mainnet TGE & Solana Bridge — STILL stubbed until founder types `project complete`.
+>   - **P3**: LLM Universal Key budget cap — Emergent Support follow-up.
+>
+> ---
+>
+
 > **2026-02-11 (BETA-REDEPLOY CLEARED 🚀 · Wrap-Ups + Game Audit) — 317/317 regression green. Founder cleared to ship beta.**
 >
 > ### Final pre-beta sprint completed:

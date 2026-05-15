@@ -267,17 +267,28 @@ async def list_live_inputs(only_live: bool = False, limit: int = 60) -> Dict[str
         clean["featured_until"] = feat.get("featured_until") if feat else None
         safe.append(clean)
 
-    # Featured streamers float to the top; ties broken by last_status_at,
-    # then created_at. Done server-side so any client (web / mobile / API
-    # consumer) gets consistent ordering.
+    # Featured streamers float to the top; ties broken by recency
+    # (newest stream first). Done server-side so any client (web / mobile /
+    # API consumer) gets consistent ordering.
     safe.sort(
         key=lambda s: (
             not s.get("is_featured"),  # featured first (False sorts before True)
-            -((s.get("last_status_at") or s.get("created_at") or "") and 1),
+            # Tie-break: most recent activity wins. Empty-string fallback
+            # is intentional — strings compare lexicographically, and an
+            # empty string sorts AFTER any ISO timestamp when reversed
+            # via the negation below.
             s.get("last_status_at") or s.get("created_at") or "",
         ),
         reverse=False,
     )
+    # Apply recency-DESC across the already-stable sort so recent streams
+    # appear first within each featured/non-featured bucket.
+    safe.sort(
+        key=lambda s: s.get("last_status_at") or s.get("created_at") or "",
+        reverse=True,
+    )
+    # Re-apply featured-first as the outer key (Python sorts are stable)
+    safe.sort(key=lambda s: 0 if s.get("is_featured") else 1)
     payload = {"streams": safe, "count": len(safe)}
     # Fire-and-forget: cache the response for 8s — matches Live Now Wall poll cadence
     await cache_set(cache_key, payload, ttl=TTL_LIVE_WALL)

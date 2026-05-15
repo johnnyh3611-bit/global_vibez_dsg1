@@ -7293,6 +7293,7 @@ def test_scale_cache_helper_exists_and_is_safe_when_redis_disabled() -> None:
         geo_add_driver, geo_remove_driver, geo_nearby_drivers,
         is_redis_enabled, TTL_LIVE_WALL,
     )
+
     assert TTL_LIVE_WALL == 8, "Live Now Wall TTL must match 8s client poll"
 
     # When REDIS_URL is unset (preview env) every helper must return None/False
@@ -7300,6 +7301,7 @@ def test_scale_cache_helper_exists_and_is_safe_when_redis_disabled() -> None:
     import os
     if not os.environ.get("REDIS_URL"):
         assert is_redis_enabled() is False
+
         async def _check():
             assert await cache_get("any_key") is None
             assert await cache_set("any_key", {"a": 1}) is False
@@ -7309,6 +7311,23 @@ def test_scale_cache_helper_exists_and_is_safe_when_redis_disabled() -> None:
             assert await geo_remove_driver("d1") is False
             assert await geo_nearby_drivers(-74.0, 40.7) == []
         asyncio.run(_check())
+
+
+def test_live_now_wall_sort_lambda_does_not_negate_strings() -> None:
+    """Pre-existing bug surfaced by testing agent: the old sort key
+    used `-((a or b or '') and 1)` which evaluated to `-''` (TypeError)
+    when both timestamps were missing — breaking /live-inputs entirely
+    for any row that lacked status timestamps. Lock the fix."""
+    from pathlib import Path
+    src = Path("/app/backend/routes/cloudflare_stream.py").read_text()
+    # The broken pattern must be gone.
+    assert '-((s.get("last_status_at") or s.get("created_at") or "") and 1)' not in src, (
+        "Reintroduced the unary-minus-on-string bug in the live-inputs sort"
+    )
+    # The new approach uses a stable triple-sort with featured-first as outer key.
+    assert 'safe.sort(key=lambda s: 0 if s.get("is_featured") else 1)' in src, (
+        "Live Now Wall sort lost the featured-first outer key"
+    )
 
 
 def test_scale_cache_wired_into_live_now_wall() -> None:
