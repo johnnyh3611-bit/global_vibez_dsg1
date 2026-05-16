@@ -1,5 +1,29 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-05-16 (cont. #10) — TWO COMMERCIAL SPOTS APPENDED + PRICING AUDIT · 436/436 regression green.**
+>
+> ### Tour expansion (founder PDF `dsg_commercial_scripts.pdf`):
+> - Added **2 new B-roll clips** to `LandingTourVideo.tsx` `CLIPS` (founder-uploaded MP4s): `ycmjkhqh__http_com_generated_video_content_.mp4` and `a0uflv8a_mp4.mp4`. Total clip count: 8 → **11** (less repeat-loop fatigue).
+> - Added **2 new CLIP_TAGS**: "Coins that pay the rent" (Commercial 1) and "From streamer to seat-holder" (Commercial 2).
+> - Added **6 new FALLBACK_CAPTIONS** at timestamps 232s–266s so on-screen text matches the new audio segments.
+> - Appended the two commercial paragraphs to `SCRIPT` in `generate_landing_tour_narration.py`. Nothing was removed — the original ~3:15 narration plays first, then a clean handoff line ("And one more thing. Two new spots. Fifteen seconds each."), then Commercial 1 + Commercial 2 back-to-back. Total runtime ≈ 4:30-4:45.
+> - **Voice stays Nova** (OpenAI's female + most energetic voice) at speed=1.10× for the excited tone the founder asked for.
+> - Regenerated `/app/frontend/public/landing-tour-narration.mp3` and the `-en.mp3` mirror. Output: **4.85 MB MP3** (was ~3.5 MB).
+> - Implementation note: OpenAI TTS has a hard 4096-char input cap. The new script is 4400 chars, so the generator now chunks on paragraph boundaries (3.8 KB safety limit) and concatenates the raw MP3 bytes — MP3 frames are self-delimiting so this stitches losslessly with zero re-encode.
+>
+> ### Pricing/numbers audit (founder ask: "make sure all numbers match"):
+> Grep-walked every chair-price, coin-credit, $VIBEZ ratio, hustle-percentage, and burn-schedule anchor across `backend/routes`, `backend/services`, and `frontend/src`:
+> - **Chair matrix** ($18 / $99 / $360 / $1,800) consistent across `equity_master.py::EQUITY_VALUE_MATRIX` ↔ tour captions ↔ frontend Equity page.
+> - **VIP minimum** (10,000 coins): single source of truth in `high_roller.py::HIGH_ROLLER_MIN_BET` = 10000.
+> - **Coin:Credit 1:10**: enforced via `coin_to_credit` ledger flow.
+> - **$VIBEZ:Solana 4:1** + 3B→1.5B burn + 51% vote + $20 floor + 90-day chair payouts + 70% creator hustle / 80% cinema split: all single-sourced from `dsg_core_system.py` / `cinema_room.py` / `equity_master.py`.
+> No drift found.
+>
+> ### Regression:
+> 4 new shield tests pin (a) the 2 new B-roll URLs + tags + captions, (b) Nova voice + 1.10× speed + both commercial scripts present, (c) **price-anchor consistency** between landing captions and `equity_master.py`'s numeric source-of-truth (fails the build if any of $18 / $99 / $360 / $1,800 drift), (d) MP3 size ≥4 MB invariant (sanity check that the regen actually wrote the bigger audio). Shield: 432 → **436 passed**.
+
+
+
 > **2026-05-16 (cont. #9) — CODE-REVIEW AUDIT + 1 REAL BUG FIXED · 432/432 regression green.**
 >
 > External code-review report flagged 8 categories of issues. Triaged each one against the actual codebase rather than reflexively applying every suggestion.

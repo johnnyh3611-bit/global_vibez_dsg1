@@ -28,7 +28,10 @@ load_dotenv()
 #   "Make sure the voice of the character that is talking is more
 #    energetic and alive and excited about Global Vibez DSG. The tour
 #    can be a little bit longer due to all the new information."
-# Length: ~520 words → ~3:00-3:15 at speed=1.10× (nova voice).
+# Length: ~680 words → ~4:30-4:45 at speed=1.10× (nova voice).
+# 2026-05-16 update: ADDED two 15-second founder commercials at the end
+# of the existing 3:45 script, per dsg_commercial_scripts.pdf. Did NOT
+# remove anything from the original narration.
 # Voice: NOVA — OpenAI's most energetic / alive voice (higher pitch,
 # more dynamic prosody than shimmer or onyx). Speed bumped to 1.10
 # for an even more excited delivery.
@@ -57,6 +60,12 @@ This is the Sovereign Casino. The Social Network. The Walking Advertisement Econ
 Take your seat. RIGHT NOW.
 
 GLOBAL VIBEZ DSG. Own the network. Feel the VIBEZ. LET'S GOOO!
+
+— And one more thing. Two new spots. Fifteen seconds each. Listen close.
+
+Commercial One. The Sovereign Casino. Picture this — neon-soaked card rooms. Diamond-tier blackjack tables. And every chip you win? That's REAL $VIBEZ in your wallet. Coins that pay your rent. This isn't a casino. It's an ECONOMY. Global Vibez DSG — take your seat.
+
+Commercial Two. From streamer, to seat-holder. Go live, build your audience, KEEP seventy percent of every tip. Onboard three vendors and unlock TIER-TWO EQUITY — chair dividends every ninety days, FOREVER. Your hustle just became ownership. Global Vibez DSG — own the network.
 """
 
 OUTPUT_PATH = Path("/app/frontend/public/landing-tour-narration.mp3")
@@ -68,18 +77,44 @@ async def main() -> None:
         raise SystemExit("EMERGENT_LLM_KEY missing from /app/backend/.env")
 
     tts = OpenAITextToSpeech(api_key=api_key)
-    print(f"[narration] generating {len(SCRIPT)} chars via OpenAI TTS (nova · tts-1-hd · 1.10×)…")
 
-    audio_bytes = await tts.generate_speech(
-        text=SCRIPT.strip(),
-        model="tts-1-hd",
-        voice="nova",      # 🔥 most energetic / alive OpenAI voice
-        response_format="mp3",
-        speed=1.10,        # higher tempo → more excited feel
-    )
+    # OpenAI TTS caps input at 4096 chars. The narration grew past that
+    # in May 2026 when the two founder-commercial spots were appended.
+    # Split on paragraph boundaries into segments, generate each MP3,
+    # concatenate the raw bytes — MP3 frames are self-delimiting so
+    # this stitches losslessly with no re-encode.
+    full = SCRIPT.strip()
+    CHUNK_LIMIT = 3800  # safety buffer under the 4096 hard cap
+    paragraphs = [p.strip() for p in full.split("\n\n") if p.strip()]
+    chunks: list[str] = []
+    buf = ""
+    for para in paragraphs:
+        candidate = (buf + "\n\n" + para) if buf else para
+        if len(candidate) <= CHUNK_LIMIT:
+            buf = candidate
+        else:
+            if buf:
+                chunks.append(buf)
+            buf = para
+    if buf:
+        chunks.append(buf)
+
+    print(f"[narration] generating {len(full)} chars in {len(chunks)} TTS chunk(s) (nova · tts-1-hd · 1.10×)…")
+
+    all_bytes = b""
+    for i, chunk in enumerate(chunks, start=1):
+        print(f"[narration]   chunk {i}/{len(chunks)} · {len(chunk)} chars")
+        audio_bytes = await tts.generate_speech(
+            text=chunk,
+            model="tts-1-hd",
+            voice="nova",      # 🔥 most energetic / alive OpenAI voice
+            response_format="mp3",
+            speed=1.10,        # higher tempo → more excited feel
+        )
+        all_bytes += audio_bytes
 
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT_PATH.write_bytes(audio_bytes)
+    OUTPUT_PATH.write_bytes(all_bytes)
     size_kb = OUTPUT_PATH.stat().st_size / 1024
     print(f"[narration] wrote {OUTPUT_PATH} ({size_kb:.1f} KB)")
 

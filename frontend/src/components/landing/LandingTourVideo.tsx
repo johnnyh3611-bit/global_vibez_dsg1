@@ -48,6 +48,10 @@ const CLIPS: string[] = [
   "https://customer-assets.emergentagent.com/job_social-connect-953/artifacts/p3dccmdd_Okay_make_me_one_more_talk_ab.mp4",
   // 8 — 2026-05-13 founder-added closing wow clip
   "https://customer-assets.emergentagent.com/job_social-connect-953/artifacts/fdv0cph9_bmp_.mp4",
+  // 9 — 2026-05-16 founder-added commercial clip ("generated_video_content"), pairs with Commercial 1 voiceover
+  "https://customer-assets.emergentagent.com/job_social-connect-953/artifacts/ycmjkhqh__http_com_generated_video_content_.mp4",
+  // 10 — 2026-05-16 founder-added commercial clip ("mp4.mp4"), pairs with Commercial 2 voiceover
+  "https://customer-assets.emergentagent.com/job_social-connect-953/artifacts/a0uflv8a_mp4.mp4",
 ];
 
 // Per-clip caption tags — 2026-05-12 founder enhancement: silent-autoplay
@@ -63,6 +67,8 @@ const CLIP_TAGS: Array<{ kicker: string; line: string; tint: string }> = [
   { kicker: "Welcome home", line: "Your Vibez universe awaits", tint: "from-violet-400 to-indigo-500" },
   { kicker: "Meet your host", line: "Founder talks the vision", tint: "from-orange-400 to-amber-500" },
   { kicker: "Sit at the table", line: "Apex · Genesis · Genius chairs", tint: "from-yellow-400 to-emerald-500" },
+  { kicker: "Commercial · 15s", line: "Coins that pay the rent", tint: "from-cyan-400 to-fuchsia-500" },
+  { kicker: "Commercial · 15s", line: "From streamer to seat-holder", tint: "from-amber-400 to-rose-500" },
 ];
 
 const MANIFEST_URL = "/landing-tour-i18n.json";
@@ -125,6 +131,13 @@ const FALLBACK_CAPTIONS: Cue[] = [
   { t: 208.0, text: "ONE MILLION CHAIRS. Globally. Forever. The first cohort to sit at the table OWNS the network." },
   { t: 220.0, text: "Take your seat. RIGHT NOW." },
   { t: 225.0, text: "GLOBAL VIBEZ DSG. Own the network. Feel the VIBEZ. LET'S GOOO!" },
+  // ── Two new founder commercials (2026-05-16, dsg_commercial_scripts.pdf) ──
+  { t: 232.0, text: "— And one more thing. Two new spots. Fifteen seconds each. Listen close." },
+  { t: 238.0, text: "Commercial One · The Sovereign Casino — neon card rooms, Diamond-tier blackjack." },
+  { t: 246.0, text: "Every chip you win is REAL $VIBEZ. Coins that pay your rent. Take your seat." },
+  { t: 254.0, text: "Commercial Two · From streamer to seat-holder." },
+  { t: 258.0, text: "Go live · keep 70% of every tip · onboard 3 vendors → Tier-2 Equity FOREVER." },
+  { t: 266.0, text: "GLOBAL VIBEZ DSG — own the network." },
 ];
 
 interface Props {

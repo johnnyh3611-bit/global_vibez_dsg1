@@ -9254,6 +9254,61 @@ def test_is_literal_anti_pattern_absent_in_game_utils() -> None:
             )
 
 
+# ────────────────────────────────────────────── 2026-05-16 Commercial extension ──
+# Founder uploaded `dsg_commercial_scripts.pdf` with two 15-second spots
+# to APPEND to the existing 3-minute landing tour (without removing any
+# existing content). Two new MP4 B-roll clips were added to CLIPS, two
+# new CLIP_TAGS, six new FALLBACK_CAPTIONS, and the narration script
+# grew the two commercial paragraphs.
+
+def test_landing_tour_has_two_new_commercial_clips() -> None:
+    from pathlib import Path
+    src = Path("/app/frontend/src/components/landing/LandingTourVideo.tsx").read_text()
+    # New B-roll URLs.
+    assert "ycmjkhqh__http_com_generated_video_content_.mp4" in src
+    assert "a0uflv8a_mp4.mp4" in src
+    # New clip tags.
+    assert "Coins that pay the rent" in src
+    assert "From streamer to seat-holder" in src
+    # New caption cues.
+    assert "Commercial One" in src and "Commercial Two" in src
+
+
+def test_landing_tour_narration_script_has_both_commercials_and_nova_voice() -> None:
+    from pathlib import Path
+    src = Path("/app/backend/scripts/generate_landing_tour_narration.py").read_text()
+    assert "voice=\"nova\"" in src, "Voice must stay Nova (female · energetic)"
+    assert "speed=1.10" in src, "Speed must stay 1.10× for excited tone"
+    assert "Commercial One. The Sovereign Casino" in src
+    assert "Commercial Two. From streamer, to seat-holder" in src
+
+
+def test_pricing_matrix_consistent_between_backend_and_landing_captions() -> None:
+    """The four chair-price anchors in the tour captions must match the
+    canonical EQUITY_VALUE_MATRIX in equity_master.py — Floor $18, Genesis
+    $99, Diamond $360, Platinum $1,800."""
+    from pathlib import Path
+    captions = Path("/app/frontend/src/components/landing/LandingTourVideo.tsx").read_text()
+    backend = Path("/app/backend/routes/equity_master.py").read_text()
+    for anchor in ("$18", "$99", "$360", "$1,800"):
+        assert anchor in captions, f"Landing tour caption is missing the {anchor} chair anchor"
+    # Backend numeric source-of-truth.
+    for n in ("18.00", "99.00", "360.00", "1_800.00"):
+        assert n in backend, f"equity_master.py is missing the {n} matrix value"
+
+
+def test_landing_tour_narration_mp3_grew_after_commercial_addition() -> None:
+    """The Nova MP3 should now be ≥4 MB (was ~3.5 MB). Sanity check that
+    the regen actually wrote bigger audio."""
+    from pathlib import Path
+    p = Path("/app/frontend/public/landing-tour-narration.mp3")
+    assert p.exists(), "landing-tour-narration.mp3 missing"
+    size_mb = p.stat().st_size / (1024 * 1024)
+    assert size_mb >= 4.0, (
+        f"Narration MP3 is {size_mb:.2f} MB — expected ≥4 MB after the May-16 commercial append"
+    )
+
+
 def test_no_undefined_names_in_route_modules() -> None:
     """Every route module must pyflakes-clean for `undefined name` —
     that bug class causes 500s on the first request to the router.
