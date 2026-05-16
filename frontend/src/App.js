@@ -62,6 +62,7 @@ import GlobeFAB from "@/components/GlobeFAB";
 // v8 — universal voice/video chat dock auto-mounted on every multiplayer URL
 import GameVoiceDockMounter from "@/components/games/GameVoiceDockMounter";
 import FloatingFoodMenu from "@/components/common/FloatingFoodMenu";
+import CoWatchLauncher from "@/components/common/CoWatchLauncher";
 import PageActionStrip from "@/components/common/PageActionStrip";
 import NotFound from "@/pages/NotFound";
 import CinemaRoom from "@/pages/CinemaRoom";
@@ -280,6 +281,7 @@ function AppRouter() {
       <GlobeFAB />
       <GameVoiceDockMounter />
       <FloatingFoodMenu />
+      <CoWatchLauncher />
       {/* Founder directive 2026-02-09 — chrome menu MUST be inline
           (scroll with the page, never sticky). Public Landing mounts
           its own <PageActionStrip /> under the WinnerTicker; every

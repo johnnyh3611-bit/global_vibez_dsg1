@@ -1,5 +1,20 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-05-16 (cont. #2) — CO-WATCH LAUNCHER SHIPPED · 409/409 regression green.**
+>
+> ### What shipped:
+> `/app/frontend/src/components/common/CoWatchLauncher.tsx` — a global floating bottom-right launcher button. One tap spawns a synced Free TV watch-party room and copies a share link with `?ref=` ambassador attribution. Detects current page context (Free TV / Cinema Room / DSG TV / MY VIBEZ) and pre-fills the room name + network. If already inside a `/free-tv/:roomId`, it skips the POST and reuses the active room's ID. Modal exposes Copy / Share / Jump-in actions.
+>
+> Mounted globally in `App.js`. Self-hides on auth pages, onboarding, age-verification, volumetric galaxy, and whenever the inline `PageActionStrip` is active (listens for the `chromebar:active` / `chromebar:idle` events).
+>
+> ### Regression:
+> 3 new shield tests pin (a) the component file + canonical test-IDs, (b) the global mount in `App.js`, and (c) the auth-page hide list. Shield went 406 → **409 passed, 0 failed**.
+>
+> ### Test-IDs:
+> `co-watch-launcher-btn`, `co-watch-launcher-modal`, `co-watch-launcher-invite-url`, `co-watch-launcher-copy-btn`, `co-watch-launcher-share-btn`, `co-watch-launcher-jump-btn`, `co-watch-launcher-close`.
+
+
+
 > **2026-05-16 (cont.) — FREE TV NETWORKS CINEMA ROOM + DASHBOARD UI REFRESH · 406/406 regression green.**
 >
 > ### Shipped:

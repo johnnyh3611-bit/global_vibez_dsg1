@@ -8828,3 +8828,42 @@ def test_dashboard_my_vibez_tile_revamped() -> None:
         "MY VIBEZ tile must use the bespoke holographic conic-gradient treatment"
     )
 
+# ────────────────────────────────────────────── Co-Watch Launcher ──
+# [2026-05-16] Global floating "Co-Watch from anywhere" button. One tap
+# spawns a synced free-tv watch-party from any page, copies a share
+# link with `?ref=` attribution.
+
+def test_co_watch_launcher_component_exists() -> None:
+    from pathlib import Path
+    p = Path("/app/frontend/src/components/common/CoWatchLauncher.tsx")
+    assert p.exists(), "CoWatchLauncher.tsx must exist"
+    src = p.read_text()
+    for tid in (
+        "co-watch-launcher-btn",
+        "co-watch-launcher-modal",
+        "co-watch-launcher-invite-url",
+        "co-watch-launcher-copy-btn",
+        "co-watch-launcher-share-btn",
+        "co-watch-launcher-jump-btn",
+        "co-watch-launcher-close",
+    ):
+        assert f'data-testid="{tid}"' in src, f"CoWatchLauncher missing testid '{tid}'"
+
+
+def test_co_watch_launcher_mounted_globally() -> None:
+    """CoWatchLauncher must be imported and rendered in App.js so it
+    shows on every protected page."""
+    from pathlib import Path
+    src = Path("/app/frontend/src/App.js").read_text()
+    assert "CoWatchLauncher" in src
+    assert "<CoWatchLauncher />" in src
+
+
+def test_co_watch_launcher_hides_on_auth_pages() -> None:
+    """Login/signup pages must not render the launcher (HIDDEN_PREFIXES)."""
+    from pathlib import Path
+    src = Path("/app/frontend/src/components/common/CoWatchLauncher.tsx").read_text()
+    for needle in ("'/login'", "'/signup'", "'/volumetric'"):
+        assert needle in src, f"HIDDEN_PREFIXES must include {needle}"
+
+
