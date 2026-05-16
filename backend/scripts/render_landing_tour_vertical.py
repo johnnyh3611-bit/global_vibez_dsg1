@@ -111,7 +111,11 @@ def build_srt(target: Path, cues: list, total_duration: float) -> None:
 
 def render_language(lang: str, track: dict, sources: List[Path]) -> Path:
     """Render the 9:16 export for one language."""
-    audio_path = PUBLIC_DIR / track["audio"].lstrip("/")
+    # Strip any cache-buster query string (e.g. "?v=nova-2026-05-16")
+    # that the i18n manifest may carry for browser cache invalidation —
+    # those aren't part of the filename on disk.
+    audio_rel = track["audio"].split("?", 1)[0].lstrip("/")
+    audio_path = PUBLIC_DIR / audio_rel
     if not audio_path.exists():
         raise SystemExit(f"Audio missing for {lang}: {audio_path}")
     duration = float(track["duration"])

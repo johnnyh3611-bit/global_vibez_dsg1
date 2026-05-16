@@ -9998,3 +9998,104 @@ def test_merchant_leaderboard_page_wired() -> None:
         "recruiter-leaderboard-btn",
     ]:
         assert tid in dash, f"MerchantDashboard missing recruiter testid: {tid}"
+
+# --- LOCKED ---------------------------------------------------------------
+# [2026-05-16 v1.4] Landing tour audio + 9:16 MP4 freshness guard.
+# After the Nova-narration regen + MP4 re-render, lock cache-busting +
+# build-artifact sync so the deploy can never silently ship the old
+# Onyx-voiced files again.
+#
+# Failure modes this protects against:
+#   1. `frontend/public/` updated, but `frontend/build/` stale → deploy
+#      pipelines that ship `build/` directly serve the old file.
+#   2. New MP3/MP4 generated, but the i18n manifest + component still
+#      reference the old URL without a cache-buster → SW + Cloudflare
+#      keep serving the old bytes.
+#   3. Service worker `CACHE_VERSION` not bumped → returning users
+#      keep their pre-Nova cached MP3.
+
+
+def test_landing_tour_assets_match_public_and_build() -> None:
+    """`frontend/public/*` and `frontend/build/*` must serve the same
+    bytes for every landing-tour asset. Drift = old voice on prod."""
+    import hashlib
+    from pathlib import Path
+
+    pairs = [
+        ("landing-tour-narration.mp3",     "landing-tour-narration.mp3"),
+        ("landing-tour-narration-en.mp3",  "landing-tour-narration-en.mp3"),
+        ("landing-tour-tiktok-9x16.mp4",   "landing-tour-tiktok-9x16.mp4"),
+        ("landing-tour-i18n.json",         "landing-tour-i18n.json"),
+        ("gv-sw.js",                       "gv-sw.js"),
+    ]
+    pub = Path("/app/frontend/public")
+    bld = Path("/app/frontend/build")
+    drift = []
+    for p_name, b_name in pairs:
+        p = pub / p_name
+        b = bld / b_name
+        if not p.exists():
+            drift.append(f"{p} missing")
+            continue
+        if not b.exists():
+            drift.append(f"{b} missing (run `yarn build` or sync from public)")
+            continue
+        ph = hashlib.sha256(p.read_bytes()).hexdigest()
+        bh = hashlib.sha256(b.read_bytes()).hexdigest()
+        if ph != bh:
+            drift.append(f"{p_name}: public sha={ph[:12]} != build sha={bh[:12]}")
+    assert not drift, "Stale build artifacts (deploy will ship old voice):\n  " + "\n  ".join(drift)
+
+
+def test_landing_tour_cache_busters_wired() -> None:
+    """All three call-sites that load the tour MP3/MP4 must use the
+    `?v=nova-2026-05-16` cache-buster so SW + CDN never serve stale."""
+    sw = open("/app/frontend/public/gv-sw.js").read()
+    assert "gv-v2-20260516-nova" in sw, "Service worker CACHE_VERSION not bumped"
+    assert "?v=nova-2026-05-16" in sw, "SW pre-cache URL missing cache-buster"
+
+    manifest = open("/app/frontend/public/landing-tour-i18n.json").read()
+    assert "?v=nova-2026-05-16" in manifest, "i18n manifest audio URL missing cache-buster"
+
+    component = open("/app/frontend/src/components/landing/LandingTourVideo.tsx").read()
+    assert "?v=nova-2026-05-16" in component, "Tour component MP3 src missing cache-buster"
+    # MP4 download link must also bust cache.
+    assert 'href="/landing-tour-tiktok-9x16.mp4?v=nova-2026-05-16"' in component, \
+        "MP4 download href missing cache-buster"
+    # The "Onyx" copy must be gone — should now say "Nova".
+    assert "Onyx narration" not in component, "Tour component still advertises 'Onyx narration'"
+    assert "Nova narration" in component, "Tour component must advertise 'Nova narration'"
+
+
+def test_landing_tour_narration_mp3_is_new_nova_file() -> None:
+    """Narration MP3s must be the new Nova-voice files. The OLD Onyx
+    files were ~2.4-4.1 MB; the new Nova files are ~5.7 MB. If size
+    regresses, someone reverted the regen."""
+    from pathlib import Path
+    pub = Path("/app/frontend/public")
+    for name, min_bytes in [
+        ("landing-tour-narration.mp3", 5_500_000),
+        ("landing-tour-narration-en.mp3", 5_500_000),
+    ]:
+        f = pub / name
+        assert f.exists(), f"missing {f}"
+        size = f.stat().st_size
+        assert size >= min_bytes, (
+            f"{name} is only {size} bytes — looks like the OLD Onyx file "
+            f"crept back in. Expected >= {min_bytes}."
+        )
+
+
+def test_landing_tour_index_js_registers_sw_with_update() -> None:
+    """`src/index.js` must call `registration.update()` so returning
+    users with the OLD SW get force-flushed on next page load."""
+    idx = open("/app/frontend/src/index.js").read()
+    assert "registration.update\\(\\)" not in idx  # literal escape check
+    assert "reg.update()" in idx, (
+        "index.js must force `reg.update()` on load so old service "
+        "workers can't keep serving the Onyx MP3."
+    )
+    assert "controllerchange" in idx, (
+        "index.js must reload once on `controllerchange` so the audio "
+        "element refetches the new Nova MP3 after SW takeover."
+    )

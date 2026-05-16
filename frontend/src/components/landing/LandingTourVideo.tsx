@@ -550,11 +550,11 @@ const LandingTourVideo: React.FC<Props> = ({ onJoinBeta }) => {
               Want to share this?
             </h3>
             <p className="text-xs md:text-sm text-white/60">
-              Same script, same Onyx narration, vertical 9:16 with burned-in captions — ready for TikTok, Reels &amp; Shorts.
+              Same script, same Nova narration, vertical 9:16 with burned-in captions — ready for TikTok, Reels &amp; Shorts.
             </p>
           </div>
           <a
-            href="/landing-tour-tiktok-9x16.mp4"
+            href="/landing-tour-tiktok-9x16.mp4?v=nova-2026-05-16"
             download="GlobalVibezDSG-Tour-9x16.mp4"
             data-testid="landing-tour-download-9x16-btn"
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white text-black text-sm font-black uppercase tracking-wider hover:bg-fuchsia-200 transition-colors shrink-0"
