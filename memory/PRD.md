@@ -1,5 +1,35 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-05-16 (cont. #9) — CODE-REVIEW AUDIT + 1 REAL BUG FIXED · 432/432 regression green.**
+>
+> External code-review report flagged 8 categories of issues. Triaged each one against the actual codebase rather than reflexively applying every suggestion.
+>
+> ### False positives (8 of 8 categories had at least some, most were entirely false):
+> | Item | Reality |
+> |---|---|
+> | `eval()` security risk (2 lines) | Function NAMED `_five_card_eval`, not `eval()` builtin. Pattern-match noise. |
+> | Hardcoded secrets (6 files) | Comments explaining old hardcoded secrets are gone (`conftest.py`), explicit `DEV_FALLBACK_DO_NOT_USE_IN_PROD` placeholders, and token enum strings ("USDC", "pending") flagged as secrets. |
+> | Circular import chairs↔apex_evolution | Already protected via lazy imports inside functions, marked with `noqa: PLC0415`. |
+> | `is "literal"` anti-pattern in uno/hearts/game_ai | Every flagged line is `is None` / `is not None` — the CORRECT idiom. Analyzer didn't read the RHS. |
+> | 245 undefined variables | Pyflakes scan found **7**, all in one file, all for the same missing symbol. The report's analyzer had a noisy rule. |
+>
+> ### Real bug found:
+> `routes/social_features.py` was calling `get_database()` on every route (lines 60, 77, 94, 123, 176, 193, 226) but never imported it. Would have 500'd on first request. Added `from utils.database import get_database`.
+>
+> ### Refactor recommendations declined:
+> Items 5 (split 4 high-complexity functions), 6 (import bloat), 7 (dynamic imports in registry.py) — all touch hot paths that are currently regression-pinned and working. Refactoring 4 critical paths the night before beta is the single highest-bug-risk move. Deferred.
+>
+> ### Regression guardrails added (5 new shield tests):
+> 1. `test_no_actual_eval_builtin_in_backend` — regex scan blocks any genuine `eval(...)` builtin call sneaking in.
+> 2. `test_lazy_circular_import_between_chairs_and_apex_evolution` — pins the lazy-import pattern so top-of-module imports can't re-introduce the circular bind.
+> 3. `test_no_hardcoded_secret_assignments_outside_env` — regex catches `sk_live_...` and `AKIA...` patterns anywhere in backend code.
+> 4. `test_is_literal_anti_pattern_absent_in_game_utils` — fails the build if `is "string"` (non-None literal) appears in uno/hearts/game_ai/spades.
+> 5. `test_no_undefined_names_in_route_modules` — runs pyflakes on every route/service/util and fails if any `undefined name` appears.
+>
+> Shield: 427 → **432 passed, 0 failed**.
+
+
+
 > **2026-05-16 (cont. #8) — CHESS HALL FIX + VISUAL UPGRADE · 427/427 regression green. CONFIRMED READY FOR BETA REDEPLOY.**
 >
 > ### Bug fix:

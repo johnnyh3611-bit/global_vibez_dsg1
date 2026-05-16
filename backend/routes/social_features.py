@@ -8,6 +8,12 @@ from typing import Optional, Dict, List, Any
 from datetime import datetime
 import uuid
 
+# 2026-05-16 — `get_database` was being called on every route below
+# but never imported, which would 500 every request to this router.
+# Discovered via code-review audit + pyflakes scan; pinned by
+# `test_no_actual_eval_builtin_in_backend`/social-features regression.
+from utils.database import get_database
+
 router = APIRouter()
 
 # Active private suites — Mongo-backed (May 2026 lockdown)
