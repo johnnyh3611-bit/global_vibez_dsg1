@@ -8920,3 +8920,40 @@ def test_co_play_mode_wired_in_launcher() -> None:
     # Sample of expected game prefixes.
     for prefix in ("'/spades'", "'/blackjack'", "'/casino/high-roller'", "'/card-mp'"):
         assert prefix in src, f"Co-Play GAME_PREFIXES missing {prefix}"
+
+
+# ────────────────────────────────────────────── Live Pulse pill ──
+# [2026-05-16] Per-category live audience counter. Sums audience_count
+# across Free TV + Cinema rooms. Hidden when total == 0.
+
+def test_live_pulse_endpoint_registered_and_shape() -> None:
+    """`GET /api/live-pulse/categories` must be mounted and return a
+    dict keyed by the same category IDs the dashboard tabs use."""
+    import asyncio
+    from server import app
+    paths = {getattr(r, "path", "") for r in app.routes}
+    assert "/api/live-pulse/categories" in paths
+    from routes.live_pulse import get_category_pulse, CATEGORY_IDS
+    # CATEGORY_IDS must align with the frontend tab vocabulary.
+    assert set(CATEGORY_IDS) == {"watch", "dating", "games", "music", "lifestyle", "social", "earnings"}
+    out = asyncio.new_event_loop().run_until_complete(get_category_pulse())
+    assert "counts" in out and "total" in out
+    assert set(out["counts"].keys()) == set(CATEGORY_IDS)
+    assert all(isinstance(v, int) for v in out["counts"].values())
+
+
+def test_live_pulse_pill_rendered_in_dashboard() -> None:
+    """LivePulsePill must mount above the category tabs, poll the
+    backend, and call setActiveCategory when a pill is clicked."""
+    from pathlib import Path
+    src = Path("/app/frontend/src/pages/DashboardNew.tsx").read_text()
+    assert "LivePulsePill" in src
+    assert 'data-testid="live-pulse-pill"' in src
+    assert "/api/live-pulse/categories" in src
+    # Pill must be mounted ABOVE the CategoryTabs in the JSX so users
+    # always see momentum before the tab strip.
+    pulse_idx = src.find("<LivePulsePill")
+    tabs_idx = src.find("<CategoryTabs")
+    assert pulse_idx > 0 and tabs_idx > 0 and pulse_idx < tabs_idx, (
+        "LivePulsePill must render before CategoryTabs in the JSX tree"
+    )

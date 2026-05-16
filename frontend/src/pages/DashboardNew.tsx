@@ -159,6 +159,72 @@ function CategoryTabs({ active, onChange }: { active: string; onChange: (id: str
   );
 }
 
+// ────────────────────────────────────────────── Live Right Now pill ──
+// Polls /api/live-pulse/categories every 20s and surfaces per-category
+// live audience counts above the tabs. Clicking a pulse pill switches
+// the active category. Hidden when the platform is fully quiet so we
+// don't show "0 live everywhere" — a credibility kill.
+
+function LivePulsePill({
+  onJump,
+}: {
+  onJump: (categoryId: string) => void;
+}) {
+  const [counts, setCounts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    async function poll() {
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/live-pulse/categories`);
+        if (!res.ok) return;
+        const json = await res.json();
+        if (!cancelled) setCounts(json.counts || {});
+      } catch {
+        // Silent — pulse is a nice-to-have, never a blocker.
+      }
+    }
+    void poll();
+    const id = setInterval(poll, 20000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, []);
+
+  const total = Object.values(counts).reduce((a, b) => a + b, 0);
+  if (total === 0) return null;
+
+  // Show only categories with at least one live viewer, hottest first.
+  const live = CATEGORIES
+    .filter((c) => c.id !== 'all' && (counts[c.id] || 0) > 0)
+    .sort((a, b) => (counts[b.id] || 0) - (counts[a.id] || 0));
+
+  return (
+    <div data-testid="live-pulse-pill" className="mb-3 flex items-center gap-2 flex-wrap">
+      <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-emerald-300">
+        <span className="relative flex h-2 w-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400/70" />
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
+        </span>
+        Live right now
+      </span>
+      {live.map((c) => {
+        const Icon = c.icon;
+        return (
+          <button
+            key={c.id}
+            data-testid={`live-pulse-${c.id}`}
+            onClick={() => onJump(c.id)}
+            className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 ring-1 ring-emerald-400/30 hover:ring-emerald-300/70 px-2.5 py-1 text-xs text-emerald-100 transition-all"
+          >
+            <Icon className="w-3 h-3" />
+            <span className="font-semibold">{counts[c.id]}</span>
+            <span className="opacity-75">in {c.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 
 
 export default function Dashboard() {
@@ -843,6 +909,12 @@ export default function Dashboard() {
           </div>
           <RideHomeButton />
         </div>
+
+        {/* ─────── Live Right Now pill — surfaces momentum so users
+              drop into the busiest category at a glance. Hidden when
+              the whole platform is quiet (avoids "0 live everywhere"
+              credibility kill). */}
+        <LivePulsePill onJump={(cat) => setActiveCategory(cat)} />
 
         {/* ─────── Category Tabs (founder ask 2026-05-16: less scroll,
               sectioned by category. Less mess, more focus. Active tab

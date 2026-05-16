@@ -1,5 +1,14 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-05-16 (cont. #4) — LIVE RIGHT NOW PILL · 414/414 regression green.**
+>
+> ### What shipped:
+> 1. **Backend** `routes/live_pulse.py` — single endpoint `GET /api/live-pulse/categories` that aggregates `audience_count` across `cinema_network_rooms` + `cinema_rooms` and returns `{ counts: { watch, dating, games, music, lifestyle, social, earnings }, total }`. Today only `watch` has a wired source of truth (Free TV + DSG cinema); the rest return 0 until their own rooms persist a live audience count. Frontend contract stays stable so we can light up more categories without a UI change.
+> 2. **Frontend** `LivePulsePill` inside `DashboardNew.tsx`. Polls every 20s, renders pulse-dot + per-category pills sorted hottest-first. Click → switches the active category tab. Self-hides when `total === 0` so we never advertise "0 live everywhere" (credibility kill). Mounted **above** the category tabs (regression-tested for ordering).
+> 3. **Regression**: 2 new shield tests pin (a) the endpoint registration + payload shape + CATEGORY_IDS alignment, and (b) the frontend mount order (pulse above tabs). Shield went 412 → **414 passed, 0 failed**.
+
+
+
 > **2026-05-16 (cont. #3) — DASHBOARD CATEGORY TABS + CO-PLAY + MY VIBEZ COPY · 412/412 regression green.**
 >
 > ### What shipped:

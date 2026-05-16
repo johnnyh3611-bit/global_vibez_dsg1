@@ -590,6 +590,12 @@ def register_all_routes(
         log.warning(f"Cinema Network Room routes not mounted: {_e}")
 
     try:
+        from routes.live_pulse import router as live_pulse_router
+        api_router.include_router(live_pulse_router, tags=["live-pulse"])
+    except Exception as _e:
+        log.warning(f"Live Pulse routes not mounted: {_e}")
+
+    try:
         from routes.premium_pricing import router as premium_pricing_router
         api_router.include_router(premium_pricing_router, tags=["premium-pricing"])
 
