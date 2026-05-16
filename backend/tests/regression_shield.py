@@ -9362,3 +9362,253 @@ def test_no_undefined_names_in_route_modules() -> None:
         "pyflakes found undefined names — these are guaranteed 500s in prod:\n"
         + "\n".join(undefined)
     )
+
+
+# --- LOCKED ---------------------------------------------------------------
+# [2026-05-16] Genius Phase Merchant Onboarding — dsg_merchant_strategy.pdf.
+# The previous agent created /app/backend/routes/merchant_onboarding.py but
+# never wired it in registry.py + never wrote tests. Tests below lock the
+# constants from the PDF (50K cap, $20 chair, 100 ceiling, 3-mile radius)
+# and the full Stripe-Checkout activation/chair/addon endpoint surface.
+
+def test_merchant_genius_phase_endpoint_public() -> None:
+    """Public read endpoint — landing page reads this without auth."""
+    from fastapi.testclient import TestClient
+    from server import app
+    client = TestClient(app)
+    r = client.get("/api/merchant/genius-phase")
+    assert r.status_code == 200, r.text
+    d = r.json()
+    assert d["phase"] == "GENIUS"
+    assert d["cap"] == 50_000
+    assert d["chair_price_usd"] == 20
+    assert d["individual_ceiling"] == 100
+    assert d["push_radius_miles"] == 3
+    assert d["activation_fee_usd"] == {"min": 100, "max": 150}
+    services = {s["id"] for s in d["services"]}
+    assert services == {"hunger_vibez", "vibez_spots", "viberidez"}
+    # Add-on pricing surfaces so the dashboard can render badges.
+    assert "dsg_tv_flight_usd" in d["addons"]
+    assert "push_blast_usd" in d["addons"]
+
+
+def test_merchant_onboard_then_acquire_chair_flow() -> None:
+    """Direct-onboard test path: register → buy 5 chairs → me reflects 6."""
+    from fastapi.testclient import TestClient
+    from server import app
+    import uuid as _uuid
+    client = TestClient(app)
+    mid = f"test-merchant-{_uuid.uuid4().hex[:8]}"
+    r = client.post(
+        "/api/merchant/onboard",
+        json={
+            "merchant_id": mid,
+            "business_name": "Test Vibez Café",
+            "service": "hunger_vibez",
+            "activation_fee_paid": 100,
+        },
+    )
+    assert r.status_code == 200, r.text
+    d = r.json()
+    assert d["chairs_held"] == 1
+    assert d["push_radius_miles"] == 3
+    assert d["vibe_shield_enabled"] is True
+    assert d["dsg_tv_placement"] is True
+
+    # Idempotent re-onboard returns the existing record.
+    r2 = client.post(
+        "/api/merchant/onboard",
+        json={
+            "merchant_id": mid,
+            "business_name": "Other Name",
+            "service": "viberidez",
+            "activation_fee_paid": 150,
+        },
+    )
+    assert r2.status_code == 200
+    assert r2.json().get("already_onboarded") is True
+
+    # Acquire +5 chairs.
+    r3 = client.post(
+        "/api/merchant/acquire-chair",
+        json={"merchant_id": mid, "chairs": 5},
+    )
+    assert r3.status_code == 200, r3.text
+    d3 = r3.json()
+    assert d3["chairs_held"] == 6
+    assert d3["usd_paid"] == 100  # 5 × $20
+
+    # /me returns credits scaffold + chair count.
+    r4 = client.get(f"/api/merchant/me/{mid}")
+    assert r4.status_code == 200
+    me = r4.json()
+    assert me["chairs_held"] == 6
+    assert "credits" in me
+    assert me["credits"] == {"dsg_tv_flights": 0, "push_blasts": 0}
+
+
+def test_merchant_chair_ceiling_enforced() -> None:
+    """An individual merchant cannot exceed the 100-chair ceiling — even
+    with concurrent +N purchases. The endpoint must reject before mutate."""
+    from fastapi.testclient import TestClient
+    from server import app
+    import uuid as _uuid
+    client = TestClient(app)
+    mid = f"test-ceiling-{_uuid.uuid4().hex[:8]}"
+    client.post(
+        "/api/merchant/onboard",
+        json={
+            "merchant_id": mid,
+            "business_name": "Ceiling Test",
+            "service": "hunger_vibez",
+            "activation_fee_paid": 100,
+        },
+    )
+    # First request: +99 chairs → total 100 (cap exactly).
+    r = client.post(
+        "/api/merchant/acquire-chair",
+        json={"merchant_id": mid, "chairs": 99},
+    )
+    assert r.status_code == 200
+    assert r.json()["chairs_held"] == 100
+    # Second request: +1 chair → should refuse.
+    r2 = client.post(
+        "/api/merchant/acquire-chair",
+        json={"merchant_id": mid, "chairs": 1},
+    )
+    assert r2.status_code == 400
+    assert "ceiling" in r2.json()["detail"].lower()
+
+
+def test_merchant_activation_fee_validation() -> None:
+    """Activation fee must stay inside the $100–$150 PDF band."""
+    from fastapi.testclient import TestClient
+    from server import app
+    import uuid as _uuid
+    client = TestClient(app)
+    mid = f"test-fee-{_uuid.uuid4().hex[:8]}"
+    # $99 → 422 (Pydantic validation, below the min)
+    r = client.post(
+        "/api/merchant/onboard",
+        json={
+            "merchant_id": mid,
+            "business_name": "Fee Test",
+            "service": "hunger_vibez",
+            "activation_fee_paid": 99,
+        },
+    )
+    assert r.status_code == 422, r.text
+    # $151 → 422 (above the max)
+    r2 = client.post(
+        "/api/merchant/onboard",
+        json={
+            "merchant_id": mid,
+            "business_name": "Fee Test",
+            "service": "hunger_vibez",
+            "activation_fee_paid": 151,
+        },
+    )
+    assert r2.status_code == 422
+    # Unknown service → 400
+    r3 = client.post(
+        "/api/merchant/onboard",
+        json={
+            "merchant_id": mid,
+            "business_name": "Fee Test",
+            "service": "bogus_service",
+            "activation_fee_paid": 100,
+        },
+    )
+    assert r3.status_code == 400
+
+
+def test_merchant_push_blast_requires_credit() -> None:
+    """Cannot fire a push blast without a credit on file (402)."""
+    from fastapi.testclient import TestClient
+    from server import app
+    import uuid as _uuid
+    client = TestClient(app)
+    mid = f"test-blast-{_uuid.uuid4().hex[:8]}"
+    client.post(
+        "/api/merchant/onboard",
+        json={
+            "merchant_id": mid,
+            "business_name": "Blast Test",
+            "service": "hunger_vibez",
+            "activation_fee_paid": 100,
+            "lat": 40.7,
+            "lng": -73.9,
+        },
+    )
+    r = client.post(
+        "/api/merchant/push-blast/send",
+        json={
+            "merchant_id": mid,
+            "headline": "Tonight only — 30% off any large pie",
+            "body": "Show this push at the counter from 8pm-close.",
+        },
+    )
+    assert r.status_code == 402, r.text
+    assert "credit" in r.json()["detail"].lower()
+
+
+def test_merchant_routes_registered_in_app() -> None:
+    """Guard so the registry.py wiring isn't accidentally reverted —
+    every /api/merchant path must be reachable from the FastAPI app."""
+    from server import app
+    paths = {getattr(r, "path", "") for r in app.routes}
+    for required in [
+        "/api/merchant/genius-phase",
+        "/api/merchant/onboard",
+        "/api/merchant/onboard/checkout",
+        "/api/merchant/onboard/verify",
+        "/api/merchant/acquire-chair",
+        "/api/merchant/acquire-chair/checkout",
+        "/api/merchant/acquire-chair/verify",
+        "/api/merchant/addon/dsg-tv/checkout",
+        "/api/merchant/addon/push-blast/checkout",
+        "/api/merchant/addon/verify",
+        "/api/merchant/push-blast/send",
+    ]:
+        assert required in paths, f"Merchant route {required} missing from registry"
+
+
+def test_merchant_frontend_pages_wired() -> None:
+    """MerchantJoin + MerchantDashboard pages exist + have key testids."""
+    join = open("/app/frontend/src/pages/MerchantJoin.tsx").read()
+    for tid in [
+        "merchant-join-page",
+        "merchant-join-id",
+        "merchant-join-name",
+        "merchant-join-tier-${t}",  # template-literal source
+        "merchant-join-cta",
+        "pillar-hyper-local",
+        "pillar-vibe-shield",
+        "pillar-dsg-token",
+        "addon-preview-dsg-tv",
+        "addon-preview-push-blast",
+    ]:
+        assert tid in join, f"MerchantJoin missing testid: {tid}"
+
+    dash = open("/app/frontend/src/pages/MerchantDashboard.tsx").read()
+    for tid in [
+        "merchant-dashboard-page",
+        "stat-chairs",
+        "stat-radius",
+        "stat-dsg-tv",
+        "stat-blasts",
+        "panel-acquire-chair",
+        "panel-dsg-tv",
+        "panel-push-blast-buy",
+        "panel-push-blast-send",
+        "acquire-chair-cta",
+        "dsg-tv-cta",
+        "push-blast-cta",
+        "blast-send-cta",
+    ]:
+        assert tid in dash, f"MerchantDashboard missing testid: {tid}"
+
+    routes = open("/app/frontend/src/routes/monetizationRoutes.tsx").read()
+    assert '"/merchant/join"' in routes, "MerchantJoin route not registered"
+    assert '"/merchant/dashboard"' in routes, "MerchantDashboard route not registered"
+

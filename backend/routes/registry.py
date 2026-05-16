@@ -989,3 +989,9 @@ def _register_hungryvibes_smartstack(api_router) -> None:
     # repeat-infringer policy, 10-day escrow, metadata blocklist.
     from routes.content_rights import router as content_rights_router  # noqa: PLC0415
     api_router.include_router(content_rights_router)
+
+    # 2026-05-16 — Genius Phase Merchant Onboarding (dsg_merchant_strategy.pdf).
+    # Flat $100-$150 activation fee, baked-in $20 Chair, 50K cap,
+    # 100-chair ceiling, 3-mile Push Blast radius, DSG TV ad-flights.
+    from routes.merchant_onboarding import router as merchant_onboarding_router  # noqa: PLC0415
+    api_router.include_router(merchant_onboarding_router)

@@ -5488,3 +5488,64 @@ all those things right now one by one until finished."
 - `frontend/capacitor.config.ts` (NEW — scaffolding)
 - `frontend/src/routes/miscRoutes.tsx` (+2 routes)
 - `frontend/src/pages/VolumetricDashboard.tsx` (+ orbit-room)
+
+---
+
+## 2026-05-16 — DSG Merchant Acquisition Strategy (Genius Phase Onboarding)
+
+Implemented `dsg_merchant_strategy.pdf` end-to-end. The previous agent
+had scaffolded `routes/merchant_onboarding.py` but never wired it into
+the registry, never wrote tests, and never built the frontend. This
+session shipped the full vertical:
+
+### Backend — `routes/merchant_onboarding.py` (rewrite)
+- Constants pinned to the PDF: $20 chair, 50K Genius Phase cap,
+  100-chair individual ceiling, 3-mile push radius, $100–$150 flat
+  activation fee, no subscription.
+- 11 endpoints under `/api/merchant/*`:
+  - `GET  /genius-phase`              — public read of cap + pricing
+  - `POST /onboard`                   — direct path (tests / admin)
+  - `POST /onboard/checkout`          — Stripe Checkout for activation fee
+  - `POST /onboard/verify`            — Stripe verify → mint merchant + 1 chair
+  - `POST /acquire-chair`             — direct path (tests / admin)
+  - `POST /acquire-chair/checkout`    — Stripe Checkout for +N chairs
+  - `POST /acquire-chair/verify`      — Stripe verify → grant chairs
+  - `POST /addon/dsg-tv/checkout`     — buy DSG TV ad-flight credits
+  - `POST /addon/push-blast/checkout` — buy Hyper-Local Push Blast credits
+  - `POST /addon/verify`              — verify add-on → credit account
+  - `POST /push-blast/send`           — consume 1 credit, record send
+  - `GET  /me/{merchant_id}`          — profile + credits hydration
+- Idempotency: every Stripe `/verify` records into
+  `merchant_stripe_sessions` and replays return the existing record
+  instead of double-granting.
+- Registered in `routes/registry.py` under the
+  `_register_hungryvibes_smartstack()` block.
+
+### Frontend — two new pages
+- `/merchant/join` (`pages/MerchantJoin.tsx`) — Business Brief landing.
+  Live Genius Phase progress bar, three pillars (Hyper-Local Command,
+  Vibe Shield, DSG Token), tier selector ($100/$125/$150), service
+  picker (Hunger Vibez / Vibez Spots / VibeRidez), and the CTA that
+  hands off to Stripe Checkout.
+- `/merchant/dashboard` (`pages/MerchantDashboard.tsx`) — post-onboard
+  portal. Four stat cards (chairs / radius / DSG TV flights / push
+  blasts), Genius Phase global progress strip, four action panels
+  (Acquire Chair, Buy DSG TV flights, Buy Push Blasts, Compose & Send
+  Blast), and an Active Benefits row. Handles all three Stripe return
+  kinds (`merchant_activation`, `merchant_chair`, `merchant_addon_*`)
+  via the URL query params and auto-verifies on mount.
+- Routes registered in `routes/monetizationRoutes.tsx`.
+
+### Tests — 8 new locked regression tests
+1. `test_merchant_genius_phase_endpoint_public` — constants & addons
+2. `test_merchant_onboard_then_acquire_chair_flow` — happy path
+3. `test_merchant_chair_ceiling_enforced` — refuse +1 at the 100 cap
+4. `test_merchant_activation_fee_validation` — Pydantic min/max + bad service
+5. `test_merchant_push_blast_requires_credit` — 402 without credit
+6. `test_merchant_routes_registered_in_app` — guard against registry rollback
+7. `test_merchant_frontend_pages_wired` — testids + route declarations
+8. (merged into the above bucket via `-k merchant`)
+
+### Regression
+- **436 → 444 passing** (`pytest tests/regression_shield.py` — 7.46s).
+- Pyflakes clean on `merchant_onboarding.py`.

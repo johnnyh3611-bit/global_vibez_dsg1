@@ -31,6 +31,8 @@ import HungryVibez from '@/pages/HungryVibez';
 import HungryVibezOrderTracking from '@/pages/HungryVibezOrderTracking';
 import HungryVibesMerchant from '@/pages/HungryVibesMerchant';
 import SmartStackDashboard from '@/pages/SmartStackDashboard';
+import MerchantJoin from '@/pages/MerchantJoin';
+import MerchantDashboard from '@/pages/MerchantDashboard';
 
 export const monetizationRoutes = (ProtectedRoute) => (
   <>
@@ -250,5 +252,9 @@ export const monetizationRoutes = (ProtectedRoute) => (
         </ProtectedRoute>
       }
     />
+    {/* DSG Merchant Acquisition Strategy (2026-05-16). Public Business
+        Brief landing + post-onboard Genius Phase Dashboard. */}
+    <Route path="/merchant/join" element={<MerchantJoin />} />
+    <Route path="/merchant/dashboard" element={<MerchantDashboard />} />
   </>
 );

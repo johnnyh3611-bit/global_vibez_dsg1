@@ -4681,3 +4681,39 @@ User confirmed they don't have a compiled Unity WebGL build (the GitHub repo pro
 - `/app/frontend/public/index.html` (viewport-fit=cover added)
 - `/app/backend/tests/regression_shield.py` (8 new gates → 182 total)
 
+
+---
+
+## 2026-05-16 — DSG Merchant Acquisition Strategy (`dsg_merchant_strategy.pdf`)
+
+### What shipped
+- Backend module `routes/merchant_onboarding.py` registered in the
+  registry. 11 live endpoints under `/api/merchant/*`.
+- Two frontend pages: `/merchant/join` (Business Brief landing) and
+  `/merchant/dashboard` (Genius Phase portal).
+- Stripe Checkout wired for activation fees ($100/$125/$150), chair
+  acquisition ($20 each, ceiling 100), DSG TV ad-flight credits, and
+  Hyper-Local Push Blast credits — all using the
+  `emergentintegrations` SDK pattern with idempotency.
+- 8 new regression tests locking the constants from the PDF.
+- Regression shield: **444/444 passing.**
+
+### What's still backlog (P1 / P2)
+- P1 — Per-user push-blast delivery: today `/push-blast/send` records
+  the blast in `merchant_push_blasts` and decrements the merchant's
+  credit. The fan-out to nearby user devices (FCM/APNS) is NOT wired
+  yet; bind it to the existing push pipeline once we know the userbase
+  density per radius cell.
+- P1 — DSG TV ad-flight serving: the credit is granted but the schedule
+  insertion into the 24/7 DSG TV broadcast queue is not wired yet —
+  needs to plug into `routes/dsg_tv_scheduler.py` (or equivalent).
+- P2 — Auth on the merchant endpoints. Today they're public so the
+  Stripe-return flow works without a session cookie. We should put the
+  POSTs behind `get_current_user` and pin the merchant_id to the user
+  once we add a "claim your dashboard" handshake.
+
+### Production checklist (no code work — user)
+- `REDIS_URL` still pending in prod (P1 from prior session).
+- Validate one real Stripe payment on `/casino/high-roller` (P1).
+- Capacitor iOS/Android shells (P1).
+- Solana Mainnet TGE / bridge — LOCKED until user types `"project complete"`.
