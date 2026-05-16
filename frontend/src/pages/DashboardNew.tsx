@@ -225,6 +225,88 @@ function LivePulsePill({
   );
 }
 
+// ────────────────────────────────────────────── Hot Rooms carousel ──
+// Surfaces the top 3 individual rooms by live audience under the pulse
+// pill. One tap drops you in — no lobby browsing. Auto-hides when
+// no rooms are live (same UX rule as the pulse pill).
+
+type HotRoom = {
+  id: string;
+  name: string;
+  category: string;
+  audience: number;
+  path: string;
+  network: string | null;
+};
+
+function HotRoomsCarousel() {
+  const navigate = useNavigate();
+  const [rooms, setRooms] = useState<HotRoom[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function poll() {
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/live-pulse/hot-rooms?limit=3`);
+        if (!res.ok) return;
+        const json = await res.json();
+        if (!cancelled) setRooms(json.rooms || []);
+      } catch {
+        // Silent — carousel is a nice-to-have, never a blocker.
+      }
+    }
+    void poll();
+    const id = setInterval(poll, 20000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, []);
+
+  if (rooms.length === 0) return null;
+
+  return (
+    <div data-testid="hot-rooms-carousel" className="mb-6">
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-amber-300">
+          Hot rooms · join in
+        </span>
+      </div>
+      <div className="flex gap-3 overflow-x-auto pb-1 -mx-1 px-1">
+        {rooms.map((r, idx) => (
+          <motion.button
+            key={r.id}
+            data-testid={`hot-room-${r.id}`}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: idx * 0.08, duration: 0.4 }}
+            onClick={() => navigate(r.path)}
+            className="group relative shrink-0 w-64 text-left rounded-xl bg-gradient-to-br from-[#1a1206] via-[#0f0a14] to-[#0a1410] ring-1 ring-amber-300/30 hover:ring-amber-300/70 px-4 py-3 transition-all shadow-[0_0_30px_-10px_rgba(251,191,36,0.35)]"
+          >
+            <div className="absolute -inset-px rounded-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
+              style={{
+                background: 'linear-gradient(135deg, rgba(251,191,36,0.18), rgba(232,121,249,0.12))',
+              }}
+            />
+            <div className="relative flex items-center justify-between mb-1.5">
+              <span className="text-[10px] uppercase tracking-widest text-amber-200/80">
+                {r.network || r.category}
+              </span>
+              <span className="inline-flex items-center gap-1 text-[11px] text-emerald-300">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400/70" />
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
+                </span>
+                <span className="font-semibold">{r.audience}</span>
+                watching
+              </span>
+            </div>
+            <div className="relative text-sm font-medium text-white truncate">{r.name}</div>
+            <div className="relative text-xs text-white/50 mt-1 truncate">Tap to join →</div>
+          </motion.button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 
 
 export default function Dashboard() {
@@ -915,6 +997,10 @@ export default function Dashboard() {
               the whole platform is quiet (avoids "0 live everywhere"
               credibility kill). */}
         <LivePulsePill onJump={(cat) => setActiveCategory(cat)} />
+
+        {/* ─────── Hot Rooms carousel — top 3 individual live rooms by
+              audience. Turns the pulse counter into an invitation. */}
+        <HotRoomsCarousel />
 
         {/* ─────── Category Tabs (founder ask 2026-05-16: less scroll,
               sectioned by category. Less mess, more focus. Active tab

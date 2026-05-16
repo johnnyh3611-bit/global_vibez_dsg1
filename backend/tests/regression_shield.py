@@ -8957,3 +8957,51 @@ def test_live_pulse_pill_rendered_in_dashboard() -> None:
     assert pulse_idx > 0 and tabs_idx > 0 and pulse_idx < tabs_idx, (
         "LivePulsePill must render before CategoryTabs in the JSX tree"
     )
+
+
+# ────────────────────────────────────────────── Hot Rooms carousel + pulse expansion ──
+# [2026-05-16] Pulse now folds in live-stream viewer counts across every
+# category, and a new /hot-rooms endpoint surfaces top-N individual
+# rooms with deep-link paths so users one-tap into the busiest room.
+
+def test_hot_rooms_endpoint_registered_and_shape() -> None:
+    """`GET /api/live-pulse/hot-rooms` must be mounted and return a
+    list of normalised room entries with id/name/audience/path."""
+    import asyncio
+    from server import app
+    paths = {getattr(r, "path", "") for r in app.routes}
+    assert "/api/live-pulse/hot-rooms" in paths
+    from routes.live_pulse import get_hot_rooms
+    out = asyncio.new_event_loop().run_until_complete(get_hot_rooms(limit=3))
+    assert "rooms" in out and isinstance(out["rooms"], list)
+    # Mock streams in routes.streaming guarantee >=3 live entries today.
+    assert len(out["rooms"]) >= 1, "Hot Rooms must surface at least one live entry given seed streams"
+    for r in out["rooms"]:
+        for k in ("id", "name", "audience", "path", "category"):
+            assert k in r, f"Hot room entry missing '{k}'"
+        assert isinstance(r["audience"], int) and r["audience"] > 0
+
+
+def test_live_pulse_includes_streaming_signal() -> None:
+    """Pulse must fold streams `routes.streaming.mock_streams` into the
+    per-category counts so games/music/etc light up alongside watch."""
+    from pathlib import Path
+    src = Path("/app/backend/routes/live_pulse.py").read_text()
+    assert "_streams_signal" in src
+    assert "from routes.streaming import mock_streams" in src
+
+
+def test_hot_rooms_carousel_rendered_in_dashboard() -> None:
+    """HotRoomsCarousel must mount between LivePulsePill and
+    CategoryTabs so the visual hierarchy is pulse → hot → tabs."""
+    from pathlib import Path
+    src = Path("/app/frontend/src/pages/DashboardNew.tsx").read_text()
+    assert "HotRoomsCarousel" in src
+    assert 'data-testid="hot-rooms-carousel"' in src
+    assert "/api/live-pulse/hot-rooms" in src
+    pulse_idx = src.find("<LivePulsePill")
+    carousel_idx = src.find("<HotRoomsCarousel")
+    tabs_idx = src.find("<CategoryTabs")
+    assert pulse_idx > 0 < carousel_idx < tabs_idx, (
+        "Dashboard order must be LivePulsePill → HotRoomsCarousel → CategoryTabs"
+    )

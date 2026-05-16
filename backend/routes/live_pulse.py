@@ -1,11 +1,13 @@
 """
-Live Pulse — per-category live audience counter.
+Live Pulse — per-category live audience counter + Hot Rooms surfacer.
 
-A single aggregator endpoint that powers the dashboard's "Live Right Now"
-pill strip above the category tabs. We aggregate whatever live-audience
-signals we already have today and return a single dict keyed by the
-exact category IDs the frontend uses.
+Two endpoints powering the dashboard's "Live Right Now" pill strip and
+the "Hot Rooms" carousel directly beneath it:
 
+  GET /api/live-pulse/categories  — per-category audience totals.
+  GET /api/live-pulse/hot-rooms   — top N individual rooms by audience.
+
+We aggregate whatever live-audience signals we already have today.
 Today we have two reliable sources of truth:
   • `cinema_network_rooms.audience_count` — Free TV watch parties
   • `cinema_rooms.audience_count`         — DSG public-domain cinema
@@ -18,9 +20,9 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Any, Dict
+from typing import Any, Dict, List
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 from motor.motor_asyncio import AsyncIOMotorClient
 
 logger = logging.getLogger(__name__)
@@ -50,21 +52,123 @@ async def _sum_audience(coll_name: str) -> int:
     return total
 
 
+async def _streams_signal() -> tuple[Dict[str, int], List[Dict[str, Any]]]:
+    """Pull live streams from `routes.streaming` (in-memory `mock_streams`
+    today; will swap to MongoDB transparently when streaming.py migrates).
+    Returns (per-category viewer-sum, normalized hot-room entries).
+
+    Maps stream `category` → live-pulse category id. Anything we don't
+    recognise rolls up under 'social' so the count is never invisible.
+    """
+    per_category: Dict[str, int] = {cid: 0 for cid in CATEGORY_IDS}
+    hot: List[Dict[str, Any]] = []
+    try:
+        from routes.streaming import mock_streams  # noqa: PLC0415
+    except Exception:
+        return per_category, hot
+
+    cat_map = {
+        "gaming": "games",
+        "music": "music",
+        "dating": "dating",
+        "watch": "watch",
+        "lifestyle": "lifestyle",
+        "social": "social",
+    }
+    for s in mock_streams.values():
+        if not s.get("is_live"):
+            continue
+        cat = cat_map.get(s.get("category"), "social")
+        viewers = int(s.get("viewers") or 0)
+        if viewers <= 0:
+            continue
+        per_category[cat] = per_category.get(cat, 0) + viewers
+        hot.append({
+            "id": s.get("id"),
+            "name": s.get("title") or "Live Stream",
+            "category": cat,
+            "audience": viewers,
+            "path": f"/streaming/{s.get('id')}",
+            "network": "LIVE_STREAM",
+        })
+    return per_category, hot
+
+
 @router.get("/categories")
 async def get_category_pulse() -> Dict[str, Any]:
     """Return live audience counts keyed by category id.
     Shape: `{ "counts": { "watch": 12, "games": 0, ... }, "total": 12 }`.
     """
-    watch_total = 0
+    counts: Dict[str, int] = {cid: 0 for cid in CATEGORY_IDS}
     try:
-        watch_total += await _sum_audience("cinema_network_rooms")
-        watch_total += await _sum_audience("cinema_rooms")
+        counts["watch"] += await _sum_audience("cinema_network_rooms")
+        counts["watch"] += await _sum_audience("cinema_rooms")
     except Exception as e:
         logger.warning("Live pulse 'watch' aggregation failed: %s", e)
 
-    counts: Dict[str, int] = {cid: 0 for cid in CATEGORY_IDS}
-    counts["watch"] = watch_total
+    # Fold in live streams across every category they advertise.
+    try:
+        stream_counts, _ = await _streams_signal()
+        for cid, n in stream_counts.items():
+            counts[cid] = counts.get(cid, 0) + n
+    except Exception as e:
+        logger.warning("Live pulse streams aggregation failed: %s", e)
+
     return {
         "counts": counts,
         "total": sum(counts.values()),
     }
+
+
+@router.get("/hot-rooms")
+async def get_hot_rooms(limit: int = Query(default=3, ge=1, le=10)) -> Dict[str, Any]:
+    """Return the top N individual rooms by audience across all live
+    surfaces. Normalised into a single shape so the dashboard can render
+    one carousel for everything.
+
+    Shape: `{ "rooms": [{ id, name, category, audience, path, network }] }`.
+    """
+    rooms: List[Dict[str, Any]] = []
+    try:
+        # Free TV watch parties.
+        async for doc in (
+            _db().cinema_network_rooms
+            .find({"audience_count": {"$gt": 0}, "is_private": False}, {"_id": 0})
+            .sort("audience_count", -1)
+            .limit(limit)
+        ):
+            rooms.append({
+                "id": doc.get("room_id"),
+                "name": doc.get("name") or "Free TV Room",
+                "category": "watch",
+                "audience": int(doc.get("audience_count") or 0),
+                "path": f"/free-tv/{doc.get('room_id')}",
+                "network": doc.get("active_network"),
+            })
+
+        # DSG public-domain cinema rooms.
+        async for doc in (
+            _db().cinema_rooms
+            .find({"audience_count": {"$gt": 0}, "is_private": False}, {"_id": 0})
+            .sort("audience_count", -1)
+            .limit(limit)
+        ):
+            rooms.append({
+                "id": doc.get("room_id"),
+                "name": doc.get("name") or "Cinema Room",
+                "category": "watch",
+                "audience": int(doc.get("audience_count") or 0),
+                "path": "/cinema-room",
+                "network": "DSG_CINEMA",
+            })
+
+        # Live streams (mock today; same shape post-migration).
+        _, hot_streams = await _streams_signal()
+        rooms.extend(hot_streams)
+    except Exception as e:
+        logger.warning("Live pulse hot-rooms aggregation failed: %s", e)
+
+    # Final cross-source sort + trim. Cheap: at most 2 × limit entries.
+    rooms.sort(key=lambda r: r["audience"], reverse=True)
+    return {"rooms": rooms[:limit]}
+

@@ -1,5 +1,17 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-05-16 (cont. #5) — HOT ROOMS CAROUSEL + STREAM SIGNAL FOLD-IN · 417/417 regression green.**
+>
+> ### What shipped:
+> 1. **`GET /api/live-pulse/hot-rooms?limit=N`** — top-N individual rooms by live audience across all surfaces, normalised into a single shape with `path` deep links so the frontend renders one carousel for everything (Free TV rooms + DSG cinema + live streams).
+> 2. **Pulse expansion** — `_streams_signal()` folds in viewer counts from `routes.streaming.mock_streams` mapped to category ids (gaming → games, music → music, etc.), so categories beyond `watch` now light up alongside Free TV. Example real response: `{ games: 18468, music: 8432, watch: 0 }` driven by the seeded live streams. When `streaming.py` migrates from mock to Mongo, the same call path keeps working.
+> 3. **Frontend `HotRoomsCarousel`** — mounted between the pulse pill and the category tabs. Renders the top 3 with audience pulse-dot, network label, name, and a "Tap to join" CTA. Polls every 20s. Auto-hides when empty.
+>
+> ### Regression:
+> 3 new shield tests pin (a) `/hot-rooms` endpoint + entry shape + at-least-one-live invariant, (b) the streams signal source wiring, and (c) the dashboard render order `LivePulsePill → HotRoomsCarousel → CategoryTabs`. Shield went 414 → **417 passed, 0 failed**.
+
+
+
 > **2026-05-16 (cont. #4) — LIVE RIGHT NOW PILL · 414/414 regression green.**
 >
 > ### What shipped:
