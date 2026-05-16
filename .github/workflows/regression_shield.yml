@@ -34,6 +34,20 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
+    # MongoDB service container — the regression suite seeds session
+    # rows + merchant docs against a real mongo. Without this, every
+    # backend test fails at `MongoClient(...)` with connection refused.
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ping:1})' --quiet"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -55,6 +69,15 @@ jobs:
         env:
           DB_NAME: test_regression_shield
           MONGO_URL: mongodb://localhost:27017
+          # Optional secrets — tests read these via os.environ.get() and
+          # tolerate them being absent, but a few presence-asserts want
+          # *something* set so they don't false-positive. Real values
+          # live in the deployment environment, never in CI.
+          STRIPE_API_KEY: "sk_test_ci_placeholder"
+          EMERGENT_LLM_KEY: "sk-ci-placeholder"
+          RESEND_API_KEY: "re_ci_placeholder"
+          FRONTEND_URL: "http://localhost:3000"
+          CORS_ORIGINS: "http://localhost:3000,http://localhost:8001"
         run: |
           python -m pytest tests/regression_shield.py -v --tb=short
 
