@@ -21,6 +21,7 @@ import RoadmapHub from "@/pages/RoadmapHub";
 import AgeVerificationPage from "@/pages/AgeVerificationPage";
 import ContentRightsPage from "@/pages/ContentRightsPage";
 import CinemaRoom from "@/pages/CinemaRoom";
+import FreeTVCinemaRoom from "@/pages/FreeTVCinemaRoom";
 import VibeSpotsPage from "@/pages/VibeSpotsPage";
 // Lazy-load Volumetric Galaxy bundle (Three.js ~500KB) — only loaded when user
 // actually visits the volumetric route or has it as their dashboard view.
@@ -112,6 +113,8 @@ export const miscRoutes = (ProtectedRoute) => (
     <Route path="/content-rights" element={<ContentRightsPage />} />
     {/* Volumetric Dashboard "Cinema Date" tile lands here. */}
     <Route path="/cinema-room" element={<ProtectedRoute><CinemaRoom /></ProtectedRoute>} />
+    <Route path="/free-tv" element={<ProtectedRoute><FreeTVCinemaRoom /></ProtectedRoute>} />
+    <Route path="/free-tv/:roomId" element={<ProtectedRoute><FreeTVCinemaRoom /></ProtectedRoute>} />
     {/* Volumetric Dashboard "Vibez Spots" tile lands here. */}
     <Route path="/vibe-spots" element={<ProtectedRoute><VibeSpotsPage /></ProtectedRoute>} />
     <Route path="/dashboard-volumetric" element={<ProtectedRoute><Suspense fallback={<div data-testid="volumetric-route-loading" className="fixed inset-0 z-[1000] flex items-center justify-center bg-[#0d1117] text-fuchsia-300 text-sm uppercase tracking-[0.3em]">Loading Galaxy…</div>}><VolumetricDashboard /></Suspense></ProtectedRoute>} />

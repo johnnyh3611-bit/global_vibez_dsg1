@@ -18,6 +18,8 @@ import {
   Gem,
   // Feb 2026 — Ambassador Care Package (Walking Advertisements / Founder's Circle)
   Award,
+  // May 2026 — Free TV Networks watch-party room
+  RadioTower,
 } from 'lucide-react';
 import { RoomLayout } from '@/components/RoomLayout';
 import { GlassCard } from '@/components/GlassCard';
@@ -194,6 +196,17 @@ export default function Dashboard() {
       image: 'https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?crop=entropy&cs=srgb&fm=jpg',
       path: '/vibe-tv',
       stats: { count: 'LIVE', label: 'Streaming' }
+    },
+    {
+      id: 'free_tv',
+      name: 'Free TV Networks',
+      description: 'Pluto · Tubi · Plex · YouTube — synced watch parties',
+      icon: RadioTower,
+      gradient: 'from-red-500 via-amber-500 to-yellow-400',
+      glow: 'rgba(251,191,36,0.55)',
+      image: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?crop=entropy&cs=srgb&fm=jpg',
+      path: '/free-tv',
+      stats: { count: '4', label: 'Networks' }
     },
     {
       id: 'dsg_music_group',
@@ -706,16 +719,123 @@ export default function Dashboard() {
         </div>
 
         {/* Room Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
           {rooms.map((room, index) => {
             const Icon = room.icon;
-            
+            const isMyVibez = room.id === 'myvibez';
+
+            // MY VIBEZ gets a custom vibrant "holographic" treatment so
+            // it pops against the rest of the grid (founder ask, May
+            // 2026). All other tiles render the standard GlassCard.
+            if (isMyVibez) {
+              return (
+                <motion.div
+                  key={room.id}
+                  data-testid="dashboard-card-myvibez"
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.08 }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => navigate(room.path)}
+                    className="group relative w-full h-full text-left rounded-2xl overflow-hidden ring-1 ring-fuchsia-400/40 hover:ring-amber-300/70 transition-all"
+                    style={{
+                      boxShadow: '0 0 70px -12px rgba(232,121,249,0.55), 0 0 90px -20px rgba(34,211,238,0.35)',
+                    }}
+                  >
+                    {/* Animated holographic gradient layer */}
+                    <div
+                      className="absolute inset-0 opacity-90"
+                      style={{
+                        background:
+                          'conic-gradient(from 0deg, #f0abfc, #fde047, #67e8f9, #fb7185, #c084fc, #fde047, #f0abfc)',
+                        filter: 'blur(34px) saturate(140%)',
+                        animation: 'spin 18s linear infinite',
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-black/55" />
+
+                    {/* Floating sparkles */}
+                    <div className="pointer-events-none absolute inset-0 overflow-hidden">
+                      {[...Array(8)].map((_, i) => (
+                        <motion.span
+                          key={i}
+                          className="absolute w-1 h-1 rounded-full bg-white"
+                          initial={{ opacity: 0 }}
+                          animate={{
+                            opacity: [0, 1, 0],
+                            y: [-10, -50],
+                            x: [0, (i % 2 === 0 ? 1 : -1) * 18],
+                          }}
+                          transition={{
+                            duration: 2.4 + (i % 4) * 0.3,
+                            repeat: Infinity,
+                            delay: i * 0.35,
+                            ease: 'easeOut',
+                          }}
+                          style={{ left: `${10 + i * 11}%`, bottom: '20%' }}
+                        />
+                      ))}
+                    </div>
+
+                    <div className="relative p-5 sm:p-6 min-h-[180px] flex flex-col justify-between">
+                      {/* Top row: badge + stats */}
+                      <div className="flex items-start justify-between">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-white/15 backdrop-blur-md ring-1 ring-white/30 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.25em] text-white">
+                          <Sparkle className="w-3 h-3" /> Trending Now
+                        </span>
+                        <div className="bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full text-xs">
+                          <span className="text-amber-300 font-mono font-bold">{room.stats.count}</span>
+                          <span className="text-white/70 ml-1">{room.stats.label}</span>
+                        </div>
+                      </div>
+
+                      {/* Title + icon */}
+                      <div className="mt-6">
+                        <motion.div
+                          whileHover={{ scale: 1.08, rotate: -4 }}
+                          transition={{ type: 'spring', stiffness: 300 }}
+                          className="inline-flex items-center justify-center w-12 h-12 rounded-2xl mb-3"
+                          style={{
+                            background:
+                              'linear-gradient(135deg, #f0abfc 0%, #fde047 50%, #67e8f9 100%)',
+                          }}
+                        >
+                          <Icon className="w-6 h-6 text-black" />
+                        </motion.div>
+                        <h3
+                          className="text-2xl sm:text-3xl font-black tracking-tight"
+                          style={{
+                            background:
+                              'linear-gradient(90deg, #fff 0%, #fde047 50%, #f0abfc 100%)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                          }}
+                        >
+                          {room.name}
+                        </h3>
+                        <p className="text-sm text-white/80 mt-1.5 line-clamp-2">
+                          {room.description}
+                        </p>
+                      </div>
+
+                      {/* CTA */}
+                      <div className="mt-4 inline-flex self-start items-center gap-2 rounded-full px-3.5 py-1.5 text-sm font-bold text-black bg-gradient-to-r from-amber-300 via-fuchsia-300 to-cyan-300 group-hover:scale-[1.04] transition-transform">
+                        Enter <Sparkles className="w-3.5 h-3.5" />
+                      </div>
+                    </div>
+                  </button>
+                </motion.div>
+              );
+            }
+
             return (
               <motion.div
                 key={room.id}
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
+                transition={{ duration: 0.5, delay: index * 0.08 }}
               >
                 <GlassCard
                   hoverable={true}
@@ -725,42 +845,42 @@ export default function Dashboard() {
                   className="group overflow-hidden h-full"
                 >
                   {/* Background Image */}
-                  <div className="relative h-48 overflow-hidden">
-                    <div 
+                  <div className="relative h-36 overflow-hidden">
+                    <div
                       className="absolute inset-0 bg-cover bg-center transform group-hover:scale-110 transition-transform duration-500"
                       style={{ backgroundImage: `url(${room.image})` }}
                     />
                     <div className={`absolute inset-0 bg-gradient-to-br ${room.gradient} opacity-60 group-hover:opacity-40 transition-opacity duration-300`} />
-                    
+
                     {/* Icon */}
                     <div className="absolute inset-0 flex items-center justify-center">
                       <motion.div
                         whileHover={{ scale: 1.2, rotate: 5 }}
                         transition={{ type: "spring", stiffness: 400 }}
                       >
-                        <Icon className="w-20 h-20 text-white drop-shadow-2xl" />
+                        <Icon className="w-14 h-14 text-white drop-shadow-2xl" />
                       </motion.div>
                     </div>
 
                     {/* Stats Badge */}
-                    <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full">
+                    <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full text-xs">
                       <span className="text-white font-mono font-bold">{room.stats.count}</span>
-                      <span className="text-slate-300 text-sm ml-1">{room.stats.label}</span>
+                      <span className="text-slate-300 ml-1">{room.stats.label}</span>
                     </div>
                   </div>
 
                   {/* Content */}
-                  <div className="p-6">
-                    <h3 className="text-2xl font-bold text-white mb-2">
+                  <div className="p-4">
+                    <h3 className="text-xl font-bold text-white mb-1">
                       {room.name}
                     </h3>
-                    <p className="text-slate-300 mb-4">
+                    <p className="text-sm text-slate-300 mb-3 line-clamp-2">
                       {room.description}
                     </p>
-                    
-                    <div className={`inline-flex items-center gap-2 text-white font-semibold px-4 py-2 rounded-full bg-gradient-to-r ${room.gradient}`}>
+
+                    <div className={`inline-flex items-center gap-1.5 text-white text-sm font-semibold px-3 py-1.5 rounded-full bg-gradient-to-r ${room.gradient}`}>
                       <span>Enter</span>
-                      <Sparkles className="w-4 h-4" />
+                      <Sparkles className="w-3.5 h-3.5" />
                     </div>
                   </div>
                 </GlassCard>

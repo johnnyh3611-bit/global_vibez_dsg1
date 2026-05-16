@@ -8720,3 +8720,111 @@ def test_refer_a_whale_frontend_card_rendered() -> None:
     assert "ref=" in src and "referral_code" in src, (
         "HighRollerCasino must forward inbound ?ref=CODE into checkout body"
     )
+
+# ────────────────────────────────────────────── Free TV Networks Cinema Room ──
+# [2026-05-16] Founder uploaded a PDF blueprint asking for a synced
+# watch-party room across Pluto/Tubi/Plex/YouTube. Built backend route
+# `cinema_network_room.py` + frontend `FreeTVCinemaRoom.tsx` + dashboard
+# tile + shrunk dashboard cards + revamped MY VIBEZ card. These tests
+# pin all four pieces.
+
+def test_free_tv_network_route_registered() -> None:
+    """Cinema Network Room endpoints must be mounted under
+    /api/cinema-network-room/* and include networks + rooms + WS."""
+    from server import app
+    paths = {getattr(r, "path", "") for r in app.routes}
+    for needle in (
+        "/api/cinema-network-room/networks",
+        "/api/cinema-network-room/networks/{network_id}",
+        "/api/cinema-network-room/rooms",
+        "/api/cinema-network-room/rooms/{room_id}",
+        "/api/cinema-network-room/rooms/{room_id}/track-ref",
+        "/api/cinema-network-room/ws/{room_id}",
+    ):
+        assert needle in paths, f"Missing route: {needle}"
+
+
+def test_free_tv_network_catalog_has_four_networks() -> None:
+    """Pluto, Tubi, Plex, YouTube — the PDF specifies all four."""
+    from routes.cinema_network_room import NETWORKS
+    ids = {n["network_id"] for n in NETWORKS}
+    assert ids == {"PLUTO_TV", "TUBI_TV", "PLEX_TV", "YOUTUBE"}, (
+        f"PDF blueprint requires exactly 4 networks, got {ids}"
+    )
+    for n in NETWORKS:
+        assert n["channels"], f"Network {n['network_id']} has no channels"
+        assert n["embed_mode"] in ("iframe", "external", "hybrid")
+        assert n["brand_color"].startswith("#")
+
+
+def test_free_tv_pdf_envelope_schema() -> None:
+    """WebSocket frames must match the PDF schema verbatim:
+    room_id / timestamp_utc / action / payload / originating_agent_uuid."""
+    from routes.cinema_network_room import _pdf_envelope
+    env = _pdf_envelope(
+        room_id="DSG_CINEMA_TEST",
+        action="NETWORK_SOURCE_MUTATION",
+        payload={"active_network": "PLUTO_TV", "channel_id": "x"},
+        agent="AGENT_X",
+    )
+    assert set(env.keys()) == {"room_id", "timestamp_utc", "action", "payload", "originating_agent_uuid"}
+    assert env["action"] == "NETWORK_SOURCE_MUTATION"
+    assert env["originating_agent_uuid"] == "AGENT_X"
+    assert isinstance(env["timestamp_utc"], int)
+
+
+def test_free_tv_frontend_page_routed() -> None:
+    """`/free-tv` and `/free-tv/:roomId` must be wired in the frontend
+    router, importing the FreeTVCinemaRoom page."""
+    from pathlib import Path
+    src = Path("/app/frontend/src/routes/miscRoutes.tsx").read_text()
+    assert "FreeTVCinemaRoom" in src
+    assert 'path="/free-tv"' in src
+    assert 'path="/free-tv/:roomId"' in src
+
+
+def test_free_tv_frontend_page_renders_critical_ids() -> None:
+    """Lobby + room view must expose the canonical test IDs so the
+    testing agent can validate the flow end-to-end."""
+    from pathlib import Path
+    src = Path("/app/frontend/src/pages/FreeTVCinemaRoom.tsx").read_text()
+    for tid in (
+        "free-tv-lobby",
+        "free-tv-network-grid",
+        "free-tv-room",
+        "free-tv-player",
+        "free-tv-channel-grid",
+        "free-tv-chat",
+        "free-tv-audience",
+        "free-tv-copy-share",
+        "free-tv-play-toggle",
+        "free-tv-external-fallback",
+    ):
+        assert f'data-testid="{tid}"' in src, f"FreeTVCinemaRoom missing testid '{tid}'"
+
+
+def test_dashboard_has_free_tv_tile_and_smaller_cards() -> None:
+    """Dashboard must include the Free TV tile and the room cards must
+    be the shrunk size (h-36 image / w-14 icon / p-4) — not the old
+    h-48 / w-20 / p-6 dimensions."""
+    from pathlib import Path
+    src = Path("/app/frontend/src/pages/DashboardNew.tsx").read_text()
+    assert "id: 'free_tv'" in src
+    assert "Free TV Networks" in src
+    assert "path: '/free-tv'" in src
+    # Smaller card layout assertions.
+    assert "h-36 overflow-hidden" in src, "Dashboard room cards must use h-36 image area"
+    assert "w-14 h-14 text-white drop-shadow-2xl" in src, "Dashboard icons must be w-14 h-14"
+    assert "gap-4 mb-12" in src, "Dashboard grid must use the tighter gap-4 spacing"
+
+
+def test_dashboard_my_vibez_tile_revamped() -> None:
+    """MY VIBEZ tile must render the vibrant holographic variant (not
+    the standard GlassCard)."""
+    from pathlib import Path
+    src = Path("/app/frontend/src/pages/DashboardNew.tsx").read_text()
+    assert 'data-testid="dashboard-card-myvibez"' in src
+    assert "isMyVibez" in src and "conic-gradient" in src, (
+        "MY VIBEZ tile must use the bespoke holographic conic-gradient treatment"
+    )
+

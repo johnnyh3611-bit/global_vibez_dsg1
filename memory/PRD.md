@@ -1,5 +1,29 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-05-16 (cont.) — FREE TV NETWORKS CINEMA ROOM + DASHBOARD UI REFRESH · 406/406 regression green.**
+>
+> ### Shipped:
+> 1. **Free TV Cinema Room** (founder PDF blueprint, 2026-05-16):
+>    - Backend: `routes/cinema_network_room.py` — 4-network catalog (Pluto TV / Tubi / Plex / YouTube, 19 channels total), watch-party rooms, ambassador `?ref=` attribution (idempotent per viewer), WebSocket sync at `/api/cinema-network-room/ws/{room_id}` using the PDF's exact envelope schema (`room_id / timestamp_utc / action / payload / originating_agent_uuid`).
+>    - Actions wired: `NETWORK_SOURCE_MUTATION`, `PLAYBACK_STATE_CHANGE`, `SCRUB_TO_MARKER`, `CHAT_MESSAGE`, `SNAPSHOT_DELIVERY`, `AUDIENCE_UPDATE`, `PING/PONG`.
+>    - Hybrid embed strategy: YouTube → iframe; Pluto → iframe + external-launch fallback; Tubi/Plex → external-launch only (their CSP blocks framing) with a clean "Open on $network" CTA so the room stays in sync via WebSocket while the user watches in a new tab.
+>    - Frontend: `pages/FreeTVCinemaRoom.tsx`. Routes `/free-tv` (lobby) and `/free-tv/:roomId` (sync'd room). Inbound `?ref=` URLs auto-credit the ambassador.
+> 2. **Dashboard refresh** (founder UX feedback):
+>    - Room cards shrunk ~25%: image `h-48 → h-36`, icon `w-20 h-20 → w-14 h-14`, padding `p-6 → p-4`, title `text-2xl → text-xl`, grid gap `gap-6 → gap-4`. Stats badge tightened to `text-xs`.
+>    - **MY VIBEZ tile** got a bespoke "holographic" treatment: animated conic-gradient backdrop (18s loop), 8 floating sparkle particles, gradient-text title (`#fff → #fde047 → #f0abfc`), tri-color CTA pill, fuchsia/amber dual-layer glow. All other tiles still use the standard `GlassCard`.
+>    - Added a new "Free TV Networks" tile with the red→amber→yellow gradient, routing to `/free-tv`.
+> 3. **Regression**: 7 new shield tests pin the network catalog, PDF envelope schema, route registration, frontend page test IDs, dashboard shrunk dimensions, and the MY VIBEZ holographic treatment. Shield went 399 → **406 passed, 0 failed**.
+>
+> ### End-to-end backend verification (curl):
+> - `GET /api/cinema-network-room/networks` → 4 networks, 19 channels.
+> - `POST /api/cinema-network-room/rooms` → `room_id=DSG_CINEMA_*`, defaults to PLUTO_TV.
+> - `POST /api/cinema-network-room/rooms/.../track-ref` → `credited:true`. Repeat: `credited:false, reason:already_logged`.
+>
+> ### Test-IDs added (for testing agent):
+> Lobby/room: `free-tv-lobby`, `free-tv-network-grid`, `free-tv-network-{PLUTO_TV|TUBI_TV|PLEX_TV|YOUTUBE}`, `free-tv-open-rooms`, `free-tv-room`, `free-tv-player`, `free-tv-external-fallback`, `free-tv-audience`, `free-tv-copy-share`, `free-tv-play-toggle`, `free-tv-channel-grid`, `free-tv-channel-{id}`, `free-tv-switch-{network_id}`, `free-tv-chat`, `free-tv-chat-input`, `free-tv-chat-send`, `free-tv-new-room-btn`. Dashboard: `dashboard-card-myvibez`.
+
+
+
 > **2026-05-16 (later) — REFER-A-WHALE ENHANCEMENT SHIPPED · 399/399 regression green.**
 >
 > ### What shipped:
