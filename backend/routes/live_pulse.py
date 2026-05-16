@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Query
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -90,8 +90,31 @@ async def _streams_signal() -> tuple[Dict[str, int], List[Dict[str, Any]]]:
             "audience": viewers,
             "path": f"/streaming/{s.get('id')}",
             "network": "LIVE_STREAM",
+            # Cloudflare Stream playback URL goes here when wired. The
+            # frontend prefers `preview_video_url` over the static image
+            # when present — see HotRoomsCarousel preview popover. Mock
+            # streams don't have one yet; emitted as None to lock the
+            # contract.
+            "preview_video_url": _cloudflare_preview_url(s),
         })
     return per_category, hot
+
+
+def _cloudflare_preview_url(stream: Dict[str, Any]) -> Optional[str]:
+    """Resolve a muted 30-second live preview URL for a stream.
+
+    Today: returns None for every stream (Cloudflare Stream not wired).
+    When `stream.cloudflare_playback_url` (HLS `.m3u8`) starts persisting,
+    this is the only function that flips — the frontend already renders
+    the `<video>` element when the field is non-null.
+    """
+    cf = stream.get("cloudflare_playback_url") or stream.get("hls_url")
+    if not cf:
+        return None
+    # `#t=-30` is a media-fragment URI: the browser auto-scrubs to the
+    # last 30 seconds of the live stream. HLS players ignore the fragment
+    # server-side, so this is a safe append.
+    return f"{cf}#t=-30"
 
 
 @router.get("/categories")
@@ -144,6 +167,7 @@ async def get_hot_rooms(limit: int = Query(default=3, ge=1, le=10)) -> Dict[str,
                 "audience": int(doc.get("audience_count") or 0),
                 "path": f"/free-tv/{doc.get('room_id')}",
                 "network": doc.get("active_network"),
+                "preview_video_url": None,  # Cloudflare Stream future wire-up.
             })
 
         # DSG public-domain cinema rooms.
@@ -160,13 +184,17 @@ async def get_hot_rooms(limit: int = Query(default=3, ge=1, le=10)) -> Dict[str,
                 "audience": int(doc.get("audience_count") or 0),
                 "path": "/cinema-room",
                 "network": "DSG_CINEMA",
+                "preview_video_url": None,  # Cloudflare Stream future wire-up.
             })
+    except Exception as e:
+        logger.warning("Live pulse hot-rooms Mongo aggregation failed: %s", e)
 
-        # Live streams (mock today; same shape post-migration).
+    # Live streams source is in-memory; never blocked by Mongo health.
+    try:
         _, hot_streams = await _streams_signal()
         rooms.extend(hot_streams)
     except Exception as e:
-        logger.warning("Live pulse hot-rooms aggregation failed: %s", e)
+        logger.warning("Live pulse hot-rooms streams signal failed: %s", e)
 
     # Category → preview image. Public-domain Unsplash thumbnails so the
     # carousel cards have a real cinematic preview even before live

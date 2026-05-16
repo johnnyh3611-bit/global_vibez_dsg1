@@ -9049,3 +9049,51 @@ def test_hot_rooms_preview_hover_card_rendered() -> None:
     # Backend must also emit it.
     backend_src = Path("/app/backend/routes/live_pulse.py").read_text()
     assert "preview_image_url" in backend_src
+
+
+# ────────────────────────────────────────────── Cloudflare Stream swap-in ──
+# [2026-05-16] Hot-rooms payload now carries an optional
+# `preview_video_url`. When Cloudflare Stream wires up, the source
+# document only needs `cloudflare_playback_url` and the frontend
+# preview popover swaps `<img>` → `<video>` for free.
+
+def test_hot_rooms_payload_includes_preview_video_url_field() -> None:
+    """The contract MUST emit `preview_video_url` (null today) on every
+    hot-room entry so the frontend's conditional `<video>` render is
+    safe even before Cloudflare Stream lands."""
+    import asyncio
+    from routes.live_pulse import get_hot_rooms
+    out = asyncio.new_event_loop().run_until_complete(get_hot_rooms(limit=3))
+    assert out["rooms"], "Need at least one live entry for this test (mock streams seed it)"
+    for r in out["rooms"]:
+        assert "preview_video_url" in r, (
+            f"Hot room entry must carry `preview_video_url` key (got keys: {list(r.keys())})"
+        )
+        v = r["preview_video_url"]
+        assert v is None or (isinstance(v, str) and v.startswith("http")), (
+            f"preview_video_url must be None or an http(s) URL, got {v!r}"
+        )
+
+
+def test_cloudflare_preview_url_helper_emits_last_30s_fragment() -> None:
+    """If a stream doc carries `cloudflare_playback_url`, the helper
+    must append `#t=-30` so the preview <video> auto-scrubs to the
+    last 30 seconds of the live broadcast."""
+    from routes.live_pulse import _cloudflare_preview_url
+    assert _cloudflare_preview_url({}) is None
+    assert _cloudflare_preview_url({"cloudflare_playback_url": ""}) is None
+    out = _cloudflare_preview_url({"cloudflare_playback_url": "https://cf.tv/live.m3u8"})
+    assert out == "https://cf.tv/live.m3u8#t=-30"
+    out2 = _cloudflare_preview_url({"hls_url": "https://x.com/y.m3u8"})
+    assert out2 == "https://x.com/y.m3u8#t=-30"
+
+
+def test_hot_rooms_preview_renders_video_when_url_present() -> None:
+    """Frontend popover must render `<video>` when preview_video_url is
+    set, falling back to `<img>` when null. Pin both code paths."""
+    from pathlib import Path
+    src = Path("/app/frontend/src/pages/DashboardNew.tsx").read_text()
+    assert "r.preview_video_url ? (" in src, "Must conditionally render on preview_video_url"
+    assert "<video" in src and "autoPlay" in src and "muted" in src
+    assert "playsInline" in src and "loop" in src
+    assert "hot-room-preview-video-" in src

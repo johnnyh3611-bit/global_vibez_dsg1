@@ -244,6 +244,7 @@ type HotRoom = {
   path: string;
   network: string | null;
   preview_image_url?: string;
+  preview_video_url?: string | null;
 };
 
 function HotRoomsCarousel() {
@@ -340,14 +341,30 @@ function HotRoomsCarousel() {
                   transition={{ duration: 0.18 }}
                   className="absolute top-full left-0 right-0 mt-2 z-50 rounded-xl overflow-hidden bg-[#0a0a14] ring-1 ring-amber-300/50 shadow-[0_24px_60px_-15px_rgba(0,0,0,0.7),0_0_45px_-10px_rgba(251,191,36,0.45)]"
                 >
-                  {/* Thumbnail strip */}
-                  <div className="relative aspect-video w-full overflow-hidden">
-                    <img
-                      src={r.preview_image_url || '/placeholder-cinema.jpg'}
-                      alt=""
-                      className="absolute inset-0 w-full h-full object-cover"
-                      loading="lazy"
-                    />
+                  {/* Thumbnail strip — swap to muted live <video> the
+                      moment Cloudflare Stream sets `preview_video_url`.
+                      No other code change needed; the Netflix-style
+                      hover-to-play behaviour comes online for free. */}
+                  <div className="relative aspect-video w-full overflow-hidden bg-black">
+                    {r.preview_video_url ? (
+                      <video
+                        src={r.preview_video_url}
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        preload="metadata"
+                        className="absolute inset-0 w-full h-full object-cover"
+                        data-testid={`hot-room-preview-video-${r.id}`}
+                      />
+                    ) : (
+                      <img
+                        src={r.preview_image_url || '/placeholder-cinema.jpg'}
+                        alt=""
+                        className="absolute inset-0 w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
                     {/* Live badge */}
                     <div className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full bg-red-500/90 text-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest">

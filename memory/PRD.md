@@ -1,5 +1,18 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-05-16 (cont. #7) — CLOUDFLARE STREAM SWAP-IN SCAFFOLDED · 423/423 regression green. READY FOR BETA REDEPLOY.**
+>
+> ### What shipped:
+> 1. **Backend** — `_cloudflare_preview_url(stream)` resolves a muted 30-second preview URL from any stream document's `cloudflare_playback_url` (or legacy `hls_url`) field and appends the `#t=-30` media-fragment URI so browsers auto-scrub to the last 30 seconds. Today returns `None` for every stream (Cloudflare not yet wired); the day a stream doc carries `cloudflare_playback_url`, the helper light-flips for that row without any other code change.
+> 2. **Contract guarantee** — every hot-room entry now emits `preview_video_url` (null today). Free TV, DSG cinema, and live-stream entries all carry the key so the frontend never branches on key existence.
+> 3. **Frontend** — `HotRoomsCarousel` preview popover conditionally renders `<video autoPlay muted loop playsInline preload="metadata">` when `preview_video_url` is set, falling back to the static `<img>` thumbnail otherwise. Same code path Netflix and Twitch use for hover-to-play. Zero re-deploy needed when Cloudflare lands; only the stream documents need the URL.
+> 4. **Hardening side-effect** — `get_hot_rooms` now isolates the Mongo and streams-signal branches into their own try blocks, so a transient Mongo issue can never wipe out the live-stream surface (improves regression isolation for the new tests).
+>
+> ### Regression:
+> 3 new shield tests pin (a) every hot-room entry carries the `preview_video_url` key with a sane value, (b) the `_cloudflare_preview_url` helper correctly appends `#t=-30` to both `cloudflare_playback_url` and `hls_url` and returns None on empty input, (c) the frontend popover conditionally renders `<video>` with the required muted/loop/playsInline attributes. Shield went 420 → **423 passed, 0 failed**.
+
+
+
 > **2026-05-16 (cont. #6) — CINEMA ROOM TILE + UNIQUE IMAGES + HOT ROOMS HOVER-PREVIEW · 420/420 regression green.**
 >
 > ### Founder asks addressed:
