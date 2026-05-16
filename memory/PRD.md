@@ -1,5 +1,21 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-05-16 — DEPLOYMENT BLOCKER FIXED · 394/394 regression green · Ready to redeploy.**
+>
+> ### Root cause:
+> `yarn.lock` resolved the transitive dep `three-bmfont-text@github:dmarcos/three-bmfont-text#eed4878795be9b3e38cf6aec6b903f56acd1f695` via `git+ssh://git@github.com/...`. Emergent's CI/CD build runner does not carry GitHub SSH keys, so the build container failed to clone the repo. The preview environment had a cached `node_modules` so it kept working — masking the issue from local QA and from the Deployer Agent.
+>
+> ### Fix applied:
+> 1. Updated `/app/frontend/yarn.lock` line 19917: `resolved "git+ssh://git@github.com/dmarcos/three-bmfont-text.git#eed4878795be9b3e38cf6aec6b903f56acd1f695"` → `resolved "git+https://github.com/dmarcos/three-bmfont-text.git#eed4878795be9b3e38cf6aec6b903f56acd1f695"`. The git commit SHA is preserved so integrity hash stays valid.
+> 2. Verified locally with `yarn install --frozen-lockfile --ignore-engines` → `success Already up-to-date.` (this is exactly what Emergent's CI invokes).
+> 3. Re-ran `pytest backend/tests/regression_shield.py` → **394 passed, 0 failed**.
+> 4. Restarted frontend supervisor — preview URL serving HTTP 200.
+>
+> ### User next step:
+> Click **Deploy** in Emergent. The build runner can now clone `three-bmfont-text` over public HTTPS without SSH credentials.
+
+
+
 > **2026-05-15 (MEDIA MASTER · SPRINT 5 — Vibe Radio auto-resolver + Network Pulse mini-widget) — 375/375 regression green · LAST sprint before redeploy.**
 >
 > ### What shipped this session:
