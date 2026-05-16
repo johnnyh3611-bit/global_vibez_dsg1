@@ -244,12 +244,24 @@ async def _handle_checkout_completed(obj: Dict[str, Any]) -> None:
             logger.warning("Malformed VIP ref %s; skipping", ref)
             return
         try:
-            from routes.high_roller import apply_vip_grant  # noqa: PLC0415
+            from routes.high_roller import apply_vip_grant, track_referral, ReferralTrackRequest  # noqa: PLC0415
             await apply_vip_grant(
                 user_id=user_id,
                 tier=tier,
                 stripe_session_id=obj.get("id"),
             )
+            # If the originating checkout carried a referral code in
+            # metadata, credit the referrer with bonus days. Failure is
+            # non-fatal — VIP grant already succeeded.
+            ref_code = (obj.get("metadata") or {}).get("referral_code")
+            if ref_code:
+                try:
+                    await track_referral(ReferralTrackRequest(
+                        referee_user_id=user_id,
+                        referral_code=ref_code,
+                    ))
+                except Exception as e:
+                    logger.warning("Referral tracking failed for %s/%s: %s", user_id, ref_code, e)
         except Exception as e:
             logger.exception("Failed to apply VIP grant for %s: %s", user_id, e)
         return

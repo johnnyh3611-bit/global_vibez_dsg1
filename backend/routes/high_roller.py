@@ -6,6 +6,8 @@ Endpoints under `/api/high-roller`:
   POST /checkout                       — create a Stripe Checkout for a tier upgrade
   POST /blackjack/deal                 — VIP-gated Blackjack with 10k min bet
   POST /blackjack/action               — VIP-gated Blackjack action passthrough
+  GET  /referral/{user_id}             — Refer-a-Whale card: code, share URL, stats
+  POST /referral/track                 — record a referred whale → +7 days bonus
 
 Webhook fan-out (NOT a route here): on Stripe `checkout.session.completed`
 with a `client_reference_id` starting with `vip:`, the existing
@@ -15,6 +17,7 @@ a user's VIP window.
 """
 from __future__ import annotations
 
+import hashlib
 import logging
 import os
 import uuid
@@ -53,6 +56,7 @@ class CheckoutRequest(BaseModel):
     user_id: str
     tier: str  # "genius" | "genesis" | "apex"
     return_url: Optional[str] = None
+    referral_code: Optional[str] = None  # Refer-a-Whale code (8 chars)
 
 
 class BlackjackDealRequest(BaseModel):
@@ -196,6 +200,7 @@ async def create_checkout(req: CheckoutRequest) -> Dict[str, Any]:
                 "user_id": req.user_id,
                 "tier": req.tier,
                 "duration_days": str(HIGH_ROLLER_GRANT_DAYS),
+                **({"referral_code": req.referral_code.strip().upper()} if req.referral_code else {}),
             },
         )
     except stripe.error.StripeError as e:
@@ -429,6 +434,138 @@ async def vip_baccarat_play(req: BaccaratPlayRequest, request: Request) -> Dict[
         "bet_amount": int(req.bet_amount),
         "payout": payout,
         "net": payout - int(req.bet_amount),
+    }
+
+
+# ────────────────────────────────────────────── Refer-a-Whale ──
+# Referrals are the cheapest growth lever for a VIP product — whales
+# already brag about table access; we just give them a code + 7-day
+# bonus VIP per referred whale who actually buys a tier.
+
+REFERRAL_BONUS_DAYS = int(os.environ.get("HIGH_ROLLER_REF_BONUS_DAYS", "7"))
+
+
+class ReferralTrackRequest(BaseModel):
+    referee_user_id: str  # the new VIP who just converted
+    referral_code: str    # the code they entered on the upgrade page
+
+
+def _referral_code_for(user_id: str) -> str:
+    """Deterministic 8-char code from user_id. Stable across restarts,
+    no DB write required to issue a code."""
+    h = hashlib.sha256(f"whale:{user_id}".encode()).hexdigest()
+    # Avoid look-alike chars (0/O, 1/I) so users can read codes aloud.
+    alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+    digest_int = int(h[:16], 16)
+    code = []
+    for _ in range(8):
+        code.append(alphabet[digest_int % len(alphabet)])
+        digest_int //= len(alphabet)
+    return "".join(code)
+
+
+async def _referral_owner(code: str) -> Optional[str]:
+    """Reverse-lookup: which user_id owns this code? O(n) over the VIP
+    table is fine here — VIP cardinality is bounded (whales, not GenZ
+    teenagers). Cache later if we cross 10k VIPs."""
+    code = code.strip().upper()
+    if not code or len(code) != 8:
+        return None
+    # Fast path: check a `referral_codes` mapping collection if it exists.
+    mapped = await _db.high_roller_referral_codes.find_one({"code": code}, {"_id": 0})
+    if mapped and mapped.get("user_id"):
+        return mapped["user_id"]
+    return None
+
+
+@router.get("/referral/{user_id}")
+async def get_referral_card(user_id: str) -> Dict[str, Any]:
+    """Refer-a-Whale share card data. Issues the code on first call so
+    we have a code→user_id reverse mapping for `_referral_owner`."""
+    code = _referral_code_for(user_id)
+    # Idempotent upsert of the reverse mapping (so /track can find owner).
+    await _db.high_roller_referral_codes.update_one(
+        {"code": code},
+        {"$set": {"code": code, "user_id": user_id}},
+        upsert=True,
+    )
+
+    stats = await _db.high_roller_referrals.find_one(
+        {"referrer_user_id": user_id}, {"_id": 0}
+    ) or {}
+    whales_referred = int(stats.get("count", 0))
+    bonus_days_earned = whales_referred * REFERRAL_BONUS_DAYS
+
+    return {
+        "user_id": user_id,
+        "code": code,
+        "share_url_suffix": f"/casino/high-roller?ref={code}",
+        "whales_referred": whales_referred,
+        "bonus_days_per_referral": REFERRAL_BONUS_DAYS,
+        "bonus_days_earned": bonus_days_earned,
+        "tagline": "Refer a whale, earn +7 VIP days when they upgrade.",
+    }
+
+
+@router.post("/referral/track")
+async def track_referral(req: ReferralTrackRequest) -> Dict[str, Any]:
+    """Called by the Stripe webhook (or the checkout success page) when a
+    referee converts to VIP. Idempotent per referee — the same referee
+    can't credit a referrer twice."""
+    referrer = await _referral_owner(req.referral_code)
+    if not referrer:
+        raise HTTPException(404, detail="Unknown referral code")
+    if referrer == req.referee_user_id:
+        raise HTTPException(400, detail="Cannot refer yourself")
+
+    # Idempotency — one referee can only credit one referrer, one time.
+    seen = await _db.high_roller_referrals_log.find_one(
+        {"referee_user_id": req.referee_user_id}, {"_id": 0}
+    )
+    if seen:
+        return {
+            "credited": False,
+            "reason": "already_credited",
+            "referrer_user_id": referrer,
+        }
+
+    now_iso = datetime.now(timezone.utc).isoformat()
+    await _db.high_roller_referrals_log.insert_one({
+        "id": str(uuid.uuid4()),
+        "referrer_user_id": referrer,
+        "referee_user_id": req.referee_user_id,
+        "code": req.referral_code.strip().upper(),
+        "credited_at": now_iso,
+    })
+    await _db.high_roller_referrals.update_one(
+        {"referrer_user_id": referrer},
+        {"$inc": {"count": 1}, "$set": {"last_credited_at": now_iso}},
+        upsert=True,
+    )
+
+    # Bonus: extend referrer's VIP window by REFERRAL_BONUS_DAYS if they
+    # currently have one. If they don't, the credit is still logged so
+    # they can spend it later when they upgrade.
+    existing = await _db.high_roller_vip.find_one({"user_id": referrer}, {"_id": 0})
+    extended_until = None
+    if existing and existing.get("vip_until"):
+        try:
+            current = datetime.fromisoformat(existing["vip_until"])
+            if current > datetime.now(timezone.utc):
+                new_until = current + timedelta(days=REFERRAL_BONUS_DAYS)
+                await _db.high_roller_vip.update_one(
+                    {"user_id": referrer},
+                    {"$set": {"vip_until": new_until.isoformat()}},
+                )
+                extended_until = new_until.isoformat()
+        except ValueError:
+            pass
+
+    return {
+        "credited": True,
+        "referrer_user_id": referrer,
+        "bonus_days_added": REFERRAL_BONUS_DAYS,
+        "vip_extended_until": extended_until,
     }
 
 

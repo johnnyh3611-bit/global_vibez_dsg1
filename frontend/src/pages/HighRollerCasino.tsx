@@ -14,7 +14,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Crown, Diamond, Sparkles, Lock, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Crown, Diamond, Sparkles, Lock, CheckCircle2, ArrowRight, Copy, Share2, Users } from 'lucide-react';
 import BackButton from '@/components/BackButton';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -33,6 +33,15 @@ type Eligibility = {
   tier: string | null;
   vip_until: string | null;
   min_bet: number;
+};
+
+type ReferralCard = {
+  code: string;
+  share_url_suffix: string;
+  whales_referred: number;
+  bonus_days_per_referral: number;
+  bonus_days_earned: number;
+  tagline: string;
 };
 
 const TIER_THEME: Record<string, { ring: string; glow: string; chip: string; badge: string }> = {
@@ -60,6 +69,8 @@ export default function HighRollerCasino() {
   const navigate = useNavigate();
   const [tiers, setTiers] = useState<Tier[]>([]);
   const [eligibility, setEligibility] = useState<Eligibility | null>(null);
+  const [referral, setReferral] = useState<ReferralCard | null>(null);
+  const [referralCopied, setReferralCopied] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -85,8 +96,50 @@ export default function HighRollerCasino() {
       const elRes = await fetch(`${API_URL}/api/high-roller/eligibility/${uid}`);
       const elJson = await elRes.json();
       setEligibility({ ...elJson, user_id: uid });
+
+      // Refer-a-Whale share card — only fetch for signed-in users so
+      // we have a stable user_id for the deterministic code.
+      try {
+        const refRes = await fetch(`${API_URL}/api/high-roller/referral/${uid}`);
+        if (refRes.ok) setReferral(await refRes.json());
+      } catch {
+        // Non-fatal — the share card is a bonus, not a blocker.
+      }
     } catch (e: any) {
       setError(e?.message || 'Failed to load High Roller data');
+    }
+  }
+
+  async function copyReferral() {
+    if (!referral) return;
+    const link = `${window.location.origin}${referral.share_url_suffix}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      setReferralCopied(true);
+      setTimeout(() => setReferralCopied(false), 1800);
+    } catch {
+      setReferralCopied(false);
+    }
+  }
+
+  async function shareReferral() {
+    if (!referral) return;
+    const link = `${window.location.origin}${referral.share_url_suffix}`;
+    const shareData = {
+      title: 'High Roller VIP · Global Vibez',
+      text: `I just unlocked the High Roller VIP floor. Use my code ${referral.code} for a heads-up before you hit the ₵10k tables.`,
+      url: link,
+    };
+    // @ts-expect-error — navigator.share is not in older TS lib targets
+    if (navigator.share) {
+      try {
+        // @ts-expect-error
+        await navigator.share(shareData);
+      } catch {
+        // user cancelled — nothing to do
+      }
+    } else {
+      void copyReferral();
     }
   }
 
@@ -101,6 +154,10 @@ export default function HighRollerCasino() {
       const me = await meRes.json();
       const uid = me.user_id || me.id || me._id;
 
+      // Pick up any inbound `?ref=CODE` from the URL — credits the
+      // referrer when this checkout converts.
+      const inboundRef = new URLSearchParams(window.location.search).get('ref') || undefined;
+
       const res = await fetch(`${API_URL}/api/high-roller/checkout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -108,6 +165,7 @@ export default function HighRollerCasino() {
           user_id: uid,
           tier,
           return_url: `${window.location.origin}/casino/high-roller`,
+          referral_code: inboundRef,
         }),
       });
       const json = await res.json();
@@ -253,6 +311,99 @@ export default function HighRollerCasino() {
             </div>
           </section>
         )}
+
+        {/* Refer-a-Whale share card — VIPs only. Highest LTV users become
+            a viral acquisition channel: bragging rights + 7-day bonus per
+            converted referee. */}
+        {isVip && referral && (
+          <motion.section
+            data-testid="refer-a-whale-card"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, delay: 0.1 }}
+            className="mb-16"
+          >
+            <h2 className="text-lg md:text-lg font-medium text-white/85 mb-4">
+              Refer a Whale
+            </h2>
+            <div className="relative rounded-2xl overflow-hidden ring-1 ring-amber-300/40 bg-gradient-to-br from-[#1a1206] via-[#0f0a14] to-[#0a1410] p-7 shadow-[0_0_80px_-15px_rgba(251,191,36,0.4)]">
+              <div className="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-amber-400/15 blur-[100px] pointer-events-none" />
+              <div className="absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-emerald-400/10 blur-[100px] pointer-events-none" />
+
+              <div className="relative grid lg:grid-cols-[1fr_auto] gap-7 items-end">
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Sparkles className="w-4 h-4 text-amber-300" />
+                    <span className="uppercase tracking-[0.3em] text-[10px] text-amber-200/80">
+                      Bragging rights + bonus days
+                    </span>
+                  </div>
+                  <p className="text-white/85 text-base max-w-md">
+                    {referral.tagline} Share your code with another whale —
+                    when they unlock any VIP tier, your window extends by
+                    <span className="text-amber-300">
+                      {' '}+{referral.bonus_days_per_referral} days
+                    </span>.
+                  </p>
+
+                  <div className="mt-5 flex flex-wrap items-center gap-3">
+                    <div
+                      data-testid="refer-a-whale-code"
+                      className="font-mono text-2xl tracking-[0.25em] bg-black/40 ring-1 ring-amber-300/40 rounded-lg px-4 py-2 text-amber-200"
+                    >
+                      {referral.code}
+                    </div>
+                    <button
+                      data-testid="refer-a-whale-copy-btn"
+                      onClick={copyReferral}
+                      className="inline-flex items-center gap-2 rounded-full bg-white/5 hover:bg-white/10 ring-1 ring-white/15 hover:ring-amber-300/40 px-4 py-2 text-sm text-white/85 transition-all"
+                    >
+                      <Copy className="w-4 h-4" />
+                      {referralCopied ? 'Copied!' : 'Copy link'}
+                    </button>
+                    <button
+                      data-testid="refer-a-whale-share-btn"
+                      onClick={shareReferral}
+                      className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-amber-300 via-amber-400 to-amber-500 text-black px-4 py-2 text-sm font-semibold hover:scale-[1.03] active:scale-[0.97] transition-transform"
+                    >
+                      <Share2 className="w-4 h-4" />
+                      Share
+                    </button>
+                  </div>
+                </div>
+
+                <div
+                  data-testid="refer-a-whale-stats"
+                  className="flex gap-6 lg:flex-col lg:gap-3 lg:items-end"
+                >
+                  <div className="text-right">
+                    <div className="text-[10px] uppercase tracking-widest text-white/40">
+                      Whales referred
+                    </div>
+                    <div className="flex items-center gap-2 justify-end mt-1">
+                      <Users className="w-4 h-4 text-emerald-300" />
+                      <span
+                        data-testid="refer-a-whale-count"
+                        className="text-3xl font-light text-white"
+                      >
+                        {referral.whales_referred}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[10px] uppercase tracking-widest text-white/40">
+                      Bonus days earned
+                    </div>
+                    <div className="text-3xl font-light text-amber-300 mt-1">
+                      +{referral.bonus_days_earned}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.section>
+        )}
+
 
         {/* Tier upgrade grid */}
         <section data-testid="high-roller-tiers" className="mb-12">

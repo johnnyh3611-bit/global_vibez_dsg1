@@ -8655,3 +8655,68 @@ def test_feb2026_roadmap_8_items_wired() -> None:
     # 7. Volumetric exposes it.
     vol = Path("/app/frontend/src/pages/VolumetricDashboard.tsx").read_text()
     assert 'path: "/roadmap"' in vol
+
+
+# ────────────────────────────────────────────── Refer-a-Whale ──
+# [2026-05-16] Wired the High Roller "Refer a Whale" share card. Whales
+# get a deterministic 8-char code, +7 day VIP bonus per converted
+# referee. Stripe webhook now credits the referrer via metadata.
+
+def test_refer_a_whale_code_is_deterministic_and_safe() -> None:
+    """Same user_id must always produce the same code; alphabet must
+    exclude look-alike chars (0/O/1/I) so codes are dictate-able."""
+    from routes.high_roller import _referral_code_for
+    code_a = _referral_code_for("user-123")
+    code_b = _referral_code_for("user-123")
+    code_c = _referral_code_for("user-456")
+    assert code_a == code_b, "Referral code must be deterministic"
+    assert code_a != code_c, "Different users must get different codes"
+    assert len(code_a) == 8
+    forbidden = set("01OI")
+    assert not (set(code_a) & forbidden), f"Code {code_a} contains look-alike chars"
+
+
+def test_refer_a_whale_endpoints_registered() -> None:
+    """GET /referral/{user_id} + POST /referral/track must be live."""
+    from server import app
+    paths = {getattr(r, "path", "") for r in app.routes}
+    assert "/api/high-roller/referral/{user_id}" in paths
+    assert "/api/high-roller/referral/track" in paths
+
+
+def test_refer_a_whale_checkout_accepts_referral_code() -> None:
+    """CheckoutRequest must accept an optional `referral_code` field so
+    the inbound `?ref=CODE` query param flows through to Stripe metadata."""
+    from routes.high_roller import CheckoutRequest
+    req = CheckoutRequest(user_id="u1", tier="genius", referral_code="ABCD2345")
+    assert req.referral_code == "ABCD2345"
+    req2 = CheckoutRequest(user_id="u1", tier="genius")
+    assert req2.referral_code is None
+
+
+def test_refer_a_whale_webhook_imports_track_referral() -> None:
+    """The Stripe payouts webhook must wire `track_referral` so a referee
+    converting flips the referrer's bonus days."""
+    from pathlib import Path
+    src = Path("/app/backend/routes/stripe_payouts_webhook.py").read_text()
+    assert "track_referral" in src, "Webhook must import track_referral"
+    assert "referral_code" in src, "Webhook must read referral_code from metadata"
+
+
+def test_refer_a_whale_frontend_card_rendered() -> None:
+    """High Roller frontend page must include the Refer-a-Whale card with
+    the canonical test IDs the testing agent will validate."""
+    from pathlib import Path
+    src = Path("/app/frontend/src/pages/HighRollerCasino.tsx").read_text()
+    for tid in (
+        "refer-a-whale-card",
+        "refer-a-whale-code",
+        "refer-a-whale-copy-btn",
+        "refer-a-whale-share-btn",
+        "refer-a-whale-count",
+        "refer-a-whale-stats",
+    ):
+        assert f'data-testid="{tid}"' in src, f"HighRollerCasino missing testid '{tid}'"
+    assert "ref=" in src and "referral_code" in src, (
+        "HighRollerCasino must forward inbound ?ref=CODE into checkout body"
+    )

@@ -1,5 +1,25 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-05-16 (later) — REFER-A-WHALE ENHANCEMENT SHIPPED · 399/399 regression green.**
+>
+> ### What shipped:
+> - **Backend** (`/app/backend/routes/high_roller.py`): Two new endpoints + helpers.
+>   - `GET /api/high-roller/referral/{user_id}` returns a deterministic 8-char code (alphabet excludes 0/O/1/I for verbal sharing), share URL suffix, whales_referred count, and bonus_days_earned (7 days per converted whale).
+>   - `POST /api/high-roller/referral/track` credits the referrer: rejects unknown codes (404), self-referrals (400), and is idempotent per referee. On a valid credit it bumps the referrer's `vip_until` by `REFERRAL_BONUS_DAYS=7` (env-overridable) if they already have an active VIP window.
+>   - `CheckoutRequest` now accepts an optional `referral_code` which Stripe persists in session metadata.
+> - **Stripe webhook** (`/app/backend/routes/stripe_payouts_webhook.py`): After applying the VIP grant, reads `metadata.referral_code` and calls `track_referral` (non-fatal on error — VIP grant succeeds even if referrer credit fails).
+> - **Frontend** (`/app/frontend/src/pages/HighRollerCasino.tsx`): VIP-only animated share card with code chip, **Copy link** + **Share** (Web Share API + clipboard fallback), stats column (whales referred + bonus days earned). Inbound `?ref=CODE` in the URL is auto-forwarded into the next checkout body so the referrer gets credit on conversion.
+> - **Regression**: 5 new shield tests covering code determinism + safe alphabet, endpoint registration, CheckoutRequest schema, webhook wiring, and frontend test-ID coverage. Shield went 394 → **399 passed, 0 failed**.
+>
+> ### End-to-end verified via curl:
+> - GET referral → returns code `6SWGZQ6M`, 0 referred.
+> - Unknown code → 404. Self-referral → 400. Valid → `credited:true, bonus_days_added:7`. Duplicate referee → `credited:false, reason:already_credited`. Stat reflects `whales_referred=1, bonus_days_earned=7`.
+>
+> ### Test-IDs added (for testing agent):
+> `refer-a-whale-card`, `refer-a-whale-code`, `refer-a-whale-copy-btn`, `refer-a-whale-share-btn`, `refer-a-whale-count`, `refer-a-whale-stats`.
+
+
+
 > **2026-05-16 — DEPLOYMENT BLOCKER FIXED · 394/394 regression green · Ready to redeploy.**
 >
 > ### Root cause:
