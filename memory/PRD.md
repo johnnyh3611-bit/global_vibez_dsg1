@@ -1,5 +1,40 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-05-17 — BACKEND REFACTOR (CODE-REVIEW DEBT) + PLANET-SHIFT MOBILE GROUNDWORK · 468/468 regression green · READY FOR BETA REDEPLOY.**
+>
+> Founder asked: "Do B and C right now until finished, and then prepare for redeployment of beta. 'Cause I'm out of credits after this." Shipped both refactor + mobile groundwork without touching any product behavior.
+>
+> ### B — Backend high-complexity function refactor (code-review debt):
+> 1. **`routes/admin_beta_cohort.py::beta_cohort`** — broke the monolithic ~120-line handler into 5 focused section helpers: `_section_signups`, `_section_roles`, `_section_revenue`, `_section_engagement`, plus 2 sub-helpers `_aggregate_spend` and `_median_time_to_first_spend`. The orchestrator is now ~20 lines and just composes them. Response shape is byte-identical (regression-pinned keys all present).
+> 2. **`backend/lifespan.py::_create_indexes_async`** — broke the ~150-line nested try-block monolith into 4 named helpers: `_migrate_grandfather_genesis_holders`, `_migrate_chair_ids_backfill`, `_migrate_phase_rename`, `_create_indexes_from_spec`. The orchestrator is 8 lines + a top-level try/except. Order preserved (migrations before index creation).
+> 3. **Lint clean**: ruff passes on both files. Backend restarted cleanly with no startup errors.
+>
+> ### C — Planet-Shift mobile UX groundwork (Master Blueprint v2):
+> 1. **New `hooks/useIsMobileGalaxy.ts`** — matchMedia-backed hook on the `(max-width: 767px)` breakpoint with Safari <14 fallback. Re-renders on orientation change so portrait↔landscape works on tablets.
+> 2. **VolumetricDashboard mobile tuning** — phones now get: star count 4000→1500 (saves ~30-40% GPU fill-rate), DPR cap 2→1.5, FOV 60°→70° (wider so 6 planets don't crowd a 360px viewport), `powerPreference: "low-power"`, antialias OFF, autorotate OFF (drains battery + fights touch drag), wider min/max distance (10-22 vs 8-20).
+> 3. **PlanetCarouselNav horizontal swipe** — added passive touchstart/touchend listeners with a 48px threshold (iOS HIG for "deliberate swipe"). Vertical swipes pass through so the page stays scrollable in tablet landscape. Swipe left = next planet, swipe right = prev planet. Reuses the existing CameraRig lerp — no new animation logic.
+> 4. **Damping enabled** on OrbitControls so spinning feels smoother across all viewports.
+>
+> ### Regression Shield: **468/468 GREEN** (+4 new locks)
+>   - `test_beta_cohort_refactored_into_section_helpers` — pins 6 helper signatures + 4 orchestrator calls + 6 response-shape keys
+>   - `test_lifespan_create_indexes_split_into_named_steps` — pins 4 named helpers + 4 orchestrator calls
+>   - `test_volumetric_dashboard_mobile_groundwork_wired` — pins hook import, GalaxyScene flag prop, star counts, DPR/FOV/powerPreference branching, autoRotate gating, 48px swipe threshold
+>   - `test_use_is_mobile_galaxy_hook_module_exists` — pins matchMedia + Safari <14 addListener/removeListener compat
+>
+> ### Founder action items (out-of-credits handoff):
+>   - 🟢 **READY TO REDEPLOY** to Beta production — code is stable, all 468 shield tests green, backend healthy
+>   - 🟡 Provision `REDIS_URL` in production env (caching auto-activates)
+>   - 🟡 Validate ONE real Stripe payment on `/casino/high-roller` (verify `vip_until` flips post-webhook)
+>   - 📱 Generate native iOS/Android shells via Capacitor (requires Mac/Xcode)
+>   - 🔐 Reconnect GitHub account in Emergent settings to clear the 403 push error
+>
+> ### Future / Backlog
+>   - **P1**: Apply `useIsMobileGalaxy` to Hot Rooms Carousel + Live Now Wall (same breakpoint, lighter media)
+>   - **P2 (BLOCKED)**: Mainnet TGE / Solana Bridge — stays stubbed until founder types `project complete`
+
+
+
+
 > **2026-05-16 (cont. #10) — TWO COMMERCIAL SPOTS APPENDED + PRICING AUDIT · 436/436 regression green.**
 >
 > ### Tour expansion (founder PDF `dsg_commercial_scripts.pdf`):

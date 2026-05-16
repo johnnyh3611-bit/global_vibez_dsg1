@@ -31,6 +31,7 @@ import ErrorBoundary from "@/components/common/ErrorBoundary";
 import { switchDashboardView } from "@/pages/DashboardRouter";
 import UnifiedEarningsWidget from "@/components/common/UnifiedEarningsWidget";
 import GalaxyGuidedTour from "@/components/dashboard/GalaxyGuidedTour";
+import { useIsMobileGalaxy } from "@/hooks/useIsMobileGalaxy";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -470,11 +471,18 @@ function GalaxyScene({
   selectedIndex,
   setSelectedIndex,
   homeworlds,
+  isMobile,
 }: {
   selectedIndex: number | null;
   setSelectedIndex: (i: number | null) => void;
   homeworlds: Record<string, Homeworld>;
+  isMobile: boolean;
 }) {
+  // 2026-05-17 Planet-Shift mobile groundwork: phones get ~60% of the
+  // star count + a tighter fog band to claw back GPU time. Same look,
+  // less fill-rate cost.
+  const starCount = isMobile ? 1500 : 4000;
+  const starRadius = isMobile ? 60 : 80;
   return (
     <>
       <color attach="background" args={["#040208"]} />
@@ -483,7 +491,7 @@ function GalaxyScene({
       <pointLight position={[0, 5, 0]} intensity={1.2} color="#a855f7" />
       <pointLight position={[8, 2, 8]} intensity={0.6} color="#22d3ee" />
       <pointLight position={[-8, 2, -8]} intensity={0.6} color="#ec4899" />
-      <Stars radius={80} depth={50} count={4000} factor={4} fade speed={1} />
+      <Stars radius={starRadius} depth={50} count={starCount} factor={4} fade speed={1} />
       <CameraRig selectedIndex={selectedIndex} />
       {CATEGORIES.map((c, i) => (
         <Planet
@@ -504,6 +512,11 @@ export default function VolumetricDashboard() {
   const navigate = useNavigate();
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [homeworlds, setHomeworlds] = useState<Record<string, Homeworld>>({});
+  // 2026-05-17 Planet-Shift mobile groundwork: phones get lighter Canvas
+  // config (fewer stars, capped DPR, no autorotate, wider FOV) + the
+  // carousel arrows become the primary nav since drag-to-spin fights
+  // OS-level horizontal swipe gestures.
+  const isMobile = useIsMobileGalaxy();
 
   // 2026-05-12 PRODUCTION BUG (beta-tester reports): "when they go into
   // the volumetric view, they cannot see that page. It redirects them
@@ -666,9 +679,9 @@ export default function VolumetricDashboard() {
         }
       >
         <Canvas
-          camera={{ position: [0, 4, 12], fov: 60 }}
-          dpr={[1, 2]}
-          gl={{ antialias: true, alpha: false, failIfMajorPerformanceCaveat: false }}
+          camera={{ position: [0, 4, 12], fov: isMobile ? 70 : 60 }}
+          dpr={isMobile ? [1, 1.5] : [1, 2]}
+          gl={{ antialias: !isMobile, alpha: false, failIfMajorPerformanceCaveat: false, powerPreference: isMobile ? "low-power" : "high-performance" }}
           onCreated={({ gl }) => {
             // 2026-05-12 — auto-recover from WebGL context loss instead
             // of letting the canvas go blank. Browsers fire this on tab
@@ -679,15 +692,16 @@ export default function VolumetricDashboard() {
           }}
         >
           <Suspense fallback={null}>
-            <GalaxyScene selectedIndex={selectedIndex} setSelectedIndex={setSelectedIndex} homeworlds={homeworlds} />
+            <GalaxyScene selectedIndex={selectedIndex} setSelectedIndex={setSelectedIndex} homeworlds={homeworlds} isMobile={isMobile} />
           </Suspense>
           <OrbitControls
             enableZoom
             enablePan={false}
-            minDistance={8}
-            maxDistance={20}
-            autoRotate={selectedIndex === null}
+            minDistance={isMobile ? 10 : 8}
+            maxDistance={isMobile ? 22 : 20}
+            autoRotate={!isMobile && selectedIndex === null}
             autoRotateSpeed={0.5}
+            enableDamping
           />
         </Canvas>
       </ErrorBoundary>
@@ -788,6 +802,39 @@ function PlanetCarouselNav({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [goNext, goPrev, selectedIndex, setSelectedIndex]);
+
+  // 2026-05-17 Planet-Shift mobile groundwork: horizontal swipe gesture
+  // on the whole viewport advances/retreats one planet. Threshold 48px
+  // matches iOS HIG for "deliberate swipe". Vertical swipes pass through
+  // so the page is still scrollable on tablets in landscape.
+  useEffect(() => {
+    let startX = 0;
+    let startY = 0;
+    let active = false;
+    const onStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      active = true;
+    };
+    const onEnd = (e: TouchEvent) => {
+      if (!active) return;
+      active = false;
+      const t = e.changedTouches[0];
+      if (!t) return;
+      const dx = t.clientX - startX;
+      const dy = t.clientY - startY;
+      if (Math.abs(dx) < 48 || Math.abs(dy) > Math.abs(dx)) return;
+      if (dx < 0) goNext();
+      else goPrev();
+    };
+    window.addEventListener("touchstart", onStart, { passive: true });
+    window.addEventListener("touchend", onEnd, { passive: true });
+    return () => {
+      window.removeEventListener("touchstart", onStart);
+      window.removeEventListener("touchend", onEnd);
+    };
+  }, [goNext, goPrev]);
 
   return (
     <>

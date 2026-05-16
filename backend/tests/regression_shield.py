@@ -10246,3 +10246,111 @@ def test_vibedice654_premium_side_bets_popup_is_fullscreen() -> None:
         "Premium 654 side-bets popup reverted to the OLD 520px bottom "
         "modal — user explicitly asked for fullscreen."
     )
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# 2026-05-17 — Backend refactor + Planet-Shift mobile groundwork (4 locks)
+# ═══════════════════════════════════════════════════════════════════════
+
+
+def test_beta_cohort_refactored_into_section_helpers():
+    """2026-05-17 refactor: the monolithic ~120-line `beta_cohort` route
+    handler is broken into 5 single-purpose section helpers so each can
+    be tested / extended without touching the orchestrator. The route
+    handler must stay a thin orchestrator that just composes them."""
+    src = open("/app/backend/routes/admin_beta_cohort.py").read()
+    for helper in [
+        "_section_signups",
+        "_section_roles",
+        "_section_revenue",
+        "_section_engagement",
+        "_aggregate_spend",
+        "_median_time_to_first_spend",
+    ]:
+        assert f"async def {helper}" in src, f"missing helper: {helper}"
+    # The orchestrator must invoke each section helper exactly once.
+    for call in [
+        "_section_signups(db,",
+        "_section_roles(db)",
+        "_section_revenue(db,",
+        "_section_engagement(db,",
+    ]:
+        assert call in src, f"orchestrator missing call: {call}"
+    # The response shape stays identical — every regression-pinned key
+    # from the original handler must still appear in the file.
+    for key in [
+        "total_paid_usd",
+        "median_time_to_first_spend_min",
+        "weakest_rooms_by_7d_visits",
+        "activation_rate_pct",
+        "jftn_season_passes_active",
+        "active_role_pill",
+    ]:
+        assert key in src, f"beta-cohort response shape drift: missing {key}"
+
+
+def test_lifespan_create_indexes_split_into_named_steps():
+    """2026-05-17 refactor: `_create_indexes_async` was a ~150-line
+    nested try-block monolith. Now it orchestrates 4 named helpers so
+    each migration / index step can be reasoned about in isolation."""
+    src = open("/app/backend/lifespan.py").read()
+    for helper in [
+        "async def _migrate_grandfather_genesis_holders",
+        "async def _migrate_chair_ids_backfill",
+        "async def _migrate_phase_rename",
+        "async def _create_indexes_from_spec",
+    ]:
+        assert helper in src, f"lifespan missing helper: {helper}"
+    # The orchestrator must call all four.
+    for call in [
+        "_migrate_grandfather_genesis_holders(logger)",
+        "_migrate_chair_ids_backfill(db, logger)",
+        "_migrate_phase_rename(db, logger)",
+        "_create_indexes_from_spec(db, logger)",
+    ]:
+        assert call in src, f"_create_indexes_async missing call: {call}"
+
+
+def test_volumetric_dashboard_mobile_groundwork_wired():
+    """2026-05-17 Planet-Shift mobile groundwork: the Volumetric Galaxy
+    must lighten Three.js cost on phones (fewer stars, capped DPR,
+    autorotate off, wider FOV) and expose a horizontal swipe gesture so
+    users can advance one planet at a time without fighting OrbitControls
+    drag. Locks the wiring so a future "clean up" can't drop it."""
+    src = open("/app/frontend/src/pages/VolumetricDashboard.tsx").read()
+    assert "useIsMobileGalaxy" in src, (
+        "VolumetricDashboard must consume useIsMobileGalaxy hook"
+    )
+    assert "const isMobile = useIsMobileGalaxy()" in src
+    # GalaxyScene must accept the mobile flag.
+    assert "isMobile: boolean" in src
+    assert "starCount = isMobile ? 1500 : 4000" in src
+    assert "starRadius = isMobile ? 60 : 80" in src
+    # Canvas: capped DPR + wider FOV + low-power GL hint on phones.
+    assert "dpr={isMobile ? [1, 1.5] : [1, 2]}" in src
+    assert "fov: isMobile ? 70 : 60" in src
+    assert 'powerPreference: isMobile ? "low-power" : "high-performance"' in src
+    # OrbitControls: autorotate disabled on mobile, damping on.
+    assert "autoRotate={!isMobile && selectedIndex === null}" in src
+    assert "enableDamping" in src
+    # PlanetCarouselNav: 48px horizontal touch swipe → next/prev planet.
+    assert "touchstart" in src and "touchend" in src
+    assert "Math.abs(dx) < 48" in src
+
+
+def test_use_is_mobile_galaxy_hook_module_exists():
+    """The mobile groundwork hook must live as its own module so other
+    surfaces (mobile Hot Rooms carousel, Live Now Wall, Volumetric Tour)
+    can reuse the same 767px matchMedia breakpoint."""
+    import os
+    path = "/app/frontend/src/hooks/useIsMobileGalaxy.ts"
+    assert os.path.exists(path), "useIsMobileGalaxy hook module missing"
+    src = open(path).read()
+    assert "export function useIsMobileGalaxy" in src
+    assert "(max-width: 767px)" in src
+    # Must use matchMedia, not a one-shot innerWidth check, so
+    # orientation flips re-render the consumer.
+    assert "matchMedia" in src
+    # Backwards-compat: Safari <14 uses addListener/removeListener.
+    assert "addListener" in src and "removeListener" in src
+
