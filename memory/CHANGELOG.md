@@ -5693,3 +5693,48 @@ agent and compounds Genius Phase rollout speed.
 ### Regression
 - **451 → 455 passing** (`pytest tests/regression_shield.py` — 8.5s).
 - Pyflakes clean on `merchant_onboarding.py`.
+
+---
+
+## 2026-05-16 — Final pre-redeploy: Nova MP4 + Asset Freshness Shield
+
+The 9:16 vertical tour MP4 (`landing-tour-tiktok-9x16.mp4`) was the last
+file still serving the OLD Onyx voice — re-rendered from scratch via the
+`render_landing_tour_vertical.py` ffmpeg pipeline (~10 min on the
+preview pod, 38.7 MB output at CRF 28).
+
+### Fixed
+- `render_landing_tour_vertical.py` — strip `?v=…` cache-buster from
+  manifest audio URL before resolving to disk path.
+- 4 layers re-aligned to point at the new Nova file with a single
+  cache-busting query: `?v=nova-2026-05-16`
+   1. `public/gv-sw.js` CACHE_VERSION → `gv-v2-20260516-nova`
+   2. `public/landing-tour-i18n.json` audio URL + duration=289.5s
+   3. `LandingTourVideo.tsx` `NARRATION_SRC` + MP4 download href + copy "Nova"
+   4. `src/index.js` calls `reg.update()` on load + auto-reload on
+      `controllerchange` so OLD SWs flush automatically.
+- `build/` directory synced to `public/` for every tour asset
+  (narration MP3, narration-en MP3, tiktok MP4, i18n manifest, SW).
+
+### New regression shield tests (4)
+1. `test_landing_tour_assets_match_public_and_build` — sha256 parity
+   between `public/` and `build/` for every tour asset.
+2. `test_landing_tour_cache_busters_wired` — SW CACHE_VERSION, manifest
+   URL, component src, MP4 href all carry `?v=nova-2026-05-16`. Copy
+   says "Nova" not "Onyx".
+3. `test_landing_tour_narration_mp3_is_new_nova_file` — file size guard
+   (>= 5.5 MB) so the OLD ~4 MB Onyx file can't sneak back in.
+4. `test_landing_tour_index_js_registers_sw_with_update` — index.js
+   force-updates the SW + reloads on controllerchange.
+
+### Full-system end-to-end test (testing_agent_v3_fork)
+- Landing tour ✅
+- /merchant/join ✅
+- /merchant/dashboard (seeded data renders correctly: chairs=3, blasts=5, dsg_tv=2) ✅
+- /merchant/ambassador (all 5 phases + matrix + QR) ✅
+- /merchant/leaderboard (reward card + share CTA + empty state) ✅
+- 4 public assets HTTP 200 with correct sizes ✅
+- 3 merchant APIs smoke-tested ✅
+
+### Regression
+- **455 → 459 passing** (`pytest tests/regression_shield.py` — 8.06s).

@@ -4790,3 +4790,16 @@ User confirmed they don't have a compiled Unity WebGL build (the GitHub repo pro
 
 ### Status: 🚀 READY FOR BETA REDEPLOY (final)
 All 5 merchant PDFs + viral recruiter loop fully implemented.
+
+---
+
+## 2026-05-16 (Beta reset) — Nova MP4 + Freshness Shield
+
+### Status: 🟢 BETA-READY, FULLY VALIDATED
+- ALL 5 merchant PDFs shipped + viral recruiter loop wired
+- Tour video Nova-voiced across ALL surfaces (streaming + download)
+- Cache-busting + auto-update SW behavior so returning users auto-flush
+- 459 regression tests green (was 455, +4 freshness guards)
+- testing_agent_v3_fork e2e sweep: 100% pass
+
+### User can safely redeploy. Everything tested top-to-bottom.
