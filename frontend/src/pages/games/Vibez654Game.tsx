@@ -21,6 +21,7 @@
  * Backend: /api/vibez-654/{start,roll,stand,state,leaderboard,history,side-bet-types}
  */
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import {
   Dice5, Dice6, Loader2, ArrowLeft, Crown, Trophy, Lock, CheckCircle2, XCircle,
@@ -727,17 +728,21 @@ function Drawer({
       </button>
       {/* When `popup` is on (side bets), expand into a full-screen
           overlay so the player can see every wager option without the
-          dice table crowding the layout. Backdrop click closes. */}
-      {open && popup && (
+          dice table crowding the layout. Backdrop click closes.
+          IMPORTANT: must be portaled to document.body — this drawer's
+          `backdrop-blur-md` would otherwise create a CSS containing
+          block that traps our `position: fixed` inside its 2px
+          collapsed bounds (per the CSS Filter Effects spec). */}
+      {open && popup && typeof document !== "undefined" && createPortal(
         <>
           <div
             onClick={() => setOpen(false)}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40"
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[60]"
             data-testid={`${testId}-popup-backdrop`}
           />
           <div
             data-testid={`${testId}-popup`}
-            className="fixed inset-0 sm:inset-4 md:inset-8 z-50 overflow-y-auto rounded-none sm:rounded-3xl border border-cyan-300/40 bg-gradient-to-br from-[#0a1428] via-[#0f1f3d] to-[#040810] shadow-2xl"
+            className="fixed inset-0 sm:inset-4 md:inset-8 z-[70] overflow-y-auto rounded-none sm:rounded-3xl border border-cyan-300/40 bg-gradient-to-br from-[#0a1428] via-[#0f1f3d] to-[#040810] shadow-2xl"
           >
             <div className="sticky top-0 z-10 flex items-center justify-between px-4 sm:px-6 py-3 bg-gradient-to-b from-black/80 to-transparent">
               <span className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-cyan-200">
@@ -758,7 +763,8 @@ function Drawer({
               {children}
             </div>
           </div>
-        </>
+        </>,
+        document.body
       )}
       {/* Default inline expansion (recent rolls, etc.). */}
       {open && !popup && (
