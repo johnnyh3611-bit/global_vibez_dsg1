@@ -9947,8 +9947,10 @@ def test_merchant_referral_attribution_and_reward() -> None:
     # 1 baked-in + 1 reward = 2 chairs.
     assert int(ref_doc.get("chairs_held", 0)) == 2
 
-    # Leaderboard surfaces them.
-    lb = client.get("/api/merchant/leaderboard?limit=10").json()
+    # Leaderboard surfaces them — use a wide limit because prior test
+    # runs accumulate recruiter rows in the shared DB and can push our
+    # fresh one off a top-10 default.
+    lb = client.get("/api/merchant/leaderboard?limit=100").json()
     assert any(row["merchant_id"] == ref_id and row["referrals_completed"] == 5
                for row in lb["top"]), f"Referrer not on leaderboard: {lb}"
 
@@ -10150,8 +10152,11 @@ def test_landing_tour_mp4_matches_narration_full_length() -> None:
     (~4:49 / 289.5s) so the download matches the streaming experience.
     Catches any future render that silently truncates back to 2:02.
     Recovery: `bash /app/scripts/regen_tour.sh`."""
-    import json, subprocess
+    import json, shutil, subprocess
     from pathlib import Path
+    import pytest as _pytest
+    if shutil.which("ffprobe") is None:
+        _pytest.skip("ffprobe not on PATH — install ffmpeg to enable this guard")
     mp4 = Path("/app/frontend/public/landing-tour-tiktok-9x16.mp4")
     manifest = json.loads(Path("/app/frontend/public/landing-tour-i18n.json").read_text())
     expected = float(manifest["languages"]["en"]["duration"])
@@ -10184,4 +10189,60 @@ def test_landing_tour_render_script_has_only_one_main() -> None:
     main_def_count = src.count("\ndef main(")
     assert main_def_count == 1, (
         f"render script defines main() {main_def_count} times — must be 1."
+    )
+
+
+def test_vibez654_side_bets_popup_uses_portal() -> None:
+    """The Vibez 654 side-bets popup MUST be portaled to document.body
+    via ReactDOM.createPortal. The parent Drawer has `backdrop-blur-md`
+    which creates a CSS containing block that traps position:fixed
+    descendants — without the portal, the popup renders as a 2px slit
+    inside the collapsed drawer instead of full-screen. Fixed via
+    portal on 2026-05-16; lock it so it can't regress."""
+    src = open("/app/frontend/src/pages/games/Vibez654Game.tsx").read()
+    assert 'createPortal' in src and 'react-dom' in src, (
+        "Vibez654Game must import createPortal from react-dom for the "
+        "side-bets popup. Removing this will trap the popup inside the "
+        "drawer's backdrop-filter containing block."
+    )
+    assert "createPortal(" in src and "document.body" in src, (
+        "Side-bets popup must call createPortal(<...>, document.body)"
+    )
+    # Drawer renders fullscreen-popup overlay only when `popup` prop is set.
+    assert "popup = false" in src or "popup?: boolean" in src, (
+        "Drawer must support a `popup` opt-in flag"
+    )
+    # Side-bets <Drawer> must pass `popup` flag (recent-rolls drawer
+    # stays inline, so we must NOT see `popup` on the recent rolls one).
+    side_bets_block_idx = src.find('testId="v654-side-bets"')
+    next_drawer_idx = src.find("<Drawer", side_bets_block_idx + 1)
+    side_bets_block = src[side_bets_block_idx:next_drawer_idx if next_drawer_idx > 0 else side_bets_block_idx + 1000]
+    assert "popup" in side_bets_block, (
+        "Side-bets <Drawer> must set the `popup` flag for the fullscreen overlay"
+    )
+
+
+def test_vibedice654_premium_side_bets_popup_is_fullscreen() -> None:
+    """The Premium 654 side-bets popup must be a full-screen overlay,
+    not a 520px bottom modal. User explicitly requested fullscreen.
+    (The recent-rolls popup stays 520px — that's a separate panel.)"""
+    src = open("/app/frontend/src/pages/games/VibeDice654Premium.tsx").read()
+    # Find the side-bets popup block by its testid and inspect the
+    # className on that motion.div (NOT the recent-rolls popup which
+    # is a separate, intentionally-smaller panel).
+    sb_idx = src.find('data-testid="sidebets-popup"')
+    assert sb_idx > 0, "Premium 654 missing sidebets-popup testid"
+    # Walk back to the motion.div that owns it.
+    block_start = src.rfind("<motion.div", 0, sb_idx)
+    block_end = src.find(">", sb_idx)
+    block = src[block_start:block_end]
+    assert "inset-0 sm:inset-4 md:inset-8" in block, (
+        "Premium 654 side-bets popup not in fullscreen mode. "
+        f"Expected `inset-0 sm:inset-4 md:inset-8` className on the "
+        f"sidebets-popup motion.div. Found:\n{block}"
+    )
+    # The OLD broken side-bets className must be gone from this block.
+    assert "w-[min(92vw,520px)]" not in block, (
+        "Premium 654 side-bets popup reverted to the OLD 520px bottom "
+        "modal — user explicitly asked for fullscreen."
     )

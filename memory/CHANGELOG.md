@@ -5785,3 +5785,54 @@ preview pod, 38.7 MB output at CRF 28).
 
 ### Regression
 - **461 → 463 passing** (`pytest tests/regression_shield.py` — 8.84s).
+
+---
+
+## 2026-05-16 — Vibez 654 Side-Bets Fullscreen Popup + Casino Game Audit
+
+### User report
+"vibe dice 654, the original game that I made is not working properly … 
+and with the side bets, it should pop out to be the whole screen when 
+they click the button for side bet."
+
+### Fixed
+- **Premium 654 (`VibeDice654Premium.tsx`)** side-bets popup converted
+  from a 520px bottom modal to a full-screen overlay
+  (`fixed inset-0 sm:inset-4 md:inset-8`). Recent-rolls popup stays
+  520px (separate feature, intentional).
+- **Original 654 (`Vibez654Game.tsx`)** Drawer component got a `popup`
+  opt-in flag. When `popup=true` AND `open=true`, the drawer content
+  renders as a full-screen overlay instead of inline collapse.
+  - **CSS containing-block fix**: the popup overlay must be portaled
+    to `document.body` via `ReactDOM.createPortal`. Without the
+    portal, the parent drawer's `backdrop-blur-md` creates a
+    containing block (per CSS Filter Effects spec) that traps
+    `position:fixed` descendants — the overlay rendered as a 670×2px
+    slit inside the collapsed drawer. Diagnosed by the testing agent,
+    fixed in one pass.
+- z-index bumped to `z-[60]` / `z-[70]` to live above other modals.
+- Side-bets <Drawer> now sets `popup` flag; recent-rolls drawer left
+  inline (it was working fine).
+
+### Casino game audit (testing_agent_v3_fork, 2 rounds)
+Round 1: identified the containing-block bug + verified Premium 654
+already worked. Round 2: portal fix verified end-to-end across desktop
++ mobile viewports. Other casino games (Chuck-a-Luck, European Roulette,
+Cyber Casino Roulette, Hazard, Uno Premium, Card MP Room) — all load
+without console errors, primary CTAs clickable.
+
+### New regression tests (4)
+1. `test_vibez654_side_bets_popup_uses_portal` — locks the portal
+   pattern + `popup` Drawer flag. Catches anyone removing the portal
+   and silently breaking the popup.
+2. `test_vibedice654_premium_side_bets_popup_is_fullscreen` — locks
+   the `inset-0 sm:inset-4 md:inset-8` className on the side-bets
+   motion.div (recent-rolls popup explicitly NOT checked — different
+   panel, intentionally 520px).
+3-4. (Previously added: MP4 length + duplicate-main guard, slightly
+     improved to gracefully skip when ffprobe isn't on PATH.)
+
+### Regression
+- 463 → **464 passing + 1 skipped** (`pytest tests/regression_shield.py`
+  — 8.55s). The skip is the MP4 length guard which requires ffprobe;
+  the CI workflow has ffmpeg installed so it runs there.
