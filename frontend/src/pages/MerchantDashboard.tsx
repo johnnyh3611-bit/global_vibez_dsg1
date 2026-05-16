@@ -84,6 +84,10 @@ export default function MerchantDashboard() {
   const [adZips, setAdZips] = useState("");
   const [qrCopied, setQrCopied] = useState(false);
 
+  // recent activity
+  const [recentBlasts, setRecentBlasts] = useState<any[]>([]);
+  const [recentAds, setRecentAds] = useState<any[]>([]);
+
   // merchant id — read from localStorage (set by MerchantJoin) or URL.
   const storedId = useMemo(() => {
     try {
@@ -103,8 +107,18 @@ export default function MerchantDashboard() {
       setPhase(await phaseRes.json());
       if (merchantId) {
         const r = await fetch(`${API}/api/merchant/me/${encodeURIComponent(merchantId)}`);
-        if (r.ok) setMerchant(await r.json());
-        else setMerchant(null);
+        if (r.ok) {
+          setMerchant(await r.json());
+          // Load recent activity timelines in parallel.
+          const [bRes, aRes] = await Promise.all([
+            fetch(`${API}/api/merchant/push-blast/recent/${encodeURIComponent(merchantId)}?limit=10`),
+            fetch(`${API}/api/merchant/dsg-tv/ads/${encodeURIComponent(merchantId)}?limit=10`),
+          ]);
+          setRecentBlasts(bRes.ok ? await bRes.json() : []);
+          setRecentAds(aRes.ok ? await aRes.json() : []);
+        } else {
+          setMerchant(null);
+        }
       }
     } catch (e: any) {
       toast.error(e?.message || "Failed to load merchant data");
@@ -671,6 +685,86 @@ export default function MerchantDashboard() {
               </a>
             </div>
           </div>
+        </Panel>
+      </section>
+
+      {/* Recent activity timeline */}
+      <section
+        data-testid="recent-activity-section"
+        className="mx-auto max-w-6xl px-6 pb-8 grid gap-5 lg:grid-cols-2"
+      >
+        <Panel
+          testId="recent-blasts-panel"
+          icon={<Radio className="h-5 w-5 text-cyan-300" />}
+          title="Recent Push Blasts"
+          subtitle="last 10 hyper-local pings with fan-out reach"
+        >
+          {recentBlasts.length === 0 ? (
+            <div className="text-xs text-white/50 py-4 text-center">
+              No blasts sent yet. Send your first push above.
+            </div>
+          ) : (
+            <ul className="space-y-2 max-h-64 overflow-y-auto">
+              {recentBlasts.map((b: any) => (
+                <li
+                  key={b.id}
+                  data-testid="recent-blast-row"
+                  className="rounded-lg bg-white/[0.03] border border-white/5 p-3"
+                >
+                  <div className="flex justify-between items-baseline gap-2">
+                    <div className="font-semibold text-sm truncate">{b.headline}</div>
+                    <div className="text-[10px] text-white/50 whitespace-nowrap">
+                      {b.sent_at?.slice(0, 16).replace("T", " ")}
+                    </div>
+                  </div>
+                  <div className="text-xs text-white/60 truncate">{b.body}</div>
+                  {b.fanout && (
+                    <div className="mt-1 text-[10px] text-cyan-300">
+                      {b.fanout.tokens_targeted ?? 0} devices targeted ·{" "}
+                      {b.fanout.fcm_sent ?? 0} delivered ·{" "}
+                      {b.fanout.candidates_in_radius ?? 0} in radius
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </Panel>
+
+        <Panel
+          testId="recent-ads-panel"
+          icon={<Tv className="h-5 w-5 text-fuchsia-300" />}
+          title="Recent DSG TV Ad-Flights"
+          subtitle="last 10 commercials scheduled to the 24/7 broadcast"
+        >
+          {recentAds.length === 0 ? (
+            <div className="text-xs text-white/50 py-4 text-center">
+              No ad-flights yet. Schedule your first commercial above.
+            </div>
+          ) : (
+            <ul className="space-y-2 max-h-64 overflow-y-auto">
+              {recentAds.map((a: any) => (
+                <li
+                  key={a.ad_id}
+                  data-testid="recent-ad-row"
+                  className="rounded-lg bg-white/[0.03] border border-white/5 p-3"
+                >
+                  <div className="flex justify-between items-baseline gap-2">
+                    <div className="font-semibold text-sm truncate">{a.title}</div>
+                    <div className="text-[10px] text-white/50 whitespace-nowrap">
+                      {a.published_at?.slice(0, 16).replace("T", " ")}
+                    </div>
+                  </div>
+                  <div className="text-xs text-white/60">
+                    {a.duration_seconds}s ·{" "}
+                    {a.target_zip_codes && a.target_zip_codes.length > 0
+                      ? `ZIPs: ${a.target_zip_codes.join(", ")}`
+                      : "no ZIP targeting"}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </Panel>
       </section>
 

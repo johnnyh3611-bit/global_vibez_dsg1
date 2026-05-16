@@ -5602,3 +5602,46 @@ gap flagged in the prior PRD entry.
 
 ### Regression
 - **444 → 448 passing** (`pytest tests/regression_shield.py` — 7.5s).
+
+---
+
+## 2026-05-16 — Merchant Acquisition v1.2 (Field Ambassador + Recent Activity)
+
+Shipped `global_vibez_dsg_master_manual.pdf` — operational sales content
+companion to the merchant strategy PDF. Plus the dashboard ROI feedback
+loop the prior PRD entry called out.
+
+### New pages
+- **`/merchant/ambassador`** (`pages/MerchantAmbassador.tsx`) — Field
+  rep playbook for door-to-door merchant sales:
+  - **5-Phase script** with phase-pill switcher: Warm Hook → Disrupting
+    Legacy → Edge & Vibe Shield → Closing Hammer → Seamless Enrollment.
+  - **Copy-to-clipboard** on every phase so reps can paste into iMessage.
+  - **Scan-Asset card** with QR code pointing to `/merchant/join`, Core
+    Deliverables list, and the exact PDF CTA copy
+    ("CLAIM FOUNDING SEAT & LAUNCH STORE DASHBOARD").
+  - **Objection matrix** with the two canned responses from the PDF
+    (time-management, hidden costs).
+
+### Existing pages updated
+- **`/merchant/join`** CTA copy now matches PDF verbatim ("CLAIM FOUNDING
+  SEAT & LAUNCH STORE DASHBOARD"). Footer adds a link to the ambassador
+  playbook for field reps.
+- **`/merchant/dashboard`** — new **Recent Activity timeline** showing
+  the last 10 push-blasts (with fan-out counts: tokens targeted, FCM
+  delivered, candidates in radius) and the last 10 DSG TV ad-flights
+  (title, duration, ZIP targeting). Closes the ROI feedback loop so
+  merchants see returns on every paid action without leaving the page.
+
+### Tests — 3 new
+1. `test_merchant_ambassador_playbook_wired` — verifies all 14 testids
+   + locks 5 anchor phrases from the script ("30% of every order",
+   "partner-owned ecosystem", "less than five minutes", etc.) so the
+   PDF copy can't be silently rewritten.
+2. `test_merchant_join_cta_matches_pdf_copy` — locks the exact CTA copy
+   + verifies the ambassador-link is wired.
+3. `test_merchant_dashboard_recent_activity_wired` — locks the recent
+   panels + verifies the API fetches.
+
+### Regression
+- **448 → 451 passing** (`pytest tests/regression_shield.py` — 9.8s).

@@ -4746,3 +4746,33 @@ User confirmed they don't have a compiled Unity WebGL build (the GitHub repo pro
   in-memory `_ADS` queue survives a backend restart.
 - Show recent push-blasts + recent ad-flights timelines on the dashboard.
 - 🔒 Solana Mainnet TGE — still locked until user types `"project complete"`.
+
+---
+
+## 2026-05-16 (final) — Merchant Acquisition v1.2 — Field Ops + ROI loop
+
+### Shipped
+- `/merchant/ambassador` field-rep playbook (5-phase script + objection
+  matrix + scan asset with QR), per `global_vibez_dsg_master_manual.pdf`.
+- Dashboard Recent Activity timeline (last 10 blasts + last 10 ad-flights)
+  to close the ROI feedback loop.
+- CTA copy aligned with PDF verbatim ("CLAIM FOUNDING SEAT & LAUNCH
+  STORE DASHBOARD").
+
+### Status: READY FOR BETA REDEPLOY
+- 451 regression tests green.
+- All 5 merchant PDFs fully implemented (strategy, master manual).
+- Auth-gated, idempotent Stripe flow, FCM fan-out, DSG TV scheduler
+  insertion, QR recruiter, recent-activity timeline.
+
+### Still pending — user actions (no code work)
+- Provision `REDIS_URL` in production.
+- Validate one real Stripe payment on `/casino/high-roller`.
+- **Redeploy to Beta** ← user's stated next step.
+- Generate iOS/Android shells via Capacitor.
+
+### Backlog (P2)
+- Stripe webhook on merchant module (defense-in-depth).
+- Persist `_ADS` in-memory queue to mongo so ad-flights survive restart.
+- Merchant-side ad-flight analytics (impressions, plays).
+- 🔒 Solana Mainnet TGE — locked until `"project complete"`.

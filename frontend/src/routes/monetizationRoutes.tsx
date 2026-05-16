@@ -33,6 +33,7 @@ import HungryVibesMerchant from '@/pages/HungryVibesMerchant';
 import SmartStackDashboard from '@/pages/SmartStackDashboard';
 import MerchantJoin from '@/pages/MerchantJoin';
 import MerchantDashboard from '@/pages/MerchantDashboard';
+import MerchantAmbassador from '@/pages/MerchantAmbassador';
 
 export const monetizationRoutes = (ProtectedRoute) => (
   <>
@@ -256,5 +257,6 @@ export const monetizationRoutes = (ProtectedRoute) => (
         Brief landing + post-onboard Genius Phase Dashboard. */}
     <Route path="/merchant/join" element={<MerchantJoin />} />
     <Route path="/merchant/dashboard" element={<MerchantDashboard />} />
+    <Route path="/merchant/ambassador" element={<MerchantAmbassador />} />
   </>
 );

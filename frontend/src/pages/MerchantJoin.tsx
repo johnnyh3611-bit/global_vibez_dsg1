@@ -281,7 +281,7 @@ export default function MerchantJoin() {
             ) : (
               <ArrowRight className="h-5 w-5" />
             )}
-            Launch Merchant Dashboard & Secure Chair
+            CLAIM FOUNDING SEAT &amp; LAUNCH STORE DASHBOARD
           </button>
           {!phase?.stripe_configured && (
             <p className="mt-3 text-xs text-amber-300">
@@ -316,6 +316,13 @@ export default function MerchantJoin() {
 
       <footer className="border-t border-white/5 py-6 text-center text-xs text-white/40">
         Genius Phase ledger · 50,000 chair hard-cap · 100-chair individual ceiling
+        <button
+          onClick={() => navigate("/merchant/ambassador")}
+          className="ml-3 underline hover:text-white/70"
+          data-testid="merchant-join-ambassador-link"
+        >
+          field ambassador playbook
+        </button>
         <button
           onClick={() => navigate("/")}
           className="ml-3 underline hover:text-white/70"

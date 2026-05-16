@@ -9811,3 +9811,64 @@ def test_merchant_frontend_pages_wired() -> None:
     routes = open("/app/frontend/src/routes/monetizationRoutes.tsx").read()
     assert '"/merchant/join"' in routes, "MerchantJoin route not registered"
     assert '"/merchant/dashboard"' in routes, "MerchantDashboard route not registered"
+    assert '"/merchant/ambassador"' in routes, "MerchantAmbassador route not registered"
+
+
+def test_merchant_ambassador_playbook_wired() -> None:
+    """[2026-05-16 v1.2] Field Ambassador playbook page must exist and
+    surface every phase from `global_vibez_dsg_master_manual.pdf` plus
+    the objection matrix and scan-asset block."""
+    amb = open("/app/frontend/src/pages/MerchantAmbassador.tsx").read()
+    for tid in [
+        "merchant-ambassador-page",
+        "phase-1-warm-hook",
+        "phase-2-disrupt-legacy",
+        "phase-3-edge-vibe-shield",
+        "phase-4-closing-hammer",
+        "phase-5-seamless-enrollment",
+        "objection-time",
+        "objection-hidden-costs",
+        "ambassador-scan-asset",
+        "deliverable-hyper-local",
+        "deliverable-vibe-shield",
+        "deliverable-dsg-token",
+        "deliverable-chair",
+        "ambassador-launch-cta",
+    ]:
+        assert tid in amb, f"MerchantAmbassador missing testid: {tid}"
+    # Lock the exact CTA copy from the PDF.
+    assert "CLAIM FOUNDING SEAT" in amb, "Ambassador CTA copy drifted from PDF"
+    # Lock anchor phrases from each phase so the script can't be silently rewritten.
+    for anchor in [
+        "founding stake",
+        "30% of every order",  # Phase 2
+        "Vibe Shield completely insulates",  # Phase 3
+        "partner-owned ecosystem",  # Phase 4
+        "less than five minutes",  # Phase 5
+    ]:
+        assert anchor in amb, f"Ambassador script lost anchor phrase: {anchor!r}"
+
+
+def test_merchant_join_cta_matches_pdf_copy() -> None:
+    """The Business Brief CTA copy must match the PDF verbatim so the
+    QR-scanned landing page hits the prescribed messaging."""
+    join = open("/app/frontend/src/pages/MerchantJoin.tsx").read()
+    assert "CLAIM FOUNDING SEAT" in join, "MerchantJoin CTA copy drifted from PDF"
+    assert "merchant-join-ambassador-link" in join, (
+        "MerchantJoin must link out to /merchant/ambassador for field reps"
+    )
+
+
+def test_merchant_dashboard_recent_activity_wired() -> None:
+    """Dashboard must surface the Recent Activity timeline so merchants
+    see ROI on each push-blast / ad-flight purchase."""
+    dash = open("/app/frontend/src/pages/MerchantDashboard.tsx").read()
+    for tid in [
+        "recent-activity-section",
+        "recent-blasts-panel",
+        "recent-ads-panel",
+    ]:
+        assert tid in dash, f"MerchantDashboard missing recent-activity testid: {tid}"
+    # Must fetch from the public recent endpoints.
+    assert "/api/merchant/push-blast/recent/" in dash
+    assert "/api/merchant/dsg-tv/ads/" in dash
