@@ -5836,3 +5836,35 @@ without console errors, primary CTAs clickable.
 - 463 → **464 passing + 1 skipped** (`pytest tests/regression_shield.py`
   — 8.55s). The skip is the MP4 length guard which requires ffprobe;
   the CI workflow has ffmpeg installed so it runs there.
+
+---
+
+## 2026-05-16 — Deployment Unblocked: MP4 Compression + Dedupe
+
+### Root cause of "Cloud Build context deadline exceeded"
+The previous render landed a 91 MB MP4 in BOTH the legacy name and
+the language-suffix name, in BOTH `public/` and `build/` = 4 copies
+totalling 352 MB just for the tour video. That blew past Cloud Build's
+image-upload window.
+
+### Fixed
+- Re-compressed the 4:49 Nova MP4: CRF 30, 1.4 Mbps cap, faststart →
+  **52 MB** (down from 88 MB). Still 4:49 / Nova / Captions burned in.
+- Deleted the duplicate `landing-tour-tiktok-en-9x16.mp4` (identical
+  to the legacy filename — only the legacy file is referenced in the
+  React component).
+- `frontend/public/` size: 218 MB → **94 MB** (a 124 MB drop).
+
+### Regression
+- **465/465 passing**, 0 skipped (ffprobe now on PATH for the MP4-length
+  guard which actively verifies the 4:49 invariant on every shield run).
+- The 15 landing-tour tests all still pass post-recompression.
+
+### v2 Blueprint PDF triage
+- Most of v2 is UE5 native-client C++ code (`AVibezPlanetActor`,
+  `AVibezPlayerState`) — separate workstream, not our React/FastAPI
+  scope.
+- All web-platform constraints in v2 (4-player lobby cap, $20/50K/100
+  chairs, DSG token naming, route locks) are already enforced.
+- Mobile "Planet Shift" UX refactor for the volumetric dashboard is
+  marked as future P2 work — does not block beta redeploy.
