@@ -5738,3 +5738,22 @@ preview pod, 38.7 MB output at CRF 28).
 
 ### Regression
 - **455 → 459 passing** (`pytest tests/regression_shield.py` — 8.06s).
+
+---
+
+## 2026-05-16 — Freshness Invariant Lock (final enhancement)
+
+### Added
+- `/app/scripts/regen_tour.sh` — one-shot script that regenerates the
+  narration MP3, the i18n manifest, the 9:16 vertical MP4, and mirrors
+  every asset from `public/` → `build/`. Single command keeps every
+  cache layer in sync forever.
+- 2 new regression tests:
+  - `test_landing_tour_mp4_not_older_than_narration_mp3` — fails the
+    shield if the narration MP3 is newer than the rendered MP4 (the
+    exact bug we just fixed today). Prevents shipping a stale MP4.
+  - `test_landing_tour_regen_script_exists_and_executable` — locks the
+    one-shot script so it can't be silently deleted.
+
+### Regression
+- **459 → 461 passing** (`pytest tests/regression_shield.py` — 8.59s).

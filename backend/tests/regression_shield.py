@@ -10099,3 +10099,47 @@ def test_landing_tour_index_js_registers_sw_with_update() -> None:
         "index.js must reload once on `controllerchange` so the audio "
         "element refetches the new Nova MP3 after SW takeover."
     )
+
+
+def test_landing_tour_mp4_not_older_than_narration_mp3() -> None:
+    """The 9:16 vertical MP4 must be newer than (or same age as) the
+    narration MP3 it was muxed from. If the MP3 was regenerated but
+    the MP4 was forgotten, the MP4 still has the OLD voice burned in
+    — and that's exactly the bug we just fixed. Fail the shield instead
+    of letting it ship.
+
+    Recovery: run `bash /app/scripts/regen_tour.sh` (or the individual
+    step from its source)."""
+    from pathlib import Path
+    mp3 = Path("/app/frontend/public/landing-tour-narration-en.mp3")
+    mp4 = Path("/app/frontend/public/landing-tour-tiktok-9x16.mp4")
+    assert mp3.exists(), f"Missing {mp3}"
+    assert mp4.exists(), f"Missing {mp4}"
+    mp3_mtime = mp3.stat().st_mtime
+    mp4_mtime = mp4.stat().st_mtime
+    drift = mp3_mtime - mp4_mtime
+    # Allow up to 60s of skew (filesystem timestamp jitter on copies).
+    assert drift <= 60, (
+        f"Stale MP4 — narration MP3 is {drift:.0f}s newer than the "
+        f"rendered 9:16 video. The MP4 audio will be the OLD voice. "
+        f"Run `bash /app/scripts/regen_tour.sh` then re-test."
+    )
+
+
+def test_landing_tour_regen_script_exists_and_executable() -> None:
+    """Lock the one-shot regen script so it can't be deleted without
+    breaking the shield — that script is the only documented path to
+    bring every cache layer back in sync in one command."""
+    import os
+    p = "/app/scripts/regen_tour.sh"
+    assert os.path.exists(p), f"Missing {p}"
+    assert os.access(p, os.X_OK), f"{p} is not executable (chmod +x)"
+    body = open(p).read()
+    # The script must touch all 4 critical assets.
+    for asset in [
+        "landing-tour-narration-en.mp3",
+        "landing-tour-tiktok-9x16.mp4",
+        "landing-tour-i18n.json",
+        "gv-sw.js",
+    ]:
+        assert asset in body, f"regen_tour.sh forgot to sync {asset}"
