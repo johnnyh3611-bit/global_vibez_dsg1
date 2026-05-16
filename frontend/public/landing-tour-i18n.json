@@ -5,8 +5,8 @@
       "label": "English",
       "native": "English",
       "rtl": false,
-      "audio": "/landing-tour-narration-en.mp3",
-      "duration": 150.0,
+      "audio": "/landing-tour-narration-en.mp3?v=nova-2026-05-16",
+      "duration": 289.5,
       "cues": [
         { "t": 0.0,   "text": "Welcome to GLOBAL VIBEZ DSG — your seat at a brand-new economy!" },
         { "t": 5.0,   "text": "Every game · every ride · every meal · every stream · every chair · every business = you EARN." },

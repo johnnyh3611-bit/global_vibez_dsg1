@@ -8,7 +8,7 @@
  *
  * Implementation
  *   • Founder-uploaded MP4 clips loop in the background (muted).
- *   • An OpenAI-TTS Onyx-voiced narration MP3 plays as the master
+ *   • An OpenAI-TTS Nova-voiced narration MP3 plays as the master
  *     soundtrack — pre-rendered to /landing-tour-narration.mp3 by
  *     `backend/scripts/generate_landing_tour_narration.py`.
  *   • Browsers block autoplay-with-sound, so we render a big PLAY
@@ -105,7 +105,10 @@ const pickInitialLang = (manifest: I18nManifest): string => {
   return manifest.default;
 };
 
-const NARRATION_SRC = "/landing-tour-narration.mp3";
+// Cache-buster version tag — bump this whenever the MP3 is regenerated
+// so production browsers + CDN edge nodes don't keep serving the stale
+// male-voice (Onyx) file from before the Nova re-record.
+const NARRATION_SRC = "/landing-tour-narration.mp3?v=nova-2026-05-16";
 
 // Static fallback caption track — used until the i18n manifest loads
 // (or if it fails to fetch). Mirrors the v3 (Feb-2026) narration script

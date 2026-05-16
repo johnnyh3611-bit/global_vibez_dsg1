@@ -13,15 +13,19 @@
  *
  * Versioned cache: bumping CACHE_VERSION evicts old caches on activate.
  */
-const CACHE_VERSION = "gv-v1-20260512";
+const CACHE_VERSION = "gv-v2-20260516-nova";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
+// Bumping the CACHE_VERSION above will evict every prior cache the
+// moment this SW activates. Returning users will refetch the new Nova
+// narration MP3 from the network on the next page load, no matter what
+// stale Onyx-voice copy they had in IndexedDB / Cache Storage.
 const PRECACHE_URLS = [
   "/",
   "/index.html",
   "/global-vibez-logo.png",
-  "/landing-tour-narration-en.mp3",
+  "/landing-tour-narration-en.mp3?v=nova-2026-05-16",
 ];
 
 self.addEventListener("install", (event) => {
