@@ -11,7 +11,7 @@
  * Backend: /api/merchant/genius-phase + /api/merchant/onboard/checkout
  */
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Crown,
@@ -22,6 +22,7 @@ import {
   Sparkles,
   ArrowRight,
   Loader2,
+  Trophy,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -44,6 +45,7 @@ interface GeniusPhase {
 
 export default function MerchantJoin() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [phase, setPhase] = useState<GeniusPhase | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -52,6 +54,29 @@ export default function MerchantJoin() {
   const [businessName, setBusinessName] = useState("");
   const [service, setService] = useState("hunger_vibez");
   const [tier, setTier] = useState<100 | 125 | 150>(100);
+
+  // Referral attribution — picks up `?ref=<merchant_id>` from QR-code
+  // scans and persists it across the Stripe redirect.
+  const refFromUrl = searchParams.get("ref") || "";
+  const [referredBy, setReferredBy] = useState(refFromUrl);
+
+  useEffect(() => {
+    if (refFromUrl) {
+      try {
+        localStorage.setItem("dsg_merchant_ref", refFromUrl);
+      } catch {
+        /* ignore */
+      }
+      setReferredBy(refFromUrl);
+    } else {
+      try {
+        const stored = localStorage.getItem("dsg_merchant_ref") || "";
+        if (stored) setReferredBy(stored);
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [refFromUrl]);
 
   useEffect(() => {
     fetch(`${API}/api/merchant/genius-phase`)
@@ -81,6 +106,7 @@ export default function MerchantJoin() {
           business_name: businessName.trim(),
           service,
           activation_fee_usd: tier,
+          referred_by: referredBy || undefined,
         }),
       });
       const data = await res.json();
@@ -151,6 +177,18 @@ export default function MerchantJoin() {
                   className="h-full bg-gradient-to-r from-fuchsia-400 via-pink-400 to-cyan-300"
                 />
               </div>
+            </div>
+          )}
+
+          {/* Referral attribution badge — visible when arriving from a QR scan */}
+          {referredBy && (
+            <div
+              data-testid="merchant-join-ref-badge"
+              className="mt-6 inline-flex items-center gap-2 rounded-full border border-emerald-300/40 bg-emerald-300/10 px-4 py-2 text-xs text-emerald-200"
+            >
+              <Trophy className="h-3.5 w-3.5" /> Referred by{" "}
+              <strong className="text-white">{referredBy}</strong> · your activation
+              will credit their recruiter leaderboard
             </div>
           )}
         </div>
@@ -322,6 +360,13 @@ export default function MerchantJoin() {
           data-testid="merchant-join-ambassador-link"
         >
           field ambassador playbook
+        </button>
+        <button
+          onClick={() => navigate("/merchant/leaderboard")}
+          className="ml-3 underline hover:text-white/70"
+          data-testid="merchant-join-leaderboard-link"
+        >
+          recruiter leaderboard
         </button>
         <button
           onClick={() => navigate("/")}

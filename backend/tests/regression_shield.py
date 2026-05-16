@@ -9872,3 +9872,129 @@ def test_merchant_dashboard_recent_activity_wired() -> None:
     # Must fetch from the public recent endpoints.
     assert "/api/merchant/push-blast/recent/" in dash
     assert "/api/merchant/dsg-tv/ads/" in dash
+
+
+def test_merchant_referral_leaderboard_endpoint() -> None:
+    """Public leaderboard endpoint — returns top recruiters + reward
+    constants. Empty list when no merchant has any referrals yet."""
+    client = _merchant_client()
+    r = client.get("/api/merchant/leaderboard?limit=5")
+    assert r.status_code == 200, r.text
+    d = r.json()
+    assert "top" in d and isinstance(d["top"], list)
+    assert d["reward_threshold"] >= 1
+    assert d["chair_price_usd"] == 20
+
+
+def test_merchant_referral_attribution_and_reward() -> None:
+    """End-to-end recruiter flow: referrer onboards 5 merchants via
+    `referred_by`, earns 1 free chair on the 5th, appears on the
+    leaderboard. Self-referral is a no-op."""
+    import uuid as _uuid
+    client = _merchant_client()
+    db = _merchant_sync_db()
+
+    # Onboard the referrer.
+    ref_uid = f"u-{_uuid.uuid4().hex[:8]}"
+    ref_token = _seed_merchant_user(ref_uid)
+    ref_id = f"recruiter-{_uuid.uuid4().hex[:8]}"
+    r = client.post(
+        "/api/merchant/onboard",
+        json={
+            "merchant_id": ref_id, "business_name": "Recruiter HQ",
+            "service": "hunger_vibez", "activation_fee_paid": 100,
+        },
+        headers={"Authorization": f"Bearer {ref_token}"},
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["chairs_held"] == 1
+
+    # Self-referral must NOT credit.
+    self_ref = client.post(
+        "/api/merchant/onboard",
+        json={
+            "merchant_id": ref_id, "business_name": "ignored",
+            "service": "hunger_vibez", "activation_fee_paid": 100,
+            "referred_by": ref_id,
+        },
+        headers={"Authorization": f"Bearer {ref_token}"},
+    )
+    # Already-onboarded path → 200 already_onboarded=True, no credit.
+    assert self_ref.status_code == 200
+    after_self = db.merchant_genius_phase.find_one({"merchant_id": ref_id})
+    assert int(after_self.get("referrals_completed") or 0) == 0
+
+    # Onboard 5 referred merchants.
+    for i in range(5):
+        new_uid = f"u-{_uuid.uuid4().hex[:8]}"
+        new_token = _seed_merchant_user(new_uid)
+        new_id = f"ref-merchant-{i}-{_uuid.uuid4().hex[:8]}"
+        rr = client.post(
+            "/api/merchant/onboard",
+            json={
+                "merchant_id": new_id, "business_name": f"Recruit {i}",
+                "service": "hunger_vibez", "activation_fee_paid": 100,
+                "referred_by": ref_id,
+            },
+            headers={"Authorization": f"Bearer {new_token}"},
+        )
+        assert rr.status_code == 200, rr.text
+
+    # Referrer must now have 5 referrals and 1 reward chair.
+    ref_doc = db.merchant_genius_phase.find_one({"merchant_id": ref_id})
+    assert int(ref_doc.get("referrals_completed", 0)) == 5
+    assert int(ref_doc.get("referral_rewards_granted", 0)) == 1
+    # 1 baked-in + 1 reward = 2 chairs.
+    assert int(ref_doc.get("chairs_held", 0)) == 2
+
+    # Leaderboard surfaces them.
+    lb = client.get("/api/merchant/leaderboard?limit=10").json()
+    assert any(row["merchant_id"] == ref_id and row["referrals_completed"] == 5
+               for row in lb["top"]), f"Referrer not on leaderboard: {lb}"
+
+
+def test_merchant_referral_unknown_referrer_is_silent() -> None:
+    """A bad `referred_by` value must NOT block the new merchant's
+    onboard — referral attribution is best-effort."""
+    import uuid as _uuid
+    client = _merchant_client()
+    uid = f"u-{_uuid.uuid4().hex[:8]}"
+    h = {"Authorization": f"Bearer {_seed_merchant_user(uid)}"}
+    mid = f"bad-ref-{_uuid.uuid4().hex[:8]}"
+    r = client.post(
+        "/api/merchant/onboard",
+        json={
+            "merchant_id": mid, "business_name": "Ignored Ref",
+            "service": "hunger_vibez", "activation_fee_paid": 100,
+            "referred_by": "does-not-exist-merchant",
+        },
+        headers=h,
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["referred_by"] == "does-not-exist-merchant"
+
+
+def test_merchant_leaderboard_page_wired() -> None:
+    """Locks the leaderboard page testids + footer wiring."""
+    lb = open("/app/frontend/src/pages/MerchantLeaderboard.tsx").read()
+    for tid in [
+        "merchant-leaderboard-page",
+        "leaderboard-reward-card",
+        "leaderboard-share-cta",
+    ]:
+        assert tid in lb, f"MerchantLeaderboard missing testid: {tid}"
+    # The route is registered.
+    routes = open("/app/frontend/src/routes/monetizationRoutes.tsx").read()
+    assert '"/merchant/leaderboard"' in routes
+    # MerchantJoin reads ?ref and shows the referral badge.
+    join = open("/app/frontend/src/pages/MerchantJoin.tsx").read()
+    assert "merchant-join-ref-badge" in join, "Join page missing ref badge"
+    assert "merchant-join-leaderboard-link" in join, "Join page footer missing leaderboard link"
+    # Dashboard surfaces the recruiter panel + leaderboard CTA.
+    dash = open("/app/frontend/src/pages/MerchantDashboard.tsx").read()
+    for tid in [
+        "recruiter-section",
+        "recruiter-panel",
+        "recruiter-leaderboard-btn",
+    ]:
+        assert tid in dash, f"MerchantDashboard missing recruiter testid: {tid}"

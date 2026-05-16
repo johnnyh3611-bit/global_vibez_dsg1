@@ -50,6 +50,11 @@ PUSH_BLAST_RADIUS_MILES = 3
 DSG_TV_FLIGHT_PRICE_USD = float(os.environ.get("MERCHANT_DSG_TV_FLIGHT_USD", 49.0))
 PUSH_BLAST_PRICE_USD = float(os.environ.get("MERCHANT_PUSH_BLAST_USD", 19.0))
 
+# Referral program — turn every onboarded merchant into a sales agent.
+# Every Nth successful referral grants the referrer 1 free Genius Phase
+# chair (worth $20).
+REFERRAL_REWARD_THRESHOLD = int(os.environ.get("MERCHANT_REFERRAL_REWARD_EVERY", 5))
+
 MERCHANT_SERVICES = [
     {"id": "hunger_vibez", "label": "Hunger Vibez", "desc": "Food, grocery, QSR delivery + ordering"},
     {"id": "vibez_spots",  "label": "Vibez Spots",  "desc": "Hourly venue + private space booking"},
@@ -130,6 +135,76 @@ async def _assert_owner(merchant_id: str, user_id: str) -> Dict[str, Any]:
     return m
 
 
+# ────────────────────────────────────────────── Referral helpers ──
+async def _attribute_referral(referrer_id: str, new_merchant_id: str) -> Dict[str, Any]:
+    """Attribute a successful referral and grant rewards on every Nth.
+
+    Returns the updated counters + reward state for the dashboard toast.
+    No-op (returns empty dict) if the referrer doesn't exist or refers
+    to itself — we never error here, the new merchant's onboarding must
+    not fail because of a bad referral tag.
+    """
+    if not referrer_id or referrer_id == new_merchant_id:
+        return {}
+    referrer = await _db().merchant_genius_phase.find_one(
+        {"merchant_id": referrer_id}, {"_id": 0}
+    )
+    if not referrer:
+        return {}
+
+    # Idempotency: don't double-credit if this referral was already logged.
+    existing = await _db().merchant_referrals.find_one(
+        {"new_merchant_id": new_merchant_id}, {"_id": 0}
+    )
+    if existing:
+        return {}
+
+    await _db().merchant_referrals.insert_one({
+        "id": str(uuid.uuid4()),
+        "referrer_id": referrer_id,
+        "new_merchant_id": new_merchant_id,
+        "credited_at": datetime.now(timezone.utc).isoformat(),
+    })
+    updated = await _db().merchant_genius_phase.find_one_and_update(
+        {"merchant_id": referrer_id},
+        {"$inc": {"referrals_completed": 1}},
+        projection={"_id": 0, "referrals_completed": 1, "chairs_held": 1,
+                    "referral_rewards_granted": 1, "merchant_id": 1},
+        return_document=True,
+    )
+    if not updated:
+        return {}
+    new_total = int(updated.get("referrals_completed", 0) or 0)
+    prior_rewards = int(updated.get("referral_rewards_granted", 0) or 0)
+    earned = new_total // REFERRAL_REWARD_THRESHOLD
+    new_rewards = max(0, earned - prior_rewards)
+
+    # Grant free chairs — capped by the individual ceiling AND the
+    # global Genius Phase remaining pool.
+    granted = 0
+    if new_rewards > 0:
+        current_chairs = int(updated.get("chairs_held", 0) or 0)
+        per_user_capacity = max(0, INDIVIDUAL_CHAIR_CEILING - current_chairs)
+        status_doc = await genius_phase_status()
+        global_capacity = int(status_doc.get("remaining", 0) or 0)
+        granted = min(new_rewards, per_user_capacity, global_capacity)
+        if granted > 0:
+            await _db().merchant_genius_phase.update_one(
+                {"merchant_id": referrer_id},
+                {"$inc": {
+                    "chairs_held": granted,
+                    "referral_rewards_granted": granted,
+                }},
+            )
+    return {
+        "referrer_id": referrer_id,
+        "referrals_completed": new_total,
+        "chairs_granted_now": granted,
+        "next_reward_at": ((new_total // REFERRAL_REWARD_THRESHOLD) + 1)
+            * REFERRAL_REWARD_THRESHOLD,
+    }
+
+
 # ────────────────────────────────────────────── Geo helpers ──
 def _haversine_miles(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
     """Great-circle distance in miles."""
@@ -149,6 +224,7 @@ class OnboardRequest(BaseModel):
     activation_fee_paid: int = Field(ge=ACTIVATION_FEE_MIN, le=ACTIVATION_FEE_MAX)
     lat: Optional[float] = None
     lng: Optional[float] = None
+    referred_by: Optional[str] = Field(default=None, max_length=80)
 
 
 class CheckoutOnboardRequest(BaseModel):
@@ -158,6 +234,7 @@ class CheckoutOnboardRequest(BaseModel):
     activation_fee_usd: int = Field(ge=ACTIVATION_FEE_MIN, le=ACTIVATION_FEE_MAX)
     lat: Optional[float] = None
     lng: Optional[float] = None
+    referred_by: Optional[str] = Field(default=None, max_length=80)
 
 
 class VerifySessionRequest(BaseModel):
@@ -294,9 +371,14 @@ async def onboard_merchant(req: OnboardRequest, request: Request) -> Dict[str, A
         "push_radius_miles": PUSH_BLAST_RADIUS_MILES,
         "vibe_shield_enabled": True,
         "dsg_tv_placement": True,
+        "referred_by": req.referred_by,
+        "referrals_completed": 0,
+        "referral_rewards_granted": 0,
         "onboarded_at": now_iso,
     }
     await _db().merchant_genius_phase.insert_one(doc.copy())
+    if req.referred_by:
+        await _attribute_referral(req.referred_by, req.merchant_id)
     doc.pop("_id", None)
     return {**doc, "already_onboarded": False}
 
@@ -406,6 +488,7 @@ async def onboard_checkout(
         "amount": str(req.activation_fee_usd),
         "lat": str(req.lat) if req.lat is not None else "",
         "lng": str(req.lng) if req.lng is not None else "",
+        "referred_by": req.referred_by or "",
     }
     return await _create_session(
         amount=float(req.activation_fee_usd),
@@ -439,6 +522,7 @@ async def onboard_verify(
     now_iso = datetime.now(timezone.utc).isoformat()
     lat = float(meta["lat"]) if meta.get("lat") else None
     lng = float(meta["lng"]) if meta.get("lng") else None
+    referred_by = meta.get("referred_by") or None
     doc = {
         "id": str(uuid.uuid4()),
         "merchant_id": req.merchant_id,
@@ -452,6 +536,9 @@ async def onboard_verify(
         "push_radius_miles": PUSH_BLAST_RADIUS_MILES,
         "vibe_shield_enabled": True,
         "dsg_tv_placement": True,
+        "referred_by": referred_by,
+        "referrals_completed": 0,
+        "referral_rewards_granted": 0,
         "stripe_session_id": req.session_id,
         "onboarded_at": now_iso,
     }
@@ -460,6 +547,8 @@ async def onboard_verify(
         {"session_id": req.session_id},
         {"$set": {"status": "complete", "verified_at": now_iso}},
     )
+    if referred_by:
+        await _attribute_referral(referred_by, req.merchant_id)
     doc.pop("_id", None)
     return {**doc, "already_onboarded": False}
 
@@ -844,3 +933,32 @@ async def dsg_tv_recent_ads(merchant_id: str, limit: int = 10) -> List[Dict[str,
         {"merchant_id": merchant_id}, {"_id": 0}
     ).sort("published_at", -1).limit(limit)
     return [doc async for doc in cursor]
+
+
+# ────────────────────────────────────────────── Leaderboard ──
+@router.get("/leaderboard")
+async def merchant_leaderboard(limit: int = 10) -> Dict[str, Any]:
+    """Top merchants by completed referrals — public.
+
+    Powers `/merchant/leaderboard`. Returns the top N + the reward
+    constants so the page can render the "next reward at" badge.
+    """
+    limit = max(1, min(100, int(limit)))
+    cursor = _db().merchant_genius_phase.find(
+        {"referrals_completed": {"$gt": 0}},
+        {
+            "_id": 0,
+            "merchant_id": 1,
+            "business_name": 1,
+            "service": 1,
+            "chairs_held": 1,
+            "referrals_completed": 1,
+            "referral_rewards_granted": 1,
+        },
+    ).sort("referrals_completed", -1).limit(limit)
+    top = [doc async for doc in cursor]
+    return {
+        "top": top,
+        "reward_threshold": REFERRAL_REWARD_THRESHOLD,
+        "chair_price_usd": GENIUS_CHAIR_PRICE,
+    }

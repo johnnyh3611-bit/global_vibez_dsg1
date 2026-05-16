@@ -4776,3 +4776,17 @@ User confirmed they don't have a compiled Unity WebGL build (the GitHub repo pro
 - Persist `_ADS` in-memory queue to mongo so ad-flights survive restart.
 - Merchant-side ad-flight analytics (impressions, plays).
 - 🔒 Solana Mainnet TGE — locked until `"project complete"`.
+
+---
+
+## 2026-05-16 (pre-redeploy) — Recruiter Leaderboard + Chair Rewards
+
+### Shipped
+- Backend `_attribute_referral` + `/api/merchant/leaderboard` endpoint.
+- Frontend `/merchant/leaderboard` page + `?ref=` deep-link tracking on
+  `/merchant/join` + recruiter panel on `/merchant/dashboard`.
+- Every 5 successful merchant referrals = 1 free $20 Genius Phase chair.
+- 455 regression tests green.
+
+### Status: 🚀 READY FOR BETA REDEPLOY (final)
+All 5 merchant PDFs + viral recruiter loop fully implemented.

@@ -33,6 +33,8 @@ import {
   Megaphone,
   Copy,
   CheckCircle2,
+  Trophy,
+  Users,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -51,6 +53,8 @@ interface Merchant {
   lng?: number | null;
   onboarded_at: string;
   credits: { dsg_tv_flights: number; push_blasts: number };
+  referrals_completed?: number;
+  referral_rewards_granted?: number;
 }
 
 interface GeniusPhase {
@@ -63,6 +67,11 @@ interface GeniusPhase {
   push_radius_miles: number;
   addons: { dsg_tv_flight_usd: number; push_blast_usd: number };
   stripe_configured: boolean;
+}
+
+interface LeaderboardRes {
+  top: { merchant_id: string; business_name: string; referrals_completed: number }[];
+  reward_threshold: number;
 }
 
 export default function MerchantDashboard() {
@@ -87,6 +96,7 @@ export default function MerchantDashboard() {
   // recent activity
   const [recentBlasts, setRecentBlasts] = useState<any[]>([]);
   const [recentAds, setRecentAds] = useState<any[]>([]);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardRes | null>(null);
 
   // merchant id — read from localStorage (set by MerchantJoin) or URL.
   const storedId = useMemo(() => {
@@ -110,12 +120,14 @@ export default function MerchantDashboard() {
         if (r.ok) {
           setMerchant(await r.json());
           // Load recent activity timelines in parallel.
-          const [bRes, aRes] = await Promise.all([
+          const [bRes, aRes, lRes] = await Promise.all([
             fetch(`${API}/api/merchant/push-blast/recent/${encodeURIComponent(merchantId)}?limit=10`),
             fetch(`${API}/api/merchant/dsg-tv/ads/${encodeURIComponent(merchantId)}?limit=10`),
+            fetch(`${API}/api/merchant/leaderboard?limit=10`),
           ]);
           setRecentBlasts(bRes.ok ? await bRes.json() : []);
           setRecentAds(aRes.ok ? await aRes.json() : []);
+          setLeaderboard(lRes.ok ? await lRes.json() : null);
         } else {
           setMerchant(null);
         }
@@ -592,6 +604,66 @@ export default function MerchantDashboard() {
             </div>
           )}
         </Panel>
+      </section>
+
+      {/* Recruiter referral row */}
+      <section
+        data-testid="recruiter-section"
+        className="mx-auto max-w-6xl px-6 pb-2"
+      >
+        {(() => {
+          const myRank = leaderboard?.top.findIndex(
+            (m) => m.merchant_id === merchant.merchant_id
+          );
+          const refs = merchant.referrals_completed || 0;
+          const rewards = merchant.referral_rewards_granted || 0;
+          const threshold = leaderboard?.reward_threshold || 5;
+          const nextAt = Math.ceil((refs + 1) / threshold) * threshold;
+          const onLeaderboard = typeof myRank === "number" && myRank >= 0;
+          return (
+            <div
+              data-testid="recruiter-panel"
+              className="rounded-2xl border border-amber-300/30 bg-gradient-to-br from-amber-300/[0.08] to-fuchsia-300/[0.04] p-5"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-amber-300 text-black">
+                    <Trophy className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="text-xs uppercase tracking-wider text-amber-200">
+                      Recruiter Program
+                    </div>
+                    <div className="font-bold">
+                      {refs} referrals · {rewards} free chair{rewards === 1 ? "" : "s"} earned
+                    </div>
+                    <div className="text-xs text-white/60 mt-0.5">
+                      next reward at referral {nextAt} ·{" "}
+                      {threshold - (refs % threshold)} to go
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {onLeaderboard && (
+                    <span
+                      data-testid="recruiter-rank-badge"
+                      className="inline-flex items-center gap-1 rounded-full bg-amber-300 text-black px-3 py-1 text-xs font-black"
+                    >
+                      <Crown className="h-3.5 w-3.5" /> Rank #{(myRank ?? 0) + 1}
+                    </span>
+                  )}
+                  <button
+                    data-testid="recruiter-leaderboard-btn"
+                    onClick={() => navigate("/merchant/leaderboard")}
+                    className="inline-flex items-center gap-1 rounded-lg bg-white/10 hover:bg-white/20 px-3 py-1.5 text-xs font-semibold"
+                  >
+                    <Users className="h-3.5 w-3.5" /> View leaderboard
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
       </section>
 
       {/* DSG TV publish + QR Code row */}

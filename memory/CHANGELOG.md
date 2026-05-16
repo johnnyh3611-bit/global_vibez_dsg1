@@ -5645,3 +5645,51 @@ loop the prior PRD entry called out.
 
 ### Regression
 - **448 → 451 passing** (`pytest tests/regression_shield.py` — 9.8s).
+
+---
+
+## 2026-05-16 — Merchant Acquisition v1.3 (Recruiter Leaderboard + Rewards)
+
+Pre-beta enhancement. Turns every onboarded merchant into a free sales
+agent and compounds Genius Phase rollout speed.
+
+### Backend additions
+- New helper `_attribute_referral` — best-effort attribution that
+  increments the referrer's `referrals_completed` counter, grants 1
+  free Genius Phase Chair every Nth (default 5) successful referral,
+  records into `merchant_referrals` for idempotency, and respects both
+  the individual 100-chair ceiling AND the global 50K cap.
+- `OnboardRequest` + `CheckoutOnboardRequest` accept `referred_by`
+  (optional). Plumbed through `/onboard`, `/onboard/checkout`, and
+  `/onboard/verify` (carried in Stripe metadata across the redirect).
+- New endpoint `GET /api/merchant/leaderboard` — top-N merchants by
+  referrals + reward constants.
+- Self-referral is a no-op; unknown `referred_by` is silent (never
+  blocks the new merchant's onboarding).
+
+### Frontend additions
+- New page `/merchant/leaderboard` (`pages/MerchantLeaderboard.tsx`):
+  reward explainer card, ranked table with gold/silver/bronze coloring,
+  "Top Recruiter" badge on rank #1, share-CTA back to the dashboard.
+- `MerchantJoin` reads `?ref=<merchant_id>` from the URL, persists it
+  in localStorage across the Stripe redirect, shows a green
+  "Referred by X" badge, and forwards `referred_by` to the backend.
+- `MerchantDashboard` recruiter panel: shows referral counter, free
+  chairs earned, next-reward-in-N progress, rank-on-leaderboard badge
+  if applicable, and a "View leaderboard" button.
+- Footer links from `/merchant/join` to both `/merchant/ambassador`
+  and `/merchant/leaderboard`.
+
+### Tests — 4 new
+1. `test_merchant_referral_leaderboard_endpoint` — public read, returns
+   reward constants.
+2. `test_merchant_referral_attribution_and_reward` — end-to-end: 5
+   referrals → 1 free chair + leaderboard appearance.
+3. `test_merchant_referral_unknown_referrer_is_silent` — bad referral
+   tag must not block onboarding.
+4. `test_merchant_leaderboard_page_wired` — frontend testid + route +
+   join-page ref badge + dashboard recruiter panel.
+
+### Regression
+- **451 → 455 passing** (`pytest tests/regression_shield.py` — 8.5s).
+- Pyflakes clean on `merchant_onboarding.py`.

@@ -34,6 +34,7 @@ import SmartStackDashboard from '@/pages/SmartStackDashboard';
 import MerchantJoin from '@/pages/MerchantJoin';
 import MerchantDashboard from '@/pages/MerchantDashboard';
 import MerchantAmbassador from '@/pages/MerchantAmbassador';
+import MerchantLeaderboard from '@/pages/MerchantLeaderboard';
 
 export const monetizationRoutes = (ProtectedRoute) => (
   <>
@@ -258,5 +259,6 @@ export const monetizationRoutes = (ProtectedRoute) => (
     <Route path="/merchant/join" element={<MerchantJoin />} />
     <Route path="/merchant/dashboard" element={<MerchantDashboard />} />
     <Route path="/merchant/ambassador" element={<MerchantAmbassador />} />
+    <Route path="/merchant/leaderboard" element={<MerchantLeaderboard />} />
   </>
 );
