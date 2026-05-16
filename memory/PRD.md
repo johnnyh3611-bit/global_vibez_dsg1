@@ -1,5 +1,11 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-05-17 (cont.) — LOW-END DEVICE LEAN PROFILE · 468/468 regression green · CLEARED FOR BETA REDEPLOY 🚀.**
+>
+> Final enhancement before redeploy. Extended `useIsMobileGalaxy` to also flip lean-mode when `navigator.hardwareConcurrency < 4` OR `navigator.deviceMemory < 4`. Catches crusty Chromebooks, budget Android tablets, and entry-tier Surface devices that aren't mobile-width but still chug on the 4000-star Stars field. Hardware sampled once at mount (doesn't change mid-session). `deviceMemory` is Chromium-only — treated as "unknown, don't penalize" when undefined so Safari/Firefox users on capable hardware aren't false-positive'd. Same hook signature — every consumer (Volumetric Dashboard today, future Hot Rooms / Live Now Wall) gets the upgrade for free. Regression test extended to pin both probes + `LOW_CPU_THRESHOLD=4` + `LOW_MEMORY_THRESHOLD=4` + the `mql.matches || lowEnd` OR.
+
+
+
 > **2026-05-17 — BACKEND REFACTOR (CODE-REVIEW DEBT) + PLANET-SHIFT MOBILE GROUNDWORK · 468/468 regression green · READY FOR BETA REDEPLOY.**
 >
 > Founder asked: "Do B and C right now until finished, and then prepare for redeployment of beta. 'Cause I'm out of credits after this." Shipped both refactor + mobile groundwork without touching any product behavior.

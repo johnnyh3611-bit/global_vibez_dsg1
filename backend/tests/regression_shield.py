@@ -10341,7 +10341,12 @@ def test_volumetric_dashboard_mobile_groundwork_wired():
 def test_use_is_mobile_galaxy_hook_module_exists():
     """The mobile groundwork hook must live as its own module so other
     surfaces (mobile Hot Rooms carousel, Live Now Wall, Volumetric Tour)
-    can reuse the same 767px matchMedia breakpoint."""
+    can reuse the same 767px matchMedia breakpoint.
+
+    2026-05-17 enhancement: the hook also flips lean-mode for low-end
+    devices (`hardwareConcurrency < 4` OR `deviceMemory < 4`) so crusty
+    Chromebooks + budget tablets that aren't mobile-width still get the
+    lighter Three.js profile."""
     import os
     path = "/app/frontend/src/hooks/useIsMobileGalaxy.ts"
     assert os.path.exists(path), "useIsMobileGalaxy hook module missing"
@@ -10353,4 +10358,12 @@ def test_use_is_mobile_galaxy_hook_module_exists():
     assert "matchMedia" in src
     # Backwards-compat: Safari <14 uses addListener/removeListener.
     assert "addListener" in src and "removeListener" in src
+    # Low-end device gate — both signals must be checked.
+    assert "hardwareConcurrency" in src, "missing hardwareConcurrency low-end probe"
+    assert "deviceMemory" in src, "missing deviceMemory low-end probe"
+    assert "LOW_CPU_THRESHOLD = 4" in src
+    assert "LOW_MEMORY_THRESHOLD = 4" in src
+    # The mql.matches || lowEnd OR must be present so lean-mode flips on
+    # EITHER trigger.
+    assert "mql.matches || lowEnd" in src
 
