@@ -9005,3 +9005,47 @@ def test_hot_rooms_carousel_rendered_in_dashboard() -> None:
     assert pulse_idx > 0 < carousel_idx < tabs_idx, (
         "Dashboard order must be LivePulsePill → HotRoomsCarousel → CategoryTabs"
     )
+
+
+# ────────────────────────────────────────────── Cinema Room + dup-image audit + hover preview ──
+# [2026-05-16] Founder asks: (a) surface Cinema Room on the dashboard,
+# (b) no two tiles share the same Unsplash image, (c) ship a 30s
+# hover-preview popover on Hot Rooms cards.
+
+def test_dashboard_has_cinema_room_tile() -> None:
+    """`/cinema-room` route existed but wasn't surfaced on the dashboard.
+    Founder ask 2026-05-16: add a tile in the Watch category."""
+    from pathlib import Path
+    src = Path("/app/frontend/src/pages/DashboardNew.tsx").read_text()
+    assert "id: 'cinema_room'" in src
+    assert "path: '/cinema-room'" in src
+    assert "cinema_room: 'watch'" in src, "Cinema Room must classify under Watch in ROOM_CATEGORY"
+
+
+def test_dashboard_room_images_are_unique() -> None:
+    """No two room tiles may share the same Unsplash photo id."""
+    import re
+    from pathlib import Path
+    src = Path("/app/frontend/src/pages/DashboardNew.tsx").read_text()
+    # Pull every `image: 'https://images.unsplash.com/photo-XXXXX...'` line.
+    image_lines = re.findall(r"image:\s*'(https://images\.unsplash\.com/photo-\d+[^']*)'", src)
+    photo_ids = [re.search(r"photo-(\d+)", url).group(1) for url in image_lines if re.search(r"photo-(\d+)", url)]
+    duplicates = {pid: photo_ids.count(pid) for pid in set(photo_ids) if photo_ids.count(pid) > 1}
+    assert not duplicates, f"Duplicate Unsplash photo IDs across dashboard tiles: {duplicates}"
+
+
+def test_hot_rooms_preview_hover_card_rendered() -> None:
+    """Hot Rooms carousel cards must expose hover preview test IDs.
+    Backend payload must include `preview_image_url` so the frontend
+    can render a real thumbnail in the popover."""
+    from pathlib import Path
+    src = Path("/app/frontend/src/pages/DashboardNew.tsx").read_text()
+    # Each card has a preview popover with a templated test ID.
+    assert "hot-room-preview-${r.id}" in src or "hot-room-preview-" in src
+    assert "preview_image_url" in src, "Frontend must consume preview_image_url"
+    assert "onMouseEnter" in src and "onTouchStart" in src, (
+        "Preview must trigger on hover (desktop) and long-press (touch)"
+    )
+    # Backend must also emit it.
+    backend_src = Path("/app/backend/routes/live_pulse.py").read_text()
+    assert "preview_image_url" in backend_src

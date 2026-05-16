@@ -168,6 +168,21 @@ async def get_hot_rooms(limit: int = Query(default=3, ge=1, le=10)) -> Dict[str,
     except Exception as e:
         logger.warning("Live pulse hot-rooms aggregation failed: %s", e)
 
+    # Category → preview image. Public-domain Unsplash thumbnails so the
+    # carousel cards have a real cinematic preview even before live
+    # thumbnails come online from Cloudflare Stream.
+    _CAT_THUMB = {
+        "watch":     "https://images.unsplash.com/photo-1485095329183-d0797cdc5676?w=640",
+        "games":     "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=640",
+        "music":     "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=640",
+        "dating":    "https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=640",
+        "lifestyle": "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=640",
+        "social":    "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=640",
+        "earnings":  "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=640",
+    }
+    for r in rooms:
+        r.setdefault("preview_image_url", _CAT_THUMB.get(r["category"], _CAT_THUMB["watch"]))
+
     # Final cross-source sort + trim. Cheap: at most 2 × limit entries.
     rooms.sort(key=lambda r: r["audience"], reverse=True)
     return {"rooms": rooms[:limit]}

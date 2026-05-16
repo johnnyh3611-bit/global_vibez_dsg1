@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import {
   Globe, Heart, LogOut, Settings, Sparkles, Crown, MessageCircle, Gamepad2,
@@ -70,6 +70,7 @@ const ROOM_CATEGORY: Record<string, CategoryId> = {
   // Watch & Stream
   myvibez: 'watch',
   free_tv: 'watch',
+  cinema_room: 'watch',
   vibez_tv: 'watch',
   tv_totem_pole: 'watch',
   streamer_overlay: 'watch',
@@ -229,6 +230,11 @@ function LivePulsePill({
 // Surfaces the top 3 individual rooms by live audience under the pulse
 // pill. One tap drops you in — no lobby browsing. Auto-hides when
 // no rooms are live (same UX rule as the pulse pill).
+//
+// Each card carries a 30s preview hover-card (Netflix/Twitch pattern):
+// hover ≥600ms on desktop, or long-press on touch — the preview rises
+// with bigger thumbnail, full title, audience pulse, and Join CTA. The
+// preview disappears the moment the cursor leaves or finger releases.
 
 type HotRoom = {
   id: string;
@@ -237,11 +243,14 @@ type HotRoom = {
   audience: number;
   path: string;
   network: string | null;
+  preview_image_url?: string;
 };
 
 function HotRoomsCarousel() {
   const navigate = useNavigate();
   const [rooms, setRooms] = useState<HotRoom[]>([]);
+  const [previewId, setPreviewId] = useState<string | null>(null);
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -260,6 +269,17 @@ function HotRoomsCarousel() {
     return () => { cancelled = true; clearInterval(id); };
   }, []);
 
+  function showPreview(id: string, delayMs = 600) {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    hoverTimer.current = setTimeout(() => setPreviewId(id), delayMs);
+  }
+
+  function hidePreview() {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    hoverTimer.current = null;
+    setPreviewId(null);
+  }
+
   if (rooms.length === 0) return null;
 
   return (
@@ -271,36 +291,107 @@ function HotRoomsCarousel() {
       </div>
       <div className="flex gap-3 overflow-x-auto pb-1 -mx-1 px-1">
         {rooms.map((r, idx) => (
-          <motion.button
+          <div
             key={r.id}
-            data-testid={`hot-room-${r.id}`}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: idx * 0.08, duration: 0.4 }}
-            onClick={() => navigate(r.path)}
-            className="group relative shrink-0 w-64 text-left rounded-xl bg-gradient-to-br from-[#1a1206] via-[#0f0a14] to-[#0a1410] ring-1 ring-amber-300/30 hover:ring-amber-300/70 px-4 py-3 transition-all shadow-[0_0_30px_-10px_rgba(251,191,36,0.35)]"
+            className="relative shrink-0 w-64"
+            onMouseEnter={() => showPreview(r.id)}
+            onMouseLeave={hidePreview}
+            onTouchStart={() => showPreview(r.id, 400)}
+            onTouchEnd={hidePreview}
+            onTouchCancel={hidePreview}
           >
-            <div className="absolute -inset-px rounded-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
-              style={{
-                background: 'linear-gradient(135deg, rgba(251,191,36,0.18), rgba(232,121,249,0.12))',
-              }}
-            />
-            <div className="relative flex items-center justify-between mb-1.5">
-              <span className="text-[10px] uppercase tracking-widest text-amber-200/80">
-                {r.network || r.category}
-              </span>
-              <span className="inline-flex items-center gap-1 text-[11px] text-emerald-300">
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400/70" />
-                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
+            <motion.button
+              data-testid={`hot-room-${r.id}`}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: idx * 0.08, duration: 0.4 }}
+              onClick={() => navigate(r.path)}
+              className="group relative w-full text-left rounded-xl bg-gradient-to-br from-[#1a1206] via-[#0f0a14] to-[#0a1410] ring-1 ring-amber-300/30 hover:ring-amber-300/70 px-4 py-3 transition-all shadow-[0_0_30px_-10px_rgba(251,191,36,0.35)]"
+            >
+              <div className="absolute -inset-px rounded-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(251,191,36,0.18), rgba(232,121,249,0.12))',
+                }}
+              />
+              <div className="relative flex items-center justify-between mb-1.5">
+                <span className="text-[10px] uppercase tracking-widest text-amber-200/80">
+                  {r.network || r.category}
                 </span>
-                <span className="font-semibold">{r.audience}</span>
-                watching
-              </span>
-            </div>
-            <div className="relative text-sm font-medium text-white truncate">{r.name}</div>
-            <div className="relative text-xs text-white/50 mt-1 truncate">Tap to join →</div>
-          </motion.button>
+                <span className="inline-flex items-center gap-1 text-[11px] text-emerald-300">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400/70" />
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
+                  </span>
+                  <span className="font-semibold">{r.audience}</span>
+                  watching
+                </span>
+              </div>
+              <div className="relative text-sm font-medium text-white truncate">{r.name}</div>
+              <div className="relative text-xs text-white/50 mt-1 truncate">Tap to join →</div>
+            </motion.button>
+
+            <AnimatePresence>
+              {previewId === r.id && (
+                <motion.div
+                  data-testid={`hot-room-preview-${r.id}`}
+                  initial={{ opacity: 0, y: 12, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                  transition={{ duration: 0.18 }}
+                  className="absolute top-full left-0 right-0 mt-2 z-50 rounded-xl overflow-hidden bg-[#0a0a14] ring-1 ring-amber-300/50 shadow-[0_24px_60px_-15px_rgba(0,0,0,0.7),0_0_45px_-10px_rgba(251,191,36,0.45)]"
+                >
+                  {/* Thumbnail strip */}
+                  <div className="relative aspect-video w-full overflow-hidden">
+                    <img
+                      src={r.preview_image_url || '/placeholder-cinema.jpg'}
+                      alt=""
+                      className="absolute inset-0 w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+                    {/* Live badge */}
+                    <div className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full bg-red-500/90 text-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest">
+                      <span className="relative flex h-1.5 w-1.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white/80" />
+                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white" />
+                      </span>
+                      Live
+                    </div>
+                    {/* Animated gradient sweep to fake a "now playing" pulse */}
+                    <motion.div
+                      className="absolute inset-x-0 bottom-0 h-0.5"
+                      initial={{ scaleX: 0 }}
+                      animate={{ scaleX: 1 }}
+                      transition={{ duration: 30, ease: 'linear' }}
+                      style={{
+                        background: 'linear-gradient(90deg, #f0abfc, #fde047, #67e8f9)',
+                        transformOrigin: '0% 50%',
+                      }}
+                    />
+                  </div>
+                  {/* Meta */}
+                  <div className="p-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[10px] uppercase tracking-widest text-amber-200/80">
+                        {r.network || r.category}
+                      </span>
+                      <span className="text-[11px] text-emerald-300 inline-flex items-center gap-1">
+                        <span className="font-semibold">{r.audience}</span> watching
+                      </span>
+                    </div>
+                    <div className="text-sm font-medium text-white mb-2">{r.name}</div>
+                    <button
+                      data-testid={`hot-room-preview-join-${r.id}`}
+                      onClick={(e) => { e.stopPropagation(); navigate(r.path); }}
+                      className="w-full inline-flex items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-amber-300 via-amber-400 to-amber-500 text-black text-xs font-bold py-2 hover:scale-[1.02] active:scale-[0.98] transition-transform"
+                    >
+                      Join now
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         ))}
       </div>
     </div>
@@ -483,6 +574,17 @@ export default function Dashboard() {
       stats: { count: '4', label: 'Networks' }
     },
     {
+      id: 'cinema_room',
+      name: 'Cinema Room',
+      description: 'Curated public-domain classics · sync-watch with anyone',
+      icon: Film,
+      gradient: 'from-amber-400 via-rose-500 to-purple-700',
+      glow: 'rgba(251,191,36,0.5)',
+      image: 'https://images.unsplash.com/photo-1485095329183-d0797cdc5676?crop=entropy&cs=srgb&fm=jpg',
+      path: '/cinema-room',
+      stats: { count: 'CLASSIC', label: 'Sync-Watch' }
+    },
+    {
       id: 'dsg_music_group',
       name: 'DSG Music Group',
       description: '70/30 Revolution — beats, battles, collab matchmaker',
@@ -511,7 +613,7 @@ export default function Dashboard() {
       icon: Music,
       gradient: 'from-yellow-400 via-amber-500 to-orange-600',
       glow: 'rgba(251,191,36,0.5)',
-      image: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?crop=entropy&cs=srgb&fm=jpg',
+      image: 'https://images.unsplash.com/photo-1571115764595-644a1f56a55c?crop=entropy&cs=srgb&fm=jpg',
       path: '/dsg/beat-vault',
       stats: { count: '70/30', label: 'Revolution' }
     },
@@ -658,7 +760,7 @@ export default function Dashboard() {
       icon: Headphones,
       gradient: 'from-fuchsia-500 via-pink-500 to-amber-300',
       glow: 'rgba(217,70,239,0.5)',
-      image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?crop=entropy&cs=srgb&fm=jpg',
+      image: 'https://images.unsplash.com/photo-1487215078519-e21cc028cb29?crop=entropy&cs=srgb&fm=jpg',
       path: '/music/sound-check',
       stats: { count: 'NEW', label: 'Music Arena' }
     },
@@ -669,7 +771,7 @@ export default function Dashboard() {
       icon: Mic2,
       gradient: 'from-cyan-400 via-fuchsia-500 to-amber-300',
       glow: 'rgba(34,211,238,0.5)',
-      image: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?crop=entropy&cs=srgb&fm=jpg',
+      image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?crop=entropy&cs=srgb&fm=jpg',
       path: '/music/collab-matchmaker',
       stats: { count: '98%', label: 'Synergy' }
     },
@@ -691,7 +793,7 @@ export default function Dashboard() {
       icon: Tv,
       gradient: 'from-purple-500 via-pink-500 to-amber-300',
       glow: 'rgba(168,85,247,0.5)',
-      image: 'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?crop=entropy&cs=srgb&fm=jpg',
+      image: 'https://images.unsplash.com/photo-1497032628192-86f99bcd76bc?crop=entropy&cs=srgb&fm=jpg',
       path: '/tv/totem-pole',
       stats: { count: 'NEW', label: 'PG-13 / 18+' }
     },
@@ -758,7 +860,7 @@ export default function Dashboard() {
       icon: Clapperboard,
       gradient: 'from-indigo-500 via-purple-600 to-rose-500',
       glow: 'rgba(99,102,241,0.5)',
-      image: 'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?crop=entropy&cs=srgb&fm=jpg',
+      image: 'https://images.unsplash.com/photo-1559584098-1280cf2fe2c9?crop=entropy&cs=srgb&fm=jpg',
       path: '/dashboard/streamer/broadcast-director',
       stats: { count: 'LIVE', label: 'Programmer' }
     },

@@ -1,5 +1,17 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-05-16 (cont. #6) — CINEMA ROOM TILE + UNIQUE IMAGES + HOT ROOMS HOVER-PREVIEW · 420/420 regression green.**
+>
+> ### Founder asks addressed:
+> 1. **Cinema Room visibility** — `/cinema-room` route existed but had no dashboard tile. Added a new tile in the Watch category with a unique cinema-curtain Unsplash photo, gradient amber→rose→purple. Routed via the existing `cinema_room: 'watch'` entry in `ROOM_CATEGORY`.
+> 2. **No duplicate tile images** — audited every `image:` URL on `DashboardNew.tsx`. Found three duplicates: `photo-1511671782779` (3×), `photo-1574375927938` (2×), `photo-1493225457124` (2×). Swapped to unique stock photos for `beat_vault`, `collab_matchmaker`, `sound_check`, `tv_totem_pole`, `broadcast_director`. Final count: **zero duplicates** (verified by `grep | sort | uniq -c`).
+> 3. **30-second hover-preview on Hot Rooms** — backend `hot-rooms` endpoint now emits a `preview_image_url` per room (category-mapped thumbnails). Frontend wraps each card in a hover-state container; 600ms desktop hover (400ms touch long-press) raises a popover with cinematic thumbnail, animated **LIVE** badge, audience count, and a "Join now" CTA. The thin gradient sweep along the thumbnail bottom auto-animates over 30s, giving the Netflix/Twitch hover feel without needing real video previews until Cloudflare Stream lands.
+>
+> ### Regression:
+> 3 new shield tests pin (a) Cinema Room tile + Watch classification, (b) **zero duplicate Unsplash photo IDs** (regex audit fails the build if any future tile re-uses an image), (c) Hot Rooms preview test IDs + backend `preview_image_url` contract. Shield went 417 → **420 passed, 0 failed**.
+
+
+
 > **2026-05-16 (cont. #5) — HOT ROOMS CAROUSEL + STREAM SIGNAL FOLD-IN · 417/417 regression green.**
 >
 > ### What shipped:
