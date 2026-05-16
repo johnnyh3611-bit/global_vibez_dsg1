@@ -374,19 +374,48 @@ export function PracticeChess({ game, onMove, makingMove, aiThinking }: { game?:
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="rounded-3xl overflow-hidden p-2"
+            className="relative rounded-3xl overflow-hidden p-2"
             style={{
-              /* Cyber-Casino chess room (Revolutionary Games Blueprint
-                 v1, May 2026). Translucent floating board with cyan
-                 glow + dark glass squares. */
+              /* Classic chess room — upgraded 2026-05-16. Royal navy +
+                 warm gold accent. Two-stop gradient frame + soft inner
+                 mahogany ring. */
               background:
-                'linear-gradient(135deg, rgba(40, 50, 90, 0.85) 0%, rgba(15, 20, 40, 0.95) 100%)',
+                'linear-gradient(135deg, #1a2447 0%, #0a0f24 55%, #1a2447 100%)',
               boxShadow:
-                '0 0 60px rgba(34, 211, 238, 0.25), inset 0 0 24px rgba(34, 211, 238, 0.15)',
-              border: '1px solid rgba(34, 211, 238, 0.3)',
-              padding: '18px',
+                '0 0 70px rgba(96, 165, 250, 0.28), 0 0 30px rgba(251, 191, 36, 0.18), inset 0 0 30px rgba(0,0,0,0.55)',
+              border: '2px solid rgba(251, 191, 36, 0.32)',
+              padding: '20px',
             }}
           >
+            {/* Ambient starfield — slow drift, low opacity, low cost */}
+            <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl">
+              {[...Array(28)].map((_, i) => (
+                <motion.span
+                  key={`star-${i}`}
+                  className="absolute rounded-full bg-amber-200/60"
+                  style={{
+                    width: i % 5 === 0 ? 2 : 1,
+                    height: i % 5 === 0 ? 2 : 1,
+                    left: `${(i * 17) % 100}%`,
+                    top: `${(i * 29) % 100}%`,
+                  }}
+                  animate={{ opacity: [0.15, 0.6, 0.15] }}
+                  transition={{ duration: 3 + (i % 4), repeat: Infinity, ease: 'easeInOut', delay: (i % 7) * 0.4 }}
+                />
+              ))}
+            </div>
+
+            {/* Reflective "marble floor" gradient under the board so the
+                pieces feel like they're standing on something solid. */}
+            <div
+              className="absolute left-2 right-2 bottom-2 h-1/3 pointer-events-none opacity-50 rounded-2xl"
+              style={{
+                background:
+                  'linear-gradient(180deg, transparent 0%, rgba(251, 191, 36, 0.08) 60%, rgba(96, 165, 250, 0.10) 100%)',
+                filter: 'blur(8px)',
+              }}
+            />
+
             {/* react-chessboard v5 tightened some style props to a Pick<>; cast to any during UI ship. */}
             {(() => {
               const ChessboardAny = Chessboard as any;
@@ -431,16 +460,24 @@ export function PracticeChess({ game, onMove, makingMove, aiThinking }: { game?:
                   onPieceDrop={handleDrop}
                   boardWidth={Math.min(600, window.innerWidth - 100)}
                   customBoardStyle={{
-                    borderRadius: '8px',
-                    boxShadow: '0 0 32px rgba(34, 211, 238, 0.25), inset 0 0 16px rgba(0,0,0,0.6)',
+                    borderRadius: '10px',
+                    boxShadow:
+                      '0 12px 36px rgba(0,0,0,0.7), 0 0 32px rgba(251, 191, 36, 0.22), inset 0 0 14px rgba(0,0,0,0.55)',
                   }}
                   customDarkSquareStyle={{
-                    background: 'linear-gradient(135deg, rgba(20, 30, 60, 0.92) 0%, rgba(40, 50, 90, 0.82) 100%)',
-                    boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.5), inset 0 -1px 1px rgba(255,255,255,0.05)',
+                    /* Deep mahogany — keeps high contrast against the
+                       light cream squares while reading as "royal" not
+                       "plastic chess set". */
+                    background:
+                      'linear-gradient(135deg, #4a2b1a 0%, #2c1810 55%, #4a2b1a 100%)',
+                    boxShadow:
+                      'inset 0 1px 2px rgba(0,0,0,0.6), inset 0 -1px 1px rgba(251, 191, 36, 0.12)',
                   }}
                   customLightSquareStyle={{
-                    background: 'linear-gradient(135deg, rgba(220, 228, 255, 0.18) 0%, rgba(180, 200, 240, 0.10) 100%)',
-                    boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.18), inset 0 -1px 1px rgba(0,0,0,0.3)',
+                    background:
+                      'linear-gradient(135deg, #f5e9d4 0%, #d9c39a 55%, #f5e9d4 100%)',
+                    boxShadow:
+                      'inset 0 1px 2px rgba(255,255,255,0.5), inset 0 -1px 1px rgba(0,0,0,0.25)',
                   }}
                   customSquareStyles={getCustomSquareStyles()}
                   customPieces={customPieces}

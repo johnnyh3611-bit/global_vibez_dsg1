@@ -1,5 +1,28 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-05-16 (cont. #8) — CHESS HALL FIX + VISUAL UPGRADE · 427/427 regression green. CONFIRMED READY FOR BETA REDEPLOY.**
+>
+> ### Bug fix:
+> Founder reported Chess Hall → Classic and Neon Arena both broken (couldn't make moves). Root cause: `chess` was wrongly listed in `PracticeGamePlay.SUPPORTED_CLIENT_GAMES`, which created a stub game with no `current_turn` field. `PracticeChess.isDraggable` requires `current_turn === 'player'` → `undefined === 'player'` → false → board frozen. Even if drag worked, `makeMove` short-circuited in client-side mode so the AI never replied.
+>
+> **Fix:**
+> 1. Removed `'chess'` from `SUPPORTED_CLIENT_GAMES`.
+> 2. Added auto-bootstrap in `fetchGame`: when the URL param is a game **type** (not a `practice_xxx` UUID), POST `/api/practice/start` to spawn a real backend game, then track its id in `activeGameId` for all subsequent `/move` calls.
+> 3. Added `credentials: 'include'` to `/start`, `/game/:id`, and `/move` fetches so the auth cookie travels.
+>
+> ### Visual upgrade:
+> Classic board re-skinned to a royal-navy frame + mahogany dark squares (`#4a2b1a → #2c1810`) + cream light squares (`#f5e9d4 → #d9c39a`) + amber-gold accent ring. Added a soft ambient starfield (28 twinkling dots) and a reflective marble-floor gradient under the board so pieces feel like they're standing on something solid. Neon Arena was already polished and untouched.
+>
+> ### Verification (Playwright on preview):
+> - `/practice/play/chess` loads, board renders all 32 pieces.
+> - Drag e2 → e4 succeeded (last-move highlight visible on screenshot, "Your Turn" banner intact).
+> - Tab switch Classic ↔ Neon Arena works, Neon Arena's `chess-battle-mode-wrapper` mounts with the "White Attacks · Turn 1" banner reflecting the e2-e4 move that just happened.
+>
+> ### Regression:
+> 4 new shield tests pin (a) chess is gone from SUPPORTED_CLIENT_GAMES, (b) bootstrap path + `activeGameId` tracking, (c) Classic warm palette, (d) 3+ `credentials: 'include'` in practice fetches. Shield went 423 → **427 passed, 0 failed**.
+
+
+
 > **2026-05-16 (cont. #7) — CLOUDFLARE STREAM SWAP-IN SCAFFOLDED · 423/423 regression green. READY FOR BETA REDEPLOY.**
 >
 > ### What shipped:

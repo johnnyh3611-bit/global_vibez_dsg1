@@ -27,6 +27,10 @@ export default function PracticeGamePlay() {
   const [particleTrigger, setParticleTrigger] = useState(0);
   const [particlePosition, setParticlePosition] = useState({ x: 0, y: 0 });
   const [loadError, setLoadError] = useState<string | null>(null);
+  // When the user lands on `/practice/play/chess`, `gameId` is the game
+  // **type**, not a real practice game UUID. We bootstrap a real game on
+  // mount and stash its id here for all subsequent move calls.
+  const [activeGameId, setActiveGameId] = useState<string | null>(null);
 
   // Every game component in the gameComponents map (below, ~line 174+) is
   // self-contained — it receives game.game_state and an onMove callback and
@@ -40,7 +44,13 @@ export default function PracticeGamePlay() {
   // SUPPORTED_CLIENT_GAMES, the page skips the backend fetch entirely.
   const SUPPORTED_CLIENT_GAMES = new Set<string>([
     // Card Games
-    'tictactoe', 'connect4', 'uno', 'chess', 'checkers', 'reversi', 'go_fish',
+    // NOTE: `chess` removed 2026-05-16 — it was wrongly listed here,
+    // which created a stub game with no `current_turn` field. That
+    // froze the board (PracticeChess `isDraggable` requires
+    // `current_turn === 'player'`). Chess now bootstraps a real
+    // backend practice game via POST /practice/start so the AI can
+    // reply after each player move.
+    'tictactoe', 'connect4', 'uno', 'checkers', 'reversi', 'go_fish',
     'crazy_eights', 'hearts', 'poker', 'spades', 'rummy', 'trivia', 'truthordare',
     'truth_or_dare', 'two_truths_lie', 'war', 'solitaire', 'gin_rummy', 'ludo',
     // Arcade
@@ -86,7 +96,32 @@ export default function PracticeGamePlay() {
 
   const fetchGame = async () => {
     try {
+      // If the URL param is a game **type** (not a real `practice_xxx`
+      // UUID), bootstrap a fresh practice game via POST /practice/start
+      // first. This unblocks Chess / Checkers / etc that were stuck
+      // because there was no real game record to fetch from.
+      const looksLikeGameId = typeof gameId === 'string' && gameId.startsWith('practice_');
+      if (!looksLikeGameId) {
+        const startRes = await fetch(`${API}/api/practice/start`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ game_type: gameId, difficulty: 'medium' }),
+        });
+        if (!startRes.ok) {
+          throw new Error('start_failed');
+        }
+        const started = await startRes.json();
+        setActiveGameId(started.game_id);
+        // The POST response already has every field the renderer needs.
+        setGame(started);
+        setLoading(false);
+        return;
+      }
+
+      // Existing fetch path for resume-by-id (rare).
       const response = await fetch(`${API}/api/practice/game/${gameId}`, {
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -94,9 +129,10 @@ export default function PracticeGamePlay() {
       }
 
       const data = await response.json();
+      setActiveGameId(data.game_id);
       setGame(data);
       setLoading(false);
-      
+
       // Check if game just completed
       if (data.status === 'completed' && !showVictory) {
         setTimeout(() => setShowVictory(true), 500);
@@ -121,10 +157,11 @@ export default function PracticeGamePlay() {
     setAiThinking(true);
 
     try {
-      const response = await fetch(`${API}/api/practice/game/${gameId}/move`, {
+      const response = await fetch(`${API}/api/practice/game/${activeGameId || gameId}/move`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        
+
         body: JSON.stringify({ move_data: moveData })
       });
 

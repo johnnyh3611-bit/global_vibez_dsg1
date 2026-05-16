@@ -9097,3 +9097,69 @@ def test_hot_rooms_preview_renders_video_when_url_present() -> None:
     assert "<video" in src and "autoPlay" in src and "muted" in src
     assert "playsInline" in src and "loop" in src
     assert "hot-room-preview-video-" in src
+
+# ────────────────────────────────────────────── Chess Hall fix ──
+# [2026-05-16] Founder reported Chess Hall → Classic / Neon Arena both
+# broken (couldn't make moves). Root cause: `chess` was wrongly listed
+# in PracticeGamePlay's `SUPPORTED_CLIENT_GAMES`, which created a stub
+# game without `current_turn` — that froze `isDraggable` in PracticeChess
+# at false. Fix: drop chess from the client-side list AND bootstrap a
+# real practice game via POST /api/practice/start when the URL param
+# is a game type rather than a `practice_xxx` UUID.
+
+def test_chess_removed_from_client_side_list() -> None:
+    """`PracticeGamePlay.SUPPORTED_CLIENT_GAMES` must not contain 'chess'.
+    Chess REQUIRES a real backend game so the AI can reply after every
+    player move; otherwise the board freezes after move 1."""
+    from pathlib import Path
+    src = Path("/app/frontend/src/pages/PracticeGamePlay.tsx").read_text()
+    # The set is multi-line — assert chess is gone via a regex over the
+    # whole SUPPORTED_CLIENT_GAMES definition.
+    import re
+    m = re.search(r"const SUPPORTED_CLIENT_GAMES = new Set<string>\(\[(.*?)\]\);", src, re.DOTALL)
+    assert m, "SUPPORTED_CLIENT_GAMES set not found"
+    body = m.group(1)
+    assert "'chess'" not in body, (
+        "Chess must not be in SUPPORTED_CLIENT_GAMES — it needs the backend AI loop"
+    )
+
+
+def test_practice_game_bootstrap_on_mount() -> None:
+    """PracticeGamePlay must auto-POST to /api/practice/start when the
+    URL param is a game **type** (e.g. 'chess'), so the user can land
+    on /practice/play/chess and the game is created automatically."""
+    from pathlib import Path
+    src = Path("/app/frontend/src/pages/PracticeGamePlay.tsx").read_text()
+    assert "/api/practice/start" in src, (
+        "PracticeGamePlay must call POST /api/practice/start to bootstrap"
+    )
+    assert "activeGameId" in src, "Must track the bootstrapped game_id"
+    assert "looksLikeGameId" in src, "Must distinguish game-type URLs from real game_ids"
+
+
+def test_classic_chess_board_uses_warm_palette() -> None:
+    """The Classic chess board got a 2026-05-16 visual upgrade — royal
+    navy frame + mahogany dark squares + cream light squares. Pin the
+    palette so a refactor doesn't accidentally revert it."""
+    from pathlib import Path
+    src = Path("/app/frontend/src/components/practice_games/PracticeChess.tsx").read_text()
+    # Mahogany dark squares.
+    assert "#4a2b1a" in src and "#2c1810" in src, (
+        "Classic dark squares must use the upgraded mahogany palette"
+    )
+    # Cream light squares.
+    assert "#f5e9d4" in src and "#d9c39a" in src, (
+        "Classic light squares must use the upgraded cream palette"
+    )
+    # Ambient starfield + reflective floor were added.
+    assert "star-${i}" in src or "ambient starfield" in src.lower()
+
+
+def test_practice_game_uses_credentials_include() -> None:
+    """All practice-game fetches must send the auth cookie, otherwise
+    /start + /move 401s out and the chess room dies silently."""
+    from pathlib import Path
+    src = Path("/app/frontend/src/pages/PracticeGamePlay.tsx").read_text()
+    target = "credentials: 'include'"
+    count = src.count(target)
+    assert count >= 3, f"Expected ≥3 credentials:include in practice fetches, got {count}"
