@@ -614,31 +614,33 @@ export default function VibeDice654Premium() {
               data-testid="sidebets-popup-backdrop"
             />
             <motion.div
-              initial={{ opacity: 0, y: 20, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.95 }}
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
               transition={{ duration: 0.2 }}
-              className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[min(92vw,520px)] max-h-[70vh] overflow-y-auto z-50 rounded-2xl border border-fuchsia-400/40 bg-black/95 shadow-2xl"
+              className="fixed inset-0 sm:inset-4 md:inset-8 z-50 overflow-y-auto rounded-none sm:rounded-3xl border border-fuchsia-400/40 bg-gradient-to-br from-[#0c0716] via-[#120a23] to-[#070514] shadow-2xl"
               data-testid="sidebets-popup"
             >
               <button
                 type="button"
                 data-testid="sidebets-popup-close"
                 onClick={() => setShowSideBetsPanel(false)}
-                className="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-black/70 border border-fuchsia-400/40 text-fuchsia-200 hover:bg-fuchsia-500/30 flex items-center justify-center text-sm font-bold"
+                className="sticky top-3 right-3 z-20 ml-auto mr-3 mt-3 w-10 h-10 rounded-full bg-black/70 border border-fuchsia-400/40 text-fuchsia-200 hover:bg-fuchsia-500/30 flex items-center justify-center text-xl font-bold"
                 aria-label="Close side bets"
               >
                 ×
               </button>
-              <SideBetsPanel
-                showPanel={true}
-                setShowPanel={() => setShowSideBetsPanel(false)}
-                sideBets={sideBets}
-                sideBetInsurance={sideBetInsurance}
-                predictedPoint={predictedPoint}
-                gamePhase={gamePhase}
-                handleSideBet={handleSideBet}
-              />
+              <div className="px-3 sm:px-6 pb-6 -mt-10">
+                <SideBetsPanel
+                  showPanel={true}
+                  setShowPanel={() => setShowSideBetsPanel(false)}
+                  sideBets={sideBets}
+                  sideBetInsurance={sideBetInsurance}
+                  predictedPoint={predictedPoint}
+                  gamePhase={gamePhase}
+                  handleSideBet={handleSideBet}
+                />
+              </div>
             </motion.div>
           </>
         )}

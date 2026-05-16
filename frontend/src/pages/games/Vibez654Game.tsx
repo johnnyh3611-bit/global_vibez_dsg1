@@ -474,7 +474,7 @@ export default function Vibez654Game() {
           </div>
         )}
 
-        {/* SIDE BETS DRAWER */}
+        {/* SIDE BETS DRAWER — pops out fullscreen so every wager is visible. */}
         <Drawer
           testId="v654-side-bets"
           icon={<Coins className="w-4 h-4" />}
@@ -487,6 +487,7 @@ export default function Vibez654Game() {
           totalValue={sideBetsLocked ? null : sideBetsTotal}
           open={sideBetsOpen}
           setOpen={setSideBetsOpen}
+          popup
         >
           {sideBetsLocked ? (
             <div className="space-y-2" data-testid="v654-side-bets-locked">
@@ -682,6 +683,7 @@ function Drawer({
   open,
   setOpen,
   children,
+  popup = false,
 }: {
   testId: string;
   icon: React.ReactNode;
@@ -691,6 +693,7 @@ function Drawer({
   open: boolean;
   setOpen: (v: boolean) => void;
   children: React.ReactNode;
+  popup?: boolean;
 }) {
   return (
     <div
@@ -722,7 +725,43 @@ function Drawer({
           />
         </span>
       </button>
-      {open && (
+      {/* When `popup` is on (side bets), expand into a full-screen
+          overlay so the player can see every wager option without the
+          dice table crowding the layout. Backdrop click closes. */}
+      {open && popup && (
+        <>
+          <div
+            onClick={() => setOpen(false)}
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40"
+            data-testid={`${testId}-popup-backdrop`}
+          />
+          <div
+            data-testid={`${testId}-popup`}
+            className="fixed inset-0 sm:inset-4 md:inset-8 z-50 overflow-y-auto rounded-none sm:rounded-3xl border border-cyan-300/40 bg-gradient-to-br from-[#0a1428] via-[#0f1f3d] to-[#040810] shadow-2xl"
+          >
+            <div className="sticky top-0 z-10 flex items-center justify-between px-4 sm:px-6 py-3 bg-gradient-to-b from-black/80 to-transparent">
+              <span className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-cyan-200">
+                {icon}
+                {label}
+              </span>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                aria-label="Close"
+                data-testid={`${testId}-popup-close`}
+                className="w-9 h-9 rounded-full bg-black/70 border border-cyan-300/40 text-cyan-100 hover:bg-cyan-500/30 flex items-center justify-center text-xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+            <div className="px-3 sm:px-6 pb-8" data-testid={`${testId}-content`}>
+              {children}
+            </div>
+          </div>
+        </>
+      )}
+      {/* Default inline expansion (recent rolls, etc.). */}
+      {open && !popup && (
         <div
           data-testid={`${testId}-content`}
           className="px-4 pb-4 pt-1 border-t border-white/5"

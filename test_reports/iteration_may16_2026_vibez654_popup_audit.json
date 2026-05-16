@@ -1,0 +1,50 @@
+{
+  "summary": "Full casino-game regression sweep with focus on side-bets full-screen popup behavior across Vibez 654 (original) and Vibe Dice 654 Premium. Premium 654 popup works perfectly (1856x1016 on desktop, close button removes it). Vibez 654 popup is BROKEN — renders as 670x2px instead of full-screen, AND close button does not close it. All other casino games (Chuck-A-Luck, European Roulette, Cyber Casino Roulette, Hazard, UNO AAA, Tournament Lobby) loaded cleanly with zero console errors.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Vibez654Game.tsx Drawer (side-bets popup)",
+        "issue": "Popup with classes 'fixed inset-0 sm:inset-4 md:inset-8 z-50' renders at only 670x2 px on desktop and 341x44 on mobile (NOT full-screen). Root cause: parent drawer container at line 701 has 'backdrop-blur-md' which creates a CSS containing block (filter-property creates a new containing block for fixed-position descendants per CSS Containment spec). This pins the popup's 'fixed' positioning to the drawer's bounds instead of the viewport. The popup elements ARE in DOM and is_visible returns True, but visually they're a 2px-tall slit underneath the trigger button.",
+        "selector": "[data-testid='v654-side-bets-popup']",
+        "priority": "HIGH"
+      },
+      {
+        "component": "Vibez654Game.tsx Drawer close button",
+        "issue": "Clicking [data-testid='v654-side-bets-popup-close'] does NOT close the popup — element remains in DOM and visible. Likely related to the same containing-block bug: the sticky close header is now inside a tiny 2px container, so the actual click target the user 'sees' isn't where Playwright force-clicks. Even with force=True the popup persists, suggesting the close button itself may be outside its parent's visible bounds (sticky top-0 inside a 2px container). NEEDS FIX after the inset-0 issue is resolved.",
+        "selector": "[data-testid='v654-side-bets-popup-close']",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/screenshots/vibez654_popup_real.png (shows broken slit popup)",
+    "/app/test_reports/screenshots/premium654_popup.png (full-screen popup — working)",
+    "/app/test_reports/screenshots/tournament_lobby.png",
+    "/app/test_reports/screenshots/ChuckALuck.png",
+    "/app/test_reports/screenshots/EuropeanRoulette.png",
+    "/app/test_reports/screenshots/CyberCasinoRoulette.png",
+    "/app/test_reports/screenshots/Hazard.png",
+    "/app/test_reports/screenshots/Uno.png"
+  ],
+  "action_items": [
+    "FIX Vibez654Game.tsx Drawer popup: render the popup overlay outside the drawer's div using ReactDOM.createPortal(document.body), OR remove 'backdrop-blur-md' from the drawer's outer container (line 701). The portal approach is recommended because Premium 654 already works this way (popup is mounted directly under <main>, not inside any backdrop-filter parent).",
+    "VERIFY close button behavior after the containing-block fix — should auto-resolve once the popup escapes the parent.",
+    "OPTIONAL: also strip 'overflow-hidden' from the drawer parent for safety, though the real culprit is backdrop-blur creating the containing block."
+  ],
+  "critical_code_review_comments": [
+    "Vibez654Game.tsx line 701: `backdrop-blur-md` on the drawer wrapper is the smoking gun. ANY child with `position: fixed` will be contained by this parent. This is a well-known CSS gotcha (filter, transform, will-change, backdrop-filter all create containing blocks per CSS Transforms spec).",
+    "Premium 654 sidebets popup is rendered at the page root (under <main>, sibling to the betting UI), which is why it works. Vibez 654 should mirror that pattern via Portal.",
+    "Test ID naming consistency: Vibez 654 uses 'v654-side-bets-*' (kebab) while Premium uses 'sidebets-*'. Consider unifying for easier QA scripts."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (not tested)", "frontend": "85% — 1 of 2 popup variants broken, 5/5 casino games load"},
+  "test_credentials": "betatester1@globalvibez.com / BetaTester2026! (from /app/memory/test_credentials.md — note the demo@globalvibez.com creds the request mentioned do NOT exist; the seeded beta accounts are the source of truth)",
+  "seed_data_creation": "None — used existing seeded beta tester account",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Premium 654 (/dice) popup is the reference implementation — works correctly. Vibez 654 (/vibez-654) popup needs the same portal pattern. To reproduce: log in, go to /vibez-654, click [data-testid='v654-side-bets-trigger'], inspect [data-testid='v654-side-bets-popup'] bounding box — it should be ~1856x1016 on desktop, not 670x2. Mobile (375x667) — on /vibez-654 a 'ROTATE FOR LANDSCAPE' overlay appears so mobile testing of the popup itself is gated by an extra rotate-prompt; Premium 654 doesn't have that rotate gate.",
+  "rca_of_the_issue": "CSS Containing Block bug. The Drawer wrapper <div className='rounded-2xl bg-black/60 border border-white/10 mt-4 backdrop-blur-md overflow-hidden'> at Vibez654Game.tsx:701 has backdrop-filter (via backdrop-blur-md). Per the CSS Filter Effects spec, any element with a non-none filter or backdrop-filter creates a containing block for ALL descendants, including those with position:fixed. This causes the popup's 'fixed inset-0' to resolve relative to the drawer's box (~670x40 px when collapsed) instead of the viewport. Confirmed by bounding box 670x2 matching trigger width. Mitigation: ReactDOM.createPortal the popup overlay to document.body, OR move backdrop-blur to an inner element that the popup is NOT a descendant of."
+}
