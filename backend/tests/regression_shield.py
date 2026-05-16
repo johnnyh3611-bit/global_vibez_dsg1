@@ -9274,6 +9274,29 @@ def test_landing_tour_has_two_new_commercial_clips() -> None:
     assert "Commercial One" in src and "Commercial Two" in src
 
 
+def test_landing_tour_includes_dating_segment() -> None:
+    """Founder ask 2026-05-16: dating was missing from the tour. The
+    narration script + on-screen captions must both cover the dating
+    surfaces (Vigilant Matchmaker, Gamer Dating, Blind Auction, Voice
+    Mirror, Memory Bank, Cinema Dates, Just For The Night)."""
+    from pathlib import Path
+    script = Path("/app/backend/scripts/generate_landing_tour_narration.py").read_text()
+    captions = Path("/app/frontend/src/components/landing/LandingTourVideo.tsx").read_text()
+    for needle in (
+        "Vigilant Matchmaker",
+        "Gamer Dating",
+        "Blind Auction",
+        "Voice Mirror",
+        "Memory Bank",
+        "Cinema Dates",
+        "Just For The Night",
+    ):
+        assert needle in script, f"Dating narration missing '{needle}'"
+        assert needle in captions, f"Dating caption missing '{needle}'"
+    # Dating CLIP_TAGS entry must exist so the carousel labels the surface.
+    assert "Find your match" in captions
+
+
 def test_landing_tour_narration_script_has_both_commercials_and_nova_voice() -> None:
     from pathlib import Path
     src = Path("/app/backend/scripts/generate_landing_tour_narration.py").read_text()
@@ -9298,14 +9321,15 @@ def test_pricing_matrix_consistent_between_backend_and_landing_captions() -> Non
 
 
 def test_landing_tour_narration_mp3_grew_after_commercial_addition() -> None:
-    """The Nova MP3 should now be ≥4 MB (was ~3.5 MB). Sanity check that
-    the regen actually wrote bigger audio."""
+    """The Nova MP3 should now be ≥5 MB (was ~4.85 MB after the May-16
+    commercials, then ~5.5 MB after the dating segment landed). Sanity
+    check that the regen actually wrote bigger audio."""
     from pathlib import Path
     p = Path("/app/frontend/public/landing-tour-narration.mp3")
     assert p.exists(), "landing-tour-narration.mp3 missing"
     size_mb = p.stat().st_size / (1024 * 1024)
-    assert size_mb >= 4.0, (
-        f"Narration MP3 is {size_mb:.2f} MB — expected ≥4 MB after the May-16 commercial append"
+    assert size_mb >= 5.0, (
+        f"Narration MP3 is {size_mb:.2f} MB — expected ≥5 MB after the dating segment was added"
     )
 
 

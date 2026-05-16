@@ -48,9 +48,13 @@ const CLIPS: string[] = [
   "https://customer-assets.emergentagent.com/job_social-connect-953/artifacts/p3dccmdd_Okay_make_me_one_more_talk_ab.mp4",
   // 8 — 2026-05-13 founder-added closing wow clip
   "https://customer-assets.emergentagent.com/job_social-connect-953/artifacts/fdv0cph9_bmp_.mp4",
-  // 9 — 2026-05-16 founder-added commercial clip ("generated_video_content"), pairs with Commercial 1 voiceover
+  // 9 — 2026-05-16 dating segment B-roll (reuses the cinematic clip-5
+  // asset; we don't have a dedicated dating-only MP4 yet, but the founder
+  // can drop one in later — just swap the URL on this line).
+  "https://customer-assets.emergentagent.com/job_social-connect-953/artifacts/jhcw8qgh_Now_could_you_make_me_another.mp4",
+  // 10 — 2026-05-16 founder-added commercial clip ("generated_video_content"), pairs with Commercial 1 voiceover
   "https://customer-assets.emergentagent.com/job_social-connect-953/artifacts/ycmjkhqh__http_com_generated_video_content_.mp4",
-  // 10 — 2026-05-16 founder-added commercial clip ("mp4.mp4"), pairs with Commercial 2 voiceover
+  // 11 — 2026-05-16 founder-added commercial clip ("mp4.mp4"), pairs with Commercial 2 voiceover
   "https://customer-assets.emergentagent.com/job_social-connect-953/artifacts/a0uflv8a_mp4.mp4",
 ];
 
@@ -67,6 +71,7 @@ const CLIP_TAGS: Array<{ kicker: string; line: string; tint: string }> = [
   { kicker: "Welcome home", line: "Your Vibez universe awaits", tint: "from-violet-400 to-indigo-500" },
   { kicker: "Meet your host", line: "Founder talks the vision", tint: "from-orange-400 to-amber-500" },
   { kicker: "Sit at the table", line: "Apex · Genesis · Genius chairs", tint: "from-yellow-400 to-emerald-500" },
+  { kicker: "Find your match", line: "Vigilant Matchmaker · Cinema Dates · Memory Bank", tint: "from-rose-400 to-pink-500" },
   { kicker: "Commercial · 15s", line: "Coins that pay the rent", tint: "from-cyan-400 to-fuchsia-500" },
   { kicker: "Commercial · 15s", line: "From streamer to seat-holder", tint: "from-amber-400 to-rose-500" },
 ];
@@ -116,28 +121,34 @@ const FALLBACK_CAPTIONS: Cue[] = [
   { t:  54.0, text: "Go LIVE on DSG TV in 30 seconds. Keep 70% of every tip, gift, and Featured unlock." },
   { t:  64.0, text: "Media Master Hub: DSG TV · Vibe Radio · Music Group · AI Scout — your broadcast empire." },
   { t:  74.0, text: "Regional Hubs: Chicago · Atlanta · NYC · LA · Miami · Houston feed the House Revenue Pool." },
-  { t:  86.0, text: "VibeRidez · Hungry VIBEZ · Vibe Artisan · Vibe Venue — every hustle hat pays 70%." },
-  { t:  98.0, text: "Cinema creators? 80% on every ticket sold!" },
-  { t: 104.0, text: "AMBASSADOR Care Package — you're a Walking Advertisement. Founder's Circle status." },
-  { t: 114.0, text: "Scan a vendor with your Master QR · Restaurants → Hungry Vibez · Businesses → Yellow Pages · Sponsors → DSG TV." },
-  { t: 126.0, text: "Chair Dividends · Referral Bounties · Override Commissions · forever." },
-  { t: 138.0, text: "3-Month Diamond Challenge: 3 vendors · 1,000 $VIBEZ · 50k vote → Tier-2 Equity + Pit Boss rights!" },
-  { t: 152.0, text: "EQUITY MASTER v2 — 4-tier Value Matrix." },
-  { t: 158.0, text: "Floor: $500K gross → $18/chair · Genesis: $2.75M → $99/chair." },
-  { t: 168.0, text: "Diamond: $10M → $360/chair · Platinum: $50M → $1,800/chair!" },
-  { t: 178.0, text: "Block-Release Governance: 50K-unit blocks · >51% majority vote · 12-month lock-up · $20 buy-back floor." },
-  { t: 190.0, text: "3B VIBEZ burning to 1.5B · 50/50 Buyback + Liquidity · 30% of gross to chair holders · paid every 90 days." },
-  { t: 200.0, text: "5× mining multiplier for chair holders · $VIBEZ bridges to Solana 4:1 · 1 Coin = 10 Credits." },
-  { t: 208.0, text: "ONE MILLION CHAIRS. Globally. Forever. The first cohort to sit at the table OWNS the network." },
-  { t: 220.0, text: "Take your seat. RIGHT NOW." },
-  { t: 225.0, text: "GLOBAL VIBEZ DSG. Own the network. Feel the VIBEZ. LET'S GOOO!" },
+  // ── DATING segment (2026-05-16 founder ask — was missing from the tour) ──
+  { t:  86.0, text: "DATING · real connections, no swipe-fatigue. AI-powered Vigilant Matchmaker scores every spark." },
+  { t:  94.0, text: "Gamer Dating · match through Spades, UNO, Chess. Date by playing together." },
+  { t: 100.0, text: "Cultural Onboarding · Blind Auction · Voice Mirror · Memory Bank vault for shared video memories." },
+  { t: 108.0, text: "Cinema Dates · sync-watch a movie with your match. Just For The Night · verified, opt-in, age-gated." },
+  { t: 116.0, text: "VibeRidez gets you there safely · every driver background-checked. Your date, your pace, your earn." },
+  { t: 124.0, text: "VibeRidez · Hungry VIBEZ · Vibe Artisan · Vibe Venue — every hustle hat pays 70%." },
+  { t: 132.0, text: "Cinema creators? 80% on every ticket sold!" },
+  { t: 138.0, text: "AMBASSADOR Care Package — you're a Walking Advertisement. Founder's Circle status." },
+  { t: 148.0, text: "Scan a vendor with your Master QR · Restaurants → Hungry Vibez · Businesses → Yellow Pages · Sponsors → DSG TV." },
+  { t: 160.0, text: "Chair Dividends · Referral Bounties · Override Commissions · forever." },
+  { t: 172.0, text: "3-Month Diamond Challenge: 3 vendors · 1,000 $VIBEZ · 50k vote → Tier-2 Equity + Pit Boss rights!" },
+  { t: 186.0, text: "EQUITY MASTER v2 — 4-tier Value Matrix." },
+  { t: 192.0, text: "Floor: $500K gross → $18/chair · Genesis: $2.75M → $99/chair." },
+  { t: 202.0, text: "Diamond: $10M → $360/chair · Platinum: $50M → $1,800/chair!" },
+  { t: 212.0, text: "Block-Release Governance: 50K-unit blocks · >51% majority vote · 12-month lock-up · $20 buy-back floor." },
+  { t: 224.0, text: "3B VIBEZ burning to 1.5B · 50/50 Buyback + Liquidity · 30% of gross to chair holders · paid every 90 days." },
+  { t: 234.0, text: "5× mining multiplier for chair holders · $VIBEZ bridges to Solana 4:1 · 1 Coin = 10 Credits." },
+  { t: 242.0, text: "ONE MILLION CHAIRS. Globally. Forever. The first cohort to sit at the table OWNS the network." },
+  { t: 254.0, text: "Take your seat. RIGHT NOW." },
+  { t: 259.0, text: "GLOBAL VIBEZ DSG. Own the network. Feel the VIBEZ. LET'S GOOO!" },
   // ── Two new founder commercials (2026-05-16, dsg_commercial_scripts.pdf) ──
-  { t: 232.0, text: "— And one more thing. Two new spots. Fifteen seconds each. Listen close." },
-  { t: 238.0, text: "Commercial One · The Sovereign Casino — neon card rooms, Diamond-tier blackjack." },
-  { t: 246.0, text: "Every chip you win is REAL $VIBEZ. Coins that pay your rent. Take your seat." },
-  { t: 254.0, text: "Commercial Two · From streamer to seat-holder." },
-  { t: 258.0, text: "Go live · keep 70% of every tip · onboard 3 vendors → Tier-2 Equity FOREVER." },
-  { t: 266.0, text: "GLOBAL VIBEZ DSG — own the network." },
+  { t: 266.0, text: "— And one more thing. Two new spots. Fifteen seconds each. Listen close." },
+  { t: 272.0, text: "Commercial One · The Sovereign Casino — neon card rooms, Diamond-tier blackjack." },
+  { t: 280.0, text: "Every chip you win is REAL $VIBEZ. Coins that pay your rent. Take your seat." },
+  { t: 288.0, text: "Commercial Two · From streamer to seat-holder." },
+  { t: 292.0, text: "Go live · keep 70% of every tip · onboard 3 vendors → Tier-2 Equity FOREVER." },
+  { t: 300.0, text: "GLOBAL VIBEZ DSG — own the network." },
 ];
 
 interface Props {
