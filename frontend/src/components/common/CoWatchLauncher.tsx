@@ -188,11 +188,9 @@ export default function CoWatchLauncher() {
       text: `Hop in — we're co-watching ${ctx.label}.`,
       url: inviteUrl,
     };
-    // @ts-expect-error — navigator.share isn't in older TS lib targets
-    if (navigator.share) {
+    if (typeof navigator !== 'undefined' && (navigator as any).share) {
       try {
-        // @ts-expect-error
-        await navigator.share(shareData);
+        await (navigator as any).share(shareData);
       } catch {
         // user cancelled — nothing to do
       }

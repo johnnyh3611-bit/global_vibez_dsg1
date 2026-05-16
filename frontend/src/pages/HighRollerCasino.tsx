@@ -130,11 +130,9 @@ export default function HighRollerCasino() {
       text: `I just unlocked the High Roller VIP floor. Use my code ${referral.code} for a heads-up before you hit the ₵10k tables.`,
       url: link,
     };
-    // @ts-expect-error — navigator.share is not in older TS lib targets
-    if (navigator.share) {
+    if (typeof navigator !== 'undefined' && (navigator as any).share) {
       try {
-        // @ts-expect-error
-        await navigator.share(shareData);
+        await (navigator as any).share(shareData);
       } catch {
         // user cancelled — nothing to do
       }
