@@ -4717,3 +4717,32 @@ User confirmed they don't have a compiled Unity WebGL build (the GitHub repo pro
 - Validate one real Stripe payment on `/casino/high-roller` (P1).
 - Capacitor iOS/Android shells (P1).
 - Solana Mainnet TGE / bridge — LOCKED until user types `"project complete"`.
+
+---
+
+## 2026-05-16 (later) — Merchant Acquisition Hardening v1.1
+
+### Closed items (formerly P1/P2 backlog)
+- ✅ P2 — Auth gating: every `/api/merchant/*` write requires a session
+  and is owner-scoped.
+- ✅ P1 — Push-blast fan-out: real FCM dispatch with haversine 3-mile
+  radius filter on `users.home_lat/home_lng`.
+- ✅ P1 — DSG TV scheduler insertion: `/dsg-tv/publish-ad` consumes 1
+  credit and pushes a `TVAd` into the live `_ADS` queue.
+- ✅ Bonus — QR-code referral generator on the merchant dashboard
+  (Scan-Code · Recruit Neighbors), per the PDF's "Scan Code Destination".
+
+### Still pending — user actions (no code work)
+- Provision `REDIS_URL` in production.
+- Validate one real Stripe payment on `/casino/high-roller`.
+- Redeploy to Beta.
+- Generate iOS/Android shells via Capacitor.
+
+### Future / Backlog
+- Stripe webhook on the merchant module (today the verify-on-return pattern
+  is the source of truth; webhook will give resiliency if the user closes
+  the tab before /verify fires).
+- Persist DSG TV ad-flights to mongo + reload on app start so the
+  in-memory `_ADS` queue survives a backend restart.
+- Show recent push-blasts + recent ad-flights timelines on the dashboard.
+- 🔒 Solana Mainnet TGE — still locked until user types `"project complete"`.

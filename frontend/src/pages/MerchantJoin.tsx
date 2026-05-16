@@ -74,6 +74,7 @@ export default function MerchantJoin() {
     try {
       const res = await fetch(`${API}/api/merchant/onboard/checkout`, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           merchant_id: merchantId.trim(),
@@ -84,6 +85,11 @@ export default function MerchantJoin() {
       });
       const data = await res.json();
       if (!res.ok || !data.checkout_url) {
+        if (res.status === 401) {
+          toast.error("Please sign in to claim a merchant chair.");
+          navigate("/auth/sign-in?next=/merchant/join");
+          return;
+        }
         throw new Error(data.detail || "Checkout failed");
       }
       // Remember the id so the dashboard can pick up after the redirect.

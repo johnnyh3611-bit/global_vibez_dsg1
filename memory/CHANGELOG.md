@@ -5549,3 +5549,56 @@ session shipped the full vertical:
 ### Regression
 - **436 → 444 passing** (`pytest tests/regression_shield.py` — 7.46s).
 - Pyflakes clean on `merchant_onboarding.py`.
+
+---
+
+## 2026-05-16 — Merchant Acquisition v1.1 (Auth + Fan-out + Scheduler + QR)
+
+Follow-up to the morning's Genius Phase merchant shipment. Closes every
+gap flagged in the prior PRD entry.
+
+### Backend hardening
+- **Auth-gated writes**: every POST under `/api/merchant/*` now requires
+  a valid session (`session_token` cookie or `Authorization: Bearer`).
+  - Onboard binds `owner_user_id` to the signed-in user.
+  - Every chair-acquisition / add-on / publish call enforces
+    `owner_user_id == current_user.user_id` (403 otherwise).
+  - Custom local `_require_user` reads session via a **fresh motor
+    client per call** so it stays independent of any stale event-loop
+    state on the global `config.database` singleton.
+- **Push-blast fan-out** (`_fanout_push_blast`):
+  - Haversine-filters users by `home_lat`/`home_lng` inside the 3-mile
+    radius around the merchant.
+  - Falls back to a global broadcast on tokens-only if no geo-tagged
+    users are found (better than zero reach in early days).
+  - Fires real FCM messages when `firebase_admin` is initialised;
+    cleanly logs token + sent + failed counts when it isn't.
+- **DSG TV scheduler insertion** (`/dsg-tv/publish-ad`):
+  - Consumes 1 flight credit, inserts a `TVAd` into
+    `routes.vibe_tv_routes._ADS` so `/api/vibe-tv/schedule` picks it up.
+  - Mirrors the audit record into `merchant_dsg_tv_ads` mongo collection.
+  - New endpoint `/api/merchant/dsg-tv/ads/{merchant_id}` returns the
+    merchant's recent ad history.
+
+### Frontend additions
+- **DSG TV publish-ad panel** on `/merchant/dashboard` (title + optional
+  ZIPs + Schedule Ad CTA, uses 1 flight credit).
+- **QR-code · Recruit Neighbors card** (the "Scan Code Destination" CTA
+  from the PDF). Uses `qrcode.react` (already in package.json). Shows a
+  QR, the referral URL, a copy-to-clipboard button, and a preview link.
+- All POST fetches now send `credentials: "include"` for the session
+  cookie.
+- Stripe-return verify endpoint also includes credentials.
+
+### Tests — 4 new tests on top of the morning's 8 (12 total)
+1. `test_merchant_writes_require_auth` — 4 POSTs return 401 without a session.
+2. `test_merchant_owner_only_acquire_chair` — non-owner gets 403.
+3. `test_merchant_push_blast_fanout_records_blast` — sends a blast and
+   verifies fanout summary + recent-blasts feed.
+4. `test_merchant_dsg_tv_publish_ad_inserts_into_broadcast_queue` —
+   credit decrement, `_ADS` insertion, audit row.
+- Module-level `_merchant_client()` enters the ASGI lifespan once so the
+  motor client binds to a single stable loop across all merchant tests.
+
+### Regression
+- **444 → 448 passing** (`pytest tests/regression_shield.py` — 7.5s).

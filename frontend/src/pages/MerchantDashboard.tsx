@@ -16,6 +16,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
+import { QRCodeSVG } from "qrcode.react";
 import {
   Crown,
   Coins,
@@ -28,6 +29,10 @@ import {
   MapPin,
   Plus,
   Tv,
+  QrCode,
+  Megaphone,
+  Copy,
+  CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -75,6 +80,9 @@ export default function MerchantDashboard() {
   const [blastsToBuy, setBlastsToBuy] = useState(1);
   const [blastHeadline, setBlastHeadline] = useState("");
   const [blastBody, setBlastBody] = useState("");
+  const [adTitle, setAdTitle] = useState("");
+  const [adZips, setAdZips] = useState("");
+  const [qrCopied, setQrCopied] = useState(false);
 
   // merchant id — read from localStorage (set by MerchantJoin) or URL.
   const storedId = useMemo(() => {
@@ -124,6 +132,7 @@ export default function MerchantDashboard() {
     setVerifying(true);
     fetch(`${API}${endpoint}`, {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ session_id: sid, merchant_id: merchantId }),
     })
@@ -150,6 +159,7 @@ export default function MerchantDashboard() {
     try {
       const r = await fetch(`${API}/api/merchant/acquire-chair/checkout`, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ merchant_id: merchant.merchant_id, chairs: chairsToBuy }),
       });
@@ -170,6 +180,7 @@ export default function MerchantDashboard() {
     try {
       const r = await fetch(`${API}/api/merchant/addon/${kind}/checkout`, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ merchant_id: merchant.merchant_id, quantity: qty }),
       });
@@ -193,6 +204,7 @@ export default function MerchantDashboard() {
     try {
       const r = await fetch(`${API}/api/merchant/push-blast/send`, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           merchant_id: merchant.merchant_id,
@@ -202,7 +214,10 @@ export default function MerchantDashboard() {
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.detail || "Could not send blast");
-      toast.success(`Blast sent — ${data.remaining_credits} credit(s) left`);
+      const fan = data.fanout || {};
+      toast.success(
+        `Blast sent · ${fan.tokens_targeted ?? 0} devices targeted · ${fan.fcm_sent ?? 0} delivered`
+      );
       setBlastHeadline("");
       setBlastBody("");
       loadAll();
@@ -210,6 +225,61 @@ export default function MerchantDashboard() {
       toast.error(e?.message || "Could not send blast");
     } finally {
       setBusy(null);
+    }
+  }
+
+  async function publishAd() {
+    if (!merchant) return;
+    if (adTitle.trim().length < 2) {
+      toast.error("Ad title required");
+      return;
+    }
+    setBusy("publish-ad");
+    try {
+      const zips = adZips
+        .split(",")
+        .map((z) => z.trim())
+        .filter((z) => z.length > 0);
+      const r = await fetch(`${API}/api/merchant/dsg-tv/publish-ad`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          merchant_id: merchant.merchant_id,
+          title: adTitle.trim(),
+          target_zip_codes: zips,
+          duration_seconds: 15,
+        }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.detail || "Could not publish ad");
+      toast.success(
+        `Ad scheduled to DSG TV · ${data.remaining_credits} flight(s) left`
+      );
+      setAdTitle("");
+      setAdZips("");
+      loadAll();
+    } catch (e: any) {
+      toast.error(e?.message || "Could not publish ad");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  const referralUrl = useMemo(() => {
+    if (!merchant) return "";
+    const base = typeof window !== "undefined" ? window.location.origin : "";
+    return `${base}/merchant/join?ref=${encodeURIComponent(merchant.merchant_id)}`;
+  }, [merchant]);
+
+  async function copyReferral() {
+    if (!referralUrl) return;
+    try {
+      await navigator.clipboard.writeText(referralUrl);
+      setQrCopied(true);
+      setTimeout(() => setQrCopied(false), 1500);
+    } catch {
+      toast.error("Could not copy link");
     }
   }
 
@@ -507,6 +577,100 @@ export default function MerchantDashboard() {
               No credits — buy push blasts above first.
             </div>
           )}
+        </Panel>
+      </section>
+
+      {/* DSG TV publish + QR Code row */}
+      <section className="mx-auto max-w-6xl px-6 pb-8 grid gap-5 lg:grid-cols-2">
+        {/* DSG TV publish-ad */}
+        <Panel
+          testId="panel-dsg-tv-publish"
+          icon={<Megaphone className="h-5 w-5 text-fuchsia-300" />}
+          title="Publish DSG TV Ad-Flight"
+          subtitle="uses 1 flight credit · inserts into the 24/7 schedule"
+        >
+          <input
+            data-testid="dsg-tv-ad-title"
+            value={adTitle}
+            onChange={(e) => setAdTitle(e.target.value)}
+            maxLength={200}
+            placeholder="Tonight's special — try our new lunch box"
+            className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 outline-none focus:border-fuchsia-300 mb-2"
+          />
+          <input
+            data-testid="dsg-tv-ad-zips"
+            value={adZips}
+            onChange={(e) => setAdZips(e.target.value)}
+            placeholder="Target ZIPs (comma-separated, optional)"
+            className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 outline-none focus:border-fuchsia-300"
+          />
+          <button
+            data-testid="dsg-tv-publish-cta"
+            disabled={busy === "publish-ad" || merchant.credits.dsg_tv_flights < 1}
+            onClick={publishAd}
+            className="mt-3 inline-flex items-center gap-1 rounded-lg bg-fuchsia-400 px-4 py-2 font-semibold text-black hover:brightness-110 disabled:opacity-40"
+          >
+            {busy === "publish-ad" ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Megaphone className="h-4 w-4" />
+            )}
+            Schedule Ad
+          </button>
+          {merchant.credits.dsg_tv_flights < 1 && (
+            <div className="mt-2 text-xs text-amber-300">
+              No flight credits — buy DSG TV flights above first.
+            </div>
+          )}
+        </Panel>
+
+        {/* QR Code card */}
+        <Panel
+          testId="merchant-qr-card"
+          icon={<QrCode className="h-5 w-5 text-cyan-300" />}
+          title="Scan-Code · Recruit Neighbors"
+          subtitle="Print this on receipts + storefront — prospects land on the Business Brief"
+        >
+          <div className="flex items-center gap-4">
+            <div
+              data-testid="merchant-qr-svg-wrap"
+              className="rounded-xl bg-white p-3 flex items-center justify-center"
+              style={{ width: 132, height: 132 }}
+            >
+              {referralUrl && (
+                <QRCodeSVG value={referralUrl} size={108} includeMargin={false} />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-xs text-white/60 mb-1">Referral URL</div>
+              <div className="truncate text-xs text-white/80">{referralUrl}</div>
+              <button
+                data-testid="merchant-qr-copy-btn"
+                onClick={copyReferral}
+                className="mt-2 inline-flex items-center gap-1 rounded-md bg-white/10 hover:bg-white/20 px-3 py-1.5 text-xs font-semibold"
+              >
+                {qrCopied ? (
+                  <>
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-300" />{" "}
+                    Copied
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-3.5 w-3.5" /> Copy link
+                  </>
+                )}
+              </button>
+              <a
+                href={`/merchant/join?ref=${encodeURIComponent(merchant.merchant_id)}`}
+                target="_blank"
+                rel="noreferrer"
+                data-testid="merchant-qr-preview-link"
+                className="ml-2 text-xs text-cyan-300 underline"
+              >
+                preview
+              </a>
+            </div>
+          </div>
         </Panel>
       </section>
 

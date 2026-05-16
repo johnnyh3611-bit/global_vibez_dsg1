@@ -9366,16 +9366,67 @@ def test_no_undefined_names_in_route_modules() -> None:
 
 # --- LOCKED ---------------------------------------------------------------
 # [2026-05-16] Genius Phase Merchant Onboarding — dsg_merchant_strategy.pdf.
-# The previous agent created /app/backend/routes/merchant_onboarding.py but
-# never wired it in registry.py + never wrote tests. Tests below lock the
-# constants from the PDF (50K cap, $20 chair, 100 ceiling, 3-mile radius)
-# and the full Stripe-Checkout activation/chair/addon endpoint surface.
+# Tests below lock the constants from the PDF (50K cap, $20 chair, 100
+# ceiling, 3-mile radius), Stripe-Checkout flow, FCM fan-out wiring, DSG
+# TV ad-flight scheduler insertion, and the auth-gating policy.
+
+# Shared TestClient — entered once via the ASGI lifespan so the cached
+# motor client binds to a single, stable event loop across all merchant
+# tests. Re-creating TestClient per test triggers
+# `RuntimeError: Event loop is closed` because motor caches the loop on
+# first use.
+_merchant_test_client = None
+
+
+def _merchant_client():
+    global _merchant_test_client
+    if _merchant_test_client is None:
+        from fastapi.testclient import TestClient  # noqa: PLC0415
+        from server import app  # noqa: PLC0415
+        _merchant_test_client = TestClient(app)
+        _merchant_test_client.__enter__()
+    return _merchant_test_client
+
+
+def _merchant_sync_db():
+    """Fresh synchronous PyMongo client — avoids any event-loop binding
+    issues when seeding test data inside the TestClient flow."""
+    from pymongo import MongoClient  # type: ignore  # noqa: PLC0415
+    return MongoClient(os.environ["MONGO_URL"])[os.environ["DB_NAME"]]
+
+
+def _seed_merchant_user(user_id: str) -> str:
+    """Insert a fake user + session into the test DB and return a bearer
+    token usable by `_require_user`. Mirrors the production auth path
+    (`utils.database.get_current_user`)."""
+    import uuid as _uuid
+    token = f"tok-{_uuid.uuid4().hex}"
+    db = _merchant_sync_db()
+    db.users.update_one(
+        {"user_id": user_id},
+        {"$set": {
+            "user_id": user_id,
+            "email": f"{user_id}@test.local",
+            "name": "Merchant Tester",
+            "auth_provider": "email",
+            "membership_type": "free",
+        }},
+        upsert=True,
+    )
+    db.user_sessions.insert_one({
+        "session_token": token,
+        "user_id": user_id,
+    })
+    return token
+
+
+def _auth_headers(user_id: str) -> dict:
+    return {"Authorization": f"Bearer {_seed_merchant_user(user_id)}"}
+
 
 def test_merchant_genius_phase_endpoint_public() -> None:
     """Public read endpoint — landing page reads this without auth."""
-    from fastapi.testclient import TestClient
-    from server import app
-    client = TestClient(app)
+    client = _merchant_client()
     r = client.get("/api/merchant/genius-phase")
     assert r.status_code == 200, r.text
     d = r.json()
@@ -9387,17 +9438,37 @@ def test_merchant_genius_phase_endpoint_public() -> None:
     assert d["activation_fee_usd"] == {"min": 100, "max": 150}
     services = {s["id"] for s in d["services"]}
     assert services == {"hunger_vibez", "vibez_spots", "viberidez"}
-    # Add-on pricing surfaces so the dashboard can render badges.
     assert "dsg_tv_flight_usd" in d["addons"]
     assert "push_blast_usd" in d["addons"]
 
 
+def test_merchant_writes_require_auth() -> None:
+    """No session → 401 on every POST. Locks the auth gate so we can't
+    silently regress to anonymous merchant onboarding."""
+    client = _merchant_client()
+    for url, body in [
+        ("/api/merchant/onboard", {
+            "merchant_id": "abc-xyz", "business_name": "biz-name",
+            "service": "hunger_vibez", "activation_fee_paid": 100,
+        }),
+        ("/api/merchant/acquire-chair", {"merchant_id": "abc-xyz", "chairs": 1}),
+        ("/api/merchant/push-blast/send", {
+            "merchant_id": "abc-xyz", "headline": "hi", "body": "there",
+        }),
+        ("/api/merchant/dsg-tv/publish-ad", {
+            "merchant_id": "abc-xyz", "title": "ad-title",
+        }),
+    ]:
+        r = client.post(url, json=body)
+        assert r.status_code == 401, f"{url} should require auth, got {r.status_code}"
+
+
 def test_merchant_onboard_then_acquire_chair_flow() -> None:
     """Direct-onboard test path: register → buy 5 chairs → me reflects 6."""
-    from fastapi.testclient import TestClient
-    from server import app
     import uuid as _uuid
-    client = TestClient(app)
+    client = _merchant_client()
+    uid = f"u-{_uuid.uuid4().hex[:8]}"
+    h = _auth_headers(uid)
     mid = f"test-merchant-{_uuid.uuid4().hex[:8]}"
     r = client.post(
         "/api/merchant/onboard",
@@ -9407,6 +9478,7 @@ def test_merchant_onboard_then_acquire_chair_flow() -> None:
             "service": "hunger_vibez",
             "activation_fee_paid": 100,
         },
+        headers=h,
     )
     assert r.status_code == 200, r.text
     d = r.json()
@@ -9414,6 +9486,7 @@ def test_merchant_onboard_then_acquire_chair_flow() -> None:
     assert d["push_radius_miles"] == 3
     assert d["vibe_shield_enabled"] is True
     assert d["dsg_tv_placement"] is True
+    assert d["owner_user_id"] == uid
 
     # Idempotent re-onboard returns the existing record.
     r2 = client.post(
@@ -9424,6 +9497,7 @@ def test_merchant_onboard_then_acquire_chair_flow() -> None:
             "service": "viberidez",
             "activation_fee_paid": 150,
         },
+        headers=h,
     )
     assert r2.status_code == 200
     assert r2.json().get("already_onboarded") is True
@@ -9432,28 +9506,52 @@ def test_merchant_onboard_then_acquire_chair_flow() -> None:
     r3 = client.post(
         "/api/merchant/acquire-chair",
         json={"merchant_id": mid, "chairs": 5},
+        headers=h,
     )
     assert r3.status_code == 200, r3.text
     d3 = r3.json()
     assert d3["chairs_held"] == 6
-    assert d3["usd_paid"] == 100  # 5 × $20
+    assert d3["usd_paid"] == 100
 
-    # /me returns credits scaffold + chair count.
+    # /me is public — partners can verify chair holdings.
     r4 = client.get(f"/api/merchant/me/{mid}")
     assert r4.status_code == 200
     me = r4.json()
     assert me["chairs_held"] == 6
-    assert "credits" in me
     assert me["credits"] == {"dsg_tv_flights": 0, "push_blasts": 0}
 
 
-def test_merchant_chair_ceiling_enforced() -> None:
-    """An individual merchant cannot exceed the 100-chair ceiling — even
-    with concurrent +N purchases. The endpoint must reject before mutate."""
-    from fastapi.testclient import TestClient
-    from server import app
+def test_merchant_owner_only_acquire_chair() -> None:
+    """Another user cannot acquire chairs for a merchant they don't own."""
     import uuid as _uuid
-    client = TestClient(app)
+    client = _merchant_client()
+    owner_uid = f"u-{_uuid.uuid4().hex[:8]}"
+    attacker_uid = f"u-{_uuid.uuid4().hex[:8]}"
+    mid = f"test-owner-{_uuid.uuid4().hex[:8]}"
+    client.post(
+        "/api/merchant/onboard",
+        json={
+            "merchant_id": mid,
+            "business_name": "Owned Café",
+            "service": "hunger_vibez",
+            "activation_fee_paid": 100,
+        },
+        headers=_auth_headers(owner_uid),
+    )
+    r = client.post(
+        "/api/merchant/acquire-chair",
+        json={"merchant_id": mid, "chairs": 1},
+        headers=_auth_headers(attacker_uid),
+    )
+    assert r.status_code == 403, r.text
+
+
+def test_merchant_chair_ceiling_enforced() -> None:
+    """An individual merchant cannot exceed the 100-chair ceiling."""
+    import uuid as _uuid
+    client = _merchant_client()
+    uid = f"u-{_uuid.uuid4().hex[:8]}"
+    h = _auth_headers(uid)
     mid = f"test-ceiling-{_uuid.uuid4().hex[:8]}"
     client.post(
         "/api/merchant/onboard",
@@ -9463,18 +9561,19 @@ def test_merchant_chair_ceiling_enforced() -> None:
             "service": "hunger_vibez",
             "activation_fee_paid": 100,
         },
+        headers=h,
     )
-    # First request: +99 chairs → total 100 (cap exactly).
     r = client.post(
         "/api/merchant/acquire-chair",
         json={"merchant_id": mid, "chairs": 99},
+        headers=h,
     )
     assert r.status_code == 200
     assert r.json()["chairs_held"] == 100
-    # Second request: +1 chair → should refuse.
     r2 = client.post(
         "/api/merchant/acquire-chair",
         json={"merchant_id": mid, "chairs": 1},
+        headers=h,
     )
     assert r2.status_code == 400
     assert "ceiling" in r2.json()["detail"].lower()
@@ -9482,63 +9581,55 @@ def test_merchant_chair_ceiling_enforced() -> None:
 
 def test_merchant_activation_fee_validation() -> None:
     """Activation fee must stay inside the $100–$150 PDF band."""
-    from fastapi.testclient import TestClient
-    from server import app
     import uuid as _uuid
-    client = TestClient(app)
+    client = _merchant_client()
+    uid = f"u-{_uuid.uuid4().hex[:8]}"
+    h = _auth_headers(uid)
     mid = f"test-fee-{_uuid.uuid4().hex[:8]}"
-    # $99 → 422 (Pydantic validation, below the min)
     r = client.post(
         "/api/merchant/onboard",
         json={
-            "merchant_id": mid,
-            "business_name": "Fee Test",
-            "service": "hunger_vibez",
-            "activation_fee_paid": 99,
+            "merchant_id": mid, "business_name": "Fee Test",
+            "service": "hunger_vibez", "activation_fee_paid": 99,
         },
+        headers=h,
     )
     assert r.status_code == 422, r.text
-    # $151 → 422 (above the max)
     r2 = client.post(
         "/api/merchant/onboard",
         json={
-            "merchant_id": mid,
-            "business_name": "Fee Test",
-            "service": "hunger_vibez",
-            "activation_fee_paid": 151,
+            "merchant_id": mid, "business_name": "Fee Test",
+            "service": "hunger_vibez", "activation_fee_paid": 151,
         },
+        headers=h,
     )
     assert r2.status_code == 422
-    # Unknown service → 400
     r3 = client.post(
         "/api/merchant/onboard",
         json={
-            "merchant_id": mid,
-            "business_name": "Fee Test",
-            "service": "bogus_service",
-            "activation_fee_paid": 100,
+            "merchant_id": mid, "business_name": "Fee Test",
+            "service": "bogus_service", "activation_fee_paid": 100,
         },
+        headers=h,
     )
     assert r3.status_code == 400
 
 
 def test_merchant_push_blast_requires_credit() -> None:
     """Cannot fire a push blast without a credit on file (402)."""
-    from fastapi.testclient import TestClient
-    from server import app
     import uuid as _uuid
-    client = TestClient(app)
+    client = _merchant_client()
+    uid = f"u-{_uuid.uuid4().hex[:8]}"
+    h = _auth_headers(uid)
     mid = f"test-blast-{_uuid.uuid4().hex[:8]}"
     client.post(
         "/api/merchant/onboard",
         json={
-            "merchant_id": mid,
-            "business_name": "Blast Test",
-            "service": "hunger_vibez",
-            "activation_fee_paid": 100,
-            "lat": 40.7,
-            "lng": -73.9,
+            "merchant_id": mid, "business_name": "Blast Test",
+            "service": "hunger_vibez", "activation_fee_paid": 100,
+            "lat": 40.7, "lng": -73.9,
         },
+        headers=h,
     )
     r = client.post(
         "/api/merchant/push-blast/send",
@@ -9547,15 +9638,118 @@ def test_merchant_push_blast_requires_credit() -> None:
             "headline": "Tonight only — 30% off any large pie",
             "body": "Show this push at the counter from 8pm-close.",
         },
+        headers=h,
     )
     assert r.status_code == 402, r.text
     assert "credit" in r.json()["detail"].lower()
 
 
+def test_merchant_push_blast_fanout_records_blast() -> None:
+    """With a credit on file, /push-blast/send must consume the credit,
+    insert a blast row, and return a fan-out summary even when FCM is
+    not initialised in the test env."""
+    from utils.database import get_database
+    import uuid as _uuid
+    client = _merchant_client()
+    uid = f"u-{_uuid.uuid4().hex[:8]}"
+    h = _auth_headers(uid)
+    mid = f"test-fanout-{_uuid.uuid4().hex[:8]}"
+    client.post(
+        "/api/merchant/onboard",
+        json={
+            "merchant_id": mid, "business_name": "Fanout Test",
+            "service": "hunger_vibez", "activation_fee_paid": 100,
+            "lat": 40.7128, "lng": -74.006,
+        },
+        headers=h,
+    )
+    # Seed 1 push-blast credit directly via sync client.
+    db = _merchant_sync_db()
+    db.merchant_addon_credits.update_one(
+        {"merchant_id": mid},
+        {"$set": {"merchant_id": mid, "push_blasts": 1, "dsg_tv_flights": 0}},
+        upsert=True,
+    )
+    r = client.post(
+        "/api/merchant/push-blast/send",
+        json={
+            "merchant_id": mid,
+            "headline": "Grand opening — 20% off",
+            "body": "Tonight only, mention this push.",
+        },
+        headers=h,
+    )
+    assert r.status_code == 200, r.text
+    d = r.json()
+    assert d["sent"] is True
+    assert d["remaining_credits"] == 0
+    assert "fanout" in d
+    assert "tokens_targeted" in d["fanout"]
+    # Recent-blasts feed should now include it.
+    r2 = client.get(f"/api/merchant/push-blast/recent/{mid}")
+    assert r2.status_code == 200
+    assert any(b["headline"].startswith("Grand opening") for b in r2.json())
+
+
+def test_merchant_dsg_tv_publish_ad_inserts_into_broadcast_queue() -> None:
+    """Publishing an ad-flight consumes 1 credit and inserts a TVAd into
+    `routes.vibe_tv_routes._ADS` so the scheduler will surface it on
+    `/api/vibe-tv/schedule`."""
+    from utils.database import get_database
+    from routes.vibe_tv_routes import _ADS
+    import uuid as _uuid
+    client = _merchant_client()
+    uid = f"u-{_uuid.uuid4().hex[:8]}"
+    h = _auth_headers(uid)
+    mid = f"test-tv-{_uuid.uuid4().hex[:8]}"
+    client.post(
+        "/api/merchant/onboard",
+        json={
+            "merchant_id": mid, "business_name": "TV Test",
+            "service": "hunger_vibez", "activation_fee_paid": 100,
+        },
+        headers=h,
+    )
+    # No credit on file → 402.
+    r0 = client.post(
+        "/api/merchant/dsg-tv/publish-ad",
+        json={"merchant_id": mid, "title": "Try our new lunch box"},
+        headers=h,
+    )
+    assert r0.status_code == 402
+
+    # Seed 1 flight credit and publish via sync client.
+    db = _merchant_sync_db()
+    db.merchant_addon_credits.update_one(
+        {"merchant_id": mid},
+        {"$set": {"merchant_id": mid, "push_blasts": 0, "dsg_tv_flights": 1}},
+        upsert=True,
+    )
+    before = len(_ADS)
+    r = client.post(
+        "/api/merchant/dsg-tv/publish-ad",
+        json={
+            "merchant_id": mid,
+            "title": "Try our new lunch box",
+            "target_zip_codes": ["10001", "10002"],
+            "duration_seconds": 15,
+        },
+        headers=h,
+    )
+    assert r.status_code == 200, r.text
+    d = r.json()
+    assert d["published"] is True
+    assert d["remaining_credits"] == 0
+    assert d["ad"]["advertiser_id"] == mid
+    assert len(_ADS) == before + 1
+    r2 = client.get(f"/api/merchant/dsg-tv/ads/{mid}")
+    assert r2.status_code == 200
+    assert any(a["title"] == "Try our new lunch box" for a in r2.json())
+
+
 def test_merchant_routes_registered_in_app() -> None:
-    """Guard so the registry.py wiring isn't accidentally reverted —
-    every /api/merchant path must be reachable from the FastAPI app."""
-    from server import app
+    """Guard against registry rollback — every /api/merchant path lives."""
+    from server import app  # noqa: PLC0415
     paths = {getattr(r, "path", "") for r in app.routes}
     for required in [
         "/api/merchant/genius-phase",
@@ -9569,6 +9763,9 @@ def test_merchant_routes_registered_in_app() -> None:
         "/api/merchant/addon/push-blast/checkout",
         "/api/merchant/addon/verify",
         "/api/merchant/push-blast/send",
+        "/api/merchant/dsg-tv/publish-ad",
+        "/api/merchant/dsg-tv/ads/{merchant_id}",
+        "/api/merchant/push-blast/recent/{merchant_id}",
     ]:
         assert required in paths, f"Merchant route {required} missing from registry"
 
@@ -9605,10 +9802,12 @@ def test_merchant_frontend_pages_wired() -> None:
         "dsg-tv-cta",
         "push-blast-cta",
         "blast-send-cta",
+        "panel-dsg-tv-publish",
+        "dsg-tv-publish-cta",
+        "merchant-qr-card",
     ]:
         assert tid in dash, f"MerchantDashboard missing testid: {tid}"
 
     routes = open("/app/frontend/src/routes/monetizationRoutes.tsx").read()
     assert '"/merchant/join"' in routes, "MerchantJoin route not registered"
     assert '"/merchant/dashboard"' in routes, "MerchantDashboard route not registered"
-
