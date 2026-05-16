@@ -10143,3 +10143,45 @@ def test_landing_tour_regen_script_exists_and_executable() -> None:
         "gv-sw.js",
     ]:
         assert asset in body, f"regen_tour.sh forgot to sync {asset}"
+
+
+def test_landing_tour_mp4_matches_narration_full_length() -> None:
+    """The 9:16 vertical MP4 must run for the FULL narration duration
+    (~4:49 / 289.5s) so the download matches the streaming experience.
+    Catches any future render that silently truncates back to 2:02.
+    Recovery: `bash /app/scripts/regen_tour.sh`."""
+    import json, subprocess
+    from pathlib import Path
+    mp4 = Path("/app/frontend/public/landing-tour-tiktok-9x16.mp4")
+    manifest = json.loads(Path("/app/frontend/public/landing-tour-i18n.json").read_text())
+    expected = float(manifest["languages"]["en"]["duration"])
+    result = subprocess.run(
+        ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+         "-of", "default=noprint_wrappers=1:nokey=1", str(mp4)],
+        capture_output=True, text=True, check=True,
+    )
+    actual = float(result.stdout.strip())
+    # 5s tolerance for ffmpeg keyframe rounding.
+    assert abs(actual - expected) <= 5, (
+        f"MP4 length {actual:.1f}s does not match narration {expected:.1f}s "
+        f"(off by {actual - expected:+.1f}s). The download will play out "
+        f"of sync with the streaming version. Run regen_tour.sh."
+    )
+
+
+def test_landing_tour_render_script_has_only_one_main() -> None:
+    """The render script used to have a duplicate legacy `main()` that
+    silently overwrote the new full-length output with a 2:02 short
+    version. Lock this so it can never come back."""
+    src = open("/app/backend/scripts/render_landing_tour_vertical.py").read()
+    main_count = src.count('if __name__ == "__main__":')
+    assert main_count == 1, (
+        f"render_landing_tour_vertical.py has {main_count} `__main__` "
+        f"guards — must be exactly 1. A duplicate legacy block crept "
+        f"back in and will overwrite the full-length MP4 with an old "
+        f"abbreviated render."
+    )
+    main_def_count = src.count("\ndef main(")
+    assert main_def_count == 1, (
+        f"render script defines main() {main_def_count} times — must be 1."
+    )

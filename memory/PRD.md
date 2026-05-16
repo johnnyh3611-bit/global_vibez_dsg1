@@ -4803,3 +4803,13 @@ All 5 merchant PDFs + viral recruiter loop fully implemented.
 - testing_agent_v3_fork e2e sweep: 100% pass
 
 ### User can safely redeploy. Everything tested top-to-bottom.
+
+---
+
+## 2026-05-16 (final final) — Full-Length MP4 Synced to Streaming
+
+### Status: 🟢 BETA-READY · DOWNLOAD = STREAMING (4:49 Nova)
+- 9:16 vertical MP4: 91 MB · 289.5s · Nova narration · captions burned in
+- Streaming MP3: 5.7 MB · 289.5s · Nova narration
+- They are now bit-for-bit equivalent in length and audio content
+- 463 regression tests green

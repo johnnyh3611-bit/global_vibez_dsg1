@@ -5757,3 +5757,31 @@ preview pod, 38.7 MB output at CRF 28).
 
 ### Regression
 - **459 → 461 passing** (`pytest tests/regression_shield.py` — 8.59s).
+
+---
+
+## 2026-05-16 — 9:16 MP4 extended to FULL 4:49 length (matches streaming)
+
+### Fixed
+- The 9:16 download MP4 was only 2:02 because:
+  1. The render script's old loop-then-trim logic relied on
+     `-c copy` concat which silently failed on short source stacks.
+  2. A DUPLICATE legacy `main()` block (lines 226-413) ran AFTER the
+     new modular render and overwrote the full-length output with a
+     2:02 abbreviated version.
+- Replaced loop logic with `ffmpeg -stream_loop -1 -i ... -t {duration}` —
+  bulletproof input looping that extends to any length.
+- Removed the duplicate legacy `main()` block (lines 226-413 deleted).
+- Re-rendered → **91 MB / 289.5s / Nova voice** matching the streaming
+  MP3 (289.464s) within 0.04s.
+- Mirrored to `frontend/build/`.
+
+### New regression tests (2)
+1. `test_landing_tour_mp4_matches_narration_full_length` — MP4 duration
+   must match manifest narration duration ±5s (catches silent
+   truncation).
+2. `test_landing_tour_render_script_has_only_one_main` — exactly 1
+   `__main__` guard + 1 `def main()` (locks the legacy-block fix).
+
+### Regression
+- **461 → 463 passing** (`pytest tests/regression_shield.py` — 8.84s).
