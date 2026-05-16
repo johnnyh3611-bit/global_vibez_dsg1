@@ -36,10 +36,136 @@ import UnifiedEarningsWidget from '@/components/common/UnifiedEarningsWidget';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
+// ────────────────────────────────────────────── Category Tabs ──
+// Founder ask 2026-05-16: less scroll, sectioned by category. The active
+// tab borrows the MY VIBEZ holographic treatment (conic-gradient + glow)
+// so the choice feels alive without overwhelming the page.
+
+type CategoryId =
+  | 'watch'
+  | 'dating'
+  | 'games'
+  | 'music'
+  | 'lifestyle'
+  | 'social'
+  | 'earnings'
+  | 'all';
+
+type CategoryDef = { id: CategoryId; label: string; icon: any };
+
+const CATEGORIES: CategoryDef[] = [
+  { id: 'watch',     label: 'Watch',     icon: Tv },
+  { id: 'dating',    label: 'Dating',    icon: Heart },
+  { id: 'games',     label: 'Games',     icon: Gamepad2 },
+  { id: 'music',     label: 'Music',     icon: Music },
+  { id: 'lifestyle', label: 'Lifestyle', icon: Utensils },
+  { id: 'social',    label: 'Social',    icon: MessageCircle },
+  { id: 'earnings',  label: 'Earnings',  icon: Gem },
+  { id: 'all',       label: 'All',       icon: Sparkles },
+];
+
+// room.id → category. Anything not listed defaults to 'all' so we never
+// silently hide a room. Update this map when you add a new room tile.
+const ROOM_CATEGORY: Record<string, CategoryId> = {
+  // Watch & Stream
+  myvibez: 'watch',
+  free_tv: 'watch',
+  vibez_tv: 'watch',
+  tv_totem_pole: 'watch',
+  streamer_overlay: 'watch',
+  broadcast_director: 'watch',
+  media_master: 'watch',
+  lyric_glasshouse: 'watch',
+  // Dating
+  dating: 'dating',
+  gamer_dating: 'dating',
+  memory_bank: 'dating',
+  vigilant_matchmaking: 'dating',
+  cultural_onboarding: 'dating',
+  just_for_the_night: 'dating',
+  blind_auction: 'dating',
+  voice_mirror: 'dating',
+  // Games & Party
+  games: 'games',
+  tournaments: 'games',
+  cyber_casino: 'games',
+  high_roller: 'games',
+  vibetionary: 'games',
+  meme_matchmaker: 'games',
+  hide_seek: 'games',
+  vibeshopper: 'games',
+  // Music
+  dsg_music_group: 'music',
+  beat_vault: 'music',
+  beat_vault_dlc: 'music',
+  sound_check: 'music',
+  collab_matchmaker: 'music',
+  totem_battles: 'music',
+  vibe_suite: 'music',
+  // Lifestyle
+  hungry_vibez: 'lifestyle',
+  rides: 'lifestyle',
+  datespot: 'lifestyle',
+  yellow_pages: 'lifestyle',
+  // Social
+  social: 'social',
+  // Earnings
+  equity_master: 'earnings',
+  ambassador_care: 'earnings',
+};
+
+function CategoryTabs({ active, onChange }: { active: string; onChange: (id: string) => void }) {
+  return (
+    <div data-testid="dashboard-category-tabs" className="mb-6">
+      <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-thin">
+        {CATEGORIES.map((cat) => {
+          const Icon = cat.icon;
+          const isActive = cat.id === active;
+          return (
+            <button
+              key={cat.id}
+              data-testid={`dashboard-category-tab-${cat.id}`}
+              onClick={() => onChange(cat.id)}
+              className={`relative shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold uppercase tracking-[0.18em] transition-all
+                ${isActive
+                  ? 'text-black ring-1 ring-amber-200/50 shadow-[0_0_30px_-8px_rgba(232,121,249,0.55)]'
+                  : 'text-white/70 hover:text-white bg-white/5 hover:bg-white/10 ring-1 ring-white/10'
+                }`}
+            >
+              {isActive && (
+                <span
+                  className="absolute inset-0 rounded-full overflow-hidden"
+                  aria-hidden="true"
+                >
+                  <span
+                    className="absolute inset-[-30%]"
+                    style={{
+                      background:
+                        'conic-gradient(from 0deg, #f0abfc, #fde047, #67e8f9, #fb7185, #c084fc, #fde047, #f0abfc)',
+                      filter: 'blur(8px) saturate(140%)',
+                      animation: 'spin 14s linear infinite',
+                    }}
+                  />
+                  <span className="absolute inset-0 bg-white/15" />
+                </span>
+              )}
+              <Icon className="relative w-3.5 h-3.5" />
+              <span className="relative">{cat.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [activeCategory, setActiveCategory] = useState<string>('watch');
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -110,7 +236,7 @@ export default function Dashboard() {
     {
       id: 'myvibez',
       name: 'MY VIBEZ',
-      description: 'TikTok-style viral content - watch & create trending videos',
+      description: 'Streaming & watch place — share your moments, discover creators',
       icon: TrendingUp,
       gradient: 'from-cyan-400 via-blue-500 to-purple-600',
       glow: 'rgba(34,211,238,0.6)',
@@ -718,9 +844,17 @@ export default function Dashboard() {
           <RideHomeButton />
         </div>
 
+        {/* ─────── Category Tabs (founder ask 2026-05-16: less scroll,
+              sectioned by category. Less mess, more focus. Active tab
+              borrows the MY VIBEZ holographic treatment so the choice
+              feels alive. */}
+        <CategoryTabs active={activeCategory} onChange={setActiveCategory} />
+
         {/* Room Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
-          {rooms.map((room, index) => {
+          {rooms
+            .filter((r) => activeCategory === 'all' || ROOM_CATEGORY[r.id] === activeCategory)
+            .map((room, index) => {
             const Icon = room.icon;
             const isMyVibez = room.id === 'myvibez';
 

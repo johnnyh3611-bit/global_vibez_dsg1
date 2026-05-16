@@ -8867,3 +8867,56 @@ def test_co_watch_launcher_hides_on_auth_pages() -> None:
         assert needle in src, f"HIDDEN_PREFIXES must include {needle}"
 
 
+
+
+# ────────────────────────────────────────────── Co-Play + Category Tabs ──
+# [2026-05-16] Founder asks: (a) bring "Invite to my table" co-play to
+# the launcher, (b) section the dashboard by categories so the active
+# tab borrows the MY VIBEZ holographic treatment, (c) drop the TikTok
+# wording from the MY VIBEZ tile.
+
+def test_dashboard_category_tabs_rendered() -> None:
+    """All 8 categories must render as tabs with the canonical test IDs."""
+    from pathlib import Path
+    src = Path("/app/frontend/src/pages/DashboardNew.tsx").read_text()
+    assert 'data-testid="dashboard-category-tabs"' in src
+    for cat in ("watch", "dating", "games", "music", "lifestyle", "social", "earnings", "all"):
+        assert f'data-testid={{`dashboard-category-tab-${{cat.id}}`}}' in src or (
+            f'dashboard-category-tab-{cat}' in src
+        ), f"Category tab missing: {cat}"
+    # ROOM_CATEGORY map must classify the new Free TV + MY VIBEZ tiles.
+    assert "ROOM_CATEGORY" in src
+    assert "free_tv: 'watch'" in src
+    assert "myvibez: 'watch'" in src
+    # Active-tab holographic treatment carries the same conic-gradient
+    # signature as the MY VIBEZ tile.
+    assert "CategoryTabs" in src and "conic-gradient" in src
+
+
+def test_my_vibez_tile_drops_tiktok_wording() -> None:
+    """Founder ask: take 'TikTok' off the MY VIBEZ description. It's a
+    streaming/watch place, not a TikTok clone."""
+    from pathlib import Path
+    src = Path("/app/frontend/src/pages/DashboardNew.tsx").read_text()
+    # Find the MY VIBEZ entry's description line.
+    assert "id: 'myvibez'" in src
+    # The exact previous wording must be gone.
+    assert "TikTok-style viral content" not in src, (
+        "MY VIBEZ description still references TikTok"
+    )
+    # And the new wording must be present.
+    assert "Streaming & watch place" in src
+
+
+def test_co_play_mode_wired_in_launcher() -> None:
+    """CoWatchLauncher must detect game/card-room paths and switch to
+    'co-play' mode, which copies the current URL with `?invite=` instead
+    of POSTing a watch-party room."""
+    from pathlib import Path
+    src = Path("/app/frontend/src/components/common/CoWatchLauncher.tsx").read_text()
+    assert "co-play" in src
+    assert "Invite to your table" in src
+    assert "?invite=" in src or "searchParams.set('invite'" in src
+    # Sample of expected game prefixes.
+    for prefix in ("'/spades'", "'/blackjack'", "'/casino/high-roller'", "'/card-mp'"):
+        assert prefix in src, f"Co-Play GAME_PREFIXES missing {prefix}"

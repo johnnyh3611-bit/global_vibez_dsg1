@@ -1,5 +1,17 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **2026-05-16 (cont. #3) — DASHBOARD CATEGORY TABS + CO-PLAY + MY VIBEZ COPY · 412/412 regression green.**
+>
+> ### What shipped:
+> 1. **Dashboard category tabs** (founder ask: less scroll, sectioned). 8 categories — Watch, Dating, Games, Music, Lifestyle, Social, Earnings, All. Default tab is **Watch** (fronts MY VIBEZ, Free TV, DSG TV, Streamer Overlay, Broadcast Director, Media Master, Lyric Glasshouse, TV Totem Pole). Each room.id is mapped via `ROOM_CATEGORY` so adding a new tile only needs one map entry. The active tab carries the **same conic-gradient holographic treatment** as the MY VIBEZ card — keeps the visual family consistent without overloading every tab.
+> 2. **Co-Play** — extended `CoWatchLauncher` with a `'co-play'` mode that auto-fires when the user is on a game/card-room/casino path. Instead of POSTing a watch-party, it copies the current URL with `?invite=<ref>` so the receiver lands at the exact same table. Button label flips to "Co-Play", modal copy reads "Pull your crew into your table", Jump-in disabled (already there). Detection covers Spades, Bid Whist, Hearts, UNO, Euchre, Pinochle, Gin Rummy, Rummy, War, Crazy Eights, Go Fish, Baccarat, Blackjack, Poker, Three-Card Poker, Vibe 654, Chess, Checkers, Connect 4, Cyber Casino, High Roller VIP, Casino, `/card-mp`, `/practice/play`.
+> 3. **MY VIBEZ wording** — dropped "TikTok-style viral content" → "Streaming & watch place — share your moments, discover creators". No external-brand association.
+>
+> ### Regression:
+> 3 new shield tests pin the 8 category tabs + ROOM_CATEGORY map + holographic active treatment, the MY VIBEZ wording change (asserts the old TikTok line is gone), and the Co-Play mode wiring + game-path detection. Shield went 409 → **412 passed, 0 failed**.
+
+
+
 > **2026-05-16 (cont. #2) — CO-WATCH LAUNCHER SHIPPED · 409/409 regression green.**
 >
 > ### What shipped:
