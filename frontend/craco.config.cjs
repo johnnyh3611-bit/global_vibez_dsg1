@@ -28,6 +28,37 @@ module.exports = {
       add: [],
     },
     configure: (webpackConfig) => {
+      // 2026-05-17 deploy fix: explicitly disable source maps in
+      // production. CRA respects GENERATE_SOURCEMAP=false at .env-load
+      // time, but Emergent's Cloud Build rewrites .env with production
+      // secrets so the perf flag was getting dropped, causing webpack
+      // to spend 3-5 minutes generating ~500MB of unused source maps
+      // and then stalling the build. Forcing devtool=false here makes
+      // the setting platform-agnostic.
+      if (process.env.NODE_ENV === "production") {
+        webpackConfig.devtool = false;
+      }
+
+      // 2026-05-17 deploy fix: cap TerserPlugin parallel workers to 2.
+      // Default (= os.cpus().length) was spinning up 8 minify workers
+      // on Cloud Build's 8-core node — each consuming ~1.2GB — which
+      // blew past the 8GB node heap cap and silently OOM-stalled the
+      // build for 5+ minutes before timing out. 2 workers keeps the
+      // memory peak under control AND finishes minification ~3× faster
+      // because they don't thrash GC.
+      if (Array.isArray(webpackConfig.optimization?.minimizer)) {
+        webpackConfig.optimization.minimizer.forEach((m) => {
+          if (m && m.constructor && m.constructor.name === "TerserPlugin") {
+            try {
+              m.options = m.options || {};
+              m.options.parallel = 2;
+            } catch {
+              /* best-effort */
+            }
+          }
+        });
+      }
+
       // Ignore source-map warnings for packages without published sources
       webpackConfig.ignoreWarnings = (webpackConfig.ignoreWarnings || []).concat([
         { module: /node_modules\/@react-three/ },

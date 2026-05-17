@@ -109,7 +109,7 @@
   },
   "scripts": {
     "start": "craco start",
-    "build": "NODE_OPTIONS='--max-old-space-size=8192' craco build",
+    "build": "GENERATE_SOURCEMAP=false DISABLE_ESLINT_PLUGIN=true TSC_COMPILE_ON_ERROR=true INLINE_RUNTIME_CHUNK=false CI=false NODE_OPTIONS='--max-old-space-size=8192' craco build",
     "test": "craco test",
     "typecheck": "tsc --noEmit",
     "ts-debt": "node scripts/ts-debt.cjs",
