@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Trophy, Users, Zap, Calendar, Play, ChevronRight, ArrowLeft } from 'lucide-react';
+import { MatchConsensusChip } from '@/components/tournament/MatchConsensusChip';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -366,6 +367,13 @@ function MatchCard({ match, tournamentId }) {
         }`}>
           {match.status.replace('_', ' ').toUpperCase()}
         </span>
+      </div>
+
+      {/* 2026-05-17 — Anti-cheat Match Consensus chip. Polls the
+          backend's consensus endpoint every 20s while the match is in
+          flight; auto-hides for matches with no submissions yet. */}
+      <div className="mt-1 text-center">
+        <MatchConsensusChip matchId={match.match_id} />
       </div>
 
       {showReportModal && (

@@ -10402,12 +10402,16 @@ def test_match_consensus_implementation_pins():
     # 72-hour window is the founder spec — must stay 72.
     assert "AIRLOCK_HOURS = 72" in src, "Airlock window drifted from 72h"
 
-    # Both must agree on BOTH winner AND score for VERIFIED_SUCCESS.
-    assert "winner_match and score_match" in src, (
-        "Consensus must require BOTH winner agreement AND score agreement"
-    )
+    # Strict-majority + score-agreement helper must exist.
+    assert "_strict_majority_winner" in src
+    assert "count * 2 <= len(subs)" in src, "strict-majority threshold drift"
 
-    # On mismatch we MUST flag DISPUTED + emit security alert.
+    # On winner+score match but hash mismatch we MUST flag for review.
+    assert '"HASH_MISMATCH_REVIEW"' in src
+    assert "_hashes_consistent" in src
+    assert "GAME_LOG_HASH_MISMATCH" in src
+
+    # On full mismatch we MUST flag DISPUTED + emit security alert.
     assert '"DISPUTED_FLAGGED"' in src
     assert "_emit_security_alert" in src
     assert "MATCH_DISCREPANCY" in src
@@ -10432,6 +10436,54 @@ def test_match_consensus_implementation_pins():
 
     # Already-finalized matches MUST refuse new submissions (409).
     assert "Match already finalized" in src
+
+    # Airlock release worker entry point exists.
+    assert "async def release_due_airlocks" in src
+    assert "/airlock/release-due" in src
+    # Release must SKIP matches currently disputed or under hash review.
+    assert "DISPUTED_FLAGGED" in src and "HASH_MISMATCH_REVIEW" in src
+
+
+def test_airlock_release_worker_wired_in_lifespan():
+    """The 72h airlock release loop MUST be kicked off from lifespan
+    startup so payouts auto-clear without manual intervention."""
+    src = open("/app/backend/lifespan.py").read()
+    assert "def _start_airlock_release_worker" in src
+    assert "Match Consensus airlock-release worker" in src
+    assert "release_due_airlocks" in src
+    # 5-minute cadence — keeps load light, latency under the founder's
+    # "≤6-min after clears_at" expectation for payout release.
+    assert "asyncio.sleep(5 * 60)" in src
+
+
+def test_match_consensus_chip_wired_into_bracket():
+    """The frontend bracket MUST surface a per-match consensus chip so
+    players can see Verified/Disputed/Awaiting/Cleared at a glance."""
+    import os
+    chip_path = "/app/frontend/src/components/tournament/MatchConsensusChip.tsx"
+    assert os.path.exists(chip_path), "MatchConsensusChip component missing"
+    chip = open(chip_path).read()
+    # All 6 chip states must be representable.
+    for tid in [
+        "match-consensus-chip-verified",
+        "match-consensus-chip-cleared",
+        "match-consensus-chip-resolved",
+        "match-consensus-chip-hash-mismatch",
+        "match-consensus-chip-disputed",
+        "match-consensus-chip-awaiting",
+    ]:
+        assert tid in chip, f"chip missing testid: {tid}"
+    # 20s poll cadence so the bracket goes "live" without hammering API.
+    assert "20_000" in chip or "20000" in chip
+    # Endpoint contract.
+    assert "/api/match-consensus/" in chip
+
+    # Bracket must import + mount the chip.
+    bracket = open("/app/frontend/src/pages/TournamentDetailsPage.tsx").read()
+    assert "MatchConsensusChip" in bracket, (
+        "TournamentDetailsPage must import + mount MatchConsensusChip"
+    )
+    assert "<MatchConsensusChip matchId={match.match_id} />" in bracket
 
 
 def test_match_consensus_indexes_registered():

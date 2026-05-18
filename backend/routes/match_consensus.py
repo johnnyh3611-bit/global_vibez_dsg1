@@ -5,29 +5,40 @@ Match Consensus Verification + 72-Hour Payout Airlock
 2026-05-17 founder spec (TypeScript snippet) — anti-cheat consensus for
 tournament match results. Both teams submit independently; the system
 locks in the winner ONLY when both submissions agree on (winner_id +
-final_score). On agreement we start a 72-hour airlock before the prize
-clears so disputes can still surface. On disagreement we flag the match
-DISPUTED, pause that bracket branch, and emit a security alert for crew
-review.
+final_score + game_log_hash). On agreement we start a 72-hour airlock
+before the prize clears so disputes can still surface. On disagreement
+we flag the match DISPUTED, pause that bracket branch, and emit a
+security alert for crew review.
+
+2026-05-17 (cont.) extensions on top of the original TS spec:
+  • >2-team support — N submissions, majority winner rule (strict majority).
+  • Hash-mismatch downgrade — even when winner_id + score agree, if
+    the `game_log_hash` differs across teams the match is flipped to
+    HASH_MISMATCH_REVIEW (catches a smarter cheater who scripts
+    matching winner claims but plays different game states).
+  • Airlock-release worker — periodic loop in `lifespan.py` flips
+    `payout_status: held → cleared` once `clears_at` passes AND no
+    open dispute exists. Manual ops endpoint exposed for curl/test.
 
 Endpoints (admin/auth-gated where it matters):
-  • POST /api/match-consensus/submit              — team submits a result
-  • GET  /api/match-consensus/{match_id}          — current consensus state
-  • POST /api/match-consensus/{match_id}/resolve  — admin manual override
+  • POST /api/match-consensus/submit                — team submits a result
+  • GET  /api/match-consensus/{match_id}            — current state
+  • POST /api/match-consensus/{match_id}/resolve    — admin manual override
+  • POST /api/match-consensus/airlock/release-due   — release matured airlocks (ops)
 
 Mongo collections used (zero schema changes — created on first write):
-  • match_submissions     — per-team submission rows
-                            unique on (match_id, reporting_team_id)
-  • match_consensus       — single row per match: status + winner
-  • match_airlocks        — TTL-style row: clears_at_iso, payout_status
-  • security_alerts       — discrepancy log for crew dashboard
+  • match_submissions  — per-team row, unique on (match_id, reporting_team_id)
+  • match_consensus    — single row per match: status + winner
+  • match_airlocks     — TTL-style row: clears_at, payout_status
+  • security_alerts    — discrepancy log for the crew dashboard
 """
 from __future__ import annotations
 
 import hashlib
 import logging
+from collections import Counter
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
@@ -39,7 +50,7 @@ logger = logging.getLogger("match_consensus")
 router = APIRouter(prefix="/match-consensus", tags=["match-consensus"])
 
 AIRLOCK_HOURS = 72
-SUBMISSIONS_REQUIRED = 2  # head-to-head; raise for >2-team formats later
+DEFAULT_SUBMISSIONS_REQUIRED = 2  # head-to-head; override per-match below.
 
 
 # ─── Models ─────────────────────────────────────────────────────────
@@ -56,7 +67,10 @@ class MatchSubmissionBody(BaseModel):
     reporting_team_id: str
     reported_winner_id: str
     final_score: FinalScore
-    game_log_hash: str  # SHA-style hash proving the game was actually played
+    game_log_hash: str
+    # Optional override for >2-team formats (round-robin / free-for-all).
+    # Defaults to 2 (head-to-head) so existing callers don't change.
+    expected_submissions: Optional[int] = Field(default=None, ge=2, le=16)
 
 
 class DisputeResolveBody(BaseModel):
@@ -67,28 +81,30 @@ class DisputeResolveBody(BaseModel):
 # ─── Helpers ────────────────────────────────────────────────────────
 
 
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
+
+
 def _utcnow_iso() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return _utcnow().isoformat()
 
 
 def _airlock_clears_at_iso() -> str:
-    return (datetime.now(timezone.utc) + timedelta(hours=AIRLOCK_HOURS)).isoformat()
+    return (_utcnow() + timedelta(hours=AIRLOCK_HOURS)).isoformat()
 
 
 def _strip_id(doc: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
-    """Mongo ObjectId is non-JSON-serializable. Drop `_id` before return."""
     if not doc:
         return doc
     doc.pop("_id", None)
     return doc
 
 
-async def _emit_security_alert(db, match_id: str, details: str) -> None:
-    """Write a row to `security_alerts` for the crew dashboard.
-    Non-fatal — alert failure must never block consensus flow."""
+async def _emit_security_alert(db, match_id: str, alert_type: str, details: str) -> None:
+    """Crew dashboard alert. Non-fatal — never block consensus flow."""
     try:
         await db.security_alerts.insert_one({
-            "type": "MATCH_DISCREPANCY",
+            "type": alert_type,
             "match_id": match_id,
             "details": details,
             "created_at": _utcnow_iso(),
@@ -99,8 +115,8 @@ async def _emit_security_alert(db, match_id: str, details: str) -> None:
 
 
 async def _start_airlock(db, match_id: str, tournament_id: str, winner_team_id: str) -> Dict[str, Any]:
-    """Idempotent: re-running on the same match returns the existing row
-    without resetting the 72h timer."""
+    """Idempotent: re-running on the same match returns the existing
+    row without resetting the 72h timer."""
     existing = await db.match_airlocks.find_one({"match_id": match_id}, {"_id": 0})
     if existing:
         return existing
@@ -118,18 +134,53 @@ async def _start_airlock(db, match_id: str, tournament_id: str, winner_team_id: 
     return row
 
 
+def _strict_majority_winner(subs: List[Dict[str, Any]]) -> Tuple[Optional[str], Optional[Dict[str, int]]]:
+    """Strict-majority rule: returns (winner_id, agreed_score) when a
+    single winner has > 50% of votes AND that majority cohort agrees
+    on the final_score. Otherwise (None, None).
+
+    For 2-submission head-to-head the rule degenerates to "both agree",
+    matching the original founder spec exactly.
+    """
+    if not subs:
+        return None, None
+    votes = Counter(s["reported_winner_id"] for s in subs)
+    winner_id, count = votes.most_common(1)[0]
+    if count * 2 <= len(subs):  # need strict majority
+        return None, None
+    # All majority voters must also agree on the score.
+    majority_scores = [
+        (s["final_score"]["teamA"], s["final_score"]["teamB"])
+        for s in subs if s["reported_winner_id"] == winner_id
+    ]
+    if len(set(majority_scores)) != 1:
+        return None, None
+    a, b = majority_scores[0]
+    return winner_id, {"teamA": a, "teamB": b}
+
+
+def _hashes_consistent(subs: List[Dict[str, Any]]) -> bool:
+    """True iff every submission carries the same game_log_hash."""
+    hashes = {s.get("game_log_hash") for s in subs}
+    return len(hashes) == 1
+
+
 # ─── Endpoints ──────────────────────────────────────────────────────
 
 
 @router.post("/submit")
 async def submit_match_result(body: MatchSubmissionBody) -> Dict[str, Any]:
-    """Team submits their copy of the match result. Once both teams have
-    submitted, the system compares and either VERIFIES (→ 72h airlock)
-    or DISPUTES (→ security alert + bracket pause)."""
+    """Team submits their copy of the match result. Once the expected
+    number of submissions land, the system runs:
+      1. Strict-majority winner check (degenerates to "both agree" for N=2)
+      2. Score agreement among the majority cohort
+      3. game_log_hash equality across ALL submissions
+    On all-three-pass → VERIFIED_SUCCESS + 72h airlock.
+    On winner+score pass but hash mismatch → HASH_MISMATCH_REVIEW.
+    On winner or score mismatch → DISPUTED_FLAGGED.
+    """
     db = get_database()
 
-    # Reject submissions on a match that's already resolved one way or
-    # the other. Avoids racing a final state.
     consensus = await db.match_consensus.find_one(
         {"match_id": body.match_id}, {"_id": 0, "status": 1}
     )
@@ -139,10 +190,6 @@ async def submit_match_result(body: MatchSubmissionBody) -> Dict[str, Any]:
             detail=f"Match already finalized as {consensus.get('status')}",
         )
 
-    # Persist this team's submission. Compound-unique on
-    # (match_id, reporting_team_id) — a team can re-submit (overwrite)
-    # but can't fake being two teams. We update_one with upsert so a
-    # late correction wins without surfacing a duplicate-key 500.
     submission_doc = {
         "match_id": body.match_id,
         "tournament_id": body.tournament_id,
@@ -158,59 +205,82 @@ async def submit_match_result(body: MatchSubmissionBody) -> Dict[str, Any]:
         upsert=True,
     )
 
-    # Pull every submission for this match (without _id).
-    cursor = db.match_submissions.find(
-        {"match_id": body.match_id}, {"_id": 0}
-    )
-    submissions = await cursor.to_list(length=10)
+    cursor = db.match_submissions.find({"match_id": body.match_id}, {"_id": 0})
+    submissions = await cursor.to_list(length=16)
 
-    if len(submissions) < SUBMISSIONS_REQUIRED:
+    expected = body.expected_submissions or DEFAULT_SUBMISSIONS_REQUIRED
+    if len(submissions) < expected:
         return {
             "status": "AWAITING_OPPONENT",
-            "message": "Waiting for the opposing team to submit results.",
+            "message": "Waiting for the opposing team(s) to submit results.",
             "submissions_received": len(submissions),
-            "submissions_required": SUBMISSIONS_REQUIRED,
+            "submissions_required": expected,
         }
 
-    # We have ≥2 submissions. Compare the first two — extend logic for
-    # round-robin (>2 teams) once that format ships.
-    sub1, sub2 = submissions[0], submissions[1]
+    # ─── Consensus pipeline ───────────────────────────────────────
+    winner_id, agreed_score = _strict_majority_winner(submissions)
 
-    winner_match = sub1["reported_winner_id"] == sub2["reported_winner_id"]
-    score_match = (
-        sub1["final_score"]["teamA"] == sub2["final_score"]["teamA"]
-        and sub1["final_score"]["teamB"] == sub2["final_score"]["teamB"]
-    )
+    if winner_id and agreed_score:
+        # Winner + score agree among the majority. Now check the hash
+        # invariant across ALL submissions (catches matching winner
+        # claims with mismatched game states).
+        if _hashes_consistent(submissions):
+            await db.match_consensus.update_one(
+                {"match_id": body.match_id},
+                {"$set": {
+                    "match_id": body.match_id,
+                    "tournament_id": body.tournament_id,
+                    "status": "VERIFIED_SUCCESS",
+                    "winner_team_id": winner_id,
+                    "final_score": agreed_score,
+                    "verified_at": _utcnow_iso(),
+                }},
+                upsert=True,
+            )
+            airlock = await _start_airlock(
+                db, body.match_id, body.tournament_id, winner_id
+            )
+            return {
+                "status": "SUCCESS",
+                "winner": winner_id,
+                "final_score": agreed_score,
+                "airlock": airlock,
+            }
 
-    if winner_match and score_match:
-        # SUCCESS: lock the verdict + start the 72h airlock.
+        # Winner + score match but hashes don't → smarter-cheater pattern.
+        all_hashes = sorted({s.get("game_log_hash", "") for s in submissions})
+        detail = (
+            f"Winner ({winner_id}) and score ({agreed_score}) agree but "
+            f"game_log_hash mismatch across {len(submissions)} submissions: "
+            f"{all_hashes}"
+        )
         await db.match_consensus.update_one(
             {"match_id": body.match_id},
             {"$set": {
                 "match_id": body.match_id,
                 "tournament_id": body.tournament_id,
-                "status": "VERIFIED_SUCCESS",
-                "winner_team_id": sub1["reported_winner_id"],
-                "final_score": sub1["final_score"],
-                "verified_at": _utcnow_iso(),
+                "status": "HASH_MISMATCH_REVIEW",
+                "winner_team_id": None,
+                "final_score": agreed_score,
+                "flagged_at": _utcnow_iso(),
+                "discrepancy": detail,
             }},
             upsert=True,
         )
-        airlock = await _start_airlock(
-            db, body.match_id, body.tournament_id, sub1["reported_winner_id"]
-        )
+        await _emit_security_alert(db, body.match_id, "GAME_LOG_HASH_MISMATCH", detail)
         return {
-            "status": "SUCCESS",
-            "winner": sub1["reported_winner_id"],
-            "final_score": sub1["final_score"],
-            "airlock": airlock,
+            "status": "HASH_MISMATCH_REVIEW",
+            "message": (
+                "Both teams agree on winner and score but their game-log "
+                "hashes differ. Sent to manual review — payout NOT released."
+            ),
+            "detail": detail,
         }
 
-    # DISCREPANCY: flag the match + emit security alert.
-    detail_msg = (
-        f"Team {sub1['reporting_team_id']} claimed {sub1['reported_winner_id']} won "
-        f"({sub1['final_score']}); Team {sub2['reporting_team_id']} claimed "
-        f"{sub2['reported_winner_id']} won ({sub2['final_score']})."
+    # ─── DISCREPANCY ──────────────────────────────────────────────
+    detail_msg = "; ".join(
+        f"Team {s['reporting_team_id']} → winner={s['reported_winner_id']} score={s['final_score']}"
+        for s in submissions
     )
     await db.match_consensus.update_one(
         {"match_id": body.match_id},
@@ -224,7 +294,7 @@ async def submit_match_result(body: MatchSubmissionBody) -> Dict[str, Any]:
         }},
         upsert=True,
     )
-    await _emit_security_alert(db, body.match_id, detail_msg)
+    await _emit_security_alert(db, body.match_id, "MATCH_DISCREPANCY", detail_msg)
     return {
         "status": "DISPUTED",
         "message": "Match results conflict. Sent to manual review. Bracket branch paused.",
@@ -234,8 +304,6 @@ async def submit_match_result(body: MatchSubmissionBody) -> Dict[str, Any]:
 
 @router.get("/{match_id}")
 async def get_match_state(match_id: str) -> Dict[str, Any]:
-    """Current consensus + airlock state for a given match. Used by the
-    tournament bracket UI to render Verified / Awaiting / Disputed."""
     db = get_database()
     consensus = _strip_id(await db.match_consensus.find_one({"match_id": match_id}))
     airlock = _strip_id(await db.match_airlocks.find_one({"match_id": match_id}))
@@ -245,7 +313,7 @@ async def get_match_state(match_id: str) -> Dict[str, Any]:
         "consensus": consensus,
         "airlock": airlock,
         "submissions_received": submissions_count,
-        "submissions_required": SUBMISSIONS_REQUIRED,
+        "submissions_required": DEFAULT_SUBMISSIONS_REQUIRED,
     }
 
 
@@ -253,9 +321,6 @@ async def get_match_state(match_id: str) -> Dict[str, Any]:
 async def admin_resolve_dispute(
     match_id: str, body: DisputeResolveBody, request: Request
 ) -> Dict[str, Any]:
-    """Admin override for a DISPUTED match. Flips status to
-    RESOLVED_BY_ADMIN, starts the 72h airlock with the admin-named
-    winner, and stamps the audit log."""
     user = await get_current_user(request)
     if user is None or not getattr(user, "is_admin", False):
         raise HTTPException(status_code=403, detail="Admin only")
@@ -285,6 +350,57 @@ async def admin_resolve_dispute(
         "winner_team_id": body.winner_team_id,
         "airlock": airlock,
     }
+
+
+# ─── Airlock release worker ─────────────────────────────────────────
+
+
+async def release_due_airlocks(db) -> Dict[str, Any]:
+    """Scan `match_airlocks` for matured rows (clears_at < now, still
+    held) and flip them to `cleared` — UNLESS the match has been
+    flipped to DISPUTED_FLAGGED or HASH_MISMATCH_REVIEW in the
+    meantime (in which case the airlock stays held pending admin
+    resolution).
+
+    Returns a small summary dict. Safe to call repeatedly.
+    """
+    now_iso = _utcnow_iso()
+    cursor = db.match_airlocks.find(
+        {"payout_status": "held", "clears_at": {"$lte": now_iso}},
+        {"_id": 0},
+    )
+    matured = await cursor.to_list(length=500)
+
+    released = 0
+    held_due_to_dispute = 0
+    for row in matured:
+        match_id = row["match_id"]
+        consensus = await db.match_consensus.find_one(
+            {"match_id": match_id}, {"_id": 0, "status": 1}
+        )
+        status = (consensus or {}).get("status")
+        if status in {"DISPUTED_FLAGGED", "HASH_MISMATCH_REVIEW"}:
+            held_due_to_dispute += 1
+            continue
+        await db.match_airlocks.update_one(
+            {"match_id": match_id, "payout_status": "held"},
+            {"$set": {"payout_status": "cleared", "cleared_at": now_iso}},
+        )
+        released += 1
+
+    return {
+        "matured": len(matured),
+        "released": released,
+        "held_due_to_dispute": held_due_to_dispute,
+    }
+
+
+@router.post("/airlock/release-due")
+async def release_due_airlocks_endpoint() -> Dict[str, Any]:
+    """Ops/manual trigger for the airlock-release worker. Returns the
+    same summary the scheduled loop reports."""
+    db = get_database()
+    return await release_due_airlocks(db)
 
 
 # ─── Optional helper for callers wanting a deterministic game-log hash ─

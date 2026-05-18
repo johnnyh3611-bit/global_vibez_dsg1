@@ -102,6 +102,9 @@ def register_startup_tasks(app, logger: logging.Logger) -> None:
         _kick_off("Vibe Radio skip-bid auto-resolver",
                   _start_vibe_radio_resolver, logger,
                   success_msg="Vibe Radio skip-bid auto-resolver started (15s ticks)")
+        _kick_off("Match Consensus airlock-release worker",
+                  _start_airlock_release_worker, logger,
+                  success_msg="Match Consensus airlock-release worker started (5-min ticks)")
 
 
 def register_shutdown(app, logger: logging.Logger) -> None:
@@ -443,6 +446,46 @@ def _start_vibe_radio_resolver() -> None:
             except Exception as exc:
                 log.warning(f"resolver tick failed: {exc}")
             await asyncio.sleep(15)
+
+    asyncio.create_task(loop())
+
+
+
+def _start_airlock_release_worker() -> None:
+    """Match Consensus 72h airlock-release worker. Every 5 minutes:
+
+      1. Scan `match_airlocks` for rows where `clears_at < now()` and
+         `payout_status == "held"`.
+      2. For each matured row, check `match_consensus.status` — if the
+         match is in DISPUTED_FLAGGED or HASH_MISMATCH_REVIEW, leave
+         the airlock held (admin must resolve first).
+      3. Otherwise flip `payout_status: held → cleared` + stamp
+         `cleared_at`.
+
+    The release logic lives in `routes.match_consensus.release_due_airlocks`
+    so the same code path runs whether triggered by this loop or by the
+    `POST /airlock/release-due` ops endpoint.
+    """
+    async def loop():
+        log = logging.getLogger("match-airlock-release")
+        await asyncio.sleep(25)  # warm-up so the route module imports cleanly
+        try:
+            from routes.match_consensus import release_due_airlocks  # noqa: PLC0415
+        except Exception as exc:
+            log.warning(f"release worker import failed — aborting loop: {exc}")
+            return
+        while True:
+            try:
+                db = get_database()
+                summary = await release_due_airlocks(db)
+                if summary["released"] or summary["held_due_to_dispute"]:
+                    log.info(
+                        "airlock-release tick: matured=%d released=%d held_due_to_dispute=%d",
+                        summary["matured"], summary["released"], summary["held_due_to_dispute"],
+                    )
+            except Exception as exc:
+                log.warning(f"airlock-release tick failed: {exc}")
+            await asyncio.sleep(5 * 60)  # 5-minute cadence
 
     asyncio.create_task(loop())
 
