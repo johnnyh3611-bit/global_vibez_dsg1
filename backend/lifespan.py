@@ -725,4 +725,20 @@ _INDEX_SPECS = [
     {"coll": "media_scout_alerts", "key": [("expires_at", -1)], "background": True},
     # Channel programming — hot read for HLS resolver
     {"coll": "media_tv_channel_programs", "key": [("channel_id", 1), ("programmed_until", -1)], "background": True},
+
+    # 2026-05-17 — Match Consensus + 72h Airlock indexes
+    # Per-team submission must be unique on (match_id, reporting_team_id)
+    # so two teams can submit but neither can stuff the ballot.
+    {"coll": "match_submissions",
+     "key": [("match_id", 1), ("reporting_team_id", 1)],
+     "unique": True, "background": True},
+    {"coll": "match_submissions", "key": [("match_id", 1)], "background": True},
+    # One consensus row per match.
+    {"coll": "match_consensus", "key": "match_id", "unique": True, "background": True},
+    {"coll": "match_consensus", "key": [("status", 1), ("verified_at", -1)], "background": True},
+    # One airlock row per match; ordered scan for "ready to clear" jobs.
+    {"coll": "match_airlocks", "key": "match_id", "unique": True, "background": True},
+    {"coll": "match_airlocks", "key": [("payout_status", 1), ("clears_at", 1)], "background": True},
+    # Security alerts — open-first.
+    {"coll": "security_alerts", "key": [("status", 1), ("created_at", -1)], "background": True},
 ]

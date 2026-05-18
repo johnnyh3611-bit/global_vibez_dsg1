@@ -10367,3 +10367,86 @@ def test_use_is_mobile_galaxy_hook_module_exists():
     # EITHER trigger.
     assert "mql.matches || lowEnd" in src
 
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# 2026-05-17 — Match Consensus + 72h Payout Airlock (anti-cheat, 3 locks)
+# ═══════════════════════════════════════════════════════════════════════
+
+
+def test_match_consensus_route_registered():
+    """Founder spec: both teams submit independently, consensus locks
+    the winner, mismatches flag DISPUTED + emit a security alert.
+    Verify the route is mounted with all 3 endpoints + admin gate."""
+    from server import app
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    assert "/api/match-consensus/submit" in paths, (
+        "POST /api/match-consensus/submit is missing"
+    )
+    assert "/api/match-consensus/{match_id}" in paths, (
+        "GET /api/match-consensus/{match_id} is missing"
+    )
+    assert "/api/match-consensus/{match_id}/resolve" in paths, (
+        "POST /api/match-consensus/{match_id}/resolve is missing"
+    )
+
+
+def test_match_consensus_implementation_pins():
+    """Lock the critical anti-cheat invariants so a future refactor
+    can't silently weaken them: 72h airlock, security alert on mismatch,
+    submission upsert keyed by (match_id, reporting_team_id), admin
+    auth on resolve, idempotent airlock, both winner_id AND score must
+    match for VERIFIED_SUCCESS."""
+    src = open("/app/backend/routes/match_consensus.py").read()
+
+    # 72-hour window is the founder spec — must stay 72.
+    assert "AIRLOCK_HOURS = 72" in src, "Airlock window drifted from 72h"
+
+    # Both must agree on BOTH winner AND score for VERIFIED_SUCCESS.
+    assert "winner_match and score_match" in src, (
+        "Consensus must require BOTH winner agreement AND score agreement"
+    )
+
+    # On mismatch we MUST flag DISPUTED + emit security alert.
+    assert '"DISPUTED_FLAGGED"' in src
+    assert "_emit_security_alert" in src
+    assert "MATCH_DISCREPANCY" in src
+
+    # Per-team submission is upserted on (match_id, reporting_team_id)
+    # so a single team can't ballot-stuff.
+    assert '"match_id": body.match_id, "reporting_team_id": body.reporting_team_id' in src, (
+        "match_submissions write must scope to (match_id, reporting_team_id)"
+    )
+
+    # Airlock start must be idempotent (re-submitting can't reset the
+    # 72h timer).
+    assert "existing = await db.match_airlocks.find_one" in src
+    assert "if existing:" in src
+
+    # Admin resolve must require is_admin.
+    assert 'getattr(user, "is_admin", False)' in src
+
+    # _id must be stripped before any consensus/airlock response.
+    assert "_strip_id" in src
+    assert 'doc.pop("_id", None)' in src
+
+    # Already-finalized matches MUST refuse new submissions (409).
+    assert "Match already finalized" in src
+
+
+def test_match_consensus_indexes_registered():
+    """The Mongo indexes that enforce the per-team submission uniqueness
+    + the consensus + airlock uniqueness must be in `_INDEX_SPECS`. The
+    `(match_id, reporting_team_id)` UNIQUE index is the DB-level guard
+    against ballot stuffing."""
+    src = open("/app/backend/lifespan.py").read()
+    # Per-team unique submission.
+    assert '"coll": "match_submissions"' in src
+    assert '"reporting_team_id"' in src
+    # One consensus per match.
+    assert '"coll": "match_consensus", "key": "match_id", "unique": True' in src
+    # One airlock per match.
+    assert '"coll": "match_airlocks", "key": "match_id", "unique": True' in src
+    # Security alerts collection indexed for the crew dashboard.
+    assert '"coll": "security_alerts"' in src
+
