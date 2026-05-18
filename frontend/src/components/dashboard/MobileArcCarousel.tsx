@@ -22,6 +22,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import MobileGalaxyTour from "@/components/dashboard/MobileGalaxyTour";
 
 type CategoryRoom = { id: string; label: string; emoji: string; path: string };
 type Category = {
@@ -102,6 +103,9 @@ const MobileArcCarousel: React.FC<Props> = ({ categories, onBackToClassic }) => 
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
+      {/* First-time coach-mark walkthrough — auto-dismisses for repeat
+          visitors via localStorage. */}
+      <MobileGalaxyTour />
       {/* Top bar */}
       <header className="sticky top-0 z-20 px-4 py-3 flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent backdrop-blur-sm">
         <button

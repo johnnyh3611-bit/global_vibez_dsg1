@@ -1,6 +1,21 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
 
+> **2026-02-XX (cont.) — MOBILE GALAXY TOUR (coach-mark walkthrough) · 494/494 regression green · READY FOR BETA REDEPLOY 🚀.**
+>
+> Founder asked to ship the "Mobile Galaxy Tour" before redeploying so first-time mobile users discover the new 2D arc carousel quickly.
+>
+> ### What shipped
+> 1. **`MobileGalaxyTour.tsx`** — 3-step coach-mark overlay (Tap to focus · Swipe to rotate · Tap room to dive in) with step dots, skip button, and finish CTA. Backdrop blur + fuchsia glow card.
+> 2. **Persistence**: dismissal (skip or completion) writes `localStorage["gv_mobile_galaxy_tour_seen"] = "1"`. Returning visitors never see it again. Storage failure (private mode, full quota) is swallowed silently.
+> 3. **Wired into `MobileArcCarousel.tsx`** — renders `<MobileGalaxyTour />` next to the existing top bar. The tour is z-100 over everything so it never gets buried.
+> 4. **Test-friendly**: `forceShow` prop for E2E + every interactive element has a unique `data-testid`.
+>
+> ### Regression Shield: **494/494 GREEN** (+1 new lock)
+>   - `test_mobile_galaxy_tour_renders_first_visit_only`
+
+
+
 > **2026-02-XX (cont.) — ADMIN PRICING UI + PAYMENTS AUDIT + PLANET-SHIFT MOBILE ARC · 493/493 regression green.**
 >
 > Three more production-hardening features in one pass — backend + frontend stack done in a single context.

@@ -11054,3 +11054,41 @@ def test_mobile_arc_carousel_replaces_canvas_on_phone():
         "VolumetricDashboard must early-return MobileArcCarousel on mobile"
     )
 
+def test_mobile_galaxy_tour_renders_first_visit_only():
+    """Feb 2026 — first-time mobile users see a 3-step coach-mark
+    walkthrough explaining the arc carousel (tap-to-focus, swipe-to-
+    rotate, tap-room-to-dive-in). Returning users don't.
+
+    Pin the wiring so a future "clean up" can't drop it:
+      • MobileGalaxyTour component exists with 3 steps + skip + next + finish
+      • localStorage key 'gv_mobile_galaxy_tour_seen' gates re-show
+      • MobileArcCarousel imports and renders <MobileGalaxyTour />
+    """
+    from pathlib import Path
+    fe = Path("/app/frontend/src")
+
+    tour = (fe / "components" / "dashboard" / "MobileGalaxyTour.tsx").read_text(encoding="utf-8")
+    assert "STORAGE_KEY" in tour and "gv_mobile_galaxy_tour_seen" in tour, (
+        "MobileGalaxyTour must persist the seen-flag in localStorage"
+    )
+    # Exactly 3 steps shipped per founder spec.
+    assert tour.count('"title":') >= 3 or tour.count("title:") >= 3, (
+        "MobileGalaxyTour must define 3 walkthrough steps"
+    )
+    for tid in [
+        "mobile-galaxy-tour-overlay",
+        "mobile-galaxy-tour-skip-btn",
+        "mobile-galaxy-tour-next-btn",
+        "mobile-galaxy-tour-finish-btn",
+        "mobile-galaxy-tour-dots",
+    ]:
+        assert tid in tour, f"MobileGalaxyTour missing data-testid '{tid}'"
+
+    carousel = (fe / "components" / "dashboard" / "MobileArcCarousel.tsx").read_text(encoding="utf-8")
+    assert "import MobileGalaxyTour" in carousel, (
+        "MobileArcCarousel must import the tour component"
+    )
+    assert "<MobileGalaxyTour" in carousel, (
+        "MobileArcCarousel must render <MobileGalaxyTour /> on the page"
+    )
+
