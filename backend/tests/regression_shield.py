@@ -11253,3 +11253,162 @@ def test_pricing_catalog_covers_featured_streamer_and_jftn_pass():
         "AdminTierPricing must render the jftn_season_pass card"
     )
 
+def test_recirculation_engine_replaces_burn_per_blueprint():
+    """Feb 2026 — Recirculation Blueprint adopted. The deflationary
+    burn model is replaced with a fixed-supply 40/30/30 recirculation
+    engine (Tournament Pool / Treasury / 72h Airlock).
+
+    Pins the off-chain implementation. The on-chain Solana mirror is
+    intentionally NOT tested here — it ships after the founder types
+    `"project complete"`.
+    """
+    from pathlib import Path
+    backend = Path(__file__).resolve().parents[1]
+
+    # 1. Service module exists with the canonical split + helpers.
+    svc = (backend / "services" / "recirculation.py").read_text(encoding="utf-8")
+    for token in [
+        "TOURNAMENT_POOL_PCT: float = 0.40",
+        "TREASURY_PCT: float = 0.30",
+        "AIRLOCK_PCT: float = 0.30",
+        "AIRLOCK_HOLD_SECONDS: int = 72 * 60 * 60",
+        "async def recirculate",
+        "async def get_pool_summary",
+        "async def release_due_airlocks",
+        "async def airlock_release_loop",
+        "recirculation_ledger",
+        "recirculation_pools",
+        "recirculation_airlocks",
+    ]:
+        assert token in svc, f"recirculation.py missing token '{token}'"
+
+    # Numeric invariants must hold at import time so a bad edit fails loud.
+    from services.recirculation import (
+        TOURNAMENT_POOL_PCT, TREASURY_PCT, AIRLOCK_PCT, AIRLOCK_HOLD_SECONDS,
+        _split,
+    )
+    assert abs((TOURNAMENT_POOL_PCT + TREASURY_PCT + AIRLOCK_PCT) - 1.0) < 1e-9
+    assert AIRLOCK_HOLD_SECONDS == 72 * 60 * 60
+    # _split must sum exactly to amount (airlock absorbs rounding).
+    s = _split(1000)
+    assert s["tournament"] + s["treasury"] + s["airlock"] == 1000
+    assert s["tournament"] == 400
+    assert s["treasury"] == 300
+    assert s["airlock"] == 300
+    # Rounding remainder lands in airlock (per Blueprint contract).
+    s = _split(1001)
+    assert s["tournament"] + s["treasury"] + s["airlock"] == 1001
+
+    # 2. Admin routes mounted.
+    from server import app
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    for p in (
+        "/api/admin/recirculation/summary",
+        "/api/admin/recirculation/ledger",
+        "/api/admin/recirculation/airlocks",
+    ):
+        assert p in paths, f"Missing admin route: {p}"
+
+    # 3. Background release worker is kicked off.
+    workers = (backend / "lifespan_workers.py").read_text(encoding="utf-8")
+    assert "def _start_recirculation_airlock_release_worker" in workers
+    assert "airlock_release_loop" in workers
+    lifespan = (backend / "lifespan.py").read_text(encoding="utf-8")
+    assert "_start_recirculation_airlock_release_worker" in lifespan, (
+        "lifespan.py must register the recirculation release worker"
+    )
+
+    # 4. Index spec covers ledger + airlocks.
+    idx = (backend / "lifespan_indexes.py").read_text(encoding="utf-8")
+    assert '"coll": "recirculation_ledger"' in idx
+    assert '"coll": "recirculation_airlocks"' in idx
+
+    # 5. The two main legacy "burn" call sites now route through
+    #    recirculate() instead of vanishing the coins.
+    gifts_route = (backend / "routes" / "founder_engines_routes.py").read_text(encoding="utf-8")
+    assert "from services.recirculation import recirculate" in gifts_route, (
+        "founder_engines_routes must import recirculate for gifts + wheel"
+    )
+    assert gifts_route.count("await recirculate(") >= 2, (
+        "founder_engines_routes must call await recirculate() for both gifts + wheel joker"
+    )
+
+def test_dsg_token_burn_paths_stay_decoupled_from_recirculation():
+    """Feb 2026 — the founder maintains TWO separate economies:
+
+      • IN-APP COINS (₵ / VIBEZ)  → Recirculation Blueprint (40/30/30, no burn)
+      • DSG TOKEN (Solana SPL)    → keeps burn schedule for the on-chain launch
+
+    This lock prevents a future agent from "consolidating" them.
+
+    Asserts:
+      1. The DSG SPL burn endpoints + schedule helpers still exist.
+      2. The DSG burn paths do NOT import the in-app recirculation engine.
+      3. The recirculation service docstring loudly documents the
+         decoupling so contributors don't accidentally bridge them.
+    """
+    from pathlib import Path
+    backend = Path(__file__).resolve().parents[1]
+
+    # DSG burn endpoints still mounted (gated, but alive).
+    from server import app
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    assert "/api/burn/schedule" in paths, (
+        "DSG burn schedule endpoint must remain — separate from in-app recirc"
+    )
+    assert "/api/admin/burn/execute" in paths, (
+        "DSG SPL burn execute endpoint must remain (gated but available)"
+    )
+
+    sovereign_ops = (backend / "routes" / "sovereign_ops_routes.py").read_text(encoding="utf-8")
+    # The Solana SPL burn must stay gated behind the safe-phrase guard.
+    assert "Live SPL burn disabled" in sovereign_ops, (
+        "DSG live SPL burn must remain gated until TGE arming"
+    )
+    # And it must NOT route through the in-app recirculation engine.
+    assert "from services.recirculation import" not in sovereign_ops, (
+        "DSG burn paths must NOT import the in-app recirculation engine"
+    )
+
+    governor = (backend / "services" / "ai_governor.py").read_text(encoding="utf-8")
+    assert "from services.recirculation import" not in governor, (
+        "AI governor (DSG burn-rate stepper) must NOT import the in-app "
+        "recirculation engine — they are decoupled economies"
+    )
+
+    # The recirculation service must loudly document the decoupling.
+    recirc = (backend / "services" / "recirculation.py").read_text(encoding="utf-8")
+    assert "IN-APP COINS" in recirc and "DSG TOKEN" in recirc, (
+        "recirculation.py docstring must explicitly contrast in-app coins "
+        "vs DSG token so contributors don't accidentally bridge them"
+    )
+
+def test_admin_recirculation_ui_wired():
+    """Founder admin page for the in-app coin recirculation pools."""
+    from pathlib import Path
+    fe = Path("/app/frontend/src")
+    page = (fe / "pages" / "admin" / "AdminRecirculation.tsx").read_text(encoding="utf-8")
+    for tid in [
+        "admin-recirculation-page",
+        "admin-recirculation-pools-card",
+        "admin-recirculation-tournament-pool",
+        "admin-recirculation-treasury",
+        "admin-recirculation-airlock-locked",
+        "admin-recirculation-ledger-card",
+        "admin-recirculation-airlocks-card",
+        "admin-recirculation-refresh-btn",
+    ]:
+        assert tid in page, f"AdminRecirculation missing testid '{tid}'"
+    for endpoint in [
+        "/api/admin/recirculation/summary",
+        "/api/admin/recirculation/ledger",
+        "/api/admin/recirculation/airlocks",
+    ]:
+        assert endpoint in page, f"AdminRecirculation must call {endpoint}"
+    # Must clearly state it's IN-APP COINS ONLY, not the DSG token.
+    assert "DSG token" in page or "DSG" in page, (
+        "AdminRecirculation must clarify it's for the in-app coin, NOT the DSG token"
+    )
+    routes = (fe / "routes" / "adminRoutes.tsx").read_text(encoding="utf-8")
+    assert "AdminRecirculation" in routes and "/admin/recirculation" in routes
+

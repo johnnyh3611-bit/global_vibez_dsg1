@@ -180,11 +180,13 @@ CRAPS_BOXCARS_PAYOUT: int = 30             # rolling exactly 6+6
 YAHTZEE_UPPER_BONUS_MINING_BOOST_MINUTES: int = 10
 YAHTZEE_UPPER_BONUS_MINING_MULT: float = 1.10  # +10% boost for the duration
 
-# Spec: "Vibes Wheel: 54 slots. 2 'Sovereign Jokers' pay 40:1 and trigger 10% burn event."
+# Spec: "Vibes Wheel: 54 slots. 2 'Sovereign Jokers' pay 40:1 and trigger a
+# 10% scarcity event." Feb 2026: the 10% slice that USED to burn is now
+# recirculated 40/30/30 per the Blueprint. Field name kept for back-compat.
 VIBES_WHEEL_SLOTS: int = 54
 VIBES_WHEEL_SOVEREIGN_JOKER_COUNT: int = 2
 VIBES_WHEEL_SOVEREIGN_JOKER_PAYOUT: int = 40
-VIBES_WHEEL_SOVEREIGN_JOKER_BURN_PCT: float = 0.10
+VIBES_WHEEL_SOVEREIGN_JOKER_BURN_PCT: float = 0.10  # recirculated, NOT burned
 
 
 def sic_bo_payout(bet_type: str, dice: List[int], stake: float) -> Dict:

@@ -97,32 +97,39 @@ async def nova_config():
     return NOVA_PROFILE
 
 
-# ────────────────────────────────────────────── Payout / rake / burn ──
+# ────────────────────────────────── Payout / rake / recirculation ──
 
 class PayoutQuery(BaseModel):
     total_pot: float = Field(..., ge=0)
     rake_percent: float = Field(default=0.05, ge=0, le=0.30)
     burn_share: float = Field(
         default=0.50, ge=0, le=1.0,
-        description="Fraction of the rake that's BURNED (deflationary). Rest is maintenance.",
+        description=(
+            "Fraction of the rake to send through the Recirculation Engine "
+            "(40/30/30 — see Blueprint). Rest is maintenance. Field name "
+            "kept as `burn_share` for back-compat."
+        ),
     )
 
 
 @router.post("/economy/payout")
 async def calc_payout(payload: PayoutQuery):
     """
-    Returns winner_payout, burn_amount, maintenance_amount for a pot.
+    Returns winner_payout, recirculation_amount, maintenance_amount for a pot.
     Pure-function endpoint — no DB writes — so the frontend can preview
-    expected payouts before the table actually settles.
+    expected payouts before the table actually settles. Feb 2026: the
+    `burn_amount` is now `recirculation_amount` (renamed for clarity, old
+    key kept for back-compat).
     """
     house_cut = payload.total_pot * payload.rake_percent
-    burn_amount = house_cut * payload.burn_share
-    maintenance = house_cut - burn_amount
+    recirc_amount = house_cut * payload.burn_share
+    maintenance = house_cut - recirc_amount
     return {
         "total_pot": round(payload.total_pot, 4),
         "winner_payout": round(payload.total_pot - house_cut, 4),
         "house_cut": round(house_cut, 4),
-        "burn_amount": round(burn_amount, 4),
+        "burn_amount": round(recirc_amount, 4),                 # back-compat
+        "recirculation_amount": round(recirc_amount, 4),        # new name
         "maintenance_amount": round(maintenance, 4),
         "rake_percent": payload.rake_percent,
         "burn_share": payload.burn_share,

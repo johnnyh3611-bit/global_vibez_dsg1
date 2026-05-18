@@ -46,6 +46,7 @@ from lifespan_workers import (
     _start_airlock_release_worker,
     _start_payout_airlock_release_worker,
     _start_payments_audit_drift_alert,
+    _start_recirculation_airlock_release_worker,
 )
 from lifespan_migrations import _create_indexes_async
 
@@ -140,6 +141,9 @@ def register_startup_tasks(app, logger: logging.Logger) -> None:
         _kick_off("Payments-audit drift alert worker",
                   _start_payments_audit_drift_alert, logger,
                   success_msg="Payments-audit drift alert worker started (6-hour ticks)")
+        _kick_off("Recirculation airlock release worker (Blueprint 72h)",
+                  _start_recirculation_airlock_release_worker, logger,
+                  success_msg="Recirculation airlock release worker started (5-min ticks)")
 
 
 def register_shutdown(app, logger: logging.Logger) -> None:

@@ -198,4 +198,12 @@ _INDEX_SPECS = [
     {"coll": "payments_audit", "key": [("user_id", 1), ("at", -1)], "background": True},
     # Drift-alert audit trail — newest-first read for the admin "Alerts" tab.
     {"coll": "payments_audit_alerts", "key": [("at", -1)], "background": True},
+
+    # Feb 2026 — Recirculation Blueprint (off-chain 40/30/30 engine)
+    {"coll": "recirculation_ledger", "key": [("at", -1)], "background": True},
+    {"coll": "recirculation_ledger", "key": [("source", 1), ("at", -1)], "background": True},
+    {"coll": "recirculation_ledger", "key": [("user_id", 1), ("at", -1)], "background": True},
+    # Release worker reads (status=held AND clears_at <= now).
+    {"coll": "recirculation_airlocks", "key": [("status", 1), ("clears_at", 1)], "background": True},
+    {"coll": "recirculation_airlocks", "key": "recirc_id", "unique": True, "background": True},
 ]

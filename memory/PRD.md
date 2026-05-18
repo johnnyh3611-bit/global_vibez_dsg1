@@ -1,6 +1,35 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
 
+> **2026-02-XX (cont.) — TWO-ECONOMY MODEL: In-App Recirculation (live) + DSG Token Burn (preserved) · 500/500 regression green 🎯.**
+>
+> Founder confirmed the bifurcation: in-app coins recirculate, DSG token keeps its burn schedule for the eventual Solana launch.
+>
+> ### Economy #1 — In-App Coins (₵ / VIBEZ) → Recirculation Blueprint (40/30/30)
+> 1. **`services/recirculation.py`** — canonical engine. `recirculate(amount_coins, source, ...)` splits 40% Tournament Pool / 30% Treasury / 30% 72h Airlock. Indexes + dedicated `recirculation_airlocks` collection. Documented loudly at the top: **IN-APP COINS ONLY — DSG token burn is a separate Solana flow**.
+> 2. **`lifespan_workers._start_recirculation_airlock_release_worker`** — 5-min cadence release worker auto-flips matured airlock rows to `cleared`.
+> 3. **3 burn call-sites rewired** to recirculate instead of vanishing coins:
+>    - `routes/founder_engines_routes.py /gifts/purchase` — 12.5% gift "burn share" now recirculates
+>    - `routes/founder_engines_routes.py /wheel/spin` — 10% Sovereign Joker share recirculates
+>    - `routes/florida_flow.py /economy/payout` — preview now returns `recirculation_amount` (legacy `burn_amount` key preserved for back-compat)
+> 4. **`/admin/recirculation` UI** with pool balances, ledger, and 72h-held airlocks. Clearly labeled "IN-APP COIN — NOT the DSG token".
+> 5. **Admin endpoints** `/api/admin/recirculation/{summary,ledger,airlocks}` — all auth-gated.
+>
+> ### Economy #2 — DSG Token (Solana SPL) → Burn Schedule (preserved & locked)
+> - `routes/sovereign_ops_routes.py /api/burn/schedule` + `/api/admin/burn/execute` — untouched. Verified: supply 750M, burned 0, burn_rate 5%.
+> - `services/ai_governor.py` burn-rate stepper — untouched.
+> - Live SPL burn remains gated behind the safe-phrase guard until you type `"project complete"`.
+>
+> ### Regression Shield: **500/500 GREEN** (+3 new locks)
+>   - `test_recirculation_engine_replaces_burn_per_blueprint` (40/30/30 math, airlock 72h hold, ledger + pool collections)
+>   - `test_dsg_token_burn_paths_stay_decoupled_from_recirculation` (no cross-imports — the two economies stay deliberately separate forever)
+>   - `test_admin_recirculation_ui_wired`
+>
+> ### Ops note
+> Disk on `/var/log` was at 100% during testing — caused a transient mongod outage. Cleared rotated supervisor + mongodb logs (now at 93%). Recommend a logrotate policy or `/var/log` size bump in prod.
+
+
+
 > **2026-02-XX (cont.) — FEATURED STREAMER + JFTN SEASON PASS MIGRATED TO PRICING CATALOG · 497/497 regression green · BACKLOG CLEARED 🎉.**
 >
 > Last backlog item executed. Two more revenue surfaces are now founder-editable from `/admin/tier-pricing` without a redeploy.

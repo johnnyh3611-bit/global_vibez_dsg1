@@ -262,13 +262,28 @@ def vw_constants() -> Dict:
 
 
 @vw_router.post("/spin")
-def vw_spin(req: VWSpinIn) -> Dict:
+async def vw_spin(req: VWSpinIn) -> Dict:
     rng = random.Random(req.seed) if req.seed is not None else random.Random()
     landed = rng.randint(0, VIBES_WHEEL_SLOTS - 1)
     try:
-        return vibes_wheel_spin_outcome(landed_slot_index=landed, stake=req.stake)
+        outcome = vibes_wheel_spin_outcome(landed_slot_index=landed, stake=req.stake)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    # Feb 2026 — the 10% "burn" slice on a Sovereign Joker now
+    # recirculates 40/30/30 instead of vanishing.
+    if outcome.get("burn", 0) > 0:
+        try:
+            from services.recirculation import recirculate  # noqa: PLC0415
+            from utils.database import get_database  # noqa: PLC0415
+            outcome["recirculation"] = await recirculate(
+                get_database(),
+                amount_coins=int(round(outcome["burn"])),
+                source="vibes_wheel_joker",
+                metadata={"slot_index": landed, "stake": req.stake},
+            )
+        except Exception:
+            outcome["recirculation"] = None
+    return outcome
 
 
 # ──────────────────────────────────────────────────────────────────────────
@@ -361,18 +376,37 @@ def gifts_list() -> Dict:
 
 
 @gifts_router.post("/purchase")
-def gifts_purchase(req: GiftPurchaseIn) -> Dict:
+async def gifts_purchase(req: GiftPurchaseIn) -> Dict:
     try:
         s = process_luxury_gift(req.item_id, req.price, req.buyer_id, req.recipient_id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     buff = lookup_gift_buff(req.item_id)
+    # Feb 2026 — the 12.5% formerly-burned share is now recirculated
+    # via the Blueprint's 40/30/30 engine (tournament pool / treasury /
+    # 72h airlock). Net to creator + treasury is unchanged.
+    recirc = None
+    if s.burn_share > 0:
+        try:
+            from services.recirculation import recirculate  # noqa: PLC0415
+            from utils.database import get_database  # noqa: PLC0415
+            recirc = await recirculate(
+                get_database(),
+                amount_coins=int(round(s.burn_share)),
+                source="sovereign_gift",
+                user_id=req.buyer_id,
+                metadata={"item_id": req.item_id, "recipient_id": req.recipient_id},
+            )
+        except Exception:
+            recirc = None
     return {
         "item_id": s.item_id, "buyer_id": s.buyer_id, "recipient_id": s.recipient_id,
         "price": s.price,
         "creator_share": s.creator_share,
         "treasury_share": s.treasury_share,
         "burn_share": s.burn_share,
+        "recirculation_share": s.burn_share,  # alias — name reflects new model
+        "recirculation": recirc,
         "buff": (
             None if buff is None
             else {"name": buff.name, "boost_type": buff.boost_type,

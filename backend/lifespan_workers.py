@@ -435,3 +435,20 @@ def _start_payments_audit_drift_alert() -> None:
 
     asyncio.create_task(loop())
 
+
+
+def _start_recirculation_airlock_release_worker() -> None:
+    """Feb 2026 — 72h recirculation airlock release loop. Flips matured
+    coin-airlock rows to `cleared` so the 30% airlock share re-enters
+    general circulation per the Recirculation Blueprint."""
+    async def loop():
+        try:
+            from services.recirculation import airlock_release_loop  # noqa: PLC0415
+            await airlock_release_loop()
+        except Exception as exc:  # noqa: BLE001
+            logging.getLogger("recirculation-airlock").warning(
+                "release loop import/start failed: %s", exc,
+            )
+
+    asyncio.create_task(loop())
+

@@ -26,7 +26,10 @@ from typing import Dict, List, Optional
 # ── Sovereign Split (60/27.5/12.5 — body spec) ──────────────────────────────
 GIFT_CREATOR_PCT: float = 0.60      # 60% to creator/driver
 GIFT_TREASURY_PCT: float = 0.275    # 27.5% to treasury + chair-holder dividends
-GIFT_BURN_PCT: float = 0.125        # 12.5% permanent supply burn
+GIFT_BURN_PCT: float = 0.125        # 12.5% — Feb 2026: NO LONGER BURNED.
+                                    # Routes through the Recirculation
+                                    # Engine (40/30/30) per Blueprint.
+                                    # Constant name kept for back-compat.
 
 # Sanity assertion at import time — fails loud if anyone edits these wrong
 assert abs(GIFT_CREATOR_PCT + GIFT_TREASURY_PCT + GIFT_BURN_PCT - 1.0) < 1e-9, \
@@ -42,7 +45,7 @@ class GiftSplit:
     price: float
     creator_share: float    # 60%  → recipient creator
     treasury_share: float   # 27.5% → platform + chair-holder dividends
-    burn_share: float       # 12.5% → permanent burn (scarcity trigger)
+    burn_share: float       # 12.5% — recirculates 40/30/30 (no longer burned)
 
 
 def process_luxury_gift(
