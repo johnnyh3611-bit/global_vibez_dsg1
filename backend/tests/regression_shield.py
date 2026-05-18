@@ -11092,3 +11092,39 @@ def test_mobile_galaxy_tour_renders_first_visit_only():
         "MobileArcCarousel must render <MobileGalaxyTour /> on the page"
     )
 
+def test_admin_payments_audit_ui_wired():
+    """Feb 2026 — founder-facing UI for the Stripe-vs-internal-credit
+    drift detector. Pins the route + key testids + API wiring so the
+    surface can't be silently broken by future refactors."""
+    from pathlib import Path
+    fe = Path("/app/frontend/src")
+
+    page = (fe / "pages" / "admin" / "AdminPaymentsAudit.tsx").read_text(encoding="utf-8")
+    # Must hit all 3 backend endpoints.
+    for path_token in [
+        "/api/admin/payments-audit/reconcile",
+        "/api/admin/payments-audit/summary",
+        "/api/admin/payments-audit/events",
+    ]:
+        assert path_token in page, (
+            f"AdminPaymentsAudit must call {path_token}"
+        )
+    # Critical testids that ops automation / E2E will look for.
+    for tid in [
+        "admin-payments-audit-page",
+        "admin-payments-audit-reconcile-card",
+        "admin-payments-audit-drift-badge",
+        "admin-payments-audit-stripe-paid",
+        "admin-payments-audit-credited",
+        "admin-payments-audit-drift",
+        "admin-payments-audit-summary-card",
+        "admin-payments-audit-events-card",
+        "admin-payments-audit-window-picker",
+    ]:
+        assert tid in page, f"AdminPaymentsAudit missing data-testid '{tid}'"
+
+    routes = (fe / "routes" / "adminRoutes.tsx").read_text(encoding="utf-8")
+    assert "AdminPaymentsAudit" in routes and "/admin/payments-audit" in routes, (
+        "AdminPaymentsAudit must be registered at /admin/payments-audit"
+    )
+

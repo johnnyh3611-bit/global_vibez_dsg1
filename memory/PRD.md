@@ -1,6 +1,24 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
 
+> **2026-02-XX (cont.) — ADMIN PAYMENTS AUDIT UI · 495/495 regression green · READY FOR BETA REDEPLOY 🚀.**
+>
+> Founder asked for the drift detector frontend before redeploying. Shipped a clean 3-section page.
+>
+> ### What shipped
+> 1. **`/admin/payments-audit` page** (`AdminPaymentsAudit.tsx`) with three sections:
+>    - **Reconciliation card** — Stripe-paid USD vs Internally-credited USD vs Drift, with red glow when drift > $0.01 (clean = emerald)
+>    - **Counts × totals table** — every (kind, status) pair with row counts, USD totals, and coin totals
+>    - **Recent events feed** — paginated, filterable by kind / status / user_id, with timestamps and Stripe session IDs
+> 2. **Window picker** (1d / 7d / 30d / 90d) flips all three sections in lockstep via `Promise.all`.
+> 3. **Mounted** at `/admin/payments-audit` in `adminRoutes.tsx`.
+> 4. **Test-friendly**: 9 distinct `data-testid`s on the major sections + per-row testids on summary + events.
+>
+> ### Regression Shield: **495/495 GREEN** (+1 new lock)
+>   - `test_admin_payments_audit_ui_wired` (pins all 3 endpoint calls + 9 testids + route registration)
+
+
+
 > **2026-02-XX (cont.) — MOBILE GALAXY TOUR (coach-mark walkthrough) · 494/494 regression green · READY FOR BETA REDEPLOY 🚀.**
 >
 > Founder asked to ship the "Mobile Galaxy Tour" before redeploying so first-time mobile users discover the new 2D arc carousel quickly.
