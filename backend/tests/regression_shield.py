@@ -10940,3 +10940,117 @@ def test_lifespan_split_into_focused_modules():
     # And it must still export the public API server.py relies on.
     assert "def register_startup_tasks" in lifespan_body
     assert "def register_shutdown" in lifespan_body
+
+def test_payments_audit_service_and_routes_wired():
+    """Feb 2026 — unified payments audit must exist so the founder can
+    reconcile Stripe receipts against internal coin credits without
+    manually joining 4 collections. Pin:
+      • service ``services/payments_audit.py`` with ``record_payment_event``
+      • admin routes mounted at ``/api/admin/payments-audit/*``
+      • coin top-up + high roller checkout call record_payment_event
+      • the ``payments_audit`` mongo index is in the spec list
+    """
+    from pathlib import Path
+    backend = Path(__file__).resolve().parents[1]
+
+    svc = (backend / "services" / "payments_audit.py").read_text(encoding="utf-8")
+    assert "async def record_payment_event" in svc, (
+        "payments_audit service must expose record_payment_event()"
+    )
+
+    route_body = (backend / "routes" / "admin_payments_audit.py").read_text(encoding="utf-8")
+    for path_token in ['"/events"', '"/summary"', '"/reconcile"']:
+        assert path_token in route_body, (
+            f"admin_payments_audit missing route {path_token}"
+        )
+
+    from server import app
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    for p in (
+        "/api/admin/payments-audit/events",
+        "/api/admin/payments-audit/summary",
+        "/api/admin/payments-audit/reconcile",
+    ):
+        assert p in paths, f"Missing admin payments-audit route: {p}"
+
+    # Coin top-up + high roller must call the audit writer.
+    coin_body = (backend / "routes" / "coin_topup.py").read_text(encoding="utf-8")
+    hr_body = (backend / "routes" / "high_roller.py").read_text(encoding="utf-8")
+    assert "record_payment_event" in coin_body, (
+        "coin_topup must call record_payment_event on checkout + webhook"
+    )
+    assert "record_payment_event" in hr_body, (
+        "high_roller must call record_payment_event on checkout"
+    )
+
+    # Index spec must cover the new collection.
+    idx = (backend / "lifespan_indexes.py").read_text(encoding="utf-8")
+    assert '"coll": "payments_audit"' in idx, (
+        "payments_audit index missing from lifespan_indexes._INDEX_SPECS"
+    )
+def test_admin_tier_pricing_ui_wired():
+    """Feb 2026 — founder admin UI for hot-editing VIP tier pricing
+    must exist at /admin/tier-pricing and wire to the catalog/patch
+    endpoints. Pin the route + testids + API calls."""
+    from pathlib import Path
+    fe = Path("/app/frontend/src")
+
+    page = (fe / "pages" / "admin" / "AdminTierPricing.tsx").read_text(encoding="utf-8")
+    assert "/api/admin/pricing/catalogs/" in page, (
+        "AdminTierPricing must read from the pricing catalog GET endpoint"
+    )
+    assert "/api/admin/pricing/vip-tiers/" in page, (
+        "AdminTierPricing must PATCH /api/admin/pricing/vip-tiers/{id}"
+    )
+    for tid in [
+        "admin-tier-pricing-page",
+        "admin-tier-pricing-grid",
+        "admin-tier-pricing-history-section",
+    ]:
+        assert tid in page, f"AdminTierPricing missing data-testid '{tid}'"
+
+    routes = (fe / "routes" / "adminRoutes.tsx").read_text(encoding="utf-8")
+    assert "AdminTierPricing" in routes and "/admin/tier-pricing" in routes, (
+        "AdminTierPricing must be registered at /admin/tier-pricing"
+    )
+
+def test_mobile_arc_carousel_replaces_canvas_on_phone():
+    """Feb 2026 Planet-Shift mobile redesign — Master Blueprint v2.
+
+    Phones no longer render the Three.js Volumetric Galaxy; they render
+    a 2D arc carousel that reuses the same CATEGORIES data. Pin:
+      • the MobileArcCarousel component exists with focus / swipe wiring
+      • VolumetricDashboard imports it and renders it when `isMobile` is true
+      • CATEGORIES is exported so the carousel + canvas share the source
+    """
+    from pathlib import Path
+    fe = Path("/app/frontend/src")
+
+    carousel = (fe / "components" / "dashboard" / "MobileArcCarousel.tsx").read_text(encoding="utf-8")
+    for tid in [
+        "mobile-arc-carousel",
+        "mobile-arc-carousel-prev-btn",
+        "mobile-arc-carousel-next-btn",
+        "mobile-arc-carousel-arc",
+    ]:
+        assert tid in carousel, f"MobileArcCarousel missing testid '{tid}'"
+    # Swipe + keyboard nav must be wired so users can advance focus
+    # without leaning on the Three.js canvas.
+    assert "onTouchStart" in carousel and "onTouchEnd" in carousel, (
+        "MobileArcCarousel must support swipe gestures"
+    )
+    assert "ArrowRight" in carousel and "ArrowLeft" in carousel, (
+        "MobileArcCarousel must support keyboard arrow keys (tablets)"
+    )
+
+    page = (fe / "pages" / "VolumetricDashboard.tsx").read_text(encoding="utf-8")
+    assert "export const CATEGORIES" in page, (
+        "VolumetricDashboard must export CATEGORIES so the mobile carousel reuses it"
+    )
+    assert "import MobileArcCarousel" in page, (
+        "VolumetricDashboard must import the MobileArcCarousel component"
+    )
+    assert "if (isMobile) {" in page, (
+        "VolumetricDashboard must early-return MobileArcCarousel on mobile"
+    )
+

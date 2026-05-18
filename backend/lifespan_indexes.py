@@ -190,4 +190,10 @@ _INDEX_SPECS = [
     # security_events — admin console reads newest-first, optionally filtered by type.
     {"coll": "security_events", "key": [("at", -1)], "background": True},
     {"coll": "security_events", "key": [("type", 1), ("at", -1)], "background": True},
+
+    # Feb 2026 — unified payments_audit ledger (Stripe vs internal coin top-ups).
+    {"coll": "payments_audit", "key": [("at", -1)], "background": True},
+    {"coll": "payments_audit", "key": [("kind", 1), ("status", 1), ("at", -1)], "background": True},
+    {"coll": "payments_audit", "key": "stripe_session_id", "sparse": True, "background": True},
+    {"coll": "payments_audit", "key": [("user_id", 1), ("at", -1)], "background": True},
 ]

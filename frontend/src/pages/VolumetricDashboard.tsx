@@ -31,13 +31,14 @@ import ErrorBoundary from "@/components/common/ErrorBoundary";
 import { switchDashboardView } from "@/pages/DashboardRouter";
 import UnifiedEarningsWidget from "@/components/common/UnifiedEarningsWidget";
 import GalaxyGuidedTour from "@/components/dashboard/GalaxyGuidedTour";
+import MobileArcCarousel from "@/components/dashboard/MobileArcCarousel";
 import { useIsMobileGalaxy } from "@/hooks/useIsMobileGalaxy";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
 type Homeworld = { path: string; label: string; emoji: string; visits: number };
 
-const CATEGORIES = [
+export const CATEGORIES = [
   {
     id: "games", label: "Games", color: "#22d3ee", aura: "#22d3ee",
     rooms: [
@@ -615,6 +616,21 @@ export default function VolumetricDashboard() {
     }
     navigate("/dashboard");
   };
+
+  // Feb 2026 Planet-Shift mobile redesign — phones render a flat 2D
+  // arc carousel instead of the Three.js canvas (Master Blueprint v2).
+  // The lean-profile pass already short-circuits expensive Three.js
+  // settings on mobile; this swap eliminates the GPU pressure entirely
+  // and gives phone users a fast, gesture-friendly nav. Desktops keep
+  // the full Volumetric Galaxy.
+  if (isMobile) {
+    return (
+      <MobileArcCarousel
+        categories={CATEGORIES}
+        onBackToClassic={setClassicMode}
+      />
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-[#040208] text-white" data-testid="volumetric-dashboard">

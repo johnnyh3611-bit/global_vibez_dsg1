@@ -13,6 +13,7 @@ import ModerationDashboard from '@/pages/admin/ModerationDashboard';
 import AdminTreasury from '@/pages/AdminTreasury';
 import AdminStaffManagement from '@/pages/admin/AdminStaffManagement';
 import AdminAuditLogs from '@/pages/admin/AdminAuditLogs';
+import AdminTierPricing from '@/pages/admin/AdminTierPricing';
 
 /**
  * Admin routes — unified under the single God-Mode (Vibe Vault) board.
@@ -47,6 +48,7 @@ export const adminRoutes = (ProtectedRoute) => (
     <Route path="/admin-verification" element={<ProtectedRoute><AdminVerification /></ProtectedRoute>} />
     <Route path="/admin/monitoring" element={<ProtectedRoute><MonitoringDashboard /></ProtectedRoute>} />
     <Route path="/admin/pricing" element={<ProtectedRoute><DynamicPricingDashboard /></ProtectedRoute>} />
+    <Route path="/admin/tier-pricing" element={<ProtectedRoute><AdminTierPricing /></ProtectedRoute>} />
     <Route path="/admin/payouts" element={<ProtectedRoute><PayoutManagement /></ProtectedRoute>} />
     <Route path="/admin/moderation-dashboard" element={<ProtectedRoute><ModerationDashboard /></ProtectedRoute>} />
   </>

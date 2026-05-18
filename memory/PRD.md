@@ -1,6 +1,38 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
 
+> **2026-02-XX (cont.) — ADMIN PRICING UI + PAYMENTS AUDIT + PLANET-SHIFT MOBILE ARC · 493/493 regression green.**
+>
+> Three more production-hardening features in one pass — backend + frontend stack done in a single context.
+>
+> ### Admin Pricing UI (founder hot-edit)
+> 1. **`/admin/tier-pricing` page** — `AdminTierPricing.tsx` renders a 3-card grid (Genius / Genesis / Apex) with inline editable price / label / tagline / perks. Saves go through `PATCH /api/admin/pricing/vip-tiers/{tier_id}`, bumping the catalog version monotonically. Auto-loads the change history below the cards.
+> 2. **Route mounted** in `routes/adminRoutes.tsx` — `/admin/tier-pricing` (separate from the legacy `/admin/pricing` dynamic-pricing dashboard).
+> 3. **All controls have `data-testid`s** for E2E coverage.
+>
+> ### Unified Payments Audit (Stripe vs internal coin top-ups)
+> 1. **`services/payments_audit.py`** — best-effort `record_payment_event()` async writer. Never throws on the checkout hot path.
+> 2. **Wired into**: `routes/coin_topup.py` (checkout-created + webhook-credited) and `routes/high_roller.py` (VIP checkout-created).
+> 3. **New admin routes** at `/api/admin/payments-audit/{events,summary,reconcile}` for paginated event feed, kind×status counts, and Stripe-paid USD vs internally-credited USD drift detection.
+> 4. **Mongo indexes** added on `payments_audit` (`at`, `kind+status+at`, `stripe_session_id`, `user_id+at`).
+>
+> ### Planet-Shift Mobile 2D Arc Carousel (Master Blueprint v2)
+> 1. **`MobileArcCarousel.tsx`** — replaces the Three.js Volumetric Galaxy on phones with a 2D arc of 3 visible "planets" (prev/focused/next), swipe + arrow + keyboard nav, full room grid below.
+> 2. **`CATEGORIES` exported** from `VolumetricDashboard.tsx` so the carousel + 3D scene share the single source of truth.
+> 3. **Early-return** in `VolumetricDashboard` when `useIsMobileGalaxy()` is true — phones never load the Three.js canvas, killing GPU pressure entirely.
+>
+> ### Regression Shield: **493/493 GREEN** (+3 new locks)
+>   - `test_payments_audit_service_and_routes_wired`
+>   - `test_admin_tier_pricing_ui_wired`
+>   - `test_mobile_arc_carousel_replaces_canvas_on_phone`
+>
+> ### User action items
+> - Reconnect GitHub from app → Save to Github
+> - Redeploy production beta with all hardening fixes
+> - Provision `REDIS_URL` + validate one live Stripe payment
+
+
+
 > **2026-02-XX — PRICING CATALOG + LIFESPAN SPLIT + FRONTEND DEP PRUNE · 490/490 regression green.**
 >
 > Three production-hardening tasks completed in one pass:

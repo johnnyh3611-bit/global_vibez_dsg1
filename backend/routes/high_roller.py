@@ -221,6 +221,26 @@ async def create_checkout(req: CheckoutRequest) -> Dict[str, Any]:
     except stripe.error.StripeError as e:
         raise HTTPException(502, detail=f"Stripe checkout error: {e}")
 
+    # Unified payments audit — best-effort, never fails the checkout.
+    try:
+        from services.payments_audit import record_payment_event  # noqa: PLC0415
+        await record_payment_event(
+            _db,
+            kind="high_roller_vip",
+            source="stripe_checkout",
+            status="created",
+            user_id=req.user_id,
+            amount_usd=price_usd,
+            stripe_session_id=session.id,
+            metadata={
+                "tier": req.tier,
+                "duration_days": HIGH_ROLLER_GRANT_DAYS,
+                **({"referral_code": req.referral_code.strip().upper()} if req.referral_code else {}),
+            },
+        )
+    except Exception:
+        pass
+
     return {
         "mode": "live",
         "checkout_url": session.url,

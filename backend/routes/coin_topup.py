@@ -146,6 +146,23 @@ async def create_topup_checkout(
         "created_at": datetime.now(timezone.utc).isoformat(),
     })
 
+    # Unified payments audit — best-effort, never fails the checkout.
+    try:
+        from services.payments_audit import record_payment_event  # noqa: PLC0415
+        await record_payment_event(
+            _db,
+            kind="coin_topup",
+            source="stripe_checkout",
+            status="created",
+            user_id=user["user_id"],
+            amount_usd=pack["usd"],
+            coins=pack["coins"],
+            stripe_session_id=session.session_id,
+            metadata={"pack_id": payload.pack_id, "payment_id": payment_id},
+        )
+    except Exception:
+        pass
+
     return {
         "success": True,
         "checkout_url": session.url,
@@ -226,3 +243,19 @@ async def _credit_user(pay: Dict[str, Any]) -> None:
         "coin_topup credited user_id=%s coins=%d pack=%s",
         pay["user_id"], pay["coins"], pay["pack_id"],
     )
+    # Unified payments audit — paid + credited event.
+    try:
+        from services.payments_audit import record_payment_event  # noqa: PLC0415
+        await record_payment_event(
+            _db,
+            kind="coin_topup",
+            source="stripe_webhook",
+            status="credited",
+            user_id=pay["user_id"],
+            amount_usd=pay.get("amount_usd"),
+            coins=int(pay["coins"]),
+            stripe_session_id=pay.get("stripe_session_id"),
+            metadata={"pack_id": pay.get("pack_id"), "payment_id": pay.get("id")},
+        )
+    except Exception:
+        pass
