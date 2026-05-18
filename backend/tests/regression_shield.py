@@ -10463,7 +10463,6 @@ def test_match_consensus_chip_wired_into_bracket():
     chip_path = "/app/frontend/src/components/tournament/MatchConsensusChip.tsx"
     assert os.path.exists(chip_path), "MatchConsensusChip component missing"
     chip = open(chip_path).read()
-    # All 6 chip states must be representable.
     for tid in [
         "match-consensus-chip-verified",
         "match-consensus-chip-cleared",
@@ -10473,17 +10472,82 @@ def test_match_consensus_chip_wired_into_bracket():
         "match-consensus-chip-awaiting",
     ]:
         assert tid in chip, f"chip missing testid: {tid}"
-    # 20s poll cadence so the bracket goes "live" without hammering API.
-    assert "20_000" in chip or "20000" in chip
-    # Endpoint contract.
+    # Chip MUST consume the bulk context (one poll per bracket, not per cell).
+    assert "useMatchConsensusBulk" in chip, (
+        "Chip must read from MatchConsensusBulkContext"
+    )
+    # Solo-fetch fallback so the chip still works outside a Provider.
     assert "/api/match-consensus/" in chip
 
-    # Bracket must import + mount the chip.
+    # Bracket page must import + mount the chip AND wrap in the Provider.
     bracket = open("/app/frontend/src/pages/TournamentDetailsPage.tsx").read()
-    assert "MatchConsensusChip" in bracket, (
-        "TournamentDetailsPage must import + mount MatchConsensusChip"
-    )
+    assert "MatchConsensusChip" in bracket
     assert "<MatchConsensusChip matchId={match.match_id} />" in bracket
+    assert "MatchConsensusBulkProvider" in bracket, (
+        "Bracket page must wrap in MatchConsensusBulkProvider for shared polling"
+    )
+
+
+def test_match_consensus_bulk_endpoint_and_context():
+    """Bulk endpoint + frontend context must exist so a 32-cell bracket
+    fires ONE poll, not 32."""
+    import os
+    src = open("/app/backend/routes/match_consensus.py").read()
+    # Bulk route exists, accepts comma-separated `match_ids`, capped at 128.
+    assert '@router.get("/bulk")' in src
+    assert "async def get_match_state_bulk" in src
+    assert "match_ids.split" in src
+    assert "max 128 match_ids per request" in src
+    # CRITICAL: `/bulk` must be declared BEFORE `/{match_id}` or
+    # FastAPI's path resolver will route it as `match_id=bulk`.
+    idx_bulk = src.find('@router.get("/bulk")')
+    idx_param = src.find('@router.get("/{match_id}")')
+    assert idx_bulk > 0 and idx_param > 0 and idx_bulk < idx_param, (
+        "GET /bulk must be declared before GET /{match_id}"
+    )
+
+    # Frontend bulk context + 50ms register debounce + 20s poll interval.
+    ctx_path = "/app/frontend/src/components/tournament/MatchConsensusBulkContext.tsx"
+    assert os.path.exists(ctx_path)
+    ctx = open(ctx_path).read()
+    assert "MatchConsensusBulkProvider" in ctx
+    assert "useMatchConsensusBulk" in ctx
+    assert "POLL_INTERVAL_MS = 20_000" in ctx
+    assert "REGISTER_DEBOUNCE_MS = 50" in ctx
+    # Refcount-based dedup so 2 chips on the same match don't double-poll.
+    assert "refs.get(matchId)" in ctx
+
+
+def test_airlock_release_hands_off_to_tournament_service():
+    """When the worker clears an airlock it MUST hand off to the
+    tournament service: write an audit row to match_payout_events and
+    notify the winner via engagement (the same collection the existing
+    tournament-win notification uses)."""
+    src = open("/app/backend/routes/match_consensus.py").read()
+    assert "match_payout_events" in src
+    assert '"event": "airlock_cleared"' in src
+    assert '"type": "match_payout_cleared"' in src
+    assert "db.engagement.insert_one" in src
+    # Handoff is non-fatal — clearance MUST succeed even if the audit
+    # or notification write fails.
+    assert "payout-event write failed" in src
+    assert "engagement notify failed" in src
+
+
+def test_frontend_hash_game_log_helper_exists():
+    """Pure-JS helper that mirrors the backend's
+    `hash_game_log(events)` so the client can produce the SAME hex
+    digest the consensus engine compares. Must use SHA-256 + Web
+    Crypto + the canonical `|` delimiter."""
+    import os
+    path = "/app/frontend/src/utils/hashGameLog.ts"
+    assert os.path.exists(path), "hashGameLog frontend helper missing"
+    src = open(path).read()
+    assert "export async function hashGameLog" in src
+    assert "SHA-256" in src
+    assert 'join("|")' in src, "canonical delimiter must stay '|'"
+    assert "TextEncoder" in src
+    assert "crypto.subtle.digest" in src
 
 
 def test_match_consensus_indexes_registered():

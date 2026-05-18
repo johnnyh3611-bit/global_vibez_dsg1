@@ -302,6 +302,53 @@ async def submit_match_result(body: MatchSubmissionBody) -> Dict[str, Any]:
     }
 
 
+@router.get("/bulk")
+async def get_match_state_bulk(match_ids: str) -> Dict[str, Any]:
+    """Batch consensus + airlock lookup for an entire bracket in ONE
+    round-trip. `match_ids` is a comma-separated list (max 128 ids).
+
+    Frontend pattern: a 64-team single-elim bracket has 32 matches per
+    refresh. Calling /match-consensus/{id} once per cell = 32 polls
+    every 20s. This endpoint collapses that to 1 poll → 32 cells.
+
+    NOTE: must be declared BEFORE `/{match_id}` so FastAPI's path
+    resolver doesn't match `/bulk` as `match_id=bulk`.
+
+    Response shape (one entry per requested match_id, in input order):
+      { results: [{ match_id, consensus, airlock, submissions_received }] }
+    """
+    db = get_database()
+    ids = [m.strip() for m in match_ids.split(",") if m.strip()]
+    if not ids:
+        return {"results": []}
+    if len(ids) > 128:
+        raise HTTPException(status_code=400, detail="max 128 match_ids per request")
+
+    consensus_docs = await db.match_consensus.find(
+        {"match_id": {"$in": ids}}, {"_id": 0}
+    ).to_list(length=128)
+    airlock_docs = await db.match_airlocks.find(
+        {"match_id": {"$in": ids}}, {"_id": 0}
+    ).to_list(length=128)
+    sub_counts_cursor = db.match_submissions.aggregate([
+        {"$match": {"match_id": {"$in": ids}}},
+        {"$group": {"_id": "$match_id", "n": {"$sum": 1}}},
+    ])
+    sub_counts = {r["_id"]: r["n"] async for r in sub_counts_cursor}
+
+    consensus_by_id = {c["match_id"]: c for c in consensus_docs}
+    airlock_by_id = {a["match_id"]: a for a in airlock_docs}
+
+    results = [{
+        "match_id": mid,
+        "consensus": consensus_by_id.get(mid),
+        "airlock": airlock_by_id.get(mid),
+        "submissions_received": sub_counts.get(mid, 0),
+        "submissions_required": DEFAULT_SUBMISSIONS_REQUIRED,
+    } for mid in ids]
+    return {"results": results}
+
+
 @router.get("/{match_id}")
 async def get_match_state(match_id: str) -> Dict[str, Any]:
     db = get_database()
@@ -362,6 +409,11 @@ async def release_due_airlocks(db) -> Dict[str, Any]:
     meantime (in which case the airlock stays held pending admin
     resolution).
 
+    On clearance the worker hands off to the tournament service:
+      • inserts a row into `match_payout_events` (audit + downstream hook)
+      • notifies the winner via `engagement` collection (same shape
+        the existing tournament-win notification uses)
+
     Returns a small summary dict. Safe to call repeatedly.
     """
     now_iso = _utcnow_iso()
@@ -376,7 +428,7 @@ async def release_due_airlocks(db) -> Dict[str, Any]:
     for row in matured:
         match_id = row["match_id"]
         consensus = await db.match_consensus.find_one(
-            {"match_id": match_id}, {"_id": 0, "status": 1}
+            {"match_id": match_id}, {"_id": 0, "status": 1, "winner_team_id": 1}
         )
         status = (consensus or {}).get("status")
         if status in {"DISPUTED_FLAGGED", "HASH_MISMATCH_REVIEW"}:
@@ -387,6 +439,41 @@ async def release_due_airlocks(db) -> Dict[str, Any]:
             {"$set": {"payout_status": "cleared", "cleared_at": now_iso}},
         )
         released += 1
+
+        # ─── Tournament service handoff ─────────────────────────
+        # Non-fatal — the airlock clearance is the source of truth;
+        # downstream hooks failing must NEVER hold up payouts.
+        winner_id = row.get("winner_team_id") or (consensus or {}).get("winner_team_id")
+        tournament_id = row.get("tournament_id", "")
+        try:
+            await db.match_payout_events.insert_one({
+                "match_id": match_id,
+                "tournament_id": tournament_id,
+                "winner_team_id": winner_id,
+                "event": "airlock_cleared",
+                "at": now_iso,
+            })
+        except Exception as e:
+            logger.warning(f"[match-consensus] payout-event write failed: {e}")
+        if winner_id:
+            try:
+                await db.engagement.insert_one({
+                    "id": f"airlock_{match_id}",
+                    "user_id": winner_id,
+                    "type": "match_payout_cleared",
+                    "title": "💰 Match Payout Released",
+                    "message": (
+                        f"The 72-hour airlock on your match cleared. "
+                        f"Your prize for match {match_id} is now released."
+                    ),
+                    "action_url": (
+                        f"/tournament/{tournament_id}" if tournament_id else "/tournaments"
+                    ),
+                    "is_read": False,
+                    "created_at": now_iso,
+                })
+            except Exception as e:
+                logger.warning(f"[match-consensus] engagement notify failed: {e}")
 
     return {
         "matured": len(matured),

@@ -1,9 +1,12 @@
 /**
  * MatchConsensusChip — anti-cheat verification indicator for tournament
- * bracket cells (2026-05-17).
+ * bracket cells (2026-05-17, bulk-context refactor 2026-05-18).
  *
- * Hits `GET /api/match-consensus/{match_id}` once on mount, then polls
- * every 20s while the match is still in flight. Renders a compact chip:
+ * Reads its state from `MatchConsensusBulkContext` so an entire bracket
+ * shares a SINGLE `/api/match-consensus/bulk?match_ids=...` poll
+ * (every 20s) instead of N independent fetches. Falls back to a solo
+ * `/api/match-consensus/{id}` fetch when not wrapped in a Provider so
+ * standalone usage still works.
  *
  *   ⏳ Awaiting   — submissions < required
  *   ✅ Verified   — both teams agreed; 72h airlock running
@@ -11,33 +14,14 @@
  *   🚨 Disputed   — winner/score mismatch
  *   ⚠️ Hash Check — winner+score match but game_log_hash differs
  *   🛡️ Resolved   — admin manual override
- *
- * Self-hides when the match has no submissions yet (avoids cluttering
- * pre-bracket cells). Zero deps beyond what TournamentDetailsPage
- * already imports.
  */
 import { useEffect, useState } from "react";
+import {
+  useMatchConsensusBulk,
+  type MatchState,
+} from "./MatchConsensusBulkContext";
 
 const API = process.env.REACT_APP_BACKEND_URL;
-
-type ConsensusStatus =
-  | "VERIFIED_SUCCESS"
-  | "DISPUTED_FLAGGED"
-  | "HASH_MISMATCH_REVIEW"
-  | "RESOLVED_BY_ADMIN";
-
-type ConsensusState = {
-  consensus: null | {
-    status: ConsensusStatus;
-    winner_team_id?: string | null;
-  };
-  airlock: null | {
-    payout_status: "held" | "cleared";
-    clears_at: string;
-  };
-  submissions_received: number;
-  submissions_required: number;
-};
 
 type ChipSpec = {
   icon: string;
@@ -46,10 +30,8 @@ type ChipSpec = {
   testid: string;
 };
 
-function deriveChip(s: ConsensusState): ChipSpec | null {
-  // No submissions yet → hide.
+function deriveChip(s: MatchState): ChipSpec | null {
   if (s.submissions_received === 0 && !s.consensus) return null;
-
   const status = s.consensus?.status;
   const cleared = s.airlock?.payout_status === "cleared";
 
@@ -93,7 +75,6 @@ function deriveChip(s: ConsensusState): ChipSpec | null {
       testid: "match-consensus-chip-disputed",
     };
   }
-  // Submissions in flight, no final consensus yet.
   return {
     icon: "⏳",
     label: `Awaiting ${s.submissions_received}/${s.submissions_required}`,
@@ -103,35 +84,32 @@ function deriveChip(s: ConsensusState): ChipSpec | null {
 }
 
 export function MatchConsensusChip({ matchId }: { matchId: string }) {
-  const [state, setState] = useState<ConsensusState | null>(null);
+  // Try bulk-context first; falls back to solo fetch if no Provider.
+  const bulkState = useMatchConsensusBulk(matchId);
+  const [soloState, setSoloState] = useState<MatchState | null>(null);
 
   useEffect(() => {
+    if (bulkState) return; // bulk wins — no need to fall back
     let cancelled = false;
-    const fetchState = async () => {
+    const fetchSolo = async () => {
       try {
         const r = await fetch(`${API}/api/match-consensus/${matchId}`);
         if (!r.ok) return;
-        const d = (await r.json()) as ConsensusState;
-        if (!cancelled) setState(d);
+        const d = (await r.json()) as MatchState;
+        if (!cancelled) setSoloState(d);
       } catch {
-        /* network / 404 — render nothing */
+        /* ignore */
       }
     };
-    fetchState();
-    // Stop polling once the match is finalized + airlock cleared.
-    const interval = setInterval(() => {
-      const finalized =
-        state?.consensus?.status === "VERIFIED_SUCCESS" &&
-        state?.airlock?.payout_status === "cleared";
-      if (!finalized) fetchState();
-    }, 20_000);
+    fetchSolo();
+    const t = setInterval(fetchSolo, 20_000);
     return () => {
       cancelled = true;
-      clearInterval(interval);
+      clearInterval(t);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [matchId]);
+  }, [matchId, bulkState]);
 
+  const state = bulkState || soloState;
   if (!state) return null;
   const chip = deriveChip(state);
   if (!chip) return null;

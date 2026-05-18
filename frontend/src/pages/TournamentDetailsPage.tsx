@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Trophy, Users, Zap, Calendar, Play, ChevronRight, ArrowLeft } from 'lucide-react';
 import { MatchConsensusChip } from '@/components/tournament/MatchConsensusChip';
+import { MatchConsensusBulkProvider } from '@/components/tournament/MatchConsensusBulkContext';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -116,6 +117,7 @@ export default function TournamentDetailsPage() {
   const canStart = isOrganizer && tournament.status === 'registration' && tournament.current_players >= 2;
 
   return (
+    <MatchConsensusBulkProvider>
     <div className="min-h-screen bg-gradient-to-br from-purple-950 via-black to-blue-950 p-4">
       <div className="max-w-7xl mx-auto">
         {/* Back Button */}
@@ -251,6 +253,7 @@ export default function TournamentDetailsPage() {
         )}
       </div>
     </div>
+    </MatchConsensusBulkProvider>
   );
 }
 
