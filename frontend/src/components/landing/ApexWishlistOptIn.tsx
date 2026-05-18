@@ -115,8 +115,10 @@ export default function ApexWishlistOptIn({
                     Reserve your spot.
                   </h3>
                   <p className="text-amber-100/65 text-[12px] mt-1 leading-relaxed">
-                    250,000 Apex seats · $50 each · 1× standard multiplier.
-                    Wishlist members get the first DM the moment Apex unlocks.
+                    Once Genius sells out, chair price moves to the live
+                    Equity Master matrix — climbing with monthly revenue
+                    from the $18 Floor → $99 Genesis → $360 Diamond → $1,800 Platinum.
+                    Wishlist members get the first DM the moment Genius closes.
                   </p>
 
                   {!isLoggedIn && (

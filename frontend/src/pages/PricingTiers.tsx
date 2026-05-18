@@ -1,10 +1,12 @@
 /**
  * /pricing — Sovereign Tiers ladder (5-tier premium · May 2026).
  *
- * Founder ask: free Guest + 4 paid premium types ($10 / $20 / $29 / $65)
+ * Founder ask: free Guest + 4 paid premium types ($9 / $19 / $39 / $89)
  * + Genius Chair $20 one-time lifetime asset. Each paid tier is a
  * DIFFERENT KIND of premium (Access · Influence · Elevated · Sovereign ·
  * Ownership) so subscribers see exactly what they're moving toward.
+ * Live prices come from `/api/tiers/catalog` — this comment is just
+ * the schema reference; do not hardcode prices in this file.
  */
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";

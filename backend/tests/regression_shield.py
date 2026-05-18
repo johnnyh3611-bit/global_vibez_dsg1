@@ -1542,41 +1542,71 @@ def test_turn_timer_route_and_stamp_wired() -> None:
     )
 
 
-def test_chair_ladder_is_final_3_tier_shape() -> None:
-    """Founder-confirmed 2026-05-04: final 3-tier ladder locks the entire
-    chair economy. No more 5-phase $5-step ramp, no more 10-phase $10→$65
-    ladder. Compact, dramatic, and impossible for a future agent to
-    accidentally regress.
+def test_chair_ladder_is_value_driven_post_genius() -> None:
+    """Founder-confirmed 2026-05-18: the static 3-tier supply ladder
+    ($20/$100/$250) is retired in favor of the value-driven plan —
 
-       Tier 1 · Genius  · $20   × 50,000  chairs  · weight 3×  · cap 100/wallet
-       Tier 2 · Genesis · $100  × 100,000 chairs  · weight 2×  · no cap
-       Tier 3 · Apex    · $250  × 50,000  chairs  · weight 1×  · no cap
+       Tier 0 · Genius     · $20 floor seat  · 50,000-chair supply cap
+                                              · weight 3× · per-wallet cap 100
+       Tier 1+ · Live valuation via the Equity Master matrix:
+                  $18 Floor    @ $500K /mo monthly revenue
+                  $99 Genesis  @ $2.75M /mo
+                  $360 Diamond @ $10M  /mo
+                  $1,800 Plat. @ $50M  /mo
 
-    Total active circulation = 200,000 chairs (+ 800,000 Reserve Vault).
+    Genius stays supply-capped (so the founder seat sells out). Past
+    50,000 chairs sold, chair price is DERIVED from monthly app revenue
+    using the Equity Master formula — NOT from a static ladder.
+
+    KNOWN GAP (2026-05-18): the live backend checkout in
+    `routes/chairs.py PHASES[]` still carries the legacy $100 Genesis /
+    $250 Apex price rows. Live checkout has not yet been rewired to the
+    Equity Master matrix because that's a real behavior change (price
+    on /api/chairs/buy would shift). When Genius is close to selling
+    out, wire `_phase_for_index()` → `equity_master.price_for_phase()`
+    so the public roadmap and the live buy endpoint stay in sync.
     """
     from routes.chairs import PHASES, GENIUS_PER_USER_CAP
-    from services.chair_expansion import EXPANSION_TIERS
-    assert len(PHASES) == 3, "Chair ladder is not 3 tiers"
-    assert PHASES[0]["name"] == "Genius" and PHASES[0]["price_usd"] == 20.0 and PHASES[0]["limit"] == 50_000 and PHASES[0]["weight"] == 3.0
-    assert PHASES[1]["name"] == "Genesis" and PHASES[1]["price_usd"] == 100.0 and PHASES[1]["limit"] == 150_000 and PHASES[1]["weight"] == 2.0
-    assert PHASES[2]["name"] == "Apex"   and PHASES[2]["price_usd"] == 250.0 and PHASES[2]["limit"] == 200_000 and PHASES[2]["weight"] == 1.0
+    from routes.equity_master import (
+        EQUITY_VALUE_MATRIX,
+        GENIUS_PHASE_FLOOR_USD,
+        GENESIS_PHASE_FLOOR_USD,
+    )
+    from services.chair_expansion import get_expansion_plan
+
+    # Genius is still the only fixed-supply phase + the only locked price.
+    assert PHASES[0]["name"] == "Genius"
+    assert PHASES[0]["price_usd"] == 20.0
+    assert PHASES[0]["limit"] == 50_000
+    assert PHASES[0]["weight"] == 3.0
+    assert GENIUS_PHASE_FLOOR_USD == 20
     assert GENIUS_PER_USER_CAP == 100, "Genius Phase per-wallet cap regressed"
-    # Revenue math check.
-    genius_rev = 20 * 50_000
-    genesis_rev = 100 * 100_000
-    apex_rev = 250 * 50_000
-    assert genius_rev == 1_000_000
-    assert genesis_rev == 10_000_000
-    assert apex_rev == 12_500_000
-    # Chair expansion service file must mirror the same 3 tiers.
-    assert len(EXPANSION_TIERS) == 3, "chair_expansion tiers regressed"
-    names = [t["name"] for t in EXPANSION_TIERS]
-    prices = [t["price_usd"] for t in EXPANSION_TIERS]
-    assert names == ["Genius", "Genesis", "Apex"]
-    assert prices == [20, 100, 250]
+
+    # Equity Master matrix is the single source of truth for the
+    # 4 post-Genius milestones. Pins the locked dollar anchors.
+    assert GENESIS_PHASE_FLOOR_USD == 100, "Genesis floor anchor moved"
+    prices = {row["label"]: row["market_value_usd"] for row in EQUITY_VALUE_MATRIX}
+    assert prices.get("Floor Level") == 18
+    assert prices.get("Genesis Target") == 99
+    assert prices.get("Diamond Status") == 360
+    assert prices.get("Platinum Scale") == 1_800
+
+    # The retired services.chair_expansion module re-exports the matrix
+    # in the legacy expansion-plan shape (so ChairExpansionPlan.tsx keeps
+    # working). Row 0 = Genius supply phase; rows 1+ = revenue-anchored.
+    plan = get_expansion_plan(active_chairs_sold=0)
+    tiers = plan["tiers"]
+    assert tiers[0]["name"] == "Genius" and tiers[0]["price_usd"] == 20
+    assert tiers[0]["kind"] == "supply_capped"
+    # At least one revenue-driven milestone must follow.
+    assert any(t.get("kind") == "revenue_driven" for t in tiers[1:])
+    # Apex (the retired static-ladder name) must NOT appear as a phase.
+    assert "Apex" not in {t["name"] for t in tiers}, (
+        "Retired Apex supply-ladder name resurfaced in chair_expansion"
+    )
 
 
-# --- END LOCKED (final 3-tier ladder · 2026-05-04) ----------------------
+# --- END LOCKED (value-driven post-Genius plan · 2026-05-18) -----------
 
 
 def test_sovereign_mining_v1_pure_functions_green() -> None:
@@ -10565,4 +10595,95 @@ def test_match_consensus_indexes_registered():
     assert '"coll": "match_airlocks", "key": "match_id", "unique": True' in src
     # Security alerts collection indexed for the crew dashboard.
     assert '"coll": "security_alerts"' in src
+
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# 2026-05-18 — Pricing consistency invariants (cross-surface anti-drift)
+# ═══════════════════════════════════════════════════════════════════════
+
+
+def test_no_retired_chair_supply_ladder_copy_resurfaces():
+    """The retired $20/$100/$250 static supply ladder is replaced by
+    Genius $20 + live Equity Master valuation post-Genius. No
+    landing-page surface should reintroduce the legacy ladder copy
+    ('Apex $250', '3-tier ladder', etc.) — visual drift is the
+    single biggest source of user confusion on pricing.
+
+    This test scans the 6 landing surfaces that previously carried the
+    dead pitch and ensures they DON'T reference the retired phase names
+    as a price ladder. Mentioning 'Apex' inside an unrelated context
+    (e.g., the High Roller VIP `apex` tier id) is fine — only the
+    retired CHAIR ladder copy is forbidden.
+    """
+    import os
+    surfaces = [
+        "/app/frontend/src/components/landing/WelcomeLetter.tsx",
+        "/app/frontend/src/components/landing/TokenRoadmap.tsx",
+        "/app/frontend/src/components/landing/WaysToEarn.tsx",
+        "/app/frontend/src/components/landing/EvolutionCountdown.tsx",
+        "/app/frontend/src/components/landing/ApexWishlistOptIn.tsx",
+        "/app/frontend/src/pages/LandingNeonGaming.tsx",
+        "/app/frontend/src/pages/Landing.tsx",
+    ]
+    forbidden_phrases = [
+        # Old chair-ladder pricing combos:
+        "Apex $250", "Apex ($250", "$250 Apex", "$50 Apex",
+        "250,000 Apex seats",
+        "Genesis $100 ", "$100 Genesis",
+        # Old ladder shape pitch:
+        "3-tier ladder", "Three tiers", "three tiers",
+        "200K active chairs", "200,000 active chairs",
+        "$50 bracket", "12.5×", "12.5x",
+    ]
+    drift = []
+    for path in surfaces:
+        if not os.path.exists(path):
+            continue
+        body = open(path).read()
+        for phrase in forbidden_phrases:
+            if phrase in body:
+                drift.append(f"{os.path.basename(path)} :: {phrase!r}")
+    assert not drift, (
+        "Retired chair-ladder copy resurfaced — value-driven plan must "
+        "be the only public pitch:\n  - " + "\n  - ".join(drift)
+    )
+
+
+def test_pricing_tiers_doc_comment_matches_backend_catalog():
+    """The /pricing page docblock used to list `$10 / $20 / $29 / $65`
+    even though the backend catalog serves `$9 / $19 / $39 / $89`. The
+    page renders runtime catalog data so users see correct prices, but
+    a wrong code comment is a credibility hit on PR review. Lock the
+    comment to either drop the price list OR match the backend exactly.
+    """
+    import re
+    src = open("/app/frontend/src/pages/PricingTiers.tsx").read()
+    # Pull the top comment block. If a price list appears, it must use
+    # backend-canonical $9/$19/$39/$89 ordered exactly.
+    if "$10" in src and "$20" in src and "$29" in src and "$65" in src:
+        raise AssertionError(
+            "PricingTiers.tsx top comment still shows retired $10/$20/$29/$65 "
+            "ladder. Replace with $9/$19/$39/$89 (backend catalog) or drop "
+            "the price list from the docblock entirely."
+        )
+    # If the comment lists a 4-number ladder, it must match backend exactly.
+    m = re.search(r"\$(\d+)\s*/\s*\$(\d+)\s*/\s*\$(\d+)\s*/\s*\$(\d+)", src[:600])
+    if m:
+        assert m.groups() == ("9", "19", "39", "89"), (
+            f"PricingTiers.tsx docblock price ladder drifted: {m.group(0)} "
+            f"— backend catalog serves $9 / $19 / $39 / $89."
+        )
+
+
+def test_genius_floor_pinned_at_twenty_dollars_everywhere():
+    """The single non-negotiable price across the whole platform: Genius
+    chair = $20 floor seat. Backend constant, live PHASES[0] checkout
+    row, and the Equity Master formula must all agree."""
+    from routes.chairs import PHASES
+    from routes.equity_master import GENIUS_PHASE_FLOOR_USD
+    from services.chair_expansion import GENIUS_PHASE_FLOOR_USD as svc_floor
+    assert PHASES[0]["price_usd"] == 20.0, "Live Genius checkout price drifted"
+    assert GENIUS_PHASE_FLOOR_USD == 20, "Equity Master Genius anchor drifted"
+    assert svc_floor == 20, "Chair expansion service Genius anchor drifted"
 

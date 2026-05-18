@@ -132,16 +132,17 @@ export default function EvolutionCountdown() {
 
         <div className="hidden md:flex items-center gap-1 text-[10px] uppercase tracking-widest text-yellow-200/90">
           <Zap className="w-3 h-3" />
-          <span>+1× pump · Apex unlocks · $50 bracket goes live</span>
+          <span>Genius sells out · Equity Master live-pricing activates</span>
         </div>
       </div>
 
       <p className="relative text-[10px] sm:text-[11px] text-white/75 text-center pb-2 px-3 leading-snug">
-        All current chair multipliers will jump by{" "}
-        <span className="text-yellow-300 font-black">+1.0×</span> at zero —
-        Genius 3× → 4×, Genesis 2× → 3×, Phase III/IV/V 1× → 2×.{" "}
+        At zero, chair price flips from the flat $20 Genius floor to{" "}
+        <span className="text-yellow-300 font-black">live revenue-driven valuation</span>{" "}
+        — climbing through the Floor / Genesis / Diamond / Platinum milestones as
+        monthly app revenue scales.{" "}
         <span className="text-yellow-300 font-bold">
-          Final $20 seats remaining before $50 Apex.
+          Final $20 seats remaining before live pricing.
         </span>
       </p>
 

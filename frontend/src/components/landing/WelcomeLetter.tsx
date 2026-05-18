@@ -62,8 +62,8 @@ export default function WelcomeLetter() {
 
           <Beat
             Icon={Sparkles}
-            title="Three tiers. Dramatic jumps. No confusion."
-            body="Genius $20 × 50,000 chairs. Genesis $100 × 100,000 chairs. Apex $250 × 50,000 chairs. That's the whole ladder — three tiers, 200,000 active chairs, ~$23.5M max raise. No $5 increments every 50K, no 10-step sprawl. Early believers pay $20; late believers pay $250. The gap is what makes showing up early mean something."
+            title="One floor seat. Then live valuation takes over."
+            body="Genius is the only fixed-supply phase — 50,000 seats at a flat $20, ever. The moment Genius sells out, chair price flips to the live Equity Master matrix: derived from monthly app revenue every quarter. Anchored milestones — $18 Floor at $500K/mo, $99 Genesis at $2.75M/mo, $360 Diamond at $10M/mo, $1,800 Platinum at $50M/mo. Early believers lock in a $20 seat whose dividend climbs with the platform. No supply guesswork, no $5-stair-step grind."
             tone="cyan"
             testId="welcome-beat-why-ramp"
           />
@@ -71,16 +71,16 @@ export default function WelcomeLetter() {
           <Beat
             Icon={Crown}
             title="Genius is open right now — $20 a chair"
-            body="If you're reading this in early access, you're a Genius-eligible buyer. Chairs at this tier carry the 3× earn-rate multiplier for life (Genesis = 2×, Apex = 1×). That weight is locked at purchase time — even after Genius sells out and the price moves to $100, then $250, your chair never loses its multiplier. Cap: 100 chairs per wallet during Genius to protect early equity from whales."
+            body="If you're reading this in early access, you're a Genius-eligible buyer. Chairs at this tier carry the 3× earn-rate multiplier for life. That weight is locked at purchase time — even after Genius sells out and the price moves to live revenue-driven valuation, your chair never loses its multiplier. Cap: 100 chairs per wallet during Genius to protect early equity from whales."
             tone="fuchsia"
             testId="welcome-beat-current-price"
           />
 
           <Beat
             Icon={Lock}
-            title="Half of all chairs are locked away"
+            title="Genius is the gate that unlocks everything"
             body={
-              "We minted 1 million chairs total but only 200,000 are available across the three tiers. The other 800,000 sit in the Reserve Vault plus the 200M DSG Founder Vault — sealed until we hit the 50,000-chair unlock gate, then released on a 12-month drip (25% immediate, balance monthly). Crew wallets hold 50M DSG exempt from ownership caps. When the Reserve unlocks, chairs go out through community-voted distribution events — never bulk-sold. This protects the floor for early holders AND roughly 2×'s payouts when we cross critical mass."
+              "Genius caps at 50,000 chairs ($1M ceiling raise). The instant chair #50,000 sells, two things flip simultaneously: chair pricing switches from flat $20 to the live Equity Master valuation, AND the 200M DSG Founder Vault begins a 12-month release (25% immediate, balance monthly). Crew wallets hold 50M DSG exempt from ownership caps. This protects the floor for early holders AND roughly 2×'s payouts when we cross critical mass."
             }
             tone="amber"
             testId="welcome-beat-reserve"
@@ -101,7 +101,7 @@ export default function WelcomeLetter() {
                 <li><strong>4:1 Solana Bridge with 1.5× Genius Bonus</strong> — convert ₵ to DSG at 4:1 ratio; Genius holders get 1.5× during the Genius Phase window.</li>
                 <li><strong>Power Hour</strong> — scheduled event windows where all earn rates multiply. Chair weights stack.</li>
                 <li><strong>Game wins</strong> — Spades, Bid Whist, Vibez 654, Blackjack payouts hit your wallet post-tax (tax pre-animates so the number you see is the number you get).</li>
-                <li><strong>Reserve drip</strong> — when we hit 50,000 chairs sold, the 200M Founder Vault begins a 12-month release; chair holders receive weighted distributions.</li>
+                <li><strong>Founder Vault drip</strong> — when chair #50,000 sells, the 200M Founder Vault begins a 12-month release; chair holders receive weighted distributions.</li>
               </ul>
             }
             tone="emerald"
@@ -242,20 +242,20 @@ export default function WelcomeLetter() {
                     data-testid="welcome-ceiling-block"
                   >
                     <p className="text-xs uppercase tracking-widest text-fuchsia-300 font-bold mb-2">
-                      The Apex price (Tier 3)
+                      The Platinum milestone (live valuation)
                     </p>
                     <p className="text-3xl font-black text-white font-mono">
-                      $250
+                      $1,800
                       <span className="text-base text-fuchsia-300 font-normal ml-2">
-                        per chair, final 50,000 of the active supply
+                        per chair @ $50M / month app revenue
                       </span>
                     </p>
                     <p className="text-xs text-fuchsia-100/80 mt-3 leading-relaxed">
-                      That's a <strong>12.5×</strong> floor-price climb vs the
-                      Genius $20. We don't promise demand takes you there —
+                      That's a <strong>90×</strong> climb from the Genius $20
+                      floor. We don't promise demand takes you there —
                       that depends on you and everyone you invite. We
-                      promise the supply curve, the reserve lock, and
-                      the multiplier guarantee for early buyers.
+                      promise the Equity Master formula, the Genius cap,
+                      and the multiplier guarantee for early buyers.
                     </p>
                   </motion.div>
                 )}

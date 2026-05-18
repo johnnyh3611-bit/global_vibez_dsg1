@@ -761,7 +761,7 @@ export default function LandingNeonGaming() {
             Globally. Forever. The first cohort to sit at the table owns the network.
           </p>
           <p className="text-xs text-white/40 max-w-xl mx-auto mb-10">
-            Genius ($20 · 50K seats) · Genesis ($100 · 100K seats) · Apex ($250 · 50K seats) ·
+            Genius ($20 × 50K cap) · then live revenue-driven valuation ($18 Floor → $99 Genesis → $360 Diamond → $1,800 Platinum) ·
             800K Reserve Vault releases after Chair #50,000.
           </p>
 

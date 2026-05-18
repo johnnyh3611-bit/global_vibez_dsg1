@@ -48,7 +48,7 @@ const EARNING_PATHS = [
     eyebrow: "Chairs",
     title: "Quarterly Profit Share",
     body:
-      "Park a Founder Chair. Every game pot, tip, and ride throws 13.5% into the Sovereign Treasury, which recirculates to chair holders weighted by tier — Genius 3× / Genesis 2× / Apex 1×. Stacks with 5× chair mining on the daily ₵ pool. Weight locked at purchase, distributed in ₵ Vibez Coins. When chair #50,000 sells, the 200M DSG Founder Vault starts a 12-month drip (25% immediate, balance monthly) on top.",
+      "Park a Founder Chair. Every game pot, tip, and ride throws 13.5% into the Sovereign Treasury, which recirculates to chair holders weighted by tier — Genius 3× / Genesis 2× / post-Genesis 1×. Stacks with 5× chair mining on the daily ₵ pool. Weight locked at purchase, distributed in ₵ Vibez Coins. When chair #50,000 sells, the 200M DSG Founder Vault starts a 12-month drip (25% immediate, balance monthly) on top.",
     rate: "Up to 30% of platform profit, by weight",
     tone: "border-amber-500/40 bg-amber-950/20 text-amber-300",
   },

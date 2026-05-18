@@ -1,13 +1,15 @@
 /**
- * ChairExpansionPlan — public-facing roadmap for the 3-tier supply ladder.
- * Compressed from the legacy 10-tier PDF to the final 3-tier shape the
- * Founder confirmed 2026-05-04: Genius $20 × 50K → Genesis $100 × 100K →
- * Apex $250 × 50K. 200K active circulation + 800K reserve vault (the
- * reserve unlocks + the 200M DSG Founder Vault begins a 12-month drip
- * the moment chair #50,000 sells).
+ * ChairExpansionPlan — public-facing roadmap for the chair economy.
+ * 2026-05-18 retire: the 3-tier static supply ladder ($20/$100/$250)
+ * was replaced by the Founder's value-driven plan:
+ *   • Genius phase  — flat $20, 50K-chair cap (sells out)
+ *   • Post-Genius   — chair price derived live from monthly app revenue
+ *                     via the Equity Master formula, anchored at
+ *                     $18 Floor → $99 Genesis → $360 Diamond → $1,800 Platinum.
  *
- * Pulls live `/api/chairs/expansion-plan` so the "current tier"
- * highlight always reflects the on-platform sold count.
+ * Pulls live `/api/chairs/expansion-plan` (now backed by the Equity
+ * Master matrix in `services/chair_expansion.py`) so the "current
+ * phase" highlight always reflects on-platform sold count.
  */
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -74,10 +76,10 @@ export default function ChairExpansionPlan() {
 
   if (!plan) return null;
 
-  // 3-tier compressed ladder — show Genius + Genesis publicly; hide Apex
-  // (tier 3) behind the Welcome Letter's narrative reveal so visitors get
-  // a friendlier arc rather than seeing the $250 ceiling upfront.
-  const visibleTiers = plan.tiers.filter((t) => t.order < 3);
+  // New value-driven plan: row 0 = the live Genius supply phase, rows 1+
+  // are revenue-anchored milestones from the Equity Master matrix. We
+  // hide the top tier (Platinum) behind the Welcome Letter narrative.
+  const visibleTiers = plan.tiers.slice(0, plan.tiers.length - 1);
 
   return (
     <section
@@ -132,34 +134,36 @@ export default function ChairExpansionPlan() {
               >
                 <div className="p-6 space-y-8">
                   <p className="text-sm text-neutral-300 leading-relaxed">
-                    The Vibez chair economy follows a transparent, supply-locked
-                    expansion curve. The pricing ramps deliberately to reward
-                    early believers — Genius buyers carry the highest
-                    earn-rate weight (3×) for life, locked at purchase.
+                    Vibez chair economy: Genius is the only fixed-supply phase
+                    (50,000 seats × $20). Once Genius sells out, chair price
+                    flips to live revenue-driven valuation via the Equity
+                    Master matrix — pricing follows monthly app revenue, not a
+                    static ladder. Genius buyers carry the highest earn-rate
+                    weight (3×) for life, locked at purchase.
                   </p>
 
                   {/* Top-line stats */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <Stat
-                      label="Total Capacity"
-                      value={fmtNum(plan.total_ecosystem_capacity)}
-                      sub="chairs"
+                      label="Genius Cap"
+                      value="50K"
+                      sub="chairs at $20"
                       Icon={Crown}
                       tone="amber"
                       testId="chair-stat-capacity"
                     />
                     <Stat
-                      label="Active Circulation"
-                      value={fmtNum(plan.active_circulation)}
-                      sub="500K available"
-                      Icon={Sparkles}
+                      label="Pricing Model"
+                      value="Live"
+                      sub="revenue-driven post-Genius"
+                      Icon={TrendingUp}
                       tone="emerald"
                       testId="chair-stat-active"
                     />
                     <Stat
-                      label="Reserve Vault"
-                      value={fmtNum(plan.reserve_vault_locked)}
-                      sub="locked until milestone"
+                      label="Founder Vault"
+                      value="200M"
+                      sub="12mo drip on Genius sellout"
                       Icon={Lock}
                       tone="slate"
                       testId="chair-stat-reserve"
@@ -168,7 +172,7 @@ export default function ChairExpansionPlan() {
                       label="Genius Multiplier"
                       value="3×"
                       sub="locked at buy time"
-                      Icon={TrendingUp}
+                      Icon={Sparkles}
                       tone="fuchsia"
                       testId="chair-stat-multiplier"
                     />
@@ -210,10 +214,12 @@ export default function ChairExpansionPlan() {
                           </div>
                           <div className="col-span-3 sm:col-span-3">
                             <p className="text-[10px] uppercase tracking-wider text-neutral-500">
-                              Range
+                              {t.order === 0 ? "Supply Cap" : "Revenue Anchor"}
                             </p>
                             <p className="text-xs font-mono text-cyan-300">
-                              {fmtNum(t.low)} – {fmtNum(t.high)}
+                              {t.order === 0
+                                ? `${fmtNum(t.high)} chairs`
+                                : `${fmtUsd((t as any).monthly_rev_anchor_usd || 0)}/mo`}
                             </p>
                           </div>
                           <div className="col-span-3 sm:col-span-2 text-right">
@@ -226,10 +232,12 @@ export default function ChairExpansionPlan() {
                           </div>
                           <div className="hidden sm:block col-span-2 text-right">
                             <p className="text-[10px] uppercase tracking-wider text-neutral-500">
-                              Tier Cap
+                              {t.order === 0 ? "Max Raise" : "Model"}
                             </p>
                             <p className="text-xs font-mono text-emerald-300">
-                              {fmtUsd(t.potential_revenue_usd)}
+                              {t.order === 0
+                                ? fmtUsd(t.potential_revenue_usd)
+                                : "Live"}
                             </p>
                           </div>
                         </motion.li>
@@ -237,18 +245,19 @@ export default function ChairExpansionPlan() {
                     })}
                   </ol>
 
-                  {/* Apex teaser — pointer to Welcome Letter */}
+                  {/* Top-tier teaser — pointer to Welcome Letter */}
                   <div
                     className="rounded-xl border border-violet-500/30 bg-violet-950/20 p-4 text-sm text-violet-100"
                     data-testid="apex-teaser"
                   >
-                    🔒 The final tier (<strong>Apex</strong>) is
-                    intentionally not shown here. See the Founders Letter
-                    above for the ceiling reveal — we share it once, quietly,
-                    so visitors aren't hit with a "max price" upfront.
+                    🔒 The top valuation milestone (<strong>Platinum</strong>,
+                    triggered at $50M/mo app revenue) is intentionally not
+                    shown here. See the Founders Letter above for the ceiling
+                    reveal — we share it once, quietly, so visitors aren't hit
+                    with a "max price" upfront.
                   </div>
 
-                  {/* Reserve vault explainer */}
+                  {/* Founder Vault explainer */}
                   <div
                     className="rounded-xl border border-amber-700/40 bg-amber-950/20 p-5"
                     data-testid="reserve-vault-block"
@@ -257,19 +266,18 @@ export default function ChairExpansionPlan() {
                       <Lock className="w-5 h-5 text-amber-300 mt-0.5 flex-shrink-0" />
                       <div>
                         <h3 className="text-amber-200 font-bold uppercase tracking-wider text-sm">
-                          Reserve Vault — {fmtNum(plan.reserve_vault_locked)} Chairs Locked
+                          200M DSG Founder Vault — Locked
                         </h3>
                         <p className="text-xs text-amber-100/80 mt-2 leading-relaxed">
-                          Half of total chair supply is programmatically locked
-                          and only releases when the platform reaches{" "}
+                          The 200M DSG Founder Vault is programmatically locked
+                          and only releases when{" "}
                           <strong className="text-amber-200">
                             {plan.reserve_unlock_gate}
                           </strong>
-                          . This protects the floor for early holders by
-                          guaranteeing supply can't be flooded mid-cycle. When
-                          unlocked, vault chairs are issued through
-                          community-voted distribution events — never
-                          bulk-sold.
+                          . On unlock: 25% releases immediately, the remaining
+                          75% drips over 11 months. Chair holders receive
+                          weighted distributions during the drip — stacked on
+                          top of the standard 30% chair-pool allocation.
                         </p>
                       </div>
                     </div>
@@ -279,7 +287,7 @@ export default function ChairExpansionPlan() {
                     className="text-center text-[10px] font-mono uppercase tracking-[0.3em] text-neutral-600"
                     data-testid="chair-expansion-disclaimer"
                   >
-                    Live data · /api/chairs/expansion-plan · Apex price hidden by design
+                    Live data · /api/chairs/expansion-plan · Platinum price hidden by design
                   </p>
                 </div>
               </motion.div>

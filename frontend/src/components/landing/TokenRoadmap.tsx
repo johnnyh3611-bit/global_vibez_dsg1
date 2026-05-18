@@ -146,7 +146,7 @@ export default function TokenRoadmap() {
       status: "shipped",
       date: "Plan published",
       title: "1M-chair supply expansion plan",
-      desc: "3-tier ladder: Genius ($20 × 50K) → Genesis ($100 × 100K) → Apex ($250 × 50K). 200K active chairs totaling ~$23.5M max raise, plus 800K in Reserve + 200M DSG Founder Vault locked until chair #50,000 sells. Genius buyers get a 12.5× floor-price multiplier guarantee by Apex.",
+      desc: "Genius is the only fixed-supply phase: 50,000 seats × $20 = $1M ceiling raise. The instant chair #50,000 sells, chair price flips to the live Equity Master matrix — anchored at $18 Floor (@ $500K/mo) → $99 Genesis (@ $2.75M/mo) → $360 Diamond (@ $10M/mo) → $1,800 Platinum (@ $50M/mo) — and the 200M DSG Founder Vault begins a 12-month drip. Genius buyers get a 90× floor-price multiplier guarantee by Platinum.",
       Icon: Sparkles,
     },
     {
