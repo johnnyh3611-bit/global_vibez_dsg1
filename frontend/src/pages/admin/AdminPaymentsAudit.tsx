@@ -52,6 +52,18 @@ type Reconcile = {
   drift_usd: number;
 };
 
+type DriftAlert = {
+  at: string;
+  window_days: number;
+  threshold_usd: number;
+  metrics: {
+    stripe_paid_usd: number;
+    internally_credited_usd: number;
+    drift_usd: number;
+  };
+  email: { sent: boolean; error: string | null; recipient: string };
+};
+
 const API = process.env.REACT_APP_BACKEND_URL;
 const WINDOW_OPTIONS = [1, 7, 30, 90];
 
@@ -63,7 +75,9 @@ const AdminPaymentsAudit: React.FC = () => {
   const [reconcile, setReconcile] = useState<Reconcile | null>(null);
   const [summary, setSummary] = useState<SummaryRow[]>([]);
   const [events, setEvents] = useState<EventRow[]>([]);
+  const [alerts, setAlerts] = useState<DriftAlert[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [checking, setChecking] = useState<boolean>(false);
 
   // Event filters
   const [filterKind, setFilterKind] = useState<string>("");
@@ -79,7 +93,7 @@ const AdminPaymentsAudit: React.FC = () => {
       if (filterUser) params.set("user_id", filterUser);
       params.set("limit", "50");
 
-      const [recRes, sumRes, evtRes] = await Promise.all([
+      const [recRes, sumRes, evtRes, alertsRes] = await Promise.all([
         fetch(`${API}/api/admin/payments-audit/reconcile?days=${days}`, {
           credentials: "include",
         }),
@@ -89,20 +103,25 @@ const AdminPaymentsAudit: React.FC = () => {
         fetch(`${API}/api/admin/payments-audit/events?${params.toString()}`, {
           credentials: "include",
         }),
+        fetch(`${API}/api/admin/payments-audit/alerts?limit=10`, {
+          credentials: "include",
+        }),
       ]);
       if (!recRes.ok || !sumRes.ok || !evtRes.ok) {
         throw new Error(
           `HTTP ${recRes.status}/${sumRes.status}/${evtRes.status}`,
         );
       }
-      const [rec, sum, evt] = await Promise.all([
+      const [rec, sum, evt, alertsData] = await Promise.all([
         recRes.json(),
         sumRes.json(),
         evtRes.json(),
+        alertsRes.ok ? alertsRes.json() : Promise.resolve({ alerts: [] }),
       ]);
       setReconcile(rec);
       setSummary(sum?.rows || []);
       setEvents(evt?.events || []);
+      setAlerts(alertsData?.alerts || []);
     } catch (err: any) {
       toast.error(`Failed to load audit: ${err?.message || err}`);
     } finally {
@@ -129,6 +148,36 @@ const AdminPaymentsAudit: React.FC = () => {
     reconcile && Math.abs(reconcile.drift_usd) > 0.01
       ? "danger"
       : "clean";
+
+  const triggerDriftCheck = async () => {
+    setChecking(true);
+    try {
+      const res = await fetch(`${API}/api/admin/payments-audit/check-now`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (data?.alert_sent) {
+        toast.success(
+          `Drift alert email sent (drift $${data?.metrics?.drift_usd?.toFixed(2)})`,
+        );
+      } else if (data?.over_threshold) {
+        toast.info(
+          `Drift over threshold but cooldown active — last alert within ${24}h.`,
+        );
+      } else {
+        toast.success(
+          `Clean — drift $${data?.metrics?.drift_usd?.toFixed(2)} (below threshold).`,
+        );
+      }
+      await loadAll();
+    } catch (err: any) {
+      toast.error(`Drift check failed: ${err?.message || err}`);
+    } finally {
+      setChecking(false);
+    }
+  };
 
   return (
     <div className="p-8 space-y-6" data-testid="admin-payments-audit-page">
@@ -225,6 +274,65 @@ const AdminPaymentsAudit: React.FC = () => {
           </div>
         ) : (
           <p className="text-sm text-zinc-500">No reconciliation data yet.</p>
+        )}
+        <div className="mt-5 pt-4 border-t border-zinc-800 flex items-center justify-between flex-wrap gap-3">
+          <p className="text-xs text-zinc-500 max-w-md">
+            Background worker auto-checks every 6h. Threshold is <code>$5.00</code>
+            by default; emails the founder via Resend when drift exceeds it
+            (24h cool-down).
+          </p>
+          <Button
+            onClick={triggerDriftCheck}
+            disabled={checking}
+            className="bg-red-500 hover:bg-red-400 text-white font-bold disabled:opacity-50"
+            data-testid="admin-payments-audit-check-now-btn"
+          >
+            {checking ? "Checking…" : "Check drift now"}
+          </Button>
+        </div>
+      </Card>
+
+      {/* Recent drift alerts — audit trail of pages */}
+      <Card
+        className="p-6 bg-black/40 border border-zinc-800"
+        data-testid="admin-payments-audit-alerts-card"
+      >
+        <h2 className="text-lg font-bold text-white mb-3">Drift alert history</h2>
+        {alerts.length === 0 ? (
+          <p
+            className="text-sm text-zinc-500"
+            data-testid="admin-payments-audit-alerts-empty"
+          >
+            No drift alerts have fired yet — the platform has been clean.
+          </p>
+        ) : (
+          <ul className="divide-y divide-zinc-800">
+            {alerts.map((a, i) => (
+              <li
+                key={`${a.at}-${i}`}
+                className="flex items-center justify-between py-2 text-sm font-mono"
+                data-testid={`admin-payments-audit-alert-row-${i}`}
+              >
+                <span className="text-zinc-400">{a.at.replace("T", " ").slice(0, 19)}</span>
+                <span className="text-red-400">
+                  ${a.metrics.drift_usd.toFixed(2)} drift
+                </span>
+                <span className="text-zinc-300 text-xs">
+                  {a.window_days}d window · threshold ${a.threshold_usd.toFixed(2)}
+                </span>
+                <Badge
+                  variant="outline"
+                  className={
+                    a.email.sent
+                      ? "text-emerald-300 border-emerald-500/40"
+                      : "text-amber-300 border-amber-500/40"
+                  }
+                >
+                  {a.email.sent ? "emailed" : "no-send"}
+                </Badge>
+              </li>
+            ))}
+          </ul>
         )}
       </Card>
 

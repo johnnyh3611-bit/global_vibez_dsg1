@@ -11128,3 +11128,73 @@ def test_admin_payments_audit_ui_wired():
         "AdminPaymentsAudit must be registered at /admin/payments-audit"
     )
 
+def test_payments_audit_drift_alert_wired():
+    """Feb 2026 — background worker emails the founder via Resend when
+    Stripe-vs-internal-credit drift exceeds the threshold. Pin:
+      • service ``services/payments_audit_alert.py`` with the canonical
+        helpers + Resend send path
+      • lifespan_workers kicks it off on startup
+      • admin route exposes the manual ``/check-now`` + ``/alerts`` paths
+      • ``payments_audit_alerts`` index registered in the index spec
+      • frontend AdminPaymentsAudit page renders the alerts panel +
+        Check-now button
+    """
+    from pathlib import Path
+    backend = Path(__file__).resolve().parents[1]
+
+    svc = (backend / "services" / "payments_audit_alert.py").read_text(encoding="utf-8")
+    for token in [
+        "DRIFT_THRESHOLD_USD",
+        "async def evaluate_and_alert",
+        "async def drift_alert_loop",
+        "RESEND_API_KEY",
+        "payments_audit_alerts",
+        "COOLDOWN_HOURS",
+    ]:
+        assert token in svc, f"payments_audit_alert.py missing token '{token}'"
+
+    workers = (backend / "lifespan_workers.py").read_text(encoding="utf-8")
+    assert "def _start_payments_audit_drift_alert" in workers, (
+        "lifespan_workers must expose _start_payments_audit_drift_alert"
+    )
+    assert "drift_alert_loop" in workers, (
+        "_start_payments_audit_drift_alert must call drift_alert_loop"
+    )
+
+    lifespan = (backend / "lifespan.py").read_text(encoding="utf-8")
+    assert "_start_payments_audit_drift_alert" in lifespan, (
+        "lifespan.py must kick off the drift alert worker"
+    )
+
+    routes = (backend / "routes" / "admin_payments_audit.py").read_text(encoding="utf-8")
+    assert '"/check-now"' in routes and '"/alerts"' in routes, (
+        "admin_payments_audit must expose POST /check-now and GET /alerts"
+    )
+
+    from server import app
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    for p in (
+        "/api/admin/payments-audit/check-now",
+        "/api/admin/payments-audit/alerts",
+    ):
+        assert p in paths, f"Missing admin route: {p}"
+
+    idx = (backend / "lifespan_indexes.py").read_text(encoding="utf-8")
+    assert '"coll": "payments_audit_alerts"' in idx, (
+        "payments_audit_alerts index missing"
+    )
+
+    # Frontend wiring
+    fe_page = (Path("/app/frontend/src") / "pages" / "admin" / "AdminPaymentsAudit.tsx").read_text(encoding="utf-8")
+    for tid in [
+        "admin-payments-audit-check-now-btn",
+        "admin-payments-audit-alerts-card",
+    ]:
+        assert tid in fe_page, f"AdminPaymentsAudit missing testid '{tid}'"
+    assert "/api/admin/payments-audit/check-now" in fe_page, (
+        "AdminPaymentsAudit must POST /check-now"
+    )
+    assert "/api/admin/payments-audit/alerts" in fe_page, (
+        "AdminPaymentsAudit must GET /alerts"
+    )
+

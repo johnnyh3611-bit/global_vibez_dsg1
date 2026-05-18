@@ -196,4 +196,6 @@ _INDEX_SPECS = [
     {"coll": "payments_audit", "key": [("kind", 1), ("status", 1), ("at", -1)], "background": True},
     {"coll": "payments_audit", "key": "stripe_session_id", "sparse": True, "background": True},
     {"coll": "payments_audit", "key": [("user_id", 1), ("at", -1)], "background": True},
+    # Drift-alert audit trail — newest-first read for the admin "Alerts" tab.
+    {"coll": "payments_audit_alerts", "key": [("at", -1)], "background": True},
 ]

@@ -45,6 +45,7 @@ from lifespan_workers import (
     _start_vibe_radio_resolver,
     _start_airlock_release_worker,
     _start_payout_airlock_release_worker,
+    _start_payments_audit_drift_alert,
 )
 from lifespan_migrations import _create_indexes_async
 
@@ -136,6 +137,9 @@ def register_startup_tasks(app, logger: logging.Logger) -> None:
         _kick_off("Payout Airlock release worker (Security D2)",
                   _start_payout_airlock_release_worker, logger,
                   success_msg="Payout Airlock release worker started (5-min ticks)")
+        _kick_off("Payments-audit drift alert worker",
+                  _start_payments_audit_drift_alert, logger,
+                  success_msg="Payments-audit drift alert worker started (6-hour ticks)")
 
 
 def register_shutdown(app, logger: logging.Logger) -> None:

@@ -110,3 +110,23 @@ async def reconcile(
         "internally_credited_usd": round(credited_usd, 2),
         "drift_usd": round(paid_usd - credited_usd, 2),
     }
+
+
+@router.post("/check-now")
+async def check_drift_now(admin=Depends(require_admin)) -> Dict[str, Any]:
+    """Manual one-shot trigger of the drift-alert worker. Runs the same
+    check the 6h background loop runs and returns the result so the
+    founder can verify the alert wiring without waiting."""
+    from services.payments_audit_alert import evaluate_and_alert  # noqa: PLC0415
+    return await evaluate_and_alert(db)
+
+
+@router.get("/alerts")
+async def list_alerts(
+    limit: int = Query(default=25, ge=1, le=100),
+    admin=Depends(require_admin),
+) -> Dict[str, Any]:
+    """Recent drift alerts (audit trail of when the founder was paged)."""
+    cursor = db.payments_audit_alerts.find({}, {"_id": 0}).sort("at", -1).limit(limit)
+    alerts = [a async for a in cursor]
+    return {"alerts": alerts, "count": len(alerts)}

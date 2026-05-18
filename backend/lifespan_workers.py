@@ -417,3 +417,21 @@ def _start_payout_airlock_release_worker() -> None:
             await asyncio.sleep(5 * 60)
 
     asyncio.create_task(loop())
+
+
+def _start_payments_audit_drift_alert() -> None:
+    """Feb 2026 — every 6h, scan the payments_audit ledger for drift
+    between Stripe-paid USD and internally-credited USD. Email the
+    founder via Resend when |drift| > threshold (24h cooldown so a
+    lingering issue doesn't spam the inbox)."""
+    async def loop():
+        try:
+            from services.payments_audit_alert import drift_alert_loop  # noqa: PLC0415
+            await drift_alert_loop()
+        except Exception as exc:  # noqa: BLE001
+            logging.getLogger("payments-audit-drift-alert").warning(
+                "drift alert loop import/start failed: %s", exc,
+            )
+
+    asyncio.create_task(loop())
+

@@ -1,6 +1,38 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
 
+> **2026-02-XX (cont.) — PAYMENTS-AUDIT DRIFT ALERT (Resend) · 496/496 regression green · READY FOR BETA REDEPLOY 🚀.**
+>
+> Final hardening pass — automated Slack-/email-style drift alerting so you don't have to remember to open the dashboard.
+>
+> ### What shipped
+> 1. **`services/payments_audit_alert.py`** — background loop runs every 6h, computes drift over the last 7 days, emails the founder via Resend when |drift| > **$5.00** (configurable via `PAYMENTS_DRIFT_THRESHOLD_USD`).
+> 2. **24h cool-down** — alerts persist to `payments_audit_alerts`; we won't re-spam the inbox while drift lingers.
+> 3. **Worker wired** into `lifespan_workers.py` → `_start_payments_audit_drift_alert` → kicked off from `lifespan.py` on every boot.
+> 4. **New admin endpoints**:
+>    - `POST /api/admin/payments-audit/check-now` — manual one-shot trigger (founder pre-deploy sanity check)
+>    - `GET /api/admin/payments-audit/alerts?limit=N` — full alert audit trail
+> 5. **Frontend** `/admin/payments-audit` page now has:
+>    - "Check drift now" red button (calls `/check-now`, toasts the result)
+>    - Drift alert history panel below the reconcile card (newest-first, with `emailed`/`no-send` badge per row)
+> 6. **Mongo index** `payments_audit_alerts.at desc` registered in `lifespan_indexes.py`.
+>
+> ### Resend env vars used (all optional w/ sane fallbacks)
+> ```
+> RESEND_API_KEY                       # already set in prod
+> RESEND_SENDER_EMAIL                  # falls back to support@globalvibezdsg.com
+> PAYMENTS_ALERT_RECIPIENT_EMAIL       # falls back to RESEND_SENDER_EMAIL
+> PAYMENTS_DRIFT_THRESHOLD_USD         # default 5.0
+> PAYMENTS_DRIFT_WINDOW_DAYS           # default 7
+> PAYMENTS_DRIFT_TICK_SECONDS          # default 21600 (6h)
+> PAYMENTS_DRIFT_COOLDOWN_HOURS        # default 24
+> ```
+>
+> ### Regression Shield: **496/496 GREEN** (+1 new lock)
+>   - `test_payments_audit_drift_alert_wired` — pins service helpers, lifespan kick-off, admin routes, index spec, frontend testids
+
+
+
 > **2026-02-XX (cont.) — ADMIN PAYMENTS AUDIT UI · 495/495 regression green · READY FOR BETA REDEPLOY 🚀.**
 >
 > Founder asked for the drift detector frontend before redeploying. Shipped a clean 3-section page.
