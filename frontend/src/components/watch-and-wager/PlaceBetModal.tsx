@@ -6,7 +6,7 @@ import { GlassCard } from '../GlassCard';
 import { useToast } from '@/hooks/useToast';
 
 const API = process.env.REACT_APP_BACKEND_URL;
-const COINS_PER_DOLLAR = 2000;
+const COINS_PER_DOLLAR = 1000;  // 1,000 coins = $1 (updated 2026-05-18)
 const MIN_BET = 10;
 const MAX_BET = 100;
 

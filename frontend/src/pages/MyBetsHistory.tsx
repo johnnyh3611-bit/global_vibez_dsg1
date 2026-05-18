@@ -5,7 +5,7 @@ import { TrendingUp, TrendingDown, Clock, Trophy, Target, Percent } from 'lucide
 import { BigWinCelebration } from '@/components/BigWinCelebration';
 
 const API = process.env.REACT_APP_BACKEND_URL;
-const COINS_PER_DOLLAR = 2000;
+const COINS_PER_DOLLAR = 1000;  // 1,000 coins = $1 (updated 2026-05-18)
 const BIG_WIN_PROFIT_THRESHOLD = 50; // 50+ coins profit
 const BIG_WIN_ODDS_THRESHOLD = 2.5; // 2.5x+ odds
 
