@@ -27,12 +27,18 @@ log = logging.getLogger(__name__)
 # in every utility room is computed from this constant).
 #
 # 2,000 ₵ = $1 USD.
-#   • Total DSG supply is fixed at 3,000,000,000 coins → roughly $1.5M
+#   • Total DSG supply is fixed at 3,000,000,000 coins → roughly $3M
 #     hard cap at the launch rate. As burns + buy-pressure shrink the
 #     float, the per-coin USD value rises (founder pricing model).
 #   • Every spend in the app routes through ``debit_coins`` so the
 #     burn rate is observable on a single ledger.
-COINS_PER_USD = 2000
+# 2026-05-18 founder ask: rate changed from $1 = 2,000 ₵ to $1 = 1,000 ₵
+# across the entire app. Each Vibez Coin is worth 2× its prior value;
+# coin-denominated allowances/bets/pots stay the same number but their
+# USD-equivalent doubles. This is the single source of truth — every
+# other rate constant (watch_and_wager, wallet docs, PricingMasterVault)
+# is reconciled to this value.
+COINS_PER_USD = 1000
 
 
 def usd_to_coins(amount_usd: float) -> int:

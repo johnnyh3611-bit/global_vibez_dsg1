@@ -103,7 +103,7 @@ const Wallet = () => {
             <p className="text-white/80 text-2xl font-semibold">
               ≈ ${usdEquivalent} USD
             </p>
-            <p className="text-white/60 text-sm mt-2">1 USD = ₵2,000 Vibez Coins</p>
+            <p className="text-white/60 text-sm mt-2">1 USD = ₵1,000 Vibez Coins</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

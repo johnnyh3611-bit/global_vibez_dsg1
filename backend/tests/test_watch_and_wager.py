@@ -11,8 +11,8 @@ import uuid
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
-# Constants from the system
-STARTING_BALANCE = 2000  # 2,000 coins = $1
+# Constants from the system (2026-05-18: rate updated 2,000 → 1,000 ₵/$)
+STARTING_BALANCE = 1000  # 1,000 coins = $1
 DAILY_LOGIN_BONUS = 100
 PRACTICE_GAME_WIN = 0  # No coins for practice
 MULTIPLAYER_GAME_WIN = 100
@@ -20,7 +20,7 @@ TOURNAMENT_WIN = 500
 MIN_BET = 50
 MAX_BET = 100
 HOUSE_EDGE = 5  # 5%
-COINS_PER_DOLLAR = 2000
+COINS_PER_DOLLAR = 1000
 
 
 class TestCoinEconomy:

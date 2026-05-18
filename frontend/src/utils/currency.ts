@@ -35,11 +35,12 @@ export const formatCurrency = (amount: number): string => formatCoins(amount);
 
 /**
  * Conversion is a separate, explicit action. Defaults below match the legacy
- * payout schedule (2000 ₵ ≈ 1 USD ≈ ~0.005 SOL on Devnet @ ~$200/SOL). The
- * real rates come from the backend — these are display-only fallbacks.
+ * payout schedule (1,000 ₵ ≈ 1 USD ≈ ~0.005 SOL on Devnet @ ~$200/SOL · rate
+ * updated 2026-05-18 from 2,000 → 1,000 ₵/$). The real rates come from the
+ * backend — these are display-only fallbacks.
  */
 export const COINS_PER_SOL_DEFAULT = 100_000;   // 1 SOL ≈ ₵100,000
-export const COINS_PER_USD_DEFAULT = 2_000;     // 1 USD ≈ ₵2,000
+export const COINS_PER_USD_DEFAULT = 1_000;     // 1 USD ≈ ₵1,000
 
 export const coinsToSol = (coins: number, rate = COINS_PER_SOL_DEFAULT): number =>
   rate > 0 ? coins / rate : 0;

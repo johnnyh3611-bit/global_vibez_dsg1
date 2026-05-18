@@ -4,7 +4,7 @@ import { Coins, TrendingUp, Gift } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
 
 const API = process.env.REACT_APP_BACKEND_URL;
-const COINS_PER_DOLLAR = 2000;  // 2,000 coins = $1
+const COINS_PER_DOLLAR = 1000;  // 1,000 coins = $1 (updated 2026-05-18)
 const MIN_CASHOUT_COINS = 50000;  // $25 minimum
 
 export function CoinBalanceWidget({ compact = false }) {

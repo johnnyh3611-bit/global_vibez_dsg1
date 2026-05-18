@@ -37,17 +37,18 @@ PAYMENTS = _db.coin_topup_payments
 USERS = _db.users
 
 # ─────────────────────────────  Packs (LOCKED)  ─────────────────────────────
-# Coin amounts scale with COINS_PER_USD = 2000.
+# Coin amounts scale with COINS_PER_USD = 1,000 (2026-05-18 founder
+# ask: rate updated from 2,000 → 1,000 ₵/$ to roughly 2× per-coin value).
 # Bigger packs reward bigger commitment via discounted ₵/$ rate:
-#   starter  →  exactly 2000 ₵/$ (no discount)
-#   popular  →  ~2222 ₵/$  (11% bonus)
-#   pro      →  2500 ₵/$   (25% bonus)
-#   vip      →  ~2857 ₵/$  (43% bonus — VIPs save the most)
+#   starter  →  exactly 1000 ₵/$ (no discount)
+#   popular  →  ~1111 ₵/$  (11% bonus)
+#   pro      →  1250 ₵/$   (25% bonus)
+#   vip      →  ~1429 ₵/$  (43% bonus — VIPs save the most)
 COIN_PACKS = {
-    "starter":  {"coins": 10_000,  "usd": 5.00,  "label": "Starter",  "bonus_pct": 0,  "popular": False},
-    "popular":  {"coins": 20_000,  "usd": 9.00,  "label": "Popular",  "bonus_pct": 11, "popular": True},
-    "pro":      {"coins": 50_000,  "usd": 20.00, "label": "Pro",      "bonus_pct": 25, "popular": False},
-    "vip":      {"coins": 100_000, "usd": 35.00, "label": "VIP",      "bonus_pct": 43, "popular": False},
+    "starter":  {"coins": 5_000,  "usd": 5.00,  "label": "Starter",  "bonus_pct": 0,  "popular": False},
+    "popular":  {"coins": 10_000, "usd": 9.00,  "label": "Popular",  "bonus_pct": 11, "popular": True},
+    "pro":      {"coins": 25_000, "usd": 20.00, "label": "Pro",      "bonus_pct": 25, "popular": False},
+    "vip":      {"coins": 50_000, "usd": 35.00, "label": "VIP",      "bonus_pct": 43, "popular": False},
 }
 
 

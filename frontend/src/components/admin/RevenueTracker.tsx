@@ -134,7 +134,7 @@ const RevenueTracker = () => {
       <div className="fee-info">
         <div className="info-row">
           <span className="info-label">Exchange Rate:</span>
-          <span className="info-value">₵2,000 = $1.00 USD</span>
+          <span className="info-value">₵1,000 = $1.00 USD</span>
         </div>
         <div className="info-row">
           <span className="info-label">Platform Fee:</span>

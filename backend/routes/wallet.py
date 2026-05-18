@@ -42,7 +42,11 @@ class TransferCredits(BaseModel):
 
 # ==================== CREDIT PACKAGES (Pricing Master Vault v1.0) ====================
 # Spec source: services/pricing_master_vault.py
-# $1 USD = 2,500 ₵ credits · 4:1 DSG bridge · tier-gated per founder spec.
+# This file routes the "Vibe Credits" product (6-pack ladder, $1 → $100)
+# whose internal rate is fixed at $1 USD = 2,500 ₵ credits · 4:1 DSG bridge.
+# That is INTENTIONALLY DIFFERENT from the Vibez Coins ₵ top-up product
+# (services/coin_wallet.py · COINS_PER_USD = 1,000 as of 2026-05-18).
+# Two products, two rates — do not collapse without founder approval.
 
 CREDIT_PACKAGES = {
     pid: {

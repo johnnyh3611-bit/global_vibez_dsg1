@@ -2832,14 +2832,14 @@ def test_coin_topup_router_mounted_with_locked_packs() -> None:
     assert router.prefix == "/coins"
     assert set(COIN_PACKS.keys()) == {"starter", "popular", "pro", "vip"}, \
         f"Coin pack catalogue drifted: {set(COIN_PACKS.keys())}"
-    assert COIN_PACKS["starter"]["coins"] == 10_000   # 5 × 2000
+    assert COIN_PACKS["starter"]["coins"] == 5_000    # 5 × 1000
     assert COIN_PACKS["starter"]["usd"] == 5.00
-    assert COIN_PACKS["popular"]["coins"] == 20_000   # 9 × 2000 + 10% bonus rounding
+    assert COIN_PACKS["popular"]["coins"] == 10_000   # 9 × 1000 + ~11% bonus rounding
     assert COIN_PACKS["popular"]["usd"] == 9.00
     assert COIN_PACKS["popular"]["popular"] is True
-    assert COIN_PACKS["pro"]["coins"] == 50_000       # 20 × 2500 (25% bonus rate)
+    assert COIN_PACKS["pro"]["coins"] == 25_000       # 20 × 1250 (25% bonus rate)
     assert COIN_PACKS["pro"]["usd"] == 20.00
-    assert COIN_PACKS["vip"]["coins"] == 100_000      # 35 × ~2857 (43% bonus rate)
+    assert COIN_PACKS["vip"]["coins"] == 50_000       # 35 × ~1429 (43% bonus rate)
     assert COIN_PACKS["vip"]["usd"] == 35.00
 
 
@@ -2889,21 +2889,23 @@ def test_unified_coin_wallet_helpers() -> None:
     JFTN) MUST debit through ``services/coin_wallet.debit_coins`` so the
     wallet has a single source of truth and an atomic-decrement guard.
 
-    Conversion rate is locked at 100 ₵ = $1 across the whole platform.
+    Conversion rate (2026-05-18 founder update): 1,000 ₵ = $1.
+    Was previously 2,000 ₵ = $1; per-coin USD value doubled.
     """
     from services.coin_wallet import (
         COINS_PER_USD, usd_to_coins, coins_to_usd,
         debit_coins, credit_coins, get_balance,
     )
-    assert COINS_PER_USD == 2000, \
-        "Coin/USD rate is locked at 2,000 ₵ = $1 (3B coin supply, founder pricing model). " \
-        "Do NOT change without a migration of every utility-room price."
-    assert usd_to_coins(29.00) == 58_000     # YP Verified
-    assert usd_to_coins(99.00) == 198_000    # YP Elite
-    assert usd_to_coins(19.00) == 38_000     # YP Featured / month
-    assert usd_to_coins(0.50) == 1_000       # half-dollar precision
+    assert COINS_PER_USD == 1000, \
+        "Coin/USD rate is locked at 1,000 ₵ = $1 (founder pricing update 2026-05-18). " \
+        "Do NOT change without coordinating coin_topup pack amounts + " \
+        "watch_and_wager rate import + a pricing-page review."
+    assert usd_to_coins(29.00) == 29_000     # YP Verified
+    assert usd_to_coins(99.00) == 99_000     # YP Elite
+    assert usd_to_coins(19.00) == 19_000     # YP Featured / month
+    assert usd_to_coins(0.50) == 500         # half-dollar precision
     assert callable(debit_coins) and callable(credit_coins) and callable(get_balance)
-    assert coins_to_usd(58_000) == 29.00
+    assert coins_to_usd(29_000) == 29.00
 
 
 def test_yellow_pages_supports_coin_payment() -> None:

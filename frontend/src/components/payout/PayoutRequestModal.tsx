@@ -8,7 +8,7 @@ const PayoutRequestModal = ({ isOpen, onClose, userBalance, onSubmit }) => {
   const [payoutMethod, setPayoutMethod] = useState('paypal');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const CONVERSION_RATE = 2000; // 2000 coins = $1 USD
+  const CONVERSION_RATE = 1000; // 1,000 coins = $1 USD (updated 2026-05-18)
   const MIN_PAYOUT_COINS = 20000; // Minimum $10 USD
   const PLATFORM_FEE_PERCENT = 5; // 5% fee
 

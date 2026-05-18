@@ -48,8 +48,11 @@ class BettingPool(BaseModel):
 
 HOUSE_EDGE = 5  # 5% house edge
 MIN_BET = 50  # 50-coin floor (founder rule, May 2026)
-MAX_BET = 100  # $0.05 value
-COINS_PER_DOLLAR = 2000  # 2,000 coins = $1
+MAX_BET = 100  # $0.10 value at the 1,000 ₵/$ rate
+# 2026-05-18: import from the single source of truth so this file
+# never drifts again. Was previously hardcoded `2000` — fixed alongside
+# the global rate change to $1 = 1,000 ₵.
+from services.coin_wallet import COINS_PER_USD as COINS_PER_DOLLAR  # noqa: E402, PLC0415
 
 
 # ==================== HELPER FUNCTIONS ====================
