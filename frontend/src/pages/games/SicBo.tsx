@@ -123,9 +123,9 @@ export default function SicBo() {
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm font-mono">
                 <div><div className="text-[10px] text-neutral-500">PAYOUT</div><b className="text-cyan-300">{result.payout_ratio}:1</b></div>
-                <div><div className="text-[10px] text-neutral-500">GROSS</div><b className="text-emerald-300">${result.gross.toFixed(2)}</b></div>
-                <div><div className="text-[10px] text-neutral-500">TAX</div><b className="text-yellow-300">${result.tax.toFixed(2)}</b></div>
-                <div><div className="text-[10px] text-neutral-500">NET</div><b className="text-emerald-200">${result.net.toFixed(2)}</b></div>
+                <div><div className="text-[10px] text-neutral-500">GROSS</div><b className="text-emerald-300">₵{result.gross.toFixed(2)}</b></div>
+                <div><div className="text-[10px] text-neutral-500">TAX</div><b className="text-yellow-300">₵{result.tax.toFixed(2)}</b></div>
+                <div><div className="text-[10px] text-neutral-500">NET</div><b className="text-emerald-200">₵{result.net.toFixed(2)}</b></div>
               </div>
             </motion.div>
           )}

@@ -178,9 +178,9 @@ export default function GenericCasinoGame(props: GenericGameProps) {
               </div>
               {props.renderResult ? props.renderResult(result) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm font-mono">
-                  <div><div className="text-[10px] text-neutral-500">GROSS</div><b className={result.gross >= 0 ? "text-emerald-300" : "text-rose-300"}>${(result.gross ?? 0).toFixed(2)}</b></div>
-                  <div><div className="text-[10px] text-neutral-500">TAX</div><b className="text-yellow-300">${(result.tax ?? 0).toFixed(2)}</b></div>
-                  <div><div className="text-[10px] text-neutral-500">NET</div><b className={result.net >= 0 ? "text-emerald-300" : "text-rose-300"}>${(result.net ?? 0).toFixed(2)}</b></div>
+                  <div><div className="text-[10px] text-neutral-500">GROSS</div><b className={result.gross >= 0 ? "text-emerald-300" : "text-rose-300"}>₵{(result.gross ?? 0).toFixed(2)}</b></div>
+                  <div><div className="text-[10px] text-neutral-500">TAX</div><b className="text-yellow-300">₵{(result.tax ?? 0).toFixed(2)}</b></div>
+                  <div><div className="text-[10px] text-neutral-500">NET</div><b className={result.net >= 0 ? "text-emerald-300" : "text-rose-300"}>₵{(result.net ?? 0).toFixed(2)}</b></div>
                 </div>
               )}
             </motion.div>

@@ -83,7 +83,7 @@ export default function VibesWheel() {
             <label className="flex flex-col text-xs">
               <span className="text-neutral-400 uppercase">Stake</span>
               <select value={stake} onChange={e => setStake(parseFloat(e.target.value))} disabled={spinning} data-testid="vw-stake-select" className="mt-1 bg-black border border-white/20 rounded-lg px-3 py-2 font-mono">
-                {[5, 10, 25, 50, 100].map(n => <option key={n} value={n}>${n}</option>)}
+                {[5, 10, 25, 50, 100].map(n => <option key={n} value={n}>₵{n}</option>)}
               </select>
             </label>
             <button onClick={spin} disabled={spinning} data-testid="vw-spin-btn" className="ml-auto px-6 py-2.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-purple-500 text-white font-black tracking-wide hover:brightness-110 disabled:opacity-50">{spinning ? "SPINNING…" : "SPIN"}</button>
@@ -107,9 +107,9 @@ export default function VibesWheel() {
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm font-mono">
                   <div><div className="text-[10px] text-neutral-500">SLOT</div><b className="text-cyan-300">#{result.slot_index}</b></div>
-                  <div><div className="text-[10px] text-neutral-500">GROSS</div><b className="text-emerald-300">${result.gross.toFixed(2)}</b></div>
-                  <div><div className="text-[10px] text-neutral-500">BURN</div><b className="text-orange-300">${result.burn.toFixed(2)}</b></div>
-                  <div><div className="text-[10px] text-neutral-500">NET</div><b className="text-emerald-200">${result.net.toFixed(2)}</b></div>
+                  <div><div className="text-[10px] text-neutral-500">GROSS</div><b className="text-emerald-300">₵{result.gross.toFixed(2)}</b></div>
+                  <div><div className="text-[10px] text-neutral-500">BURN</div><b className="text-orange-300">₵{result.burn.toFixed(2)}</b></div>
+                  <div><div className="text-[10px] text-neutral-500">NET</div><b className="text-emerald-200">₵{result.net.toFixed(2)}</b></div>
                 </div>
               </motion.div>
             )}

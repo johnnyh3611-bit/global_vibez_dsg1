@@ -225,7 +225,7 @@ export default function ThirtyOne() {
               data-testid="thirty-one-bounty-select"
               className="mt-1 bg-black border border-white/20 rounded-lg px-3 py-2 text-white font-mono"
             >
-              {[1, 2, 5, 10, 25].map(n => <option key={n} value={n}>${n.toFixed(2)}</option>)}
+              {[1, 2, 5, 10, 25].map(n => <option key={n} value={n}>₵{n.toFixed(2)}</option>)}
             </select>
           </label>
           <button
@@ -309,7 +309,7 @@ export default function ThirtyOne() {
             </div>
             <p className="text-sm text-neutral-300 mb-4">
               <b className="text-rose-200">{outcome.low_score_players.join(" and ")}</b> tied at low score <b className="text-white">{outcome.low_score}</b>.
-              Both must re-ante <b className="text-yellow-300">${bounty.toFixed(2)}</b> or go bankrupt. 13.5% Sovereign Tax applies to every round.
+              Both must re-ante <b className="text-yellow-300">₵{bounty.toFixed(2)}</b> or go bankrupt. 13.5% Sovereign Tax applies to every round.
             </p>
             <button
               onClick={runShootout}
@@ -345,11 +345,11 @@ export default function ThirtyOne() {
               </div>
               <div className="rounded-lg border border-white/10 bg-black/40 p-3">
                 <div className="text-[10px] text-neutral-500 uppercase mb-1">Final Pot</div>
-                <div className="font-mono font-bold text-cyan-300">${shootout.final_pot.toFixed(2)}</div>
+                <div className="font-mono font-bold text-cyan-300">₵{shootout.final_pot.toFixed(2)}</div>
               </div>
               <div className="rounded-lg border border-white/10 bg-black/40 p-3">
                 <div className="text-[10px] text-neutral-500 uppercase mb-1">Sovereign Tax</div>
-                <div className="font-mono font-bold text-rose-300">${shootout.total_tax.toFixed(2)}</div>
+                <div className="font-mono font-bold text-rose-300">₵{shootout.total_tax.toFixed(2)}</div>
               </div>
             </div>
             {/* Pot history bar */}
@@ -366,9 +366,9 @@ export default function ThirtyOne() {
                       <div
                         style={{ height: `${pct}%` }}
                         className="bg-gradient-to-t from-fuchsia-500 to-cyan-400 rounded-t transition-all"
-                        title={`Round ${i}: $${p.toFixed(2)}`}
+                        title={`Round ${i}: ₵${p.toFixed(2)}`}
                       />
-                      <div className="text-[9px] text-center text-neutral-500 mt-0.5">${p.toFixed(0)}</div>
+                      <div className="text-[9px] text-center text-neutral-500 mt-0.5">₵{p.toFixed(0)}</div>
                     </div>
                   );
                 })}

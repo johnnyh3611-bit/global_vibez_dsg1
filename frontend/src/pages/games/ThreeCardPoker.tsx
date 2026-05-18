@@ -118,7 +118,7 @@ export default function ThreeCardPoker() {
               <label className="flex flex-col text-xs">
                 <span className="text-neutral-400 uppercase">Pair Plus</span>
                 <select value={pairPlus} onChange={e => setPairPlus(parseFloat(e.target.value))} disabled={busy} data-testid="tcp-pp-select" className="mt-1 bg-black border border-white/20 rounded-lg px-3 py-2 font-mono">
-                  {[0, 5, 10, 25, 50].map(n => <option key={n} value={n}>${n}</option>)}
+                  {[0, 5, 10, 25, 50].map(n => <option key={n} value={n}>₵{n}</option>)}
                 </select>
               </label>
               <button onClick={startRound} disabled={busy} data-testid="tcp-deal-btn" className="hidden md:block sm:ml-auto px-6 py-2.5 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 text-white font-black tracking-wide hover:brightness-110">DEAL</button>
@@ -133,10 +133,10 @@ export default function ThreeCardPoker() {
           {phase === "resolved" && result && (
             <div className="space-y-3">
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-                <div><div className="text-[10px] text-neutral-500 uppercase">Ante</div><div className={`font-mono font-bold ${result.ante_payout >= 0 ? "text-emerald-300" : "text-rose-300"}`}>${result.ante_payout.toFixed(2)}</div></div>
-                <div><div className="text-[10px] text-neutral-500 uppercase">Play</div><div className={`font-mono font-bold ${result.play_payout >= 0 ? "text-emerald-300" : "text-rose-300"}`}>${result.play_payout.toFixed(2)}</div></div>
-                <div><div className="text-[10px] text-neutral-500 uppercase">Bonus / PP</div><div className="font-mono font-bold text-yellow-300">${(result.ante_bonus + result.pair_plus_payout).toFixed(2)}</div></div>
-                <div><div className="text-[10px] text-neutral-500 uppercase">Net</div><div className={`font-mono font-black text-lg ${result.net >= 0 ? "text-emerald-300" : "text-rose-300"}`} data-testid="tcp-net">${result.net.toFixed(2)}</div></div>
+                <div><div className="text-[10px] text-neutral-500 uppercase">Ante</div><div className={`font-mono font-bold ${result.ante_payout >= 0 ? "text-emerald-300" : "text-rose-300"}`}>₵{result.ante_payout.toFixed(2)}</div></div>
+                <div><div className="text-[10px] text-neutral-500 uppercase">Play</div><div className={`font-mono font-bold ${result.play_payout >= 0 ? "text-emerald-300" : "text-rose-300"}`}>₵{result.play_payout.toFixed(2)}</div></div>
+                <div><div className="text-[10px] text-neutral-500 uppercase">Bonus / PP</div><div className="font-mono font-bold text-yellow-300">₵{(result.ante_bonus + result.pair_plus_payout).toFixed(2)}</div></div>
+                <div><div className="text-[10px] text-neutral-500 uppercase">Net</div><div className={`font-mono font-black text-lg ${result.net >= 0 ? "text-emerald-300" : "text-rose-300"}`} data-testid="tcp-net">₵{result.net.toFixed(2)}</div></div>
               </div>
               <button onClick={() => { setPhase("idle"); setResult(null); }} data-testid="tcp-new-btn" className="w-full py-2.5 rounded-full bg-white/10 hover:bg-white/20 font-bold">New Hand</button>
             </div>

@@ -178,8 +178,8 @@ export default function Bingo() {
                   )}
                   <div className="grid grid-cols-3 gap-2 text-sm font-mono">
                     <div><div className="text-[10px] text-neutral-500">MULTIPLIER</div><b className="text-cyan-300">{evalResult.final_multiplier}×</b></div>
-                    <div><div className="text-[10px] text-neutral-500">GROSS</div><b className="text-emerald-300">${evalResult.gross_payout.toFixed(2)}</b></div>
-                    <div><div className="text-[10px] text-neutral-500">NET</div><b className="text-emerald-200">${evalResult.net_payout.toFixed(2)}</b></div>
+                    <div><div className="text-[10px] text-neutral-500">GROSS</div><b className="text-emerald-300">₵{evalResult.gross_payout.toFixed(2)}</b></div>
+                    <div><div className="text-[10px] text-neutral-500">NET</div><b className="text-emerald-200">₵{evalResult.net_payout.toFixed(2)}</b></div>
                   </div>
                 </>
               )}

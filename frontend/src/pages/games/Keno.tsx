@@ -99,7 +99,7 @@ export default function Keno() {
           <label className="flex flex-col text-xs">
             <span className="text-neutral-400 uppercase">Stake</span>
             <select value={stake} onChange={e => setStake(parseFloat(e.target.value))} disabled={busy} data-testid="keno-stake-select" className="mt-1 bg-black border border-white/20 rounded-lg px-3 py-2 font-mono">
-              {[5, 10, 25, 50, 100].map(n => <option key={n} value={n}>${n}</option>)}
+              {[5, 10, 25, 50, 100].map(n => <option key={n} value={n}>₵{n}</option>)}
             </select>
           </label>
           <button onClick={clear} disabled={busy} data-testid="keno-clear-btn" className="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-xs font-bold flex items-center gap-1"><Eraser className="w-3 h-3" /> CLEAR</button>
@@ -117,8 +117,8 @@ export default function Keno() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm font-mono">
               <div><div className="text-[10px] text-neutral-500">PICKS</div><b className="text-cyan-300">{result.picks.length}</b></div>
               <div><div className="text-[10px] text-neutral-500">MULT</div><b className="text-cyan-300">{result.multiplier}×</b></div>
-              <div><div className="text-[10px] text-neutral-500">GROSS</div><b className="text-emerald-300">${result.gross.toFixed(2)}</b></div>
-              <div><div className="text-[10px] text-neutral-500">NET</div><b className="text-emerald-200">${result.net.toFixed(2)}</b></div>
+              <div><div className="text-[10px] text-neutral-500">GROSS</div><b className="text-emerald-300">₵{result.gross.toFixed(2)}</b></div>
+              <div><div className="text-[10px] text-neutral-500">NET</div><b className="text-emerald-200">₵{result.net.toFixed(2)}</b></div>
             </div>
             <button onClick={() => { setResult(null); setPicks(new Set()); }} data-testid="keno-new-game-btn" className="mt-4 w-full py-2.5 rounded-full bg-white/10 hover:bg-white/20 font-bold">New Game</button>
           </motion.div>

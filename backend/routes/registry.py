@@ -1001,3 +1001,8 @@ def _register_hungryvibes_smartstack(api_router) -> None:
     # winner, mismatches flag DISPUTED and emit a security alert.
     from routes.match_consensus import router as match_consensus_router  # noqa: PLC0415
     api_router.include_router(match_consensus_router)
+
+    # 2026-05-18 — Security Directive D4: admin security console
+    # (events feed + global airlock queue + manual release trigger).
+    from routes.admin_security import router as admin_security_router  # noqa: PLC0415
+    api_router.include_router(admin_security_router)

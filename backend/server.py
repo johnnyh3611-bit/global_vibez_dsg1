@@ -45,6 +45,57 @@ async def _k8s_health_probe() -> Dict[str, str]:
     return {"status": "ok"}
 
 
+# ─── Security Directive D1 — Sandbox Firewall (2026-05-18) ─────────
+#
+# Per the Security Directive: a thrown exception in any game room /
+# sub-feature MUST NOT leak structural info (file paths, model names,
+# stack traces) to the client, AND must be recorded server-side so the
+# Live Behavioral Monitoring (D4) layer can correlate against rate-limit
+# anomalies. Any unhandled `Exception` here gets:
+#   • a stable, public-safe response: { detail: "internal error", request_id }
+#   • a server-side log line tagging the request_id + the masked path
+#   • a write to the `security_events` collection so the admin dashboard
+#     surfaces error bursts (D4 monitoring hook).
+# FastAPI's HTTPException keeps its original 4xx/5xx semantics — we
+# only intercept the bottom-of-stack unhandled-Exception path.
+@app.exception_handler(Exception)
+async def _sandbox_firewall(request: Request, exc: Exception):
+    """Catches every unhandled exception from any router and returns a
+    sanitized 500. The request_id is stable + safe to share with users
+    in support tickets — it maps to the internal log line."""
+    from fastapi.responses import JSONResponse  # noqa: PLC0415
+
+    request_id = str(uuid.uuid4())
+    masked_path = request.url.path or "/"
+    # Internal-only log line. Full traceback goes to stderr via uvicorn.
+    logger.exception(
+        "[sandbox-firewall] request_id=%s path=%s method=%s exc_type=%s",
+        request_id, masked_path, request.method, type(exc).__name__,
+    )
+    # Best-effort security-event write. Never block the response on it.
+    try:
+        await db.security_events.insert_one({
+            "type": "unhandled_exception",
+            "request_id": request_id,
+            "path": masked_path,
+            "method": request.method,
+            "exc_type": type(exc).__name__,
+            # NEVER store the message body — it can contain user PII /
+            # model names. The type + path is enough for correlation.
+            "at": datetime.now(timezone.utc).isoformat(),
+            "client_ip": request.client.host if request.client else None,
+        })
+    except Exception:  # noqa: BLE001 — best-effort logger
+        pass
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": "internal error",
+            "request_id": request_id,
+        },
+    )
+
+
 # Mirror it under /api/ as well so the same path works through the
 # external ingress (which strips /api before forwarding) AND from any
 # in-cluster client that hits the api prefix directly.

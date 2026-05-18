@@ -192,7 +192,7 @@ export default function VibesSlots() {
                 data-testid="vibes-slots-stake-select"
                 className="bg-black border border-white/20 rounded-lg px-3 py-2 text-white font-mono"
               >
-                {[0.5, 1, 2, 5, 10, 25].map(n => <option key={n} value={n}>${n.toFixed(2)}</option>)}
+                {[0.5, 1, 2, 5, 10, 25].map(n => <option key={n} value={n}>₵{n.toFixed(2)}</option>)}
               </select>
             </label>
             <button
@@ -223,7 +223,7 @@ export default function VibesSlots() {
               <div><div className="text-[10px] text-neutral-500 uppercase">Matches</div><div className="font-mono font-bold">{lastResult.matches}</div></div>
               <div><div className="text-[10px] text-neutral-500 uppercase">Anchor</div><div className="font-mono font-bold">{constants?.symbols[lastResult.anchor_symbol]?.emoji} {lastResult.anchor_symbol}</div></div>
               <div><div className="text-[10px] text-neutral-500 uppercase">Multiplier</div><div className="font-mono font-bold text-cyan-300">{lastResult.payout_multiplier}×</div></div>
-              <div><div className="text-[10px] text-neutral-500 uppercase">Payout</div><div className={`font-mono font-bold ${lastResult.gross_payout > 0 ? "text-emerald-300" : "text-neutral-500"}`}>${lastResult.gross_payout.toFixed(2)}</div></div>
+              <div><div className="text-[10px] text-neutral-500 uppercase">Payout</div><div className={`font-mono font-bold ${lastResult.gross_payout > 0 ? "text-emerald-300" : "text-neutral-500"}`}>₵{lastResult.gross_payout.toFixed(2)}</div></div>
             </div>
             {lastResult.is_jackpot_hit && (
               <div className="mt-3 pt-3 border-t border-yellow-500/30 flex items-center gap-2 text-yellow-200">

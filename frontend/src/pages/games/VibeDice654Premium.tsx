@@ -363,7 +363,7 @@ export default function VibeDice654Premium() {
         const totalSideBetWin = data.side_bet_payout || 0;
         if (totalSideBetWin > 0) {
           const winningBets = data.side_bet_results.map((r) => r.bet_type).join(', ');
-          setDealerMessage(`Side Bet WIN! Hit: ${winningBets} for $${totalSideBetWin.toFixed(2)}`);
+          setDealerMessage(`Side Bet WIN! Hit: ${winningBets} for ₵${totalSideBetWin.toFixed(2)}`);
           setDealerMood('celebrating');
           setTimeout(() => {
             setShowSideBetResults(false);

@@ -30,9 +30,9 @@ export default function CasinoWar() {
           </div>
           {r.war && <div className="text-xs text-yellow-300">⚔️ WAR — Player {r.war.war_player_card.rank}{r.war.war_player_card.suit} vs Dealer {r.war.war_dealer_card.rank}{r.war.war_dealer_card.suit}</div>}
           <div className="grid grid-cols-3 gap-2 text-sm font-mono pt-2 border-t border-white/10">
-            <div><div className="text-[10px] text-neutral-500">GROSS</div><b className={r.gross >= 0 ? "text-emerald-300" : "text-rose-300"}>${r.gross.toFixed(2)}</b></div>
-            <div><div className="text-[10px] text-neutral-500">TAX</div><b className="text-yellow-300">${r.tax.toFixed(2)}</b></div>
-            <div><div className="text-[10px] text-neutral-500">NET</div><b className={r.net >= 0 ? "text-emerald-300" : "text-rose-300"}>${r.net.toFixed(2)}</b></div>
+            <div><div className="text-[10px] text-neutral-500">GROSS</div><b className={r.gross >= 0 ? "text-emerald-300" : "text-rose-300"}>₵{r.gross.toFixed(2)}</b></div>
+            <div><div className="text-[10px] text-neutral-500">TAX</div><b className="text-yellow-300">₵{r.tax.toFixed(2)}</b></div>
+            <div><div className="text-[10px] text-neutral-500">NET</div><b className={r.net >= 0 ? "text-emerald-300" : "text-rose-300"}>₵{r.net.toFixed(2)}</b></div>
           </div>
         </div>
       )}

@@ -10687,3 +10687,136 @@ def test_genius_floor_pinned_at_twenty_dollars_everywhere():
     assert GENIUS_PHASE_FLOOR_USD == 20, "Equity Master Genius anchor drifted"
     assert svc_floor == 20, "Chair expansion service Genius anchor drifted"
 
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# 2026-05-18 — Security Directive Compliance + Tier Rebalance (5 locks)
+# ═══════════════════════════════════════════════════════════════════════
+
+
+def test_security_directive_d1_sandbox_firewall_registered():
+    """D1: server.py MUST register a global exception handler that
+    sanitizes unhandled errors AND writes a row to `security_events`
+    for the D4 monitoring stream."""
+    src = open("/app/backend/server.py").read()
+    assert '@app.exception_handler(Exception)' in src, (
+        "Security D1: global exception handler missing"
+    )
+    assert "_sandbox_firewall" in src
+    # Must return a sanitized response — never the raw message body.
+    assert '"detail": "internal error"' in src
+    # Must mint a stable request_id for support correlation.
+    assert "request_id" in src
+    # Must hand off to D4 monitoring via security_events write.
+    assert "security_events.insert_one" in src
+
+
+def test_security_directive_d2_shared_payout_airlock_module():
+    """D2: a single shared `services/payout_airlock.py` enforces the
+    NON-negotiable 72-hour hold across every outward transfer source."""
+    import os
+    path = "/app/backend/services/payout_airlock.py"
+    assert os.path.exists(path), "Security D2: payout_airlock service missing"
+    src = open(path).read()
+    assert "AIRLOCK_HOURS = 72" in src, "D2 airlock window drifted from 72h"
+    assert "async def enqueue_payout" in src
+    assert "async def release_due_payouts" in src
+    # Worker MUST scan on (status=held, clears_at<=now) — pinned to the
+    # composite index we just created.
+    assert '"status": "held"' in src
+    assert '"clears_at"' in src
+
+    # Background worker MUST be kicked off from lifespan.
+    lifespan = open("/app/backend/lifespan.py").read()
+    assert "_start_payout_airlock_release_worker" in lifespan
+    assert "Payout Airlock release worker" in lifespan
+
+
+def test_security_directive_d4_admin_security_console_routes():
+    """D4: admin console exposes events feed + global airlock view +
+    manual release trigger. All 3 endpoints MUST be admin-gated."""
+    from server import app
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    assert "/api/admin/security/events" in paths
+    assert "/api/admin/security/airlocks" in paths
+    assert "/api/admin/security/airlocks/release-due" in paths
+    src = open("/app/backend/routes/admin_security.py").read()
+    # All 3 endpoints MUST call _require_admin first.
+    assert src.count("_require_admin(request)") >= 3
+
+
+def test_no_dollar_sign_in_game_pages():
+    """Founder rule: no game page may display a literal '$' currency
+    sign. All money in-game is ₵ (Vibez Coin). This catches the next
+    time someone copy-pastes a `$${x.toFixed(2)}` from a casino lib."""
+    import glob, re
+    offenders = []
+    forbidden_patterns = [
+        # ">$<digit>" — literal dollar followed by a digit in JSX text
+        re.compile(r">\$\d"),
+        # ">${var.toFixed(N)}" — JSX-text dollar-prefixed coin display
+        re.compile(r">\$\{[^}]*\.toFixed"),
+        # "$${expr.toFixed" — escaped template literal dollar coin display
+        re.compile(r"\$\$\{[^}]*\.toFixed"),
+    ]
+    for path in glob.glob("/app/frontend/src/pages/games/*.tsx"):
+        body = open(path).read()
+        for pat in forbidden_patterns:
+            for m in pat.finditer(body):
+                offenders.append(f"{path.split('/')[-1]} :: {m.group(0)!r}")
+    assert not offenders, (
+        "Forbidden '$' currency display found inside /games/ — replace "
+        "with '₵' (Vibez Coin):\n  - " + "\n  - ".join(offenders[:25])
+    )
+
+
+def test_coin_pack_catalog_internally_consistent():
+    """Coin pack bonus_pct labels must match the actual ₵/$ delivered
+    relative to the COINS_PER_USD base rate. Drift here = customer
+    seeing 'Save 10%!' but actually getting 11% — confusing trust hit."""
+    from routes.coin_topup import COIN_PACKS
+    from services.coin_wallet import COINS_PER_USD
+    for pack_id, pack in COIN_PACKS.items():
+        base_coins = pack["usd"] * COINS_PER_USD
+        actual_bonus_pct = round(
+            (pack["coins"] - base_coins) / base_coins * 100
+        )
+        labeled = pack["bonus_pct"]
+        assert abs(actual_bonus_pct - labeled) <= 1, (
+            f"Coin pack '{pack_id}' labels {labeled}% bonus but actually "
+            f"delivers {actual_bonus_pct}% ({pack['coins']} ₵ / ${pack['usd']} "
+            f"vs base {int(base_coins)} ₵)"
+        )
+
+
+def test_sovereign_tiers_have_explicit_activity_caps():
+    """Every tier in the catalog must declare `activity_caps` so the
+    frontend can render a balanced comparison ladder. Caps must
+    monotonically increase from Guest → Sovereign on at least 3 axes
+    (daily_allowance, replays, chair_mining_cap)."""
+    from routes.sovereign_tiers import TIERS
+    subscription_tiers = ["guest", "insider", "tastemaker", "royal", "sovereign"]
+    by_id = {t["id"]: t for t in TIERS}
+    for tier_id in subscription_tiers:
+        assert tier_id in by_id, f"tier {tier_id} missing"
+        tier = by_id[tier_id]
+        assert "activity_caps" in tier, f"tier {tier_id} missing activity_caps"
+        caps = tier["activity_caps"]
+        for key in ["daily_allowance_credits", "saved_replays", "chair_mining_cap_x"]:
+            assert key in caps, f"{tier_id} missing cap '{key}'"
+
+    # Strictly monotonic ascent on the 3 axes.
+    for key in ["daily_allowance_credits", "chair_mining_cap_x"]:
+        values = [by_id[t]["activity_caps"][key] for t in subscription_tiers]
+        # -1 sentinel = unlimited; treat as max
+        norm = [(10**9 if v == -1 else v) for v in values]
+        assert norm == sorted(norm), (
+            f"Activity-cap '{key}' is not monotonic across "
+            f"Guest→Sovereign: {values}"
+        )
+    # Genius Chair must stack with subscriptions, not replace them.
+    gc = by_id.get("genius_chair", {})
+    assert gc.get("activity_caps", {}).get("stacks_with_subscription") is True, (
+        "Genius Chair must stack with subscription tier multipliers"
+    )
+

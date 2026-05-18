@@ -148,16 +148,16 @@ export default function CaribbeanStud() {
           {phase === "decision" && (
             <div className="flex justify-center gap-3">
               <button onClick={() => resolve(false)} disabled={busy} data-testid="cs-fold-btn" className="px-6 py-3 rounded-full bg-rose-500 hover:bg-rose-400 text-white font-bold">FOLD (lose ante)</button>
-              <button onClick={() => resolve(true)} disabled={busy} data-testid="cs-raise-btn" className="px-6 py-3 rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 text-black font-black">RAISE 2× (${(ante * 2).toFixed(2)})</button>
+              <button onClick={() => resolve(true)} disabled={busy} data-testid="cs-raise-btn" className="px-6 py-3 rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 text-black font-black">RAISE 2× (₵{(ante * 2).toFixed(2)})</button>
             </div>
           )}
           {phase === "resolved" && resolved && (
             <div className="space-y-3">
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-                <div><div className="text-[10px] text-neutral-500 uppercase">Ante Payout</div><div className={`font-mono font-bold ${resolved.ante_payout > 0 ? "text-emerald-300" : resolved.ante_payout < 0 ? "text-rose-300" : ""}`}>${resolved.ante_payout.toFixed(2)}</div></div>
-                <div><div className="text-[10px] text-neutral-500 uppercase">Play Payout</div><div className={`font-mono font-bold ${resolved.play_payout > 0 ? "text-emerald-300" : resolved.play_payout < 0 ? "text-rose-300" : ""}`}>${resolved.play_payout.toFixed(2)}</div></div>
-                <div><div className="text-[10px] text-neutral-500 uppercase">Sovereign Tax</div><div className="font-mono font-bold text-yellow-300">${resolved.sovereign_tax.toFixed(2)}</div></div>
-                <div><div className="text-[10px] text-neutral-500 uppercase">Net Total</div><div className={`font-mono font-black text-lg ${resolved.net_total > 0 ? "text-emerald-300" : resolved.net_total < 0 ? "text-rose-300" : ""}`} data-testid="cs-net-total">${resolved.net_total.toFixed(2)}</div></div>
+                <div><div className="text-[10px] text-neutral-500 uppercase">Ante Payout</div><div className={`font-mono font-bold ${resolved.ante_payout > 0 ? "text-emerald-300" : resolved.ante_payout < 0 ? "text-rose-300" : ""}`}>₵{resolved.ante_payout.toFixed(2)}</div></div>
+                <div><div className="text-[10px] text-neutral-500 uppercase">Play Payout</div><div className={`font-mono font-bold ${resolved.play_payout > 0 ? "text-emerald-300" : resolved.play_payout < 0 ? "text-rose-300" : ""}`}>₵{resolved.play_payout.toFixed(2)}</div></div>
+                <div><div className="text-[10px] text-neutral-500 uppercase">Sovereign Tax</div><div className="font-mono font-bold text-yellow-300">₵{resolved.sovereign_tax.toFixed(2)}</div></div>
+                <div><div className="text-[10px] text-neutral-500 uppercase">Net Total</div><div className={`font-mono font-black text-lg ${resolved.net_total > 0 ? "text-emerald-300" : resolved.net_total < 0 ? "text-rose-300" : ""}`} data-testid="cs-net-total">₵{resolved.net_total.toFixed(2)}</div></div>
               </div>
               <button onClick={() => { setPhase("idle"); setDealt(null); setResolved(null); }} data-testid="cs-new-hand-btn" className="w-full py-2.5 rounded-full bg-white/10 hover:bg-white/20 font-bold">New Hand</button>
             </div>
@@ -181,12 +181,12 @@ export default function CaribbeanStud() {
       {/* Mobile-only sticky CTA — context-aware to phase. */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-black/90 backdrop-blur border-t border-white/10 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
         {phase === "idle" && (
-          <button onClick={newDeal} disabled={busy} data-testid="cs-deal-btn-mobile" className="w-full py-3 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-black font-black tracking-widest disabled:opacity-50">DEAL · ${ante.toFixed(0)}</button>
+          <button onClick={newDeal} disabled={busy} data-testid="cs-deal-btn-mobile" className="w-full py-3 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-black font-black tracking-widest disabled:opacity-50">DEAL · ₵{ante.toFixed(0)}</button>
         )}
         {phase === "decision" && (
           <div className="grid grid-cols-2 gap-2">
             <button onClick={() => resolve(false)} disabled={busy} data-testid="cs-fold-btn-mobile" className="py-3 rounded-full bg-rose-500 text-white font-black tracking-widest disabled:opacity-50">FOLD</button>
-            <button onClick={() => resolve(true)} disabled={busy} data-testid="cs-raise-btn-mobile" className="py-3 rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 text-black font-black tracking-widest disabled:opacity-50">RAISE 2× ${(ante * 2).toFixed(0)}</button>
+            <button onClick={() => resolve(true)} disabled={busy} data-testid="cs-raise-btn-mobile" className="py-3 rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 text-black font-black tracking-widest disabled:opacity-50">RAISE 2× ₵{(ante * 2).toFixed(0)}</button>
           </div>
         )}
         {phase === "resolved" && (

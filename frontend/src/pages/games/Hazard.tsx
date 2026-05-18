@@ -35,9 +35,9 @@ export default function Hazard() {
             <div className="text-sm text-center">Outcome: <b className="font-mono text-cyan-300">{r.outcome.replace(/_/g, " ").toUpperCase()}</b></div>
             <div className="text-xs text-center text-neutral-400">Rolls: <span className="font-mono">{r.history.map((d: number[]) => `[${d.join(",")}]`).join(" → ")}</span></div>
             <div className="grid grid-cols-3 gap-2 text-sm font-mono pt-2 border-t border-white/10">
-              <div><div className="text-[10px] text-neutral-500">GROSS</div><b className={r.gross >= 0 ? "text-emerald-300" : "text-rose-300"}>${r.gross.toFixed(2)}</b></div>
-              <div><div className="text-[10px] text-neutral-500">TAX</div><b className="text-yellow-300">${r.tax.toFixed(2)}</b></div>
-              <div><div className="text-[10px] text-neutral-500">NET</div><b className={r.net >= 0 ? "text-emerald-300" : "text-rose-300"}>${r.net.toFixed(2)}</b></div>
+              <div><div className="text-[10px] text-neutral-500">GROSS</div><b className={r.gross >= 0 ? "text-emerald-300" : "text-rose-300"}>₵{r.gross.toFixed(2)}</b></div>
+              <div><div className="text-[10px] text-neutral-500">TAX</div><b className="text-yellow-300">₵{r.tax.toFixed(2)}</b></div>
+              <div><div className="text-[10px] text-neutral-500">NET</div><b className={r.net >= 0 ? "text-emerald-300" : "text-rose-300"}>₵{r.net.toFixed(2)}</b></div>
             </div>
           </div>
         );

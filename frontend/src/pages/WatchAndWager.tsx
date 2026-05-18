@@ -112,7 +112,7 @@ export function WatchAndWager() {
               <ul className="text-white/80 text-sm space-y-1">
                 <li>• <strong>Community Odds:</strong> Odds change based on how others bet</li>
                 <li>• <strong>5% House Edge:</strong> We take 5%, winners share the rest</li>
-                <li>• <strong>Bet Limits:</strong> Min 10 coins ($0.005), Max 100 coins ($0.05)</li>
+                <li>• <strong>Bet Limits:</strong> Min 10 ₵, Max 100 ₵ per wager</li>
                 <li>• <strong>Fair System:</strong> Underdogs get better odds automatically</li>
               </ul>
             </div>

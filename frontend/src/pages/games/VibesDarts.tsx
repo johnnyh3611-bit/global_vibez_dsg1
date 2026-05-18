@@ -85,7 +85,7 @@ export default function VibesDarts() {
             <label className="flex flex-col text-xs">
               <span className="text-neutral-400 uppercase">Stake</span>
               <select value={stake} onChange={e => setStake(parseFloat(e.target.value))} disabled={busy} data-testid="darts-stake" className="mt-1 bg-black border border-white/20 rounded-lg px-3 py-2 font-mono">
-                {[5, 10, 25, 50, 100].map(n => <option key={n} value={n}>${n}</option>)}
+                {[5, 10, 25, 50, 100].map(n => <option key={n} value={n}>₵{n}</option>)}
               </select>
             </label>
             <button onClick={reset} disabled={busy} data-testid="darts-reset-btn" className="ml-auto px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-xs font-bold uppercase tracking-widest">Reset</button>
@@ -103,9 +103,9 @@ export default function VibesDarts() {
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm font-mono">
                 <div><div className="text-[10px] text-neutral-500">DIST</div><b className="text-cyan-300">{(result.distance * 100).toFixed(1)}%</b></div>
-                <div><div className="text-[10px] text-neutral-500">GROSS</div><b className={result.gross >= 0 ? "text-emerald-300" : "text-rose-300"}>${result.gross.toFixed(2)}</b></div>
-                <div><div className="text-[10px] text-neutral-500">TAX</div><b className="text-yellow-300">${result.tax.toFixed(2)}</b></div>
-                <div><div className="text-[10px] text-neutral-500">NET</div><b className={result.net >= 0 ? "text-emerald-300" : "text-rose-300"}>${result.net.toFixed(2)}</b></div>
+                <div><div className="text-[10px] text-neutral-500">GROSS</div><b className={result.gross >= 0 ? "text-emerald-300" : "text-rose-300"}>₵{result.gross.toFixed(2)}</b></div>
+                <div><div className="text-[10px] text-neutral-500">TAX</div><b className="text-yellow-300">₵{result.tax.toFixed(2)}</b></div>
+                <div><div className="text-[10px] text-neutral-500">NET</div><b className={result.net >= 0 ? "text-emerald-300" : "text-rose-300"}>₵{result.net.toFixed(2)}</b></div>
               </div>
             </motion.div>
           )}

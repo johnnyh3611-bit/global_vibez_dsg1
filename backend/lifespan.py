@@ -105,6 +105,9 @@ def register_startup_tasks(app, logger: logging.Logger) -> None:
         _kick_off("Match Consensus airlock-release worker",
                   _start_airlock_release_worker, logger,
                   success_msg="Match Consensus airlock-release worker started (5-min ticks)")
+        _kick_off("Payout Airlock release worker (Security D2)",
+                  _start_payout_airlock_release_worker, logger,
+                  success_msg="Payout Airlock release worker started (5-min ticks)")
 
 
 def register_shutdown(app, logger: logging.Logger) -> None:
@@ -491,6 +494,46 @@ def _start_airlock_release_worker() -> None:
 
 
 
+def _start_payout_airlock_release_worker() -> None:
+    """Security Directive D2 — generic payout airlock release loop.
+
+    Mirrors `_start_airlock_release_worker` but for the platform-wide
+    `payout_airlocks` collection (creator earnings withdrawals, crypto
+    bridge withdrawals, driver payouts — anything that calls
+    `services.payout_airlock.enqueue_payout()`).
+
+    Every 5 minutes: scan for rows where `clears_at < now` and
+    `status == "held"`, flip them to `cleared`. The actual outward
+    transfer (Stripe payout, on-chain send, etc.) is handled by a
+    downstream consumer keyed off `source` — that piece is intentionally
+    NOT wired here so a failed transfer can be retried without
+    re-queueing a 72h hold.
+    """
+    async def loop():
+        log = logging.getLogger("payout-airlock-release")
+        await asyncio.sleep(30)
+        try:
+            from services.payout_airlock import release_due_payouts  # noqa: PLC0415
+        except Exception as exc:
+            log.warning(f"release worker import failed — aborting loop: {exc}")
+            return
+        while True:
+            try:
+                db = get_database()
+                summary = await release_due_payouts(db)
+                if summary["released"]:
+                    log.info(
+                        "payout-airlock tick: matured=%d released=%d",
+                        summary["matured"], summary["released"],
+                    )
+            except Exception as exc:
+                log.warning(f"payout-airlock tick failed: {exc}")
+            await asyncio.sleep(5 * 60)
+
+    asyncio.create_task(loop())
+
+
+
 # ────────────────────────────────────────────── Indexes
 
 
@@ -784,4 +827,11 @@ _INDEX_SPECS = [
     {"coll": "match_airlocks", "key": [("payout_status", 1), ("clears_at", 1)], "background": True},
     # Security alerts — open-first.
     {"coll": "security_alerts", "key": [("status", 1), ("created_at", -1)], "background": True},
+
+    # 2026-05-18 — Security Directive D2 (Payout Airlock) + D4 (Events)
+    {"coll": "payout_airlocks", "key": [("status", 1), ("clears_at", 1)], "background": True},
+    {"coll": "payout_airlocks", "key": [("user_id", 1), ("queued_at", -1)], "background": True},
+    # security_events — admin console reads newest-first, optionally filtered by type.
+    {"coll": "security_events", "key": [("at", -1)], "background": True},
+    {"coll": "security_events", "key": [("type", 1), ("at", -1)], "background": True},
 ]
