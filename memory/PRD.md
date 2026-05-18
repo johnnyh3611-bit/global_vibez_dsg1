@@ -1,6 +1,29 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
 
+> **2026-02-XX (cont.) — FEATURED STREAMER + JFTN SEASON PASS MIGRATED TO PRICING CATALOG · 497/497 regression green · BACKLOG CLEARED 🎉.**
+>
+> Last backlog item executed. Two more revenue surfaces are now founder-editable from `/admin/tier-pricing` without a redeploy.
+>
+> ### What shipped
+> 1. **`services/pricing_catalog.py`** extended with two new catalogs:
+>    - `featured_streamer` (default $5.00 / 30 days)
+>    - `jftn_season_pass` (default $25.00 / 30 days)
+>    Plus typed helpers `get_featured_streamer_pricing()` / `get_jftn_season_pass_pricing()` with safe fallback to the hardcoded defaults.
+> 2. **`routes/featured_streamers.py`** — `/checkout` now reads live price + duration from the catalog via `_live_pricing()`. Stripe line items, success/cancel URLs, and the returned payload all reflect the editable values.
+> 3. **`routes/just_for_the_night.py`** — Season Pass create / verify / `me` endpoints all read through `_live_season_pass_pricing(db)` so a single hot edit propagates to the checkout amount, the expiration window, and the `pass_doc.price_usd` audit field.
+> 4. **`SimplePricingCatalogCard.tsx`** — new generic admin component (Price + Duration + Save), wired into `AdminTierPricing.tsx` under a new "Other live-editable catalogs" section.
+> 5. **Seed verified**: both new docs auto-populate on first boot (`featured_streamer v=1 {price: 5.0, duration: 30}` · `jftn_season_pass v=1 {price: 25.0, duration: 30}`).
+>
+> ### Regression Shield: **497/497 GREEN** (+1 new lock)
+>   - `test_pricing_catalog_covers_featured_streamer_and_jftn_pass`
+>
+> ### Backlog status — CLEARED ✅
+> - ~~Migrate Featured Streamers + JFTN room passes into the pricing_catalog~~ ← done
+> - Mainnet TGE & Solana Bridge — still LOCKED until you type `"project complete"`
+
+
+
 > **2026-02-XX (cont.) — PAYMENTS-AUDIT DRIFT ALERT (Resend) · 496/496 regression green · READY FOR BETA REDEPLOY 🚀.**
 >
 > Final hardening pass — automated Slack-/email-style drift alerting so you don't have to remember to open the dashboard.

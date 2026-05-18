@@ -42,6 +42,19 @@ CATALOG_DEFAULTS: Dict[str, Dict[str, Any]] = {
         "tiers": _DEFAULT_VIP_TIERS,
         "version": 1,
     },
+    # Feb 2026 — featured streamer 30-day slot. Founder hot-edits the
+    # price from /admin/tier-pricing without a redeploy.
+    "featured_streamer": {
+        "price_usd": 5.00,
+        "duration_days": 30,
+        "version": 1,
+    },
+    # Feb 2026 — Just-For-The-Night Season Pass.
+    "jftn_season_pass": {
+        "price_usd": 25.00,
+        "duration_days": 30,
+        "version": 1,
+    },
 }
 
 # 60s TTL cache. Pricing data is read on every /tiers and /checkout
@@ -174,3 +187,29 @@ async def get_vip_tier_price_usd(db, tier_id: str) -> float:
     if tier_id not in tiers:
         raise ValueError(f"Unknown VIP tier: {tier_id}")
     return float(tiers[tier_id]["price_usd"])
+
+
+# ─────────────────────────── Featured streamer ───────────────────────
+async def get_featured_streamer_pricing(db) -> Dict[str, Any]:
+    """Return ``{price_usd, duration_days}`` for the Featured Streamer
+    30-day slot. Falls back to hardcoded defaults on any error."""
+    catalog = await get_catalog(db, "featured_streamer")
+    if not isinstance(catalog, dict) or "price_usd" not in catalog:
+        catalog = CATALOG_DEFAULTS["featured_streamer"]
+    return {
+        "price_usd": float(catalog.get("price_usd", 5.00)),
+        "duration_days": int(catalog.get("duration_days", 30)),
+    }
+
+
+# ─────────────────────────── JFTN season pass ────────────────────────
+async def get_jftn_season_pass_pricing(db) -> Dict[str, Any]:
+    """Return ``{price_usd, duration_days}`` for the JFTN Season Pass.
+    Falls back to hardcoded defaults on any error."""
+    catalog = await get_catalog(db, "jftn_season_pass")
+    if not isinstance(catalog, dict) or "price_usd" not in catalog:
+        catalog = CATALOG_DEFAULTS["jftn_season_pass"]
+    return {
+        "price_usd": float(catalog.get("price_usd", 25.00)),
+        "duration_days": int(catalog.get("duration_days", 30)),
+    }

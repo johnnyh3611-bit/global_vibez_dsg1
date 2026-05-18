@@ -19,6 +19,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import SimplePricingCatalogCard from '@/components/admin/SimplePricingCatalogCard';
 
 type Tier = {
   tier: string;
@@ -250,6 +251,27 @@ const AdminTierPricing: React.FC = () => {
             </Card>
           );
         })}
+      </section>
+
+      <section data-testid="admin-simple-pricing-section">
+        <h2 className="text-lg font-bold text-white mt-8 mb-3">
+          Other live-editable catalogs
+        </h2>
+        <p className="text-sm text-zinc-400 mb-4">
+          Single-price entries that can be hot-edited the same way as VIP tiers.
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <SimplePricingCatalogCard
+            catalogId="featured_streamer"
+            title="Featured Streamer slot"
+            subtitle="Pinned position on the Live Now Wall."
+          />
+          <SimplePricingCatalogCard
+            catalogId="jftn_season_pass"
+            title="JFTN Season Pass"
+            subtitle="Premium room access for the duration window."
+          />
+        </div>
       </section>
 
       <section data-testid="admin-tier-pricing-history-section">

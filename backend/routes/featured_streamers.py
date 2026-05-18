@@ -49,9 +49,22 @@ _db = AsyncIOMotorClient(os.environ.get("MONGO_URL"))[
 ]
 
 # ────────────────────────────────────────────── Constants ──
+# DEFAULT values — actual price/duration read from the live pricing
+# catalog so the founder can hot-edit from /admin/tier-pricing without
+# a redeploy. Catalog ID: "featured_streamer".
 FEATURED_PRICE_USD = 5.00
 FEATURED_DURATION_DAYS = 30
 FEATURED_REF_PREFIX = "feature:"
+
+
+async def _live_pricing() -> Dict[str, Any]:
+    """Read live featured-streamer pricing from the catalog. Falls back
+    to the hardcoded defaults on any error so checkout never crashes."""
+    try:
+        from services.pricing_catalog import get_featured_streamer_pricing  # noqa: PLC0415
+        return await get_featured_streamer_pricing(_db)
+    except Exception:
+        return {"price_usd": FEATURED_PRICE_USD, "duration_days": FEATURED_DURATION_DAYS}
 
 
 class CheckoutRequest(BaseModel):
@@ -72,33 +85,37 @@ async def create_checkout(req: CheckoutRequest) -> Dict[str, Any]:
     target without trusting the user's later state."""
     if not STRIPE_API_KEY:
         # Mock checkout for preview env without live key.
+        live = await _live_pricing()
         return {
             "mode": "mock",
             "checkout_url": f"https://example.com/mock-checkout?streamer={req.streamer_id}&plan=featured",
             "expires_at": (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat(),
-            "price_usd": FEATURED_PRICE_USD,
-            "duration_days": FEATURED_DURATION_DAYS,
+            "price_usd": live["price_usd"],
+            "duration_days": live["duration_days"],
         }
 
     # Where to bounce the user after Stripe collects payment. Default to
     # the Live Now Wall so they instantly see their feature land.
     return_url = req.return_url or "https://globalvibezdsg.com/streams/live"
 
+    live = await _live_pricing()
+    price_usd = live["price_usd"]
+    duration_days = live["duration_days"]
     try:
         session = stripe.checkout.Session.create(
-            mode="payment",  # one-shot purchase (we manage 30-day window ourselves)
+            mode="payment",  # one-shot purchase (we manage the duration window ourselves)
             payment_method_types=["card"],
             line_items=[{
                 "price_data": {
                     "currency": "usd",
                     "product_data": {
-                        "name": "Featured Streamer · 30 days",
+                        "name": f"Featured Streamer · {duration_days} days",
                         "description": (
                             "Glowing pinned position at the top of the Live Now Wall "
-                            "for 30 days. Boost discovery, grow your audience."
+                            f"for {duration_days} days. Boost discovery, grow your audience."
                         ),
                     },
-                    "unit_amount": int(FEATURED_PRICE_USD * 100),
+                    "unit_amount": int(price_usd * 100),
                 },
                 "quantity": 1,
             }],
@@ -108,7 +125,7 @@ async def create_checkout(req: CheckoutRequest) -> Dict[str, Any]:
             metadata={
                 "kind": "featured_streamer",
                 "streamer_id": req.streamer_id,
-                "duration_days": str(FEATURED_DURATION_DAYS),
+                "duration_days": str(duration_days),
             },
         )
     except stripe.error.StripeError as e:
@@ -119,8 +136,8 @@ async def create_checkout(req: CheckoutRequest) -> Dict[str, Any]:
         "checkout_url": session.url,
         "session_id": session.id,
         "expires_at": datetime.fromtimestamp(session.expires_at, timezone.utc).isoformat() if session.expires_at else None,
-        "price_usd": FEATURED_PRICE_USD,
-        "duration_days": FEATURED_DURATION_DAYS,
+        "price_usd": price_usd,
+        "duration_days": duration_days,
     }
 
 

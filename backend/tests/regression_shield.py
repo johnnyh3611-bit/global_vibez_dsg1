@@ -11198,3 +11198,58 @@ def test_payments_audit_drift_alert_wired():
         "AdminPaymentsAudit must GET /alerts"
     )
 
+def test_pricing_catalog_covers_featured_streamer_and_jftn_pass():
+    """Feb 2026 — Featured Streamer slot + JFTN Season Pass pricing
+    moved into the Mongo pricing_catalog so the founder hot-edits both
+    from /admin/tier-pricing without a redeploy.
+
+    Pins:
+      • CATALOG_DEFAULTS has 'featured_streamer' and 'jftn_season_pass'
+      • Typed helpers get_featured_streamer_pricing /
+        get_jftn_season_pass_pricing exist
+      • Each call site reads through the catalog (and keeps the
+        hardcoded constant as fallback)
+      • Admin UI surfaces both via the SimplePricingCatalogCard
+    """
+    from pathlib import Path
+    backend = Path(__file__).resolve().parents[1]
+    fe = Path("/app/frontend/src")
+
+    catalog_src = (backend / "services" / "pricing_catalog.py").read_text(encoding="utf-8")
+    for cid in ("featured_streamer", "jftn_season_pass"):
+        assert f'"{cid}"' in catalog_src, (
+            f"pricing_catalog must define CATALOG_DEFAULTS['{cid}']"
+        )
+    for fn in ("get_featured_streamer_pricing", "get_jftn_season_pass_pricing"):
+        assert f"async def {fn}" in catalog_src, (
+            f"pricing_catalog must expose async helper {fn}"
+        )
+
+    fs = (backend / "routes" / "featured_streamers.py").read_text(encoding="utf-8")
+    assert "get_featured_streamer_pricing" in fs, (
+        "featured_streamers route must read from the pricing catalog"
+    )
+    # Hardcoded default must remain as the fallback constant.
+    assert "FEATURED_PRICE_USD = 5.00" in fs
+
+    jftn = (backend / "routes" / "just_for_the_night.py").read_text(encoding="utf-8")
+    assert "get_jftn_season_pass_pricing" in jftn, (
+        "just_for_the_night must read Season Pass pricing from the catalog"
+    )
+    assert "_live_season_pass_pricing" in jftn, (
+        "just_for_the_night must expose _live_season_pass_pricing helper"
+    )
+
+    # Frontend wiring
+    card = (fe / "components" / "admin" / "SimplePricingCatalogCard.tsx").read_text(encoding="utf-8")
+    assert "/api/admin/pricing/catalogs/" in card, (
+        "SimplePricingCatalogCard must hit the generic catalog endpoint"
+    )
+    page = (fe / "pages" / "admin" / "AdminTierPricing.tsx").read_text(encoding="utf-8")
+    assert 'catalogId="featured_streamer"' in page, (
+        "AdminTierPricing must render the featured_streamer card"
+    )
+    assert 'catalogId="jftn_season_pass"' in page, (
+        "AdminTierPricing must render the jftn_season_pass card"
+    )
+

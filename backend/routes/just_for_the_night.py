@@ -17,10 +17,21 @@ router = APIRouter(prefix="/just-for-the-night", tags=["Just for the Night Rooms
 # Shared bcrypt context — same scheme as email_auth so verify costs match.
 _pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# Season Pass — 2026-05-12 founder ask.
+# Season Pass — 2026-05-12 founder ask. Live values fetched from the
+# pricing_catalog so the founder can hot-edit price/duration without a
+# redeploy. These constants remain as the fallback default.
 SEASON_PASS_USD = 25
 SEASON_PASS_DAYS = 30
 SEASON_PASS_PRICE_ENV = "STRIPE_PRICE_JFTN_SEASON_PASS"
+
+
+async def _live_season_pass_pricing(db) -> Dict[str, Any]:
+    """Read live Season Pass pricing from the catalog with fallback."""
+    try:
+        from services.pricing_catalog import get_jftn_season_pass_pricing  # noqa: PLC0415
+        return await get_jftn_season_pass_pricing(db)
+    except Exception:
+        return {"price_usd": float(SEASON_PASS_USD), "duration_days": int(SEASON_PASS_DAYS)}
 
 # ==================== MODELS ====================
 
@@ -602,8 +613,9 @@ async def start_season_pass_checkout(
     db = get_database()
     sc = StripeCheckout(api_key=stripe_key)
     origin = request.origin_url.rstrip("/")
+    live = await _live_season_pass_pricing(db)
     session_req = CheckoutSessionRequest(
-        amount=float(SEASON_PASS_USD),
+        amount=float(live["price_usd"]),
         currency="usd",
         success_url=f"{origin}/just-for-the-night?pass=success&session_id={{CHECKOUT_SESSION_ID}}",
         cancel_url=f"{origin}/just-for-the-night?pass=cancelled",
@@ -622,8 +634,8 @@ async def start_season_pass_checkout(
     return {
         "checkout_url": session.url,
         "session_id": session.session_id,
-        "price_usd": SEASON_PASS_USD,
-        "duration_days": SEASON_PASS_DAYS,
+        "price_usd": live["price_usd"],
+        "duration_days": live["duration_days"],
     }
 
 
@@ -645,7 +657,8 @@ async def verify_season_pass(
     status = await sc.get_checkout_status(session_id)
     if not status or status.payment_status != "paid":
         raise HTTPException(status_code=402, detail="Payment not completed")
-    expires = (datetime.now(timezone.utc) + timedelta(days=SEASON_PASS_DAYS)).isoformat()
+    live = await _live_season_pass_pricing(db)
+    expires = (datetime.now(timezone.utc) + timedelta(days=live["duration_days"])).isoformat()
     existing = await db.jftn_season_passes.find_one(
         {"session_id": session_id}, {"_id": 0},
     )
@@ -656,7 +669,7 @@ async def verify_season_pass(
             "active": True,
             "issued_at_iso": datetime.now(timezone.utc).isoformat(),
             "expires_at_iso": expires,
-            "price_usd": SEASON_PASS_USD,
+            "price_usd": live["price_usd"],
         })
     await db.jftn_season_pass_sessions.update_one(
         {"session_id": session_id}, {"$set": {"status": "paid"}},
@@ -678,11 +691,12 @@ async def my_season_pass(current_user: User = Depends(get_current_user)):
         {"user_id": current_user.user_id, "active": True, "expires_at_iso": {"$gte": now_iso}},
         {"_id": 0, "session_id": 0},
     )
+    live = await _live_season_pass_pricing(db)
     return {
         "active": pass_doc is not None,
         "pass": pass_doc,
-        "price_usd": SEASON_PASS_USD,
-        "duration_days": SEASON_PASS_DAYS,
+        "price_usd": live["price_usd"],
+        "duration_days": live["duration_days"],
     }
 
 
