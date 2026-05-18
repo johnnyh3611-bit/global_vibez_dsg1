@@ -1,5 +1,43 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+
+> **2026-02-XX — PRICING CATALOG + LIFESPAN SPLIT + FRONTEND DEP PRUNE · 490/490 regression green.**
+>
+> Three production-hardening tasks completed in one pass:
+>
+> ### P0(b) — Pricing Catalog (Mongo-backed, founder-mutable)
+> 1. **`services/pricing_catalog.py`** — new MongoDB-backed pricing layer with a 60s in-process TTL cache and fallback to hardcoded defaults. Catalogues: `high_roller_vip_tiers` (Genius/Genesis/Apex).
+> 2. **`routes/admin_pricing.py`** — admin-only endpoints: `GET/PUT /api/admin/pricing/catalogs`, `PATCH /api/admin/pricing/vip-tiers/{tier_id}`, `GET /api/admin/pricing/catalogs/{catalog_id}/history`. Locked behind `require_admin`. Every mutation writes to `pricing_catalog_history` for tamper-evident audit.
+> 3. **`routes/high_roller.py`** — `/tiers` and `/checkout` now read live prices from the catalog (with safe fallback).
+> 4. **Lifespan seeder** — `_seed_pricing_catalog` runs idempotently on startup; verified `pricing_catalog` doc populated with version 1.
+>
+> ### P1(c) — Lifespan split (851 → 151 lines)
+> 1. **`lifespan_workers.py`** — all `_start_*` background-worker starters + `_kick_off` helper (419 lines).
+> 2. **`lifespan_migrations.py`** — `_migrate_*` helpers + `_seed_pricing_catalog` + `_create_indexes_async` orchestrator (153 lines).
+> 3. **`lifespan_indexes.py`** — `_INDEX_SPECS` list + `_create_indexes_from_spec` helper (193 lines).
+> 4. **`lifespan.py`** slimmed to the FastAPI startup/shutdown entry point only (151 lines). Public API (`register_startup_tasks`, `register_shutdown`) unchanged — `server.py` import contract preserved.
+> 5. Regression tests that grepped `lifespan.py` for moved content updated to point at the new modules.
+>
+> ### P1(d) — Frontend dep pruning
+> Removed 10 unused packages from `package.json` (zero import references across the entire frontend tree):
+>   `aframe`, `aframe-react`, `react-spring`, `@react-spring/three`, `react-xr`, `tsparticles`, `@tsparticles/react`, `@tsparticles/slim`, `viem`, `@streamflow/stream`.
+> Frontend compiled cleanly (`webpack compiled with 76 warnings` — all source-map noise from third-party deps, identical to pre-prune state). Production `craco build` will skip the dependency install for these packages, cutting Vercel/Railway deploy time.
+>
+> ### Coin Exchange Rate Refactor (1000 ₵/$1) — completed mid-session
+> - `services/coin_wallet.py` → `COINS_PER_USD = 1000`
+> - `routes/coin_topup.py` pack catalog math reconciled (starter/popular/pro/vip)
+> - `routes/coins.py` legacy `COINS_PER_DOLLAR` updated
+> - Frontend hardcodes fixed: `PlaceBetModal.tsx`, `MyBetsHistory.tsx` (were 2000)
+>
+> ### Regression Shield: **490/490 GREEN** (+5 new locks)
+>   - `test_pricing_catalog_service_exposes_vip_tiers`
+>   - `test_admin_pricing_routes_registered`
+>   - `test_high_roller_routes_use_pricing_catalog`
+>   - `test_pricing_catalog_seed_wired_into_lifespan`
+>   - `test_lifespan_split_into_focused_modules` (pins the 3-module split with a 200-line ceiling on `lifespan.py`)
+>
+
+
 > **2026-05-17 (cont.) — LOW-END DEVICE LEAN PROFILE · 468/468 regression green · CLEARED FOR BETA REDEPLOY 🚀.**
 >
 > Final enhancement before redeploy. Extended `useIsMobileGalaxy` to also flip lean-mode when `navigator.hardwareConcurrency < 4` OR `navigator.deviceMemory < 4`. Catches crusty Chromebooks, budget Android tablets, and entry-tier Surface devices that aren't mobile-width but still chug on the 4000-star Stars field. Hardware sampled once at mount (doesn't change mid-session). `deviceMemory` is Chromium-only — treated as "unknown, don't penalize" when undefined so Safari/Firefox users on capable hardware aren't false-positive'd. Same hook signature — every consumer (Volumetric Dashboard today, future Hot Rooms / Live Now Wall) gets the upgrade for free. Regression test extended to pin both probes + `LOW_CPU_THRESHOLD=4` + `LOW_MEMORY_THRESHOLD=4` + the `mql.matches || lowEnd` OR.

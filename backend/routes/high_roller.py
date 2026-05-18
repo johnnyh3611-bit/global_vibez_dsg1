@@ -37,6 +37,7 @@ from services.high_roller_economy import (
     is_valid_tier,
     tier_price_usd,
 )
+from services.pricing_catalog import get_vip_tiers
 
 logger = logging.getLogger(__name__)
 
@@ -125,9 +126,15 @@ async def _require_vip(user_id: str) -> Dict[str, Any]:
 # ────────────────────────────────────────────── Endpoints ──
 @router.get("/tiers")
 async def list_tiers() -> Dict[str, Any]:
-    """Public — render the High Roller pricing page."""
+    """Public — render the High Roller pricing page.
+
+    Reads from the live pricing_catalog (Mongo-backed, founder-mutable)
+    with a fallback to the hardcoded VIP_TIERS defaults so the route
+    never blanks out on a Mongo blip.
+    """
+    live_tiers = await get_vip_tiers(_db)
     return {
-        "tiers": list(VIP_TIERS.values()),
+        "tiers": list(live_tiers.values()),
         "min_bet": HIGH_ROLLER_MIN_BET,
         "duration_days": HIGH_ROLLER_GRANT_DAYS,
         "ref_prefix": HIGH_ROLLER_REF_PREFIX,
@@ -156,8 +163,16 @@ async def create_checkout(req: CheckoutRequest) -> Dict[str, Any]:
     if not is_valid_tier(req.tier):
         raise HTTPException(400, detail=f"Unknown tier '{req.tier}'")
 
-    price_usd = tier_price_usd(req.tier)
-    tier_info = VIP_TIERS[req.tier]
+    # Live pricing — admins can change these via /api/admin/pricing
+    # without a redeploy. Falls back to the hardcoded defaults if the
+    # catalog row is missing or Mongo is unreachable.
+    try:
+        live_tiers = await get_vip_tiers(_db)
+        tier_info = live_tiers.get(req.tier) or VIP_TIERS[req.tier]
+        price_usd = float(tier_info.get("price_usd", tier_price_usd(req.tier)))
+    except Exception:
+        price_usd = tier_price_usd(req.tier)
+        tier_info = VIP_TIERS[req.tier]
 
     if not STRIPE_API_KEY:
         # Mock checkout for preview env / test runs.

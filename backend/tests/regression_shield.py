@@ -2397,8 +2397,9 @@ def test_beta_waitlist_route_and_page_exist() -> None:
         assert sym in digest_body, f"weekly_digest_service missing symbol {sym}"
     # Lifespan must register the scheduler so it actually fires.
     lifespan = (root / "backend/lifespan.py").read_text(encoding="utf-8")
+    workers = (root / "backend/lifespan_workers.py").read_text(encoding="utf-8")
     assert "_start_weekly_digest" in lifespan
-    assert "weekly_digest_loop" in lifespan
+    assert "weekly_digest_loop" in workers
     # Admin UI panel testids
     for tid in [
         "beta-admin-digest", "beta-admin-digest-send-btn",
@@ -6898,8 +6899,9 @@ def test_streamer_wrap_up_emails_wired():
 
     # Background loop is auto-started via the lifespan kickoff list.
     lifespan = open("/app/backend/lifespan.py").read()
+    workers = open("/app/backend/lifespan_workers.py").read()
     assert "_start_streamer_wrap_up" in lifespan
-    assert "streamer_wrap_up_loop" in lifespan
+    assert "streamer_wrap_up_loop" in workers
 
     # Frontend exposes the manual-send button on the analytics page.
     analytics = open("/app/frontend/src/pages/streaming/StreamerAnalytics.tsx").read()
@@ -7376,7 +7378,7 @@ def test_high_roller_indexes_registered_in_lifespan() -> None:
     """Compound indexes for VIP membership + Live Now Wall hot paths
     must be appended to the startup index set."""
     from pathlib import Path
-    src = Path("/app/backend/lifespan.py").read_text()
+    src = Path("/app/backend/lifespan_indexes.py").read_text()
     # VIP collection
     assert '"coll": "high_roller_vip"' in src
     # Featured streamers + follow fan-out
@@ -7598,7 +7600,7 @@ def test_media_master_module_mounted_in_registry() -> None:
 def test_media_master_indexes_registered_in_lifespan() -> None:
     """Hot read paths must have proper Mongo indexes."""
     from pathlib import Path
-    src = Path("/app/backend/lifespan.py").read_text()
+    src = Path("/app/backend/lifespan_indexes.py").read_text()
     for coll in [
         "media_tv_passes", "media_tv_pins", "media_radio_skip_bids",
         "media_artist_sponsorships", "media_scout_hype",
@@ -10324,15 +10326,22 @@ def test_beta_cohort_refactored_into_section_helpers():
 def test_lifespan_create_indexes_split_into_named_steps():
     """2026-05-17 refactor: `_create_indexes_async` was a ~150-line
     nested try-block monolith. Now it orchestrates 4 named helpers so
-    each migration / index step can be reasoned about in isolation."""
-    src = open("/app/backend/lifespan.py").read()
+    each migration / index step can be reasoned about in isolation.
+
+    2026-02 split: helpers live in ``lifespan_migrations.py`` (the
+    migration bodies + orchestrator) and ``lifespan_indexes.py`` (the
+    index spec helper). Both are required."""
+    migrations = open("/app/backend/lifespan_migrations.py").read()
+    indexes = open("/app/backend/lifespan_indexes.py").read()
     for helper in [
         "async def _migrate_grandfather_genesis_holders",
         "async def _migrate_chair_ids_backfill",
         "async def _migrate_phase_rename",
-        "async def _create_indexes_from_spec",
     ]:
-        assert helper in src, f"lifespan missing helper: {helper}"
+        assert helper in migrations, f"lifespan_migrations missing helper: {helper}"
+    assert "async def _create_indexes_from_spec" in indexes, (
+        "lifespan_indexes missing _create_indexes_from_spec helper"
+    )
     # The orchestrator must call all four.
     for call in [
         "_migrate_grandfather_genesis_holders(logger)",
@@ -10340,7 +10349,7 @@ def test_lifespan_create_indexes_split_into_named_steps():
         "_migrate_phase_rename(db, logger)",
         "_create_indexes_from_spec(db, logger)",
     ]:
-        assert call in src, f"_create_indexes_async missing call: {call}"
+        assert call in migrations, f"_create_indexes_async missing call: {call}"
 
 
 def test_volumetric_dashboard_mobile_groundwork_wired():
@@ -10480,12 +10489,13 @@ def test_airlock_release_worker_wired_in_lifespan():
     """The 72h airlock release loop MUST be kicked off from lifespan
     startup so payouts auto-clear without manual intervention."""
     src = open("/app/backend/lifespan.py").read()
-    assert "def _start_airlock_release_worker" in src
+    workers = open("/app/backend/lifespan_workers.py").read()
+    assert "def _start_airlock_release_worker" in workers
     assert "Match Consensus airlock-release worker" in src
-    assert "release_due_airlocks" in src
+    assert "release_due_airlocks" in workers
     # 5-minute cadence — keeps load light, latency under the founder's
     # "≤6-min after clears_at" expectation for payout release.
-    assert "asyncio.sleep(5 * 60)" in src
+    assert "asyncio.sleep(5 * 60)" in workers
 
 
 def test_match_consensus_chip_wired_into_bracket():
@@ -10587,7 +10597,7 @@ def test_match_consensus_indexes_registered():
     + the consensus + airlock uniqueness must be in `_INDEX_SPECS`. The
     `(match_id, reporting_team_id)` UNIQUE index is the DB-level guard
     against ballot stuffing."""
-    src = open("/app/backend/lifespan.py").read()
+    src = open("/app/backend/lifespan_indexes.py").read()
     # Per-team unique submission.
     assert '"coll": "match_submissions"' in src
     assert '"reporting_team_id"' in src
@@ -10822,3 +10832,111 @@ def test_sovereign_tiers_have_explicit_activity_caps():
         "Genius Chair must stack with subscription tier multipliers"
     )
 
+
+def test_pricing_catalog_service_exposes_vip_tiers():
+    """Feb 2026 — pricing for VIP tiers must be routed through the
+    Mongo-backed pricing catalog so the founder can mutate prices
+    without a redeploy. The service must expose:
+      • CATALOG_DEFAULTS with the 'high_roller_vip_tiers' key
+      • async helpers get_vip_tiers / get_vip_tier_price_usd
+      • seed_pricing_catalog + update_catalog + invalidate_cache
+    """
+    from services import pricing_catalog
+    assert "high_roller_vip_tiers" in pricing_catalog.CATALOG_DEFAULTS, (
+        "Pricing catalog must define defaults for high_roller_vip_tiers"
+    )
+    defaults = pricing_catalog.CATALOG_DEFAULTS["high_roller_vip_tiers"]
+    assert "tiers" in defaults and isinstance(defaults["tiers"], dict)
+    # The default seed must agree with the locked Python constants.
+    from services.high_roller_economy import VIP_TIERS
+    assert defaults["tiers"]["genius"]["price_usd"] == VIP_TIERS["genius"]["price_usd"]
+    for fn in ("seed_pricing_catalog", "get_catalog", "update_catalog",
+               "invalidate_cache", "get_vip_tiers", "get_vip_tier_price_usd"):
+        assert callable(getattr(pricing_catalog, fn, None)), (
+            f"pricing_catalog must expose async helper '{fn}'"
+        )
+
+
+def test_admin_pricing_routes_registered():
+    """The admin pricing endpoints must be wired so the founder UI can
+    list / update / audit catalogs at runtime."""
+    from server import app
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    must_have = [
+        "/api/admin/pricing/catalogs",
+        "/api/admin/pricing/catalogs/{catalog_id}",
+        "/api/admin/pricing/vip-tiers/{tier_id}",
+        "/api/admin/pricing/catalogs/{catalog_id}/history",
+    ]
+    for p in must_have:
+        assert p in paths, f"Missing admin pricing route: {p}"
+
+
+def test_high_roller_routes_use_pricing_catalog():
+    """High Roller /tiers + /checkout must read from the live catalog
+    (Mongo-backed) so admin price edits propagate without a redeploy."""
+    from pathlib import Path
+    body = (Path(__file__).resolve().parents[1] /
+            "routes" / "high_roller.py").read_text(encoding="utf-8")
+    assert "from services.pricing_catalog import get_vip_tiers" in body, (
+        "high_roller.py must import the pricing catalog helper"
+    )
+    assert "await get_vip_tiers(" in body, (
+        "high_roller.py /tiers + /checkout must call await get_vip_tiers()"
+    )
+
+
+def test_pricing_catalog_seed_wired_into_lifespan():
+    """The seeder must run on startup so the collection is populated on
+    the first boot without any manual ops step. The seeder helper now
+    lives in ``lifespan_migrations`` (Feb 2026 split)."""
+    from pathlib import Path
+    body = (Path(__file__).resolve().parents[1] /
+            "lifespan_migrations.py").read_text(encoding="utf-8")
+    assert "_seed_pricing_catalog(" in body, (
+        "lifespan_migrations must call _seed_pricing_catalog(db, logger) on startup"
+    )
+    assert "seed_pricing_catalog" in body, (
+        "lifespan_migrations must import services.pricing_catalog.seed_pricing_catalog"
+    )
+
+def test_lifespan_split_into_focused_modules():
+    """Feb 2026 split: ``lifespan.py`` was an 850-line monolith. The
+    heavy implementation now lives in three focused modules so each can
+    be audited / appended to without scrolling past unrelated code.
+
+    Locks the wiring so a future "consolidation" can't undo it:
+      • lifespan_workers     — all `_start_*` + `_kick_off`
+      • lifespan_migrations  — `_migrate_*` + `_seed_*` + `_create_indexes_async`
+      • lifespan_indexes     — `_INDEX_SPECS` + `_create_indexes_from_spec`
+    """
+    from pathlib import Path
+    backend = Path(__file__).resolve().parents[1]
+    for name, must_have in [
+        ("lifespan_workers.py", ["_kick_off",
+                                  "def _start_card_royale",
+                                  "def _start_payout_airlock_release_worker"]),
+        ("lifespan_migrations.py", ["async def _migrate_grandfather_genesis_holders",
+                                     "async def _migrate_chair_ids_backfill",
+                                     "async def _migrate_phase_rename",
+                                     "async def _seed_pricing_catalog",
+                                     "async def _create_indexes_async"]),
+        ("lifespan_indexes.py", ["_INDEX_SPECS",
+                                  "async def _create_indexes_from_spec"]),
+    ]:
+        p = backend / name
+        assert p.exists(), f"Lifespan split: {name} missing"
+        body = p.read_text(encoding="utf-8")
+        for token in must_have:
+            assert token in body, f"{name} missing: {token}"
+
+    # lifespan.py must stay slim — it's now an entry point only.
+    lifespan_body = (backend / "lifespan.py").read_text(encoding="utf-8")
+    lifespan_lines = lifespan_body.count("\n")
+    assert lifespan_lines < 200, (
+        f"lifespan.py grew back to {lifespan_lines} lines — keep heavy code "
+        "in the lifespan_workers/migrations/indexes modules."
+    )
+    # And it must still export the public API server.py relies on.
+    assert "def register_startup_tasks" in lifespan_body
+    assert "def register_shutdown" in lifespan_body
