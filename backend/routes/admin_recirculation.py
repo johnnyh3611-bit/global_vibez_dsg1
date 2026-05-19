@@ -25,6 +25,18 @@ from utils.admin_guard import require_admin
 router = APIRouter(prefix="/admin/recirculation", tags=["admin-recirculation"])
 
 
+# ─────────── Public read (for the landing page velocity widget) ──────
+public_router = APIRouter(prefix="/recirculation", tags=["recirculation"])
+
+
+@public_router.get("/public-summary")
+async def public_summary() -> Dict[str, Any]:
+    """Public, unauthenticated read of the recirculation pool totals.
+    Powers the landing-page Velocity Widget. Returns the same numbers as
+    the admin summary minus anything sensitive (no per-user data)."""
+    return await get_pool_summary(db)
+
+
 @router.get("/summary")
 async def summary(admin=Depends(require_admin)) -> Dict[str, Any]:
     return await get_pool_summary(db)

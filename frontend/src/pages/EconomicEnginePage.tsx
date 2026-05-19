@@ -9,7 +9,7 @@
  * the backend via /api/economic-engine/snapshot.
  */
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Coins, Flame, Droplets, Target, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Coins, Flame, Recycle, Target, ShieldCheck } from "lucide-react";
 import EconomicEngineCard from "@/components/economic_engine/EconomicEngineCard";
 
 export default function EconomicEnginePage() {
@@ -44,11 +44,13 @@ export default function EconomicEnginePage() {
         <p className="text-sm text-purple-200/80 mb-8 max-w-2xl">
           A self-regulating dual-asset economy calibrated to a{" "}
           <b className="text-fuchsia-200">premium standard</b> — engineered to accelerate
-          project valuation and community wealth. Every fee dollar from Rides, Restaurants
-          &amp; Gaming splits 50/50 between Buyback &amp; Burn and Liquidity Injection,
-          producing a <b className="text-fuchsia-200">rising price floor and constant scarcity</b>.
-          Users transact in Credits — the Standard Utility Unit — so prices stay stable
-          regardless of token volatility.
+          project valuation and community wealth.{" "}
+          <b className="text-emerald-200">In-app VIBEZ ₵</b> (3B fixed supply) recirculates
+          40/30/30 across tournament pools, treasury, and a 72h vault — coins never burn,
+          they cycle.{" "}
+          <b className="text-fuchsia-200">DSG Token</b> (750M Solana SPL) keeps a separate
+          burn schedule for long-term scarcity. Users transact in Credits — the Standard
+          Utility Unit — so prices stay stable regardless of token volatility.
         </p>
 
         {/* Live state */}
@@ -59,17 +61,17 @@ export default function EconomicEnginePage() {
           <Pillar
             icon={Coins}
             title="Dual-Asset Shield"
-            body="Vibez Coin (3 B initial, $0.10 floor parity) drives day-to-day spending. DSG Token (750 M Golden Asset) accrues long-term value to chair-holders + stakers. Credits — the Standard Utility Unit — keep prices stable in every utility room."
+            body="VIBEZ ₵ (3B fixed, recirculates) drives day-to-day spending. DSG Token (750M Golden Asset, burns) accrues long-term value to chair-holders + stakers. Credits — the Standard Utility Unit — keep prices stable in every utility room."
+          />
+          <Pillar
+            icon={Recycle}
+            title="In-App Recirculation (₵)"
+            body="Coins never burn. Every in-app transaction splits 40% to Tournament Pools, 30% to Platform Treasury, and 30% to a 72-hour vault that auto-releases back into circulation. Velocity drives value — your spend funds someone's next win."
           />
           <Pillar
             icon={Flame}
-            title="Dynamic Burn"
-            body="At 3 B supply we burn 5%. As supply approaches the 1.5 B stabilization floor, burn drops linearly to 0.5%. The closer we get to parity, the gentler the burn — preventing over-deflation while keeping pressure on supply."
-          />
-          <Pillar
-            icon={Droplets}
-            title="50 / 50 Revenue Split"
-            body="Global revenue from Rides · Restaurants · Gaming splits cleanly: 50% Buyback & Burn — active market purchases that remove supply and drive price. 50% Liquidity Injection — strengthens the pool and protects against volatility."
+            title="DSG Token Burn Schedule"
+            body="The Solana SPL token (750M total) burns 5% at the ceiling, declining linearly to 0% at the 350M floor. Formula: min(5%, (supply − 350M) / 50M × 1%). Gentle near the floor — pressure on supply without over-deflating long-term holders."
           />
           <Pillar
             icon={Target}
@@ -87,10 +89,11 @@ export default function EconomicEnginePage() {
           <div>
             <p className="text-sm font-bold text-cyan-200">Every state change is on-record.</p>
             <p className="text-xs text-cyan-100/80 mt-0.5">
-              Each fee ingestion, burn, and liquidity deposit appends an immutable row to{" "}
-              <code className="font-mono text-cyan-100">dsg_economic_events</code>. Auditors can
-              request the full log; investors can verify the engine has done exactly what the
-              spec says it has done.
+              Every in-app recirculation split writes to{" "}
+              <code className="font-mono text-cyan-100">recirculation_ledger</code>;
+              every DSG burn writes to{" "}
+              <code className="font-mono text-cyan-100">dsg_economic_events</code>. Two
+              ledgers, two economies, both immutable. Auditors can request either log.
             </p>
           </div>
         </div>

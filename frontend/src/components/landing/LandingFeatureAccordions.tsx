@@ -142,26 +142,26 @@ const useVibezConstants = (): VibezConstants | null => {
   return data;
 };
 
-interface BurnStats {
-  burned: number;
-  burned_24h: number;
+interface VelocityStats {
+  tournament_pool: number;
+  treasury: number;
+  airlock_locked: number;
   total_supply: number;
-  circulating: number;
 }
 
-const useBurnStats = (): BurnStats | null => {
-  const [data, setData] = useState<BurnStats | null>(null);
+const useVelocityStats = (): VelocityStats | null => {
+  const [data, setData] = useState<VelocityStats | null>(null);
   useEffect(() => {
     let mounted = true;
-    fetch(`${API}/api/coins/stats/burn`)
+    fetch(`${API}/api/recirculation/public-summary`)
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (!mounted || !d) return;
         setData({
-          burned:        d.lifetime_burned ?? d.burned ?? 0,
-          burned_24h:    d.burned_24h      ?? d.last_24h ?? 0,
-          total_supply:  d.total_supply    ?? 3_000_000_000,
-          circulating:   d.circulating     ?? 0,
+          tournament_pool: d.tournament_pool ?? 0,
+          treasury:        d.treasury ?? 0,
+          airlock_locked:  d.airlock_locked ?? 0,
+          total_supply:    3_000_000_000, // fixed in-app ₵ cap
         });
       })
       .catch(() => undefined);
@@ -191,7 +191,7 @@ const LandingFeatureAccordions: React.FC = () => {
   const toggle = (k: string) => setOpen((p) => ({ ...p, [k]: !p[k] }));
 
   const constants = useVibezConstants();
-  const burn = useBurnStats();
+  const velocity = useVelocityStats();
 
   return (
     <section
@@ -288,18 +288,19 @@ const LandingFeatureAccordions: React.FC = () => {
           </div>
           <div>
             <p className="text-[10px] uppercase tracking-widest font-bold text-amber-300 mb-2">
-              Live Supply Telemetry
+              Live Velocity Telemetry
             </p>
             <div className="grid grid-cols-2 gap-3">
-              <Stat label="Total Supply"  value={`${fmt(burn?.total_supply ?? 3_000_000_000)} ₵`} accent="text-white" />
-              <Stat label="Circulating"   value={`${fmt(burn?.circulating ?? 0)} ₵`}              accent="text-cyan-300" />
-              <Stat label="Lifetime Burned" value={`${fmt(burn?.burned ?? 0)} ₵`}                  accent="text-rose-300" icon={<Flame className="w-3.5 h-3.5" />} />
-              <Stat label="24h Burned"    value={`${fmt(burn?.burned_24h ?? 0)} ₵`}                accent="text-orange-300" />
+              <Stat label="Fixed Supply"     value={`${fmt(velocity?.total_supply ?? 3_000_000_000)} ₵`} accent="text-white" />
+              <Stat label="Tournament Pool"  value={`${fmt(velocity?.tournament_pool ?? 0)} ₵`}         accent="text-emerald-300" />
+              <Stat label="Treasury"         value={`${fmt(velocity?.treasury ?? 0)} ₵`}                accent="text-fuchsia-300" />
+              <Stat label="72h Vault"        value={`${fmt(velocity?.airlock_locked ?? 0)} ₵`}          accent="text-amber-300" />
             </div>
             <p className="text-[11px] text-slate-400 mt-3">
-              Definitive Economy rate: 10 Coins = $1 USD = 100 Credits ·{" "}
-              <span className="text-amber-300 font-bold">1 Coin = 10 Credits</span> ·
-              Mint mode:{" "}
+              <span className="text-white font-bold">3 billion ₵ forever.</span>{" "}
+              Coins don't burn — they cycle 40 / 30 / 30 (Tournament Pools /
+              Treasury / 72h Vault). DSG token has its own separate burn
+              schedule on Solana. Mint mode:{" "}
               <span className="text-amber-300 font-bold">
                 {constants?.mint_mode || "SIMULATED"}
               </span>{" "}
@@ -354,7 +355,7 @@ const LandingFeatureAccordions: React.FC = () => {
             Icon={MapPin}
             color="text-amber-300"
             title="Yellow Pages"
-            desc="Mom-and-pop directory · verified businesses · hyper-local. Ad credits burn ₵ on every listing boost."
+            desc="Mom-and-pop directory · verified businesses · hyper-local. Listing boosts cycle ₵ back into tournament pools — your ads fund someone's next win."
             cta="Browse directory →"
             href="/yellow-pages"
           />

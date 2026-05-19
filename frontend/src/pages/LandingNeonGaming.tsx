@@ -10,7 +10,7 @@ import LatestAdditions from '../components/landing/LatestAdditions';
 import TokenRoadmap from '../components/landing/TokenRoadmap';
 import ChairExpansionPlan from '../components/landing/ChairExpansionPlan';
 import WelcomeLetter from '../components/landing/WelcomeLetter';
-import BurnCounterWidget from '@/components/BurnCounterWidget';
+import RecirculationVelocityWidget from '@/components/RecirculationVelocityWidget';
 import PublicHealthBadge from '../components/landing/PublicHealthBadge';
 import EvolutionCountdown from '../components/landing/EvolutionCountdown';
 import WinnerTicker from '../components/common/WinnerTicker';
@@ -443,9 +443,9 @@ export default function LandingNeonGaming() {
               </motion.button>
             </div>
 
-            {/* Live Burn Counter — public scarcity readout */}
+            {/* Live Coin Velocity — recirculation readout (replaces burn counter) */}
             <div className="mt-6">
-              <BurnCounterWidget />
+              <RecirculationVelocityWidget />
             </div>
           </motion.div>
 

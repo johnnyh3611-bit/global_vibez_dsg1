@@ -15,7 +15,8 @@ export default function RestaurantDetail() {
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('all');
   // ₵-vs-card toggle for menu-item orders. Default to ₵ — that's the
-  // unified-market UX where every coin spent burns supply for the 3B cap.
+  // unified-market UX where every coin spent recirculates (40/30/30) under
+  // the 3B in-app cap — coins never burn, they cycle.
   const [orderMethod, setOrderMethod] = useState<'coins' | 'card'>('coins');
   const [orderingId, setOrderingId] = useState<string | null>(null);
   const [topUpOpen, setTopUpOpen] = useState(false);

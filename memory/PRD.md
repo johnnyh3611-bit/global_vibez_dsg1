@@ -1,6 +1,38 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
 
+> **2026-02-XX (cont.) — MARKETING COPY REFRESH (Recirculation story consistent app-wide) · 501/501 regression green 🎨.**
+>
+> All user-facing surfaces now match the two-economy backend reality.
+>
+> ### What was contradicting the backend (BEFORE)
+> - `BurnCounterWidget` on landing: "Every spend in the app is a permanent burn" ❌ (spends now recirculate)
+> - Tour video t=224 caption: "3B VIBEZ burning to 1.5B" ❌ (VIBEZ doesn't burn; DSG is 750M→350M)
+> - `LandingFeatureAccordions` stats: "Lifetime Burned / 24h Burned" with 🔥 ❌
+> - Yellow Pages copy: "Ad credits burn ₵" ❌
+> - `EconomicEnginePage`: "At 3B supply we burn 5%..." ❌ (mixed VIBEZ with DSG)
+> - `EconomicEngineCard` header: "Vibez Coin · ... · Constant scarcity" ❌
+> - `RestaurantDetail.tsx` code comment: "every coin spent burns supply" ❌
+>
+> ### What ships now (AFTER)
+> 1. **New public read endpoint** `/api/recirculation/public-summary` — unauthenticated, powers the landing-page velocity widget.
+> 2. **New `RecirculationVelocityWidget`** on the landing page — live readout of Tournament Pool / Treasury / 72h Vault with velocity-driven hero copy ("Coins don't die. They cycle. Every spend funds someone's next win."). Auto-refreshes every 30s.
+> 3. **`LandingFeatureAccordions`** — burn stats card → velocity stats card. Yellow Pages copy rewritten: "Listing boosts cycle ₵ back into tournament pools — your ads fund someone's next win."
+> 4. **Tour video caption at t=224s** — replaced with the dual-economy line: "Two economies, one network. 3B VIBEZ recirculate forever (40% tournament pools · 30% treasury · 30% 72h vault). DSG token burns 750M → 350M floor on Solana."
+> 5. **`WelcomeLetter`** — new "Two economies. Same network." beat clearly contrasting in-app ₵ recirculation vs DSG burn, with correct DSG 750M total + 350M floor numbers per founder confirmation.
+> 6. **`EconomicEnginePage`** — narrative rebuilt around dual-economy model. New pillars: "Dual-Asset Shield" / "In-App Recirculation (₵)" / "DSG Token Burn Schedule" / "Dynamic Utility Pricing".
+> 7. **`EconomicEngineCard` header** — re-attributes burn engine to DSG explicitly, with footnote that in-app VIBEZ ₵ doesn't burn.
+> 8. **`RestaurantDetail.tsx`** — comment fixed.
+> 9. **`BurnCounterWidget.tsx`** — file deleted.
+>
+> ### Regression Shield: **501/501 GREEN** (+1 new lock, 3 updated)
+>   - NEW `test_marketing_copy_matches_recirculation_blueprint` — pins widget, landing, tour, accordions, public endpoint
+>   - UPDATED `test_burn_counter_widget_pinned_to_landing_page` → now asserts the legacy widget is DELETED + new widget present
+>   - UPDATED `test_landing_feature_accordions_mounted_with_three_cards` → asserts new recirculation endpoint
+>   - UPDATED `test_definitive_economy_positioning_app_wide` → asserts dual-economy narrative, no stale burn copy
+
+
+
 > **2026-02-XX (cont.) — TWO-ECONOMY MODEL: In-App Recirculation (live) + DSG Token Burn (preserved) · 500/500 regression green 🎯.**
 >
 > Founder confirmed the bifurcation: in-app coins recirculate, DSG token keeps its burn schedule for the eventual Solana launch.

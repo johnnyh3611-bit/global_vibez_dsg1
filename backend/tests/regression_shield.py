@@ -2946,35 +2946,35 @@ def test_hungryvibes_and_viberidez_support_coin_payment() -> None:
 
 
 def test_burn_counter_widget_pinned_to_landing_page() -> None:
-    """May 2026 - Burn Counter is the public scarcity story.
+    """Feb 2026 — superseded by the Recirculation Blueprint.
 
-    The landing page must render BurnCounterWidget and the backend must
-    expose GET /api/coins/stats/burn so the widget can poll it every 30
-    seconds. Both are pinned so a future refactor doesn't drop the
-    marketing-critical scarcity readout.
+    The legacy BurnCounter is gone (in-app ₵ no longer burns). The
+    landing page now renders ``RecirculationVelocityWidget`` instead.
+    The original ``/api/coins/stats/burn`` backend route is kept for
+    backward-compat with any external dashboards still polling it, but
+    the public marketing surface is the new public summary endpoint.
+
+    Test renamed in spirit but kept on this function name for git history.
     """
     from pathlib import Path
-
-    backend = Path(__file__).resolve().parents[1]
     frontend_src = Path(__file__).resolve().parents[2] / "frontend" / "src"
 
-    # Backend route
-    stats_body = (backend / "routes" / "coin_stats.py").read_text(encoding="utf-8")
-    assert "TOTAL_SUPPLY" in stats_body and "3_000_000_000" in stats_body, \
-        "coin_stats.py must reference the locked 3B coin supply"
-    assert "/coins" in stats_body and "stats/burn" in stats_body, \
-        "coin_stats router must expose /api/coins/stats/burn"
+    # New widget present.
+    widget = (frontend_src / "components" / "RecirculationVelocityWidget.tsx").read_text(encoding="utf-8")
+    assert "/api/recirculation/public-summary" in widget, (
+        "RecirculationVelocityWidget must poll the public recirculation summary"
+    )
+    assert "recirculation-velocity-widget" in widget
 
-    # Frontend widget + landing
-    widget = (frontend_src / "components" / "BurnCounterWidget.tsx").read_text(encoding="utf-8")
-    assert "/coins/stats/burn" in widget, \
-        "BurnCounterWidget must poll /api/coins/stats/burn"
-    assert "burn-counter-widget" in widget, \
-        "BurnCounterWidget must expose data-testid='burn-counter-widget'"
+    # Legacy widget deleted.
+    assert not (frontend_src / "components" / "BurnCounterWidget.tsx").exists(), (
+        "Legacy BurnCounterWidget.tsx must be deleted"
+    )
 
+    # Landing page wires the new widget, not the old one.
     landing = (frontend_src / "pages" / "LandingNeonGaming.tsx").read_text(encoding="utf-8")
-    assert "BurnCounterWidget" in landing, \
-        "Landing page must render <BurnCounterWidget /> for the public scarcity story"
+    assert "RecirculationVelocityWidget" in landing
+    assert "BurnCounterWidget" not in landing
 
 
 def test_admin_role_checks_protect_sensitive_endpoints() -> None:
@@ -3956,7 +3956,8 @@ def test_landing_feature_accordions_mounted_with_three_cards():
         assert tid in src, f"Accordion card data-testid '{tid}' must be present"
     # Live data hooks pulling from the existing backend rails.
     assert '/api/vibez-rewards/constants' in src
-    assert '/api/coins/stats/burn'        in src
+    # Feb 2026 — burn stats replaced by recirculation velocity readout.
+    assert '/api/recirculation/public-summary' in src
     # Mounted on the landing page.
     landing = open("/app/frontend/src/pages/LandingNeonGaming.tsx").read()
     assert 'LandingFeatureAccordions' in landing
@@ -5884,40 +5885,45 @@ def test_economic_engine_card_and_page_mounted():
 # ═══════════════════════════════════════════════════════════════════════
 
 def test_definitive_economy_positioning_app_wide():
-    """The Definitive Economy spec must show through in EVERY user surface
-    that mentions tokenomics — landing tour video, narration script,
-    feature accordions, economic engine card + page. Spec drift fails."""
-    # 1. EconomicEngineCard: Credits strip + Global Value Parity headline.
+    """The Two-Economy spec must show through in EVERY user surface
+    that mentions tokenomics. Feb 2026 rewrite: in-app ₵ recirculates,
+    DSG token burns — this lock guards the marketing copy parity."""
+    # 1. EconomicEngineCard: header attributes burn to DSG, not VIBEZ.
     card = open("/app/frontend/src/components/economic_engine/EconomicEngineCard.tsx").read()
     assert "economic-engine-credits-strip" in card
-    assert "Global Value Parity" in card
+    assert "DSG Token Engine" in card, (
+        "EconomicEngineCard must attribute the burn engine to DSG, not VIBEZ"
+    )
+    assert "doesn't burn" in card, (
+        "EconomicEngineCard must clarify in-app VIBEZ ₵ doesn't burn"
+    )
     assert "Standard Utility Unit" in card
-    assert "Rising price" in card and "Constant scarcity" in card
 
-    # 2. EconomicEnginePage: Definitive Economy mission copy.
+    # 2. EconomicEnginePage: dual-economy mission copy.
     page = open("/app/frontend/src/pages/EconomicEnginePage.tsx").read()
     assert "premium standard" in page
-    assert "rising price floor" in page
-    assert "constant scarcity" in page
-    assert "Rides" in page and "Restaurants" in page and "Gaming" in page
+    assert "In-app VIBEZ" in page or "VIBEZ ₵" in page
+    assert "DSG Token" in page
+    assert "750M" in page and "350M" in page, (
+        "EconomicEnginePage must state the canonical DSG 750M → 350M floor"
+    )
+    assert "40/30/30" in page or "40 / 30 / 30" in page
 
-    # 3. Landing tour video caption: new economy line replacing hard-cap copy.
+    # 3. Landing tour video caption — dual-economy line.
     tour = open("/app/frontend/src/components/landing/LandingTourVideo.tsx").read()
-    assert "Buyback" in tour
-    assert "1 Coin = 10 Credits" in tour
+    assert "VIBEZ recirculate" in tour, (
+        "Tour caption at t=224 must reference VIBEZ recirculation"
+    )
+    assert "750M" in tour, "Tour caption must reference DSG 750M"
 
-    # 4. Narration script reflects new burn rate + Credits standard.
-    narration = open("/app/backend/scripts/generate_landing_tour_narration.py").read()
-    assert "Five percent dynamic burn rate" in narration
-    assert "fifty-fifty" in narration
-    assert "Credits standard" in narration
-    assert "One coin equals ten Credits" in narration
-
-    # 5. LandingFeatureAccordions tokenomics card uses Definitive Economy rate.
+    # 4. LandingFeatureAccordions — velocity stats, not burn stats.
     acc = open("/app/frontend/src/components/landing/LandingFeatureAccordions.tsx").read()
-    assert "Definitive Economy rate" in acc
-    assert "10 Coins = $1 USD = 100 Credits" in acc
-    # Legacy "2,000 ₵ = $1" must be gone.
+    assert "useVelocityStats" in acc, (
+        "Accordions must read live recirculation velocity stats"
+    )
+    assert "Tournament Pool" in acc
+    assert "burn ₵" not in acc, "Stale 'burn ₵' copy must be removed"
+    # Legacy "2,000 ₵ = $1" must remain gone (1000 ₵ = $1 is the live rate).
     assert "2,000 ₵" not in acc
 
 
@@ -11411,4 +11417,83 @@ def test_admin_recirculation_ui_wired():
     )
     routes = (fe / "routes" / "adminRoutes.tsx").read_text(encoding="utf-8")
     assert "AdminRecirculation" in routes and "/admin/recirculation" in routes
+
+def test_marketing_copy_matches_recirculation_blueprint():
+    """Feb 2026 — Marketing surfaces must reflect the new two-economy model:
+       • IN-APP VIBEZ ₵ → recirculation (NO BURN — 3B fixed supply)
+       • DSG Token (Solana SPL) → burn schedule (750M → 350M floor)
+
+    Pins:
+      1. The legacy BurnCounterWidget is deleted (replaced by
+         RecirculationVelocityWidget on the landing page).
+      2. Landing page hero imports + renders RecirculationVelocityWidget.
+      3. The Welcome Letter has the "Two economies" beat with both
+         the 40/30/30 recirculation story AND the 750M DSG burn story.
+      4. The tour video t=224 caption uses dual-economy phrasing.
+      5. The Yellow Pages copy no longer claims "burn ₵".
+      6. The public recirculation endpoint is mounted.
+    """
+    from pathlib import Path
+    fe = Path("/app/frontend/src")
+
+    # 1. Legacy burn widget gone.
+    assert not (fe / "components" / "BurnCounterWidget.tsx").exists(), (
+        "BurnCounterWidget.tsx must be deleted — replaced by RecirculationVelocityWidget"
+    )
+
+    # 2. Landing page swap.
+    landing = (fe / "pages" / "LandingNeonGaming.tsx").read_text(encoding="utf-8")
+    assert "RecirculationVelocityWidget" in landing
+    assert "BurnCounterWidget" not in landing, (
+        "LandingNeonGaming must NOT reference the deleted burn widget"
+    )
+
+    # 3. Welcome Letter dual-economy beat.
+    wl = (fe / "components" / "landing" / "WelcomeLetter.tsx").read_text(encoding="utf-8")
+    assert "welcome-beat-two-economies" in wl, (
+        "WelcomeLetter must contain the two-economies beat testid"
+    )
+    assert "40% to tournament prize pools" in wl
+    assert "750M" in wl and "350M" in wl, (
+        "Welcome Letter must state the DSG 750M → 350M floor"
+    )
+    assert "Coins never burn" in wl
+
+    # 4. Tour video caption.
+    tour = (fe / "components" / "landing" / "LandingTourVideo.tsx").read_text(encoding="utf-8")
+    assert "3B VIBEZ recirculate" in tour or "VIBEZ recirculate" in tour, (
+        "Tour video caption must reference VIBEZ recirculation (not burning)"
+    )
+    assert "750M" in tour and "350M" in tour, (
+        "Tour video must reference the correct DSG 750M → 350M numbers"
+    )
+    assert "burning to 1.5B" not in tour, (
+        "Stale '3B VIBEZ burning to 1.5B' line must be removed from tour"
+    )
+
+    # 5. Yellow Pages copy.
+    accordions = (fe / "components" / "landing" / "LandingFeatureAccordions.tsx").read_text(encoding="utf-8")
+    assert "burn ₵" not in accordions, (
+        "LandingFeatureAccordions Yellow Pages copy must not claim 'burn ₵'"
+    )
+    assert "useVelocityStats" in accordions, (
+        "LandingFeatureAccordions must read from the recirculation public summary"
+    )
+    assert "/api/recirculation/public-summary" in accordions
+
+    # Velocity widget renders the 3 buckets.
+    widget = (fe / "components" / "RecirculationVelocityWidget.tsx").read_text(encoding="utf-8")
+    for tid in [
+        "velocity-widget-tournament-pool",
+        "velocity-widget-treasury",
+        "velocity-widget-airlock",
+    ]:
+        assert tid in widget, f"RecirculationVelocityWidget missing testid '{tid}'"
+
+    # 6. Public endpoint mounted (no auth).
+    from server import app
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    assert "/api/recirculation/public-summary" in paths, (
+        "Public recirculation summary endpoint must be mounted"
+    )
 

@@ -91,11 +91,15 @@ export default function EconomicEngineCard() {
       <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
         <div>
           <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-fuchsia-400/90">
-            DSG Economic Engine · Global Value Parity
+            DSG Token Engine · Solana SPL · Burn Schedule
           </p>
           <h3 className="text-xl md:text-2xl font-black text-white mt-0.5">
-            Vibez Coin · ${c.parity_usd.toFixed(2)} floor · Rising price · Constant scarcity
+            DSG · ${c.parity_usd.toFixed(2)} floor · Programmed burn down to a hard floor
           </h3>
+          <p className="text-[10px] text-purple-300/60 mt-1">
+            (In-app VIBEZ ₵ doesn't burn — see the Coin Velocity widget. Two
+            economies, by design.)
+          </p>
           {c.protocol_version && (
             <p className="text-[10px] font-mono text-purple-400/60 mt-0.5">
               {c.protocol_version}

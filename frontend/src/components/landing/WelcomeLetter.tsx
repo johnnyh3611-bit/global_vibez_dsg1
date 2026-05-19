@@ -109,6 +109,53 @@ export default function WelcomeLetter() {
           />
 
           <Beat
+            Icon={Sparkles}
+            title="Two economies. Same network."
+            body={
+              <>
+                <p className="mt-2 text-sm text-fuchsia-100/90 leading-relaxed">
+                  We run two coins on purpose — a soft in-app currency
+                  built for velocity, and a hard Solana token built for
+                  scarcity. Both serve different jobs. Both stay
+                  decoupled.
+                </p>
+                <ul className="mt-3 space-y-2.5 text-sm text-fuchsia-100/90 list-disc list-outside ml-5">
+                  <li>
+                    <strong className="text-emerald-300">VIBEZ ₵ (in-app · 3 billion fixed).</strong>{" "}
+                    Coins never burn. Every paid in-app transaction
+                    cycles{" "}
+                    <span className="text-white">40% to tournament prize pools</span>,{" "}
+                    <span className="text-white">30% to the platform treasury</span>,{" "}
+                    and <span className="text-white">30% to a 72-hour vault</span> that
+                    auto-releases back into circulation. Coins keep
+                    moving — velocity drives in-app value. Burning
+                    coins would just remove utility; recirculating
+                    them funds the next chair-holder dividend, the next
+                    tournament jackpot, the next gift. 3 billion ₵
+                    forever, no rugs.
+                  </li>
+                  <li>
+                    <strong className="text-fuchsia-300">DSG Token (Solana SPL · 750M total).</strong>{" "}
+                    The on-chain token has a programmed burn schedule:{" "}
+                    <strong>5% burn ceiling at 750M circulating,
+                    linearly declining to 0% at the 350M floor</strong>{" "}
+                    (formula:{" "}
+                    <code className="text-fuchsia-300 text-xs">
+                      min(5%, (supply − 350M) / 50M × 1%)
+                    </code>
+                    ). Deflationary pressure is maximum early, tapers
+                    to zero at the floor — protects long-term holders
+                    from late-game dilution. DSG burns AND VIBEZ
+                    recirculation co-exist by design.
+                  </li>
+                </ul>
+              </>
+            }
+            tone="cyan"
+            testId="welcome-beat-two-economies"
+          />
+
+          <Beat
             Icon={Shield}
             title="For Chair Holders & Premium Members — the deep mechanics"
             body={

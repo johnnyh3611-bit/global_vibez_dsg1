@@ -140,7 +140,7 @@ const FALLBACK_CAPTIONS: Cue[] = [
   { t: 192.0, text: "Floor: $500K gross → $18/chair · Genesis: $2.75M → $99/chair." },
   { t: 202.0, text: "Diamond: $10M → $360/chair · Platinum: $50M → $1,800/chair!" },
   { t: 212.0, text: "Block-Release Governance: 50K-unit blocks · >51% majority vote · 12-month lock-up · $20 buy-back floor." },
-  { t: 224.0, text: "3B VIBEZ burning to 1.5B · 50/50 Buyback + Liquidity · 30% of gross to chair holders · paid every 90 days." },
+  { t: 224.0, text: "Two economies, one network. 3B VIBEZ recirculate forever (40% tournament pools · 30% treasury · 30% 72h vault). DSG token burns 750M → 350M floor on Solana." },
   { t: 234.0, text: "5× mining multiplier for chair holders · $VIBEZ bridges to Solana 4:1 · 1 Coin = 10 Credits." },
   { t: 242.0, text: "ONE MILLION CHAIRS. Globally. Forever. The first cohort to sit at the table OWNS the network." },
   { t: 254.0, text: "Take your seat. RIGHT NOW." },
