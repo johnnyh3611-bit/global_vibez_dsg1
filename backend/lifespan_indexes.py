@@ -241,4 +241,14 @@ _INDEX_SPECS = [
     {"coll": "room_participants", "key": "node_id", "unique": True, "background": True},
     {"coll": "room_participants", "key": [("room_id", 1), ("user_id", 1)], "unique": True, "background": True},
     {"coll": "room_participants", "key": [("room_id", 1), ("seat_index", 1)], "background": True},
+
+    # Feb 2026 — DSG TV Expansion (Prestige · Stools · Predict-to-Win)
+    {"coll": "prestige_chairs", "key": "chair_id", "unique": True, "background": True},
+    {"coll": "prestige_chairs", "key": [("owner_id", 1), ("status", 1)], "background": True},
+    {"coll": "stool_balances", "key": "user_id", "unique": True, "background": True},
+    {"coll": "prediction_pools", "key": "pool_id", "unique": True, "background": True},
+    {"coll": "prediction_pools", "key": [("status", 1), ("created_at", -1)], "background": True},
+    {"coll": "prediction_stakes", "key": "stake_id", "unique": True, "background": True},
+    {"coll": "prediction_stakes", "key": [("pool_id", 1), ("option", 1)], "background": True},
+    {"coll": "prediction_stakes", "key": [("user_id", 1), ("at", -1)], "background": True},
 ]

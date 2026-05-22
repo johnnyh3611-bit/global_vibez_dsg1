@@ -71,6 +71,8 @@ import RoomInfoCube from "@/components/common/RoomInfoCube";
 import RoomVisitLogger from "@/components/common/RoomVisitLogger";
 import RoleSwitcher from "@/components/common/RoleSwitcher";
 import LandscapeRotateHint from "@/components/common/LandscapeRotateHint";
+import CmdKLauncher from "@/components/CmdKLauncher";
+import MobileBottomNav from "@/components/MobileBottomNav";
 
 // Routes that own the entire viewport (h-[100dvh] + overflow-hidden) —
 // e.g. card rooms, dice games, casino tables, full-screen tools. The
@@ -354,6 +356,10 @@ function AppRouter() {
             quietly bouncing to the landing. */}
         <Route path="*" element={<NotFound />} />
       </Routes>
+      {/* Global Cmd+K launcher + mobile bottom nav. Mounted once at
+          the App shell so every route gets them for free. */}
+      <CmdKLauncher />
+      <MobileBottomNav />
     </>
   );
 }

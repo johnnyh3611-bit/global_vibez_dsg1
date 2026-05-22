@@ -12168,3 +12168,111 @@ def test_session_hub_links_explore():
     src = open("/app/frontend/src/components/SessionHubCard.tsx").read()
     assert "'/explore'" in src, "Dashboard hub must surface /explore"
 
+
+
+# ──────────────────────────────────────────────────────────────────
+# DSG TV Expansion (Prestige · Stools · Predict-to-Win)
+# Cmd+K launcher · MobileBottomNav (Feb 2026)
+# ──────────────────────────────────────────────────────────────────
+
+def test_dsg_tv_constants_counter_proposal():
+    """The PRED split must NOT contain a 1% burn — that 1% goes to
+    Treasury per the counter-proposal. Burn pct must be 0."""
+    from services.dsg_tv_expansion import (
+        PRED_BROADCASTER_PCT, PRED_TREASURY_PCT, PRED_WINNERS_PCT,
+        STOOLS_PER_CHAIR, UPGRADE_COIN_COSTS, PRESTIGE_TIERS,
+    )
+    assert abs(PRED_BROADCASTER_PCT - 0.05) < 1e-9
+    assert abs(PRED_TREASURY_PCT - 0.01) < 1e-9, (
+        "Counter-proposal: 1% must go to Treasury, NOT burn"
+    )
+    assert abs(PRED_WINNERS_PCT - 0.94) < 1e-9
+    assert abs(PRED_BROADCASTER_PCT + PRED_TREASURY_PCT + PRED_WINNERS_PCT - 1.0) < 1e-9
+    assert STOOLS_PER_CHAIR == 100
+    assert PRESTIGE_TIERS == ("standard", "neon_ruby", "cyber_diamond")
+    # Upgrade costs in COINS (₵), not dollars
+    assert UPGRADE_COIN_COSTS[("standard", "neon_ruby")] == 500_000
+    assert UPGRADE_COIN_COSTS[("neon_ruby", "cyber_diamond")] == 2_000_000
+
+
+def test_dsg_tv_resolve_never_burns_in_app_coins():
+    """resolve_pool's 1% must route to Treasury — NOT through
+    dsg_spl_burn_queue. (Prestige upgrades DO legitimately enqueue
+    SPL burns, but Predict-to-Win must not.)"""
+    src = open("/app/backend/services/dsg_tv_expansion.py").read()
+    # Locate resolve_pool function and verify it ONLY references
+    # treasury, not the SPL burn queue.
+    import re
+    match = re.search(r"async def resolve_pool\(.*?\nasync def ", src, re.DOTALL)
+    resolve_body = match.group(0) if match else ""
+    assert resolve_body, "Could not isolate resolve_pool function body"
+    assert "dsg_spl_burn_queue" not in resolve_body, (
+        "Predict-to-Win resolve must NOT enqueue SPL burns. "
+        "Route the 1% to Treasury instead."
+    )
+    assert '"_id": "treasury"' in resolve_body
+
+
+def test_dsg_tv_endpoints_registered():
+    from server import app
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    for p in [
+        "/api/dsg-tv/prestige/me",
+        "/api/dsg-tv/prestige/upgrade",
+        "/api/dsg-tv/stools/me",
+        "/api/dsg-tv/stools/redeem",
+        "/api/dsg-tv/predict/open",
+        "/api/dsg-tv/predict/create",
+        "/api/dsg-tv/predict/stake",
+        "/api/dsg-tv/constants",
+        "/api/admin/dsg-tv/stools/grant",
+        "/api/admin/dsg-tv/predict/resolve",
+    ]:
+        assert p in paths, f"DSG TV endpoint missing: {p}"
+
+
+def test_dsg_tv_indexes_declared():
+    from lifespan_indexes import _INDEX_SPECS
+    colls = {it["coll"] for it in _INDEX_SPECS}
+    for c in ["prestige_chairs", "stool_balances",
+              "prediction_pools", "prediction_stakes"]:
+        assert c in colls, f"DSG TV index missing: {c}"
+
+
+def test_dsg_tv_page_built():
+    src = open("/app/frontend/src/pages/DSGTVExpansion.tsx").read()
+    for tid in ["dsg-tv-page", "dsg-tv-tabs",
+                "dsg-tv-prestige-card", "dsg-tv-stools-card",
+                "dsg-tv-predict-create", "dsg-tv-redeem-stools"]:
+        assert tid in src, f"DSG TV page missing testid: {tid}"
+    assert "/api/dsg-tv/" in src
+
+
+def test_dsg_tv_route_registered():
+    routes = open("/app/frontend/src/routes/monetizationRoutes.tsx").read()
+    assert 'path="/dsg-tv"' in routes
+    assert "DSGTVExpansion" in routes
+
+
+def test_cmdk_launcher_mounted_globally():
+    app = open("/app/frontend/src/App.js").read()
+    assert "import CmdKLauncher" in app
+    assert "<CmdKLauncher" in app
+    cmd = open("/app/frontend/src/components/CmdKLauncher.tsx").read()
+    assert "cmdk-launcher" in cmd
+    assert "cmdk-input" in cmd
+    assert "EXPLORE_REGISTRY" in cmd
+
+
+def test_mobile_bottom_nav_mounted_globally():
+    app = open("/app/frontend/src/App.js").read()
+    assert "import MobileBottomNav" in app
+    assert "<MobileBottomNav" in app
+    nav = open("/app/frontend/src/components/MobileBottomNav.tsx").read()
+    assert "mobile-bottom-nav" in nav
+    # All 6 tabs must exist
+    for k in ["home", "vibe-654", "plex", "studio", "explore", "profile"]:
+        assert f"`mobile-nav-${{key}}`" in nav or f"mobile-nav-{k}" in nav, (
+            f"Mobile nav missing tab: {k}"
+        )
+

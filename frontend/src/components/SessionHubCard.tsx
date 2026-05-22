@@ -72,6 +72,15 @@ const SURFACES = [
     iconTint: 'text-white/70',
   },
   {
+    key: 'dsg-tv',
+    route: '/dsg-tv',
+    title: 'DSG TV',
+    subtitle: 'Prestige · Stools · Predict-to-Win',
+    Icon: Crown,
+    accent: 'from-rose-500/30 to-cyan-500/30 border-rose-400/40',
+    iconTint: 'text-rose-300',
+  },
+  {
     key: 'explore',
     route: '/explore',
     title: 'Explore Everything',

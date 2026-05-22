@@ -16,6 +16,7 @@ import ArtistOnboarding from '@/pages/ArtistOnboarding';
 import PlexLobby from '@/pages/PlexLobby';
 import PlexRoom from '@/pages/PlexRoom';
 import Explore from '@/pages/Explore';
+import DSGTVExpansion from '@/pages/DSGTVExpansion';
 import VIPRooms from '@/pages/VIPRooms';
 import SeasonalEvents from '@/pages/SeasonalEvents';
 import HighRollerCasino from '@/pages/HighRollerCasino';
@@ -169,6 +170,14 @@ export const monetizationRoutes = (ProtectedRoute) => (
       element={
         <ProtectedRoute>
           <Explore />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/dsg-tv"
+      element={
+        <ProtectedRoute>
+          <DSGTVExpansion />
         </ProtectedRoute>
       }
     />
