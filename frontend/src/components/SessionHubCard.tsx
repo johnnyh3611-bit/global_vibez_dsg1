@@ -71,6 +71,15 @@ const SURFACES = [
     accent: 'from-slate-600/30 to-slate-800/30 border-white/20',
     iconTint: 'text-white/70',
   },
+  {
+    key: 'explore',
+    route: '/explore',
+    title: 'Explore Everything',
+    subtitle: 'Master index · search any room',
+    Icon: Sparkles,
+    accent: 'from-cyan-500/30 to-fuchsia-500/30 border-cyan-400/40',
+    iconTint: 'text-cyan-300',
+  },
 ];
 
 export default function SessionHubCard() {

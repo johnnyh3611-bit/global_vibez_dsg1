@@ -5213,3 +5213,15 @@ All 5 merchant PDFs + viral recruiter loop fully implemented.
 - The DSG TV Expansion blueprint proposes Prestige chair upgrades (Neon Ruby · Cyber Diamond) + Micro-Chairs (Stools) + Predict-to-Win.
 - Two of the three (Prestige + Micro-Chairs) fit cleanly with our counter-proposal economics.
 - Predict-to-Win's "1% in-app burn per pot" still conflicts with the 0% in-app burn rule we've locked. Same counter-proposal pattern: route that 1% to Treasury bucket instead.
+
+---
+
+## 2026-02-15 (Master Explore Index) — SHIPPED
+
+### Status: 🟢 LIVE · 554/554 TESTS GREEN
+- **/explore page** — single searchable index of 56 curated destinations across 6 categories (Casino · Music · Dating · Streaming · Wallet · Founder Tools)
+- Full-text search across title + subtitle + route + tags
+- Category chip filter with live counts
+- Manifest at `EXPLORE_REGISTRY` in `/pages/Explore.tsx` is single source of truth — add new surfaces here as they ship
+- Linked from Dashboard SessionHubCard (7th tile)
+- +4 regression tests + 40-entry minimum floor guard

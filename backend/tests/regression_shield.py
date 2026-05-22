@@ -12130,3 +12130,41 @@ def test_dashboard_mounts_session_hub_card():
     dash = open("/app/frontend/src/pages/DashboardNew.tsx").read()
     assert "SessionHubCard" in dash, "DashboardNew must render the SessionHubCard"
 
+
+
+# ──────────────────────────────────────────────────────────────────
+# /explore — Master destination index
+# ──────────────────────────────────────────────────────────────────
+
+def test_explore_page_built():
+    src = open("/app/frontend/src/pages/Explore.tsx").read()
+    assert "explore-page" in src
+    assert "explore-search" in src
+    assert "explore-category-chips" in src
+    assert "explore-grid" in src
+    assert "explore-chip-all" in src
+    # Categories are .map()'d with template literals — assert on source pattern
+    assert "`explore-chip-${c}`" in src, "Category chips must emit template-literal testids"
+
+
+def test_explore_registry_size_floor():
+    """Catalog must surface at least 40 destinations. Guards against
+    silent shrinkage when refactoring."""
+    src = open("/app/frontend/src/pages/Explore.tsx").read()
+    import re
+    rows = re.findall(r"\{\s*route:\s*'/[^']+',\s*title:", src)
+    assert len(rows) >= 40, (
+        f"Explore registry has only {len(rows)} entries — must keep at least 40"
+    )
+
+
+def test_explore_route_registered():
+    routes = open("/app/frontend/src/routes/monetizationRoutes.tsx").read()
+    assert 'path="/explore"' in routes
+    assert "import Explore from '@/pages/Explore'" in routes
+
+
+def test_session_hub_links_explore():
+    src = open("/app/frontend/src/components/SessionHubCard.tsx").read()
+    assert "'/explore'" in src, "Dashboard hub must surface /explore"
+

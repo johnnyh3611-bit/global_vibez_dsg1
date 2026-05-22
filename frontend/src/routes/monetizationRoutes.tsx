@@ -15,6 +15,7 @@ import ArtistDashboard from '@/pages/ArtistDashboard';
 import ArtistOnboarding from '@/pages/ArtistOnboarding';
 import PlexLobby from '@/pages/PlexLobby';
 import PlexRoom from '@/pages/PlexRoom';
+import Explore from '@/pages/Explore';
 import VIPRooms from '@/pages/VIPRooms';
 import SeasonalEvents from '@/pages/SeasonalEvents';
 import HighRollerCasino from '@/pages/HighRollerCasino';
@@ -160,6 +161,14 @@ export const monetizationRoutes = (ProtectedRoute) => (
       element={
         <ProtectedRoute>
           <PlexRoom />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/explore"
+      element={
+        <ProtectedRoute>
+          <Explore />
         </ProtectedRoute>
       }
     />
