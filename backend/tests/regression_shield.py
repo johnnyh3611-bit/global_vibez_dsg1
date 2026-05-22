@@ -10091,18 +10091,18 @@ def test_landing_tour_assets_match_public_and_build() -> None:
 
 def test_landing_tour_cache_busters_wired() -> None:
     """All three call-sites that load the tour MP3/MP4 must use the
-    `?v=nova-2026-05-16` cache-buster so SW + CDN never serve stale."""
+    `?v=recirc-2026-02-15` cache-buster so SW + CDN never serve stale."""
     sw = open("/app/frontend/public/gv-sw.js").read()
-    assert "gv-v2-20260516-nova" in sw, "Service worker CACHE_VERSION not bumped"
-    assert "?v=nova-2026-05-16" in sw, "SW pre-cache URL missing cache-buster"
+    assert "gv-v3-20260215-recirc-nova" in sw, "Service worker CACHE_VERSION not bumped"
+    assert "?v=recirc-2026-02-15" in sw, "SW pre-cache URL missing cache-buster"
 
     manifest = open("/app/frontend/public/landing-tour-i18n.json").read()
-    assert "?v=nova-2026-05-16" in manifest, "i18n manifest audio URL missing cache-buster"
+    assert "?v=recirc-2026-02-15" in manifest, "i18n manifest audio URL missing cache-buster"
 
     component = open("/app/frontend/src/components/landing/LandingTourVideo.tsx").read()
-    assert "?v=nova-2026-05-16" in component, "Tour component MP3 src missing cache-buster"
+    assert "?v=recirc-2026-02-15" in component, "Tour component MP3 src missing cache-buster"
     # MP4 download link must also bust cache.
-    assert 'href="/landing-tour-tiktok-9x16.mp4?v=nova-2026-05-16"' in component, \
+    assert 'href="/landing-tour-tiktok-9x16.mp4?v=recirc-2026-02-15"' in component, \
         "MP4 download href missing cache-buster"
     # The "Onyx" copy must be gone — should now say "Nova".
     assert "Onyx narration" not in component, "Tour component still advertises 'Onyx narration'"

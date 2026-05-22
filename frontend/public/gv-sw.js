@@ -13,7 +13,7 @@
  *
  * Versioned cache: bumping CACHE_VERSION evicts old caches on activate.
  */
-const CACHE_VERSION = "gv-v2-20260516-nova";
+const CACHE_VERSION = "gv-v3-20260215-recirc-nova";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
@@ -25,7 +25,7 @@ const PRECACHE_URLS = [
   "/",
   "/index.html",
   "/global-vibez-logo.png",
-  "/landing-tour-narration-en.mp3?v=nova-2026-05-16",
+  "/landing-tour-narration-en.mp3?v=recirc-2026-02-15",
 ];
 
 self.addEventListener("install", (event) => {

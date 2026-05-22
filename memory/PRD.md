@@ -5073,3 +5073,19 @@ All 5 merchant PDFs + viral recruiter loop fully implemented.
 - Streaming MP3: 5.7 MB · 289.5s · Nova narration
 - They are now bit-for-bit equivalent in length and audio content
 - 463 regression tests green
+
+---
+
+## 2026-02-15 (Recirculation Refresh) — New Narration Audio + MP4 Re-Render
+
+### Status: 🟢 BETA-READY · RECIRCULATION ECONOMY VOICED-OVER
+- Re-generated landing-page tour narration MP3 from updated Recirculation script
+  (40/30/30 cycle: Tournament/Treasury/Airlock — coins CYCLE, DSG SPL burns)
+- Streaming MP3: 6.05 MB · 302.5s · Nova voice @ 1.10× speed · 2 TTS chunks
+- 9:16 vertical MP4 re-rendered: 91.9 MB · 289.5s · burned captions + new audio
+- Cache-buster bumped: `?v=recirc-2026-02-15` · SW `gv-v3-20260215-recirc-nova`
+- Backup of pre-refresh MP3 stored at `landing-tour-narration.mp3.bak-pre-recirc`
+- All 5 cache surfaces synced (component, SW pre-cache, manifest, MP4 href, build dir)
+- **502 / 502 regression shield tests green** (added 1 cache-buster guard for new version)
+
+### User can redeploy beta now.

@@ -108,7 +108,7 @@ const pickInitialLang = (manifest: I18nManifest): string => {
 // Cache-buster version tag — bump this whenever the MP3 is regenerated
 // so production browsers + CDN edge nodes don't keep serving the stale
 // male-voice (Onyx) file from before the Nova re-record.
-const NARRATION_SRC = "/landing-tour-narration.mp3?v=nova-2026-05-16";
+const NARRATION_SRC = "/landing-tour-narration.mp3?v=recirc-2026-02-15";
 
 // Static fallback caption track — used until the i18n manifest loads
 // (or if it fails to fetch). Mirrors the v3 (Feb-2026) narration script
@@ -554,7 +554,7 @@ const LandingTourVideo: React.FC<Props> = ({ onJoinBeta }) => {
             </p>
           </div>
           <a
-            href="/landing-tour-tiktok-9x16.mp4?v=nova-2026-05-16"
+            href="/landing-tour-tiktok-9x16.mp4?v=recirc-2026-02-15"
             download="GlobalVibezDSG-Tour-9x16.mp4"
             data-testid="landing-tour-download-9x16-btn"
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white text-black text-sm font-black uppercase tracking-wider hover:bg-fuchsia-200 transition-colors shrink-0"
