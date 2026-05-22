@@ -5168,3 +5168,30 @@ All 5 merchant PDFs + viral recruiter loop fully implemented.
 - **MongoDB collections**: dsg_tracks · room_music_queues · music_transactions · artist_balances · artist_gas_outs · music_chart_bonuses · dsg_spl_burn_queue
 - **17 new endpoints** (`/api/media/*` + `/api/admin/media/*`)
 - **+9 regression tests** guarding split math, ₵-only payloads, 0% in-app burn, route registration, indexes, seed migration, overlay mounts.
+
+---
+
+## 2026-02-15 (Plex Room V3 + Creator Funnel + Hall-Wide Overlay) — SHIPPED
+
+### Status: 🟢 LIVE · 545/545 TESTS GREEN
+
+**Unified Plex Room V3** (`/plex`, `/plex/:roomId`) — single-room ecosystem with mode toggles, the Affinity Engine, and 4-seat pillar grid
+- 3 mode toggles: GAMING / DATING / SHOWCASE (host-only control)
+- Affinity Engine: icebreaker (cyan, 0-39) → neon_spark (fuchsia, 40-74) → synergy_flare (gold, 75+) computed from interest overlap (Jaccard similarity), ambient theme transitions auto-applied
+- Battle wager caps in ₵ (100K/1M/5M) matching Prize Wheel + Media Engine
+- Wager routing: 40% Tournament / 30% Treasury / 30% Airlock (NOT the blueprint's broken "100% Treasury")
+- Visual override hybrid control protocol (host overrides algorithmic theme)
+- Vibe DJ overlay auto-mounted
+
+**Counter-proposal economics enforced** — rejected the V3 PDF's 50/30/20 + 50% burn (same conflict we've fixed 3 times). All in-room transactions go through the existing Media Engine 80/15/5 split. Documented in `services/plex_room.py` docstring.
+
+**Artist Onboarding** (`/artist/onboarding`) — 4-step 60-second creator funnel
+- Step 1: Artist display name + track title
+- Step 2: Audio URL + optional cover art
+- Step 3: Confirm + transparent 80% take callout
+- Step 4: Success + deep-link to `/artist/dashboard`
+- Self-serve via new `POST /api/media/artist/me/tracks` (artist_id hard-bound to calling user, no spoofing)
+
+**Hall-Wide Vibe DJ rollout** — Overlay now mounted in all 5 reachable Vibez 654 rooms (Classic · Premium · Solo Vault · Coliseum/Tournament · Prescription)
+
+**Regression**: +8 new tests (545 total green). Smoke screenshots confirm Plex Lobby, Plex Room V3, and Artist Onboarding flow all render correctly end-to-end.

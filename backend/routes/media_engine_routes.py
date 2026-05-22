@@ -164,6 +164,36 @@ async def artist_tracks_self(
     return {"rows": rows, "count": len(rows)}
 
 
+class ArtistUpsertTrackRequest(BaseModel):
+    track_title: str = Field(..., min_length=1, max_length=160)
+    audio_url: str = Field(..., min_length=4, max_length=800)
+    cover_art_url: Optional[str] = Field(default=None, max_length=800)
+    artist_display_name: Optional[str] = Field(default=None, max_length=120)
+
+
+@router.post("/artist/me/tracks")
+async def artist_upsert_track_self(
+    body: ArtistUpsertTrackRequest,
+    current_user=Depends(get_current_user_from_session),
+) -> Dict[str, Any]:
+    """Self-serve track publish for the onboarding flow. Artist ID
+    is locked to the calling user — no spoofing possible. The track
+    appears in Audio Unlock Nodes immediately (momentum_score=0)."""
+    artist_id = current_user["user_id"]
+    artist_name = (
+        body.artist_display_name
+        or current_user.get("name")
+        or current_user.get("user_name")
+        or current_user.get("email", "Artist").split("@")[0]
+    )
+    track = await upsert_track(
+        db, artist_id=artist_id, artist_name=artist_name,
+        track_title=body.track_title, audio_url=body.audio_url,
+        cover_art_url=body.cover_art_url,
+    )
+    return {"ok": True, "track": track}
+
+
 class GasOutRequest(BaseModel):
     coins: int = Field(..., gt=0, le=1_000_000_000)
     solana_wallet: str = Field(..., min_length=32, max_length=64)

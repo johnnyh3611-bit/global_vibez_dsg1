@@ -11983,3 +11983,102 @@ def test_vibe_dj_overlay_mounted_in_all_six_one_rooms():
         assert "VibeDJOverlay" in src, f"{path} missing VibeDJOverlay import"
         assert "<VibeDJOverlay" in src, f"{path} missing VibeDJOverlay render"
 
+
+
+# ──────────────────────────────────────────────────────────────────
+# Unified Plex Room (V3 Living-Room Ecosystem) + Artist Onboarding
+# ──────────────────────────────────────────────────────────────────
+
+def test_plex_room_constants_match_counter_proposal():
+    """Affinity tiers + wager caps + 40/30/30 routing — all locked
+    to the live counter-proposal economics. NOT the 50/30/20 from
+    the V3 blueprint (which conflicts with the Recirculation engine)."""
+    from services.plex_room import (
+        WAGER_CAPS_COINS, WAGER_TOURNAMENT_PCT,
+        WAGER_TREASURY_PCT, WAGER_AIRLOCK_PCT,
+        AFFINITY_STATES, VALID_MODES,
+    )
+    assert WAGER_CAPS_COINS == {"free": 100_000, "mid": 1_000_000, "top": 5_000_000}
+    assert abs(WAGER_TOURNAMENT_PCT + WAGER_TREASURY_PCT + WAGER_AIRLOCK_PCT - 1.0) < 1e-9
+    assert abs(WAGER_TOURNAMENT_PCT - 0.40) < 1e-9
+    assert VALID_MODES == {"GAMING", "DATING", "SHOWCASE"}
+    # Three affinity states
+    keys = [s[1] for s in AFFINITY_STATES]
+    assert keys == ["icebreaker", "neon_spark", "synergy_flare"]
+
+
+def test_plex_room_endpoints_registered():
+    from server import app
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    for p in [
+        "/api/plex/rooms",
+        "/api/plex/rooms/live",
+        "/api/plex/rooms/{room_id}",
+        "/api/plex/rooms/{room_id}/join",
+        "/api/plex/rooms/{room_id}/leave",
+        "/api/plex/rooms/{room_id}/mode",
+        "/api/plex/rooms/{room_id}/visual-override",
+    ]:
+        assert p in paths, f"Plex Room endpoint missing: {p}"
+
+
+def test_plex_room_indexes_declared():
+    from lifespan_indexes import _INDEX_SPECS
+    colls = {it["coll"] for it in _INDEX_SPECS}
+    assert "unified_rooms" in colls
+    assert "room_participants" in colls
+
+
+def test_plex_lobby_and_room_pages_built():
+    lobby = open("/app/frontend/src/pages/PlexLobby.tsx").read()
+    room = open("/app/frontend/src/pages/PlexRoom.tsx").read()
+    assert "plex-lobby-page" in lobby
+    assert "plex-lobby-create" in lobby
+    assert "plex-room-page" in room
+    # Cards are .map()'d with template-literal testids — check on the source.
+    assert "`plex-mode-${m.toLowerCase()}`" in room
+    assert "plex-affinity-badge" in room
+    # Vibe DJ overlay must be mounted inside the Plex Room
+    assert "<VibeDJOverlay" in room
+
+
+def test_plex_routes_registered():
+    routes = open("/app/frontend/src/routes/monetizationRoutes.tsx").read()
+    assert 'path="/plex"' in routes
+    assert 'path="/plex/:roomId"' in routes
+    assert "PlexLobby" in routes
+    assert "PlexRoom" in routes
+
+
+def test_artist_onboarding_page_built():
+    src = open("/app/frontend/src/pages/ArtistOnboarding.tsx").read()
+    for tid in [
+        "artist-onboarding-page",
+        "artist-onboarding-step",
+        "artist-onboarding-name",
+        "artist-onboarding-title",
+        "artist-onboarding-audio",
+        "artist-onboarding-publish",
+        "artist-onboarding-step-4",
+    ]:
+        assert tid in src, f"Onboarding missing testid: {tid}"
+    # Uses the artist-self-serve upsert endpoint
+    assert "/api/media/artist/me/tracks" in src
+    # Surfaces the 80% take so artists know what they're signing up for
+    assert "80%" in src
+
+
+def test_artist_onboarding_route_registered():
+    routes = open("/app/frontend/src/routes/monetizationRoutes.tsx").read()
+    assert 'path="/artist/onboarding"' in routes
+    assert "ArtistOnboarding" in routes
+
+
+def test_artist_self_serve_upsert_endpoint():
+    """Onboarding must NOT require admin to publish — there's a
+    dedicated /api/media/artist/me/tracks POST."""
+    src = open("/app/backend/routes/media_engine_routes.py").read()
+    assert "async def artist_upsert_track_self" in src
+    # Must hard-bind artist_id to the calling user (no spoofing)
+    assert 'artist_id = current_user["user_id"]' in src
+

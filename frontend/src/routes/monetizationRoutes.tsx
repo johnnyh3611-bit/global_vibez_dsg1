@@ -12,6 +12,9 @@ import AchievementBadges from '@/pages/AchievementBadges';
 import DailyChallenges from '@/pages/DailyChallenges';
 import DailySpinWheel from '@/pages/DailySpinWheel';
 import ArtistDashboard from '@/pages/ArtistDashboard';
+import ArtistOnboarding from '@/pages/ArtistOnboarding';
+import PlexLobby from '@/pages/PlexLobby';
+import PlexRoom from '@/pages/PlexRoom';
 import VIPRooms from '@/pages/VIPRooms';
 import SeasonalEvents from '@/pages/SeasonalEvents';
 import HighRollerCasino from '@/pages/HighRollerCasino';
@@ -133,6 +136,30 @@ export const monetizationRoutes = (ProtectedRoute) => (
       element={
         <ProtectedRoute>
           <ArtistDashboard />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/artist/onboarding"
+      element={
+        <ProtectedRoute>
+          <ArtistOnboarding />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/plex"
+      element={
+        <ProtectedRoute>
+          <PlexLobby />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/plex/:roomId"
+      element={
+        <ProtectedRoute>
+          <PlexRoom />
         </ProtectedRoute>
       }
     />

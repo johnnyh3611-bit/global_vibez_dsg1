@@ -233,4 +233,12 @@ _INDEX_SPECS = [
     {"coll": "music_chart_bonuses", "key": [("distributed_at", -1)], "background": True},
     {"coll": "dsg_spl_burn_queue", "key": "queue_id", "unique": True, "background": True},
     {"coll": "dsg_spl_burn_queue", "key": [("status", 1), ("at", 1)], "background": True},
+
+    # Feb 2026 — Unified Plex Room (V3 Living-Room Ecosystem)
+    {"coll": "unified_rooms", "key": "room_id", "unique": True, "background": True},
+    {"coll": "unified_rooms", "key": [("status", 1), ("affinity_score", -1)], "background": True},
+    {"coll": "unified_rooms", "key": [("host_id", 1), ("created_at", -1)], "background": True},
+    {"coll": "room_participants", "key": "node_id", "unique": True, "background": True},
+    {"coll": "room_participants", "key": [("room_id", 1), ("user_id", 1)], "unique": True, "background": True},
+    {"coll": "room_participants", "key": [("room_id", 1), ("seat_index", 1)], "background": True},
 ]
