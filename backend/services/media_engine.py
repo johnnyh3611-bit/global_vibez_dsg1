@@ -438,6 +438,8 @@ async def record_transaction(
         "txn_id": txn_id,
         "split": split,
         "balance_after_coins": balance_after,
+        "collective_split_count": collective.get("split_count", 0),
+        "collective_distribution": collective.get("rows"),
     }
 
 

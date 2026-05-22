@@ -5302,3 +5302,27 @@ All 5 merchant PDFs + viral recruiter loop fully implemented.
 
 ### Blockers
 - GitHub 403 push — awaiting user reconnect via "Save to Github".
+
+---
+## 2026-05-22 (cont.) — MME Auto-Split Wire + License Marketplace
+### Status: 🟢 LIVE · 601/601 REGRESSION GREEN · Testing-agent 609/609 PASS
+
+### What shipped
+1. **MME × Music Group auto-split wiring** — `services.media_engine.record_transaction` now calls `_credit_artist_collective_slice` for the 80% artist slice. If the track has registered collaborator splits (basis points summing to 10,000), the slice is distributed pro-rata across every collaborator's `artist_balances` row, with rounding absorbed by the largest holder. A `music_royalty_payouts` audit row (source=`mme_auto_split`, burn_coins=0) is appended on every multi-collaborator distribution. Backward-compatible: tracks without splits still credit 100% to the primary artist.
+2. **License Marketplace** at `/marketplace/license` — broadcaster / merchant-facing 3-tab catalog (TV sync · casino background · commercial use). Surfaces only tracks the artist has explicitly opted-in via `tracks_rights_ledger`. License action calls the live `/api/media/tip` endpoint, so every license payment runs the same 80/15/5 + auto-collaborator-split.
+3. **MME tip response enriched** — `POST /api/media/tip` now returns `collective_split_count` + `collective_distribution` so UIs can render the per-collaborator share without an extra round-trip.
+
+### New API endpoint
+- `GET /api/music-group/marketplace/licensable?context=tv_sync|casino_background|commercial_use&limit=N` — public, JOIN-able with `dsg_tracks` (artist_name + momentum_score), validates invalid contexts.
+
+### Funnel
+- Artist opts in at `/artist/music-group` (rights toggles + collaborator splits)
+- Broadcaster / ad-buyer browses `/marketplace/license`
+- License purchase → MME 80/15/5 + auto-pro-rata across collaborators → audit row in `music_royalty_payouts`
+
+### Backlog
+- 🔒 **TGE & Solana Bridge** — locked until user types `"project complete"`.
+
+### Blockers
+- GitHub 403 push — awaiting user reconnect via "Save to Github".
+
