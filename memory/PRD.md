@@ -5326,3 +5326,41 @@ All 5 merchant PDFs + viral recruiter loop fully implemented.
 ### Blockers
 - GitHub 403 push — awaiting user reconnect via "Save to Github".
 
+
+---
+## 2026-05-22 (cont.) — VibeRidez Cargo Master + License Inbox · Final pre-beta ship
+### Status: 🟢 LIVE · 614/614 REGRESSION GREEN · Testing-agent 630/630 PASS
+
+### What shipped
+1. **VibeRidez Cargo Master** — full retail logistics layer at `/api/cargo/*` + `/driver/cargo` UI. Six modules:
+   - Store Inventory (merchant SKU catalog upserts; advertisable feed for widgets)
+   - Retail Order placement (customer taps widget → debits ₵ → mints manifest with pickup barcode)
+   - Proof-of-Delivery Dual Barcode Lock (sha256 + `secrets.token_urlsafe`; single-use plaintext stored only for the active state)
+   - Settlement: 80% store partner · 20% platform vault → flows through `recirculate()` 40/30/30 (NO burn)
+   - Cancellation/Return: client late-cancel = 500 ₵ flat to driver + full ₵ refund to customer; product return = driver gets 1.5× base fare
+   - Driver Retail Console state machine: assigned → picked_up → handover → delivered, with returning/returned/cancelled side states
+2. **License Inbox card** (`/components/LicenseInboxCard.tsx`) — mounted at top of `/artist/dashboard`. Polls `/api/music-group/royalty/me` every 30s and surfaces every collective royalty event (MME auto-splits, License Marketplace sales, admin disbursements) with click-to-expand per-collaborator breakdown showing role, basis points, and exact ₵ share. Closes the trust loop pre-beta.
+3. **DSG Music Group v2 PDF (new upload)** — diffed against shipped v1; only delta is the Solana Anchor on-chain code, which remains TGE-locked until user types `"project complete"`. No new in-app work required (rights ledger, basis-point splits, royalty disbursement all already shipped). The "70% talent share" rule from the PDF was rejected in favor of the founder-locked 80/15/5 MME composition.
+
+### Counter-proposal economics (locked)
+- **VibeRidez Cargo**: PDF dollar fee ($5.00) → 500 ₵ in-app. Store/platform = 80/20. Platform vault → 40/30/30 recirc. 0% burn. ₵ only.
+- **DSG Music Group**: 80% MME artist slice → basis-point split across collaborators. 15% treasury + 5% tournament unchanged. 0% burn.
+
+### New API endpoints (15)
+- `/api/cargo/{constants|inventory/upsert|inventory|order|pickup|handover|verify-handover|cancel|return|driver/me/assignments|driver/manifest/{manifest_id}|me/orders}`
+- `/api/admin/cargo/{assign-driver|settlements/recent|manifests/active}`
+
+### Beta-readiness checklist 🟢
+- 614 regression shields green
+- 630/630 testing-agent verified
+- All payouts route through `recirculate()` — no in-app burn anywhere
+- Dual-barcode + auth-guards in place
+- Cmd+K + Mobile bottom nav mounted globally
+- License Inbox + Explore registry searchable
+
+### Backlog
+- 🔒 **TGE & Solana Bridge** — locked until user types `"project complete"`. The Music Group v2 Solana Anchor program + Cargo Manifest on-chain registry both deploy under this gate.
+
+### Blockers
+- GitHub 403 push — awaiting user reconnect via "Save to Github".
+
