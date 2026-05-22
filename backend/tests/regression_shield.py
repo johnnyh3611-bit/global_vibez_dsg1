@@ -12276,3 +12276,155 @@ def test_mobile_bottom_nav_mounted_globally():
             f"Mobile nav missing tab: {k}"
         )
 
+
+# ───────────────────────────────────────────────────────────────────
+# DSG TV EXPANSION — live route + economics shields (May 2026)
+# Prestige Chairs · Stools · Predict-to-Win
+# Founder rule: in-app coins recirculate (40/30/30). No 50% in-app
+# burns. SPL burn intents go on a separate queue.
+# ───────────────────────────────────────────────────────────────────
+
+def test_dsg_tv_expansion_routes_mounted() -> None:
+    """Every public DSG TV Expansion endpoint must be reachable."""
+    from server import app
+    paths = {getattr(r, "path", "") for r in app.routes}
+    required = {
+        "/api/dsg-tv/constants",
+        "/api/dsg-tv/prestige/me",
+        "/api/dsg-tv/prestige/upgrade",
+        "/api/dsg-tv/stools/me",
+        "/api/dsg-tv/stools/redeem",
+        "/api/dsg-tv/predict/open",
+        "/api/dsg-tv/predict/create",
+        "/api/dsg-tv/predict/stake",
+        "/api/admin/dsg-tv/stools/grant",
+        "/api/admin/dsg-tv/predict/resolve",
+    }
+    missing = required - paths
+    assert not missing, f"DSG TV Expansion routes missing: {missing}"
+
+
+def test_dsg_tv_expansion_constants_endpoint() -> None:
+    """/constants must expose the counter-proposal economics with
+    zero in-app burn (0.0 burn pct)."""
+    from fastapi.testclient import TestClient
+    from server import app
+    client = TestClient(app)
+    r = client.get("/api/dsg-tv/constants")
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["stools_per_chair"] == 100
+    split = body["predict_split"]
+    # Hard-lock the 5/1/94 split + zero burn rule.
+    assert split["broadcaster_pct"] == 0.05
+    assert split["treasury_pct"] == 0.01
+    assert split["winners_pct"] == 0.94
+    assert split["burn_pct"] == 0.0, (
+        "DSG TV Predict-to-Win must NEVER reintroduce an in-app burn"
+    )
+    # 3 prestige tiers must be exposed.
+    assert body["prestige_tiers"] == ["standard", "neon_ruby", "cyber_diamond"]
+    # Upgrade costs in COINS only.
+    costs = body["upgrade_costs_coins"]
+    assert costs["standard->neon_ruby"] == 500_000
+    assert costs["neon_ruby->cyber_diamond"] == 2_000_000
+
+
+def test_dsg_tv_expansion_open_pools_public() -> None:
+    """List of open prediction pools must be a public GET (no auth
+    dependency on the route). Verified by route inspection so we
+    sidestep the cross-test motor loop pollution."""
+    from server import app
+    target = None
+    for r in app.routes:
+        if getattr(r, "path", "") == "/api/dsg-tv/predict/open":
+            target = r
+            break
+    assert target is not None, "/api/dsg-tv/predict/open route missing"
+    # GET method must be supported and there must be no auth dependency
+    # (the public list is intentionally open per the blueprint).
+    assert "GET" in getattr(target, "methods", set())
+    deps_src = open("/app/backend/routes/dsg_tv_expansion_routes.py").read()
+    open_decl = deps_src.split('@router.get("/predict/open")')[1].split(
+        "@router."
+    )[0]
+    assert "get_current_user_from_session" not in open_decl, (
+        "predict/open must be public (no session guard)"
+    )
+
+
+def test_dsg_tv_expansion_authed_endpoints_require_session() -> None:
+    """Player-facing endpoints must be locked behind the session guard."""
+    from fastapi.testclient import TestClient
+    from server import app
+    client = TestClient(app)
+    for path in (
+        "/api/dsg-tv/prestige/me",
+        "/api/dsg-tv/stools/me",
+    ):
+        r = client.get(path)
+        assert r.status_code in (401, 403), (
+            f"{path} returned {r.status_code} — expected auth guard"
+        )
+
+
+def test_dsg_tv_expansion_admin_endpoints_require_admin() -> None:
+    """Admin grant + resolve must reject unauthenticated callers."""
+    from fastapi.testclient import TestClient
+    from server import app
+    client = TestClient(app)
+    r1 = client.post("/api/admin/dsg-tv/stools/grant",
+                     json={"user_id": "u_nope", "count": 5})
+    r2 = client.post("/api/admin/dsg-tv/predict/resolve",
+                     json={"pool_id": "p_nope", "outcome": "x"})
+    assert r1.status_code in (401, 403)
+    assert r2.status_code in (401, 403)
+
+
+def test_dsg_tv_expansion_predict_no_in_app_burn_in_source() -> None:
+    """Source-level shield: the resolve flow must not call burn_coins
+    (or push to the SPL burn queue) for a prediction pool. Only the
+    Prestige path is allowed to enqueue SPL burns."""
+    import re
+    src = open("/app/backend/services/dsg_tv_expansion.py").read()
+    # SPL burn queue intent IS expected — but only on the Prestige path.
+    assert "dsg_spl_burn_queue" in src, "SPL queue intent for Prestige expected"
+    # Strip comments + docstrings before scanning resolve_pool.
+    resolve_section = src.split("async def resolve_pool")[1].split(
+        "async def list_open_pools"
+    )[0]
+    # Remove triple-quoted docstrings.
+    code_only = re.sub(r'"""[\s\S]*?"""', "", resolve_section)
+    # Remove single-line comments.
+    code_only = "\n".join(
+        line.split("#", 1)[0] for line in code_only.splitlines()
+    )
+    assert "burn" not in code_only.lower(), (
+        "Predict-to-Win resolve must never reintroduce an in-app burn "
+        f"(found in: {code_only})"
+    )
+
+
+def test_dsg_tv_expansion_page_imports_constants_endpoint() -> None:
+    """The Prestige page must hit the live API so the UI stays in
+    lock-step with the backend split. The constants endpoint is
+    optional, but the four primary read endpoints are mandatory."""
+    src = open("/app/frontend/src/pages/DSGTVExpansion.tsx").read()
+    assert "/api/dsg-tv/prestige/me" in src
+    assert "/api/dsg-tv/stools/me" in src
+    assert "/api/dsg-tv/predict/open" in src
+    # Write endpoints — must remain wired so the page is interactive.
+    assert "/api/dsg-tv/prestige/upgrade" in src
+    assert "/api/dsg-tv/stools/redeem" in src
+    assert "/api/dsg-tv/predict/create" in src
+    assert "/api/dsg-tv/predict/stake" in src
+
+
+def test_explore_registry_includes_dsg_tv_and_search_targets() -> None:
+    """Cmd+K depends on EXPLORE_REGISTRY containing entries the user
+    can jump to. If the registry is empty or DSG TV is missing, the
+    launcher returns no results."""
+    src = open("/app/frontend/src/pages/Explore.tsx").read()
+    assert "EXPLORE_REGISTRY" in src
+    # The DSG TV expansion route must be searchable.
+    assert "/dsg-tv" in src
