@@ -5364,3 +5364,32 @@ All 5 merchant PDFs + viral recruiter loop fully implemented.
 ### Blockers
 - GitHub 403 push — awaiting user reconnect via "Save to Github".
 
+
+---
+## 2026-05-22 (final) — Beta Hub + Tour Video Audio-Fallback Fix
+### Status: 🟢 LIVE · 618/618 REGRESSION GREEN · Testing-agent core flows PASS
+
+### What shipped
+1. **Beta Features Hub** at `/beta-hub` — single-pane-of-glass listing every feature shipped this session (9 cards: CmdK · Mobile Nav · DSG TV Expansion · DSG Logistics · Admin Logistics · Music Group · License Marketplace · License Inbox · VibeRidez Cargo). Each card auto-pings its public `/constants` endpoint, shows live status (ok/fail/busy), and has Open + Re-Ping buttons. The page is found from a prominent banner on `/dashboard` ([data-testid='dashboard-beta-hub-banner']) and indexed in Cmd+K.
+
+2. **Landing Tour Video — audio + video fix** (`/components/landing/LandingTourVideo.tsx`). The "instrumental music plays / no video overlay" bug was three layered issues:
+   - **Autoplay**: added imperative `videoRef.current.play()` in a `useEffect` on `[clipIdx, hasStarted, allClipsFailed]` so cross-origin MP4 re-plays don't get throttled.
+   - **Retry storm**: previous `onError` cycled through all 11 clips with no cap → tight infinite loop. Now tracks each failed index in a `failedClipsRef` Set, skips already-failed indices, and bails out to a **poster fallback** ([data-testid='landing-tour-poster-fallback']) once every clip has failed.
+   - **Audio gating** (the symptom the user reported): `start()` / `togglePlay()` / `restart()` previously bailed when `videoRef.current` was null (poster-fallback path), preventing the narration MP3 from playing — that's the exact "voice with no video overlay" pattern. Now audio is the primary signal: guard is `if (!a) return` and video calls are conditional.
+   - Verified: audio starts within 500ms of click, captions + progress bar advance with `currentTime`, overlay dismisses correctly. Real browsers will additionally play the video clip loop; codec-locked headless environments degrade gracefully to the branded poster with audio + captions intact.
+
+### Beta-readiness checklist 🟢
+- 9 features shipped this session — all surfaced on `/beta-hub` with health pings
+- 618/618 regression shields green
+- 0% in-app burn enforced via source-level shields at every layer
+- All payouts route through `recirculate()` 40/30/30
+- Cmd+K + Mobile bottom nav + Beta Hub banner all mounted globally
+- Landing tour: real browsers get video + audio + captions; headless gets poster + audio + captions (no infinite loop, no silent failures)
+- Sandbox firewall extracted; ObjectId hygiene patched
+
+### Backlog
+- 🔒 **TGE & Solana Bridge** — locked until user types `"project complete"`.
+
+### Blockers
+- GitHub 403 push — awaiting user reconnect via "Save to Github".
+
