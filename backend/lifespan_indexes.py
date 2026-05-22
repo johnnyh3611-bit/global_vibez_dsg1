@@ -214,4 +214,23 @@ _INDEX_SPECS = [
     {"coll": "prize_wheel_spins", "key": [("kind", 1), ("at", -1)], "background": True},
     {"coll": "user_prize_inventory", "key": [("user_id", 1), ("awarded_at", -1)], "background": True},
     {"coll": "user_prize_inventory", "key": [("user_id", 1), ("status", 1)], "background": True},
+
+    # Feb 2026 — Master Media Engine (DSG TV + Music)
+    {"coll": "dsg_tracks", "key": "track_id", "unique": True, "background": True},
+    {"coll": "dsg_tracks", "key": [("status", 1), ("momentum_score", 1)], "background": True},
+    {"coll": "dsg_tracks", "key": [("status", 1), ("weekly_chart_points", -1)], "background": True},
+    {"coll": "dsg_tracks", "key": [("artist_id", 1), ("created_at", -1)], "background": True},
+    {"coll": "room_music_queues", "key": "queue_id", "unique": True, "background": True},
+    {"coll": "room_music_queues", "key": [("room_id", 1), ("status", 1), ("votes", -1)], "background": True},
+    {"coll": "music_transactions", "key": "txn_id", "unique": True, "background": True},
+    {"coll": "music_transactions", "key": [("artist_id", 1), ("at", -1)], "background": True},
+    {"coll": "music_transactions", "key": [("user_id", 1), ("at", -1)], "background": True},
+    {"coll": "music_transactions", "key": [("at", -1)], "background": True},
+    {"coll": "artist_balances", "key": "artist_id", "unique": True, "background": True},
+    {"coll": "artist_gas_outs", "key": "gas_id", "unique": True, "background": True},
+    {"coll": "artist_gas_outs", "key": [("artist_id", 1), ("at", -1)], "background": True},
+    {"coll": "music_chart_bonuses", "key": "bonus_id", "unique": True, "background": True},
+    {"coll": "music_chart_bonuses", "key": [("distributed_at", -1)], "background": True},
+    {"coll": "dsg_spl_burn_queue", "key": "queue_id", "unique": True, "background": True},
+    {"coll": "dsg_spl_burn_queue", "key": [("status", 1), ("at", 1)], "background": True},
 ]

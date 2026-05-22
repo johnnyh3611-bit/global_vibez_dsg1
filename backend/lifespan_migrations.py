@@ -129,6 +129,40 @@ async def _seed_pricing_catalog(db, logger: logging.Logger) -> None:
         logger.warning(f"[pricing] catalog seed skipped: {e}")
 
 
+async def _seed_dsg_tracks(db, logger: logging.Logger) -> None:
+    """Idempotently seed three demo tracks so the Vibe DJ overlay
+    + audio-unlock-nodes endpoint always have content to render.
+    These rows are safe to overwrite via the admin upsert endpoint;
+    on subsequent boots ``$setOnInsert`` makes this a no-op."""
+    try:
+        from services.media_engine import upsert_track  # noqa: PLC0415
+        seeds = [
+            {"track_id": "trk_seed_nova_drift",
+             "artist_id": "artist_nova_drift",
+             "artist_name": "Nova Drift",
+             "track_title": "Recirculation Anthem",
+             "audio_url": "https://cdn.globalvibez.test/audio/seed_nova.mp3",
+             "cover_art_url": ""},
+            {"track_id": "trk_seed_dsg_pulse",
+             "artist_id": "artist_dsg_pulse",
+             "artist_name": "DSG Pulse",
+             "track_title": "Vibez Cycle",
+             "audio_url": "https://cdn.globalvibez.test/audio/seed_pulse.mp3",
+             "cover_art_url": ""},
+            {"track_id": "trk_seed_chair_holder",
+             "artist_id": "artist_chair_holder",
+             "artist_name": "Chair Holder",
+             "track_title": "Founder's Move",
+             "audio_url": "https://cdn.globalvibez.test/audio/seed_chair.mp3",
+             "cover_art_url": ""},
+        ]
+        for s in seeds:
+            await upsert_track(db, **s)
+        logger.info("[media] dsg_tracks demo seed ok (%d)", len(seeds))
+    except Exception as e:
+        logger.warning(f"[media] dsg_tracks seed skipped: {e}")
+
+
 async def _create_indexes_async(logger: logging.Logger) -> None:
     """Orchestrates one-time chair migrations + index creation.
 
@@ -146,6 +180,7 @@ async def _create_indexes_async(logger: logging.Logger) -> None:
         await _migrate_chair_ids_backfill(db, logger)
         await _migrate_phase_rename(db, logger)
         await _seed_pricing_catalog(db, logger)
+        await _seed_dsg_tracks(db, logger)
         await _create_indexes_from_spec(db, logger)
 
         logger.info("Database indexes created successfully")

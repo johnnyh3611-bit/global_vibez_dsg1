@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { authFetch } from "@/utils/secureAuth";
 import { PremiumDice } from "@/components/games/vibedice654/PremiumDice";
+import VibeDJOverlay from "@/components/VibeDJOverlay";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -238,6 +239,8 @@ export default function Vibez654Game() {
 
   return (
     <div className="min-h-screen bg-[#050507] text-cyan-100 relative overflow-hidden font-mono">
+      {/* Vibe DJ overlay (right-side, glassmorphism) */}
+      <VibeDJOverlay roomId="vibez-654-classic" />
       {/* Static grid backdrop — NO animation (photosensitive-safe). */}
       <div
         className="absolute inset-0 opacity-25 pointer-events-none"

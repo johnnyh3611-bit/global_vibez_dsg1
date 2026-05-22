@@ -11794,3 +11794,135 @@ def test_hall_and_chip_variant_lists_stay_in_sync():
         re.findall(r"\{\s*id:\s*'[a-zA-Z0-9_\-]+',", hall)
     ), "Chip manifest length must match Hall VARIANTS length"
 
+
+
+# ──────────────────────────────────────────────────────────────────
+# Master Media Engine (MME) — DSG TV + Music
+# 80 / 15 / 5 split · NO in-app burn · ₵-only payloads
+# ──────────────────────────────────────────────────────────────────
+
+def test_media_engine_split_constants_are_80_15_5():
+    """The artist take, treasury cut, and tournament-pool cut MUST
+    match the counter-proposal contract exactly. Any drift will
+    silently change creator economics."""
+    from services.media_engine import (
+        ARTIST_PCT, TREASURY_PCT, TOURNAMENT_PCT, GAS_OUT_FEE_PCT,
+    )
+    assert abs(ARTIST_PCT - 0.80) < 1e-9
+    assert abs(TREASURY_PCT - 0.15) < 1e-9
+    assert abs(TOURNAMENT_PCT - 0.05) < 1e-9
+    assert abs(ARTIST_PCT + TREASURY_PCT + TOURNAMENT_PCT - 1.0) < 1e-9
+    assert abs(GAS_OUT_FEE_PCT - 0.10) < 1e-9, (
+        "Gas-Out fee must be 10% (counter-proposal)"
+    )
+
+
+def test_media_engine_split_math_is_exact():
+    """split_for() must return whole-coin shares that sum to the input
+    AND favor the artist on rounding. Critical for ledger integrity."""
+    from services.media_engine import split_for
+    for amt in [5_000, 1_000, 17, 1, 123_456_789]:
+        s = split_for(amt)
+        assert s["artist"] + s["treasury"] + s["tournament"] == amt, (
+            f"Split sum != amount for {amt}: {s}"
+        )
+        # Artist receives the rounding remainder — never less than 80%
+        # of the original input.
+        assert s["artist"] >= int(amt * 0.80), (
+            f"Artist take below 80% for {amt}: {s}"
+        )
+
+
+def test_media_engine_never_burns_in_app_coins():
+    """The whole point of the counter-proposal is that in-app coins
+    never burn. Guard the service so a future edit can't quietly
+    flip this back."""
+    src = open("/app/backend/services/media_engine.py").read()
+    # The only "burn" reference should be the DSG SPL gas-out fee
+    # comment AND the 0-burn payload field. Make that explicit.
+    assert "0  % → Burn" in src or "burn_pct" in src
+    assert "coins_burned" in src
+    assert '"coins_burned": 0' in src, (
+        "music_transactions row MUST persist coins_burned=0"
+    )
+
+
+def test_media_engine_wager_caps_are_coins_not_dollars():
+    """All wager caps must be in COINS. USD must not appear in the
+    user-facing dictionary."""
+    from services.media_engine import WAGER_CAPS_COINS
+    assert WAGER_CAPS_COINS == {
+        "free": 100_000, "mid": 1_000_000, "top": 5_000_000,
+    }
+
+
+def test_media_engine_routes_registered():
+    """All public + admin endpoints must be mounted under /api."""
+    from server import app
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    for p in [
+        "/api/media/discovery/unlock-nodes",
+        "/api/media/charts/weekly",
+        "/api/media/rooms/{room_id}/queue",
+        "/api/media/tip",
+        "/api/media/vote-boost",
+        "/api/media/stream-unlock",
+        "/api/media/visual-gift",
+        "/api/media/artist/me/balance",
+        "/api/media/artist/me/gas-out",
+        "/api/admin/media/tracks",
+        "/api/admin/media/distribute-weekly-chart-bonus",
+        "/api/admin/media/transactions",
+        "/api/admin/media/constants",
+    ]:
+        assert p in paths, f"Media engine endpoint missing: {p}"
+
+
+def test_media_engine_indexes_declared():
+    from lifespan_indexes import _INDEX_SPECS
+    colls = {it["coll"] for it in _INDEX_SPECS}
+    for c in [
+        "dsg_tracks", "room_music_queues", "music_transactions",
+        "artist_balances", "artist_gas_outs", "music_chart_bonuses",
+        "dsg_spl_burn_queue",
+    ]:
+        assert c in colls, f"Index plan missing collection: {c}"
+
+
+def test_media_engine_seeds_three_demo_tracks_on_boot():
+    """The Vibe DJ overlay relies on at least one track always
+    existing. Seed migration must be wired."""
+    mig = open("/app/backend/lifespan_migrations.py").read()
+    assert "_seed_dsg_tracks" in mig
+    assert "trk_seed_nova_drift" in mig
+    assert "trk_seed_dsg_pulse" in mig
+
+
+def test_vibe_dj_overlay_component_built():
+    """Vibe DJ glassmorphism overlay must exist with tip/boost/gift
+    buttons + transparent 80/15/5 footnote."""
+    src = open("/app/frontend/src/components/VibeDJOverlay.tsx").read()
+    for tid in [
+        "vibe-dj-overlay", "vibe-dj-toggle", "vibe-dj-now-playing",
+        "vibe-dj-tip-row", "vibe-dj-boost-row", "vibe-dj-gift-row",
+    ]:
+        assert tid in src, f"VibeDJOverlay missing testid: {tid}"
+    # Economics footnote must show on the UI for full transparency.
+    assert "80% to artist" in src and "15% Treasury" in src and "5% Tournament" in src
+    # Must call the real /api/media/{tip,vote-boost,visual-gift} endpoints
+    assert "/api/media/" in src
+
+
+def test_vibe_dj_overlay_mounted_in_two_rooms_minimum():
+    """The overlay must be mounted in the Classic Parlour AND the
+    Prescription Room so founders can dogfood the tipping flow."""
+    classic = open("/app/frontend/src/pages/games/Vibez654Game.tsx").read()
+    prescription = open("/app/frontend/src/pages/games/Vibe654Prescription.tsx").read()
+    for src, name in [(classic, "Vibez654Game"), (prescription, "Vibe654Prescription")]:
+        assert "VibeDJOverlay" in src, (
+            f"VibeDJOverlay not imported in {name}"
+        )
+        assert "<VibeDJOverlay" in src, (
+            f"VibeDJOverlay not rendered in {name}"
+        )
+

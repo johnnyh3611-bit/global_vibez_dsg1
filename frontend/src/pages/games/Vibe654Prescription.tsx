@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
+import VibeDJOverlay from '@/components/VibeDJOverlay';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -282,6 +283,7 @@ export default function Vibe654Prescription() {
 
   return (
     <div className="min-h-screen bg-[#0a0612] text-slate-100 selection:bg-amber-400 selection:text-black" data-testid="prescription-page">
+      <VibeDJOverlay roomId="vibe-654-prescription" />
       {/* Header */}
       <header className="flex items-center justify-between px-6 py-4 border-b border-amber-400/20 backdrop-blur-md sticky top-0 z-20 bg-[#0a0612]/95">
         <button

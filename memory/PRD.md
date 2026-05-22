@@ -5150,3 +5150,21 @@ All 5 merchant PDFs + viral recruiter loop fully implemented.
 - Footnote rewritten to celebrate 7/7 coverage
 
 **Regression**: +5 new tests (524 total green). All probes pass: Prescription UI built, route registered, Hall flipped, chip wired, Hall ↔ Chip manifests in sync.
+
+---
+
+## 2026-02-15 (Master Media Engine v2 + Counter-Proposal) — SHIPPED
+
+### Status: 🟢 LIVE · 533/533 TESTS GREEN
+- Replaces blueprint's bankruptcy-grade 50/30/20 (50% burn) with **80/15/5 (0% burn)**:
+  - 80% → Artist accrued balance (in-app coins, never burned)
+  - 15% → Recirculation Treasury bucket
+  - 5%  → Recirculation Tournament Pool bucket (also funds top-3 weekly chart bonus)
+- Burns only happen on **Gas-Out Accelerator** (artist's instant DSG SPL payout): 10% fee → 100% SPL burned on the public token. In-app coins remain pure recirculation.
+- Wager caps in **coins**: free 100K ₵ / mid 1M ₵ / top 5M ₵
+- **Anti-payola Audio Unlock Nodes** — `/api/media/discovery/unlock-nodes` returns the 3 LOWEST-momentum tracks platform-wide
+- **Vibe DJ overlay** glassmorphism panel mounted in Vibez 654 Classic + Prescription rooms. Tip · Vote Boost · 3D Visual Gift rows. Transparency footnote.
+- **3 demo tracks seeded on boot**: Nova Drift, DSG Pulse, Chair Holder
+- **MongoDB collections**: dsg_tracks · room_music_queues · music_transactions · artist_balances · artist_gas_outs · music_chart_bonuses · dsg_spl_burn_queue
+- **17 new endpoints** (`/api/media/*` + `/api/admin/media/*`)
+- **+9 regression tests** guarding split math, ₵-only payloads, 0% in-app burn, route registration, indexes, seed migration, overlay mounts.
