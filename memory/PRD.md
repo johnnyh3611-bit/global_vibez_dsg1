@@ -5225,3 +5225,53 @@ All 5 merchant PDFs + viral recruiter loop fully implemented.
 - Manifest at `EXPLORE_REGISTRY` in `/pages/Explore.tsx` is single source of truth — add new surfaces here as they ship
 - Linked from Dashboard SessionHubCard (7th tile)
 - +4 regression tests + 40-entry minimum floor guard
+
+
+---
+## 2026-05-22 — DSG TV Expansion + DSG Logistics Master Blueprint (8 modules)
+### Status: 🟢 LIVE · 580/580 REGRESSION GREEN · Testing-agent 100%
+
+### What shipped this session
+1. **Cmd+K Launcher** (`/components/CmdKLauncher.tsx`) — globally mounted Spotlight-style search over EXPLORE_REGISTRY. Cmd+K / Ctrl+K opens; ArrowUp/Down + Enter navigates.
+2. **Mobile Bottom Nav** (`/components/MobileBottomNav.tsx`) — 6-tab phone navigator (Home · 654 · Plex · Studio · Explore · Me) auto-renders on viewports <768px; hides on auth/landing routes.
+3. **DSG TV Expansion** (`/api/dsg-tv/*` + `/dsg-tv`) — Prestige Chairs (3 tiers · 500K → 2M ₵ upgrade costs) · Stools (100 stools = 1 chair) · Predict-to-Win with **5/1/94 split + 0% in-app burn**. On-chain SPL burn enqueued via `dsg_spl_burn_queue` (separate from in-app coin flow).
+4. **DSG Logistics Master Hub** (`/api/dsg-logistics/*` + `/dsg-logistics`) — full 8-module Logistics Master Blueprint:
+   - Module 1: Hybrid Emergency Breakdown (VibeRidez auto-fare-zero + ride credit; Hunger Vibez nearby-driver recovery or merchant remake)
+   - Module 2: Dual Safety Loop (15s countdown → safety-team livestream + manual override)
+   - Module 3: Hardware Mandates (dual-lens dash cam verification, 7-day TTL)
+   - Module 4: White-Glove Violations (1-strike warn → 3-strike 24h suspend; physical-constraint exemption)
+   - Module 5: Fair-Share Cancellation Payouts (75% / 80% / 30% driver splits; platform cut routed via `recirculate()` 40/30/30 — **no burn**)
+   - Module 6: Driver Override Console (incident + camera + strikes snapshot)
+   - Module 7: Driver Tier Matrix (Standard / VIP Premium / Elite Vibe Chauffeur derived from rating + WG score + camera flags + trips)
+   - Module 8: Hunger Vibez Creator Kitchen (deep-link onboarding · featured-dish ordering at 15,000 ₵ · 75/25 creator/platform split via recirculation · manual delay push to drivers)
+
+### Economics enforcement (founder rule)
+- **0% in-app burn** — every payout flow routes the platform cut through `services.recirculation.recirculate()` (40% tournament / 30% treasury / 30% 72h airlock).
+- **Driver fair-shares from the PDF preserved** (75/80/30) — the 25/20/70 platform residuals are the only thing that changes destination.
+- Every ledger row stamps explicit `burn_coins: 0` for audit clarity.
+- Source-level shield: `test_dsg_logistics_no_in_app_burn_in_service_source` fails CI if a `burn_coins(...)` call sneaks into the service.
+
+### New collections
+- `emergency_incidents`, `ride_credits`, `hunger_remakes`
+- `driver_hardware_compliance`
+- `white_glove_violations`
+- `cancellation_payouts`
+- `driver_tier_state`
+- `creator_kitchens`, `creator_kitchen_orders`, `creator_kitchen_delays`
+- `prestige_chairs`, `stool_balances`, `prediction_pools`, `prediction_stakes` (DSG TV expansion)
+
+### New API endpoints (33 total)
+- `/api/dsg-tv/constants|prestige/me|prestige/upgrade|stools/me|stools/redeem|predict/open|predict/create|predict/stake`
+- `/api/admin/dsg-tv/stools/grant|predict/resolve`
+- `/api/dsg-logistics/constants|breakdown/trigger|safety/arm|safety/override|hardware/verify|hardware/me|override-console/me|tier/me|creator-kitchen/{register|me|{kitchen_id}|featured-dish|order|delay}`
+- `/api/admin/dsg-logistics/white-glove/violation|cancellation/process|cancellation/recent|incidents/active`
+
+### Regression Shield
+- **570 → 580 tests** (+10 DSG Logistics shields, including 3 burn-prevention shields)
+
+### Backlog (P0 future)
+- 🔒 **TGE & Solana Bridge** — locked until user types `"project complete"`
+- Refactor bloated `server.py` global exception handler
+
+### Blockers
+- GitHub 403 push — awaiting user reconnect via "Save to Github"
