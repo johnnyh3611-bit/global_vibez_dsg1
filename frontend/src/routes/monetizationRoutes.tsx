@@ -18,6 +18,7 @@ import PlexRoom from '@/pages/PlexRoom';
 import Explore from '@/pages/Explore';
 import DSGTVExpansion from '@/pages/DSGTVExpansion';
 import DSGLogisticsHub from '@/pages/DSGLogisticsHub';
+import MusicGroupArtistPanel from '@/pages/MusicGroupArtistPanel';
 import VIPRooms from '@/pages/VIPRooms';
 import SeasonalEvents from '@/pages/SeasonalEvents';
 import HighRollerCasino from '@/pages/HighRollerCasino';
@@ -187,6 +188,14 @@ export const monetizationRoutes = (ProtectedRoute) => (
       element={
         <ProtectedRoute>
           <DSGLogisticsHub />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/artist/music-group"
+      element={
+        <ProtectedRoute>
+          <MusicGroupArtistPanel />
         </ProtectedRoute>
       }
     />

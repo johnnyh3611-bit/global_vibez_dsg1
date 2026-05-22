@@ -10713,20 +10713,31 @@ def test_genius_floor_pinned_at_twenty_dollars_everywhere():
 
 
 def test_security_directive_d1_sandbox_firewall_registered():
-    """D1: server.py MUST register a global exception handler that
-    sanitizes unhandled errors AND writes a row to `security_events`
-    for the D4 monitoring stream."""
-    src = open("/app/backend/server.py").read()
-    assert '@app.exception_handler(Exception)' in src, (
-        "Security D1: global exception handler missing"
+    """D1: the global exception handler MUST sanitize unhandled errors
+    AND write a row to `security_events` for the D4 monitoring stream.
+    After the May-2026 refactor, the handler lives in
+    `utils/sandbox_firewall.py` and server.py only calls `install(...)`.
+    Both surfaces are validated here."""
+    server_src = open("/app/backend/server.py").read()
+    # server.py must wire in the firewall module.
+    assert "from utils.sandbox_firewall import install" in server_src, (
+        "Security D1: server.py must import the sandbox_firewall installer"
     )
-    assert "_sandbox_firewall" in src
+    assert "_install_sandbox_firewall(app, db, logger)" in server_src, (
+        "Security D1: server.py must call install(app, db, logger)"
+    )
+    # The actual handler lives in the utils module.
+    fw_src = open("/app/backend/utils/sandbox_firewall.py").read()
+    assert '@app.exception_handler(Exception)' in fw_src, (
+        "Security D1: global exception handler missing in sandbox_firewall.py"
+    )
+    assert "_sandbox_firewall" in fw_src
     # Must return a sanitized response — never the raw message body.
-    assert '"detail": "internal error"' in src
+    assert '"detail": "internal error"' in fw_src
     # Must mint a stable request_id for support correlation.
-    assert "request_id" in src
+    assert "request_id" in fw_src
     # Must hand off to D4 monitoring via security_events write.
-    assert "security_events.insert_one" in src
+    assert "security_events.insert_one" in fw_src
 
 
 def test_security_directive_d2_shared_payout_airlock_module():
@@ -12620,3 +12631,203 @@ def test_dsg_logistics_in_explore_registry() -> None:
     src = open("/app/frontend/src/pages/Explore.tsx").read()
     assert "/dsg-logistics" in src
     assert "DSG Logistics Hub" in src
+
+# ───────────────────────────────────────────────────────────────────
+# ADMIN DSG LOGISTICS DASHBOARD (May 2026)
+# Single pane of glass for safety team — surfaces active incidents,
+# recent fair-share payouts (w/ 40/30/30 recirculation breakdown),
+# and white-glove violations.
+# ───────────────────────────────────────────────────────────────────
+
+def test_admin_dsg_logistics_page_built() -> None:
+    src = open("/app/frontend/src/pages/admin/AdminDSGLogistics.tsx").read()
+    for tid in (
+        "admin-dsg-logistics-page",
+        "admin-incidents-section",
+        "admin-payouts-section",
+        "admin-cancel-form",
+        "admin-wg-form",
+        "process-cancel-btn",
+        "log-wg-btn",
+        "cancel-jobid-input", "cancel-driverid-input",
+        "wg-driverid-input",
+    ):
+        assert tid in src, f"AdminDSGLogistics missing testid: {tid}"
+    # Live API wiring.
+    for endpoint in (
+        "/api/admin/dsg-logistics/incidents/active",
+        "/api/admin/dsg-logistics/cancellation/recent",
+        "/api/admin/dsg-logistics/cancellation/process",
+        "/api/admin/dsg-logistics/white-glove/violation",
+    ):
+        assert endpoint in src, f"AdminDSGLogistics missing API call: {endpoint}"
+
+
+def test_admin_dsg_logistics_route_registered() -> None:
+    routes = open("/app/frontend/src/routes/adminRoutes.tsx").read()
+    assert '/admin/dsg-logistics' in routes
+    assert "AdminDSGLogistics" in routes
+
+
+# ───────────────────────────────────────────────────────────────────
+# SANDBOX FIREWALL REFACTOR (May 2026)
+# Bottom-of-stack handler now lives in utils/sandbox_firewall.py to
+# keep server.py focused. Shield ensures the refactor doesn't drift.
+# ───────────────────────────────────────────────────────────────────
+
+def test_sandbox_firewall_module_extracted() -> None:
+    src = open("/app/backend/utils/sandbox_firewall.py").read()
+    assert "def install(app" in src, "sandbox_firewall must export install(app, db, logger)"
+    assert "security_events" in src
+    assert "internal error" in src
+    # JSONResponse must be imported at module level (not inside the handler).
+    assert "from fastapi.responses import JSONResponse" in src
+
+
+def test_server_uses_sandbox_firewall_install() -> None:
+    src = open("/app/backend/server.py").read()
+    assert "from utils.sandbox_firewall import install" in src
+    assert "_install_sandbox_firewall(app, db, logger)" in src
+    # The inline handler must be gone — `async def _sandbox_firewall` MUST
+    # no longer live in server.py (the refactor target).
+    assert "async def _sandbox_firewall" not in src, (
+        "Sandbox firewall must live in utils/sandbox_firewall.py, "
+        "not inline in server.py"
+    )
+
+
+# ───────────────────────────────────────────────────────────────────
+# DSG MUSIC GROUP — Rights Ledger + Collaborator Splits (May 2026)
+# Composes WITH the existing Master Media Engine 80/15/5 split — only
+# the 80% artist-collective slice is sub-divided here. NO burn.
+# ───────────────────────────────────────────────────────────────────
+
+def test_dsg_music_group_routes_mounted() -> None:
+    from server import app
+    paths = {getattr(r, "path", "") for r in app.routes}
+    required = {
+        "/api/music-group/constants",
+        "/api/music-group/rights/set",
+        "/api/music-group/rights/{track_id}",
+        "/api/music-group/rights/{track_id}/can-play",
+        "/api/music-group/splits/set",
+        "/api/music-group/splits/{track_id}",
+        "/api/music-group/royalty/me",
+        "/api/admin/music-group/royalty/disburse",
+        "/api/admin/music-group/royalty/recent",
+    }
+    missing = required - paths
+    assert not missing, f"DSG Music Group routes missing: {missing}"
+
+
+def test_dsg_music_group_constants_endpoint() -> None:
+    from fastapi.testclient import TestClient
+    from server import app
+    with TestClient(app) as client:
+        r = client.get("/api/music-group/constants")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["bps_total"] == 10_000
+    assert body["max_collaborators_per_track"] >= 2
+    # Platform split MUST mirror the MME — 80/15/5, burn 0.
+    split = body["platform_split"]
+    assert split["artist_collective"] == 0.80
+    assert split["treasury"] == 0.15
+    assert split["tournament"] == 0.05
+    assert split["burn"] == 0.0, (
+        "Music Group must NEVER reintroduce a burn (composes with MME)"
+    )
+    # Sync contexts the rights ledger gates.
+    assert set(body["sync_contexts"]) == {
+        "tv_sync", "casino_background", "commercial_use",
+    }
+
+
+def test_dsg_music_group_authed_endpoints_require_session() -> None:
+    from fastapi.testclient import TestClient
+    from server import app
+    client = TestClient(app)
+    r1 = client.post("/api/music-group/rights/set",
+                      json={"track_id": "t_nope",
+                            "allow_tv_sync": True,
+                            "allow_casino_background": False,
+                            "allow_commercial_use": False})
+    r2 = client.post("/api/music-group/splits/set",
+                      json={"track_id": "t_nope",
+                            "splits": [{"user_id": "u", "role": "primary_artist",
+                                         "basis_points": 10000}]})
+    r3 = client.get("/api/music-group/royalty/me")
+    for r in (r1, r2, r3):
+        assert r.status_code in (401, 403), (
+            f"{r.request.url} got {r.status_code} — expected auth guard"
+        )
+
+
+def test_dsg_music_group_admin_endpoints_require_admin() -> None:
+    from fastapi.testclient import TestClient
+    from server import app
+    client = TestClient(app)
+    r1 = client.post("/api/admin/music-group/royalty/disburse",
+                      json={"track_id": "t_nope", "payout_coins": 100})
+    r2 = client.get("/api/admin/music-group/royalty/recent")
+    for r in (r1, r2):
+        assert r.status_code in (401, 403)
+
+
+def test_dsg_music_group_basis_points_invariant_enforced() -> None:
+    """Source-level shield: `set_collaborator_splits` MUST validate
+    sum == 10_000. If a future refactor weakens this, the on-chain
+    invariant from the blueprint breaks silently."""
+    src = open("/app/backend/services/dsg_music_group.py").read()
+    fn = src.split("async def set_collaborator_splits")[1].split(
+        "async def get_collaborator_splits"
+    )[0]
+    assert "total_bps" in fn
+    assert "BPS_TOTAL" in fn or "10_000" in fn or "10000" in fn
+    assert "invalid_basis_points_split" in fn
+
+
+def test_dsg_music_group_no_burn_in_disbursement_source() -> None:
+    """Royalty disbursement must not call burn_coins anywhere — every
+    coin flows to a collaborator. Comments allowed; code stripped."""
+    import re
+    src = open("/app/backend/services/dsg_music_group.py").read()
+    fn = src.split("async def disburse_collective_royalty")[1].split(
+        "async def list_recent_payouts"
+    )[0]
+    code = re.sub(r'"""[\s\S]*?"""', "", fn)
+    code = "\n".join(line.split("#", 1)[0] for line in code.splitlines())
+    assert "burn_coins(" not in code, (
+        "Royalty disbursement must never burn coins"
+    )
+    # Explicit ledger marker.
+    assert '"burn_coins": 0' in fn
+
+
+def test_music_group_artist_panel_built() -> None:
+    src = open("/app/frontend/src/pages/MusicGroupArtistPanel.tsx").read()
+    for tid in (
+        "music-group-panel", "rights-section", "splits-section",
+        "royalty-section", "add-collaborator-btn", "save-splits-btn",
+        "track-picker",
+    ):
+        assert tid in src, f"MusicGroupArtistPanel missing testid: {tid}"
+    for endpoint in (
+        "/api/music-group/rights/set",
+        "/api/music-group/splits/set",
+        "/api/music-group/royalty/me",
+    ):
+        assert endpoint in src
+
+
+def test_music_group_artist_route_registered() -> None:
+    routes = open("/app/frontend/src/routes/monetizationRoutes.tsx").read()
+    assert '/artist/music-group' in routes
+    assert "MusicGroupArtistPanel" in routes
+
+
+def test_music_group_in_explore_registry() -> None:
+    src = open("/app/frontend/src/pages/Explore.tsx").read()
+    assert "/artist/music-group" in src
+    assert "DSG Music Group" in src
+

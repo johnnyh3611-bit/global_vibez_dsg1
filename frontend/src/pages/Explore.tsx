@@ -62,6 +62,7 @@ export const EXPLORE_REGISTRY: Entry[] = [
   { route: '/plex', title: 'Plex Rooms', subtitle: 'Living rooms · Gaming · Dating · Showcase', cat: 'music', tags: ['plex', 'living-room', 'affinity'] },
   { route: '/artist/onboarding', title: 'Drop a Track', subtitle: '60-second creator funnel', cat: 'music', tags: ['artist', 'onboarding', 'music'] },
   { route: '/artist/dashboard', title: 'Creator Studio', subtitle: '80% take · ledger · Gas-Out', cat: 'music', tags: ['artist', 'creator', 'gas-out'] },
+  { route: '/artist/music-group', title: 'DSG Music Group', subtitle: 'Rights ledger · collaborator splits · royalty audit', cat: 'music', tags: ['artist', 'music-group', 'splits', 'royalty', 'rights'] },
   { route: '/cinema-room', title: 'Cinema Room', subtitle: 'Synchronous watch party', cat: 'music', tags: ['cinema', 'video'] },
   { route: '/beat-vault/dlc', title: 'Beat Vault DLC', subtitle: 'Premium production drops', cat: 'music', tags: ['vault', 'beats'] },
 
