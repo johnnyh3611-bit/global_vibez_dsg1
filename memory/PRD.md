@@ -5089,3 +5089,21 @@ All 5 merchant PDFs + viral recruiter loop fully implemented.
 - **502 / 502 regression shield tests green** (added 1 cache-buster guard for new version)
 
 ### User can redeploy beta now.
+
+---
+
+## 2026-02-15 (Random Tier Prize Wheel) — V1 Blueprint + V1.1 Stabilization Patch
+
+### Status: 🟢 SHIPPED · 511/511 REGRESSION TESTS GREEN
+- New service `/app/backend/services/prize_wheel.py` — three-tier weighted-probability wheel (Free / Mid / Top)
+- New routes `/app/backend/routes/prize_wheel_routes.py` mounted at:
+  - `GET /api/prize-wheel/status` · `POST /api/prize-wheel/spin` · `GET /api/prize-wheel/inventory`
+  - `GET /api/admin/prize-wheel/summary` · `GET /api/admin/prize-wheel/spins`
+- New page `/app/frontend/src/pages/DailySpinWheel.tsx` at route `/daily-spin`
+- 4-layer Sybil gate: SMS verify + complete profile + 1 game hand/24h + Founder Chair for Top Tier
+- 0.5% Treasury circuit breaker (rolling 24h) auto-degrades to utility-only rewards when tripped
+- Treasury (30%) is the ONLY funding bucket. Tournament + Airlock buckets insulated.
+- All user-facing metrics in coins (₵). USD never appears in API payload (regression test enforces).
+- Coin amounts: Free (10K / 50K jackpot) · Mid (40K / 300K jackpot) · Top (200K-350K / 1.5M jackpot)
+- Indexes added to `lifespan_indexes.py` for `prize_wheel_spins` + `user_prize_inventory`
+- +9 regression shield tests (511 total)

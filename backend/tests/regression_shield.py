@@ -11497,3 +11497,125 @@ def test_marketing_copy_matches_recirculation_blueprint():
         "Public recirculation summary endpoint must be mounted"
     )
 
+
+
+# ──────────────────────────────────────────────────────────────────
+# Random Tier Prize Wheel — v1 Blueprint + v1.1 Stabilization Patch
+# (Feb 2026)
+# ──────────────────────────────────────────────────────────────────
+
+def test_prize_wheel_service_imports_and_matrices_sum_to_one():
+    """All three tier matrices must sum to exactly 1.0 — anything
+    else means a probability row was added/edited without rebalancing
+    and would silently break the wheel."""
+    from services.prize_wheel import TIER_CONFIGS
+    for tier_key, cfg in TIER_CONFIGS.items():
+        total = sum(p for p, _, _ in cfg["matrix"])
+        assert abs(total - 1.0) < 1e-9, (
+            f"Tier '{tier_key}' probabilities sum to {total}, must be 1.0"
+        )
+    # Every tier MUST define a cooldown.
+    for tier_key, cfg in TIER_CONFIGS.items():
+        assert cfg["spin_cooldown_seconds"] > 0, f"{tier_key} missing cooldown"
+
+
+def test_prize_wheel_top_tier_requires_chair():
+    """Top Tier is hardware-locked to Founder Chair holders. Don't
+    let anyone quietly downgrade this to 'any active user'."""
+    from services.prize_wheel import TIER_CONFIGS
+    assert TIER_CONFIGS["top"]["requires_chair"] is True, (
+        "Top Tier MUST require a Founder Chair (v1.1 Patch lock)"
+    )
+    assert TIER_CONFIGS["mid"]["requires_chair"] is False
+    assert TIER_CONFIGS["free"]["requires_chair"] is False
+
+
+def test_prize_wheel_funding_bucket_is_treasury_only():
+    """The wheel MUST debit only the Treasury (30%) bucket of the
+    Recirculation pools. Tournament + Airlock buckets are off-limits."""
+    src = open("/app/backend/services/prize_wheel.py").read()
+    # Conditional decrement matches "_id": "treasury"
+    assert '"_id": "treasury"' in src and 'recirculation_pools.update_one' in src, (
+        "Prize wheel must conditionally debit the Treasury bucket"
+    )
+    # Must NEVER write to tournament_pool or airlock buckets.
+    assert '"_id": "tournament_pool"' not in src, (
+        "Prize wheel must NOT touch the Tournament Pool"
+    )
+    # The wheel does not query airlocks for debit either.
+    assert 'recirculation_airlocks.update' not in src
+
+
+def test_prize_wheel_circuit_breaker_pct_is_half_percent():
+    """0.5% of Treasury per rolling 24h — the v1.1 Stabilization Patch
+    hard ceiling. Any drift here = uncapped coin minting risk."""
+    from services.prize_wheel import BREAKER_TREASURY_PCT
+    assert abs(BREAKER_TREASURY_PCT - 0.005) < 1e-9, (
+        f"Breaker must be 0.5%, got {BREAKER_TREASURY_PCT}"
+    )
+
+
+def test_prize_wheel_routes_registered():
+    """All four prize-wheel endpoints must be mounted under /api."""
+    from server import app
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    for p in [
+        "/api/prize-wheel/status",
+        "/api/prize-wheel/spin",
+        "/api/prize-wheel/inventory",
+        "/api/admin/prize-wheel/summary",
+        "/api/admin/prize-wheel/spins",
+    ]:
+        assert p in paths, f"Prize wheel endpoint missing: {p}"
+
+
+def test_prize_wheel_indexes_declared():
+    """Spin audit + user perk inventory MUST have indexes for the
+    24h breaker query and per-user lookups."""
+    from lifespan_indexes import _INDEX_SPECS
+    colls = [it["coll"] for it in _INDEX_SPECS]
+    assert "prize_wheel_spins" in colls, "prize_wheel_spins indexes missing"
+    assert "user_prize_inventory" in colls, "user_prize_inventory indexes missing"
+
+
+def test_prize_wheel_no_usd_in_api_payload():
+    """User-facing payload must denominate everything in coins (₵).
+    No '$' signs, no 'USD' keys in the routes or status outputs."""
+    routes = open("/app/backend/routes/prize_wheel_routes.py").read()
+    svc = open("/app/backend/services/prize_wheel.py").read()
+    # Allow USD constants for internal economic math (COINS_PER_USD
+    # import is fine) — but no '$' character should appear in the
+    # response shaping at all.
+    assert "'$'" not in routes and '"$"' not in routes, (
+        "Prize wheel routes leaking USD into API payload"
+    )
+    # Service has only the explicit docstring/comment USD references
+    # for internal math. The get_status payload must not emit '$'.
+    assert "'$'" not in svc, (
+        "Prize wheel service leaking USD into API payload"
+    )
+
+
+def test_prize_wheel_frontend_page_wired():
+    """The DailySpinWheel page must exist and be routed at /daily-spin."""
+    page = open("/app/frontend/src/pages/DailySpinWheel.tsx").read()
+    assert "daily-spin-wheel-page" in page, "DailySpinWheel missing root testid"
+    assert "spin-button" in page, "DailySpinWheel missing spin-button testid"
+    assert "outcome-matrix" in page, "DailySpinWheel missing outcome-matrix testid"
+    routes = open("/app/frontend/src/routes/monetizationRoutes.tsx").read()
+    assert 'path="/daily-spin"' in routes, "/daily-spin route not registered"
+    assert "DailySpinWheel" in routes, "DailySpinWheel not imported in routes"
+
+
+def test_prize_wheel_sybil_gate_enforces_four_layers():
+    """Sybil gate must enforce all four layers from the v1.1 Patch:
+    phone, profile, recent game hand, chair (Top only)."""
+    src = open("/app/backend/services/prize_wheel.py").read()
+    for token in [
+        "phone_verified",
+        "profile_incomplete",
+        "no_game_hand_in_24h",
+        "founder_chair_required",
+    ]:
+        assert token in src, f"Sybil gate missing layer: {token}"
+

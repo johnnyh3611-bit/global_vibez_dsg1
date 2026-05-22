@@ -206,4 +206,12 @@ _INDEX_SPECS = [
     # Release worker reads (status=held AND clears_at <= now).
     {"coll": "recirculation_airlocks", "key": [("status", 1), ("clears_at", 1)], "background": True},
     {"coll": "recirculation_airlocks", "key": "recirc_id", "unique": True, "background": True},
+
+    # Feb 2026 — Random Tier Prize Wheel (v1 Blueprint + v1.1 Stabilization Patch)
+    {"coll": "prize_wheel_spins", "key": "spin_id", "unique": True, "background": True},
+    {"coll": "prize_wheel_spins", "key": [("user_id", 1), ("at", -1)], "background": True},
+    {"coll": "prize_wheel_spins", "key": [("at", -1)], "background": True},
+    {"coll": "prize_wheel_spins", "key": [("kind", 1), ("at", -1)], "background": True},
+    {"coll": "user_prize_inventory", "key": [("user_id", 1), ("awarded_at", -1)], "background": True},
+    {"coll": "user_prize_inventory", "key": [("user_id", 1), ("status", 1)], "background": True},
 ]

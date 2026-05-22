@@ -10,6 +10,7 @@ import CryptoPayments from '@/pages/CryptoPayments';
 import GiftShop from '@/pages/GiftShop';
 import AchievementBadges from '@/pages/AchievementBadges';
 import DailyChallenges from '@/pages/DailyChallenges';
+import DailySpinWheel from '@/pages/DailySpinWheel';
 import VIPRooms from '@/pages/VIPRooms';
 import SeasonalEvents from '@/pages/SeasonalEvents';
 import HighRollerCasino from '@/pages/HighRollerCasino';
@@ -115,6 +116,14 @@ export const monetizationRoutes = (ProtectedRoute) => (
       element={
         <ProtectedRoute>
           <DailyChallenges />
+        </ProtectedRoute>
+      } 
+    />
+    <Route 
+      path="/daily-spin" 
+      element={
+        <ProtectedRoute>
+          <DailySpinWheel />
         </ProtectedRoute>
       } 
     />
