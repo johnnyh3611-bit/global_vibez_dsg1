@@ -17,6 +17,7 @@ import PlexLobby from '@/pages/PlexLobby';
 import PlexRoom from '@/pages/PlexRoom';
 import Explore from '@/pages/Explore';
 import DSGTVExpansion from '@/pages/DSGTVExpansion';
+import DSGLogisticsHub from '@/pages/DSGLogisticsHub';
 import VIPRooms from '@/pages/VIPRooms';
 import SeasonalEvents from '@/pages/SeasonalEvents';
 import HighRollerCasino from '@/pages/HighRollerCasino';
@@ -178,6 +179,14 @@ export const monetizationRoutes = (ProtectedRoute) => (
       element={
         <ProtectedRoute>
           <DSGTVExpansion />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/dsg-logistics"
+      element={
+        <ProtectedRoute>
+          <DSGLogisticsHub />
         </ProtectedRoute>
       }
     />

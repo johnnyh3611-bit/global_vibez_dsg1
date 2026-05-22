@@ -75,6 +75,7 @@ export const EXPLORE_REGISTRY: Entry[] = [
 
   // Streaming
   { route: '/dsg-tv', title: 'DSG TV', subtitle: 'Prestige · Stools · Predict-to-Win', cat: 'streaming', tags: ['dsg-tv', 'prestige', 'predict', 'stools'] },
+  { route: '/dsg-logistics', title: 'DSG Logistics Hub', subtitle: 'Emergency · Hardware · Tier · Creator Kitchen', cat: 'streaming', tags: ['logistics', 'driver', 'kitchen', 'safety', 'ridez', 'hunger'] },
   { route: '/browse-streams', title: 'Browse Streams', subtitle: 'Live DSG TV channels', cat: 'streaming', tags: ['streaming', 'tv'] },
   { route: '/dashboard/streamer/broadcast-director', title: 'Broadcast Director', subtitle: 'Streamer command center', cat: 'streaming', tags: ['streaming', 'director'] },
 

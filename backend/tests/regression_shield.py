@@ -12428,3 +12428,195 @@ def test_explore_registry_includes_dsg_tv_and_search_targets() -> None:
     assert "EXPLORE_REGISTRY" in src
     # The DSG TV expansion route must be searchable.
     assert "/dsg-tv" in src
+
+
+# ───────────────────────────────────────────────────────────────────
+# DSG LOGISTICS — 8-module Master Blueprint shields (May 2026)
+# Emergency · Safety Loop · Hardware · White-Glove · Cancellation ·
+# Override Console · Driver Tier · Creator Kitchen
+#
+# Counter-proposal economics: driver fair-share preserved, platform
+# cut flows through 40/30/30 recirculation (NOT burn). ₵ only.
+# ───────────────────────────────────────────────────────────────────
+
+def test_dsg_logistics_routes_mounted() -> None:
+    from server import app
+    paths = {getattr(r, "path", "") for r in app.routes}
+    required = {
+        "/api/dsg-logistics/constants",
+        "/api/dsg-logistics/breakdown/trigger",
+        "/api/dsg-logistics/safety/arm",
+        "/api/dsg-logistics/safety/override",
+        "/api/dsg-logistics/hardware/verify",
+        "/api/dsg-logistics/hardware/me",
+        "/api/dsg-logistics/override-console/me",
+        "/api/dsg-logistics/tier/me",
+        "/api/dsg-logistics/creator-kitchen/register",
+        "/api/dsg-logistics/creator-kitchen/me",
+        "/api/dsg-logistics/creator-kitchen/{kitchen_id}",
+        "/api/dsg-logistics/creator-kitchen/featured-dish",
+        "/api/dsg-logistics/creator-kitchen/order",
+        "/api/dsg-logistics/creator-kitchen/delay",
+        "/api/admin/dsg-logistics/white-glove/violation",
+        "/api/admin/dsg-logistics/cancellation/process",
+        "/api/admin/dsg-logistics/cancellation/recent",
+        "/api/admin/dsg-logistics/incidents/active",
+    }
+    missing = required - paths
+    assert not missing, f"DSG Logistics routes missing: {missing}"
+
+
+def test_dsg_logistics_constants_endpoint() -> None:
+    """Constants must expose all 8-module knobs with 0% in-app burn and
+    the 40/30/30 recirculation model."""
+    from fastapi.testclient import TestClient
+    from server import app
+    with TestClient(app) as client:
+        r = client.get("/api/dsg-logistics/constants")
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["recirculation_model"] == "40/30/30"
+    assert body["in_app_burn_pct"] == 0.0, (
+        "DSG Logistics must NEVER reintroduce an in-app burn"
+    )
+    assert body["safety_countdown_seconds"] == 15
+    assert body["creator_featured_dish_coins"] == 15_000
+    assert body["cancellation_flat_fee_coins"] == 500
+    # PDF-locked splits
+    splits = body["payout_splits"]
+    assert splits["passenger_cancel_late"]["driver_pct"] == 0.75
+    assert splits["passenger_no_show"]["driver_pct"] == 0.80
+    assert splits["platform_emergency_redirect"]["driver_pct"] == 0.30
+    # Tier matrix
+    tiers = body["tier_rules"]
+    assert {"standard", "vip_premium", "elite_vibe"} <= set(tiers.keys())
+    assert tiers["elite_vibe"]["min_rating"] == 4.95
+    assert tiers["vip_premium"]["min_rating"] == 4.8
+
+
+def test_dsg_logistics_authed_endpoints_require_session() -> None:
+    from fastapi.testclient import TestClient
+    from server import app
+    client = TestClient(app)
+    for path in (
+        "/api/dsg-logistics/hardware/me",
+        "/api/dsg-logistics/override-console/me",
+        "/api/dsg-logistics/tier/me",
+        "/api/dsg-logistics/creator-kitchen/me",
+    ):
+        r = client.get(path)
+        assert r.status_code in (401, 403), (
+            f"{path} returned {r.status_code} — expected auth guard"
+        )
+
+
+def test_dsg_logistics_admin_endpoints_require_admin() -> None:
+    from fastapi.testclient import TestClient
+    from server import app
+    client = TestClient(app)
+    r1 = client.post("/api/admin/dsg-logistics/white-glove/violation",
+                      json={"driver_id": "d", "physical_constraint_verified": False})
+    r2 = client.post("/api/admin/dsg-logistics/cancellation/process",
+                      json={"job_id": "j", "driver_id": "d",
+                            "kind": "passenger_cancel_late"})
+    r3 = client.get("/api/admin/dsg-logistics/incidents/active")
+    r4 = client.get("/api/admin/dsg-logistics/cancellation/recent")
+    for r in (r1, r2, r3, r4):
+        assert r.status_code in (401, 403), (
+            f"{r.request.url} got {r.status_code} — expected admin guard"
+        )
+
+
+def test_dsg_logistics_no_in_app_burn_in_service_source() -> None:
+    """Source-level shield: cancellation + creator-kitchen flows must
+    route the platform cut through `recirculate(...)`, never debit a
+    burn account. Comments/docstrings allowed (so we can talk about
+    why we don't burn) — actual code must not."""
+    import re
+    src = open("/app/backend/services/dsg_logistics.py").read()
+    # The platform-cut paths MUST call recirculate(...)
+    assert "from services.recirculation import recirculate" in src
+    # Strip docstrings and comments and verify no burn_coins call exists.
+    code = re.sub(r'"""[\s\S]*?"""', "", src)
+    code = "\n".join(line.split("#", 1)[0] for line in code.splitlines())
+    assert "burn_coins(" not in code, (
+        "DSG Logistics service must not call burn_coins; route platform "
+        "cuts through recirculate() instead."
+    )
+    # Explicit burn_coins=0 marker must exist in payout writes.
+    assert "\"burn_coins\": 0" in src, (
+        "Cancellation + Creator Kitchen ledger rows must explicitly "
+        "stamp burn_coins=0 for audit clarity."
+    )
+
+
+def test_dsg_logistics_payout_split_uses_recirculation() -> None:
+    """Hard shield: `process_cancellation_payout` must invoke
+    `recirculate(...)` on the platform share. Catches drift where a
+    future engineer might add a `burn` or write directly to a vault."""
+    src = open("/app/backend/services/dsg_logistics.py").read()
+    fn = src.split("async def process_cancellation_payout")[1].split(
+        "async def driver_override_state"
+    )[0]
+    assert "recirculate(" in fn, (
+        "Cancellation payout must route platform cut via recirculate(...)"
+    )
+    assert "credit_coins(" in fn, (
+        "Driver fair-share must be credited via credit_coins(...)"
+    )
+
+
+def test_dsg_logistics_creator_kitchen_uses_recirculation() -> None:
+    src = open("/app/backend/services/dsg_logistics.py").read()
+    fn = src.split("async def place_live_order")[1].split(
+        "async def push_kitchen_delay"
+    )[0]
+    assert "recirculate(" in fn, (
+        "Creator Kitchen order must route platform cut via recirculate()"
+    )
+    # The 75/25 creator/platform split is the founder-approved rate.
+    assert "* 0.75" in fn or "*0.75" in fn
+
+
+def test_dsg_logistics_hub_page_built() -> None:
+    src = open("/app/frontend/src/pages/DSGLogisticsHub.tsx").read()
+    for tid in (
+        "dsg-logistics-page", "logistics-tabs",
+        "trigger-vibe-ridez-breakdown", "trigger-hunger-vibez-breakdown",
+        "verify-hardware-btn", "register-kitchen-btn",
+        "set-featured-dish-btn", "push-delay-btn",
+    ):
+        assert tid in src, f"DSG Logistics Hub missing testid: {tid}"
+    # Tab testids are generated via template literal — both the
+    # template and every literal key MUST be present.
+    assert "`logistics-tab-${key}`" in src
+    for key in ("override", "hardware", "tier", "kitchen", "constants"):
+        assert f"'{key}'" in src, f"Logistics Hub missing tab key: {key}"
+    # Page must hit the live API.
+    for endpoint in (
+        "/api/dsg-logistics/constants",
+        "/api/dsg-logistics/breakdown/trigger",
+        "/api/dsg-logistics/safety/arm",
+        "/api/dsg-logistics/safety/override",
+        "/api/dsg-logistics/hardware/verify",
+        "/api/dsg-logistics/hardware/me",
+        "/api/dsg-logistics/override-console/me",
+        "/api/dsg-logistics/tier/me",
+        "/api/dsg-logistics/creator-kitchen/me",
+        "/api/dsg-logistics/creator-kitchen/register",
+        "/api/dsg-logistics/creator-kitchen/featured-dish",
+        "/api/dsg-logistics/creator-kitchen/delay",
+    ):
+        assert endpoint in src, f"DSG Logistics Hub missing API call: {endpoint}"
+
+
+def test_dsg_logistics_route_registered_in_frontend() -> None:
+    routes = open("/app/frontend/src/routes/monetizationRoutes.tsx").read()
+    assert 'path="/dsg-logistics"' in routes
+    assert "DSGLogisticsHub" in routes
+
+
+def test_dsg_logistics_in_explore_registry() -> None:
+    src = open("/app/frontend/src/pages/Explore.tsx").read()
+    assert "/dsg-logistics" in src
+    assert "DSG Logistics Hub" in src

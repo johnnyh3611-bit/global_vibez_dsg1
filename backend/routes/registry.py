@@ -173,6 +173,8 @@ from routes.plex_room_routes import router as plex_room_router
 from routes.user_interests_routes import router as user_interests_router
 from routes.dsg_tv_expansion_routes import router as dsg_tv_router
 from routes.dsg_tv_expansion_routes import admin_router as admin_dsg_tv_router
+from routes.dsg_logistics_routes import router as dsg_logistics_router
+from routes.dsg_logistics_routes import admin_router as admin_dsg_logistics_router
 from routes.reports import router as reports_router
 from routes.ratings import router as ratings_router
 from routes.notifications import router as notifications_router
@@ -407,6 +409,8 @@ def register_all_routes(
     api_router.include_router(user_interests_router)
     api_router.include_router(dsg_tv_router)
     api_router.include_router(admin_dsg_tv_router)
+    api_router.include_router(dsg_logistics_router)
+    api_router.include_router(admin_dsg_logistics_router)
     api_router.include_router(reports_router)
     api_router.include_router(ratings_router)
     api_router.include_router(notifications_router)
