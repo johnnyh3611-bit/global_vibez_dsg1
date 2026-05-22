@@ -22,6 +22,7 @@ import RecentRollsPanel from '@/components/games/vibedice654/RecentRollsPanel';
 import WinCelebrationModal from '@/components/games/vibedice654/WinCelebrationModal';
 import { MAX_SIDE_BETS } from '@/components/games/vibedice654/constants';
 import { motion, AnimatePresence } from 'framer-motion';
+import VibeDJOverlay from '@/components/VibeDJOverlay';
 
 import '../../styles/vibez-pro.css';
 
@@ -476,6 +477,7 @@ export default function VibeDice654Premium() {
       className="h-[100dvh] flex flex-col overflow-hidden text-white relative bg-[radial-gradient(ellipse_at_top,_#2a1848_0%,_#0a0014_60%,_#000_100%)]"
       data-testid="vibedice-page"
     >
+      <VibeDJOverlay roomId="vibedice-premium" />
       {/* marble floor texture matching the Solo Vault aesthetic */}
       <div
         className="absolute inset-0 opacity-30 pointer-events-none"

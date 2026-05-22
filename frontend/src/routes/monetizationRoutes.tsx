@@ -11,6 +11,7 @@ import GiftShop from '@/pages/GiftShop';
 import AchievementBadges from '@/pages/AchievementBadges';
 import DailyChallenges from '@/pages/DailyChallenges';
 import DailySpinWheel from '@/pages/DailySpinWheel';
+import ArtistDashboard from '@/pages/ArtistDashboard';
 import VIPRooms from '@/pages/VIPRooms';
 import SeasonalEvents from '@/pages/SeasonalEvents';
 import HighRollerCasino from '@/pages/HighRollerCasino';
@@ -126,6 +127,14 @@ export const monetizationRoutes = (ProtectedRoute) => (
           <DailySpinWheel />
         </ProtectedRoute>
       } 
+    />
+    <Route
+      path="/artist/dashboard"
+      element={
+        <ProtectedRoute>
+          <ArtistDashboard />
+        </ProtectedRoute>
+      }
     />
     <Route 
       path="/vip-rooms" 

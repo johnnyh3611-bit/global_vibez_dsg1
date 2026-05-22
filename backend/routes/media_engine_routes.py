@@ -136,6 +136,34 @@ async def artist_balance_self(
     return await get_artist_balance(db, current_user["user_id"])
 
 
+@router.get("/artist/me/transactions")
+async def artist_transactions_self(
+    limit: int = Query(default=50, ge=1, le=200),
+    current_user=Depends(get_current_user_from_session),
+) -> Dict[str, Any]:
+    """Recent fan→artist transactions for the calling artist.
+    Used by the creator dashboard ledger view."""
+    cursor = (db.music_transactions
+              .find({"artist_id": current_user["user_id"]}, {"_id": 0})
+              .sort("at", -1)
+              .limit(limit))
+    rows = [r async for r in cursor]
+    return {"rows": rows, "count": len(rows)}
+
+
+@router.get("/artist/me/tracks")
+async def artist_tracks_self(
+    current_user=Depends(get_current_user_from_session),
+) -> Dict[str, Any]:
+    """The calling artist's own track catalog (descending by chart points)."""
+    cursor = (db.dsg_tracks
+              .find({"artist_id": current_user["user_id"]}, {"_id": 0})
+              .sort([("lifetime_chart_points", -1)])
+              .limit(50))
+    rows = [r async for r in cursor]
+    return {"rows": rows, "count": len(rows)}
+
+
 class GasOutRequest(BaseModel):
     coins: int = Field(..., gt=0, le=1_000_000_000)
     solana_wallet: str = Field(..., min_length=32, max_length=64)

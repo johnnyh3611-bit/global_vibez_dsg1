@@ -14,6 +14,7 @@ import VibeWinnerExplosion from '../../components/vibe654/VibeWinnerExplosion';
 import TipPlayerModal from '../../components/vibe654/TipPlayerModal';
 import BleacherSideBetPanel, { PlayerOddRow } from '../../components/vibe654/BleacherSideBetPanel';
 import { apiGet, apiPost, getCurrentUser, pickNewEvents } from '../../components/vibe654/api';
+import VibeDJOverlay from '@/components/VibeDJOverlay';
 
 // ----- Backend payload shape -------------------------------------------------
 interface TablePayload {
@@ -318,6 +319,7 @@ export default function VibeColiseum() {
 
   return (
     <div className="h-[100dvh] flex flex-col overflow-hidden bg-[radial-gradient(ellipse_at_top,_#0a2e35_0%,_#020308_60%,_#000_100%)] text-white">
+      <VibeDJOverlay roomId={`coliseum-${tableId}`} />
       {/* stadium perimeter lighting sweep */}
       <motion.div
         className="fixed inset-0 pointer-events-none opacity-40"

@@ -7,6 +7,7 @@ import type { ColiseumSeat } from '../../components/vibe654/SeatOrb';
 import SideDockDecision from '../../components/vibe654/SideDockDecision';
 import VibeWinnerExplosion from '../../components/vibe654/VibeWinnerExplosion';
 import RoomMenuBar from '../../components/games/RoomMenuBar';
+import VibeDJOverlay from '@/components/VibeDJOverlay';
 import { apiPost, apiGet, getCurrentUser } from '../../components/vibe654/api';
 
 // ----- Backend payload shape (5-dice sequential 6-5-4) -----------------------
@@ -269,6 +270,7 @@ export default function VibeSoloHighRoller() {
 
   return (
     <div className="h-[100dvh] flex flex-col overflow-hidden bg-[radial-gradient(ellipse_at_top,_#2a1848_0%,_#0a0014_60%,_#000_100%)] text-white">
+      <VibeDJOverlay roomId="vibe-solo-highroller" />
       {/* marble floor texture */}
       <div
         className="fixed inset-0 opacity-30 pointer-events-none"

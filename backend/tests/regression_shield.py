@@ -11926,3 +11926,60 @@ def test_vibe_dj_overlay_mounted_in_two_rooms_minimum():
             f"VibeDJOverlay not rendered in {name}"
         )
 
+
+
+# ──────────────────────────────────────────────────────────────────
+# Artist Dashboard + Overlay rollout to remaining 6-5-4 variants
+# ──────────────────────────────────────────────────────────────────
+
+def test_artist_dashboard_page_built():
+    """Creator Studio must surface balance, ledger, tracks, and the
+    Gas-Out flow — all in ₵, no $."""
+    src = open("/app/frontend/src/pages/ArtistDashboard.tsx").read()
+    for tid in [
+        "artist-dashboard-page", "artist-balance-headline",
+        "artist-gas-out-trigger", "artist-tracks-card", "artist-txns-card",
+        "artist-dashboard-footer",
+    ]:
+        assert tid in src, f"ArtistDashboard missing testid: {tid}"
+    # API surface contract
+    assert "/api/media/artist/me/balance" in src
+    assert "/api/media/artist/me/transactions" in src
+    assert "/api/media/artist/me/tracks" in src
+    assert "/api/media/artist/me/gas-out" in src
+
+
+def test_artist_dashboard_route_registered():
+    routes = open("/app/frontend/src/routes/monetizationRoutes.tsx").read()
+    assert 'path="/artist/dashboard"' in routes
+    assert "ArtistDashboard" in routes
+
+
+def test_artist_endpoints_registered():
+    from server import app
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    for p in [
+        "/api/media/artist/me/balance",
+        "/api/media/artist/me/transactions",
+        "/api/media/artist/me/tracks",
+        "/api/media/artist/me/gas-out",
+    ]:
+        assert p in paths, f"Artist endpoint missing: {p}"
+
+
+def test_vibe_dj_overlay_mounted_in_all_six_one_rooms():
+    """Every reachable 6-5-4 room must carry the Vibe DJ overlay so
+    artists earn from EVERY table. Plus Prescription which already
+    had it. Total: 5 rooms with the overlay."""
+    expected = [
+        "/app/frontend/src/pages/games/Vibez654Game.tsx",          # Classic Parlour
+        "/app/frontend/src/pages/games/VibeDice654Premium.tsx",    # Premium
+        "/app/frontend/src/pages/games/VibeSoloHighRoller.tsx",    # Solo Vault
+        "/app/frontend/src/pages/games/VibeColiseum.tsx",          # Tournament + Coliseum
+        "/app/frontend/src/pages/games/Vibe654Prescription.tsx",   # Sovereign
+    ]
+    for path in expected:
+        src = open(path).read()
+        assert "VibeDJOverlay" in src, f"{path} missing VibeDJOverlay import"
+        assert "<VibeDJOverlay" in src, f"{path} missing VibeDJOverlay render"
+
