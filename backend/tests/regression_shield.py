@@ -11619,3 +11619,52 @@ def test_prize_wheel_sybil_gate_enforces_four_layers():
     ]:
         assert token in src, f"Sybil gate missing layer: {token}"
 
+
+
+# ──────────────────────────────────────────────────────────────────
+# Founder Preview Tools (admin-only credit minting for room QA)
+# ──────────────────────────────────────────────────────────────────
+
+def test_founder_preview_routes_registered():
+    """All three founder-preview endpoints must be mounted under
+    /api/admin/founder-preview and gated by require_admin."""
+    from server import app
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    for p in [
+        "/api/admin/founder-preview/top-up",
+        "/api/admin/founder-preview/balance",
+        "/api/admin/founder-preview/reset",
+    ]:
+        assert p in paths, f"Founder preview endpoint missing: {p}"
+
+
+def test_founder_preview_requires_admin():
+    """The endpoints must depend on require_admin so non-admins get 403."""
+    src = open("/app/backend/routes/admin_founder_preview.py").read()
+    assert "from utils.admin_guard import require_admin" in src
+    assert "Depends(require_admin)" in src, (
+        "Founder preview endpoints must be admin-gated"
+    )
+
+
+def test_founder_preview_ledger_reason_is_traceable():
+    """Top-ups must write to coin_ledger with reason='founder_preview'
+    so we can distinguish admin test mints from real player credits."""
+    src = open("/app/backend/routes/admin_founder_preview.py").read()
+    assert 'reason="founder_preview"' in src, (
+        "Top-ups must be ledgered with reason='founder_preview'"
+    )
+
+
+def test_dashboard_spin_badge_wired():
+    """DashboardSpinBadge must be imported + rendered in DashboardNew
+    header so users can find /daily-spin without remembering the URL."""
+    dash = open("/app/frontend/src/pages/DashboardNew.tsx").read()
+    assert "DashboardSpinBadge" in dash, (
+        "DashboardNew must import + render DashboardSpinBadge"
+    )
+    badge = open("/app/frontend/src/components/DashboardSpinBadge.tsx").read()
+    assert "dashboard-spin-ready-badge" in badge
+    assert "dashboard-founder-preview-trigger" in badge
+    assert "/api/admin/founder-preview/top-up" in badge
+

@@ -166,6 +166,7 @@ from routes.admin_recirculation import router as admin_recirculation_router
 from routes.admin_recirculation import public_router as recirculation_public_router
 from routes.prize_wheel_routes import router as prize_wheel_router
 from routes.prize_wheel_routes import admin_router as admin_prize_wheel_router
+from routes.admin_founder_preview import router as admin_founder_preview_router
 from routes.reports import router as reports_router
 from routes.ratings import router as ratings_router
 from routes.notifications import router as notifications_router
@@ -393,6 +394,7 @@ def register_all_routes(
     api_router.include_router(recirculation_public_router)
     api_router.include_router(prize_wheel_router)
     api_router.include_router(admin_prize_wheel_router)
+    api_router.include_router(admin_founder_preview_router)
     api_router.include_router(reports_router)
     api_router.include_router(ratings_router)
     api_router.include_router(notifications_router)

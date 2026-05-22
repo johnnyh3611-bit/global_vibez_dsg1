@@ -32,6 +32,7 @@ import ChairHolderVoteBanner from '@/components/dashboard/ChairHolderVoteBanner'
 import RideHomeButton from '@/components/common/RideHomeButton';
 import { switchDashboardView } from '@/pages/DashboardRouter';
 import UnifiedEarningsWidget from '@/components/common/UnifiedEarningsWidget';
+import DashboardSpinBadge from '@/components/DashboardSpinBadge';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -938,6 +939,7 @@ export default function Dashboard() {
           
           <div className="flex items-center gap-4">
             <CreditBalance />
+            <DashboardSpinBadge isAdmin={!!user?.is_admin} />
             
             <Button
               variant="ghost"
