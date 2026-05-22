@@ -116,16 +116,14 @@ const VARIANTS: Variant[] = [
   {
     id: 'prescription',
     title: 'Vibez 654 Prescription',
-    subtitle: 'Sovereign-tier engine · stand / reroll point dice · backend live',
-    badge: 'Backend only',
-    stakes: 'Engine only — no UI yet',
-    status: 'backend-only',
+    subtitle: 'Sovereign-tier · 6→5→4 with stand & reroll point dice · 5 side bets',
+    badge: 'Sovereign',
+    stakes: '5 / 10 / 25 / 50 / 100 / 250 / 500 ₵',
+    status: 'live',
     icon: Dice5,
-    accent: 'from-zinc-500 to-zinc-800',
-    go: () => {
-      /* no-op — backend-only */
-    },
-    cta: 'UI in progress',
+    accent: 'from-amber-400 via-amber-600 to-amber-900',
+    go: ({ navigate }) => navigate('/vibe-654/prescription'),
+    cta: 'Enter prescription',
   },
 ];
 
@@ -275,7 +273,7 @@ export default function Vibe654Hall() {
         </div>
 
         <p className="mt-8 text-[11px] text-white/40 text-center" data-testid="vibe-654-hall-footnote">
-          The Prescription engine is live server-side (/api/games/vibe654/prescription/*). A dedicated UI is queued — for now, sovereign players hit the engine through their Founder Chair dashboard.
+          Every variant on the platform — including the sovereign Prescription room — is now reachable from this hub. New variants will surface here automatically as they ship.
         </p>
       </main>
     </div>

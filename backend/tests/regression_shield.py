@@ -11711,3 +11711,86 @@ def test_vibez_654_card_lands_in_hall_not_dice():
     assert "navigate('/vibe-654-hall')" in src, (
         "Vibez 654 card must route to the Hall, not directly to /dice"
     )
+
+
+# ──────────────────────────────────────────────────────────────────
+# Vibez 654 Prescription UI + Dashboard reachability chip
+# ──────────────────────────────────────────────────────────────────
+
+def test_vibe_654_prescription_page_built():
+    """The sovereign-tier Prescription UI must exist with the full
+    play / reroll / stand flow plus the five side-bet pickers."""
+    page = open("/app/frontend/src/pages/games/Vibe654Prescription.tsx").read()
+    assert "prescription-page" in page, "Root testid missing"
+    for tid in [
+        "prescription-roll-btn",
+        "prescription-reroll-btn",
+        "prescription-stand-btn",
+        "prescription-bet-builder",
+        "prescription-dice-strip",
+        "prescription-nova-voice",
+    ]:
+        assert tid in page, f"Prescription UI missing testid: {tid}"
+    # Must call the real Prescription endpoints, not /dice or /vibez-654.
+    assert "/api/games/vibe654/play" in page
+    assert "/api/games/vibe654/reroll-point-dice" in page
+    assert "/api/games/vibe654/stand" in page
+    # All five side bets must be selectable
+    for sb in ["TRIPLE_6", "ONE_AND_DONE", "STRAIGHT_1", "STRAIGHT_6", "LARGE_STRAIGHT"]:
+        assert sb in page, f"Side bet {sb} missing from Prescription UI"
+
+
+def test_vibe_654_prescription_route_registered():
+    routes = open("/app/frontend/src/routes/gamesRoutes.tsx").read()
+    assert 'path="/vibe-654/prescription"' in routes
+    assert "Vibe654Prescription" in routes
+
+
+def test_vibe_654_hall_marks_prescription_as_live():
+    """Hall must now route to the new UI; the 'backend-only' status
+    used to ship as a placeholder before the UI existed."""
+    hall = open("/app/frontend/src/pages/games/Vibe654Hall.tsx").read()
+    # The prescription variant block must point to the new route
+    assert "navigate('/vibe-654/prescription')" in hall, (
+        "Hall Prescription card must navigate to the new UI"
+    )
+    # And it must NOT be in backend-only status anymore — count 'backend-only'
+    # occurrences. The Status TYPE definition allows it, but no VARIANT row
+    # should still hold it.
+    import re
+    # Each variant entry looks like:  "status: 'live'," / "status: 'backend-only',"
+    statuses = re.findall(r"status:\s*'(live|ephemeral|backend-only)'", hall)
+    assert "backend-only" not in statuses, (
+        "Hall still has a 'backend-only' variant — clean it up so the chip reads 7/7"
+    )
+
+
+def test_dashboard_reachability_chip_wired():
+    """Dashboard must surface the reachability chip so a founder can
+    see at a glance whether all 6-5-4 surfaces are discoverable."""
+    chip = open("/app/frontend/src/components/Vibez654ReachabilityChip.tsx").read()
+    assert "vibez-654-reachability-chip" in chip
+    assert "VARIANTS_MANIFEST" in chip
+    dash = open("/app/frontend/src/pages/DashboardNew.tsx").read()
+    assert "Vibez654ReachabilityChip" in dash, (
+        "Reachability chip must be wired into DashboardNew"
+    )
+
+
+def test_hall_and_chip_variant_lists_stay_in_sync():
+    """The chip embeds a manifest mirroring the Hall's VARIANTS list.
+    If the two drift, the dashboard count will lie. Guard the count."""
+    hall = open("/app/frontend/src/pages/games/Vibe654Hall.tsx").read()
+    chip = open("/app/frontend/src/components/Vibez654ReachabilityChip.tsx").read()
+    import re
+    hall_ids = set(re.findall(r"id:\s*'([a-zA-Z0-9_\-]+)'", hall))
+    chip_ids = set(re.findall(r"id:\s*'([a-zA-Z0-9_\-]+)'", chip))
+    # Hall extracts include all variant ids; chip is just the manifest.
+    # Require chip ids ⊆ hall ids, and same total length.
+    assert chip_ids == hall_ids & chip_ids, (
+        f"Reachability chip references unknown variants: {chip_ids - hall_ids}"
+    )
+    assert len(chip_ids) == len(
+        re.findall(r"\{\s*id:\s*'[a-zA-Z0-9_\-]+',", hall)
+    ), "Chip manifest length must match Hall VARIANTS length"
+

@@ -5122,3 +5122,31 @@ All 5 merchant PDFs + viral recruiter loop fully implemented.
 - Updated `/games` tile so "Vibez 654" card lands in the Hall (not /dice) — surfaces all variants by default
 - Added "All 654 rooms" pill in the Vibez 654 Classic header for in-game cross-nav
 - +4 regression tests guarding the Hall, route registration, orphan-removal, and tile routing
+
+---
+
+## 2026-02-15 (Vibez 654 Prescription UI + Dashboard Reachability Chip)
+
+### Status: 🟢 SHIPPED · 524/524 TESTS GREEN
+
+**Prescription Room (`/vibe-654/prescription`)**
+- New page `/app/frontend/src/pages/games/Vibe654Prescription.tsx`
+- Wired to existing backend `/api/games/vibe654/play | reroll-point-dice | stand | history/:userId`
+- Full 3-roll flow: bet builder → roll → qualify (6+5+4) → stand OR reroll point dice (max 3)
+- 5 side bets: TRIPLE_6, ONE_AND_DONE, STRAIGHT_1, STRAIGHT_6, LARGE_STRAIGHT
+- Sovereign-tier styling: amber crown · gradient marble · Nova voice line on every action
+- Per-dice rendering with locked/point/free state colors (emerald/amber/white)
+- Recent rolls history strip at bottom (last 5)
+
+**Dashboard Reachability Chip**
+- New component `/app/frontend/src/components/Vibez654ReachabilityChip.tsx`
+- Header pill reads "✓ HALL: 7/7" — emerald when all variants reachable, amber otherwise
+- Click → `/vibe-654-hall`
+- Embeds VARIANTS_MANIFEST that mirrors the Hall's variant table; regression test guards sync
+
+**Hall Updated**
+- Prescription card flipped from `backend-only` (gray) to `live` (sovereign amber gradient)
+- CTA changed from "UI in progress" → "Enter prescription"
+- Footnote rewritten to celebrate 7/7 coverage
+
+**Regression**: +5 new tests (524 total green). All probes pass: Prescription UI built, route registered, Hall flipped, chip wired, Hall ↔ Chip manifests in sync.

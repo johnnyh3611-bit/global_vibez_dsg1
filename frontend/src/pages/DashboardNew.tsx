@@ -33,6 +33,7 @@ import RideHomeButton from '@/components/common/RideHomeButton';
 import { switchDashboardView } from '@/pages/DashboardRouter';
 import UnifiedEarningsWidget from '@/components/common/UnifiedEarningsWidget';
 import DashboardSpinBadge from '@/components/DashboardSpinBadge';
+import Vibez654ReachabilityChip from '@/components/Vibez654ReachabilityChip';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -940,6 +941,7 @@ export default function Dashboard() {
           <div className="flex items-center gap-4">
             <CreditBalance />
             <DashboardSpinBadge isAdmin={!!user?.is_admin} />
+            <Vibez654ReachabilityChip />
             
             <Button
               variant="ghost"

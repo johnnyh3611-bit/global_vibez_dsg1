@@ -131,6 +131,7 @@ import VideoCallDemo from "@/pages/VideoCallDemo";
 import PracticeBaccarat from "@/components/practice_games/PracticeBaccarat";
 import VibeDice654Premium from "@/pages/games/VibeDice654Premium";
 import Vibe654Hall from "@/pages/games/Vibe654Hall";
+import Vibe654Prescription from "@/pages/games/Vibe654Prescription";
 import Vibe654TournamentLobby from "@/pages/games/Vibe654TournamentLobby";
 import Vibe654TournamentTable from "@/pages/games/Vibe654TournamentTable";
 import VibeColiseum from "@/pages/games/VibeColiseum";
@@ -222,6 +223,8 @@ export const gamesRoutes = (ProtectedRoute) => (
     <Route path="/games/vibez-654" element={<ProtectedRoute><Vibez654Game /></ProtectedRoute>} />
     <Route path="/vibe-654-hall" element={<ProtectedRoute><Vibe654Hall /></ProtectedRoute>} />
     <Route path="/games/vibe-654-hall" element={<Navigate to="/vibe-654-hall" replace />} />
+    <Route path="/vibe-654/prescription" element={<ProtectedRoute><Vibe654Prescription /></ProtectedRoute>} />
+    <Route path="/games/vibe654/prescription" element={<Navigate to="/vibe-654/prescription" replace />} />
     <Route path="/blackjack-universal" element={<ProtectedRoute><BlackjackUniversal /></ProtectedRoute>} />
     <Route path="/poker-practice" element={<ProtectedRoute><PokerPractice /></ProtectedRoute>} />
     {/* Legacy /rummy-practice URL → new Rummy AAA */}
