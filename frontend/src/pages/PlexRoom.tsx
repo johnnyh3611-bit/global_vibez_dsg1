@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import VibeDJOverlay from '@/components/VibeDJOverlay';
+import InterestTagPicker, { hasPickedInterests, loadStoredInterests } from '@/components/InterestTagPicker';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -98,6 +99,7 @@ export default function PlexRoom() {
   const [state, setState] = useState<RoomState | null>(null);
   const [loading, setLoading] = useState(true);
   const [busyMode, setBusyMode] = useState<Mode | null>(null);
+  const [pickerOpen, setPickerOpen] = useState<boolean>(false);
 
   const token = () => localStorage.getItem('auth_token');
 
@@ -114,21 +116,42 @@ export default function PlexRoom() {
     }
   }, [roomId]);
 
-  // Auto-join on mount (idempotent — backend dedupes)
+  // Auto-join on mount (idempotent — backend dedupes). On first
+  // join EVER (no interests stored), pop the InterestTagPicker so
+  // the Affinity Engine activates with real data.
   useEffect(() => {
     const t = token();
     if (!t || !roomId) {
       fetchState();
       return;
     }
+    if (!hasPickedInterests()) {
+      setPickerOpen(true);
+      fetchState();
+      return;
+    }
     fetch(`${API}/api/plex/rooms/${roomId}/join`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
-      body: JSON.stringify({ interests: [] }),
+      body: JSON.stringify({ interests: loadStoredInterests() }),
     })
       .catch(() => undefined)
       .finally(fetchState);
   }, [roomId, fetchState]);
+
+  const handlePickerClose = async (picked: string[]) => {
+    setPickerOpen(false);
+    const t = token();
+    if (!t || !roomId) return;
+    // Replay join now that we have interests
+    fetch(`${API}/api/plex/rooms/${roomId}/join`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
+      body: JSON.stringify({ interests: picked }),
+    })
+      .catch(() => undefined)
+      .finally(fetchState);
+  };
 
   // Light polling — 4s. Cheap, no websockets needed for the MVP.
   useEffect(() => {
@@ -316,6 +339,9 @@ export default function PlexRoom() {
 
       {/* Vibe DJ overlay — single source of music monetization */}
       <VibeDJOverlay roomId={`plex-${state.room.room_id}`} />
+
+      {/* Interest-tag picker — fires once per device on first Plex join */}
+      <InterestTagPicker open={pickerOpen} onClose={handlePickerClose} />
     </div>
   );
 }

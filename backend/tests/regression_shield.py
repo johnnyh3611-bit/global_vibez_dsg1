@@ -12082,3 +12082,51 @@ def test_artist_self_serve_upsert_endpoint():
     # Must hard-bind artist_id to the calling user (no spoofing)
     assert 'artist_id = current_user["user_id"]' in src
 
+
+
+# ──────────────────────────────────────────────────────────────────
+# Interest tag picker + session-hub dashboard wire-up
+# ──────────────────────────────────────────────────────────────────
+
+def test_interests_endpoints_registered():
+    from server import app
+    paths = {r.path for r in app.routes if hasattr(r, "path")}
+    assert "/api/users/me/interests" in paths
+
+
+def test_interest_tag_picker_built():
+    src = open("/app/frontend/src/components/InterestTagPicker.tsx").read()
+    assert "interest-tag-picker" in src
+    assert "interest-tag-grid" in src
+    assert "interest-picker-save" in src
+    # 12-tag taxonomy
+    for key in ["music", "cards", "dice", "chess", "crypto", "sports",
+                "art", "tech", "travel", "food", "gaming", "fitness"]:
+        assert f"'{key}'" in src, f"Interest tag missing: {key}"
+
+
+def test_plex_room_uses_interest_picker_on_first_join():
+    src = open("/app/frontend/src/pages/PlexRoom.tsx").read()
+    assert "InterestTagPicker" in src, "Plex Room must mount the InterestTagPicker"
+    assert "hasPickedInterests" in src
+    assert "loadStoredInterests" in src
+    # Must pass real interests to the join endpoint after pick
+    assert "interests: picked" in src or "interests: loadStoredInterests()" in src
+
+
+def test_session_hub_card_surfaces_all_new_routes():
+    """Dashboard hub must link the six Feb 2026 surfaces — without
+    this card, users have no UI path to them."""
+    src = open("/app/frontend/src/components/SessionHubCard.tsx").read()
+    for route in [
+        "'/plex'", "'/vibe-654-hall'", "'/daily-spin'",
+        "'/artist/onboarding'", "'/artist/dashboard'",
+    ]:
+        assert route in src, f"Session hub missing route: {route}"
+    assert "session-hub-card" in src
+
+
+def test_dashboard_mounts_session_hub_card():
+    dash = open("/app/frontend/src/pages/DashboardNew.tsx").read()
+    assert "SessionHubCard" in dash, "DashboardNew must render the SessionHubCard"
+

@@ -5195,3 +5195,21 @@ All 5 merchant PDFs + viral recruiter loop fully implemented.
 **Hall-Wide Vibe DJ rollout** — Overlay now mounted in all 5 reachable Vibez 654 rooms (Classic · Premium · Solo Vault · Coliseum/Tournament · Prescription)
 
 **Regression**: +8 new tests (545 total green). Smoke screenshots confirm Plex Lobby, Plex Room V3, and Artist Onboarding flow all render correctly end-to-end.
+
+---
+
+## 2026-02-15 (Affinity Activation + Dashboard Sprint Hub) — SHIPPED
+
+### Status: 🟢 LIVE · 550/550 TESTS GREEN
+- **Interest-Tag Picker** (`/components/InterestTagPicker.tsx`) — 12-chip modal fires once per device on first Plex Room join. Persists to localStorage + best-effort PUT to new `/api/users/me/interests` endpoint. Picked tags are passed to every future Plex join → Affinity Engine now fully active (Icebreaker → Neon Spark → Synergy Flare states will populate as real users with overlapping interests share rooms).
+- **Session Hub Card** (`/components/SessionHubCard.tsx`) — Big dashboard card surfacing all 6 Feb 2026 surfaces with pulsing "NEW" badges: Plex Rooms · Vibez 654 Hall · Daily Spin Wheel · Drop a Track · Creator Studio · Roadmap Hub. Without this card the new destinations were URL-guessable only.
+- **+5 regression tests** locking the hub surfaces & picker contract.
+
+### Mobile Dashboard — honest status
+- Existing `DashboardNew.tsx` is Tailwind-responsive (sm/md/lg breakpoints) and collapses cleanly on phones but is NOT phone-first.
+- No dedicated `MobileDashboard` page exists. A future P2 build could deliver a sticky bottom-tab nav variant for true mobile-first UX.
+
+### V3.5 / DSG TV Expansion PDF flag
+- The DSG TV Expansion blueprint proposes Prestige chair upgrades (Neon Ruby · Cyber Diamond) + Micro-Chairs (Stools) + Predict-to-Win.
+- Two of the three (Prestige + Micro-Chairs) fit cleanly with our counter-proposal economics.
+- Predict-to-Win's "1% in-app burn per pot" still conflicts with the 0% in-app burn rule we've locked. Same counter-proposal pattern: route that 1% to Treasury bucket instead.
