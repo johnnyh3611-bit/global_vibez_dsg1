@@ -1,0 +1,48 @@
+{
+  "summary": "Re-tested LandingTourVideo fix. INFINITE-LOOP IS FIXED — exactly 11 'clip failed to load' warnings (one per clip), networkidle in ~5s, no retry storm. BUT a new critical bug surfaced: when poster fallback is active, clicking the PLAY overlay does NOT start the audio narration, breaking the documented graceful-degradation PASS path.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "LandingTourVideo · start()/togglePlay()/restart()",
+        "issue": "When all clips fail and the poster fallback renders, videoRef.current is null. The guard `if (!a || !v) return;` short-circuits BEFORE `a.play()`, so the narration audio never starts. The play overlay also never disappears (hasStarted stays false). Verified: after clicking [data-testid='landing-tour-play-overlay'] twice, audio_paused=true, audio_currentTime=0, overlay still visible.",
+        "selector": "[data-testid='landing-tour-play-overlay'] · [data-testid='landing-tour-audio']",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Headless Chromium landing tour playback",
+        "issue": "All 11 customer-assets MP4s emit 'clip failed to load' on this preview env (headless Chromium codec set). This is the previously-documented headless codec limitation and matches the brief — fallback path is intended. However the fallback's audio gating is broken (see above).",
+        "affected_selectors": ["[data-testid='landing-tour-video-clip']", "[data-testid='landing-tour-poster-fallback']"]
+      }
+    ],
+    "design_issues": [
+      {
+        "screen": "Landing tour fallback",
+        "issues": ["Play overlay sits on top of the poster fallback; the kicker text 'Own the network · Feel the vibez' is partly hidden behind the big play button (z-index stacking). Cosmetic but worth tightening once the audio-gating bug is fixed."]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/test_reports/iteration_2026_05_22_landing_tour_video_retest.json"
+  ],
+  "action_items": [
+    "FIX (HIGH): In /app/frontend/src/components/landing/LandingTourVideo.tsx — change the early-return in start()/togglePlay()/restart() from `if (!a || !v) return;` to `if (!a) return;` and wrap every `v.play()`/`v.pause()`/`v.load()`/`v.currentTime = …` with `if (v) {...}` so that the audio still plays when only the poster fallback is mounted. Also flip setHasStarted(true) regardless of v presence so the play overlay dismisses.",
+    "OPTIONAL: prefetch the first clip with a HEAD/range fetch and only set `allClipsFailed` after the user clicks play, so the section doesn't pre-degrade to the fallback before the user has interacted (the current behaviour is functional but reveals 'codec not supported' early).",
+    "OPTIONAL: tighten the play-overlay z-order over the fallback so the headline 'Own the network · Feel the vibez' isn't bisected by the play button."
+  ],
+  "critical_code_review_comments": [
+    "The retry-cap fix is correct and works: failedClipsRef + allClipsFailed cleanly bound the onError chain to N=11 warnings then stop. ",
+    "Removing crossOrigin='anonymous' is correct (no canvas decode happens here).",
+    "However the gating of audio playback on `v` being non-null is a regression of the graceful-degradation contract. The audio element is intentionally rendered outside the ternary, but start()/togglePlay()/restart() each force the video to exist before they will touch the audio."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a", "frontend": "infinite-loop fix: PASS; graceful-degradation audio: FAIL"},
+  "test_credentials": "betatester1@globalvibez.com / BetaTester2026! (not exercised this run — task is scoped to landing video re-test; /beta-hub and /dashboard items deferred until the critical audio-gating bug is fixed)",
+  "seed_data_creation": "none",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "After the start()/togglePlay()/restart() guard is loosened, re-run: (1) click [data-testid='landing-tour-play-overlay'] on / and assert audio.paused===false within 3s even when poster-fallback is rendered; (2) confirm warning count stays ≤11; (3) then exercise /beta-hub (login betatester1@globalvibez.com / BetaTester2026!) and verify the 9-card grid + at-least-5 status='ok' pings, and /dashboard banner [data-testid='dashboard-beta-hub-banner'] navigates to /beta-hub.",
+  "rca of the issue": "ROOT CAUSE — In LandingTourVideo.tsx lines 275-284 (start), 286-300 (togglePlay), 310-321 (restart), the first executable line is `if (!a || !v) return;`. When `allClipsFailed === true`, the `<video data-testid='landing-tour-video-clip'>` element is replaced by the `<div data-testid='landing-tour-poster-fallback'>`, so videoRef.current === null. The early-return therefore aborts before `a.play()` is called, leaving the narration silent and the play-overlay visible. REPRODUCTION: open / in headless Chromium (or any browser where all 11 MP4s fail), wait for fallback to mount, click the overlay — audio stays paused, overlay stays. MITIGATION: replace the conjunctive guard with `if (!a) return;` and wrap every video-ref dereference with a null-check; also call `setHasStarted(true)` regardless of `v` so the overlay dismisses in the fallback branch."
+}

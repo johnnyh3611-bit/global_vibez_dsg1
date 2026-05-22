@@ -168,6 +168,12 @@ const LandingTourVideo: React.FC<Props> = ({ onJoinBeta }) => {
   const [progress, setProgress] = useState(0);
   const [captionIdx, setCaptionIdx] = useState(0);
   const [hasStarted, setHasStarted] = useState(false);
+  // Track per-clip decode failures so a single broken URL does NOT
+  // start a tight retry loop across all 11 clips. Once everything has
+  // failed once we bail out + show the poster fallback. Lives in a
+  // ref so it doesn't trigger re-renders on every onError fire.
+  const failedClipsRef = useRef<Set<number>>(new Set());
+  const [allClipsFailed, setAllClipsFailed] = useState(false);
 
   // i18n state
   const [manifest, setManifest] = useState<I18nManifest | null>(null);
@@ -351,32 +357,70 @@ const LandingTourVideo: React.FC<Props> = ({ onJoinBeta }) => {
           data-testid="landing-tour-video-frame"
         >
           {/* Background video — looped MP4 sequence, MUTED.
-              `crossOrigin="anonymous"` is required so S3 returns the
-              CORS headers iOS Safari needs before it'll decode frames.
               `preload="auto"` warms the buffer before the user hits
-              play so the first frame paints instantly. We also surface
-              video-load errors so a broken clip URL doesn't silently
-              fall back to a black overlay. */}
-          <video
-            ref={videoRef}
-            key={CLIPS[clipIdx]}
-            src={CLIPS[clipIdx]}
-            muted
-            playsInline
-            autoPlay={hasStarted}
-            preload="auto"
-            crossOrigin="anonymous"
-            onEnded={handleClipEnded}
-            onError={(e) => {
-              // eslint-disable-next-line no-console
-              console.warn("[landing-tour] clip failed to load:", CLIPS[clipIdx], e);
-              // Advance to the next clip so a single broken URL doesn't
-              // leave the user staring at black for the whole narration.
-              setClipIdx((prev) => (prev + 1) % CLIPS.length);
-            }}
-            className="absolute inset-0 w-full h-full object-cover"
-            data-testid="landing-tour-video-clip"
-          />
+              play so the first frame paints instantly. `crossOrigin`
+              is intentionally omitted — we never decode pixels into
+              a canvas, and the attribute adds CORS preflight friction
+              that breaks Safari/iOS playback for cross-origin MP4s.
+              If a clip URL fails to decode (codec issue, 404, etc.)
+              we advance once + track that clip in `failedClipsRef`.
+              When every clip has failed, we bail out and render the
+              static poster fallback so the section never goes black. */}
+          {!allClipsFailed ? (
+            <video
+              ref={videoRef}
+              key={CLIPS[clipIdx]}
+              src={CLIPS[clipIdx]}
+              muted
+              playsInline
+              autoPlay={hasStarted}
+              preload="auto"
+              onEnded={handleClipEnded}
+              onError={() => {
+                failedClipsRef.current.add(clipIdx);
+                // eslint-disable-next-line no-console
+                console.warn("[landing-tour] clip failed to load:", clipIdx, CLIPS[clipIdx]);
+                if (failedClipsRef.current.size >= CLIPS.length) {
+                  // Every clip exhausted — stop the retry loop.
+                  setAllClipsFailed(true);
+                  return;
+                }
+                // Skip to the next un-tried clip — never re-fire on
+                // an already-failed index.
+                setClipIdx((prev) => {
+                  for (let step = 1; step <= CLIPS.length; step++) {
+                    const next = (prev + step) % CLIPS.length;
+                    if (!failedClipsRef.current.has(next)) return next;
+                  }
+                  return prev;
+                });
+              }}
+              className="absolute inset-0 w-full h-full object-cover"
+              data-testid="landing-tour-video-clip"
+            />
+          ) : (
+            // Static gradient + brand mark fallback when codec support
+            // is missing (corp browsers, locked-down headless Chromium,
+            // etc.). The narration MP3 continues playing — the founder's
+            // voice + captions are the primary signal here.
+            <div
+              className="absolute inset-0 w-full h-full bg-gradient-to-br from-fuchsia-700 via-violet-800 to-cyan-700 flex items-center justify-center"
+              data-testid="landing-tour-poster-fallback"
+            >
+              <div className="text-center px-6">
+                <p className="text-[10px] uppercase tracking-[0.4em] text-white/70 font-black mb-2">
+                  Global Vibez DSG
+                </p>
+                <p className="text-2xl md:text-4xl font-black text-white mb-2">
+                  Own the network · Feel the vibez
+                </p>
+                <p className="text-xs text-white/60">
+                  Audio narration continues below. Refresh in a modern browser
+                  to see the cinematic clip loop.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Narration audio — master timeline. Re-mounted whenever the
               language changes by keying on audioSrc; otherwise the
