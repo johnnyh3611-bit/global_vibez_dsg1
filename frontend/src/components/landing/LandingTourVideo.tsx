@@ -226,27 +226,24 @@ const LandingTourVideo: React.FC<Props> = ({ onJoinBeta }) => {
   //   (b) the previous `key={CLIPS[clipIdx]}` remount left a brief
   //       window where videoRef.current was stale and .play() resolved
   //       on the unmounted element.
-  //   (c) `crossOrigin="anonymous"` is required so the S3 host serves
-  //       the file with Access-Control-Allow-Origin and our domain can
-  //       decode the frames into a <video> on iOS Safari.
-  // The effect below kicks .play() every time the active clip changes
-  // — both after the user starts the tour and on every loop transition.
+  //   (c) onError without a retry cap led to a tight loop; the cap is
+  //       now enforced via `failedClipsRef` and `allClipsFailed`.
+  // The effect below kicks .play() every time the active clip changes —
+  // both after the user starts the tour and on every loop transition.
+  // When the poster fallback is active there is no <video> ref; we
+  // short-circuit instead of erroring.
   useEffect(() => {
     const v = videoRef.current;
-    if (!v || !hasStarted) return;
-    // Some browsers (Safari) require .load() after swapping src before
-    // .play() will pick up the new buffer.
+    if (!v || !hasStarted || allClipsFailed) return;
     try { v.load(); } catch { /* noop */ }
     const p = v.play();
     if (p && typeof p.catch === "function") {
       p.catch((err) => {
-        // Surface the error so we can diagnose autoplay failures in
-        // production — the silent .catch was masking exactly this.
         // eslint-disable-next-line no-console
         console.warn("[landing-tour] video play() rejected:", err?.message || err);
       });
     }
-  }, [clipIdx, hasStarted]);
+  }, [clipIdx, hasStarted, allClipsFailed]);
 
   // Track narration progress for caption sync + scrubber.
   useEffect(() => {
@@ -275,10 +272,12 @@ const LandingTourVideo: React.FC<Props> = ({ onJoinBeta }) => {
   const start = () => {
     const a = audioRef.current;
     const v = videoRef.current;
-    if (!a || !v) return;
+    // Audio is the primary narration carrier — it must start even
+    // when the video element is missing (poster-fallback path).
+    if (!a) return;
     a.muted = muted;
     a.play().catch(() => undefined);
-    v.play().catch(() => undefined);
+    if (v) v.play().catch(() => undefined);
     setPlaying(true);
     setHasStarted(true);
   };
@@ -286,14 +285,14 @@ const LandingTourVideo: React.FC<Props> = ({ onJoinBeta }) => {
   const togglePlay = () => {
     const a = audioRef.current;
     const v = videoRef.current;
-    if (!a || !v) return;
+    if (!a) return;
     if (playing) {
       a.pause();
-      v.pause();
+      if (v) v.pause();
       setPlaying(false);
     } else {
       a.play().catch(() => undefined);
-      v.play().catch(() => undefined);
+      if (v) v.play().catch(() => undefined);
       setPlaying(true);
       setHasStarted(true);
     }
@@ -310,12 +309,12 @@ const LandingTourVideo: React.FC<Props> = ({ onJoinBeta }) => {
   const restart = () => {
     const a = audioRef.current;
     const v = videoRef.current;
-    if (!a || !v) return;
+    if (!a) return;
     a.currentTime = 0;
-    v.currentTime = 0;
+    if (v) v.currentTime = 0;
     setClipIdx(0);
     a.play().catch(() => undefined);
-    v.play().catch(() => undefined);
+    if (v) v.play().catch(() => undefined);
     setPlaying(true);
     setHasStarted(true);
   };

@@ -13251,8 +13251,10 @@ def test_landing_tour_video_autoplay_hardened() -> None:
     already-failed clip."""
     src = open("/app/frontend/src/components/landing/LandingTourVideo.tsx").read()
     # Imperative .play() on clipIdx change — otherwise <video> with a
-    # remounted `key` may not autoplay on every transition.
-    assert "v.play()" in src and "[clipIdx, hasStarted]" in src, (
+    # remounted `key` may not autoplay on every transition. The deps
+    # also include `allClipsFailed` so we don't try to play when the
+    # poster fallback is active.
+    assert "v.play()" in src and "[clipIdx, hasStarted, allClipsFailed]" in src, (
         "Landing tour must re-call .play() on every clip transition"
     )
     # Errors must surface so a future broken URL doesn't produce a

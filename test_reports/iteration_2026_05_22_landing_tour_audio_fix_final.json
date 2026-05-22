@@ -1,0 +1,42 @@
+{
+  "summary": "Final re-test of LandingTourVideo audio fallback fix. Primary audio-gating regression is FIXED. All three core assertions pass: (a) audio_paused=false AND audio_currentTime>0 within 0.5s of clicking play overlay (was failing previously), (b) play overlay disappears (hasStarted=true), (c) on poster-fallback path the audio + progress bar + captions all advance. One minor variance: the 'clip failed to load' warning count over 10s came in at 12, one above the spec threshold of 11. This is almost certainly a React 18 dev-mode StrictMode double-mount artifact on the very first clip (no retry loop, no infinite loop) — production builds without StrictMode should hit exactly 11.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Headless Chromium landing tour playback (poster-fallback path)",
+        "issue": "FIXED — start()/togglePlay()/restart() now use `if (!a) return` and conditionally invoke video methods only when videoRef.current exists. Verified: clicking [data-testid='landing-tour-play-overlay'] with poster fallback active starts audio within 500ms, sets hasStarted=true (overlay disappears), and the progress scrubber + captions advance with the audio currentTime (0.379s → 3.34s over a 3s window).",
+        "affected_selectors": ["[data-testid='landing-tour-play-overlay']", "[data-testid='landing-tour-audio']", "[data-testid='landing-tour-poster-fallback']", "[data-testid='landing-tour-progress']", "[data-testid='landing-tour-caption']"]
+      }
+    ],
+    "design_issues": [
+      {
+        "screen": "Landing tour fallback",
+        "issues": ["Cosmetic only (carried over from previous iteration, not retested as part of this scope): play overlay sits on top of the poster fallback so the kicker text 'Own the network · Feel the vibez' is partly hidden behind the play button. Now that the play overlay dismisses correctly on first click it's far less visible — leaving as low-priority polish."]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/test_reports/iteration_2026_05_22_landing_tour_audio_fix_final.json"
+  ],
+  "action_items": [
+    "NONE BLOCKING — ship is GO for the audio-fallback regression.",
+    "OPTIONAL/LOW: investigate the +1 'clip failed to load' warning count (12 observed vs 11 expected). High-probability cause is React 18 StrictMode dev-mode double effect-mount of the initial <video> element. Verify in a production build (StrictMode side-effects are stripped); if it still reads 12 there, the root cause is something else and worth a quick look. Otherwise consider this dev-only noise.",
+    "OPTIONAL/LOW: tighten play-overlay z-order over the poster fallback so 'Own the network · Feel the vibez' isn't bisected by the play button before first click (cosmetic, only visible pre-click)."
+  ],
+  "critical_code_review_comments": [
+    "The guard change in start()/togglePlay()/restart() (`if (!a) return;` + conditional `if (v) v.method()`) is the correct minimal fix and restores the documented graceful-degradation contract.",
+    "useEffect deps `[clipIdx, hasStarted, allClipsFailed]` correctly short-circuit when poster fallback is mounted — confirmed no .load()/.play() rejections fire after fallback engages.",
+    "The audio element is rightfully rendered OUTSIDE the ternary so the audio ref survives the video→poster transition. The fix completes that design intent.",
+    "File is 658 lines — at the upper edge of the 700-line guideline. Consider extracting CLIPS/CLIP_TAGS/FALLBACK_CAPTIONS into /constants/landingTour.ts for clarity in a future refactor (non-blocking)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (frontend only)", "frontend": "audio-gating fix: PASS · overlay-dismiss: PASS · captions/progress on fallback: PASS · warning-count <=11: borderline (12 observed)"},
+  "test_credentials": "not exercised this run — scoped strictly to landing tour video re-test",
+  "seed_data_creation": "none",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Audio-fallback fix is verified PASS. The only remaining note is the dev-mode warning count of 12 vs spec of 11; if the next regression needs strict ≤11, retest against a production build. Outstanding pre-existing items (/beta-hub 9-card grid, /dashboard banner) are still deferred — separate scope.",
+  "rca of the issue": "VERIFIED FIX — Previous root cause was the conjunctive guard `if (!a || !v) return;` in start()/togglePlay()/restart(); when the poster fallback rendered (allClipsFailed=true), videoRef.current was null and the guard aborted before a.play() could run. The current code now guards only on `!a` and wraps every v.method() with `if (v)`. Reproduction in headless Chromium: open /, wait ~5s for all 11 clips to fail and the fallback to mount, click [data-testid='landing-tour-play-overlay'] — observed within 500ms: audio.paused=false, audio.currentTime=0.371s, overlay removed, progress=0.12% and ticking upward, caption 'Welcome to GLOBAL VIBEZ DSG — your seat at a brand-new economy!' rendered. Three seconds later: currentTime=3.34s, progress=1.12%. Audio is now correctly treated as the primary narration carrier."
+}
