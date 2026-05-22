@@ -12965,3 +12965,219 @@ def test_license_marketplace_in_explore_registry() -> None:
     assert "/marketplace/license" in src
     assert "License Marketplace" in src
 
+
+# ───────────────────────────────────────────────────────────────────
+# VIBERIDEZ CARGO MASTER — Retail logistics shields (May 2026)
+# 80/20 store-platform split; vault flows through 40/30/30
+# recirculation. Dual-barcode dual-scan lock. NO in-app burns.
+# ───────────────────────────────────────────────────────────────────
+
+def test_viberidez_cargo_routes_mounted() -> None:
+    from server import app
+    paths = {getattr(r, "path", "") for r in app.routes}
+    required = {
+        "/api/cargo/constants",
+        "/api/cargo/inventory/upsert",
+        "/api/cargo/inventory",
+        "/api/cargo/order",
+        "/api/cargo/pickup",
+        "/api/cargo/handover",
+        "/api/cargo/verify-handover",
+        "/api/cargo/cancel",
+        "/api/cargo/return",
+        "/api/cargo/driver/me/assignments",
+        "/api/cargo/driver/manifest/{manifest_id}",
+        "/api/cargo/me/orders",
+        "/api/admin/cargo/assign-driver",
+        "/api/admin/cargo/settlements/recent",
+        "/api/admin/cargo/manifests/active",
+    }
+    missing = required - paths
+    assert not missing, f"VibeRidez Cargo routes missing: {missing}"
+
+
+def test_viberidez_cargo_constants_endpoint() -> None:
+    from fastapi.testclient import TestClient
+    from server import app
+    with TestClient(app) as client:
+        r = client.get("/api/cargo/constants")
+    assert r.status_code == 200
+    body = r.json()
+    # Hard-lock the 80/20 split + counter-proposal economics.
+    assert body["store_partner_pct"] == 0.80
+    assert body["platform_vault_pct"] == 0.20
+    assert body["platform_vault_routing"] == "40/30/30 recirculation"
+    assert body["in_app_burn_pct"] == 0.0, (
+        "VibeRidez Cargo must NEVER reintroduce an in-app burn"
+    )
+    # PDF dollar fee translated to coins.
+    assert body["late_cancel_driver_fee_coins"] == 500
+    assert body["return_fare_multiplier"] == 1.5
+    # State machine surface.
+    assert {"assigned", "picked_up", "handover", "delivered",
+            "cancelled", "returning", "returned"} <= set(body["cargo_states"])
+
+
+def test_viberidez_cargo_authed_endpoints_require_session() -> None:
+    from fastapi.testclient import TestClient
+    from server import app
+    client = TestClient(app)
+    for path in (
+        "/api/cargo/me/orders",
+        "/api/cargo/driver/me/assignments",
+    ):
+        r = client.get(path)
+        assert r.status_code in (401, 403)
+    for path in (
+        ("/api/cargo/inventory/upsert", {"store_id": "s", "sku": "s",
+                                          "name": "n", "price_coins": 100}),
+        ("/api/cargo/order", {"store_id": "s", "sku": "s",
+                                "quantity": 1}),
+        ("/api/cargo/pickup", {"manifest_id": "m",
+                                "scanned_plaintext": "deadbeefdead"}),
+        ("/api/cargo/handover", {"manifest_id": "m"}),
+        ("/api/cargo/verify-handover", {"manifest_id": "m",
+                                         "scanned_plaintext": "deadbeefdead"}),
+        ("/api/cargo/cancel", {"order_id": "o"}),
+        ("/api/cargo/return", {"order_id": "o", "base_fare_coins": 100}),
+    ):
+        r = client.post(path[0], json=path[1])
+        assert r.status_code in (401, 403, 422), (
+            f"{path[0]} got {r.status_code} — expected auth/validation guard"
+        )
+
+
+def test_viberidez_cargo_admin_endpoints_require_admin() -> None:
+    from fastapi.testclient import TestClient
+    from server import app
+    client = TestClient(app)
+    r1 = client.post("/api/admin/cargo/assign-driver",
+                      json={"manifest_id": "m", "driver_id": "d"})
+    r2 = client.get("/api/admin/cargo/settlements/recent")
+    r3 = client.get("/api/admin/cargo/manifests/active")
+    for r in (r1, r2, r3):
+        assert r.status_code in (401, 403)
+
+
+def test_viberidez_cargo_no_burn_in_source() -> None:
+    """Source-level shield: the cargo settlement + cancellation paths
+    must route via `recirculate(...)` and NEVER call burn_coins."""
+    import re
+    src = open("/app/backend/services/viberidez_cargo.py").read()
+    # Platform vault MUST flow through recirculate.
+    assert "from services.recirculation import recirculate" in src
+    # Strip comments + docstrings before scanning for burn.
+    code = re.sub(r'"""[\s\S]*?"""', "", src)
+    code = "\n".join(line.split("#", 1)[0] for line in code.splitlines())
+    assert "burn_coins(" not in code, (
+        "VibeRidez Cargo must never burn coins; route via recirculate()"
+    )
+    # Explicit burn=0 marker in the settlement ledger row.
+    assert '"burn_coins": 0' in src
+
+
+def test_viberidez_cargo_settlement_uses_80_20_split() -> None:
+    """Settlement function must compute store @ 80% and platform @ 20%
+    and route the platform share through `recirculate(...)`."""
+    src = open("/app/backend/services/viberidez_cargo.py").read()
+    fn = src.split("async def _settle_cargo")[1].split(
+        "async def client_late_cancel"
+    )[0]
+    assert "STORE_PARTNER_PCT" in fn
+    assert "credit_coins(" in fn, "Store payout must use credit_coins"
+    assert "recirculate(" in fn, "Platform vault must route via recirculate"
+
+
+def test_viberidez_cargo_dual_barcode_lock_state_machine() -> None:
+    """The driver MUST hit pickup → handover → delivered, and each
+    transition MUST verify the barcode hash before flipping state."""
+    src = open("/app/backend/services/viberidez_cargo.py").read()
+    pickup_fn = src.split("async def driver_scan_pickup")[1].split(
+        "async def driver_start_handover"
+    )[0]
+    # Hash comparison must happen before the state flip.
+    assert "hashlib.sha256" in pickup_fn
+    assert "pickup_barcode_hash" in pickup_fn
+    assert "\"state\": \"picked_up\"" in pickup_fn
+    verify_fn = src.split("async def customer_verify_handover")[1].split(
+        "async def _settle_cargo"
+    )[0]
+    assert "hashlib.sha256" in verify_fn
+    assert "customer_barcode_hash" in verify_fn
+    assert "\"state\": \"delivered\"" in verify_fn
+    # Settlement must run on the verified delivery (not before).
+    assert "_settle_cargo(" in verify_fn
+
+
+def test_viberidez_cargo_late_cancel_credits_driver() -> None:
+    src = open("/app/backend/services/viberidez_cargo.py").read()
+    fn = src.split("async def client_late_cancel")[1].split(
+        "async def product_return"
+    )[0]
+    assert "LATE_CANCEL_DRIVER_FEE_COINS" in fn
+    assert "credit_coins(" in fn
+    assert "cargo_late_cancel_fee" in fn
+
+
+def test_viberidez_cargo_product_return_uses_multiplier() -> None:
+    src = open("/app/backend/services/viberidez_cargo.py").read()
+    fn = src.split("async def product_return")[1].split(
+        "async def driver_assignments"
+    )[0]
+    assert "RETURN_FARE_MULTIPLIER" in fn
+    assert "credit_coins(" in fn
+
+
+def test_viberidez_cargo_driver_console_page_built() -> None:
+    src = open("/app/frontend/src/pages/DriverCargoConsole.tsx").read()
+    for tid in (
+        "driver-cargo-page", "assignments-section",
+        "active-manifest-section", "pickup-scan-btn",
+        "start-handover-btn", "active-state-pill",
+    ):
+        assert tid in src, f"DriverCargoConsole missing testid: {tid}"
+    # Page must hit the live API.
+    for endpoint in (
+        "/api/cargo/driver/me/assignments",
+        "/api/cargo/driver/manifest/",
+        "/api/cargo/pickup",
+        "/api/cargo/handover",
+    ):
+        assert endpoint in src, f"DriverCargoConsole missing API call: {endpoint}"
+
+
+def test_viberidez_cargo_route_and_explore_registered() -> None:
+    routes = open("/app/frontend/src/routes/monetizationRoutes.tsx").read()
+    assert '/driver/cargo' in routes
+    assert "DriverCargoConsole" in routes
+    explore = open("/app/frontend/src/pages/Explore.tsx").read()
+    assert "/driver/cargo" in explore
+    assert "Cargo Driver Console" in explore
+
+
+# ───────────────────────────────────────────────────────────────────
+# LICENSE INBOX — Artist Studio notification card (May 2026)
+# ───────────────────────────────────────────────────────────────────
+
+def test_license_inbox_card_built() -> None:
+    src = open("/app/frontend/src/components/LicenseInboxCard.tsx").read()
+    for tid in (
+        "license-inbox-card",
+        "inbox-refresh-btn",
+        "inbox-manage-splits-link",
+    ):
+        assert tid in src, f"LicenseInboxCard missing testid: {tid}"
+    # Polls the per-artist royalty feed and links to splits manager.
+    assert "/api/music-group/royalty/me" in src
+    assert "/artist/music-group" in src
+
+
+def test_license_inbox_mounted_on_artist_dashboard() -> None:
+    src = open("/app/frontend/src/pages/ArtistDashboard.tsx").read()
+    assert "LicenseInboxCard" in src, (
+        "License Inbox card must be mounted on /artist/dashboard"
+    )
+    assert "from '@/components/LicenseInboxCard'" in src
+    # The component must actually be rendered (not just imported).
+    assert "<LicenseInboxCard" in src
+

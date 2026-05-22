@@ -18,6 +18,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { LicenseInboxCard } from '@/components/LicenseInboxCard';
 import { toast } from 'sonner';
 
 const API = process.env.REACT_APP_BACKEND_URL;
@@ -188,6 +189,7 @@ export default function ArtistDashboard() {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-6 space-y-5">
+        <LicenseInboxCard />
         {/* Headline balance card */}
         <Card className="p-6 bg-gradient-to-br from-amber-500/15 via-fuchsia-500/10 to-purple-700/15 border border-amber-400/30">
           <div className="flex flex-wrap items-center justify-between gap-4">

@@ -64,6 +64,7 @@ export const EXPLORE_REGISTRY: Entry[] = [
   { route: '/artist/dashboard', title: 'Creator Studio', subtitle: '80% take · ledger · Gas-Out', cat: 'music', tags: ['artist', 'creator', 'gas-out'] },
   { route: '/artist/music-group', title: 'DSG Music Group', subtitle: 'Rights ledger · collaborator splits · royalty audit', cat: 'music', tags: ['artist', 'music-group', 'splits', 'royalty', 'rights'] },
   { route: '/marketplace/license', title: 'License Marketplace', subtitle: 'TV sync · casino BG · commercial ad licensing', cat: 'music', tags: ['license', 'marketplace', 'sync', 'tv', 'commercial', 'broadcaster'] },
+  { route: '/driver/cargo', title: 'Cargo Driver Console', subtitle: 'Retail manifests · dual-barcode lock · 80/20 split', cat: 'streaming', tags: ['driver', 'cargo', 'retail', 'viberidez', 'logistics'] },
   { route: '/cinema-room', title: 'Cinema Room', subtitle: 'Synchronous watch party', cat: 'music', tags: ['cinema', 'video'] },
   { route: '/beat-vault/dlc', title: 'Beat Vault DLC', subtitle: 'Premium production drops', cat: 'music', tags: ['vault', 'beats'] },
 
