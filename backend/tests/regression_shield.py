@@ -13181,3 +13181,83 @@ def test_license_inbox_mounted_on_artist_dashboard() -> None:
     # The component must actually be rendered (not just imported).
     assert "<LicenseInboxCard" in src
 
+
+# ───────────────────────────────────────────────────────────────────
+# BETA FEATURES HUB + LANDING TOUR VIDEO HARDENING (May 2026)
+# Single-pane-of-glass page for QA / founder review of the entire
+# 2026-05-22 build, plus the autoplay/CORS hardening that fixed the
+# "instrumental music plays, no video" bug.
+# ───────────────────────────────────────────────────────────────────
+
+def test_beta_hub_page_built() -> None:
+    src = open("/app/frontend/src/pages/BetaHub.tsx").read()
+    for tid in (
+        "beta-hub-page",
+        "beta-hub-grid",
+        "beta-hub-runall-btn",
+        "beta-hub-economics-note",
+    ):
+        assert tid in src, f"BetaHub missing testid: {tid}"
+    # Every feature shipped this session MUST be listed in the hub —
+    # otherwise the user can't view + test it.
+    for feature_key in (
+        "cmdk", "mobile-nav", "dsg-tv", "dsg-logistics",
+        "admin-logistics", "music-group", "license-mkt",
+        "license-inbox", "cargo",
+    ):
+        assert f"'{feature_key}'" in src, (
+            f"BetaHub registry missing feature key: {feature_key}"
+        )
+    # Health-ping must hit live public endpoints (no auth) so non-admin
+    # founders can verify production health.
+    for endpoint in (
+        "/api/dsg-tv/constants",
+        "/api/dsg-logistics/constants",
+        "/api/music-group/constants",
+        "/api/music-group/marketplace/licensable",
+        "/api/cargo/constants",
+    ):
+        assert endpoint in src, f"BetaHub missing ping endpoint: {endpoint}"
+
+
+def test_beta_hub_route_registered() -> None:
+    routes = open("/app/frontend/src/routes/monetizationRoutes.tsx").read()
+    assert 'path="/beta-hub"' in routes
+    assert "BetaHub" in routes
+
+
+def test_beta_hub_in_explore_registry_and_dashboard() -> None:
+    explore = open("/app/frontend/src/pages/Explore.tsx").read()
+    assert "/beta-hub" in explore
+    assert "Beta Hub" in explore
+    # The big banner MUST be on the main dashboard so the user finds
+    # it without typing the URL.
+    dash = open("/app/frontend/src/pages/DashboardNew.tsx").read()
+    assert "dashboard-beta-hub-banner" in dash
+    assert "/beta-hub" in dash
+
+
+def test_landing_tour_video_autoplay_hardened() -> None:
+    """The "instrumental music plays / no video overlay" bug was caused
+    by silent autoplay rejections on cross-origin MP4s. Shield ensures
+    we don't regress: video element must declare crossOrigin and we
+    must imperatively call .play() on every clip change."""
+    src = open("/app/frontend/src/components/landing/LandingTourVideo.tsx").read()
+    # CORS attribute that lets iOS Safari decode the S3-hosted MP4s.
+    assert 'crossOrigin="anonymous"' in src, (
+        "Landing tour <video> must set crossOrigin=anonymous for "
+        "cross-origin MP4 playback on Safari/iOS"
+    )
+    # Imperative .play() on clipIdx change — otherwise <video> with a
+    # remounted `key` may not autoplay on every transition.
+    assert "v.play()" in src and "[clipIdx, hasStarted]" in src, (
+        "Landing tour must re-call .play() on every clip transition"
+    )
+    # Errors must surface so a future broken URL doesn't produce a
+    # silent black overlay during the narration.
+    assert "onError={" in src and "clip failed to load" in src, (
+        "Landing tour <video> must surface load failures"
+    )
+    # preload=auto warms the buffer so first frame paints instantly.
+    assert 'preload="auto"' in src
+

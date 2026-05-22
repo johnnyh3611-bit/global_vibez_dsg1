@@ -1039,6 +1039,43 @@ export default function Dashboard() {
           <SessionHubCard />
         </div>
 
+        {/* 🚀 Beta Hub — 2026-05-22 build. Single pane of glass listing
+            every feature shipped this session (DSG TV Expansion, DSG
+            Logistics, Music Group, License Marketplace, License Inbox,
+            VibeRidez Cargo, and more) with per-feature health pings.
+            Founder ask: "make sure I can view and test everything". */}
+        <motion.button
+          type="button"
+          onClick={() => navigate('/beta-hub')}
+          data-testid="dashboard-beta-hub-banner"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="group relative w-full max-w-5xl mx-auto mb-8 overflow-hidden rounded-2xl border-2 border-fuchsia-400/40 bg-gradient-to-r from-fuchsia-600/25 via-purple-600/15 to-cyan-600/20 backdrop-blur-md px-5 py-4 text-left hover:scale-[1.005] transition-transform shadow-[0_0_30px_-10px_rgba(217,70,239,0.4)]"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-fuchsia-500 to-violet-600 flex items-center justify-center shrink-0">
+              <span className="text-xl">🚀</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] uppercase tracking-[0.3em] font-black text-fuchsia-200">
+                New · 2026-05-22 Build
+              </p>
+              <h3 className="text-lg sm:text-xl font-black text-white mt-0.5">
+                Beta Features Hub
+              </h3>
+              <p className="text-xs text-white/70 mt-0.5">
+                View + test every feature shipped this session — DSG TV, Music Group,
+                License Marketplace, VibeRidez Cargo, Logistics Ops, and 4 more — with live
+                health pings on each.
+              </p>
+            </div>
+            <span className="hidden sm:flex items-center gap-1 text-fuchsia-200 text-xs font-black uppercase tracking-widest">
+              Open <span aria-hidden>→</span>
+            </span>
+          </div>
+        </motion.button>
+
         {/* 🌌 Volumetric preview banner — founder ask 2026-05-12 ("build it
             first to see what it looks like; if I don't like it, take it
             off"). Big, can't-miss A/B toggle into the new Three.js dashboard. */}

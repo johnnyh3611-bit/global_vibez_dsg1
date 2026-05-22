@@ -213,6 +213,35 @@ const LandingTourVideo: React.FC<Props> = ({ onJoinBeta }) => {
     setClipIdx((prev) => (prev + 1) % CLIPS.length);
   };
 
+  // 2026-05-22 — make the background video actually play. Three issues
+  // were breaking the visual:
+  //   (a) browsers throttle autoplay of cross-origin MP4s; we have to
+  //       imperatively call .play() AFTER each src swap.
+  //   (b) the previous `key={CLIPS[clipIdx]}` remount left a brief
+  //       window where videoRef.current was stale and .play() resolved
+  //       on the unmounted element.
+  //   (c) `crossOrigin="anonymous"` is required so the S3 host serves
+  //       the file with Access-Control-Allow-Origin and our domain can
+  //       decode the frames into a <video> on iOS Safari.
+  // The effect below kicks .play() every time the active clip changes
+  // — both after the user starts the tour and on every loop transition.
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v || !hasStarted) return;
+    // Some browsers (Safari) require .load() after swapping src before
+    // .play() will pick up the new buffer.
+    try { v.load(); } catch { /* noop */ }
+    const p = v.play();
+    if (p && typeof p.catch === "function") {
+      p.catch((err) => {
+        // Surface the error so we can diagnose autoplay failures in
+        // production — the silent .catch was masking exactly this.
+        // eslint-disable-next-line no-console
+        console.warn("[landing-tour] video play() rejected:", err?.message || err);
+      });
+    }
+  }, [clipIdx, hasStarted]);
+
   // Track narration progress for caption sync + scrubber.
   useEffect(() => {
     const a = audioRef.current;
@@ -321,7 +350,13 @@ const LandingTourVideo: React.FC<Props> = ({ onJoinBeta }) => {
           className="relative rounded-2xl overflow-hidden border-2 border-fuchsia-500/30 shadow-[0_0_60px_-15px_rgba(217,70,239,0.5)] bg-black aspect-video"
           data-testid="landing-tour-video-frame"
         >
-          {/* Background video — looped MP4 sequence, MUTED */}
+          {/* Background video — looped MP4 sequence, MUTED.
+              `crossOrigin="anonymous"` is required so S3 returns the
+              CORS headers iOS Safari needs before it'll decode frames.
+              `preload="auto"` warms the buffer before the user hits
+              play so the first frame paints instantly. We also surface
+              video-load errors so a broken clip URL doesn't silently
+              fall back to a black overlay. */}
           <video
             ref={videoRef}
             key={CLIPS[clipIdx]}
@@ -329,7 +364,16 @@ const LandingTourVideo: React.FC<Props> = ({ onJoinBeta }) => {
             muted
             playsInline
             autoPlay={hasStarted}
+            preload="auto"
+            crossOrigin="anonymous"
             onEnded={handleClipEnded}
+            onError={(e) => {
+              // eslint-disable-next-line no-console
+              console.warn("[landing-tour] clip failed to load:", CLIPS[clipIdx], e);
+              // Advance to the next clip so a single broken URL doesn't
+              // leave the user staring at black for the whole narration.
+              setClipIdx((prev) => (prev + 1) % CLIPS.length);
+            }}
             className="absolute inset-0 w-full h-full object-cover"
             data-testid="landing-tour-video-clip"
           />

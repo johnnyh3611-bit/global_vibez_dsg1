@@ -21,6 +21,7 @@ import DSGLogisticsHub from '@/pages/DSGLogisticsHub';
 import MusicGroupArtistPanel from '@/pages/MusicGroupArtistPanel';
 import LicenseMarketplace from '@/pages/LicenseMarketplace';
 import DriverCargoConsole from '@/pages/DriverCargoConsole';
+import BetaHub from '@/pages/BetaHub';
 import VIPRooms from '@/pages/VIPRooms';
 import SeasonalEvents from '@/pages/SeasonalEvents';
 import HighRollerCasino from '@/pages/HighRollerCasino';
@@ -214,6 +215,14 @@ export const monetizationRoutes = (ProtectedRoute) => (
       element={
         <ProtectedRoute>
           <DriverCargoConsole />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/beta-hub"
+      element={
+        <ProtectedRoute>
+          <BetaHub />
         </ProtectedRoute>
       }
     />
