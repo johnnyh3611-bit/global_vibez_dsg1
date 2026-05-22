@@ -70,6 +70,59 @@ async def can_play(track_id: str, context: str = "tv_sync") -> Dict[str, Any]:
     return await check_can_play(db, track_id=track_id, context=context)
 
 
+@router.get("/marketplace/licensable")
+async def licensable_tracks(context: str = "tv_sync",
+                             limit: int = 50) -> Dict[str, Any]:
+    """Browse tracks the artist has opted into licensing for ``context``.
+
+    ``context`` ∈ {tv_sync, casino_background, commercial_use}.
+    Joins `tracks_rights_ledger` with `dsg_tracks` so every row carries
+    the metadata a broadcaster / merchant ad-buyer needs to make a
+    decision (title, artist, momentum score, rights flags).
+    """
+    field = f"allow_{context}"
+    if field not in {"allow_tv_sync", "allow_casino_background",
+                     "allow_commercial_use"}:
+        return {"ok": False, "reason": "invalid_context", "rows": []}
+    cursor = db.tracks_rights_ledger.find(
+        {field: True}, {"_id": 0},
+    ).limit(max(1, min(int(limit), 100)))
+    rights_rows = [r async for r in cursor]
+    if not rights_rows:
+        return {"ok": True, "context": context, "rows": [], "count": 0}
+
+    track_ids = [r["track_id"] for r in rights_rows]
+    cursor2 = db.dsg_tracks.find(
+        {"track_id": {"$in": track_ids}, "status": "active"},
+        {"_id": 0, "track_id": 1, "artist_id": 1, "artist_name": 1,
+         "track_title": 1, "title": 1, "cover_art_url": 1,
+         "momentum_score": 1, "lifetime_chart_points": 1},
+    )
+    tracks_by_id = {t["track_id"]: t async for t in cursor2}
+    rows = []
+    for r in rights_rows:
+        t = tracks_by_id.get(r["track_id"])
+        if not t:
+            continue
+        rows.append({
+            "track_id": r["track_id"],
+            "title": t.get("track_title") or t.get("title"),
+            "artist_id": t.get("artist_id"),
+            "artist_name": t.get("artist_name"),
+            "cover_art_url": t.get("cover_art_url", ""),
+            "momentum_score": int(t.get("momentum_score") or 0),
+            "lifetime_chart_points": int(t.get("lifetime_chart_points") or 0),
+            "rights": {
+                "allow_tv_sync": bool(r.get("allow_tv_sync")),
+                "allow_casino_background": bool(r.get("allow_casino_background")),
+                "allow_commercial_use": bool(r.get("allow_commercial_use")),
+            },
+        })
+    rows.sort(key=lambda x: x["momentum_score"], reverse=True)
+    return {"ok": True, "context": context, "rows": rows,
+            "count": len(rows)}
+
+
 # ─── Collaborator Splits ───
 
 class SplitRow(BaseModel):

@@ -45,6 +45,7 @@ export default function AdminDSGLogistics() {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [busy, setBusy] = useState(false);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   // Manual cancellation processor form
   const [formJobId, setFormJobId] = useState('');
   const [formDriverId, setFormDriverId] = useState('');
@@ -67,6 +68,12 @@ export default function AdminDSGLogistics() {
         fetch(`${API}/api/admin/dsg-logistics/incidents/active`, { headers: auth }).then(r => r.json()),
         fetch(`${API}/api/admin/dsg-logistics/cancellation/recent`, { headers: auth }).then(r => r.json()),
       ]);
+      if (inc?.detail === 'not_admin' || pay?.detail === 'not_admin'
+          || inc?.detail === 'Forbidden' || pay?.detail === 'Forbidden') {
+        setIsAdmin(false);
+        return;
+      }
+      setIsAdmin(true);
       setIncidents(inc?.rows || []);
       setPayouts(pay?.rows || []);
     } catch (e) {
@@ -160,7 +167,18 @@ export default function AdminDSGLogistics() {
         </p>
       </header>
 
-      <main className="max-w-6xl mx-auto px-5 py-6 space-y-6">
+      {isAdmin === false ? (
+        <main className="max-w-3xl mx-auto px-5 py-12 text-center" data-testid="admin-required-panel">
+          <AlertTriangle className="w-10 h-10 text-amber-300 mx-auto mb-3" />
+          <h2 className="text-base font-black uppercase tracking-widest text-amber-200">
+            Admin Access Required
+          </h2>
+          <p className="text-xs text-white/50 mt-2">
+            This dashboard is restricted to the Logistics safety team. If you
+            should have access, ping the on-call admin to be added.
+          </p>
+      </main>
+      ) : (      <main className="max-w-6xl mx-auto px-5 py-6 space-y-6">
         {/* ─── Active incidents ─── */}
         <section data-testid="admin-incidents-section">
           <h2 className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-rose-200 mb-3">
@@ -353,6 +371,7 @@ export default function AdminDSGLogistics() {
           </section>
         </div>
       </main>
+      )}
     </div>
   );
 }

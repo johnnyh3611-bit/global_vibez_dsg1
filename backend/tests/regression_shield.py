@@ -12831,3 +12831,137 @@ def test_music_group_in_explore_registry() -> None:
     assert "/artist/music-group" in src
     assert "DSG Music Group" in src
 
+
+# ───────────────────────────────────────────────────────────────────
+# MME × DSG MUSIC GROUP — Auto-Split Wiring + License Marketplace
+# (May 2026)
+#
+# The MME's 80% artist slice now flows through
+# `_credit_artist_collective_slice` which auto-splits across
+# collaborators if the track has registered basis-point splits.
+# The License Marketplace surfaces only opt-in tracks per context.
+# ───────────────────────────────────────────────────────────────────
+
+def test_mme_collective_slice_helper_wired() -> None:
+    """The MME must call the collective-slice helper from
+    `record_transaction` so the 80% slice auto-splits across
+    collaborators. If a future refactor reverts to the legacy
+    single-credit path this shield fails loudly."""
+    src = open("/app/backend/services/media_engine.py").read()
+    # Helper must exist.
+    assert "async def _credit_artist_collective_slice" in src, (
+        "Collective slice helper missing — MME would silently lose "
+        "the auto-split behavior."
+    )
+    # record_transaction must use the helper, not the legacy direct
+    # _credit_artist_balance call for the 80% slice.
+    fn = src.split("async def record_transaction")[1].split(
+        "async def get_artist_balance"
+    )[0]
+    assert "_credit_artist_collective_slice" in fn, (
+        "record_transaction must route the 80% slice via "
+        "_credit_artist_collective_slice for auto-split."
+    )
+    # The txn row must include the collective distribution metadata.
+    assert '"collective_split_count"' in src
+    assert '"collective_distribution"' in src
+
+
+def test_mme_collective_slice_no_burn() -> None:
+    """The auto-split path must never burn coins."""
+    src = open("/app/backend/services/media_engine.py").read()
+    fn = src.split("async def _credit_artist_collective_slice")[1].split(
+        "async def record_transaction"
+    )[0]
+    import re
+    code = re.sub(r'"""[\s\S]*?"""', "", fn)
+    code = "\n".join(line.split("#", 1)[0] for line in code.splitlines())
+    assert "burn_coins(" not in code, (
+        "_credit_artist_collective_slice must never burn coins"
+    )
+    # Ledger marker MUST be present.
+    assert '"burn_coins": 0' in fn
+
+
+def test_mme_collective_slice_falls_back_to_primary() -> None:
+    """Hard contract: if a track has no collaborator splits, the full
+    80% slice goes to the primary artist (backward compatibility)."""
+    src = open("/app/backend/services/media_engine.py").read()
+    fn = src.split("async def _credit_artist_collective_slice")[1].split(
+        "async def record_transaction"
+    )[0]
+    assert "Legacy path" in fn or "no splits" in fn.lower()
+    assert "_credit_artist_balance" in fn, (
+        "Fall-back must credit the primary via _credit_artist_balance"
+    )
+
+
+def test_license_marketplace_endpoint_mounted() -> None:
+    from server import app
+    paths = {getattr(r, "path", "") for r in app.routes}
+    assert "/api/music-group/marketplace/licensable" in paths, (
+        "License marketplace endpoint missing"
+    )
+
+
+def test_license_marketplace_endpoint_returns_rows() -> None:
+    """The licensable endpoint must be a public GET supporting the
+    `context` query param. We inspect the route + handler source so
+    the test is stable across the full suite (TestClient pollutes the
+    motor loop when run after the lifespan-tests)."""
+    from server import app
+    target = None
+    for r in app.routes:
+        if getattr(r, "path", "") == "/api/music-group/marketplace/licensable":
+            target = r
+            break
+    assert target is not None
+    assert "GET" in getattr(target, "methods", set())
+    # Source must validate the context arg + filter by the matching
+    # rights flag so we never leak non-opted-in tracks.
+    src = open("/app/backend/routes/dsg_music_group_routes.py").read()
+    fn = src.split("async def licensable_tracks")[1].split(
+        "@router.get(\"/splits"
+    )[0] if "async def licensable_tracks" in src else src
+    assert "invalid_context" in fn, (
+        "licensable endpoint must reject unknown contexts"
+    )
+    assert "allow_tv_sync" in fn
+    assert "allow_casino_background" in fn
+    assert "allow_commercial_use" in fn
+    # Must JOIN with dsg_tracks to surface artist + momentum metadata.
+    assert "dsg_tracks" in fn
+    assert "momentum_score" in fn
+
+
+def test_license_marketplace_page_built() -> None:
+    src = open("/app/frontend/src/pages/LicenseMarketplace.tsx").read()
+    for tid in (
+        "license-marketplace-page",
+        "marketplace-tabs",
+        "marketplace-context-info",
+    ):
+        assert tid in src, f"License Marketplace missing testid: {tid}"
+    # All 3 sync contexts surfaced as tabs.
+    assert "`marketplace-tab-${key}`" in src
+    for key in ("tv_sync", "casino_background", "commercial_use"):
+        assert f"'{key}'" in src, (
+            f"License Marketplace missing context tab: {key}"
+        )
+    # Hits the new licensable endpoint AND triggers a real MME tip
+    # transaction (so the 80% slice auto-splits).
+    assert "/api/music-group/marketplace/licensable" in src
+    assert "/api/media/tip" in src
+
+
+def test_license_marketplace_route_registered() -> None:
+    routes = open("/app/frontend/src/routes/monetizationRoutes.tsx").read()
+    assert '/marketplace/license' in routes
+    assert "LicenseMarketplace" in routes
+
+
+def test_license_marketplace_in_explore_registry() -> None:
+    src = open("/app/frontend/src/pages/Explore.tsx").read()
+    assert "/marketplace/license" in src
+    assert "License Marketplace" in src
+

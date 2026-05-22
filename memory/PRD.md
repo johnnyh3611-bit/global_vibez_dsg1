@@ -5275,3 +5275,30 @@ All 5 merchant PDFs + viral recruiter loop fully implemented.
 
 ### Blockers
 - GitHub 403 push — awaiting user reconnect via "Save to Github"
+
+
+---
+## 2026-05-22 (cont.) — Admin Logistics + Sandbox Refactor + DSG Music Group
+### Status: 🟢 LIVE · 593/593 REGRESSION GREEN · Testing-agent 612/612 PASS
+
+### What shipped
+1. **Logistics Admin Dashboard** (`/admin/dsg-logistics`) — single pane of glass for safety team: active incidents, recent cancellation payouts (with full 40/30/30 recirculation breakdown per row), manual cancellation processor form, white-glove violation logger. Auto-refresh 15s. Non-admin viewers get an explicit "Admin Access Required" panel.
+2. **Sandbox Firewall Refactor** — global unhandled-exception handler extracted from `server.py` to `utils/sandbox_firewall.py` as a clean `install(app, db, logger)` function. The inline handler is gone; server.py now has a 5-line registration block. Behavior is identical (still writes `security_events`, still returns `{detail:'internal error', request_id}`).
+3. **DSG Music Group** (`/api/music-group/*` + `/artist/music-group`) — per-track Rights Ledger (allow_tv_sync / allow_casino_background / allow_commercial_use) + Collaborator Splits engine (basis points, must sum to 10,000) + collective Royalty Disbursement. **Composes WITH the existing Master Media Engine** — the 80/15/5 platform split is unchanged; this module only governs how the 80% artist-collective slice is further sub-divided across N collaborators. 0% burn enforced via source-level shield.
+
+### New API endpoints
+- `/api/music-group/constants|rights/set|rights/{track_id}|rights/{track_id}/can-play|splits/set|splits/{track_id}|royalty/me`
+- `/api/admin/music-group/royalty/disburse|royalty/recent`
+- `/api/admin/dsg-logistics/*` consumed by the admin dashboard.
+
+### Composition rule (founder economics — locked)
+- **Master Media Engine** still owns the 80/15/5 platform split on every fan→artist transaction.
+- **DSG Music Group** sub-divides the 80% slice across collaborators via basis points.
+- **Burn stays 0** at every layer.
+
+### Backlog (P0 future)
+- 🔒 **TGE & Solana Bridge** — locked until user types `"project complete"`.
+- 🟡 Wire `disburse_collective_royalty()` into the live Master Media Engine path so the 80% slice is auto-distributed (currently admin-triggered).
+
+### Blockers
+- GitHub 403 push — awaiting user reconnect via "Save to Github".

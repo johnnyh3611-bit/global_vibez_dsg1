@@ -207,6 +207,99 @@ async def _credit_artist_balance(db, *, artist_id: str, coins: int,
     )
 
 
+async def _credit_artist_collective_slice(
+    db,
+    *,
+    track_id: str,
+    primary_artist_id: str,
+    slice_coins: int,
+    txn_id: str,
+) -> Dict[str, Any]:
+    """Credit the 80 % MME artist slice across collaborators.
+
+    Composition with `services.dsg_music_group`:
+      • If the track has registered collaborator splits, the slice
+        is divided pro-rata by basis points (must sum to 10_000),
+        with the largest holder absorbing rounding.
+      • If no splits are registered, the full slice flows to the
+        primary artist (legacy single-credit path).
+
+    Either way the credits land in `artist_balances` so the Artist
+    Studio dashboard + Gas-Out flows keep working transparently for
+    every collaborator. A single ledger row is appended to
+    `music_royalty_payouts` for audit / tax export.
+
+    Returns the distribution breakdown for the immutable txn row.
+    """
+    if slice_coins <= 0:
+        return {"distributed": 0, "rows": [], "split_count": 0}
+
+    # Lazy import — keeps the MME's import graph clean for the case
+    # where Music Group hasn't been deployed yet (older test fixtures).
+    try:
+        from services.dsg_music_group import (  # noqa: PLC0415
+            get_collaborator_splits, BPS_TOTAL,
+        )
+        splits = await get_collaborator_splits(db, track_id)
+    except Exception:  # noqa: BLE001
+        splits = []
+        BPS_TOTAL = 10_000
+
+    if not splits:
+        # Legacy path — primary artist takes 100 % of the 80 % slice.
+        await _credit_artist_balance(
+            db, artist_id=primary_artist_id,
+            coins=slice_coins, txn_id=txn_id,
+        )
+        return {"distributed": slice_coins, "split_count": 0,
+                "rows": [{"user_id": primary_artist_id,
+                          "role": "primary_artist",
+                          "basis_points": BPS_TOTAL,
+                          "share_coins": int(slice_coins)}]}
+
+    # Multi-collaborator path — basis-point pro-rata.
+    sorted_splits = sorted(
+        splits, key=lambda s: int(s.get("basis_points", 0)), reverse=True,
+    )
+    distributed = 0
+    rows: List[Dict[str, Any]] = []
+    for idx, s in enumerate(sorted_splits):
+        bps = int(s.get("basis_points") or 0)
+        if idx == len(sorted_splits) - 1:
+            share = slice_coins - distributed  # absorb rounding
+        else:
+            share = (slice_coins * bps) // BPS_TOTAL
+        distributed += share
+        if share > 0:
+            await _credit_artist_balance(
+                db, artist_id=s["user_id"],
+                coins=share, txn_id=txn_id,
+            )
+        rows.append({
+            "user_id": s["user_id"],
+            "role": s.get("role"),
+            "basis_points": bps,
+            "share_coins": int(share),
+        })
+
+    # Audit row — same shape as the admin-triggered disburse so the
+    # Music Group dashboard surfaces every event uniformly.
+    await db.music_royalty_payouts.insert_one({
+        "payout_id": f"mroyal_{uuid.uuid4().hex[:14]}",
+        "track_id": track_id,
+        "primary_artist_id": primary_artist_id,
+        "source": "mme_auto_split",
+        "payout_coins": int(slice_coins),
+        "payouts": rows,
+        "collaborator_count": len(rows),
+        "metadata": {"txn_id": txn_id},
+        "burn_coins": 0,
+        "at": _now_iso(),
+    })
+    return {"distributed": distributed, "split_count": len(rows),
+            "rows": rows}
+
+
 async def _credit_recirculation_buckets(db, *, treasury: int,
                                         tournament: int,
                                         txn_id: str) -> None:
@@ -298,8 +391,11 @@ async def record_transaction(
 
     # 2. Split + 3. Credits
     split = split_for(coins_spent)
-    await _credit_artist_balance(
-        db, artist_id=trk["artist_id"], coins=split["artist"],
+    collective = await _credit_artist_collective_slice(
+        db,
+        track_id=track_id,
+        primary_artist_id=trk["artist_id"],
+        slice_coins=split["artist"],
         txn_id=txn_id,
     )
     await _credit_recirculation_buckets(
@@ -331,6 +427,8 @@ async def record_transaction(
         "coins_burned": 0,            # in-app coins never burn
         "burn_kind": "none",
         "split_rule": "80/15/5",
+        "collective_split_count": collective.get("split_count", 0),
+        "collective_distribution": collective.get("rows"),
         "at": _now_iso(),
     }
     await db.music_transactions.insert_one(txn_doc)

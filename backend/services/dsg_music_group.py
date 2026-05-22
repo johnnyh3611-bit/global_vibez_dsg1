@@ -186,6 +186,9 @@ async def set_collaborator_splits(
             "created_at": now,
         })
     await db.collaborator_splits.insert_many(rows)
+    # Strip mongo-injected _id so the response is JSON-serializable.
+    for r in rows:
+        r.pop("_id", None)
     return {"ok": True, "track_id": track_id, "splits": rows,
             "total_basis_points": BPS_TOTAL}
 

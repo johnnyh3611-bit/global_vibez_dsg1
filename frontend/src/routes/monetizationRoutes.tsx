@@ -19,6 +19,7 @@ import Explore from '@/pages/Explore';
 import DSGTVExpansion from '@/pages/DSGTVExpansion';
 import DSGLogisticsHub from '@/pages/DSGLogisticsHub';
 import MusicGroupArtistPanel from '@/pages/MusicGroupArtistPanel';
+import LicenseMarketplace from '@/pages/LicenseMarketplace';
 import VIPRooms from '@/pages/VIPRooms';
 import SeasonalEvents from '@/pages/SeasonalEvents';
 import HighRollerCasino from '@/pages/HighRollerCasino';
@@ -196,6 +197,14 @@ export const monetizationRoutes = (ProtectedRoute) => (
       element={
         <ProtectedRoute>
           <MusicGroupArtistPanel />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/marketplace/license"
+      element={
+        <ProtectedRoute>
+          <LicenseMarketplace />
         </ProtectedRoute>
       }
     />
