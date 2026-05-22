@@ -5107,3 +5107,18 @@ All 5 merchant PDFs + viral recruiter loop fully implemented.
 - Coin amounts: Free (10K / 50K jackpot) · Mid (40K / 300K jackpot) · Top (200K-350K / 1.5M jackpot)
 - Indexes added to `lifespan_indexes.py` for `prize_wheel_spins` + `user_prize_inventory`
 - +9 regression shield tests (511 total)
+
+---
+
+## 2026-02-15 (Vibez 654 Hall) — Single Discovery Hub for every 6-5-4 variant
+
+### Status: 🟢 SHIPPED · 519/519 TESTS GREEN
+- New page `/app/frontend/src/pages/games/Vibe654Hall.tsx` at route `/vibe-654-hall`
+- Lists ALL 7 variants in a single grid with honest status badges:
+  - **Reachable (5):** Classic · Premium · Solo Vault · Tournament Lobby
+  - **Needs live table (2):** Breadwinner Coliseum · Legacy Tournament Table — both have "Spin Up Test Table" buttons that auto-create a 100K ₵ tournament table and navigate straight to the live URL
+  - **No UI yet (1):** Vibez 654 Prescription (backend at `/api/games/vibe654/prescription/*` works, UI queued)
+- Cleaned up orphan: removed dead `VibeDice654` import from `gamesRoutes.tsx` (had no route AND its `/api/dice/*` backend router was never registered)
+- Updated `/games` tile so "Vibez 654" card lands in the Hall (not /dice) — surfaces all variants by default
+- Added "All 654 rooms" pill in the Vibez 654 Classic header for in-game cross-nav
+- +4 regression tests guarding the Hall, route registration, orphan-removal, and tile routing

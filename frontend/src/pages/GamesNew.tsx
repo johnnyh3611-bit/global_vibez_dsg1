@@ -347,9 +347,15 @@ export default function GamesNew() {
     }
 
     // Special routes for specific games
-    if (game.id === 'vibe_654_dice' || game.id === 'vibez_654') {
+    if (game.id === 'vibe_654_dice') {
       soundManager.buttonClick();
       navigate('/dice');
+      return;
+    }
+    if (game.id === 'vibez_654') {
+      // Route to the new Hub so users discover all 7 variants
+      soundManager.buttonClick();
+      navigate('/vibe-654-hall');
       return;
     }
     

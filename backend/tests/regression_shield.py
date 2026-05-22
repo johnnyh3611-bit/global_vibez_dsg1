@@ -11668,3 +11668,46 @@ def test_dashboard_spin_badge_wired():
     assert "dashboard-founder-preview-trigger" in badge
     assert "/api/admin/founder-preview/top-up" in badge
 
+
+
+
+# ──────────────────────────────────────────────────────────────────
+# Vibez 654 Hall — single discovery hub for every 6-5-4 variant
+# ──────────────────────────────────────────────────────────────────
+
+def test_vibe_654_hall_page_exists_and_lists_all_variants():
+    """The Hall must enumerate every 6-5-4 variant the platform has —
+    including the ones that need a live table to enter — so a founder
+    or QA tester can reach all of them from a single screen."""
+    hall = open("/app/frontend/src/pages/games/Vibe654Hall.tsx").read()
+    assert "vibe-654-hall-page" in hall
+    # Cards are rendered via .map() with template-literal test ids, so
+    # we assert the variant id is present in the VARIANTS table instead.
+    for vid in ["'classic'", "'premium'", "'solo'", "'lobby'", "'coliseum'",
+                "'legacy-table'", "'prescription'"]:
+        assert f"id: {vid}" in hall, f"Hall variant missing: {vid}"
+    assert "`vibe-654-card-${v.id}`" in hall, "Cards must emit template-literal test ids"
+    assert "/api/vibe654/tournament/create-table" in hall, (
+        "Hall must use the real Tournament create-table endpoint"
+    )
+
+
+def test_vibe_654_hall_route_registered():
+    routes = open("/app/frontend/src/routes/gamesRoutes.tsx").read()
+    assert 'path="/vibe-654-hall"' in routes, "/vibe-654-hall route missing"
+    assert "Vibe654Hall" in routes, "Vibe654Hall not imported"
+
+
+def test_orphaned_vibe_dice654_import_removed():
+    routes = open("/app/frontend/src/routes/gamesRoutes.tsx").read()
+    assert 'import VibeDice654 from "@/pages/games/VibeDice654";' not in routes, (
+        "Orphaned VibeDice654 import re-introduced. Either route it "
+        "OR register a backend /api/dice/* router — currently neither."
+    )
+
+
+def test_vibez_654_card_lands_in_hall_not_dice():
+    src = open("/app/frontend/src/pages/GamesNew.tsx").read()
+    assert "navigate('/vibe-654-hall')" in src, (
+        "Vibez 654 card must route to the Hall, not directly to /dice"
+    )

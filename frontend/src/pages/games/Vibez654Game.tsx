@@ -261,8 +261,17 @@ export default function Vibez654Game() {
           <Dice6 className="w-5 h-5 text-amber-400" />
           Vibez 654
         </h1>
-        <div className="text-[10px] uppercase tracking-widest text-cyan-500 hidden sm:block">
-          5 Dice · 6 → 5 → 4
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigate('/vibe-654-hall')}
+            className="hidden sm:flex items-center gap-1 text-[10px] uppercase tracking-widest text-amber-300 hover:text-amber-200 border border-amber-400/40 px-2 py-1 rounded-full"
+            data-testid="v654-hall-link"
+          >
+            All 654 rooms
+          </button>
+          <div className="text-[10px] uppercase tracking-widest text-cyan-500 hidden sm:block">
+            5 Dice · 6 → 5 → 4
+          </div>
         </div>
       </header>
 
