@@ -5,7 +5,6 @@ export const verifySession = async (token: string) => {
   return { valid: true };
 };
 
-// Re-adding the exports that your API routes are looking for
 export const createSession = async (data: any) => {
   return { success: true };
 };
