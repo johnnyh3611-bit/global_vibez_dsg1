@@ -13,22 +13,9 @@ import { DealerName } from "@/lib/dealer/personas";
 
 export function DealerInterface() {
   const [dealerName, setDealerName] = useState<DealerName>("Nova");
-  const [chatByDealer, setChatByDealer] = useState<ChatArchive>(() => {
-    const archive = loadChatArchiveFromStorage();
-    // Load from localStorage for current dealer on mount
-    const saved = localStorage.getItem(chatStorageKey(dealerName));
-    if (saved) {
-      try {
-        return {
-          ...archive,
-          [dealerName]: sanitizeChatHistory(JSON.parse(saved)),
-        };
-      } catch {
-        // Ignore corrupted entries
-      }
-    }
-    return archive;
-  });
+  const [chatByDealer, setChatByDealer] = useState<ChatArchive>(
+    loadChatArchiveFromStorage
+  );
   const canPersist = useRef(false);
 
   const chatHistory = useMemo(
