@@ -1,16 +1,17 @@
 import { NextResponse } from "next/server";
-import { getSessionFromCookies } from "@/lib/auth/session";
+
+import { getSession } from "@/lib/auth/auth-service";
 
 export async function GET() {
-  const user = await getSessionFromCookies();
+  const session = await getSession();
 
-  if (!user) {
+  if (!session) {
     return NextResponse.json({ authenticated: false }, { status: 401 });
   }
 
   return NextResponse.json({
     authenticated: true,
-    publicKey: user.publicKey,
-    hasChair: user.hasChair,
+    publicKey: session.publicKey,
+    hasChair: session.hasChair,
   });
 }

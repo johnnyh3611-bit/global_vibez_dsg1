@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { getSessionFromCookies } from "@/lib/auth/session";
+import { getSession } from "@/lib/auth/auth-service";
 import { dealerPersonas, DealerName } from "@/lib/dealer/personas";
 import { streamCompletion } from "@/lib/ollama/client";
 
 export async function POST(request: Request) {
-  const session = await getSessionFromCookies();
+  const session = await getSession();
 
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { DealerInterface } from "@/components/dealer/DealerInterface";
-import { getSessionFromCookies } from "@/lib/auth/session";
+import { getSession } from "@/lib/auth/auth-service";
 
 export default async function DealerPage() {
-  const session = await getSessionFromCookies();
+  const session = await getSession();
 
   if (!session || !session.hasChair) {
     return (
