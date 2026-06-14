@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { consumeNonce } from "@/lib/auth/nonce-store";
+
 import { createSession, sessionCookieOptions } from "@/lib/auth/session";
 import {
   buildSignInMessage,

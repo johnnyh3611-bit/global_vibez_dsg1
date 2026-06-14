@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createNonce } from "@/lib/auth/nonce-store";
+
 import { buildSignInMessage } from "@/lib/solana/verifySignature";
 
 export async function POST(request: NextRequest) {
