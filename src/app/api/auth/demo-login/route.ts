@@ -7,7 +7,7 @@ export async function POST() {
   try {
     const token = await createSession(demoPublicKey);
     const response = NextResponse.json({ publicKey: demoPublicKey });
-    response.cookies.set(sessionCookieOptions(token));
+    response.cookies.set(sessionCookieOptions.name, token, { maxAge: sessionCookieOptions.maxAge });
 
     return response;
   } catch (error) {
