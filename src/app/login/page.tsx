@@ -3,7 +3,7 @@
 import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { WalletAuth } from "@/components/auth/WalletAuth";
+// import { WalletAuth from "@/components/auth/WalletAuth";
 import { useAuth } from "@/contexts/AuthContext";
 
 function LoginContent() {
