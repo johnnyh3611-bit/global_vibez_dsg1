@@ -8,11 +8,11 @@
  * touching the content engine or the broadcast feed.
  *
  * `getVideoProvider()` selects the implementation from the environment:
- *   TV_VIDEO_PROVIDER = "mock" (default) | "runway" | "luma" | "heygen"
+ *   TV_VIDEO_PROVIDER = "mock" (default) | "luma" | "runway" | "heygen"
  *   TV_VIDEO_API_KEY  = <key for the chosen real provider>
  *
- * Only the Mock provider is wired today; the real providers throw a clear
- * "pending integration" error until a provider is chosen and a key is supplied.
+ * The Mock and Luma (Dream Machine) providers are wired; the remaining real
+ * providers throw a clear "pending integration" error until wired.
  */
 import type { VideoScript } from "./content-engine";
 
@@ -63,6 +63,124 @@ export class MockVideoProvider implements VideoProvider {
   }
 }
 
+/**
+ * Luma Dream Machine provider — text-to-video synthesis.
+ *
+ * Render jobs are async: {@link generateClip} kicks off a generation and
+ * returns immediately (status "pending"/"processing"); callers poll
+ * {@link getClip} until it resolves to "ready" (with a playable `url`) or
+ * "failed". The broadcast feed refresh loop drives that polling.
+ *
+ * API: https://api.lumalabs.ai/dream-machine/v1/generations
+ */
+interface LumaGeneration {
+  id: string;
+  state: "queued" | "dreaming" | "completed" | "failed";
+  assets?: { video?: string | null } | null;
+  failure_reason?: string | null;
+}
+
+const LUMA_BASE = "https://api.lumalabs.ai/dream-machine/v1";
+
+function mapLumaState(state: LumaGeneration["state"]): ClipStatus {
+  switch (state) {
+    case "completed":
+      return "ready";
+    case "failed":
+      return "failed";
+    case "queued":
+      return "pending";
+    case "dreaming":
+      return "processing";
+  }
+}
+
+function buildLumaPrompt(script: VideoScript): string {
+  const visuals = script.scenes.map((scene) => scene.visual).join("; ");
+  return [
+    `${script.title}.`,
+    script.narration,
+    visuals ? `Visual direction: ${visuals}.` : "",
+    "Cinematic, high-fidelity, neon violet glassmorphism aesthetic.",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+async function readError(res: Response): Promise<string> {
+  try {
+    return (await res.text()).slice(0, 300);
+  } catch {
+    return res.statusText;
+  }
+}
+
+export class LumaVideoProvider implements VideoProvider {
+  readonly name = "luma";
+
+  constructor(
+    private readonly apiKey: string,
+    private readonly model = "ray-2"
+  ) {}
+
+  private headers(): Record<string, string> {
+    return {
+      Authorization: `Bearer ${this.apiKey}`,
+      "Content-Type": "application/json",
+      accept: "application/json",
+    };
+  }
+
+  private toClip(scriptId: string, gen: LumaGeneration): VideoClip {
+    return {
+      jobId: gen.id,
+      scriptId,
+      status: mapLumaState(gen.state),
+      url: gen.assets?.video ?? null,
+      provider: this.name,
+      error:
+        gen.state === "failed"
+          ? gen.failure_reason ?? "Luma generation failed"
+          : undefined,
+    };
+  }
+
+  async generateClip(script: VideoScript): Promise<VideoClip> {
+    const res = await fetch(`${LUMA_BASE}/generations`, {
+      method: "POST",
+      headers: this.headers(),
+      body: JSON.stringify({
+        prompt: buildLumaPrompt(script),
+        model: this.model,
+        aspect_ratio: "16:9",
+        loop: true,
+      }),
+    });
+    if (!res.ok) {
+      throw new Error(
+        `Luma generation request failed (${res.status}): ${await readError(res)}`
+      );
+    }
+    const gen = (await res.json()) as LumaGeneration;
+    return this.toClip(script.id, gen);
+  }
+
+  async getClip(jobId: string): Promise<VideoClip | null> {
+    const res = await fetch(`${LUMA_BASE}/generations/${jobId}`, {
+      headers: this.headers(),
+    });
+    if (res.status === 404) return null;
+    if (!res.ok) {
+      throw new Error(
+        `Luma poll failed (${res.status}): ${await readError(res)}`
+      );
+    }
+    const gen = (await res.json()) as LumaGeneration;
+    // Luma does not echo our script id; the feed refresh re-attaches it.
+    return this.toClip("", gen);
+  }
+}
+
 const REAL_PROVIDERS = ["runway", "luma", "heygen"] as const;
 type RealProviderName = (typeof REAL_PROVIDERS)[number];
 
@@ -90,8 +208,12 @@ export function getVideoProvider(): VideoProvider {
         `TV_VIDEO_PROVIDER="${selected}" requires TV_VIDEO_API_KEY to be set.`
       );
     }
-    // Real providers are async render APIs that must be wired and tested
-    // against live credentials before shipping. Until then, fail loudly
+    if (selected === "luma") {
+      cached = new LumaVideoProvider(apiKey);
+      return cached;
+    }
+    // Remaining real providers are async render APIs that must be wired and
+    // tested against live credentials before shipping. Until then, fail loudly
     // rather than silently faking output.
     throw new Error(
       `Video provider "${selected}" is not wired yet. Pending integration ` +

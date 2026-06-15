@@ -32,6 +32,15 @@ class BroadcastFeed {
     return item;
   }
 
+  /** Update an existing item's clip in place (keeps feed position). */
+  update(scriptId: string, clip: VideoClip): BroadcastItem | null {
+    const index = this.items.findIndex((item) => item.script.id === scriptId);
+    if (index === -1) return null;
+    const updated: BroadcastItem = { ...this.items[index], clip };
+    this.items[index] = updated;
+    return updated;
+  }
+
   list(): BroadcastItem[] {
     return [...this.items];
   }
