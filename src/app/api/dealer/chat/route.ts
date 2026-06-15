@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/auth/auth-service";
+import { getSession } from "@/lib/auth";
 import { dealerPersonas, DealerName } from "@/lib/dealer/personas";
 import { streamCompletion } from "@/lib/ollama/client";
 

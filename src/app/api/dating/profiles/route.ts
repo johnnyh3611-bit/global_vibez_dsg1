@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/auth/auth-service";
+import { getSession } from "@/lib/auth";
 import { SAMPLE_PROFILES } from "@/lib/dating/profiles";
 
 export async function GET() {

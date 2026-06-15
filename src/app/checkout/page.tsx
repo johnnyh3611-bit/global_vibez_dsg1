@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getSession } from "@/lib/auth/auth-service";
+import { getSession } from "@/lib/auth";
 
 export default async function CheckoutPage() {
   const session = await getSession();

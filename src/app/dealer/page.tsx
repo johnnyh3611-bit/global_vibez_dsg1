@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { DealerInterface } from "@/components/dealer/DealerInterface";
-import { getSession } from "@/lib/auth/auth-service";
+import { getSession } from "@/lib/auth";
 
 export default async function DealerPage() {
   const session = await getSession();

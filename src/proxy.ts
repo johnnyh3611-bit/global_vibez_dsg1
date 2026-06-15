@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { AUTH_COOKIE_NAME, verifySession } from "@/lib/auth/auth-service";
+import { AUTH_COOKIE_NAME, verifySession } from "@/lib/auth";
 
 function redirectToLogin(request: NextRequest): NextResponse {
   const loginUrl = new URL("/login", request.url);

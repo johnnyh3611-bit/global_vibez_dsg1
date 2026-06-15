@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/lib/auth/auth-service";
+import { getSession } from "@/lib/auth";
 import { generateCompletion, parseSuggestions } from "@/lib/ollama/client";
 
 export async function POST(request: NextRequest) {

@@ -4,7 +4,7 @@ import {
   consumeNonce,
   createSession,
   sessionCookieOptions,
-} from "@/lib/auth/auth-service";
+} from "@/lib/auth";
 import {
   buildSignInMessage,
   verifyWalletSignature,
