@@ -2,7 +2,9 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="relative h-screen w-full overflow-hidden bg-black text-white">
+    <div className="relative h-screen w-full overflow-hidden bg-background-deep text-white">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(124,58,237,0.35),transparent_60%)]" />
+
       <video
         src="/intro.mp4"
         autoPlay
