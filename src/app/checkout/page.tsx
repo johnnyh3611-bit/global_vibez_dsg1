@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { getSessionFromCookies } from "@/lib/auth/session";
+import { getSession } from "@/lib/auth";
 
 export default async function CheckoutPage() {
-  const session = await getSessionFromCookies();
+  const session = await getSession();
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-black px-6 text-center text-white">

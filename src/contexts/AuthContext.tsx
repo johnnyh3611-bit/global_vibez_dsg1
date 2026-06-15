@@ -23,7 +23,6 @@ interface AuthContextValue extends AuthState {
   signIn: () => Promise<boolean>;
   signOut: () => Promise<void>;
   refresh: () => Promise<void>;
-  demoLogin: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -142,34 +141,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   }, [connected, disconnect]);
 
-  const demoLogin = useCallback(async (): Promise<boolean> => {
-    setState((s) => ({ ...s, signingIn: true, error: null }));
-
-    try {
-      const res = await fetch("/api/auth/demo-login", { method: "POST" });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error ?? "Demo login failed");
-      }
-
-      await refresh();
-      setState((s) => ({ ...s, signingIn: false }));
-      return true;
-    } catch (err) {
-      setState((s) => ({
-        ...s,
-        signingIn: false,
-        error: err instanceof Error ? err.message : "Demo login failed",
-      }));
-      return false;
-    }
-  }, [refresh]);
-
   return (
-    <AuthContext.Provider
-      value={{ ...state, signIn, signOut, refresh, demoLogin }}
-    >
+    <AuthContext.Provider value={{ ...state, signIn, signOut, refresh }}>
       {children}
     </AuthContext.Provider>
   );

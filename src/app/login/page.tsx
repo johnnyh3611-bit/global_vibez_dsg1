@@ -3,7 +3,7 @@
 import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-// import { WalletAuth from "@/components/auth/WalletAuth";
+import { WalletAuth } from "@/components/auth/WalletAuth";
 import { useAuth } from "@/contexts/AuthContext";
 
 function LoginContent() {
@@ -35,7 +35,7 @@ function LoginContent() {
           </p>
         </div>
 
-        <div>Auth Component Removed</div>
+        <WalletAuth />
 
         <div className="rounded-xl border border-zinc-200 bg-white p-4 text-left text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400">
           <p className="font-medium text-zinc-800 dark:text-zinc-200">

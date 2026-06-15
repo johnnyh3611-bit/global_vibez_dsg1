@@ -178,7 +178,7 @@ export function DealerChat({
                   key={dealer.name}
                   type="button"
                   onClick={() => handleDealerChange(dealer.name)}
-                  className={`group relative overflow-hidden rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] transition-all duration-300 ${
+                  className={`group relative inline-flex min-h-11 items-center overflow-hidden rounded-full border px-4 text-xs font-semibold uppercase tracking-[0.18em] transition-all duration-300 ${
                     active
                       ? "border-white/30 bg-white/15 text-white shadow-[0_0_24px_rgba(255,255,255,0.12)]"
                       : "border-white/10 bg-white/5 text-white/60 hover:border-white/20 hover:bg-white/10 hover:text-white"
@@ -258,12 +258,12 @@ export function DealerChat({
               onChange={(event) => setInput(event.target.value)}
               placeholder={`Transmit to ${selectedDealer.name}...`}
               disabled={streaming}
-              className="flex-1 bg-transparent px-3 py-2 text-sm text-white outline-none placeholder:text-white/30 disabled:opacity-50"
+              className="min-h-11 flex-1 bg-transparent px-3 text-sm text-white outline-none placeholder:text-white/30 disabled:opacity-50"
             />
             <button
               type="submit"
               disabled={streaming || !input.trim()}
-              className="rounded-xl border border-purple-400/30 bg-purple-500/20 px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.22em] text-purple-100 transition-all duration-300 hover:border-purple-300/50 hover:bg-purple-500/30 hover:shadow-[0_0_24px_rgba(168,85,247,0.25)] disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex min-h-11 items-center rounded-xl border border-brand-primary/40 bg-brand-primary/20 px-5 text-xs font-semibold uppercase tracking-[0.22em] text-brand-glow transition-all duration-300 hover:border-brand-accent/50 hover:bg-brand-primary/30 hover:shadow-brand-glow disabled:cursor-not-allowed disabled:opacity-40"
               style={{ backdropFilter: "blur(10px)" }}
             >
               Send
