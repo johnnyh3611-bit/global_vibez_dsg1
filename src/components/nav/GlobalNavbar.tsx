@@ -27,7 +27,7 @@ export function GlobalNavbar() {
   if (HIDDEN_ON.includes(pathname)) return null;
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-surface-glass-border bg-surface-glass shadow-glass backdrop-blur-md">
+    <header className="sticky top-0 z-50 w-full border-b border-surface-glass-border bg-background-deep/70 shadow-glass backdrop-blur-md">
       <nav className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
         <Link
           href="/"
