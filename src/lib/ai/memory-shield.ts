@@ -4,7 +4,12 @@
  * break a rule (e.g. change the dice cost), the action is rejected and the
  * caller is handed the canonical MainBrain context to hard-revert to.
  */
-import { mainBrain, type GameRules, type GlobalContext } from "./main-brain";
+import {
+  mainBrain,
+  type GameRules,
+  type GlobalContext,
+  type MainBrain,
+} from "./main-brain";
 
 export type GameActionType = "dice-roll";
 
@@ -24,8 +29,11 @@ export interface ShieldDecision {
   reverted: boolean;
 }
 
-export function guardAction(action: ProposedAction): ShieldDecision {
-  const context = mainBrain.getGlobalContext();
+export function guardAction(
+  action: ProposedAction,
+  brain: MainBrain = mainBrain
+): ShieldDecision {
+  const context = brain.getGlobalContext();
   const violations: string[] = [];
 
   if (action.type === "dice-roll" && action.cost !== context.rules.diceCost) {

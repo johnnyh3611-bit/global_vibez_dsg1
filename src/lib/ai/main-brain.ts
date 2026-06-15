@@ -37,6 +37,14 @@ export interface GlobalContext {
   syncedAt: string;
 }
 
+/** A status report aggregated from the game-integrity harness. */
+export interface HarnessReport {
+  gameId: string;
+  roomStatus: "OPERATIONAL" | "BUG_DETECTED" | "NOT_IMPLEMENTED";
+  memorySync: boolean;
+  reportedAt: string;
+}
+
 const CANONICAL_RULES: GameRules = Object.freeze({ diceCost: 10 });
 
 const HIGH_FLOW: HighFlowConstraints = Object.freeze({
@@ -44,13 +52,14 @@ const HIGH_FLOW: HighFlowConstraints = Object.freeze({
   allowRuleMutation: false,
 });
 
-class MainBrain {
+export class MainBrain {
   private metrics: EconomicMetrics = {
     totalRolls: 0,
     creditsWagered: 0,
     housePool: 0,
   };
   private version = 1;
+  private harnessReports: HarnessReport[] = [];
 
   /** The canonical rule set (defensive copy). */
   get rules(): GameRules {
@@ -78,6 +87,31 @@ class MainBrain {
     this.version += 1;
     return this.getGlobalContext();
   }
+
+  /** Record a harness status report for dashboard aggregation. */
+  recordHarnessReport(report: Omit<HarnessReport, "reportedAt">): HarnessReport {
+    const stored: HarnessReport = {
+      ...report,
+      reportedAt: new Date().toISOString(),
+    };
+    this.harnessReports.push(stored);
+    return stored;
+  }
+
+  /** Latest harness report per game (most recent wins). */
+  getHarnessReports(): HarnessReport[] {
+    const latest = new Map<string, HarnessReport>();
+    for (const report of this.harnessReports) {
+      latest.set(report.gameId, report);
+    }
+    return [...latest.values()];
+  }
+}
+
+/** Create an isolated MainBrain instance (used by the test harness so it does
+ *  not pollute the production singleton's economic metrics). */
+export function createMainBrain(): MainBrain {
+  return new MainBrain();
 }
 
 /** Process-wide singleton (reused across warm invocations of the runtime). */

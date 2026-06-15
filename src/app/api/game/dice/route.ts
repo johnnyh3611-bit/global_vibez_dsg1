@@ -1,33 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { randomInt } from "crypto";
 import { getSession } from "@/lib/auth";
 import { mainBrain } from "@/lib/ai/main-brain";
 import { guardAction } from "@/lib/ai/memory-shield";
-
-const DICE_COUNT = 5;
-
-function rollDice(count: number): number[] {
-  return Array.from({ length: count }, () => randomInt(1, 7));
-}
-
-/**
- * Vibe 6-5-4 (Ship, Captain, Crew): a player must roll a 6, then a 5, then a 4
- * to qualify. The two remaining dice are the "cargo" score.
- */
-function evaluateSixFiveFour(dice: number[]): {
-  qualified: boolean;
-  cargo: number;
-} {
-  const remaining = [...dice];
-  for (const face of [6, 5, 4]) {
-    const idx = remaining.indexOf(face);
-    if (idx === -1) {
-      return { qualified: false, cargo: 0 };
-    }
-    remaining.splice(idx, 1);
-  }
-  return { qualified: true, cargo: remaining.reduce((a, b) => a + b, 0) };
-}
+import { DICE_COUNT, rollDice, evaluateSixFiveFour } from "@/lib/game/dice";
 
 export async function POST(request: NextRequest) {
   const session = await getSession();
