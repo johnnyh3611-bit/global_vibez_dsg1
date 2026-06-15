@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { DealerChat } from "@/components/dealer/DealerChat";
+import { BrainSyncIndicator } from "@/components/dealer/BrainSyncIndicator";
 import {
   ChatArchive,
   chatStorageKey,
@@ -56,6 +57,7 @@ export function DealerInterface() {
             Global <span className="text-brand-accent">Vibez</span> DSG
           </Link>
           <div className="flex flex-wrap items-center gap-3">
+            <BrainSyncIndicator />
             <Link
               href="/dating"
               className="inline-flex min-h-11 items-center rounded-full border border-surface-glass-border bg-surface-glass px-4 text-xs font-semibold uppercase tracking-[0.18em] text-white/70 backdrop-blur-md transition-all hover:bg-surface-glass-strong hover:text-white"
