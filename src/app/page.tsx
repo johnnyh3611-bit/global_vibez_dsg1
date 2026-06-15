@@ -21,16 +21,16 @@ export default function Home() {
         </div>
 
         <h1 className="text-5xl font-bold tracking-tight drop-shadow-lg sm:text-7xl">
-          Global <span className="text-violet-400">Vibez</span>
+          Global <span className="text-brand-accent">Vibez</span>
         </h1>
 
-        <p className="mt-4 max-w-xl text-lg text-white/80 drop-shadow">
+        <p className="mt-4 max-w-xl text-base text-white/80 drop-shadow sm:text-lg">
           One wallet. Every vibe. Connect, stream, and play — all on-chain.
         </p>
 
         <Link
           href="/login"
-          className="mt-10 rounded-full bg-violet-600 px-10 py-4 text-base font-semibold text-white shadow-[0_0_40px_rgba(124,58,237,0.5)] transition-all hover:scale-105 hover:bg-violet-500"
+          className="mt-10 inline-flex min-h-11 items-center justify-center rounded-full bg-brand-primary px-10 py-4 text-base font-semibold text-white shadow-brand-glow transition-all hover:scale-105 hover:bg-brand-primary-hover"
         >
           Enter Global Vibez
         </Link>
