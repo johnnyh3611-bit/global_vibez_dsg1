@@ -30,8 +30,10 @@ function getHoldersFilePath(): string {
 
 function loadFileWallets(): string[] {
   const filePath = getHoldersFilePath();
-  if (!fs.existsSync(filePath)) return [];
-  return parseWalletLines(fs.readFileSync(filePath, "utf-8"));
+  if (!fs.existsSync(/* turbopackIgnore: true */ filePath)) return [];
+  return parseWalletLines(
+    fs.readFileSync(/* turbopackIgnore: true */ filePath, "utf-8")
+  );
 }
 
 function buildChairHolderSet(): Set<string> {
@@ -50,7 +52,9 @@ function buildChairHolderSet(): Set<string> {
 
 export function getChairHolders(): Set<string> {
   const filePath = getHoldersFilePath();
-  const mtime = fs.existsSync(filePath) ? fs.statSync(filePath).mtimeMs : null;
+  const mtime = fs.existsSync(/* turbopackIgnore: true */ filePath)
+    ? fs.statSync(/* turbopackIgnore: true */ filePath).mtimeMs
+    : null;
 
   if (cachedHolders && cachedMtime === mtime) {
     return cachedHolders;
