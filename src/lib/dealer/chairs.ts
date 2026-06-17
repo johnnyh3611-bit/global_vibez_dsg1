@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 
 const DEFAULT_HOLDERS_FILE = path.join(
-  /* turbopackIgnore: true */ process.cwd(),
+  /*turbopackIgnore: true*/ process.cwd(),
   "data",
   "chair-holders.txt"
 );
