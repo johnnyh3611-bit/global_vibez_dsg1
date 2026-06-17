@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 /**
@@ -42,9 +42,16 @@ export default function MetaHumanDealerVideo({
     setVideoError(false); // reset error when state changes
   }, [isDealing, isShuffling, isCelebrating]);
 
-  const handleVideoError = useCallback(() => {
+  const handleVideoError = () => {
     setVideoError(true);
-  }, []);
+  };
+
+  const getFallbackLabel = () => {
+    if (isCelebrating) return '🎉 Celebrating';
+    if (isDealing) return '🃏 Dealing';
+    if (isShuffling) return '🎴 Shuffling';
+    return '⏳ Ready';
+  };
 
   // MetaHuman video paths (your Unreal Engine exports)
   const getVideoPath = () => {
@@ -74,7 +81,7 @@ export default function MetaHumanDealerVideo({
           <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-slate-900 to-slate-800">
             <div className="text-6xl mb-3">🎰</div>
             <p className="text-yellow-400 font-bold text-sm uppercase tracking-wider">
-              {isCelebrating ? '🎉 Celebrating' : isDealing ? '🃏 Dealing' : isShuffling ? '🎴 Shuffling' : '⏳ Ready'}
+              {getFallbackLabel()}
             </p>
             <p className="text-slate-500 text-xs mt-1">Live dealer video loading…</p>
           </div>
