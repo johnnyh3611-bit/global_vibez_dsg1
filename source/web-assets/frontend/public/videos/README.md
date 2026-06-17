@@ -64,10 +64,15 @@ smooth cinematic lighting, realistic human motion, close-up shot, looping animat
 - **Orientation**: Landscape (16:9 ratio)
 
 ## Current Status
-❌ Videos not yet added (component will show fallback)
+⚠️  Placeholder MP4 containers are present but contain no video frames.
+The component will display an animated fallback UI until real dealer footage is added.
 
-Once you add the videos, the AI Dealer will display realistic human animations for:
-- ✨ Idle state (waiting for bets)
-- 🎴 Shuffling cards
-- 🃏 Dealing cards
-- 🎉 Celebrating wins
+To add real dealer footage:
+1. Download clips from one of the sources listed above
+2. Replace the placeholder files in this folder with the downloaded 720p/1080p MP4s
+3. Restart the frontend: `sudo supervisorctl restart frontend`
+
+Once real videos are in place, the AI Dealer will display realistic human animations for:
+- ✨ Idle/waiting state (`dealer-shuffle.mp4`)
+- 🎴 Shuffling cards (`dealer-shuffling.mp4`)
+- 🃏 Dealing cards (`dealer-dealing.mp4`)

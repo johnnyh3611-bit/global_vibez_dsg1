@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 /**
@@ -26,6 +26,7 @@ export default function MetaHumanDealerVideo({
   className?: string;
 }) {
   const [currentVideo, setCurrentVideo] = useState('idle');
+  const [videoError, setVideoError] = useState(false);
 
   // Video state machine - switch videos based on game state
   useEffect(() => {
@@ -38,7 +39,12 @@ export default function MetaHumanDealerVideo({
     } else {
       setCurrentVideo('idle');
     }
+    setVideoError(false); // reset error when state changes
   }, [isDealing, isShuffling, isCelebrating]);
+
+  const handleVideoError = useCallback(() => {
+    setVideoError(true);
+  }, []);
 
   // MetaHuman video paths (your Unreal Engine exports)
   const getVideoPath = () => {
@@ -64,17 +70,28 @@ export default function MetaHumanDealerVideo({
       <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-2xl border-4 border-yellow-400/30">
         
         {/* Actual MetaHuman Video */}
-        <video
-          key={currentVideo} // Force reload when state changes
-          className="w-full h-full object-cover"
-          autoPlay
-          loop
-          muted
-          playsInline
-        >
-          <source src={getVideoPath()} type="video/mp4" />
-          Your browser does not support MetaHuman video playback.
-        </video>
+        {videoError ? (
+          <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-slate-900 to-slate-800">
+            <div className="text-6xl mb-3">🎰</div>
+            <p className="text-yellow-400 font-bold text-sm uppercase tracking-wider">
+              {isCelebrating ? '🎉 Celebrating' : isDealing ? '🃏 Dealing' : isShuffling ? '🎴 Shuffling' : '⏳ Ready'}
+            </p>
+            <p className="text-slate-500 text-xs mt-1">Live dealer video loading…</p>
+          </div>
+        ) : (
+          <video
+            key={currentVideo} // Force reload when state changes
+            className="w-full h-full object-cover"
+            autoPlay
+            loop
+            muted
+            playsInline
+            onError={handleVideoError}
+          >
+            <source src={getVideoPath()} type="video/mp4" />
+            Your browser does not support MetaHuman video playback.
+          </video>
+        )}
 
         {/* Dealer Name Tag Overlay */}
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-yellow-400 px-6 py-2 rounded-full shadow-lg">
