@@ -1,0 +1,24 @@
+name: 'PR labels'
+on:
+  pull_request:
+    types:
+      - 'opened'
+      - 'reopened'
+      - 'labeled'
+      - 'unlabeled'
+      - 'synchronize'
+
+jobs:
+  classify:
+    name: 'Classify PR'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - name: 'PR impact specified'
+        uses: mheap/github-action-required-labels@0ac283b4e65c1fb28ce6079dea5546ceca98ccbe # v5.5.2
+        with:
+          mode: exactly
+          count: 1
+          labels: 'bug, debt, feature-request, no-changelog'
