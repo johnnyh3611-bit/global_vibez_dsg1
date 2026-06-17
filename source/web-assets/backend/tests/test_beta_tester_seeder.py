@@ -15,7 +15,7 @@ import requests
 from dotenv import load_dotenv
 from pymongo import MongoClient
 
-load_dotenv("/app/backend/.env", override=True)
+load_dotenv("/home/johnnie/master-project/.env", override=True)
 
 BASE_URL = os.environ.get(
     "REACT_APP_BACKEND_URL",
@@ -67,7 +67,7 @@ class TestSeederBehavior:
         assert (r2["created"] + r2["healed"] + r2["untouched"]) == 3
 
     def test_lifespan_registers_seeder(self):
-        body = open("/app/backend/lifespan.py", encoding="utf-8").read()
+        body = open("/home/johnnie/master-project/lifespan.py", encoding="utf-8").read()
         assert "_start_beta_tester_seeder" in body
         assert "Beta Tester seeder" in body
 

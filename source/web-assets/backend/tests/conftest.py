@@ -47,7 +47,7 @@ def _autoload_env() -> None:
     if os.environ.get("REACT_APP_BACKEND_URL"):
         return
     here = Path(__file__).resolve()
-    # /app/backend/tests/conftest.py → /app/frontend/.env
+    # /home/johnnie/master-project/tests/conftest.py → /app/frontend/.env
     env_path = here.parent.parent.parent / "frontend" / ".env"
     if not env_path.exists():
         return

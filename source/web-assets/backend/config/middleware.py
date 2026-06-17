@@ -9,7 +9,7 @@ def setup_middleware(app) -> None:
     """Configure all middleware for the FastAPI app"""
     
     # Read CORS origins from environment variable
-    cors_origins = os.environ.get('CORS_ORIGINS', 'http://localhost:3000')  # Default to localhost for dev
+    cors_origins = os.environ.get('CORS_ORIGINS', os.environ.get('CORS_ORIGINS', 'https://globalvibezdsg.com'))
     
     print("🔧 CORS Configuration Debug:")
     print(f"  Raw CORS_ORIGINS: {cors_origins}")

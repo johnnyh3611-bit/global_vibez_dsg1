@@ -10,7 +10,7 @@ import uuid
 
 import pytest
 
-sys.path.insert(0, "/app/backend")
+sys.path.insert(0, "/home/johnnie/master-project")
 
 from config import db  # noqa: E402
 from services.viberidez_cargo import (  # noqa: E402

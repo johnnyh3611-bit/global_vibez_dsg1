@@ -1,6 +1,6 @@
 """
 Beta Operational Sweep - Backend health spot-check
-Run with: PYTHONPATH=/app/backend pytest /app/backend/tests/test_iter_beta_operational_sweep.py -v
+Run with: PYTHONPATH=/home/johnnie/master-project pytest /home/johnnie/master-project/tests/test_iter_beta_operational_sweep.py -v
 """
 import os
 import requests

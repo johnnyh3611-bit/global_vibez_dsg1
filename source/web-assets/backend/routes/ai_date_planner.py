@@ -5,7 +5,7 @@ from utils.database import get_database, get_current_user
 from datetime import datetime, timezone
 import os
 from dotenv import load_dotenv
-from source.web-assets.backend.services.ai_engine import LlmChat, UserMessage
+from services.ai_engine import LlmChat, UserMessage
 import json
 
 load_dotenv()

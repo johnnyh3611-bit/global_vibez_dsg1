@@ -28,7 +28,7 @@ DB_NAME = os.environ.get("DB_NAME") or "test_database"
 # Read from backend/.env if not in test env
 if not os.environ.get("DB_NAME"):
     try:
-        with open("/app/backend/.env") as _f:
+        with open("/home/johnnie/master-project/.env") as _f:
             for _line in _f:
                 if _line.startswith("MONGO_URL="):
                     MONGO_URL = _line.split("=", 1)[1].strip().strip('"')

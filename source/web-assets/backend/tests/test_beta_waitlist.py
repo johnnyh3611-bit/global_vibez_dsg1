@@ -12,7 +12,7 @@ import requests
 from dotenv import load_dotenv
 from pymongo import MongoClient
 
-load_dotenv("/app/backend/.env", override=True)
+load_dotenv("/home/johnnie/master-project/.env", override=True)
 
 BASE_URL = os.environ.get(
     "REACT_APP_BACKEND_URL",
@@ -153,7 +153,7 @@ class TestEmailDispatchPath:
 
 class TestRouteRegistration:
     def test_router_registered_in_registry(self):
-        src = open("/app/backend/routes/registry.py", encoding="utf-8").read()
+        src = open("/home/johnnie/master-project/routes/registry.py", encoding="utf-8").read()
         assert "from routes.beta_waitlist import" in src
         assert "beta_waitlist_router" in src
         assert "beta_waitlist_admin_router" in src

@@ -5,7 +5,7 @@
 Tests are organized by feature area:
 
 ```
-/app/backend/tests/
+/home/johnnie/master-project/tests/
 ├── casino/              # Casino game tests
 │   ├── test_baccarat.py
 │   ├── test_bid_whist.py

@@ -17,7 +17,7 @@ small "auto-pilot" per game. Every game must reach phase ∈
 """
 import sys
 
-sys.path.insert(0, "/app/backend")
+sys.path.insert(0, "/home/johnnie/master-project")
 
 # ────────────────────── Helpers ───────────────────────────────────────
 

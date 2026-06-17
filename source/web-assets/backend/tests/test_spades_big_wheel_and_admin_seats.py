@@ -14,10 +14,10 @@ import pytest
 import requests
 
 # Ensure backend modules are importable for unit tests of SpadesGame.
-sys.path.insert(0, "/app/backend")
+sys.path.insert(0, "/home/johnnie/master-project")
 
 # Test credentials are pulled from env to keep secrets out of source.
-# See /app/backend/tests/conftest.py and /app/memory/test_credentials.md.
+# See /home/johnnie/master-project/tests/conftest.py and /app/memory/test_credentials.md.
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "")
 ADMIN_2FA = os.environ.get("ADMIN_2FA", "")

@@ -1,6 +1,6 @@
 """Unit test for DominoesGame engine — block dominoes rules."""
 import sys, os
-sys.path.insert(0, '/app/backend')
+sys.path.insert(0, '/home/johnnie/master-project')
 
 from utils.dominoes_game import DominoesGame, build_double_six_set
 

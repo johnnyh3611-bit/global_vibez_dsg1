@@ -963,7 +963,7 @@ async def chair_checkout(payload: ChairCheckoutPayload, http_request: Request) -
 
     # Stripe
     try:
-        from source.web-assets.backend.services.payment_hub import (
+        from services.payment_hub import (
             StripeCheckout, CheckoutSessionRequest,
         )
     except ImportError as e:
@@ -1044,7 +1044,7 @@ async def chair_checkout_status(session_id: str, http_request: Request) -> Dict[
         return {"status": "activated", "quantity": pending["quantity"]}
 
     try:
-        from source.web-assets.backend.services.payment_hub import StripeCheckout
+        from services.payment_hub import StripeCheckout
     except ImportError as e:
         raise HTTPException(503, f"Stripe library unavailable: {e}")
     stripe_key = os.environ.get("STRIPE_API_KEY")

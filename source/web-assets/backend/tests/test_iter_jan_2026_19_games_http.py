@@ -1,6 +1,6 @@
 """HTTP smoke for all 19 wave-I + wave-II game endpoints via public URL.
 
-Uses correct field names per /app/backend/routes/{founder_engines_routes,casino_wave2_routes}.py.
+Uses correct field names per /home/johnnie/master-project/routes/{founder_engines_routes,casino_wave2_routes}.py.
 """
 import os
 import pytest

@@ -232,7 +232,7 @@ class TestScaleCacheNoop:
     def test_cache_get_no_raise_without_redis(self):
         import asyncio
         import sys
-        sys.path.insert(0, "/app/backend")
+        sys.path.insert(0, "/home/johnnie/master-project")
         # Ensure REDIS_URL unset for this test
         old = os.environ.pop("REDIS_URL", None)
         try:
@@ -259,7 +259,7 @@ class TestStripeWebhookVipPrefix:
     def test_vip_prefix_routes_to_apply_vip_grant(self):
         """The regression shield test exists, but verify the import path."""
         import sys
-        sys.path.insert(0, "/app/backend")
+        sys.path.insert(0, "/home/johnnie/master-project")
         import routes.stripe_payouts_webhook as wh  # noqa: PLC0415
         from services.high_roller_economy import HIGH_ROLLER_REF_PREFIX  # noqa: PLC0415
         assert HIGH_ROLLER_REF_PREFIX == "vip:"

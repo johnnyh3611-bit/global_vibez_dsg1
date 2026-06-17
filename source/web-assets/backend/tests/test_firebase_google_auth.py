@@ -203,14 +203,14 @@ class TestFirebaseServiceAccount:
     
     def test_service_account_file_exists(self):
         """Verify firebase-service-account.json exists"""
-        service_account_path = "/app/backend/firebase-service-account.json"
+        service_account_path = "/home/johnnie/master-project/firebase-service-account.json"
         assert os.path.exists(service_account_path), "Firebase service account file missing"
         print("✅ Firebase service account file exists")
     
     def test_service_account_valid_json(self):
         """Verify service account file is valid JSON"""
         import json
-        service_account_path = "/app/backend/firebase-service-account.json"
+        service_account_path = "/home/johnnie/master-project/firebase-service-account.json"
         
         with open(service_account_path, 'r') as f:
             data = json.load(f)

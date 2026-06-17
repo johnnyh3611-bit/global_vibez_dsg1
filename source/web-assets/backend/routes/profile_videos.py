@@ -8,7 +8,7 @@ from utils.database import get_database, get_current_user
 router = APIRouter(prefix="/profile", tags=["profile_videos"])
 
 # Video upload directory
-UPLOAD_DIR = Path("/app/backend/uploads/profile_videos")
+UPLOAD_DIR = Path("/home/johnnie/master-project/uploads/uploads/profile_videos")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 # Allowed video formats

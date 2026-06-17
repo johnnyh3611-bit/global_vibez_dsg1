@@ -3,7 +3,7 @@ Test Fisher-Yates Shuffle Implementation
 Verifies that the shuffle produces fair, random distributions
 """
 import sys
-sys.path.append('/app/backend')
+sys.path.append('/home/johnnie/master-project')
 
 from services.blackjack_multiplayer import fisher_yates_shuffle, create_deck
 from collections import Counter

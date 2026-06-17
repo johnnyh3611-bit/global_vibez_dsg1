@@ -23,10 +23,10 @@ from dotenv import load_dotenv
 # Force-load the canonical backend .env so DB_NAME matches the live
 # backend even when regression_shield ran first and set
 # DB_NAME=test_regression_shield via setdefault().
-load_dotenv("/app/backend/.env", override=True)
+load_dotenv("/home/johnnie/master-project/.env", override=True)
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://social-connect-953.preview.emergentagent.com").rstrip("/")
-BACKEND = Path("/app/backend")
+BACKEND = Path("/home/johnnie/master-project")
 
 
 # ── 1. Validator correctness ─────────────────────────────────────────────
@@ -149,7 +149,7 @@ class TestBidWhistTurnStamp:
     @pytest.mark.asyncio
     async def test_stamp_writes_field(self):
         import sys
-        sys.path.insert(0, "/app/backend")
+        sys.path.insert(0, "/home/johnnie/master-project")
         from motor.motor_asyncio import AsyncIOMotorClient
         from routes.turn_timer import stamp_turn_start
 
@@ -177,7 +177,7 @@ class TestBidWhistTurnStamp:
         # but it lives on the live backend's own loop, so we just need the
         # write to be durable before issuing the HTTP call.
         import sys
-        sys.path.insert(0, "/app/backend")
+        sys.path.insert(0, "/home/johnnie/master-project")
         import time as _t
         from pymongo import MongoClient
         from pymongo.write_concern import WriteConcern

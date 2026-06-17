@@ -8,10 +8,10 @@ import os
 import pytest
 
 import sys
-sys.path.insert(0, "/app/backend")
+sys.path.insert(0, "/home/johnnie/master-project")
 
 from dotenv import load_dotenv  # noqa: E402
-load_dotenv("/app/backend/.env")
+load_dotenv("/home/johnnie/master-project/.env")
 
 from motor.motor_asyncio import AsyncIOMotorClient  # noqa: E402
 

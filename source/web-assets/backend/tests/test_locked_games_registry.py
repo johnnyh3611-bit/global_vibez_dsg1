@@ -47,7 +47,7 @@ def test_every_declared_test_module_exists_on_disk() -> None:
     for g in LOCKED_GAMES:
         if not g.test_module:
             continue
-        path = os.path.join("/app/backend", g.test_module.replace(".", "/") + ".py")
+        path = os.path.join("/home/johnnie/master-project", g.test_module.replace(".", "/") + ".py")
         assert os.path.exists(path), (
             f"Locked game {g.id!r} declares test module {g.test_module!r}, "
             f"but {path} does not exist."

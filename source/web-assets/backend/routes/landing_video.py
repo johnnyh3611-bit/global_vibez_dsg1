@@ -19,7 +19,7 @@ GET  /api/landing-video/status/{task_id}
     Returns: { status: "queued"|"running"|"done"|"error", url?: str,
                error?: str, started_at: str, finished_at?: str }
 
-The actual mp4 is stored at /app/backend/uploads/landing_video/ which
+The actual mp4 is stored at /home/johnnie/master-project/uploads/landing_video/ which
 is already wired into the /api/uploads static mount.
 """
 from __future__ import annotations
@@ -40,7 +40,7 @@ load_dotenv()
 log = logging.getLogger(__name__)
 
 EMERGENT_LLM_KEY = os.environ.get("EMERGENT_LLM_KEY")
-UPLOADS_ROOT = Path("/app/backend/uploads/landing_video")
+UPLOADS_ROOT = Path("/home/johnnie/master-project/uploads/landing_video")
 UPLOADS_ROOT.mkdir(parents=True, exist_ok=True)
 
 DEFAULT_PROMPT = (

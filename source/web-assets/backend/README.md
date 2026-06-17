@@ -109,7 +109,7 @@ Comprehensive admin panel for platform oversight.
 ## 📁 Project Structure
 
 ```
-/app/backend/
+/home/johnnie/master-project/
 ├── routes/
 │   ├── casino/          # Casino game routes
 │   ├── admin_panel/     # Admin routes

@@ -17,7 +17,7 @@ import sys
 import os
 
 # Add backend to path for direct imports
-sys.path.insert(0, '/app/backend')
+sys.path.insert(0, '/home/johnnie/master-project')
 
 from utils.bid_whist_game import BidWhistGame, get_bid_whist_ai_bid, get_bid_whist_ai_play
 

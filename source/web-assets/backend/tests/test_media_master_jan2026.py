@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import os
 from dotenv import load_dotenv
-load_dotenv("/app/backend/.env")
+load_dotenv("/home/johnnie/master-project/.env")
 import uuid
 import pytest
 import requests

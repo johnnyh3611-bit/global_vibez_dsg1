@@ -385,7 +385,7 @@ class TestBidWhistGameLogic:
         """Test bid value calculations"""
         # Import game logic
         import sys
-        sys.path.insert(0, '/app/backend')
+        sys.path.insert(0, '/home/johnnie/master-project')
         from utils.bid_whist_game import BidWhistGame
         
         game = BidWhistGame()
@@ -400,7 +400,7 @@ class TestBidWhistGameLogic:
     def test_deck_creation(self):
         """Test 54-card deck creation"""
         import sys
-        sys.path.insert(0, '/app/backend')
+        sys.path.insert(0, '/home/johnnie/master-project')
         from utils.bid_whist_game import BidWhistGame
         
         game = BidWhistGame()
@@ -417,7 +417,7 @@ class TestBidWhistGameLogic:
     def test_deal_cards(self):
         """Test card dealing (12 per player + 6 kitty)"""
         import sys
-        sys.path.insert(0, '/app/backend')
+        sys.path.insert(0, '/home/johnnie/master-project')
         from utils.bid_whist_game import BidWhistGame
         
         game = BidWhistGame()
@@ -439,7 +439,7 @@ class TestBidWhistGameLogic:
     def test_team_assignments(self):
         """Test team assignments (North+South vs East+West)"""
         import sys
-        sys.path.insert(0, '/app/backend')
+        sys.path.insert(0, '/home/johnnie/master-project')
         from utils.bid_whist_game import BidWhistGame
         
         game = BidWhistGame()

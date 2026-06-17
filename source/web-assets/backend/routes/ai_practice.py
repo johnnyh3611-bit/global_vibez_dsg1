@@ -10,7 +10,7 @@ secure_random = secrets.SystemRandom()
 import json
 import os
 from utils.database import get_database
-from source.web-assets.backend.services.ai_engine import LlmChat, UserMessage
+from services.ai_engine import LlmChat, UserMessage
 
 router = APIRouter(prefix="/ai-practice", tags=["ai_practice"])
 

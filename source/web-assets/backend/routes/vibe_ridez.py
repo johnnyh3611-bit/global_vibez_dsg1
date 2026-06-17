@@ -12,7 +12,7 @@ import os
 from uuid import uuid4
 
 from utils.auth_dependencies import get_current_user_from_session, verify_user_id
-from source.web-assets.backend.services.payment_hub import StripeCheckout, CheckoutSessionRequest
+from services.payment_hub import StripeCheckout, CheckoutSessionRequest
 
 router = APIRouter(prefix="/vibe-ridez", tags=["Vibe Ridez"])
 

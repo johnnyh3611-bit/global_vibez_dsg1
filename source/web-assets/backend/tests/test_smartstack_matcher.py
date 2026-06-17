@@ -1,6 +1,6 @@
 """SmartStack matcher engine tests."""
 import sys
-sys.path.insert(0, "/app/backend")
+sys.path.insert(0, "/home/johnnie/master-project")
 
 from routes.smartstack import _score_match, haversine, MAX_DETOUR_MI, MIN_PROFIT_BOOST
 

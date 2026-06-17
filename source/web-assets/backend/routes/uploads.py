@@ -7,7 +7,7 @@ from pathlib import Path
 router = APIRouter(prefix="/uploads", tags=["uploads"])
 
 # Directory for storing uploaded files
-UPLOAD_DIR = Path("/app/backend/uploads")
+UPLOAD_DIR = Path("/home/johnnie/master-project/uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
 
 # Subdirectories for different file types

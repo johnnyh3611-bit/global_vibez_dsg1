@@ -14,7 +14,7 @@ endpoints. Focuses on:
 - User preferences (spades ruleset)
 - Backend boot health (no 500 import errors visible)
 
-Secrets pulled from env via /app/backend/tests/conftest.py fixtures.
+Secrets pulled from env via /home/johnnie/master-project/tests/conftest.py fixtures.
 """
 from __future__ import annotations
 

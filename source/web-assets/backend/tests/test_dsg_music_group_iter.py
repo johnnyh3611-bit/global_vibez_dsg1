@@ -176,14 +176,14 @@ def test_splits_set_invalid_bps_sum_returns_reason(beta_session):
 
 # ─── Sandbox firewall refactor verification ───
 def test_sandbox_firewall_extracted():
-    server = Path("/app/backend/server.py").read_text()
+    server = Path("/home/johnnie/master-project/server.py").read_text()
     assert "from utils.sandbox_firewall import install" in server
     assert "_install_sandbox_firewall(app, db, logger)" in server
     # The inline definition must NOT exist anymore in server.py
     assert "async def _sandbox_firewall(request: Request, exc: Exception)" not in server, \
         "inline _sandbox_firewall handler must be removed from server.py"
 
-    fw = Path("/app/backend/utils/sandbox_firewall.py").read_text()
+    fw = Path("/home/johnnie/master-project/utils/sandbox_firewall.py").read_text()
     assert "def install(app" in fw
     assert "internal error" in fw
     assert "security_events" in fw

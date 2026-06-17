@@ -16,7 +16,7 @@ from utils.database import get_database
 
 # Stripe checkout via emergentintegrations (already used by VibeRidez)
 try:
-    from source.web-assets.backend.services.payment_hub import (
+    from services.payment_hub import (
         StripeCheckout,
         CheckoutSessionRequest,
     )
@@ -690,7 +690,7 @@ async def vibe_venues_stripe_webhook(request: Request) -> Dict[str, Any]:
     host_url = str(request.base_url).rstrip("/")
     webhook_url = f"{host_url}/api/vibe-venues/stripe/webhook"
 
-    from source.web-assets.backend.services.payment_hub import StripeCheckout as _SC
+    from services.payment_hub import StripeCheckout as _SC
     sc = _SC(api_key=os.environ.get("STRIPE_API_KEY", ""), webhook_url=webhook_url)
     webhook_response = await sc.handle_webhook(body, signature)
 

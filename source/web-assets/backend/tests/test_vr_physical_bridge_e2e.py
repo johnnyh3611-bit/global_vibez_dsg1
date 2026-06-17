@@ -248,7 +248,7 @@ class TestVictoryHandoff:
     def test_broadcast_when_streak_5_seeded(self, session):
         # Seed game_sessions doc directly via Mongo
         import sys
-        sys.path.insert(0, "/app/backend")
+        sys.path.insert(0, "/home/johnnie/master-project")
         from motor.motor_asyncio import AsyncIOMotorClient
 
         mongo_url = os.environ.get("MONGO_URL")

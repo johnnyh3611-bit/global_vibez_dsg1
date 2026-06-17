@@ -1,6 +1,6 @@
 """
 Test the new Vibe Integrity & Ban Protocol routes + Sovereign Tiers
-pricing curve. These add to /app/backend/tests/regression_shield.py via
+pricing curve. These add to /home/johnnie/master-project/tests/regression_shield.py via
 the locks at the bottom — failing here would prevent shipping.
 """
 from __future__ import annotations

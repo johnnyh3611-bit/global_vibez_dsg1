@@ -48,7 +48,7 @@ def fix_random_to_secrets(file_path):
 
 def scan_and_fix_python_files():
     """Scan and fix all Python files"""
-    backend_path = Path('/app/backend')
+    backend_path = Path('/home/johnnie/master-project')
     fixed_files = []
     
     for py_file in backend_path.rglob('*.py'):

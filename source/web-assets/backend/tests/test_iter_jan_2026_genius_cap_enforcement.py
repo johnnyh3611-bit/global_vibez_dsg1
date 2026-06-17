@@ -12,7 +12,7 @@ from pymongo import MongoClient
 from datetime import datetime, timezone
 from dotenv import load_dotenv
 
-load_dotenv("/app/backend/.env")
+load_dotenv("/home/johnnie/master-project/.env")
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://social-connect-953.preview.emergentagent.com").rstrip("/")
 MONGO_URL = os.environ.get("MONGO_URL", "mongodb://localhost:27017")

@@ -44,7 +44,7 @@ import pytest
 import requests
 from dotenv import load_dotenv
 
-load_dotenv("/app/backend/.env", override=True)
+load_dotenv("/home/johnnie/master-project/.env", override=True)
 
 BASE_URL = os.environ.get(
     "REACT_APP_BACKEND_URL",

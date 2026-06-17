@@ -86,7 +86,7 @@ async def get_dating_coach_suggestions(request: DatingCoachRequest) -> Dict[str,
     Analyzes conversation history and match profile to generate helpful tips.
     """
     try:
-        from source.web-assets.backend.services.ai_engine import LlmChat, UserMessage
+        from services.ai_engine import LlmChat, UserMessage
 
         system_message = _build_coach_system_prompt(
             request.match_profile, request.conversation_history,

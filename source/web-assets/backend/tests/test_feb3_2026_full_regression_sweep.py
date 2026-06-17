@@ -106,7 +106,7 @@ class TestAuth:
 # ---------- FastAPI import ----------
 class TestImports:
     def test_server_app_imports(self):
-        sys.path.insert(0, "/app/backend")
+        sys.path.insert(0, "/home/johnnie/master-project")
         from server import app  # noqa
         routes = len(app.routes)
         assert routes > 1000, f"expected >1000 routes, got {routes}"
@@ -203,7 +203,7 @@ class TestBetaFeedback:
 # ---------- Dualbot engine smoke ----------
 class TestEngineSmoke:
     def setup_method(self, method):
-        sys.path.insert(0, "/app/backend")
+        sys.path.insert(0, "/home/johnnie/master-project")
 
     def test_euchre(self):
         from utils.euchre_game import EuchreGame

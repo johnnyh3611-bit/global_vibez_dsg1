@@ -3,7 +3,7 @@ from typing import Optional, Dict, Any
 from pydantic import BaseModel
 from utils.database import get_database, get_current_user
 from datetime import datetime, timezone
-from source.web-assets.backend.services.payment_hub import StripeCheckout, CheckoutSessionRequest
+from services.payment_hub import StripeCheckout, CheckoutSessionRequest
 from services.pricing_master_vault import (
     PACKS as MASTER_VAULT_PACKS,
     list_packs as list_master_vault_packs,

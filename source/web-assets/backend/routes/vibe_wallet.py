@@ -207,7 +207,7 @@ async def get_topup_packages() -> Dict[str, Any]:
 @router.post("/topup/create-session")
 async def create_topup_session(package: TopUpPackage, request: Request) -> Dict[str, Any]:
     """Create Stripe checkout session for wallet top-up"""
-    from source.web-assets.backend.services.payment_hub import (
+    from services.payment_hub import (
         StripeCheckout, CheckoutSessionRequest, CheckoutSessionResponse
     )
     from config import STRIPE_API_KEY
@@ -282,7 +282,7 @@ async def create_topup_session(package: TopUpPackage, request: Request) -> Dict[
 @router.get("/topup/status/{session_id}")
 async def check_topup_status(session_id: str, request: Request) -> Dict[str, Any]:
     """Check Stripe payment status and credit wallet if successful"""
-    from source.web-assets.backend.services.payment_hub import (
+    from services.payment_hub import (
         StripeCheckout, CheckoutStatusResponse
     )
     from config import STRIPE_API_KEY
@@ -358,7 +358,7 @@ async def check_topup_status(session_id: str, request: Request) -> Dict[str, Any
 @router.post("/webhook")
 async def stripe_webhook_handler(request: Request) -> Dict[str, Any]:
     """Handle Stripe webhook events for wallet top-ups"""
-    from source.web-assets.backend.services.payment_hub import StripeCheckout
+    from services.payment_hub import StripeCheckout
     from config import STRIPE_API_KEY
     
     try:

@@ -11,7 +11,7 @@ Cloudflare for new services. Far more meaningful than "10 million bots"
 which would just crash our own pod.
 
 Run from /app:
-    python3 /app/backend/tests/stress_test.py
+    python3 /home/johnnie/master-project/tests/stress_test.py
 """
 from __future__ import annotations
 

@@ -44,7 +44,7 @@ def _test_module_path(module: Optional[str]) -> Optional[str]:
     """Convert a dotted test path like `tests.test_xyz` to a fs path."""
     if not module:
         return None
-    return os.path.join("/app/backend", module.replace(".", "/") + ".py")
+    return os.path.join("/home/johnnie/master-project", module.replace(".", "/") + ".py")
 
 
 def _test_pass_count(test_path: Optional[str], timeout: int = 30) -> Optional[int]:
@@ -61,7 +61,7 @@ def _test_pass_count(test_path: Optional[str], timeout: int = 30) -> Optional[in
     try:
         proc = subprocess.run(
             [sys.executable, "-m", "pytest", test_path, "--collect-only", "-q"],
-            cwd="/app/backend",
+            cwd="/home/johnnie/master-project",
             capture_output=True,
             text=True,
             timeout=timeout,

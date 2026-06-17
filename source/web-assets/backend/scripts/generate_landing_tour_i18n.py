@@ -14,7 +14,7 @@ For each target language:
         /app/frontend/public/landing-tour-narration-{lang}.mp3
 
 Run once after editing SCRIPT or LANGUAGES:
-    cd /app/backend && python scripts/generate_landing_tour_i18n.py
+    cd /home/johnnie/master-project && python scripts/generate_landing_tour_i18n.py
 """
 import asyncio
 import json
@@ -69,14 +69,14 @@ ENGLISH_DURATION = 122.0
 
 # English narration script (matches the in-app script).
 ENGLISH_SCRIPT = open(
-    "/app/backend/scripts/_landing_tour_english_script.txt"
+    "/home/johnnie/master-project/scripts/_landing_tour_english_script.txt"
 ).read().strip() if Path(
-    "/app/backend/scripts/_landing_tour_english_script.txt"
+    "/home/johnnie/master-project/scripts/_landing_tour_english_script.txt"
 ).exists() else None
 
 if ENGLISH_SCRIPT is None:
     # Fallback — read from the existing generator.
-    GEN = Path("/app/backend/scripts/generate_landing_tour_narration.py").read_text()
+    GEN = Path("/home/johnnie/master-project/scripts/generate_landing_tour_narration.py").read_text()
     m = re.search(r'SCRIPT = """(.+?)"""', GEN, re.DOTALL)
     if not m:
         raise SystemExit("Could not extract SCRIPT from generate_landing_tour_narration.py")
@@ -104,7 +104,7 @@ async def translate(target_label: str, text: str, kind: str) -> str:
     """
     api_key = os.getenv("EMERGENT_LLM_KEY")
     if not api_key:
-        raise SystemExit("EMERGENT_LLM_KEY missing from /app/backend/.env")
+        raise SystemExit("EMERGENT_LLM_KEY missing from /home/johnnie/master-project/.env")
     chat = (
         LlmChat(
             api_key=api_key,

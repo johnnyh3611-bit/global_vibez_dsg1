@@ -108,7 +108,7 @@ def test_vibe_654_tournament_module_imports_canonical_engines() -> None:
     """Read the route file source and assert the canonical engines are
     actually imported. Catches accidental refactors that drop the wiring.
     """
-    src = open("/app/backend/routes/vibe_654_tournament.py").read()
+    src = open("/home/johnnie/master-project/routes/vibe_654_tournament.py").read()
     assert "from services.sovereign_game_logic import" in src
     assert "resolve_multi_tie" in src
     assert "from services.war_of_attrition import" in src

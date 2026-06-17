@@ -10,7 +10,7 @@ which gives us:
   • Webhook events on stream.live + stream.disconnected
 
 Activation:
-  Drop these into /app/backend/.env (without commits) — once present,
+  Drop these into /home/johnnie/master-project/.env (without commits) — once present,
   endpoints flip from STUB to LIVE automatically:
     CLOUDFLARE_ACCOUNT_ID=...
     CLOUDFLARE_API_TOKEN=...

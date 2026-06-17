@@ -161,14 +161,14 @@ async def create_vibe_post(
         # Handle file upload (video/image)
         content_url = None
         if file:
-            # Persist the upload to /app/backend/uploads/vibez/ — the
+            # Persist the upload to /home/johnnie/master-project/uploads/vibez/ — the
             # /api/uploads static mount in server.py exposes this dir
             # to the public web. In production point this at S3/Cloudinary
             # by overriding the MY_VIBEZ_UPLOAD_BUCKET env var; the rest of
             # the post pipeline only cares about the resulting content_url.
             from pathlib import Path
             file_ext = (file.filename or "bin").rsplit('.', 1)[-1].lower()
-            uploads_dir = Path("/app/backend/uploads/vibez")
+            uploads_dir = Path("/home/johnnie/master-project/uploads/vibez")
             uploads_dir.mkdir(parents=True, exist_ok=True)
             disk_path = uploads_dir / f"{post_id}.{file_ext}"
             # Rewind — we already consumed file.file above for size check.

@@ -6,7 +6,7 @@ import os
 from dotenv import load_dotenv
 from typing import Dict, List
 from pydantic import BaseModel
-from source.web-assets.backend.services.ai_engine import LlmChat, UserMessage
+from services.ai_engine import LlmChat, UserMessage
 
 load_dotenv()
 
@@ -226,4 +226,4 @@ Provide your moderation decision in JSON format."""
         return results
 
 # Global moderator instance
-ai_moderator = AIModerator()
+ai_moderator = None # AIModerator() (Disabled for local dev)

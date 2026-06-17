@@ -14,7 +14,7 @@ from typing import Optional
 from pymongo import MongoClient
 
 # Test credentials are pulled from env to keep secrets out of source.
-# See /app/backend/tests/conftest.py and /app/memory/test_credentials.md.
+# See /home/johnnie/master-project/tests/conftest.py and /app/memory/test_credentials.md.
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")
 API = f"{BASE_URL}/api"
 

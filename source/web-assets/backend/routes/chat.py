@@ -19,7 +19,7 @@ import asyncio
 import os
 from dotenv import load_dotenv
 from utils.database import get_database
-from source.web-assets.backend.services.ai_engine import LlmChat, UserMessage
+from services.ai_engine import LlmChat, UserMessage
 
 load_dotenv()
 EMERGENT_LLM_KEY = os.getenv('EMERGENT_LLM_KEY')

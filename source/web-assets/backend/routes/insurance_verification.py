@@ -9,7 +9,7 @@ import os
 router = APIRouter(prefix="/insurance-verification", tags=["insurance_verification"])
 
 # Upload directory
-UPLOAD_DIR = "/app/backend/uploads/insurance"
+UPLOAD_DIR = "/home/johnnie/master-project/uploads/insurance"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 

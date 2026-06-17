@@ -54,7 +54,7 @@ async def suggest_titles(body: TitleSuggestBody):
     llm_used = False
     if body.use_llm and os.environ.get("EMERGENT_LLM_KEY"):
         try:
-            from source.web-assets.backend.services.ai_engine import LlmChat, UserMessage  # type: ignore
+            from services.ai_engine import LlmChat, UserMessage  # type: ignore
             chat = LlmChat(
                 api_key=os.environ["EMERGENT_LLM_KEY"],
                 session_id=f"copilot-title-{datetime.now(timezone.utc).isoformat()}",

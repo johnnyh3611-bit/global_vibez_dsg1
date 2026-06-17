@@ -9,7 +9,7 @@
 # is preserved as a fallback via env vars for nodes with less RAM/CPU.)
 #
 # Usage (production environment ONLY — NOT the supervised preview env):
-#   /app/backend/scripts/run_production.sh
+#   /home/johnnie/master-project/scripts/run_production.sh
 #
 # IMPORTANT: do NOT run this on the Emergent preview pod — supervisor
 # already manages a single uvicorn process there.

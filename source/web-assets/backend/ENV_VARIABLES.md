@@ -30,7 +30,7 @@ STRIPE_PUBLISHABLE_KEY=pk_test_your_stripe_publishable_key
 STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret
 
 # Stripe Test Keys (available in pod)
-# Check /app/backend/.env for pre-configured test keys
+# Check /home/johnnie/master-project/.env for pre-configured test keys
 ```
 
 ### External Services (Optional)
@@ -115,7 +115,7 @@ env | grep -E "MONGO|JWT|STRIPE|ADMIN"
 echo $MONGO_URL
 
 # Load from .env file
-export $(cat /app/backend/.env | xargs)
+export $(cat /home/johnnie/master-project/.env | xargs)
 ```
 
 ## Default Values

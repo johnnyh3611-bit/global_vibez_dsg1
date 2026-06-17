@@ -125,7 +125,7 @@ class TestMatchmakingSystem:
         """Verify matchmaking module is importable"""
         # This is a code structure test
         import sys
-        sys.path.insert(0, '/app/backend')
+        sys.path.insert(0, '/home/johnnie/master-project')
         
         try:
             from services.matchmaking import (
@@ -141,7 +141,7 @@ class TestMatchmakingSystem:
     def test_room_manager_module_exists(self):
         """Verify room manager module is importable"""
         import sys
-        sys.path.insert(0, '/app/backend')
+        sys.path.insert(0, '/home/johnnie/master-project')
         
         try:
             from services.room_manager import (
@@ -162,7 +162,7 @@ class TestRoomManagerFunctions:
     def test_create_room(self):
         """Test room creation function"""
         import sys
-        sys.path.insert(0, '/app/backend')
+        sys.path.insert(0, '/home/johnnie/master-project')
         
         from services.room_manager import create_room, GameType
         
@@ -189,7 +189,7 @@ class TestRoomManagerFunctions:
     def test_send_invite(self):
         """Test invite sending function"""
         import sys
-        sys.path.insert(0, '/app/backend')
+        sys.path.insert(0, '/home/johnnie/master-project')
         
         from services.room_manager import create_room, send_invite, GameType
         
@@ -221,7 +221,7 @@ class TestRoomManagerFunctions:
     def test_join_room(self):
         """Test room joining function"""
         import sys
-        sys.path.insert(0, '/app/backend')
+        sys.path.insert(0, '/home/johnnie/master-project')
         
         from services.room_manager import create_room, join_room, GameType
         
@@ -256,7 +256,7 @@ class TestMatchmakingFunctions:
     def test_join_queue(self):
         """Test joining matchmaking queue"""
         import sys
-        sys.path.insert(0, '/app/backend')
+        sys.path.insert(0, '/home/johnnie/master-project')
         
         from services.matchmaking import join_matchmaking_queue, leave_matchmaking_queue, GameType
         
@@ -285,7 +285,7 @@ class TestMatchmakingFunctions:
     def test_leave_queue(self):
         """Test leaving matchmaking queue"""
         import sys
-        sys.path.insert(0, '/app/backend')
+        sys.path.insert(0, '/home/johnnie/master-project')
         
         from services.matchmaking import join_matchmaking_queue, leave_matchmaking_queue, GameType
         
@@ -305,7 +305,7 @@ class TestMatchmakingFunctions:
     def test_match_creation_with_4_players(self):
         """Test that match is created when 4 players join queue"""
         import sys
-        sys.path.insert(0, '/app/backend')
+        sys.path.insert(0, '/home/johnnie/master-project')
         
         from services.matchmaking import (
             join_matchmaking_queue, 

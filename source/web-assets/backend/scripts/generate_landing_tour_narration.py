@@ -4,7 +4,7 @@ OpenAI TTS (Onyx voice, HD model). Output saved to:
     /app/frontend/public/landing-tour-narration.mp3
 
 Run:
-    cd /app/backend && python scripts/generate_landing_tour_narration.py
+    cd /home/johnnie/master-project && python scripts/generate_landing_tour_narration.py
 
 To re-generate after editing the SCRIPT below, just re-run.
 The MP3 is committed alongside the React frontend so deploy doesn't
@@ -15,7 +15,7 @@ import os
 import sys
 from pathlib import Path
 
-# Ensure /app/backend is on sys.path when invoked from any cwd.
+# Ensure /home/johnnie/master-project is on sys.path when invoked from any cwd.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from dotenv import load_dotenv  # noqa: E402
@@ -76,7 +76,7 @@ OUTPUT_PATH = Path("/app/frontend/public/landing-tour-narration.mp3")
 async def main() -> None:
     api_key = os.getenv("EMERGENT_LLM_KEY")
     if not api_key:
-        raise SystemExit("EMERGENT_LLM_KEY missing from /app/backend/.env")
+        raise SystemExit("EMERGENT_LLM_KEY missing from /home/johnnie/master-project/.env")
 
     tts = OpenAITextToSpeech(api_key=api_key)
 

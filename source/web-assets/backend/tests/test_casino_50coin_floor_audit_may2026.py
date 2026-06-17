@@ -6,7 +6,7 @@ Pre-redeploy audit (May 12, 2026):
   - Hits real REST endpoints on the preview backend with a beta-tester JWT.
 
 Run:
-  pytest /app/backend/tests/test_casino_50coin_floor_audit_may2026.py -v \
+  pytest /home/johnnie/master-project/tests/test_casino_50coin_floor_audit_may2026.py -v \
       --tb=short --junitxml=/app/test_reports/pytest/floor_audit_may2026.xml
 """
 from __future__ import annotations

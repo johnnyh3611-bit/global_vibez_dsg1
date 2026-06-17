@@ -1,6 +1,6 @@
 """
 pytest configuration for backend/tests/unit.
-Ensures `/app/backend` is on sys.path so `from utils.foo import ...`
+Ensures `/home/johnnie/master-project` is on sys.path so `from utils.foo import ...`
 and `from routes.foo import ...` resolve cleanly without installation.
 """
 import os
@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-BACKEND_ROOT = Path(__file__).resolve().parents[2]  # /app/backend
+BACKEND_ROOT = Path(__file__).resolve().parents[2]  # /home/johnnie/master-project
 if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 

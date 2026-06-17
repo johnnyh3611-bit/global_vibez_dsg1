@@ -59,7 +59,7 @@ class Comment(BaseModel):
 #   • application/json    → legacy base64 data-URI (kept for backward
 #     compat with older callers).
 
-VIDEO_DIR = "/app/backend/static/videos"
+VIDEO_DIR = "/home/johnnie/master-project/static/videos"
 MAX_VIDEO_BYTES = 100 * 1024 * 1024  # 100 MB hard cap (parity with /uploads/media)
 ALLOWED_VIDEO_TYPES = {
     "video/mp4", "video/quicktime", "video/webm", "video/ogg",
