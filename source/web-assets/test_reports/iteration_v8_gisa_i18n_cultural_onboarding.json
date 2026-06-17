@@ -1,0 +1,50 @@
+{
+  "summary": "Completed full v8.0 review (GISA Audit + International Localization v2.0 + Cultural Onboarding v2.0). All backend tests green (92 regression shield + 32 v8 unit + 13 new v8 API endpoint = 137 total passing). Frontend landing page renders all 11 required data-testids with exact copy matches; Globe FAB → Cultural Hub modal flow verified functional with all 3 tabs (country/language/dialect).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "POST /api/localization/detect",
+        "issue": "CF-IPCountry header is stripped by the K8s preview-env ingress, so Tier-1 auto-sync defaults to US on preview URL. Works correctly against localhost:8001 and via X-Country fallback header. In production (behind Cloudflare) this will work as designed. Not a code bug — infrastructure artifact of preview env."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_gisa_agent_v8.py",
+    "/app/backend/tests/test_localization_v2.py",
+    "/app/backend/tests/test_cultural_onboarding_v2.py",
+    "/app/backend/tests/test_v8_locked_specs_intact.py",
+    "/app/backend/tests/test_v8_api_endpoints.py",
+    "/app/backend/tests/regression_shield.py",
+    "/app/test_reports/pytest/v8_unit_tests.xml",
+    "/app/test_reports/pytest/v8_api_tests.xml",
+    "/app/test_reports/pytest/regression_shield.xml"
+  ],
+  "action_items": [
+    "(Optional) Document that Tier-1 CF-IPCountry auto-sync requires Cloudflare in front of the deployment — add a note or X-Country fallback instruction to the locked spec or an ops README so future QA does not flag this as a bug.",
+    "(Optional test-tooling polish) In future Playwright tests, click fixed-position FABs with native element.click() via page.evaluate() rather than Playwright's click+scroll_into_view to avoid scroll-induced mis-clicks. Functional behavior is correct."
+  ],
+  "critical_code_review_comments": [
+    "GISA routes (/api/gisa/modules) return 'matrix' key while /api/gisa/thresholds returns 'thresholds' — naming is inconsistent but acceptable for beta. Both keys are stable per unit tests.",
+    "Cultural onboarding submit uses nested {step, payload} — field name 'payload' is generic; consider renaming to 'step_data' or 'form' in a future breaking-change release for clarity. Not blocking.",
+    "GlobeFAB positions at bottom-24 right-4 (y≈1022 on 1080 viewport) which is within 60px of viewport bottom. Visible/clickable, but a future mobile review should confirm it doesn't overlap with the mobile dock on small screens (code already has `sm:bottom-6` override)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_v8_api_endpoints.py (created — 13 new API-level integration tests against live backend URL)"
+  ],
+  "success_rate": {
+    "backend": "100% (137/137 passed — regression 92/92, v8 unit 32/32, v8 API 13/13)",
+    "frontend": "100% (11/11 required data-testids present, tagline + final CTA copy exact-match, Globe FAB → Cultural Hub modal flow verified with all 3 tabs)"
+  },
+  "test_credentials": "Not exercised — v8 endpoints are all public; admin God-Mode + demo login not required for any v8 feature tested. Credentials in /app/memory/test_credentials.md verified available.",
+  "seed_data_creation": "Test-only docs created in user_metadata collection under user_id='TEST_v8_locale_user' and 'TEST_v8_cultural_user'. Safe to leave — no impact on prod data; TEST_ prefix makes cleanup trivial.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "v8.0 feature batch (GISA, International v2, Cultural Onboarding v2) is fully green. 92-test regression shield still passes. If adding new features, reuse /app/backend/tests/test_v8_api_endpoints.py as the live-URL integration smoke layer for these three modules. Key schema gotchas to remember: (1) /api/localization/select + /me/{id}/save expect 'country_code' + 'language_code' + 'dialect' (NOT 'country'/'language'/'currency'); (2) /api/cultural-onboarding/{id}/submit expects {step, payload} (NOT {step, data}); (3) /api/localization/detect returns {'localization': {...}} nested under 'localization' key; (4) /api/gisa/modules returns {'matrix': [...]} not 'modules'. (5) CF-IPCountry header is stripped by the preview-env K8s ingress; use X-Country header fallback in tests. Globe FAB lives at bottom-right fixed position — in Playwright use page.evaluate(\"document.querySelector(...).click()\") rather than playwright click() to avoid scroll interference.",
+  "rca of the issue": "N/A — no blocking issues found."
+}

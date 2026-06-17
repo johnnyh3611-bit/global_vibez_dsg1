@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="2" time="1.977" timestamp="2026-05-02T03:05:58.829263+00:00" hostname="agent-env-d18ffc68-6865-4910-bcea-395826c8d1cd"><testcase classname="backend.tests.test_bid_whist_aaa_universal.TestSpadesPractice" name="test_start_returns_bidding_phase_and_13_card_hand" time="1.809" /><testcase classname="backend.tests.test_bid_whist_aaa_universal.TestBidWhistPractice" name="test_start_returns_bidding_phase_and_12_card_hand" time="0.057"><failure message="AssertionError: missing seat north&#10;assert 'north' in {}">backend/tests/test_bid_whist_aaa_universal.py:58: in test_start_returns_bidding_phase_and_12_card_hand
+    assert pos in players, f"missing seat {pos}"
+E   AssertionError: missing seat north
+E   assert 'north' in {}</failure></testcase></testsuite></testsuites>

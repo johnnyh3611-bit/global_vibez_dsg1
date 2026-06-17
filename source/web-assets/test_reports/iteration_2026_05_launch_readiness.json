@@ -1,0 +1,69 @@
+{
+  "summary": "Launch readiness sweep — backend: 25/25 tests passed in new test_launch_readiness_2026_05.py + 240/240 regression_shield + v654_sidebets stayed green. Frontend: tour of 14 critical routes, /lottery page fully verified end-to-end including ticket purchase. No launch blockers found. Tier-A PDF features (DSG6 lottery, Vibe Spots 65/35 cancellation, Vibe Core orchestrator) all behave exactly per spec.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/auth/signup", "issue": "Requires email, password, name AND date_of_birth (422 if missing). Documented for next testers."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Blackjack room (/blackjack)", "issue": "Multiple floating FABs visible in fullscreen game room: live-status pill, game-log-toggle, players-toggle. Spec says ONLY InRoomCommsLauncher pill allowed in fullscreen game rooms.", "selector": "[data-testid='live-status'], [data-testid='game-log-toggle'], [data-testid='players-toggle']", "priority": "MEDIUM"},
+      {"component": "Practice Chess (/practice/play/chess)", "issue": "voice-coach-trigger FAB visible at bottom-left — orphan floating element on fullscreen game route.", "selector": "[data-testid='voice-coach-trigger']", "priority": "MEDIUM"},
+      {"component": "Cyber Casino (/games/cyber-casino)", "issue": "in-room-comms-pill is MISSING on this route — comms launcher not mounted. Either add to FULLSCREEN_PREFIXES or wire mount.", "selector": "[data-testid='in-room-comms-pill']", "priority": "LOW"},
+      {"component": "log-design-lesson-toggle (global)", "issue": "Dev-only widget at 10% opacity still visible on every page including /lottery. Should be gated behind NODE_ENV !== 'production' before launch.", "selector": "[data-testid='log-design-lesson-toggle']", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_launch_readiness_2026_05.py",
+    "/app/test_reports/pytest/launch_readiness_2026_05.xml"
+  ],
+  "action_items": [
+    "Remove/gate the 3 orphan FABs on /blackjack (live-status, game-log-toggle, players-toggle) in fullscreen game mode, OR confirm they are intentional and update the spec.",
+    "Remove voice-coach-trigger FAB from /practice/play/chess in fullscreen mode (or move it into the InRoomComms drawer).",
+    "Add /games/cyber-casino to the InRoomComms launcher mount list (currently missing the comms pill).",
+    "Gate log-design-lesson-toggle behind NODE_ENV check so it doesn't ship to beta testers.",
+    "(Optional) Document /api/auth/signup required fields (email, password, name, date_of_birth) — friction for first-time testers."
+  ],
+  "critical_code_review_comments": [
+    "DSG6 _validate_picks correctly rejects duplicates, out-of-range, wrong vibe ball — solid. Pydantic min_length=5/max_length=5 backstops it at 422 too.",
+    "vibe_spots cancel uses `host_keep = round(fee * 0.35); guest_refund = fee - host_keep` — clean, sum invariant always holds. EXACT 350/650 split on ₵1000 verified.",
+    "vibe_core_orchestrator gracefully falls back to NEEDS_HUMAN/NO_LLM_KEY when LLM budget capped — won't block production launch.",
+    "Solana stub (offchain_<hex>) is correctly behind SOLANA_MAINNET_UNLOCKED env flag — flip-the-flag launch works.",
+    "All 3 new routes use proper async/await, exclude _id from responses, raise typed HTTPException with 400/401/403/404 — passes code-review bar.",
+    "Stripe checkout (both coins and wallet) now requires `origin_url` in payload — make sure the frontend always sends window.location.origin."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_launch_readiness_2026_05.py (created)"
+  ],
+  "success_rate": {"backend": "100% (25/25 new + 240/240 regression)", "frontend": "~85% (12/14 routes clean; 2 routes have orphan FABs)"},
+  "test_credentials": "betatester1@globalvibez.com / BetaTester2026!  +  betatester2@globalvibez.com / BetaTester2026!  — both pre-DOB'd, large ₵ balance, used for the 2-user vibe-spots booking flow.",
+  "seed_data_creation": "Used existing beta testers — created lottery tickets for betatester1 (5 tickets purchased during e2e), and 2 vibe-spot bookings (cancelled + completed) between betatester1 (guest) and betatester2 (host). All test data prefixed conceptually but lives in dsg6_tickets / vibe_spot_bookings / vibe_court_broadcasts collections.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "launch_readiness_verdict": {
+    "ship_today_blockers": [],
+    "ship_today_ok_as_is": [
+      "DSG6 Lottery (full CRUD + UI verified end-to-end)",
+      "Vibe Spots 65/35 cancellation (EXACT split confirmed)",
+      "Vibe Core Orchestrator (Complete status + Vibe Court broadcast verified)",
+      "Auth (login/signup/me)",
+      "Stripe checkout (test mode, cs_test_ URLs returned)",
+      "All 14 critical user-journey routes render without white screens",
+      "Public catalog endpoints (coins/packs, wallet/packages, cinema-room/catalog, vibez-654 leaderboard/side-bets)"
+    ],
+    "ship_today_mocked_but_acceptable": [
+      "Solana escrow → offchain_<hex> ledger (intentional, env-gated, flip flag post-launch)",
+      "AI mediation → NEEDS_HUMAN fallback (budget-capped key, graceful degrade)",
+      "Stripe in test mode (sk_test_) — fine for beta launch"
+    ],
+    "ship_in_v1_1": [
+      "Remove orphan FABs from /blackjack and /practice/play/chess",
+      "Mount InRoomComms pill on /games/cyber-casino",
+      "Gate log-design-lesson-toggle dev widget"
+    ]
+  },
+  "context_for_next_testing_agent": "All 3 new Tier-A modules (dsg6_lottery, vibe_spots, vibe_core_orchestrator) are wired and behaving per PDF spec. The test file at /app/backend/tests/test_launch_readiness_2026_05.py covers them + the launch sweep — use it as the regression baseline going forward. Auth signup requires {email, password, name, date_of_birth} — easy gotcha. Stripe endpoints both need origin_url in the body. Solana mainnet is locked via env flag — that's expected for now."
+}

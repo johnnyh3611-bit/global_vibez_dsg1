@@ -1,0 +1,24 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "NIXPACKS"
+  },
+  "deploy": {
+    "numReplicas": 1,
+    "startCommand": "supervisord -c /app/supervisord.conf",
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
+  },
+  "services": [
+    {
+      "name": "backend",
+      "env": {
+        "MONGO_URL": "${{MONGO_URL}}",
+        "DB_NAME": "${{DB_NAME}}",
+        "EMERGENT_LLM_KEY": "${{EMERGENT_LLM_KEY}}",
+        "STRIPE_API_KEY": "${{STRIPE_API_KEY}}",
+        "PORT": "8001"
+      }
+    }
+  ]
+}

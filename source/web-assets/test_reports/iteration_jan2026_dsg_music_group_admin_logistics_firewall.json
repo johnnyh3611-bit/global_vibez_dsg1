@@ -1,0 +1,41 @@
+{
+  "summary": "End-to-end testing of the Jan 2026 iteration: (1) DSG Music Group blueprint at /api/music-group/*, (2) Admin Logistics dashboard at /admin/dsg-logistics, (3) sandbox_firewall refactor. Backend regression_shield 593/593 PASS. New integration suite (15 tests) PASS. Service-level unit suite (4 tests) PASS — burn_coins=0 invariant verified, share-sum reconciliation verified (1000 and 999 both reconcile exactly). Frontend smoke: /artist/music-group renders [data-testid=music-group-panel], /admin/dsg-logistics renders [data-testid=admin-dsg-logistics-page], /explore Cmd+K registry contains 'DSG Music Group', /dsg-tv and /dsg-logistics regressions remain green. Sandbox firewall refactor verified: utils/sandbox_firewall.py exists with install(app,db,logger), server.py imports + calls it, inline async def _sandbox_firewall is REMOVED from server.py.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/admin/dsg-logistics (non-admin viewer)", "issues": ["When a non-admin user navigates here, the page chrome still renders and the data fetches return 403 in the console. The shell is gated only by ProtectedRoute (auth) — not by an admin role check on the client. This is functional (server enforces 403) but the page should ideally short-circuit with an access-denied state for non-admins to avoid confusing 403 console errors."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/regression_shield.py",
+    "/app/backend/tests/test_dsg_music_group_iter.py",
+    "/app/backend/tests/test_dsg_music_group_service_unit.py"
+  ],
+  "action_items": [
+    "Optional polish: AdminDSGLogistics page should render an explicit 'admin required' panel for non-admin users instead of attempting the protected API calls and surfacing 403 in console (currently functional but noisy).",
+    "Optional: the regression_shield's D1 assertion currently checks for '_sandbox_firewall' as a substring inside utils/sandbox_firewall.py — that's fine, but a stricter assertion 'async def _sandbox_firewall' was tightened in test_dsg_music_group_iter.test_sandbox_firewall_extracted to guarantee the inline handler is not left over in server.py.",
+    "Optional: in dsg_music_group.set_collaborator_splits, ownership is validated BEFORE bps invariant. UX-wise the artist may want bps-validation feedback even when track_id is wrong — current order is correct security-wise, no change required."
+  ],
+  "critical_code_review_comments": [
+    "services/dsg_music_group.py disburse_collective_royalty: rounding remainder is absorbed by the LAST entry in the bps-DESC-sorted list — that's the SMALLEST bps holder. Comment in code says 'largest holder absorbs rounding' which is opposite. Functionally fine (reconciliation still exact), but the comment/sort direction are inconsistent. Cosmetic only.",
+    "routes/dsg_music_group_routes.py imports BPS_TOTAL/MAX/ARTIST_COLLECTIVE_PCT directly — fine; constants endpoint is public and harmless.",
+    "utils/sandbox_firewall.py: best-effort security_events write swallows ALL exceptions silently (BLE001). Acceptable here because handler must not fail — documented in comment.",
+    "burn_coins=0 hardcoded in disburse — matches blueprint hard rule; ledger row confirmed via unit test."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_dsg_music_group_iter.py (NEW)",
+    "/app/backend/tests/test_dsg_music_group_service_unit.py (NEW)"
+  ],
+  "success_rate": {"backend": "100% (593 regression + 15 new integration + 4 service unit = 612/612 PASS)", "frontend": "100% (6/6 smoke checks pass)"},
+  "test_credentials": "Beta tester betatester1@globalvibez.com / BetaTester2026! (auto-seeded, not admin role).",
+  "seed_data_creation": "Unit suite creates+cleans test_mg_track_001 in dsg_tracks; cleanup runs after each test. No production data mutated.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Music Group + Admin Logistics + sandbox firewall refactor all GREEN. No admin user in the seeded credential set, so admin happy-path for /admin/music-group/royalty/disburse + /admin/dsg-logistics endpoints is covered only at the 401/403 guard level via HTTP and at the service level (which bypasses the admin guard) via the unit suite. If E1 adds an admin in /app/memory/test_credentials.md, re-run with admin login to exercise admin_disburse end-to-end. Also: AdminDSGLogistics shell renders for non-admins because client route only checks auth; consider adding a client-side admin-role gate (see design_issues).",
+  "rca of the issue": "N/A — no defects found in this iteration."
+}

@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: global-vibez-mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: global_vibez
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - app-network
+
+  # Backend (FastAPI + Socket.IO)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: global-vibez-backend
+    restart: always
+    ports:
+      - "8001:8001"
+    environment:
+      - MONGO_URL=mongodb://admin:password123@mongodb:27017/
+      - DB_NAME=global_vibez
+      - EMERGENT_LLM_KEY=${EMERGENT_LLM_KEY}
+      - STRIPE_API_KEY=${STRIPE_API_KEY}
+      - PORT=8001
+    depends_on:
+      - mongodb
+    networks:
+      - app-network
+    command: uvicorn server:app --host 0.0.0.0 --port 8001
+
+  # Frontend (React)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: global-vibez-frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_BACKEND_URL=http://localhost:8001
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:

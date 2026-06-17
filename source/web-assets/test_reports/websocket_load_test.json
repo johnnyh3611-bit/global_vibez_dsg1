@@ -1,0 +1,85 @@
+{
+  "test_timestamp": "2026-04-01T13:57:59.403148",
+  "duration_seconds": 82.75,
+  "connections": {
+    "attempted": 1661,
+    "successful": 1661,
+    "failed": 0,
+    "success_rate": 100.0,
+    "peak_concurrent": 1000,
+    "disconnections": 1661,
+    "reconnections": 0
+  },
+  "connection_times": {
+    "min_ms": 150.21,
+    "max_ms": 3673.97,
+    "avg_ms": 297.58,
+    "p50_ms": 289.96,
+    "p95_ms": 414.29,
+    "p99_ms": 458.81
+  },
+  "rooms": {
+    "created": 50,
+    "joined": 0
+  },
+  "messages": {
+    "sent": 0,
+    "received": 0,
+    "throughput_per_second": 0.0
+  },
+  "message_latency": {
+    "min_ms": 0,
+    "max_ms": 0,
+    "avg_ms": 0,
+    "p50_ms": 0,
+    "p95_ms": 0,
+    "p99_ms": 0
+  },
+  "errors": [],
+  "test_results": {
+    "tests": [
+      {
+        "name": "Single Connection",
+        "passed": true,
+        "connection_time_ms": 194.78
+      },
+      {
+        "name": "10 Concurrent Connections",
+        "passed": true,
+        "connected": 10,
+        "success_rate": 100.0
+      },
+      {
+        "name": "100 Concurrent Connections",
+        "passed": true,
+        "connected": 100,
+        "success_rate": 100.0,
+        "still_connected_after_2s": 100
+      },
+      {
+        "name": "Room Creation (50 rooms)",
+        "passed": true,
+        "rooms_created": 50
+      },
+      {
+        "name": "500 Concurrent Connections",
+        "passed": true,
+        "connected": 500,
+        "success_rate": 100.0,
+        "connection_time_seconds": 11.01,
+        "connections_per_second": 45.4,
+        "still_connected_after_5s": 500
+      },
+      {
+        "name": "1000 Concurrent Connections",
+        "passed": true,
+        "connected": 1000,
+        "success_rate": 100.0,
+        "connection_time_seconds": 22.42,
+        "connections_per_second": 44.6,
+        "still_connected_after_10s": 1000
+      }
+    ],
+    "overall_success": true
+  }
+}

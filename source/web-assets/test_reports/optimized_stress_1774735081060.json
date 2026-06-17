@@ -1,0 +1,83 @@
+{
+  "startTime": "2026-03-28T20:06:23.575Z",
+  "target": 1000000,
+  "batchSize": 1000,
+  "concurrency": 50,
+  "phases": {
+    "userCreation": {
+      "target": 100000,
+      "created": 0,
+      "duration": "6374.462s",
+      "rate": "0 users/s"
+    },
+    "engagement": {
+      "tested": 0,
+      "successful": 0,
+      "duration": "0s"
+    },
+    "myVibez": {
+      "tested": 0,
+      "successful": 0,
+      "duration": "0s"
+    },
+    "tournaments": {
+      "created": 0,
+      "duration": "3.059s"
+    },
+    "videoCalls": {
+      "attempted": 5000,
+      "successful": 0,
+      "duration": "319.949s"
+    }
+  },
+  "errors": [
+    {
+      "path": "/api/auth/test-user",
+      "error": "getaddrinfo ENOTFOUND gvdsg-primary-7742.emergentmind.pro"
+    },
+    {
+      "path": "/api/auth/test-user",
+      "error": "getaddrinfo ENOTFOUND gvdsg-primary-7742.emergentmind.pro"
+    },
+    {
+      "path": "/api/auth/test-user",
+      "error": "getaddrinfo ENOTFOUND gvdsg-primary-7742.emergentmind.pro"
+    },
+    {
+      "path": "/api/auth/test-user",
+      "error": "getaddrinfo ENOTFOUND gvdsg-primary-7742.emergentmind.pro"
+    },
+    {
+      "path": "/api/auth/test-user",
+      "error": "getaddrinfo ENOTFOUND gvdsg-primary-7742.emergentmind.pro"
+    },
+    {
+      "path": "/api/auth/test-user",
+      "error": "getaddrinfo ENOTFOUND gvdsg-primary-7742.emergentmind.pro"
+    },
+    {
+      "path": "/api/auth/test-user",
+      "error": "getaddrinfo ENOTFOUND gvdsg-primary-7742.emergentmind.pro"
+    },
+    {
+      "path": "/api/auth/test-user",
+      "error": "getaddrinfo ENOTFOUND gvdsg-primary-7742.emergentmind.pro"
+    },
+    {
+      "path": "/api/auth/test-user",
+      "error": "getaddrinfo ENOTFOUND gvdsg-primary-7742.emergentmind.pro"
+    },
+    {
+      "path": "/api/auth/test-user",
+      "error": "getaddrinfo ENOTFOUND gvdsg-primary-7742.emergentmind.pro"
+    }
+  ],
+  "summary": {
+    "totalRequests": 0,
+    "successful": 0,
+    "failed": 105050,
+    "avgResponseTime": 0
+  },
+  "endTime": "2026-03-28T21:58:01.060Z",
+  "totalDuration": "6697.472s (111.62 min)"
+}

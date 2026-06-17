@@ -1,0 +1,60 @@
+{
+  "summary": "Founder triple-fix verify sweep — 4/4 VERIFY items GREEN. (1) /vibez-654 single-player game restored to working state — stake row chips ₵50/250/500/1k/5k all render, 'Ante In ₵250' button starts a game (POST /api/vibez-654/start returns 200 with new 5-dice fields has_6/has_5/has_4/qualified/point_dice/residual_dice/rolls_remaining), Roll renders 5 dice in v654-dice-arena, qualifier ladder v654-qualifier-ladder visible. (2) ProtectedRoute action strip is correctly suppressed on fullscreen game routes — manually navigated to /vibe-654/solo, /spades, /bid-whist, /hearts, /vibez-654 → testid protected-route-action-strip count=0 on all five; control /dashboard count=1. (3) Photosensitive-safe styles confirmed on /spades — 0 elements running gv-card-neon-pulse, 0 running ace-flicker/ruby-heartbeat/nova-shimmer/jade-pulse; Reduce Motion menu item visible inside PageActionStrip dropdown, clicking it sets body[data-no-flash]='1' + localStorage.gv_no_flash_v1='1' AND the flag PERSISTS through full page reload. (4) pytest /app/backend/tests/regression_shield.py -q → 226 passed in 4.13s — all three new locks present: test_protected_route_skips_action_strip_on_fullscreen_games, test_vibez654_classic_page_speaks_5dice_protocol, test_photosensitive_safe_card_styles. Demo-login backend was returning 500 on first hit because mongod had crashed (supervisor 'FATAL: Exited too quickly') — `sudo supervisorctl start mongod` brought it back up; root cause appears to be an OOM/disk-fill from earlier in the session — logged for main agent but not blocking. Used beta credentials betatester1@globalvibez.com after that. Safe to ship.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "supervisor:mongod", "issue": "mongod was in FATAL state on entry to this run (Exited too quickly). Recovered cleanly via `sudo supervisorctl start mongod` and stayed up. Likely a side-effect of the earlier disk-fill incident. Worth checking /var/log/mongodb for the crash trace before redeploy."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "verifications_passed": [
+    "VERIFY-1 /vibez-654 stake row + 5 chips (₵50/₵250/₵500/₵1k/₵5k) all rendered with correct testids",
+    "VERIFY-1 'Ante In ₵250' click → v654-game-active=1, v654-qualifier-ladder=1, v654-dice-arena=1",
+    "VERIFY-1 Roll click → 5 dice rendered (v654-die-0..4), 2nd roll also 5 dice (no 6/5/4 hit on this RNG draw, so no chips locked — expected)",
+    "VERIFY-1 backend POST /api/vibez-654/start returns has_6/has_5/has_4/qualified/point_dice/residual_dice/rolls_remaining (5-dice protocol live)",
+    "VERIFY-1 backend POST /api/vibez-654/roll returns same 5-dice fields + last_roll.dice (5 dice)",
+    "VERIFY-2 protected-route-action-strip count=0 on /vibe-654/solo, /spades, /bid-whist, /hearts, /vibez-654",
+    "VERIFY-2 protected-route-action-strip count=1 on /dashboard (control)",
+    "VERIFY-2 FULLSCREEN_GAME_ROUTES whitelist in App.js:68-75 covers all 5 tested routes",
+    "VERIFY-3a /spades: 0 elements with gv-card-neon-pulse animation running",
+    "VERIFY-3b /spades: 0 elements with ace-flicker/ruby-heartbeat/nova-shimmer/jade-pulse animations running",
+    "VERIFY-3c PageActionStrip on /dashboard exposes 'Reduce Motion' menu item (visible after opening Quick Access)",
+    "VERIFY-3c click Reduce Motion → body[data-no-flash]='1' AND localStorage.gv_no_flash_v1='1'",
+    "VERIFY-3c reload page → BOTH flags persist (body=1, ls=1)",
+    "VERIFY-4 pytest regression_shield.py = 226 passed in 4.13s (was 224 previously — 2 new locks merged in this iteration)",
+    "VERIFY-4 New locks present: test_protected_route_skips_action_strip_on_fullscreen_games, test_vibez654_classic_page_speaks_5dice_protocol, test_photosensitive_safe_card_styles"
+  ],
+  "test_report_links": [
+    "/app/backend/tests/regression_shield.py",
+    "/app/frontend/src/pages/games/Vibez654Game.tsx",
+    "/app/frontend/src/App.js",
+    "/app/frontend/src/styles/vibez-pro.css",
+    "/app/frontend/src/components/common/PageActionStrip.tsx"
+  ],
+  "action_items": [
+    "Investigate why mongod entered FATAL state pre-session (likely earlier OOM/disk-fill). Check /var/log/mongodb/*.log before next redeploy. Not blocking this ship.",
+    "Optional: also gate the /not-found page behind HIDDEN_EXACT in WhatsNewBanner (carry-over comment from prior iteration)."
+  ],
+  "critical_code_review_comments": [
+    "App.js FULLSCREEN_GAME_ROUTES (lines 68-75) cleanly exempts the 17 fullscreen game routes from PageActionStrip — pattern .startsWith(r + '/') correctly matches both /vibe-654 and /vibe-654/solo. Confirmed by manual nav test.",
+    "vibez-pro.css keeps the @keyframes definitions for nova-shimmer / jade-pulse / ace-flicker / ruby-heartbeat alive but the .action-ready-* classes no longer reference them via `animation:` — that's fine and reversible. The body[data-no-flash='1'] universal selector at line 520 (animation: none !important on *, *::before, *::after) is the killswitch — solid implementation.",
+    "Vibez654Game.tsx diceToRender at line 143 uses (game.qualified ? point_dice : residual_dice ?? last_roll_dice) — correctly defaults to residual_dice when not yet qualified, which is what triggered the OLD page's break (it was reading locked_dice/unlocked_dice that the new server endpoint no longer emits).",
+    "PageActionStrip toggleNoFlash both writes localStorage AND sets body attribute imperatively — re-application on reload happens via the boot script in index.html (verified body=1 persists), good belt-and-suspenders.",
+    "Backend still returns legacy fields locked_dice=[] and unlocked_dice=[] alongside the new 5-dice fields — backward-compat for any old client. Safe to drop in a future cleanup but no need to rush."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "226/226 (100%) regression_shield + live API smoke 2/2",
+    "frontend": "VERIFY-1 + VERIFY-2 + VERIFY-3 all PASS (5/5 fullscreen routes, full Vibez 654 game flow, photosensitive killswitch + persistence)"
+  },
+  "test_credentials": "betatester1@globalvibez.com / BetaTester2026! (works after `sudo supervisorctl start mongod` — demo-login was 500 prior because mongod was FATAL).",
+  "seed_data_creation": "None — beta tester account was already provisioned by beta_tester_seeder on backend boot.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Three founder fixes shipped clean: (1) /vibez-654 page rewritten to consume new 5-dice protocol (has_6/has_5/has_4/qualified/point_dice/residual_dice), (2) ProtectedRoute action strip whitelisted out of FULLSCREEN_GAME_ROUTES so game CTAs stay reachable, (3) all card-room flicker animations stripped + Reduce Motion killswitch in PageActionStrip with localStorage persistence. regression_shield.py = 226 GREEN. ONE OPS NOTE: mongod was in FATAL state on session entry — recovered via supervisorctl start mongod. If next agent sees demo-login or other auth returning 500, check supervisorctl status mongod first.",
+  "rca of the issue": "Original founder bug: /vibez-654 page was reading locked_dice/unlocked_dice from /api/vibez-654/start response, but server had been migrated to a 5-dice protocol that emits has_6/has_5/has_4/qualified/point_dice/residual_dice. With the legacy fields empty, the page showed no dice and no Ante button worked. Fix in Vibez654Game.tsx wires diceToRender to residual_dice (or point_dice if qualified) and adds the qualifier ladder UI consuming has_6/has_5/has_4. Verified end-to-end via manual game flow."
+}

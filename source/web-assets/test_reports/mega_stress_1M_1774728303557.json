@@ -1,0 +1,61 @@
+{
+  "startTime": "2026-03-28T19:56:32.614Z",
+  "totalUsers": 1000000,
+  "batchSize": 10000,
+  "tests": {
+    "userCreation": {
+      "totalUsers": 0,
+      "duration": "510.875s",
+      "usersPerSecond": 0
+    },
+    "engagementEngine": {
+      "tested": 0,
+      "successful": 0,
+      "duration": "0s",
+      "successRate": "NaN%"
+    },
+    "tournaments": {
+      "tournamentsCreated": 0,
+      "joinAttempts": 0,
+      "successfulJoins": 0,
+      "duration": "0.044s"
+    },
+    "videoCalls": {
+      "callsInitiated": 10000,
+      "successful": 0,
+      "duration": "0.006s",
+      "successRate": "0.00%"
+    },
+    "aiMatching": {
+      "analysisAttempts": 0,
+      "successful": 0,
+      "duration": "0s"
+    },
+    "myVibez": {
+      "postsCreated": 0,
+      "duration": "0s",
+      "postsPerSecond": null
+    },
+    "datingDiscovery": {
+      "likesAttempted": 0,
+      "successful": 0,
+      "duration": "0s"
+    },
+    "friends": {
+      "requestsSent": 0,
+      "successful": 0,
+      "duration": "0s"
+    }
+  },
+  "summary": {
+    "totalRequests": 0,
+    "successfulRequests": 0,
+    "failedRequests": 1000100,
+    "avgResponseTime": 0,
+    "maxResponseTime": 0,
+    "minResponseTime": null,
+    "successRate": "NaN%"
+  },
+  "endTime": "2026-03-28T20:05:03.557Z",
+  "totalDuration": "510.929s (8.52 minutes)"
+}

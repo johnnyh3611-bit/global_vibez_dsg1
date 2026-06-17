@@ -1,0 +1,36 @@
+{
+  "summary": "Regression-tested all 5 backlog items (A: Big Wheel Lounge, B: Apex Wishlist, C: Milestone Recap, D: Solana Gas/TPS, E: lifespan refactor). 31/31 pytest cases PASS. New endpoints behave per spec; no regressions detected post-refactor.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter_jan_2026_big_wheel_apex_solana_lifespan.py",
+    "/app/test_reports/pytest/iter_jan2026_bigwheel_apex_solana_lifespan.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "routes/milestones.py admin_milestones_recap: returns `_id: 1` projection of milestone_queue rows; if those documents store `_id` as Mongo ObjectId, FastAPI will fail to serialize. In current data the field is treated as `milestone_id` (string), so it works today, but a defensive `{'_id': 0, 'milestone_id': 1, ...}` projection would be safer for future docs inserted without an explicit string `_id`.",
+    "routes/solana_network.py _is_mainnet(): operator-precedence ambiguity in `'mainnet' in url or 'helius-rpc.com/?api-key' in url and 'devnet' not in url` — Python evaluates `and` before `or`, so the intent is preserved, but adding parentheses would prevent future misreads.",
+    "lifespan.py register_shutdown(): when DISABLE_CARD_ROYALE_SCHEDULER=1 the shutdown handler returns early WITHOUT closing the motor client. Per the inline comment this is intentional for pytest reuse, but in the preview env (which also has this flag set) the motor client never gets explicitly closed on supervisor restart — relying on process death. Acceptable, but worth flagging.",
+    "lifespan.py register_startup_tasks(): the `DISABLE_CARD_ROYALE_SCHEDULER=1` flag misleadingly disables ALL 7 schedulers (Card Royale, Daily Report, VibeRidez, Solana Indexer, Profit-Share, Auto-Pilot, Apex Evolution), not just Card Royale. Rename to `DISABLE_BG_SCHEDULERS` or split flags. Behavior is preserved 1:1 from pre-refactor server.py, so not a regression."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter_jan_2026_big_wheel_apex_solana_lifespan.py (new)"
+  ],
+  "success_rate": {
+    "backend": "100% (31/31)",
+    "frontend": "skipped per request"
+  },
+  "test_credentials": "Admin: vault-auth password='GlobalVibez_Founder_2025!' code='000000'. Demo user: POST /api/auth/demo-login (no body).",
+  "seed_data_creation": "Created and cleaned up: (1) one BIG_WHEEL Spades game (wager=10) — removed via direct mongo delete in test teardown; (2) wishlist entries with email prefixes 'pytest_' and 'bounds_' — removed via teardown_class regex delete on db.apex_wishlist.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "All 5 backlog items are validated. Test file at /app/backend/tests/test_iter_jan_2026_big_wheel_apex_solana_lifespan.py covers: BigWheel stats/lobbies/leaderboard incl. live-game fixture; Apex wishlist 400/idempotency/bounds/admin-401/admin-200; Milestone recap 401/200/clamping; Solana fees/tps 401/200 on Devnet (is_mainnet=False, fees=0, TPS series populated); lifespan-refactor spread test of 10 routes. Per /api/admin/audit/feed needs admin cookie (returns 401 unauth, validated). Note: /api/leaderboard/global does not exist — substituted /api/coins/leaderboard for the spread test. Schedulers are intentionally suppressed in preview (DISABLE_CARD_ROYALE_SCHEDULER=1), so no 'started' logs appear; 'Database indexes created successfully' appears repeatedly in backend.err.log confirming lifespan startup hooks fire correctly.",
+  "rca_of_the_issue": "N/A — no regressions found. Lifespan refactor (server.py 1874→1587 lines, indexes moved to declarative _INDEX_SPECS list, 7 scheduler kick-offs wrapped in _kick_off helper) is behavior-preserving. Backend health=200, all spread-test routes respond non-500, indexes log success, no 'scheduler skipped' warnings outside the expected DISABLE_CARD_ROYALE_SCHEDULER early-return."
+}

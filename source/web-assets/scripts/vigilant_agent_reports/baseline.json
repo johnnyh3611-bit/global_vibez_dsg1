@@ -1,0 +1,586 @@
+{
+  "url": "https://social-connect-953.preview.emergentagent.com",
+  "started_at": "2026-05-09T12:34:34.165Z",
+  "devices": [
+    {
+      "name": "Desktop_4K",
+      "viewport": {
+        "width": 3840,
+        "height": 2160
+      },
+      "collisions": [
+        {
+          "a": "DIV#root",
+          "b": "A#emergent-badge",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": null
+        },
+        {
+          "a": "DIV#root",
+          "b": "svg",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": null
+        },
+        {
+          "a": "DIV#root",
+          "b": "path",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": null
+        },
+        {
+          "a": "DIV#root",
+          "b": "path",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": null
+        },
+        {
+          "a": "DIV#root",
+          "b": "P",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": null
+        },
+        {
+          "a": "DIV#root",
+          "b": "IFRAME",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": null
+        },
+        {
+          "a": "DIV",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "corner-dock-left",
+          "b_testid": null
+        },
+        {
+          "a": "DIV",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "corner-dock-left",
+          "b_testid": "landing-room-tint-overlay"
+        },
+        {
+          "a": "DIV",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "corner-dock-left",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "corner-dock-left-trigger",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "corner-dock-left-trigger",
+          "b_testid": "landing-room-tint-overlay"
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "corner-dock-left-trigger",
+          "b_testid": null
+        },
+        {
+          "a": "svg",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": null
+        },
+        {
+          "a": "svg",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": "landing-room-tint-overlay"
+        },
+        {
+          "a": "svg",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": null
+        },
+        {
+          "a": "path",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": null
+        },
+        {
+          "a": "path",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": "landing-room-tint-overlay"
+        },
+        {
+          "a": "path",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": null
+        },
+        {
+          "a": "SPAN",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": null
+        },
+        {
+          "a": "SPAN",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": "landing-room-tint-overlay"
+        },
+        {
+          "a": "SPAN",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": null
+        },
+        {
+          "a": "SPAN",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": null
+        },
+        {
+          "a": "SPAN",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": "landing-room-tint-overlay"
+        },
+        {
+          "a": "SPAN",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": null
+        },
+        {
+          "a": "svg",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": null
+        }
+      ],
+      "duplicate_testids": [],
+      "fab_stacks": {
+        "fab_count_by_corner": {
+          "bottom-left": 2,
+          "bottom-right": 2
+        },
+        "stacked_pairs": []
+      },
+      "nav_error": null
+    },
+    {
+      "name": "iPhone_Mobile",
+      "viewport": {
+        "width": 393,
+        "height": 659
+      },
+      "collisions": [
+        {
+          "a": "DIV#root",
+          "b": "A#emergent-badge",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": null
+        },
+        {
+          "a": "DIV#root",
+          "b": "svg",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": null
+        },
+        {
+          "a": "DIV#root",
+          "b": "path",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": null
+        },
+        {
+          "a": "DIV#root",
+          "b": "path",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": null
+        },
+        {
+          "a": "DIV#root",
+          "b": "P",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": null
+        },
+        {
+          "a": "DIV#root",
+          "b": "IFRAME",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": null
+        },
+        {
+          "a": "DIV",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "corner-dock-left",
+          "b_testid": null
+        },
+        {
+          "a": "DIV",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "corner-dock-left",
+          "b_testid": "landing-room-tint-overlay"
+        },
+        {
+          "a": "DIV",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "corner-dock-left",
+          "b_testid": null
+        },
+        {
+          "a": "DIV",
+          "b": "SECTION",
+          "overlap_pct": 100,
+          "a_testid": "corner-dock-left",
+          "b_testid": null
+        },
+        {
+          "a": "DIV",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "corner-dock-left",
+          "b_testid": null
+        },
+        {
+          "a": "DIV",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "corner-dock-left",
+          "b_testid": null
+        },
+        {
+          "a": "DIV",
+          "b": "DIV",
+          "overlap_pct": 23,
+          "a_testid": "corner-dock-left",
+          "b_testid": null
+        },
+        {
+          "a": "DIV",
+          "b": "BUTTON",
+          "overlap_pct": 23,
+          "a_testid": "corner-dock-left",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "corner-dock-left-trigger",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "corner-dock-left-trigger",
+          "b_testid": "landing-room-tint-overlay"
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "corner-dock-left-trigger",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "SECTION",
+          "overlap_pct": 100,
+          "a_testid": "corner-dock-left-trigger",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "corner-dock-left-trigger",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "corner-dock-left-trigger",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 23,
+          "a_testid": "corner-dock-left-trigger",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "BUTTON",
+          "overlap_pct": 23,
+          "a_testid": "corner-dock-left-trigger",
+          "b_testid": null
+        },
+        {
+          "a": "svg",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": null
+        },
+        {
+          "a": "svg",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": "landing-room-tint-overlay"
+        },
+        {
+          "a": "svg",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": null
+        }
+      ],
+      "duplicate_testids": [],
+      "fab_stacks": {
+        "fab_count_by_corner": {
+          "bottom-left": 2,
+          "bottom-right": 2
+        },
+        "stacked_pairs": []
+      },
+      "nav_error": null
+    },
+    {
+      "name": "iPad_Tablet",
+      "viewport": {
+        "width": 834,
+        "height": 1194
+      },
+      "collisions": [
+        {
+          "a": "DIV#root",
+          "b": "A#emergent-badge",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": null
+        },
+        {
+          "a": "DIV#root",
+          "b": "svg",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": null
+        },
+        {
+          "a": "DIV#root",
+          "b": "path",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": null
+        },
+        {
+          "a": "DIV#root",
+          "b": "path",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": null
+        },
+        {
+          "a": "DIV#root",
+          "b": "P",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": null
+        },
+        {
+          "a": "DIV#root",
+          "b": "IFRAME",
+          "overlap_pct": 100,
+          "a_testid": null,
+          "b_testid": null
+        },
+        {
+          "a": "DIV",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "corner-dock-left",
+          "b_testid": null
+        },
+        {
+          "a": "DIV",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "corner-dock-left",
+          "b_testid": "landing-room-tint-overlay"
+        },
+        {
+          "a": "DIV",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "corner-dock-left",
+          "b_testid": null
+        },
+        {
+          "a": "DIV",
+          "b": "SECTION",
+          "overlap_pct": 100,
+          "a_testid": "corner-dock-left",
+          "b_testid": null
+        },
+        {
+          "a": "DIV",
+          "b": "DIV",
+          "overlap_pct": 95,
+          "a_testid": "corner-dock-left",
+          "b_testid": null
+        },
+        {
+          "a": "DIV",
+          "b": "DIV",
+          "overlap_pct": 95,
+          "a_testid": "corner-dock-left",
+          "b_testid": null
+        },
+        {
+          "a": "DIV",
+          "b": "DIV",
+          "overlap_pct": 95,
+          "a_testid": "corner-dock-left",
+          "b_testid": null
+        },
+        {
+          "a": "DIV",
+          "b": "SECTION",
+          "overlap_pct": 95,
+          "a_testid": "corner-dock-left",
+          "b_testid": "burn-counter-widget"
+        },
+        {
+          "a": "DIV",
+          "b": "DIV",
+          "overlap_pct": 97,
+          "a_testid": "corner-dock-left",
+          "b_testid": null
+        },
+        {
+          "a": "DIV",
+          "b": "DIV",
+          "overlap_pct": 73,
+          "a_testid": "corner-dock-left",
+          "b_testid": null
+        },
+        {
+          "a": "DIV",
+          "b": "DIV",
+          "overlap_pct": 73,
+          "a_testid": "corner-dock-left",
+          "b_testid": "burn-counter-tiles"
+        },
+        {
+          "a": "DIV",
+          "b": "DIV",
+          "overlap_pct": 73,
+          "a_testid": "corner-dock-left",
+          "b_testid": "burn-tile-24h"
+        },
+        {
+          "a": "DIV",
+          "b": "DIV",
+          "overlap_pct": 66,
+          "a_testid": "corner-dock-left",
+          "b_testid": null
+        },
+        {
+          "a": "DIV",
+          "b": "DIV",
+          "overlap_pct": 47,
+          "a_testid": "corner-dock-left",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "corner-dock-left-trigger",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "corner-dock-left-trigger",
+          "b_testid": "landing-room-tint-overlay"
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 100,
+          "a_testid": "corner-dock-left-trigger",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "SECTION",
+          "overlap_pct": 100,
+          "a_testid": "corner-dock-left-trigger",
+          "b_testid": null
+        },
+        {
+          "a": "BUTTON",
+          "b": "DIV",
+          "overlap_pct": 95,
+          "a_testid": "corner-dock-left-trigger",
+          "b_testid": null
+        }
+      ],
+      "duplicate_testids": [],
+      "fab_stacks": {
+        "fab_count_by_corner": {
+          "bottom-left": 2,
+          "bottom-right": 2
+        },
+        "stacked_pairs": []
+      },
+      "nav_error": null
+    }
+  ],
+  "finished_at": "2026-05-09T12:35:22.576Z"
+}

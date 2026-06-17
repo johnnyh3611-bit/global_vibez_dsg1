@@ -1,0 +1,205 @@
+{
+  "meta": {
+    "generated_at": "2026-03-28T15:13:11.848Z",
+    "test_duration_ms": 313134,
+    "tester_version": "10X_MEGA_v1.0",
+    "base_url": "http://localhost:3000",
+    "api_url": "https://social-connect-953.preview.emergentagent.com"
+  },
+  "summary": {
+    "total_tests": 25,
+    "passed": 1,
+    "failed": 24,
+    "pass_rate": "4.00%"
+  },
+  "results": {
+    "games": [
+      {
+        "game": "poker",
+        "category": "cardGames",
+        "status": "ERROR",
+        "error": "page.screenshot: options.quality is unsupported for the png screenshots",
+        "timestamp": "2026-03-28T15:08:10.818Z"
+      },
+      {
+        "game": "spades",
+        "category": "cardGames",
+        "status": "ERROR",
+        "error": "page.screenshot: options.quality is unsupported for the png screenshots",
+        "timestamp": "2026-03-28T15:08:21.883Z"
+      },
+      {
+        "game": "hearts",
+        "category": "cardGames",
+        "status": "ERROR",
+        "error": "page.screenshot: options.quality is unsupported for the png screenshots",
+        "timestamp": "2026-03-28T15:08:33.219Z"
+      },
+      {
+        "game": "rummy",
+        "category": "cardGames",
+        "status": "ERROR",
+        "error": "page.screenshot: options.quality is unsupported for the png screenshots",
+        "timestamp": "2026-03-28T15:08:45.310Z"
+      },
+      {
+        "game": "blackjack",
+        "category": "cardGames",
+        "status": "ERROR",
+        "error": "page.screenshot: options.quality is unsupported for the png screenshots",
+        "timestamp": "2026-03-28T15:08:56.405Z"
+      },
+      {
+        "game": "gofish",
+        "category": "cardGames",
+        "status": "ERROR",
+        "error": "page.screenshot: options.quality is unsupported for the png screenshots",
+        "timestamp": "2026-03-28T15:09:07.701Z"
+      },
+      {
+        "game": "crazy-eights",
+        "category": "cardGames",
+        "status": "ERROR",
+        "error": "page.screenshot: options.quality is unsupported for the png screenshots",
+        "timestamp": "2026-03-28T15:09:18.504Z"
+      },
+      {
+        "game": "uno",
+        "category": "cardGames",
+        "status": "ERROR",
+        "error": "page.screenshot: options.quality is unsupported for the png screenshots",
+        "timestamp": "2026-03-28T15:09:29.507Z"
+      },
+      {
+        "game": "bid-whist",
+        "category": "cardGames",
+        "status": "ERROR",
+        "error": "page.screenshot: options.quality is unsupported for the png screenshots",
+        "timestamp": "2026-03-28T15:09:41.400Z"
+      },
+      {
+        "game": "chess",
+        "category": "boardGames",
+        "status": "ERROR",
+        "error": "page.screenshot: options.quality is unsupported for the png screenshots",
+        "timestamp": "2026-03-28T15:09:52.018Z"
+      },
+      {
+        "game": "checkers",
+        "category": "boardGames",
+        "status": "ERROR",
+        "error": "page.screenshot: options.quality is unsupported for the png screenshots",
+        "timestamp": "2026-03-28T15:10:03.610Z"
+      },
+      {
+        "game": "connect4",
+        "category": "boardGames",
+        "status": "ERROR",
+        "error": "page.screenshot: options.quality is unsupported for the png screenshots",
+        "timestamp": "2026-03-28T15:10:16.418Z"
+      },
+      {
+        "game": "tictactoe",
+        "category": "boardGames",
+        "status": "ERROR",
+        "error": "page.screenshot: options.quality is unsupported for the png screenshots",
+        "timestamp": "2026-03-28T15:10:28.110Z"
+      },
+      {
+        "game": "reversi",
+        "category": "boardGames",
+        "status": "ERROR",
+        "error": "page.screenshot: options.quality is unsupported for the png screenshots",
+        "timestamp": "2026-03-28T15:10:39.800Z"
+      },
+      {
+        "game": "ludo",
+        "category": "culturalGames",
+        "status": "ERROR",
+        "error": "page.screenshot: options.quality is unsupported for the png screenshots",
+        "timestamp": "2026-03-28T15:10:50.415Z"
+      },
+      {
+        "game": "carrom",
+        "category": "culturalGames",
+        "status": "ERROR",
+        "error": "page.screenshot: options.quality is unsupported for the png screenshots",
+        "timestamp": "2026-03-28T15:11:02.887Z"
+      },
+      {
+        "game": "snakes-and-ladders",
+        "category": "culturalGames",
+        "status": "ERROR",
+        "error": "page.screenshot: options.quality is unsupported for the png screenshots",
+        "timestamp": "2026-03-28T15:11:13.299Z"
+      },
+      {
+        "game": "chinese-checkers",
+        "category": "culturalGames",
+        "status": "ERROR",
+        "error": "page.screenshot: options.quality is unsupported for the png screenshots",
+        "timestamp": "2026-03-28T15:11:25.199Z"
+      },
+      {
+        "game": "mahjong",
+        "category": "culturalGames",
+        "status": "ERROR",
+        "error": "page.screenshot: options.quality is unsupported for the png screenshots",
+        "timestamp": "2026-03-28T15:11:37.205Z"
+      },
+      {
+        "game": "dominoes",
+        "category": "culturalGames",
+        "status": "ERROR",
+        "error": "page.screenshot: options.quality is unsupported for the png screenshots",
+        "timestamp": "2026-03-28T15:11:48.183Z"
+      },
+      {
+        "game": "mancala",
+        "category": "culturalGames",
+        "status": "ERROR",
+        "error": "page.screenshot: options.quality is unsupported for the png screenshots",
+        "timestamp": "2026-03-28T15:11:59.025Z"
+      },
+      {
+        "game": "go",
+        "category": "culturalGames",
+        "status": "ERROR",
+        "error": "page.screenshot: options.quality is unsupported for the png screenshots",
+        "timestamp": "2026-03-28T15:12:10.607Z"
+      },
+      {
+        "game": "shogi",
+        "category": "culturalGames",
+        "status": "ERROR",
+        "error": "page.screenshot: options.quality is unsupported for the png screenshots",
+        "timestamp": "2026-03-28T15:12:22.284Z"
+      },
+      {
+        "game": "xiangqi",
+        "category": "culturalGames",
+        "status": "ERROR",
+        "error": "page.screenshot: options.quality is unsupported for the png screenshots",
+        "timestamp": "2026-03-28T15:12:33.213Z"
+      }
+    ],
+    "engagement": [],
+    "myVibez": [],
+    "friends": [],
+    "dating": [],
+    "tournaments": [],
+    "auth": [],
+    "websockets": [],
+    "performance": [
+      {
+        "name": "Concurrent Users Simulation",
+        "status": "PASS",
+        "total_users": 10,
+        "successful": 10,
+        "failed": 0
+      }
+    ],
+    "ui": []
+  },
+  "screenshots_directory": "/tmp/"
+}

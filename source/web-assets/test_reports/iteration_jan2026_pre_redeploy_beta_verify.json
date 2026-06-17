@@ -1,0 +1,58 @@
+{
+  "summary": "Pre-redeploy beta verification — 16/16 backend pytests PASS; frontend mostly PASS except a route-collision bug that shadows the new /wallet PhantomConnect row.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Wallet route (/wallet)",
+        "issue": "DUPLICATE ROUTE REGISTRATION. /app/frontend/src/routes/gamesRoutes.tsx:521 registers `<Route path=\"/wallet\" element={<VibeWallet/>}>` BEFORE /app/frontend/src/routes/miscRoutes.tsx:77 which registers the NEW `<Wallet/>` page. React Router resolves the first match, so /wallet renders the legacy VibeWallet — the new Wallet.tsx (with [data-testid=wallet-connect-phantom-row] + 'Connect Phantom Wallet' row + PhantomConnectButton) is unreachable. Selector returned 0 hits on /wallet during e2e.",
+        "selector": "[data-testid=wallet-connect-phantom-row]",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Classic dashboard header",
+        "issues": ["The pulsing pill button is labelled 'Volumetric View' / '3D' (data-testid=dashboard-try-volumetric) — review-request copy expected the label to read 'Try Volumetric'. Functionality works; cosmetic copy mismatch only."]
+      },
+      {
+        "screen": "Multiple rooms (sports-lounge, underground-live, voice-mirror, etc.)",
+        "issues": ["VigilantAgent console flagged the room-info-cube-trigger pill (fixed top-16 left-3 z-[55]) as occluding underlying back buttons (e.g. BUTTON[ul-back] on /underground-live, BUTTON[tiers-back] on /tiers). Pill still works but it stacks on top of nav controls — consider z-index or left offset adjustment."]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_jan2026_pre_redeploy_beta_verify.py",
+    "/app/test_reports/pytest/iter_jan2026_pre_redeploy.xml"
+  ],
+  "action_items": [
+    "Remove the duplicate <Route path=\"/wallet\"> from /app/frontend/src/routes/gamesRoutes.tsx (lines 520-523) so the canonical miscRoutes.tsx Wallet component renders. After fix, [data-testid=wallet-connect-phantom-row] must be visible on /wallet.",
+    "(Optional cosmetic) Update the classic-dashboard pulsing pill copy in /app/frontend/src/pages/DashboardNew.tsx:484 from 'Volumetric View' to 'Try Volumetric' to match the spec.",
+    "(Optional polish) Adjust z-index / position of the [data-testid=room-info-cube-trigger] pill so it doesn't sit on top of *-back nav buttons."
+  ],
+  "critical_code_review_comments": [
+    "Route collision: two `path=\"/wallet\"` entries (gamesRoutes.tsx + miscRoutes.tsx). React Router v6 silently keeps the first; the second is dead code. Add a lint guard or unify under a single route file to prevent future regressions.",
+    "Wallet.tsx PhantomConnectButton is shipped but unreachable in production due to the above — high-impact dead feature.",
+    "DashboardNew classic header omits an explicit 'Try Volumetric' string; reviewers using copy as the heuristic will flag it.",
+    "RoomInfoCube z-index=55 + fixed top-16/left-3 conflicts with all page back-buttons. Consider moving below the header strip or to top-right."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_jan2026_pre_redeploy_beta_verify.py (new)"
+  ],
+  "success_rate": {"backend": "100% (16/16)", "frontend": "12/13 checks (92%) — only /wallet PhantomRow failed due to route shadowing"},
+  "test_credentials": "betatester1@globalvibez.com / BetaTester2026! — login succeeded; landed on /dashboard.",
+  "seed_data_creation": "Created one TEST_pwroom_* JFTN room with password 'secret123' via betatester1; left in DB (not cleaned up).",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend layer for JFTN Season Pass, Room Password gate, Gift inbox/redeem, Integrity config, Sovereign Tiers catalog (6 tiers, tastemaker $19 popular_anchor, insider $9 trial $1), Underground Live (2 seeded battles), Spectator Bet leaderboard, Receipts merchant-boosts, Recent Rooms log/me — all green. Frontend: only blocker is the /wallet route collision shadowing Wallet.tsx. Remove the duplicate Route from gamesRoutes.tsx and re-verify [data-testid=wallet-connect-phantom-row].",
+  "rca of the issue": {
+    "bug": "/wallet PhantomConnect row missing",
+    "rca": "Two <Route path=\"/wallet\"> declarations exist in the app — gamesRoutes.tsx:521 (legacy VibeWallet) and miscRoutes.tsx:77 (new Wallet.tsx with PhantomConnectButton). React Router v6 chooses the first match, so the new page never renders.",
+    "reproduction": "Login as betatester1 → navigate to /wallet → inspect DOM → [data-testid=wallet-connect-phantom-row] returns 0 nodes; the rendered tree corresponds to VibeWallet (no PhantomConnectButton import).",
+    "mitigation": "Delete or comment out lines 520-523 of /app/frontend/src/routes/gamesRoutes.tsx. miscRoutes.tsx already owns the canonical /wallet → Wallet.tsx mapping."
+  }
+}

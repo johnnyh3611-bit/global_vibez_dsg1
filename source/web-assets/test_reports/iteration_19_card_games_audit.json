@@ -1,0 +1,55 @@
+{
+  "summary": "Card-game beta audit (REPORT-ONLY) — 20 routes audited via demo login. Spades/Hearts/BidWhist AAA show correct STAGGERED slow-deal animation (cards appear sequentially over 5s). UNO/Crazy Eights/Gin Rummy/Rummy/Caribbean Stud show INSTANT_FLASH (founder's exact complaint). Regression shield 194/220 GREEN — 26 RED (NOT 220/220 as founder expected). NO code modified.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "regression_shield.py", "issue": "26 of 220 tests FAIL. Includes test_pinochle_engine_boots, test_hearts_engine_boots, test_dominoes_engine_boots (ModuleNotFoundError). These engine-boot failures correlate with the AAA pages showing 'NO_CARDS_AFTER_5s'.", "priority": "CRITICAL"},
+      {"endpoint": "regression_shield.py", "issue": "test_gin_rummy_to_view_exposes_meld_groups & test_rummy_to_view_exposes_meld_groups failing — meld view contract regressed.", "priority": "HIGH"},
+      {"endpoint": "regression_shield.py", "issue": "Sovereign / v8 / v10 / v12 / chair-ladder / vibe-654 / card-multiplayer route mounting tests failing (16 sovereign-related).", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "/api/spades-practice/state", "issue": "Returns 404 (other practice routes return 401 = healthy); spades router prefix may differ from sibling routers."},
+      {"endpoint": "/api/ws/vibe-phone/{demo_id} & /api/ws/friend-events/{demo_id}", "issue": "WebSocket connection rejected for demo users on every page — emits browser warnings universally."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "UnoAAA", "issue": "Deal animation INSTANT_FLASH — 9 cards appear within 2s, not staggered. Violates founder's explicit slow-deal requirement.", "selector": "[data-testid*='card']", "priority": "HIGH"},
+      {"component": "CrazyEightsAAA", "issue": "Deal animation INSTANT_FLASH — 6 cards flashed, not staggered.", "selector": "[data-testid*='card']", "priority": "HIGH"},
+      {"component": "GinRummyAAA", "issue": "Deal animation INSTANT_FLASH — 11 cards flashed.", "selector": "[data-testid*='card']", "priority": "HIGH"},
+      {"component": "RummyAAA", "issue": "Deal animation INSTANT_FLASH — 14 cards flashed.", "selector": "[data-testid*='card']", "priority": "HIGH"},
+      {"component": "CaribbeanStud", "issue": "Deal animation INSTANT_FLASH — 5 player + 5 dealer cards appear together.", "selector": "[data-testid*='card']", "priority": "HIGH"},
+      {"component": "PokerPractice (/poker-practice)", "issue": "Bet input present but NO Deal/Start/Play button discoverable — game cannot be started.", "selector": "button:has-text('Deal/Start/Play')", "priority": "HIGH"}
+    ],
+    "integration_issues": [
+      {"flow": "Deal click on Practice Blackjack / Baccarat / 3-Card Poker / Casino War / Chemin / Cyber BJ", "issue": "After clicking visible Deal button, no cards appear within 5s. Likely requires chip/bet placement first — automated audit could not confirm STAGGERED vs FLASH for these.", "affected_selectors": ["button:has-text('Deal')","[data-testid*='chip']"]},
+      {"flow": "Demo user WebSocket connections", "issue": "/api/ws/vibe-phone & /api/ws/friend-events fail to upgrade for demo users on every page render.", "affected_selectors": []}
+    ],
+    "design_issues": [
+      {"screen": "Cyber Casino Blackjack /games/cyber-casino/blackjack", "issues": ["Onboarding tooltip 'NEW Tap Tools for everything' overlaps bottom-left of game UI on first visit — partially blocks rules text.", "Made with Emergent badge bottom-right overlaps More menu in some layouts."]}
+    ]
+  },
+  "verdict_per_game_table": "See /app/test_reports/iteration_card_games_audit_summary.json for the structured 20-row verdict table with route / page_renders / deal_anim / bet_ui / severity per row.",
+  "test_report_links": [
+    "/app/test_reports/iteration_card_games_audit.json",
+    "/app/test_reports/iteration_card_games_audit_summary.json",
+    "/app/backend/tests/regression_shield.py"
+  ],
+  "action_items": [
+    "Add slow-staggered deal animation (per-card ≥80ms delay) to UnoAAA, CrazyEightsAAA, GinRummyAAA, RummyAAA, CaribbeanStud — match the Spades/Hearts/BidWhist pattern.",
+    "Fix /poker-practice missing Deal/Start trigger button.",
+    "Triage 26 failing regression_shield tests — priority on test_pinochle_engine_boots / test_hearts_engine_boots / test_dominoes_engine_boots (likely missing module imports) before beta.",
+    "Manual eyeball pass needed on Euchre/Dominoes/GoFish/Pinochle AAA + all betting games — automated audit could not auto-place bet to trigger deal.",
+    "Gate /api/ws/vibe-phone & /api/ws/friend-events behind authenticated user check or skip for demo users."
+  ],
+  "critical_code_review_comments": [
+    "Inconsistency between AAA pages: Spades/Hearts/BidWhist do staggered deal correctly (good reference), but the same pattern wasn't propagated to Uno/CrazyEights/GinRummy/Rummy. Likely a copy-from-template miss.",
+    "regression_shield.py is the founder's confidence backstop and it's RED on 12% of tests — must restore to 220/220 before beta opens.",
+    "Three engine-boot tests failing (pinochle, hearts, dominoes) is concerning — explains the 'NO_CARDS_AFTER_5s' on those AAA routes too. Same root cause likely."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "88% (194/220 regression_shield)", "frontend": "100% routes render; 15% confirmed STAGGERED, 25% confirmed INSTANT_FLASH, 60% indeterminate"},
+  "seed_data_creation": "none",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "After fixes: re-run by clicking demo-login then visiting each route, click Deal and count [data-testid*=card] DOM nodes at t=0, 2s, 5s. If count rises monotonically across the window = STAGGERED (good). If count jumps to final value at t=2s = INSTANT_FLASH (bad). For betting games, extend script to first click a chip element then Deal."
+}

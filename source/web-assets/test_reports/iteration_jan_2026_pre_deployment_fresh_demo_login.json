@@ -1,0 +1,49 @@
+{
+  "summary": "PRE-DEPLOYMENT system check for Global Vibez DSG. Validated the new POST /api/auth/demo-login?fresh=1 flag, end-to-end cross-user invite flow, admin God-Mode, all Stripe webhook routing, legal-posture leak guards, and bearer-token persistence across chairs/profit-share/premium/founders-pass. Created /app/backend/tests/test_iter_jan_2026_fresh_demo_login.py with 21 new tests — all 21 PASS against the live preview URL. Combined regression run (this iteration + prior 75-test baseline + 14 chair tests) = 91/94 PASS; 3 pre-existing failures in TestSolanaIndexerAdmin (unrelated, missing admin auth fixture). Frontend smoke check: 4/5 critical testids present on the new pages. ONE missing testid: `dynamic-premium-price-banner` on /vibe-stakes is not rendered.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/auth/demo-login?fresh=1", "issue": "Response payload still hardcodes `email: demo@globalvibez.com` and `name: Demo User` even when fresh=1 mints a different user (correct user_id IS returned). The user document IS stored correctly with the unique email/name — only the immediate POST response misreports them. Cosmetic; downstream /chairs/me, /profit-share/me etc. all read the right doc."},
+      {"endpoint": "POST /api/premium/subscribe", "issue": "STILL not idempotent on payment_ref (carried over from prior iteration). Stripe webhooks retry — same successful charge will double-credit the reserve + pool boost. HIGH-priority hardening before flipping production."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "VibeStakesPortal", "issue": "data-testid=\"dynamic-premium-price-banner\" not found on /vibe-stakes page (review request explicitly listed it as a required testid).", "selector": "[data-testid=\"dynamic-premium-price-banner\"]", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [
+      {"flow": "Bundle initialization", "issue": "Console error `TypeError: e is not a function` at bundle.js:658510 fires on EVERY page load (chair-vault, vibe-stakes, founders-pass, subscriptions, join). Originates from a `.initialize()` call. Likely a third-party SDK (Privy/Firebase/Tenor?) failing silently. Page still renders, but the error spam will pollute production telemetry.", "affected_selectors": ["all routes"]},
+      {"flow": "Treasury anonymized list rendering", "issue": "React warning `Encountered two children with the same key, TEST_r…c6` on /vibe-stakes. The 6+2 char anonymization scheme (flagged in prior iteration) is now actually colliding for TEST_ prefixed seed users. List render uses anonymized id as React key — must use db `_id` or composite key.", "affected_selectors": ["[data-testid=\"vibe-stakes-house-tier-upsell\"]"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter_jan_2026_fresh_demo_login.py",
+    "/app/test_reports/pytest/iter_jan_2026_fresh_demo_login.xml",
+    "/app/test_reports/pytest/iter_jan_2026_regression_full.xml"
+  ],
+  "action_items": [
+    "(MEDIUM) Add `data-testid=\"dynamic-premium-price-banner\"` to the dynamic-pricing element rendered inside /vibe-stakes (review request lists it as required).",
+    "(MEDIUM) Investigate the recurring `TypeError: e is not a function` initialization error in the JS bundle. Wrap `await sdk.initialize()` in try/catch so a single SDK failure can't spam every page.",
+    "(MEDIUM) Switch the treasury anonymized-list React key from the anonymized id (collision-prone) to the underlying user_id or row index. Will silence the duplicate-key warning that's currently logged on every /vibe-stakes load.",
+    "(LOW) Have the demo-login response echo the actual minted user's email + name when fresh=1 (cosmetic; the correct doc is stored, only the response field is wrong).",
+    "(HIGH, carried over from prior iteration) Implement idempotency on /api/premium/subscribe keyed off payment_ref — Stripe will retry on production.",
+    "(LOW) Pre-existing TestSolanaIndexerAdmin failures are NOT caused by this iteration — those tests need the admin_session fixture wired up. Not blocking for this ship."
+  ],
+  "critical_code_review_comments": [
+    "demo_login response body in server.py L494-501 returns `email: demo@globalvibez.com` and `name: 'Demo User'` UNCONDITIONALLY, even in the fresh=1 branch. The user_id IS correct because it was reassigned, but if any frontend consumer reads `email`/`name` from the demo-login response (vs re-fetching /api/auth/me), fresh users will appear identical. Trivial fix: return `email=demo_user['email']`, `name=demo_user['name']`.",
+    "demo_login fresh branch always inserts a brand-new user — no upper bound, no rate limit. A loop hammering ?fresh=1 will balloon db.users (already 20945). Add a TTL index on `is_throwaway_demo:true` users (e.g., 24h) so they auto-purge.",
+    "Cross-user invite flow VERIFIED working: User A (singleton) → invite → User B (fresh) redeem → User B test-buy → User A current_stakes increased by ≥10. End-to-end legal-posture loyalty bonus path is sound.",
+    "Legal posture VERIFIED clean: /chairs/phase and /chairs/me return zero instances of valuation/dividend/equity/shares language."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter_jan_2026_fresh_demo_login.py (NEW — 21 tests, all passing)"
+  ],
+  "success_rate": {"backend": "100% on new iteration suite (21/21). Combined regression: 96.8% (91/94) — 3 pre-existing TestSolanaIndexerAdmin failures unrelated to this iteration.", "frontend": "80% (4/5 testids found across critical pages; dynamic-premium-price-banner missing)"},
+  "test_credentials": "Admin: GlobalVibez_Founder_2025! / 000000 (verified). Singleton demo: POST /api/auth/demo-login. Fresh demo: POST /api/auth/demo-login?fresh=1.",
+  "seed_data_creation": "Fresh demo users were minted (~10) during testing — all flagged is_throwaway_demo:true. Two chair test-buys executed (1 by singleton seed, 1 by a fresh user via cross-user invite flow). One invite code generated, redeemed, and converted. Loyalty stakes (+10) granted to inviter. All idempotent on payment_ref.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "21 new pre-deployment tests live at /app/backend/tests/test_iter_jan_2026_fresh_demo_login.py. Run with `pytest backend/tests/test_iter_jan_2026_fresh_demo_login.py -v` against REACT_APP_BACKEND_URL. Singleton demo-login is STILL singleton (id stays demo_b88a4250). Cross-user invite happy path now testable via ?fresh=1. Frontend dynamic-premium-price-banner testid is the one outstanding gap. The recurring `TypeError: e is not a function` console error is on EVERY page and should be triaged before production.",
+  "rca of the issue": "No blocking issues. Three actionable findings: (1) demo-login response payload misreports email/name in fresh mode (response-only bug, db doc is correct), (2) one missing frontend testid, (3) a third-party SDK initialization error that fires on every page load. None of these block the cross-user invite flow which is the core feature this iteration enables."
+}

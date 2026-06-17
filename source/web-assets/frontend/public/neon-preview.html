@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cyberpunk Neon Game Cards - Preview</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    .neon-card {
+      position: relative;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 1rem;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+    .neon-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 20px 60px rgba(6, 182, 212, 0.4);
+      border-color: rgba(6, 182, 212, 0.5);
+    }
+    .neon-image-container {
+      position: relative;
+      height: 192px;
+      background: #000;
+      overflow: hidden;
+    }
+    .neon-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.8;
+      transition: all 0.3s ease;
+    }
+    .neon-card:hover .neon-image {
+      transform: scale(1.1);
+      opacity: 1;
+    }
+    .neon-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(6, 182, 212, 0.3), rgba(168, 85, 247, 0.2), transparent);
+      mix-blend-mode: overlay;
+    }
+    .neon-glow-hover {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(6, 182, 212, 0.5), rgba(168, 85, 247, 0.3), transparent);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .neon-card:hover .neon-glow-hover {
+      opacity: 1;
+    }
+    .scan-line {
+      position: absolute;
+      width: 100%;
+      height: 50%;
+      background: linear-gradient(to bottom, transparent 0%, rgba(0, 255, 255, 0.3) 50%, transparent 100%);
+      opacity: 0.3;
+      animation: scan 4s linear infinite;
+    }
+    @keyframes scan {
+      0% {transform: translateY(-100%);}
+      100% {transform: translateY(200%);}
+    }
+    .badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      padding: 6px 12px;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      z-index: 10;
+    }
+    .badge-featured { background: #facc15; color: #000; }
+    .badge-hot { background: #ef4444; color: #fff; }
+    .badge-new { background: #10b981; color: #fff; }
+    .badge-upgraded { background: #3b82f6; color: #fff; }
+  </style>
+</head>
+<body class="p-8">
+  <div class="max-w-7xl mx-auto">
+    <div class="text-center mb-12">
+      <h1 class="text-5xl font-bold text-white mb-4">
+        🎮 Cyberpunk Neon Game Cards
+        <span class="block text-2xl mt-2 bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
+          2026 Gaming Aesthetic Preview
+        </span>
+      </h1>
+      <p class="text-slate-300 text-lg">Sample cards with abstract neon/holographic images</p>
+    </div>
+
+    <!-- Featured Games Section -->
+    <div class="mb-12">
+      <h2 class="text-3xl font-bold text-white mb-6">⭐ Featured Games</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <!-- UNO -->
+        <div class="neon-card">
+          <span class="badge badge-hot">HOT</span>
+          <div class="neon-image-container">
+            <img src="https://images.unsplash.com/photo-1649676145667-6a07b10a3c99" 
+                 alt="UNO" 
+                 class="neon-image"
+                 loading="lazy">
+            <div class="neon-overlay"></div>
+            <div class="neon-glow-hover"></div>
+            <div class="scan-line"></div>
+          </div>
+          <div class="p-6">
+            <h3 class="text-2xl font-bold text-white mb-2">UNO</h3>
+            <p class="text-slate-400 text-sm mb-4">Players: 2-4 • Card Game</p>
+            <button class="w-full py-2 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-cyan-500/50 transition">
+              Play Now
+            </button>
+          </div>
+        </div>
+
+        <!-- Poker -->
+        <div class="neon-card">
+          <span class="badge badge-featured">POPULAR</span>
+          <div class="neon-image-container">
+            <img src="https://images.unsplash.com/photo-1773429492643-62efd2686348" 
+                 alt="Poker" 
+                 class="neon-image"
+                 loading="lazy">
+            <div class="neon-overlay"></div>
+            <div class="neon-glow-hover"></div>
+            <div class="scan-line"></div>
+          </div>
+          <div class="p-6">
+            <h3 class="text-2xl font-bold text-white mb-2">Poker</h3>
+            <p class="text-slate-400 text-sm mb-4">Players: 2-6 • Card Game</p>
+            <button class="w-full py-2 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-cyan-500/50 transition">
+              Play Now
+            </button>
+          </div>
+        </div>
+
+        <!-- Roulette -->
+        <div class="neon-card">
+          <span class="badge badge-upgraded">AI DEALER</span>
+          <div class="neon-image-container">
+            <img src="https://images.unsplash.com/photo-1774998903213-3e35444774ec" 
+                 alt="Roulette" 
+                 class="neon-image"
+                 loading="lazy">
+            <div class="neon-overlay"></div>
+            <div class="neon-glow-hover"></div>
+            <div class="scan-line"></div>
+          </div>
+          <div class="p-6">
+            <h3 class="text-2xl font-bold text-white mb-2">Roulette</h3>
+            <p class="text-slate-400 text-sm mb-4">Players: 1 • Casino</p>
+            <button class="w-full py-2 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-cyan-500/50 transition">
+              Play Now
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- More Sample Games -->
+    <div class="mb-12">
+      <h2 class="text-3xl font-bold text-white mb-6">🎯 More Sample Games</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <!-- Chess (Board) -->
+        <div class="neon-card">
+          <div class="neon-image-container">
+            <img src="https://images.unsplash.com/photo-1764258560191-d8f338c823a7" 
+                 alt="Chess" 
+                 class="neon-image"
+                 loading="lazy">
+            <div class="neon-overlay"></div>
+            <div class="neon-glow-hover"></div>
+            <div class="scan-line"></div>
+          </div>
+          <div class="p-6">
+            <h3 class="text-2xl font-bold text-white mb-2">Chess</h3>
+            <p class="text-slate-400 text-sm mb-4">Players: 2 • Board Game</p>
+            <button class="w-full py-2 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-cyan-500/50 transition">
+              Play Now
+            </button>
+          </div>
+        </div>
+
+        <!-- Snake (Arcade) -->
+        <div class="neon-card">
+          <span class="badge badge-upgraded">🎵 UPGRADED</span>
+          <div class="neon-image-container">
+            <img src="https://images.pexels.com/photos/15549328/pexels-photo-15549328.jpeg" 
+                 alt="Snake" 
+                 class="neon-image"
+                 loading="lazy">
+            <div class="neon-overlay"></div>
+            <div class="neon-glow-hover"></div>
+            <div class="scan-line"></div>
+          </div>
+          <div class="p-6">
+            <h3 class="text-2xl font-bold text-white mb-2">Snake</h3>
+            <p class="text-slate-400 text-sm mb-4">Players: 1 • Arcade</p>
+            <button class="w-full py-2 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-cyan-500/50 transition">
+              Play Now
+            </button>
+          </div>
+        </div>
+
+        <!-- Truth or Dare (Party) -->
+        <div class="neon-card">
+          <span class="badge badge-upgraded">🎵 UPGRADED</span>
+          <div class="neon-image-container">
+            <img src="https://images.unsplash.com/photo-1763926444192-08bba5ffdd46" 
+                 alt="Truth or Dare" 
+                 class="neon-image"
+                 loading="lazy">
+            <div class="neon-overlay"></div>
+            <div class="neon-glow-hover"></div>
+            <div class="scan-line"></div>
+          </div>
+          <div class="p-6">
+            <h3 class="text-2xl font-bold text-white mb-2">Truth or Dare</h3>
+            <p class="text-slate-400 text-sm mb-4">Players: 2+ • Party Game</p>
+            <button class="w-full py-2 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-cyan-500/50 transition">
+              Play Now
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="text-center text-slate-400 text-sm mt-12">
+      <p>✨ This is a preview of 6 sample games with Cyberpunk Neon aesthetic</p>
+      <p class="mt-2">All images are abstract/holographic patterns from Unsplash/Pexels</p>
+    </div>
+  </div>
+</body>
+</html>

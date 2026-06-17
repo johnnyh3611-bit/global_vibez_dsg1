@@ -1,0 +1,54 @@
+{
+  "summary": "Vibez 654 side-bets backend (8/8 pytest passing), Vibez 654 single-player drawers (Side Bets + Recent Rolls) verified working, Vibe Solo High Roller layout fix verified (coliseum 461x461 fits cleanly above stake bar with 104px gap on 1366x768; 390x390 on 414x896 with no horizontal overflow), and full visual sweep of 22 fullscreen game routes at desktop+mobile completed. Found 5 real defects (1 founder-rule WhatsNewBanner leak, 3 FAB violations on cyber-casino routes, 1 voice-dock FAB on three-card-poker, 1 broken /chess route returning 404). The 178x40 fixed bottom-right element flagged on all routes is the platform 'Made with Emergent' watermark and is NOT app code.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Vibez654Game outcome card", "issue": "data-testids 'v654-payout' and 'v654-side-payout' not found in DOM after stand — outcome card may use different testids or only render under specific conditions. Could not verify per spec.", "selector": "[data-testid=\"v654-payout\"], [data-testid=\"v654-side-payout\"]", "priority": "MEDIUM"},
+      {"component": "Vibez654Game side bets header", "issue": "Side bets total testid 'v654-side-bets-total' missing — header instead shows 'SIDE BETS · N PLACED' (count only, not amount total).", "selector": "[data-testid=\"v654-side-bets-total\"]", "priority": "LOW"},
+      {"component": "Vibez654Game side-bet pick buttons after start", "issue": "Could not confirm pick buttons are disabled after game starts — the post-start drawer renders read-only summary list (TRIPLE 6 ₵25 lost / ANY STRAIGHT ₵10 lost) without re-rendering pick buttons. Visually correct (read-only) but the test selector for disabled state returned null.", "selector": "[data-testid^=\"v654-side-bet-\"][data-testid*=\"-pick-\"]", "priority": "LOW"},
+      {"component": "/chess route", "issue": "Top-level /chess route renders 'Not Found' page on both 1366x768 and 414x896 — only /practice/play/chess works. The visual sweep brief lists /chess as a target route.", "selector": "n/a", "priority": "HIGH"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Cyber Casino fullscreen routes (/games/cyber-casino, /games/cyber-casino/roulette)", "issues": ["VIOLATION of founder no-FAB rule: voice-mirror-dock (fixed bottom-left), beta-feedback-toggle (fixed bottom-left), floating-food-menu-trigger (fixed bottom-right circular) all visible on these fullscreen game rooms", "WhatsNewBanner is visible on these routes (should be hidden on game routes)"]},
+      {"screen": "/games/cyber-casino/slots and /games/cyber-casino/blackjack", "issues": ["WhatsNewBanner visible (should be hidden on game routes)"]},
+      {"screen": "/games/vibez-654 (legacy alias)", "issues": ["WhatsNewBanner visible (should be hidden on game routes — the canonical /vibez-654 correctly hides it)"]},
+      {"screen": "/three-card-poker", "issues": ["VIOLATION: game-voice-dock FAB visible at bottom-right (151x46) — only InRoomCommsLauncher pill at top-right is permitted"]},
+      {"screen": "/practice/play/chess", "issues": ["Faint unidentified fixed bottom-right element (90x24, opacity-30, no testid) — may be an internal debug marker, but founder rule disallows fixed bottom elements on fullscreen game rooms"]},
+      {"screen": "All routes (informational, not a defect)", "issues": ["The 178x40 element at bottom-right (left:1172, top:712) is the platform 'Made with Emergent' badge injected by the preview wrapper — NOT app code. Same 149x25 'log-design-lesson-toggle' bottom-left is opacity-10 and excluded from FAB rule per its testid being in the allowlist."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_v654_sidebets_iter_2026_05.py",
+    "/app/test_reports/pytest/v654_sidebets_2026_05.xml",
+    "/app/test_reports/screenshots/iter_2026_05/"
+  ],
+  "action_items": [
+    "Hide WhatsNewBanner on /games/cyber-casino*, /games/vibez-654 (legacy alias) — same rule as /vibez-654",
+    "Remove or gate FABs on /games/cyber-casino routes: voice-mirror-dock, beta-feedback-toggle, floating-food-menu-trigger violate the no-FAB-on-fullscreen-game-room rule",
+    "Remove game-voice-dock FAB on /three-card-poker (bottom-right) — replace with inline PageActionStrip or move into InRoomCommsLauncher pill",
+    "Investigate /chess top-level route returning 'Not Found' — either redirect to /practice/play/chess or render the live chess room",
+    "Confirm Vibez654 outcome-card testids: add data-testid=\"v654-payout\" and data-testid=\"v654-side-payout\" to the outcome card so the spec contract is satisfied",
+    "Optional: add data-testid=\"v654-side-bets-total\" to the drawer header so the total ₵ value is exposed for tests (currently only the placed-count is shown)"
+  ],
+  "critical_code_review_comments": [
+    "/app/backend/routes/vibez_654.py is 545 lines — at the edge of the 700-line guideline but fine; settle/start/roll/history/types all single-responsibility and well-commented.",
+    "Side-bet evaluation in _evaluate_side_bets correctly fires only on rolls==1 in the dispatcher — defensive guard prevents re-evaluation on subsequent rolls. Good.",
+    "Stake debiting in start_game uses pick_wallet_field_for_debit and unpacks (field, _bal) tuple — matches the bug fix mentioned in the request brief.",
+    "Settlement credits gross side-bet payout correctly (stake already debited up-front, only multiplier × amount paid back) — matches gross-payout convention.",
+    "Frontend Vibez654Game.tsx uses Drawer pattern — drawers expand/collapse cleanly and lock to read-only after game starts (good UX), but data-testid contract is incomplete (v654-payout, v654-side-payout, v654-side-bets-total missing in DOM)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_v654_sidebets_iter_2026_05.py (NEW — 8 tests, all passing)"
+  ],
+  "success_rate": {"backend": "100% (8/8 pytest)", "frontend": "75% — drawers work; layout cap works; 5 founder-rule violations + 1 broken route + 3 missing testids"},
+  "test_credentials": "betatester1@globalvibez.com / BetaTester2026! — works against preview URL; balance was sufficient for all start operations.",
+  "seed_data_creation": "Each test creates its own ephemeral game rows in vibez_654_games via real /start /roll /stand calls; no manual seeding.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend side-bets pipeline is fully green (test_v654_sidebets_iter_2026_05.py — 8/8). The Coliseum sizing fix (line 64-77 in Coliseum.tsx with maxWidth: min(820px,100%,calc(60vh))) is working — verified 461x461 on 1366x768 and 390x390 on 414x896 with NO bottom-stake-bar overlap. Drawers on /vibez-654 work and lock after start. The visual sweep flagged: (a) WhatsNewBanner leak on /games/cyber-casino* and /games/vibez-654, (b) three FAB violations on /games/cyber-casino (voice-mirror-dock, beta-feedback-toggle, floating-food-menu-trigger), (c) game-voice-dock FAB on /three-card-poker, (d) /chess returning 404. NOTE: The 178x40 bottom-right and 149x25 bottom-left fixed elements detected on every route are the platform 'Made with Emergent' watermark and the opacity-10 'log-design-lesson-toggle' debug pill — both are NOT in-app FABs and should be ignored on the next sweep. Screenshots saved to /app/test_reports/screenshots/iter_2026_05/.",
+  "rca_of_the_issue": "WhatsNewBanner: route-level hide list is only applied to /vibez-654 but not its alias /games/vibez-654 nor /games/cyber-casino*; banner-host component likely lives in a layout wrapper that doesn't read the active route slug. Cyber-casino FABs: voice-mirror-dock, beta-feedback-toggle, floating-food-menu-trigger are mounted at the casino-page level (or higher) instead of inside a non-fullscreen layout — they need to be conditionally suppressed when isFullscreenGameRoom flag is true. /chess 404: Likely a missing route entry in App.tsx — only /practice/play/chess is wired."
+}

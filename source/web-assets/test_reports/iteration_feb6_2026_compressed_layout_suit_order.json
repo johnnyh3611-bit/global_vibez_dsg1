@@ -1,0 +1,42 @@
+{
+  "summary": "Feb 6, 2026 verification of compressed single-viewport Vibe 654 trio + drawer toggles + Coliseum cyan-emerald center stage + flipped suit order H>C>D>S. Backend regression_shield 48/48 PASS (3 new locks green: test_vibe_rooms_use_compressed_single_viewport_layout, test_coliseum_center_stage_shows_live_qualifier_chips, test_vibedice_premium_drawer_toggles_present + upgraded test_hand_fan_sorts_by_suit). Live curl: demo-login -> POST /api/games/vibe654/play main_bet=10 -> success=true, credits_balance 96925 -> 96915 (exact 10 debit). Frontend mobile (390x844): /vibe-654/solo h-[100dvh] active (bodyScrollHeight 844 == innerHeight 844, no overflow), stake bar visible with chip + 'Ante In' label + 'How it works' pill. /dice h-[100dvh] (844=844), 'Side Bets (0)' + 'Recent Rolls' drawer toggles render as pills below NovaDealerHeader, Top-Up button present in rightSlot, Roll Dice reachable, no body scroll. Coliseum /games/vibe654/tournament uses cyan-emerald palette and contains qualifier 6/5/4 text; 1px horizontal overflow (bodyScrollWidth 391 vs innerWidth 390) is the only minor finding. Spades suit order verified at runtime: hearts (A,9,7,3) -> clubs (A,Q,J,4) -> diamonds (K,10,9) -> spades (10,4) — correct H>C>D>S grouping with ranks descending within each suit.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Coliseum tournament list (/games/vibe654/tournament)", "issue": "1px horizontal overflow on mobile 390px (bodyScrollWidth=391). Likely a border or shadow on a card spilling 1px past the viewport. Visually invisible but creates a tiny horizontal scroll.", "selector": "body / outermost wrapper", "priority": "LOW"},
+      {"component": "Coliseum in-table center stage", "issue": "Could not verify `Play Next Orbit` button + tiny dice + 'Round X · Pot' on the actual in-table route — /games/vibe654/tournament renders the LOBBY listing tables; the new compressed center stage only renders after Join Table or on /vibe-654/coliseum/<table_id>. Backend regression lock covers source-grep but a runtime e2e probe was not exercised this iteration.", "selector": "n/a (route requires table_id)", "priority": "LOW"},
+      {"component": "Solo Vault Ante In button click", "issue": "Programmatic 'Ante In' button click could not be confirmed because the floating Emergent 'What's new' banner overlays the top of the page, and our selector matched the heading 'ANTE IN - NOVA IS READY' label rather than the actual button. The stake bar IS rendered (testid present, 1,000 visible). Flow still likely works for real users (button is below the cropped area in the screenshot).", "selector": "button:has-text('Ante In')", "priority": "LOW"},
+      {"component": "Privy SDK (carry-over)", "issue": "TypeError: e is not a function + CSP frame-ancestors 403 on every page load. Not a regression, cosmetic console pollution.", "selector": "[data-testid='login-privy-btn']", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/regression_shield.py",
+    "/app/test_reports/pytest/iter_feb6_2026_compressed_layout.xml"
+  ],
+  "action_items": [
+    "(LOW) Trim 1px horizontal overflow on /games/vibe654/tournament mobile (391 vs 390). Likely a `border-r` or `shadow` on the active-tables card — switch to `border-l` only or `overflow-x-hidden` on the outermost wrapper.",
+    "(LOW) Add a runtime Playwright lock for the in-table Coliseum compressed center stage (qualifier chips 6/5/4 + tiny dice + Play Next Orbit). Current lock is source-grep only — an e2e probe via Join Table -> verify center stage would catch layout regressions.",
+    "(LOW carry-over) Privy iframe still throws on preview. Self-hide on non-prod domain."
+  ],
+  "critical_code_review_comments": [
+    "Compressed single-viewport layout VERIFIED on /vibe-654/solo and /dice at 390x844: bodyScrollHeight === innerHeight (844), zero vertical scroll while betting/playing — meets the 'no scrolling up/down while betting' requirement.",
+    "Drawer toggles ('Side Bets (0)' + 'Recent Rolls') render as collapsible pills on /dice — collapsible-over-always-visible preference satisfied.",
+    "Coliseum cyan-emerald palette confirmed (cyanEmerald=true) — visually distinct from Solo Vault amber-fuchsia.",
+    "Suit order H>C>D>S verified at RUNTIME via [data-testid='spades-card-X-suit'] in /spades — hearts (A,9,7,3) -> clubs (A,Q,J,4) -> diamonds (K,10,9) -> spades (10,4). Red-black-red-black alternation between suits, descending ranks within each suit. Both source-grep lock and runtime DOM agree.",
+    "Backend 48/48 regression_shield PASS — including all 3 new layout locks. Live /play debit works exactly (96925 -> 96915 on main_bet=10). No backend regressions from the layout refactor.",
+    "Recommend a real e2e Playwright probe for: (a) Solo Vault Ante In -> SideDockDecision appears, (b) Coliseum Join Table -> compressed in-table center stage. Current iteration hit page-overlay + lobby-vs-table issues that prevented these specific flows from being asserted at runtime."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (48/48 pytest + live /play debit verified)", "frontend": "~95% — compressed layouts + drawers + suit order all green; in-table Coliseum center stage + Solo Vault Ante-In click not exercised at runtime due to route/banner constraints"},
+  "test_credentials": "POST /api/auth/demo-login (no body) -> token + user_id. Demo user demo_23970ac9 with credits_balance ~96k.",
+  "seed_data_creation": "None. Single /play call against demo session (10 credits debited).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "regression_shield.py is now 48 tests (was 45). Three new locks: test_vibe_rooms_use_compressed_single_viewport_layout, test_coliseum_center_stage_shows_live_qualifier_chips, test_vibedice_premium_drawer_toggles_present. Plus test_hand_fan_sorts_by_suit upgraded to assert h<c<d<s ordering. Mobile compressed layout (h-[100dvh]) verified on /vibe-654/solo and /dice at 390x844 — body scroll = innerHeight, zero overflow. Drawer pills 'Side Bets (0)' + 'Recent Rolls' present on /dice. Coliseum tournament list has 1px horizontal overflow (cosmetic). To test the in-table Coliseum compressed center stage with qualifier chips + Play Next Orbit, a route with a real table_id is needed (or click Join Table from /games/vibe654/tournament — there's an active demo table). Spades suit order H>C>D>S confirmed at runtime via data-testid='spades-card-RANK-SUIT'. Live /play wallet debit unchanged after layout refactor (96925->96915 on main_bet=10).",
+  "rca of the issue": "n/a — verification iteration, no bugs uncovered. Three minor LOW items: (1) Coliseum lobby has 1px horiz overflow (border/shadow spillover), (2) Coliseum in-table compressed stage and Solo Vault ante-in interactive flow not exercised at runtime (route/overlay constraints), (3) carry-over Privy console noise."
+}

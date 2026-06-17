@@ -1,0 +1,86 @@
+{
+  "default": "en",
+  "languages": {
+    "en": {
+      "label": "English",
+      "native": "English",
+      "rtl": false,
+      "audio": "/landing-tour-narration-en.mp3?v=recirc-2026-02-15",
+      "duration": 289.5,
+      "cues": [
+        {
+          "t": 0.0,
+          "text": "Welcome to GLOBAL VIBEZ DSG — your seat at a brand-new economy!"
+        },
+        {
+          "t": 5.0,
+          "text": "Every game · every ride · every meal · every stream · every chair · every business = you EARN."
+        },
+        {
+          "t": 14.0,
+          "text": "Cyber Casino — 30+ AAA card rooms, neon-drenched, live multiplayer."
+        },
+        {
+          "t": 22.0,
+          "text": "Spades · Bid Whist · Hearts · UNO · Pinochle · Euchre · Gin Rummy."
+        },
+        {
+          "t": 30.0,
+          "text": "Vibez 6-5-4 · chess · baccarat · blackjack · 3-card poker · slots that PAY."
+        },
+        {
+          "t": 40.0,
+          "text": "Every spin, every hand, every trick taken → you earn $VIBEZ."
+        },
+        {
+          "t": 47.0,
+          "text": "STREAMING — go live on DSG TV in 30 seconds. Tips · gifts · Featured tier unlocks."
+        },
+        {
+          "t": 58.0,
+          "text": "Keep 70% of everything. Live Now Wall gold-pin for top streamers."
+        },
+        {
+          "t": 66.0,
+          "text": "Tag-team with another creator → you BOTH earn. Followers get push when you go live."
+        },
+        {
+          "t": 76.0,
+          "text": "Drive a VibeRidez → 70%. Deliver Hungry VIBEZ → 70%."
+        },
+        {
+          "t": 84.0,
+          "text": "Cook as a Vibe Artisan → 70%. Host a Vibe Venue → 70%."
+        },
+        {
+          "t": 92.0,
+          "text": "VIBE YELLOW PAGES — local business launchpad · geo-pinned · verified."
+        },
+        {
+          "t": 102.0,
+          "text": "Free profile · hyper-local sponsorship · in-app coupons · owners earn coins on every booking."
+        },
+        {
+          "t": 112.0,
+          "text": "Backed by the DSG Guard safety protocol — real listings · real people · real money."
+        },
+        {
+          "t": 120.0,
+          "text": "Independent artists — keep 70%. Beat Vault · Freestyle Battles · Collab Matchmaker · Totem Pole."
+        },
+        {
+          "t": 130.0,
+          "text": "Apex · Genesis · Genius chairs · 1,000,000 seats · 13.5% Sovereign Tax · 5× mining for holders."
+        },
+        {
+          "t": 140.0,
+          "text": "One currency. One economy. You OWN it."
+        },
+        {
+          "t": 145.0,
+          "text": "Take your seat. RIGHT NOW.  GLOBAL VIBEZ DSG."
+        }
+      ]
+    }
+  }
+}

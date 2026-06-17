@@ -1,0 +1,48 @@
+{
+  "summary": "Tested Underground Casino + universal landscape-toggle + card-room regression + backend smoke. 13/13 fullscreen routes have both data-testid='landscape-toggle' and data-testid='in-room-comms-pill' mounted at top-right. Landscape toggle correctly flips body.gv-force-landscape and pill text 'landscape'<->'Forced'. Portrait mobile (414x896) shows hint overlay with force + dismiss. Underground Casino gate validates balance + pass-phrase and reveals lobby with all 6 themed tables; theme is deep wine/burgundy (radial-gradient #2a0810/#150307/#050203) — confirmed NOT cyan. Backend smoke green: /api/dsg6/current 200, /api/vibe-spots/mine 401 unauth, /api/vibe-core/process-event 401 unauth & status='Complete' with auth+GENERIC. ONE HIGH bug found: /blackjack route's redirect to /practice/play/blackjack DROPS the ?stake_floor=5000&lounge=underground query string, breaking the high-limit lounge contract for the blackjack seat only (the other 5 tables preserve the query).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "UndergroundCasino -> Blackjack seat / /blackjack route redirect",
+        "issue": "Clicking ugc-table-blackjack navigates to /blackjack?stake_floor=5000&lounge=underground but the /blackjack route redirects to /practice/play/blackjack and STRIPS the query string. Result: blackjack seat opened from Underground Casino cannot read stake_floor=5000 and will not enforce the C5,000 minimum. Other 5 tables (baccarat, three-card-poker, vibez-654, lottery, roulette) preserve the query correctly.",
+        "selector": "[data-testid='ugc-table-blackjack']",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "All fullscreen game routes (top-right chrome)",
+        "issues": [
+          "VigilantAgent console warns 'BUTTON[in-room-comms-pill] is occluded by SPAN' — the landscape-toggle pill's 'landscape'/'Forced' text span sits very close to the comms pill bounding box; clicks worked in 1366x768 testing but worth a CSS tightening pass on small breakpoints."
+        ]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/test_reports/iteration_2026_05_underground_landscape.json",
+    "/app/test_reports/ugc_blackjack.png",
+    "/app/test_reports/cardroom__spades.png"
+  ],
+  "action_items": [
+    "FIX: Either change /app/frontend/src/pages/UndergroundCasino.tsx TABLES entry for blackjack from path:'/blackjack' to path:'/practice/play/blackjack' (matches roulette pattern), OR fix the /blackjack -> /practice/play/blackjack redirect to forward location.search (e.g. <Navigate to={`/practice/play/blackjack${location.search}`} replace />). The query-drop is what breaks the founder's high-limit-lounge contract.",
+    "OPTIONAL: Tighten the landscape-toggle pill width/positioning so the VigilantAgent click-blocker warning against in-room-comms-pill goes away."
+  ],
+  "critical_code_review_comments": [
+    "UndergroundCasino.tsx TABLES uses /blackjack while every other path is the real router path — inconsistent; relying on a downstream redirect that doesn't preserve search is fragile.",
+    "LandscapeRotateHint cleanup effect removes 'gv-force-landscape' on unmount even when forced=true persists in localStorage — if the component unmounts on route change to a non-fullscreen route, the class is correctly removed; OK behavior, but the cleanup runs on every forced flip too which is harmless. No action needed.",
+    "GlobalCommsMounter correctly scopes BOTH InRoomCommsLauncher and LandscapeRotateHint to fullscreen routes only — good. Verified 13/13 routes."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "92%"},
+  "test_credentials": "betatester1@globalvibez.com / BetaTester2026! (C35,284 balance — passes gate).",
+  "seed_data_creation": "None.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Underground Casino gate + lobby + theme are GREEN. Landscape toggle is GREEN across all 13 fullscreen routes (toggle flips body class, pill text correct, mobile portrait shows hint overlay). The single open defect is the /blackjack redirect dropping the lounge query string — once fixed, re-verify by clicking ugc-table-blackjack and asserting the final URL contains stake_floor=5000&lounge=underground.",
+  "rca of the issue": "The /blackjack route in the app router uses an unconditional <Navigate to='/practice/play/blackjack' /> (or equivalent) which does NOT spread location.search onto the destination. React Router's <Navigate> requires either passing the full pathname+search string or using replace with a pathname object. Reproduction: visit /blackjack?stake_floor=5000&lounge=underground -> ends at /practice/play/blackjack with empty search. Mitigation: change the redirect to forward search params (or update UndergroundCasino TABLES.blackjack.path to '/practice/play/blackjack'). All other underground table links preserve the query (verified by direct visits to /baccarat, /three-card-poker, /vibez-654, /lottery, /practice/play/roulette)."
+}

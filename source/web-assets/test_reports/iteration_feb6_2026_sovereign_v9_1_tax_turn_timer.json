@@ -1,0 +1,35 @@
+{
+  "summary": "Round 9.1 Sovereign Tax + Turn Timer regression: 21/21 new tests + 80/80 regression shield all GREEN. Validated joker power indexing (Big Joker beats Ace under Downtown trump - the critical 20-value inversion bug is fixed), 13.5% tax math (1000 -> tax 135 / net 865), turn-timer endpoint contract (400 unknown / 404 missing / 422 short id / 200 TIME_OK on fresh stamp), and source-code wiring of settle_taxable_payout in Spades + Bid Whist payout paths plus apply_sovereign_tax in Vibez 654 net winnings path. Also verified credit_transactions audit row now includes gross/tax fields and turn_started_at_ms is persisted on the bid_whist_games doc when stamp_turn_start runs.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_sovereign_v9_1_validator_and_payouts.py",
+    "/app/test_reports/pytest/sovereign_v9_1.xml",
+    "/app/test_reports/pytest/regression_shield_v9_1.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "card_game_payouts.settle_taxable_payout: clean separation of validator preview vs sovereign_engine net; sane fallback when they diverge. Audit row carries gross/tax/net.",
+    "sovereign_validator: joker power indexing (BIG=100, LITTLE=90) correctly dominates direction-independent under both Uptown + Downtown, and is correctly inert under No-Trump (-1 power).",
+    "turn_timer.check uses Pydantic Field(min_length=3) so malformed inputs return 422 before hitting Mongo - good defense in depth.",
+    "stamp_turn_start writes both turn_started_at_ms (int) AND turn_started_iso (string) - dual format is fine but slight redundancy; the int is sufficient for the watchdog.",
+    "Vibez 654 correctly taxes ONLY net winnings (payout - bet), not the bet refund. Spades + BW pots tax per-player gross (pot // winners). Math is consistent with PDF directive E."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_sovereign_v9_1_validator_and_payouts.py (NEW)"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "n/a (backend-only test scope)"},
+  "test_credentials": "Demo user via POST /api/auth/demo-login (not exercised - validator + endpoint contracts are auth-free)",
+  "seed_data_creation": "Two transient docs in bid_whist_games (TEST_bw_stamp_tt_001, TEST_bw_ttok_001) created and torn down within the same test - no residual state.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Validator + tax + turn-timer scope is fully covered by /app/backend/tests/test_sovereign_v9_1_validator_and_payouts.py (21 tests). The full 4-seat Bid Whist game session is intentionally out of scope per main agent instructions. If a future agent wants live payout E2E, they should use the seed factory at /app/backend/tests/test_bid_whist_full_game_simulation.py and chain a real game to completion - but the helper is already locked by regression shield asserting source-level wiring.",
+  "rca_of_the_issue": "N/A - Round 9.1 validation passed clean. Joker Power Indexing: get_power() returns BIG_JOKER_POWER=100 / LITTLE_JOKER_POWER=90 BEFORE evaluating suit/rank tables, so jokers always trump under any direction (uptown/downtown). The previous 20-value inversion bug (where Downtown's 2->14 mapping would clash with joker face value 14/15) is structurally impossible now because the joker branch returns early."
+}

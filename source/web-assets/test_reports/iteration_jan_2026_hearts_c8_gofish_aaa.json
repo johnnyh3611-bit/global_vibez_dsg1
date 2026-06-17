@@ -1,0 +1,40 @@
+{
+  "summary": "Full backend + frontend validation of Hearts/Crazy Eights/Go Fish AAA universal rollout. 11/11 backend pytest tests pass. All three new /hearts /crazy-eights /go-fish routes render lobby, start button, spades-table variant (crimson/onyx/ocean), per-game overlay modal, progress pills on N/E/W with South hidden by design. All 7 legacy redirects work. Spades (emerald) + Bid Whist (cobalt) regression passes. All 4 game-tile testids render on /games under Card Games category; Practice vs AI button navigates to canonical AAA routes.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "/games tile click (whole card) for new games",
+        "issue": "Clicking the tile itself (game-tile-hearts | game-tile-crazy_eights | game-tile-go_fish | game-tile-bid_whist) does not navigate; only the nested 'Practice vs AI' button (game-tile-{id}-practice-btn) triggers navigate(). The review request stated 'clicking the tile (or Practice vs AI button)'. Practice button works; whole-tile click is a noop. Low priority since the button path is wired and matches the existing pattern for other games.",
+        "affected_selectors": ["[data-testid=\"game-tile-hearts\"]", "[data-testid=\"game-tile-crazy_eights\"]", "[data-testid=\"game-tile-go_fish\"]", "[data-testid=\"game-tile-bid_whist\"]"]
+      }
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter_jan_2026_hearts_c8_gofish_aaa.py",
+    "/app/test_reports/pytest/iter_jan_2026_hearts_c8_gofish_aaa.xml"
+  ],
+  "action_items": [
+    "(Optional/low priority) If spec demands that the entire tile card is clickable, add an onClick on the tile root of GamesNew.tsx for hearts/crazy_eights/go_fish/bid_whist that routes to the canonical AAA path. Otherwise, document the intent (tile is a card; only Practice / Multiplayer buttons navigate) and close."
+  ],
+  "critical_code_review_comments": [
+    "Hearts/Crazy Eights/Go Fish practice routers keep in-memory _MATCHES dicts. Single-worker FastAPI is fine today but note that any move to gunicorn -w N or horizontal scaling will break matches across processes. Eventually migrate to a DB- or Redis-backed session store (same caveat already applies to spades/bid-whist).",
+    "All three new routers rely on `get_current_user(request)` which reads Bearer first, cookie second. Good — matches the documented auth invariant.",
+    "go_fish_practice validates 'must hold at least one of that rank to ask' via ValueError → 400 HTTP. Clean.",
+    "Crazy Eights `start` explicitly re-flips if top_card is an 8; tests confirm top_card is never an 8 on 10+ fresh starts.",
+    "players_data seat view exposes `card_count` only (opponents' hand sizes) — good, prevents hand leakage to other positions. South hand is served via `your_hand`.",
+    "South-seat progress pill is intentionally hidden (documented UI invariant). Frontend correctly renders null for spades-seat-progress-south across all 3 new games."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter_jan_2026_hearts_c8_gofish_aaa.py (new)"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "~95% (1 low-priority: whole-tile click doesn't navigate)"},
+  "test_credentials": "Demo Login button on /login → POST /api/auth/demo-login (auto-provisions guest session).",
+  "seed_data_creation": "None — backend matches are in-memory, cleared on process restart.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend view schema for the 3 new AAA games: players_data[pos] exposes only {card_count,...}; south's hand is on `your_hand`. Hearts is pass_direction-rotated (left→right→across→none), first start() always 'left'. Crazy Eights top_card re-flipped until not an 8. Go Fish ask() validates rank-in-hand. /games tiles are only visible under the 'Card Games' category (click the Card Games tab).",
+  "rca of the issue": "Whole-tile non-navigation: GamesNew.tsx attaches onClick to the inner 'Practice vs AI' button but the tile root does not forward clicks. This is consistent with the existing pattern for other tiles on the page, so it appears intentional. If the review mandate 'clicking the tile' is strict, add an onClick to the outer Card element that calls the same navigate() for hearts/crazy_eights/go_fish/bid_whist ids."
+}

@@ -1,0 +1,40 @@
+{
+  "summary": "Wave 2 verification: VIP Roulette + Baccarat backend endpoints, VipCrownBadge global UI, and standard-engine isolation. Created /app/backend/tests/test_high_roller_wave2_roulette_baccarat.py (14 tests, ALL PASS). Regression shield re-run: 349/349 GREEN. Frontend Playwright sweep verified: non-VIP demo user sees high-roller-not-vip + tier grid (no lounge tiles); after granting VIP via apply_vip_grant the same demo user sees all 3 lounge tiles (blackjack/roulette/baccarat), the wheel UI with 9 bet buttons + spin button, the baccarat player/banker/tie selectors + deal button, and the gold VipCrownBadge floats on /dashboard while correctly self-hiding on every /casino/high-roller* page. Isolation guarantee re-verified: standard /api/roulette/spin still returns 200 with NO 10k floor, and /api/baccarat/play never leaks 'high_roller' or '10000' into its response.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_high_roller_wave2_roulette_baccarat.py",
+    "/app/test_reports/pytest/high_roller_wave2.xml",
+    "/app/test_reports/pytest/regression_shield_wave2.xml",
+    "/app/backend/tests/regression_shield.py"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "routes/high_roller.py grew from ~307 → 492 lines but remains cohesive; logical grouping into 4 sections (Models / Helpers / Endpoints / Grant) is clean. No need to split yet (under 700-line guideline).",
+    "Roulette payout uses int(b.bet_amount * (multiplier+1)) for the hit branch — correct (stake refunded + N:1 winnings). Loss branch returns 0 — correct.",
+    "Baccarat banker payout uses int(req.bet_amount * 1.95) — confirmed: 10000 → 19500 in live test (5% commission applied). Tie returns 9x and player returns 2x as documented.",
+    "VipCrownBadge self-hides on /casino/high-roller* via location.pathname.startsWith — verified live for both /dashboard (visible) and /casino/high-roller/* (hidden).",
+    "vip_roulette_server_hash takes user_id as a raw query/body param (FastAPI converts to query param). Test uses `params={'user_id': ...}` and gets 200; if a client sent it as JSON body the route would 422. Minor — consider a Pydantic body model for symmetry with other VIP routes. Non-blocking.",
+    "_RED_NUMBERS set matches the standard European wheel (18 entries) — Vegas-accurate."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_high_roller_wave2_roulette_baccarat.py (new — 14 tests, all pass)"
+  ],
+  "success_rate": {
+    "backend": "100% (14/14 new wave-2 tests + 349/349 regression shield)",
+    "frontend": "100% (VIP & non-VIP flows verified; all 14 expected data-testids present)"
+  },
+  "test_credentials": "Demo login button (login-demo-btn) — produces stable demo user_id 'demo_23970ac9'. Granted/revoked VIP via apply_vip_grant during the run.",
+  "seed_data_creation": "Test fixture creates TEST_vip_w2_* users in high_roller_vip with 30-day vip_until, cleaned up in fixture teardown. Demo user VIP (granted for the frontend UI test) was also cleaned up post-run via pymongo delete_one.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Run `cd /app/backend && set -a && source .env && set +a && DISABLE_BG_SCHEDULERS=1 pytest tests/test_high_roller_wave2_roulette_baccarat.py tests/test_high_roller_mvp.py tests/regression_shield.py -q` — expect 14+14+349=377 pass. To re-test the frontend VIP path, grant VIP to the demo user with: `python3 -c \"import asyncio; from routes.high_roller import apply_vip_grant; asyncio.run(apply_vip_grant(user_id='demo_23970ac9', tier='genesis', stripe_session_id='cs_test_X'))\"` then login via the demo button and visit /casino/high-roller. The badge polls every 60s but mounts immediately on page load, so navigation between routes is sufficient. Clean up afterwards with `db.high_roller_vip.delete_one({'user_id':'demo_23970ac9'})`.",
+  "rca_of_the_issue": "N/A — no issues found. All Wave 2 acceptance criteria pass on first run."
+}

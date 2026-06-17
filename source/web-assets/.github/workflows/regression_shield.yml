@@ -1,0 +1,112 @@
+name: 🛡 Regression Shield
+
+# Runs on every push + PR. If the shield goes red, the PR cannot merge
+# (enable branch protection in GitHub settings → Branches → require this
+# status check before merging).
+#
+# What it guards:
+#   - FastAPI imports cleanly (1000+ routes)
+#   - All card-game engines boot
+#   - Gin Rummy / Rummy meld_groups contract intact
+#   - Hearts pass-modal dark ink
+#   - Euchre / Pinochle hand visible during bidding
+#   - /baccarat canonical route
+#   - Baccarat currency (₵ only, no $)
+#   - Demo-login credits seed
+#   - Dockerfile Node heap cap
+#   - Privy self-hide guard
+#   - Coming Soon list populated
+#   - ChairOrb / ComingSoonOverlay / QuickEmojiButton components
+#
+# Why: the user was regressing repeatedly ("fix one thing, break another").
+# This blocks broken code from shipping.
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+  workflow_dispatch:  # allow manual run from Actions tab
+
+jobs:
+  regression_shield:
+    name: 🛡 Backend shield + TS baseline
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    # MongoDB service container — the regression suite seeds session
+    # rows + merchant docs against a real mongo. Without this, every
+    # backend test fails at `MongoClient(...)` with connection refused.
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ping:1})' --quiet"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install backend deps
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run regression shield (backend)
+        working-directory: backend
+        env:
+          DB_NAME: test_regression_shield
+          MONGO_URL: mongodb://localhost:27017
+          # Optional secrets — tests read these via os.environ.get() and
+          # tolerate them being absent, but a few presence-asserts want
+          # *something* set so they don't false-positive. Real values
+          # live in the deployment environment, never in CI.
+          STRIPE_API_KEY: "sk_test_ci_placeholder"
+          EMERGENT_LLM_KEY: "sk-ci-placeholder"
+          RESEND_API_KEY: "re_ci_placeholder"
+          FRONTEND_URL: "http://localhost:3000"
+          CORS_ORIGINS: "http://localhost:3000,http://localhost:8001"
+        run: |
+          python -m pytest tests/regression_shield.py -v --tb=short
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: yarn
+          cache-dependency-path: frontend/yarn.lock
+
+      - name: Install frontend deps
+        working-directory: frontend
+        run: yarn install --frozen-lockfile
+
+      - name: TypeScript baseline check
+        working-directory: frontend
+        run: |
+          set +e
+          OUTPUT=$(npx tsc --noEmit --skipLibCheck 2>&1)
+          EXIT=$?
+          COUNT=$(echo "$OUTPUT" | grep -cE "error TS[0-9]+" || true)
+          echo "TypeScript errors: $COUNT"
+          if [ "$COUNT" -gt 450 ]; then
+            echo "::error::TS error count $COUNT exceeds ceiling of 450 (inherited baseline ~410, mostly in shadcn ui/* primitives). New regression!"
+            echo "$OUTPUT" | grep -E "error TS[0-9]+" | head -30
+            exit 1
+          fi
+          echo "✅ TS errors within baseline — shield green"
+
+      - name: Shield green
+        run: |
+          echo "🛡  All shield checks passed — safe to deploy."

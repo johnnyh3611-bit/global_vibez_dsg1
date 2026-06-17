@@ -1,0 +1,46 @@
+{
+  "summary": "P0 shell-wire QA: 9/9 DSG TV endpoint tests pass; 570/570 regression_shield pass; frontend Playwright sweep validates CmdK launcher, /dsg-tv 3-tab page, /explore registry, and mobile bottom nav with 6 tabs. One minor UX issue on Predict-to-Win create form (list does not visibly refresh within 2.5s).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Predict-to-Win create (DSG TV → Predict tab)",
+        "issue": "After clicking Create with a fresh prompt, the open-pools list on the page did not visibly include the new pool prompt within 2.5s. Backend POST /api/dsg-tv/predict/create returns ok:true and the pool DOES show up in /api/dsg-tv/predict/open (verified by backend test). Likely missing refetch/refresh of the predict list on create success, OR the prompt is rendered truncated in the list card. Non-blocking but should be confirmed by main agent.",
+        "affected_selectors": ["[data-testid='dsg-tv-page']", "predict tab create button"]
+      }
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_dsg_tv_expansion_shell_wire.py",
+    "/app/test_reports/pytest/dsg_tv_shell.xml",
+    "/app/backend/tests/regression_shield.py"
+  ],
+  "action_items": [
+    "(optional) Verify that the Predict-to-Win list on /dsg-tv re-fetches /api/dsg-tv/predict/open after a successful create. If the list already does, ensure the rendered card shows the prompt text (currently the prompt may be truncated/styled in a way that the body innerText check missed it).",
+    "Cosmetic only: consider exposing `data-testid='dsg-tv-tab-prestige|stools|predict'` on each of the 3 tab buttons (currently selectable by text but stable testids would future-proof regression scripts)."
+  ],
+  "critical_code_review_comments": [
+    "services/dsg_tv_expansion.py:resolve_pool — when there are NO winners, winners_pool flows to Treasury (zero-burn rule preserved). Comment & logic are consistent with the founder rule of 0% in-app burn. ✅",
+    "resolve_pool integer-division on payouts (int(winners_pool * coins/winning_total)) may leave 1-2 coins of rounding dust unallocated; non-blocking but worth a treasury sweep at end of resolve to keep books exact.",
+    "routes/dsg_tv_expansion_routes.py imports look clean; admin endpoints correctly guarded by require_admin.",
+    "Constants endpoint exposes burn_pct:0.0 explicitly — good contract for frontend to display '0% in-app burn' badge."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_dsg_tv_expansion_shell_wire.py (new — 9 endpoint tests, all passing)"
+  ],
+  "success_rate": {
+    "backend": "100% (9/9 new DSG TV tests + 570/570 regression_shield)",
+    "frontend": "~95% (CmdK PASS, tabs PASS, mobile nav PASS, /explore PASS, predict create has UI refresh concern)"
+  },
+  "test_credentials": "betatester1@globalvibez.com / BetaTester2026! (from /app/memory/test_credentials.md). Demo accounts also documented for betatester2/3.",
+  "seed_data_creation": "Created 1 TEST_ prediction pool via backend test (prompt='TEST_pool_will_x_win_match?'). Pool persists in prediction_pools collection in 'open' status. Safe to ignore or sweep.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "P0 shell-wire is GREEN. New endpoint test file: /app/backend/tests/test_dsg_tv_expansion_shell_wire.py — reuse for any DSG TV regression. Regression shield (570 tests) covers full platform — run via `cd /app && python -m pytest backend/tests/regression_shield.py -q`. CmdK launcher uses data-testid='cmdk-launcher'; mobile bottom nav uses data-testid='mobile-bottom-nav'; DSG TV page uses data-testid='dsg-tv-page' + 'dsg-tv-tabs'. EXPLORE_REGISTRY in /app/frontend/src/pages/Explore.tsx shows 57 surfaces — confirmed live.",
+  "rca_of_the_issue": "Minor UX: After Predict-to-Win create, the list refresh on the DSG TV Predict tab was not detected via DOM text scan within 2.5s. Backend (POST /api/dsg-tv/predict/create) is confirmed to insert the pool and GET /api/dsg-tv/predict/open returns it. So this is a pure client-side concern — either the React fetch is not re-triggered after the create promise resolves, or the rendered card displays a truncated/styled prompt that didn't textually match. Recommended quick fix: in DSGTVExpansion.tsx Predict-tab create handler, await the create and then call the same loader used on mount (e.g. setPools(await fetch('/api/dsg-tv/predict/open'))). Add a `toast.success('Pool created')` for clarity."
+}

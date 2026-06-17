@@ -1,0 +1,58 @@
+{
+  "summary": "Beta-readiness comprehensive sweep complete. Backend: 99/99 regression_shield + 38/38 v8 + my-vibez streaming + tic-tac-toe 5-in-a-row + vibez-654 + vibe-654 social tests all green; +14 new live-URL tests in test_iter_beta_sweep_live.py also green (after fixing 4 test-script issues — see notes). Server boots cleanly with 1382 routes. Frontend: landing OneSheet (6/6 testids), Globe FAB on dashboard, Vibez 654 AAA redesign all 6 zone testids render after starting a game, /games lobby has zero 3D-Poker references. TWO ISSUES flagged for main agent: (1) /settings page does not expose `settings-ai-dealer-tab` / `settings-language-tab` on the menu/tab strip (the testids exist in source but only wrap the content panels); (2) /poker-3d and /poker-css3d return HTTP 200 SPA shell with no content instead of 404/redirect.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/gisa/run", "issue": "summary.overall_status oscillates between 'pass' and 'warn' on the statistical-contention model (UE5/5654 Vibe parity floats around the 95% target). Acceptable per spec but flag for main agent — founder-facing report should consider widening tolerance or showing 'pass-with-warnings' label."},
+      {"endpoint": "POST /api/vibez-654/roll & /stand", "issue": "Endpoints take game_id in JSON body, not URL path (review_request asserted /{game_id}/roll which does not exist). Source-of-truth: routes/vibez_654.py lines 138/231. Document for next agent."},
+      {"endpoint": "POST /api/localization/me/{uid}/save", "issue": "Rejects 'ja-JP' as language code with 400 'unknown language code'. Only base codes ('ja','en','es') accepted. Save+detect inconsistency: /detect returns full BCP-47 tags but /save only accepts base. Worth normalizing for international v2 spec compliance."},
+      {"endpoint": "POST /api/cultural-onboarding/{uid}/submit", "issue": "Step names are LITERAL_ENUM only — must be 'origin_and_vibe' / 'linguistic_range' / 'dialect_selection' / 'cultural_values' (review_request loosely said '4 canonical steps'). Document for future testing agents."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "SettingsPage tab strip", "issue": "Founder-requested testids data-testid='settings-ai-dealer-tab' and 'settings-language-tab' exist in source (lines 152 & 194) but only wrap the CONTENT panels, not the menu/tab strip items. When /settings loads the default Sound & Music tab, neither testid is visible/queryable. Need to either (a) move the testids onto the menu nav items themselves or (b) duplicate the testids on both nav and content.", "selector": "[data-testid='settings-ai-dealer-tab'], [data-testid='settings-language-tab']", "priority": "MEDIUM"},
+      {"component": "3D Poker route fallback", "issue": "/poker-3d and /poker-css3d return HTTP 200 SPA shell with empty body (no 'Not Found' UI, no redirect). Founder spec said routes should '404 cleanly or redirect'. Currently they show a blank dashboard chrome page.", "selector": "n/a", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Vibez 654 / Phase 0 redesign", "issues": ["Visually clean AAA jewel/luxury treatment — stat bar (ROUND/BET/LIVE SCORE), calcified panel, control deck, 24h leaderboard all align with design_guidelines.json. No design issues observed during this sweep."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter_beta_sweep_live.py",
+    "/app/backend/tests/test_my_vibez_streaming_upload.py",
+    "/app/backend/tests/test_tictactoe_5_in_a_row.py",
+    "/app/backend/tests/test_v8_api_endpoints.py",
+    "/app/backend/tests/test_vibez_654_5dice.py",
+    "/app/backend/tests/test_vibe_654_social.py",
+    "/app/backend/tests/regression_shield.py",
+    "/app/test_reports/pytest/iter_beta_sweep_v8.xml",
+    "/app/test_reports/pytest/iter_beta_sweep_live.xml"
+  ],
+  "action_items": [
+    "[FRONTEND] SettingsPage.tsx — add data-testid='settings-ai-dealer-tab' and 'settings-language-tab' onto the menu/nav items (not just the content panels), so the founder's 'tab strip' contract is met regardless of which tab is currently active.",
+    "[FRONTEND] Add /poker-3d and /poker-css3d to a 'deleted-route' redirect list in App.js (e.g. <Navigate to='/games' replace />) so cached bookmarks don't show a blank page.",
+    "[BACKEND] /api/localization/me/{uid}/save — accept full BCP-47 tags ('ja-JP', 'en-US') in addition to base codes for symmetry with /api/localization/detect output.",
+    "[BACKEND] (Optional) /api/gisa/run — widen UE5/5654 Vibe parity tolerance to ~94% or surface a separate 'pass_with_warnings' overall_status so founder reports stop oscillating.",
+    "[CLEANUP] frontend/src/pages/GamesNew.tsx line 324 — remove 'poker_3d' and 'poker_css3d' from the clientSideGames whitelist (deletion was incomplete; functionally harmless but a tidiness regression for the 3D Poker deletion sweep)."
+  ],
+  "critical_code_review_comments": [
+    "Vibez 654 routes are a flat /vibez-654/{action} pattern with game_id in body — diverges from REST conventions but consistent with the rest of the codebase. No change needed.",
+    "GISA full_audit completes in ~3s on the preview env — probably the statistical model rather than a real Locust run. Spec-allowed, but production should swap in the locustfile.py harness for true contention.",
+    "test_tictactoe_5_in_a_row.py imports `from services.games.tictactoe import …` which only resolves when PYTHONPATH=/app/backend. Add conftest.py-level path injection (or move to an `import sys; sys.path.insert(0, '/app/backend')` shim) so it works from /app root."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter_beta_sweep_live.py (CREATED — 14 live-URL integration tests covering all founder beta-readiness checkpoints)"
+  ],
+  "success_rate": {
+    "backend": "100% (99 regression + 38 v8/feature + 14 live = 151/151 passed)",
+    "frontend": "85% (landing OneSheet 6/6, Globe FAB ✓, Vibez 654 AAA 6/6, /games lobby ✓; settings tab-strip testids missing, /poker-3d empty SPA shell)"
+  },
+  "test_credentials": "Demo login via /api/auth/demo-login — auto-provisioned (token: demo_session_*). God-Mode admin not exercised this sweep.",
+  "seed_data_creation": "TEST_beta_sweep_user (localization), TEST_beta_onboard_<hex> (cultural onboarding), TEST_beta_tictac (tic-tac-toe room) — all TEST_-prefixed; safe to leave.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Founder beta-readiness sweep is GREEN at the engine/API layer. Two surface-level frontend gaps remain: (a) settings tab-strip testids; (b) /poker-3d & /poker-css3d need a Navigate redirect in App.js. New live-URL test file is /app/backend/tests/test_iter_beta_sweep_live.py — reuse it. Vibez 654 endpoint shape: POST /api/vibez-654/{start,roll,stand} with game_id in JSON BODY (NOT in URL path). Cultural onboarding step enum: ['origin_and_vibe','linguistic_range','dialect_selection','cultural_values']. Localization /save accepts only base lang codes ('ja' not 'ja-JP'). To run: `cd /app/backend && PYTHONPATH=/app/backend pytest tests/test_iter_beta_sweep_live.py tests/regression_shield.py tests/test_my_vibez_streaming_upload.py tests/test_tictactoe_5_in_a_row.py tests/test_v8_api_endpoints.py tests/test_vibez_654_5dice.py tests/test_vibe_654_social.py -v`.",
+  "rca of the issue": "Two minor frontend gaps: (1) Settings testids placed on content panels instead of nav items — when /settings loads on default 'Sound & Music' tab, querying the AI-Dealer/Language testids returns 0. Fix: also add testids to the nav buttons/links. (2) Deleted 3D-Poker routes /poker-3d & /poker-css3d weren't added to a redirect list in App.js, so React Router's catch-all SPA fallback renders an empty chrome shell. Fix: add explicit <Route path='/poker-3d' element={<Navigate to='/games' replace />} /> entries (or 404 component)."
+}

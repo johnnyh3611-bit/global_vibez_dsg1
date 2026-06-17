@@ -1,0 +1,169 @@
+{
+  "agent": "knowledge_lock",
+  "summary": {
+    "total_games": 14,
+    "total_findings": 0,
+    "by_severity": {
+      "high": 0,
+      "medium": 0,
+      "low": 0
+    },
+    "by_rule": {}
+  },
+  "games": [
+    {
+      "key": "spades_aaa",
+      "label": "Spades \u2014 Premium AAA",
+      "files_scanned": 1,
+      "totals": {
+        "high": 0,
+        "medium": 0,
+        "low": 0
+      },
+      "findings": []
+    },
+    {
+      "key": "spades_practice",
+      "label": "Spades \u2014 Practice (vs AI)",
+      "files_scanned": 1,
+      "totals": {
+        "high": 0,
+        "medium": 0,
+        "low": 0
+      },
+      "findings": []
+    },
+    {
+      "key": "spades_4p",
+      "label": "Spades \u2014 4P Live",
+      "files_scanned": 2,
+      "totals": {
+        "high": 0,
+        "medium": 0,
+        "low": 0
+      },
+      "findings": []
+    },
+    {
+      "key": "bid_whist_aaa",
+      "label": "Bid Whist \u2014 Premium AAA",
+      "files_scanned": 2,
+      "totals": {
+        "high": 0,
+        "medium": 0,
+        "low": 0
+      },
+      "findings": []
+    },
+    {
+      "key": "bid_whist_practice",
+      "label": "Bid Whist \u2014 Practice (vs AI)",
+      "files_scanned": 1,
+      "totals": {
+        "high": 0,
+        "medium": 0,
+        "low": 0
+      },
+      "findings": []
+    },
+    {
+      "key": "blackjack_universal",
+      "label": "Blackjack \u2014 Universal",
+      "files_scanned": 2,
+      "totals": {
+        "high": 0,
+        "medium": 0,
+        "low": 0
+      },
+      "findings": []
+    },
+    {
+      "key": "poker_practice",
+      "label": "Poker \u2014 Practice + Multiplayer",
+      "files_scanned": 2,
+      "totals": {
+        "high": 0,
+        "medium": 0,
+        "low": 0
+      },
+      "findings": []
+    },
+    {
+      "key": "rummy",
+      "label": "Rummy \u2014 Practice + Multiplayer + Gin",
+      "files_scanned": 3,
+      "totals": {
+        "high": 0,
+        "medium": 0,
+        "low": 0
+      },
+      "findings": []
+    },
+    {
+      "key": "baccarat",
+      "label": "Baccarat \u2014 Premium",
+      "files_scanned": 1,
+      "totals": {
+        "high": 0,
+        "medium": 0,
+        "low": 0
+      },
+      "findings": []
+    },
+    {
+      "key": "uno",
+      "label": "Uno \u2014 Premium",
+      "files_scanned": 1,
+      "totals": {
+        "high": 0,
+        "medium": 0,
+        "low": 0
+      },
+      "findings": []
+    },
+    {
+      "key": "hearts",
+      "label": "Hearts",
+      "files_scanned": 1,
+      "totals": {
+        "high": 0,
+        "medium": 0,
+        "low": 0
+      },
+      "findings": []
+    },
+    {
+      "key": "go_fish",
+      "label": "Go Fish",
+      "files_scanned": 1,
+      "totals": {
+        "high": 0,
+        "medium": 0,
+        "low": 0
+      },
+      "findings": []
+    },
+    {
+      "key": "war",
+      "label": "War",
+      "files_scanned": 1,
+      "totals": {
+        "high": 0,
+        "medium": 0,
+        "low": 0
+      },
+      "findings": []
+    },
+    {
+      "key": "crazy_eights",
+      "label": "Crazy Eights",
+      "files_scanned": 1,
+      "totals": {
+        "high": 0,
+        "medium": 0,
+        "low": 0
+      },
+      "findings": []
+    }
+  ]
+}

@@ -1,0 +1,251 @@
+/**
+ * Audit Log Styles
+ */
+
+.audit-log-widget {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95));
+  border: 2px solid rgba(100, 116, 139, 0.3);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+/* === STATS OVERVIEW === */
+
+.audit-stats {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.stat-pill {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(100, 116, 139, 0.3);
+  border-radius: 20px;
+  padding: 12px 20px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.stat-pill .stat-label {
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.stat-pill .stat-value {
+  color: #22d3ee;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+/* === FILTERS === */
+
+.audit-filters {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.filter-select {
+  padding: 10px 16px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 2px solid rgba(100, 116, 139, 0.3);
+  border-radius: 8px;
+  color: #e2e8f0;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #22d3ee;
+  box-shadow: 0 0 15px rgba(34, 211, 238, 0.3);
+}
+
+/* === AUDIT TABLE === */
+
+.audit-table-container {
+  overflow-x: auto;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.audit-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.audit-table thead {
+  background: rgba(0, 0, 0, 0.4);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.audit-table th {
+  padding: 12px 16px;
+  text-align: left;
+  color: #cbd5e1;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid rgba(100, 116, 139, 0.3);
+}
+
+.audit-table tbody tr {
+  border-bottom: 1px solid rgba(100, 116, 139, 0.1);
+  transition: all 0.2s;
+}
+
+.audit-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.audit-table tbody tr.action-green {
+  border-left: 3px solid #22c55e;
+}
+
+.audit-table tbody tr.action-red {
+  border-left: 3px solid #ef4444;
+}
+
+.audit-table tbody tr.action-yellow {
+  border-left: 3px solid #fbbf24;
+}
+
+.audit-table tbody tr.action-blue {
+  border-left: 3px solid #22d3ee;
+}
+
+.audit-table td {
+  padding: 16px;
+  color: #e2e8f0;
+}
+
+.time-cell {
+  font-size: 12px;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+.time-cell small {
+  color: #64748b;
+  font-size: 11px;
+}
+
+.employee-cell strong {
+  color: #a855f7;
+}
+
+.employee-cell small {
+  color: #64748b;
+  font-size: 11px;
+}
+
+.action-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.action-badge.green {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+}
+
+.action-badge.red {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.action-badge.yellow {
+  background: rgba(251, 191, 36, 0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.4);
+}
+
+.action-badge.blue {
+  background: rgba(34, 211, 238, 0.2);
+  color: #22d3ee;
+  border: 1px solid rgba(34, 211, 238, 0.4);
+}
+
+.detail-cell {
+  max-width: 400px;
+}
+
+.metadata-details {
+  margin-top: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  padding: 8px;
+}
+
+.metadata-details summary {
+  cursor: pointer;
+  color: #22d3ee;
+  font-size: 11px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.metadata-details pre {
+  margin-top: 8px;
+  font-size: 11px;
+  color: #cbd5e1;
+  overflow-x: auto;
+}
+
+.target-cell {
+  font-size: 12px;
+}
+
+.target-type {
+  background: rgba(100, 116, 139, 0.3);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  text-transform: uppercase;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.target-cell small {
+  color: #64748b;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.no-target {
+  color: #64748b;
+}
+
+/* === RESPONSIVE === */
+
+@media (max-width: 768px) {
+  .audit-stats {
+    flex-direction: column;
+  }
+  
+  .audit-filters {
+    flex-direction: column;
+  }
+  
+  .audit-table {
+    font-size: 11px;
+  }
+  
+  .audit-table th,
+  .audit-table td {
+    padding: 8px;
+  }
+}

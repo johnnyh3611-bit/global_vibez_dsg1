@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><style>body{margin:0;background:#000;}</style></head><body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(75,1,0.1,1000),renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(1000,1000);renderer.setClearColor(0x000000);document.body.appendChild(renderer.domElement);
+for(let i=0;i<4;i++){
+  const cardGeometry=new THREE.BoxGeometry(3,4.5,0.1);
+  const cardMaterial=new THREE.MeshPhysicalMaterial({color:0x001a33,metalness:1.0,roughness:0.0,clearcoat:1.0,clearcoatRoughness:0.0,emissive:0x00ffff,emissiveIntensity:1.2,transparent:true,opacity:0.9});
+  const card=new THREE.Mesh(cardGeometry,cardMaterial);
+  card.position.set((i-1.5)*3,0,i*2);
+  card.rotation.y=Math.PI/6*i;card.rotation.x=-Math.PI/12;scene.add(card);
+  const frameGeometry=new THREE.BoxGeometry(3.2,4.7,0.05);
+  const frameMaterial=new THREE.MeshBasicMaterial({color:0x00ffff,transparent:true,opacity:0.8});
+  const frame=new THREE.Mesh(frameGeometry,frameMaterial);
+  frame.position.z=card.position.z-0.1;frame.position.x=card.position.x;frame.rotation.y=card.rotation.y;frame.rotation.x=card.rotation.x;
+  scene.add(frame);
+}
+for(let i=0;i<6;i++){
+  const lineGeometry=new THREE.BoxGeometry(30,0.1,0.1);
+  const lineMaterial=new THREE.MeshBasicMaterial({color:0x00ffff,transparent:true,opacity:0.6});
+  const line=new THREE.Mesh(lineGeometry,lineMaterial);
+  line.position.y=(i-3)*3;line.position.z=-5;scene.add(line);
+}
+const gridHelper=new THREE.GridHelper(30,15,0x00ffff,0x004488);
+gridHelper.position.y=-8;scene.add(gridHelper);
+for(let i=0;i<3;i++){
+  const ringGeometry=new THREE.TorusGeometry(10+i*2,0.2,8,50);
+  const ringMaterial=new THREE.MeshBasicMaterial({color:i===0?0x00ffff:0x0088ff,transparent:true,opacity:0.4});
+  const ring=new THREE.Mesh(ringGeometry,ringMaterial);
+  scene.add(ring);
+}
+const ambientLight=new THREE.AmbientLight(0x002233,1.5);scene.add(ambientLight);
+const pointLight1=new THREE.PointLight(0x00ffff,5,100);pointLight1.position.set(15,15,20);scene.add(pointLight1);
+const pointLight2=new THREE.PointLight(0x0088ff,3,100);pointLight2.position.set(-15,15,20);scene.add(pointLight2);
+camera.position.set(0,5,20);camera.lookAt(0,0,0);let time=0;
+function animate(){requestAnimationFrame(animate);time+=0.015;scene.children.forEach((child,i)=>{if(child.geometry&&child.geometry.type==='BoxGeometry'&&i<4){child.rotation.y+=0.01;child.position.y=Math.sin(time+i)*0.5;}if(child.geometry&&child.geometry.type==='TorusGeometry')child.rotation.z+=0.008;});renderer.render(scene,camera);}
+animate();
+</script></body></html>

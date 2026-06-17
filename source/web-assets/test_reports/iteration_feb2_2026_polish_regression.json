@@ -1,0 +1,42 @@
+{
+  "summary": "Feb 2, 2026 pre-deploy polish regression sweep. Tested: backend health + baccarat play/history + gin-rummy/rummy meld_groups, engine smoke for Euchre/Pinochle/Hearts, FastAPI route count (1182 routes import cleanly); frontend /baccarat + /practice/play/baccarat AAA redesign testids, Hearts pass modal legibility (14 clickable tokens), Euchre 5-card hand fan during bidding, Pinochle 12-card hand fan during bidding, Gin Rummy/Rummy meld-group testids, currency (no $ USD only ₵), and WSOD smoke for all 11 card-room routes. Everything core is passing — zero regressions found from this iteration's changes. One minor testid gap in PracticeBaccarat.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/baccarat/play", "issue": "Demo user's credits_balance defaults to 0 on first login; baccarat endpoint returns 400 'Insufficient credits' until credits are seeded. Not a regression from this iteration — the baccarat router + demo-login flow both pre-existed. Seeded 100k credits directly via Mongo to complete the play/history test. Consider adding 'credits_balance: 50' (or similar starter grant) to the demo-login document-creation block, identical to the new-user /api/auth/signup flow which seeds 50."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "PracticeBaccarat", "issue": "Missing data-testid='baccarat-practice-credits' on the credits balance display. BaccaratPremium has baccarat-credits but PracticeBaccarat's parallel element is not tagged. All other practice testids present (baccarat-practice-aaa, -bet-zone-player/tie/banker, -chip-5/10/25/50/100/500, -deal-btn, -clear-btn, -new-round-btn, -leave). Minor — doesn't block gameplay.", "selector": "PracticeBaccarat.tsx credits display div", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_baccarat.py (existing, not re-run here)",
+    "/app/test_reports/iteration_feb2_2026_polish_regression.json"
+  ],
+  "action_items": [
+    "(Optional, LOW) Add data-testid='baccarat-practice-credits' to the credits display in /app/frontend/src/components/practice_games/PracticeBaccarat.tsx to match BaccaratPremium's naming convention.",
+    "(Optional, LOW) Consider seeding credits_balance on the canonical demo user in the demo-login branch of /app/backend/server.py so /api/baccarat/play works on a fresh DB without manual Mongo seeding.",
+    "No blocking issues — safe to redeploy."
+  ],
+  "critical_code_review_comments": [
+    "Baccarat redesign is clean — testids consistent between premium + practice except for the -credits one noted above.",
+    "Gin Rummy + Rummy meld_groups + per-card meld_id correctly surface through to_view() and render client-side as data-testid='{game}-meld-group-{id}' groups.",
+    "Hearts pass modal renders 13 interactive card tokens with visible rank/glyph — legibility fix verified via screenshot (black 3♣, black 10♣, red hearts/diamonds all legible on dark modal).",
+    "Euchre + Pinochle hands now visible during bidding phase (5 + 12 cards respectively) — bug fix verified via screenshot (Euchre shows 9♣ 10♦ K♥ 9♥ A♥ with Order Up / Pass buttons; Pinochle shows 12-card fan with bid ladder 250/260/270/280/290/300 + Pass).",
+    "All 11 card-room routes load without WSOD (body_len 18k–22k, button count 8–13 per lobby)."
+  ],
+  "updated_files": [
+    "(none — no code changes made by testing agent; one-time credits_balance=100000 seeded on demo@globalvibez.com user document in Mongo to unblock baccarat test)"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "95% (1 missing testid out of dozens, all functional behavior passing)"},
+  "test_credentials": "Used POST /api/auth/demo-login (cookie + Bearer token) per /app/memory/test_credentials.md. Demo user email=demo@globalvibez.com.",
+  "seed_data_creation": "One-off: set credits_balance=100000 on demo@globalvibez.com to satisfy baccarat bet validation. Safe to leave in test_database.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Pre-deploy sweep on Feb 2 2026 confirmed zero regressions from the polish pass (SpadesCard/HeartsPassModal legibility, Euchre/Pinochle bidding hand visibility, Gin Rummy/Rummy meld grouping, BaccaratPremium + PracticeBaccarat AAA redesign at /baccarat canonical route, QuickEmojiButton wiring, type hints on tictactoe/checkers/multiplayer_socketio). Only nit: PracticeBaccarat missing 'baccarat-practice-credits' testid. Emoji button testids (multiplayer-chat-emoji-toggle, quick-emoji-toggle) were NOT reachable from lobby pages — they live inside live-match chat UIs; did not spin up a multiplayer session to verify (would require dual-client test). Code inspection of QuickEmojiButton.tsx + GameChat.tsx import shows wiring exists. If a future iteration doubts the emoji flow, open a multiplayer game + toggle chat to verify end-to-end.",
+  "rca of the issue": "N/A — no regressions found. Only finding is a pre-existing 1-missing-testid polish gap that does not affect runtime behavior."
+}

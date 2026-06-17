@@ -1,0 +1,58 @@
+{
+  "summary": "Validated USDC payout daemon + driver-wallet API + frontend pill/gate. 13/14 pytest pass (1 skipped – demo-login re-uses same user so cannot exercise no-wallet bucket). Frontend wallet setup page, wallet-registered-card, address display, and /driver wallet-ok pill + Go-Live (unblocked with wallet) all verified. ONE frontend gap: /vibe-ridez/driver-dashboard appears to NOT render the DriverDashboard component (body is empty, dashboard-wallet-link not present).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "DriverDashboard (/vibe-ridez/driver-dashboard)",
+        "issue": "Route does not render the dashboard — body.innerText is effectively empty (only global header banner shows). As a result, the new 'Payout Wallet' button (data-testid=dashboard-wallet-link) is never visible. Route is registered in /app/frontend/src/routes/ridesRoutes.tsx line 53 wrapped in ProtectedRoute → VibeDriverDashboard. Likely a runtime error in the component or an unresolved import. Needs main-agent investigation of browser console runtime errors in DriverDashboard.tsx (Wallet icon import from lucide-react? other deps?).",
+        "selector": "[data-testid=\"dashboard-wallet-link\"]",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_usdc_payout.py",
+    "/app/test_reports/pytest/iter_jan_2026_usdc_payout.xml"
+  ],
+  "action_items": [
+    "Investigate why /vibe-ridez/driver-dashboard renders blank. Open DevTools console on that route — likely a React render crash in DriverDashboard.tsx (check Wallet icon import, driverData shape, or ProtectedRoute interaction). Fix so dashboard-wallet-link becomes reachable.",
+    "OPTIONAL hardening: /api/admin/usdc-payout/retry is narrow — rejects paid rows with 404 only because it filters by status. Consider returning 409 with clearer message when ride exists but is in terminal 'paid' state vs truly missing 404.",
+    "OPTIONAL: demo-login appears to deterministically re-login the same session (token refreshed to the same user_id) — this prevented the no-wallet bucket test. Consider a /api/testing/seed-driver endpoint or allow admins to seed a fresh driver for E2E."
+  ],
+  "critical_code_review_comments": [
+    "usdc_payout_daemon.py _process_one: when amount exceeds daily cap, the row is flipped back to 'pending' with a driver_payout_error note — but driver_payout_attempts was ALREADY incremented by _claim_batch. Over successive ticks the attempts counter will climb even though the row never truly failed; max_attempts (3) could prematurely mark a legitimately-deferred row as failed after 3 deferrals. Suggest resetting attempts on the deferred-daily-cap branch or treat that path as a no-op.",
+    "routes/usdc_payout_admin.py admin_set_dry_run writes os.environ directly but this mutation is per-process: if backend runs with multiple workers/replicas only one sees the flip. Fine for a single-worker preview but FLAG FOR PROD — persist the flag in DB (config collection) and read on every tick() to make it durable + multi-worker safe.",
+    "Admin dry-run toggle has a doc-string promising a mainnet-ack guard that is NOT wired up. A careless operator can currently flip DRY_RUN=0 on mainnet via one POST. Before any mainnet cutover, add `if cfg['network']=='mainnet' and body.dry_run is False and not body.mainnet_ack: raise 400`.",
+    "_claim_batch does N sequential findOneAndUpdate calls — fine at batch_size=5 but won't scale. For v2, consider a bulk `update_many({status:pending, limit N}, ...)` using a claim_id or transaction.",
+    "The admin queue endpoint `/api/admin/usdc-payout/queue` has no date filter — as fare_distributions grows, the last-500 sort could miss recent rows (sorts by created_at desc, so actually ok, but flag paginating beyond 500)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_usdc_payout.py (new)"
+  ],
+  "success_rate": {"backend": "100% (13/13 executed, 1 expectedly skipped)", "frontend": "83% (5 of 6 surfaces verified; dashboard-wallet-link not rendered)"},
+  "test_credentials": "Demo login via POST /api/auth/demo-login. Admin via POST /api/admin/vault-auth {password: GlobalVibez_Founder_2025!, code: 000000}.",
+  "seed_data_creation": "Seeded TEST_ride_* rows via /api/viberidez/fares/distribute (15.50 USD and 1000 USD for per-tx-cap test). Registered wallet DsVmA6LJrFgVwwoMgSaU5EdX6qVnQ1qqLoL8BKf4GkqR for demo user.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend surface (stats/queue/tick-now/dry-run/retry/driver-wallet POST+GET) fully covered in /app/backend/tests/test_usdc_payout.py — reuse as regression. Frontend gap is the /vibe-ridez/driver-dashboard blank render — retest after main-agent fixes it.",
+  "verified_flows": [
+    "POST /api/driver/wallet auth-gated (401 without Bearer) ✓",
+    "POST /api/driver/wallet rejects invalid base58 with 400 ✓",
+    "POST /api/driver/wallet persists + GET returns address+registered_at ✓",
+    "GET /api/admin/usdc-payout/stats admin-gated, returns by_status+config, NEVER exposes wallet_secret ✓",
+    "GET /api/admin/usdc-payout/queue admin-gated, supports ?status filter ✓",
+    "POST /api/admin/usdc-payout/dry-run live-flips env flag; verified via subsequent /stats ✓ (reset to true after)",
+    "POST /api/admin/usdc-payout/tick-now processes pending → paid with mock_sig='dryrun_...' and dry_run:true ✓",
+    "Daemon per-tx cap: $1000 fare (driver_usd=$700) lands in capped_per_tx, not paid ✓",
+    "POST /api/admin/usdc-payout/retry/{ride_id} resets capped row to pending; returns 404 on unknown ride ✓",
+    "Frontend /driver/wallet shows wallet-registered-card with correct address ✓",
+    "Frontend /driver shows driver-wallet-ok-link pill (green Wallet Connected) ✓",
+    "Frontend /driver Go Live button works (no error banner) when wallet registered ✓"
+  ]
+}
