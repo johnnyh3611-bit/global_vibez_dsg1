@@ -3,12 +3,12 @@ import { defineConfig, devices } from '@playwright/test';
 /**
  * Playwright config for Global Vibez DSG E2E smoke suite.
  *
- * Points at the deployed preview URL (REACT_APP_BACKEND_URL in frontend/.env)
- * so tests can run in CI without spinning up a local dev server.
+ * Set E2E_BASE_URL to the deployed/staging URL before running in CI.
+ * Falls back to the local dev server when running locally.
  *
  * Run: `cd frontend && yarn e2e` (headless) or `yarn e2e:headed` (headed).
  */
-const BASE_URL = process.env.E2E_BASE_URL || 'https://social-connect-953.preview.emergentagent.com';
+const BASE_URL = process.env.E2E_BASE_URL || 'http://localhost:3000';
 
 export default defineConfig({
   testDir: './e2e',
