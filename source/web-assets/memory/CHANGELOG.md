@@ -2866,7 +2866,7 @@ Events:       checkout.session.completed, payment_intent.succeeded
 
 Webhook returns 200 with `{received, kind, subscription_id}` on success
 or `{received, ignored, warn, already_processed}` for benign skips.
-Signature verification handled by `emergentintegrations.payments.stripe.checkout`.
+Signature verification handled by `source.web-assets.backend.services.payment_hub`.
 
 
 
@@ -2909,7 +2909,7 @@ can fetch its own row (existing escrow-lock / release-prep / vibe-check
 **Task 2 — Stripe checkout for $20/mo Artisan + $30/mo Restaurant Partnership**
 
 Backend: 3 new routes in `/app/backend/routes/vibe_venues.py` using
-`emergentintegrations.payments.stripe.checkout.StripeCheckout`:
+`source.web-assets.backend.services.payment_hub.StripeCheckout`:
   - `POST /api/vibe-venues/artisans/{artisan_id}/checkout`
     → $20.00 Stripe session, redirects to hosted checkout, success URL
        `/vibe-venues/artisan/payment-success?session_id=…&artisan_id=…`

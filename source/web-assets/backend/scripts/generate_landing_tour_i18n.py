@@ -26,7 +26,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from dotenv import load_dotenv  # noqa: E402
-from emergentintegrations.llm.chat import LlmChat, UserMessage  # noqa: E402
+from source.web-assets.backend.services.ai_engine import LlmChat, UserMessage  # noqa: E402
 from emergentintegrations.llm.openai import OpenAITextToSpeech  # noqa: E402
 from mutagen.mp3 import MP3  # noqa: E402
 

@@ -74,7 +74,7 @@ from utils.database import get_current_user
 # Lazy Stripe import — emergentintegrations is installed but if the env
 # is misconfigured we still want the rest of the routes to load.
 try:
-    from emergentintegrations.payments.stripe.checkout import (
+    from source.web-assets.backend.services.payment_hub import (
         StripeCheckout,
         CheckoutSessionRequest,
     )

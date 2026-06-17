@@ -273,7 +273,7 @@ function GamePage() {
 ### Phase 1: AI Moderation (Claude Integration)
 ```python
 # In chat.py, update moderate_message function
-from emergentintegrations.llm.chat import LlmChat, UserMessage
+from source.web-assets.backend.services.ai_engine import LlmChat, UserMessage
 
 async def moderate_message(text: str, user_id: str) -> dict:
     try:

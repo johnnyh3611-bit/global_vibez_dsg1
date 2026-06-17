@@ -64,7 +64,7 @@ MERCHANT_SERVICES = [
 
 # ────────────────────────────────────────────── Stripe + integrations ──
 try:  # pragma: no cover
-    from emergentintegrations.payments.stripe.checkout import (
+    from source.web-assets.backend.services.payment_hub import (
         StripeCheckout,
         CheckoutSessionRequest,
     )

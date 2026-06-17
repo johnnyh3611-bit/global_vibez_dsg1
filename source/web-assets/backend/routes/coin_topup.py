@@ -107,7 +107,7 @@ async def create_topup_checkout(
     if not pack:
         raise HTTPException(400, f"Invalid pack_id. Choose from {list(COIN_PACKS)}")
 
-    from emergentintegrations.payments.stripe.checkout import (
+    from source.web-assets.backend.services.payment_hub import (
         StripeCheckout, CheckoutSessionRequest,
     )
     from config import STRIPE_API_KEY
@@ -174,7 +174,7 @@ async def create_topup_checkout(
 @router.get("/topup/status/{session_id}")
 async def check_topup_status(session_id: str, request: Request) -> Dict[str, Any]:
     """Poll Stripe + reconcile coin credit on success."""
-    from emergentintegrations.payments.stripe.checkout import StripeCheckout
+    from source.web-assets.backend.services.payment_hub import StripeCheckout
     from config import STRIPE_API_KEY
 
     host_url = str(request.base_url).rstrip("/")
@@ -200,7 +200,7 @@ async def check_topup_status(session_id: str, request: Request) -> Dict[str, Any
 
 @router.post("/webhook/stripe")
 async def stripe_webhook(request: Request) -> Dict[str, Any]:
-    from emergentintegrations.payments.stripe.checkout import StripeCheckout
+    from source.web-assets.backend.services.payment_hub import StripeCheckout
     from config import STRIPE_API_KEY
 
     host_url = str(request.base_url).rstrip("/")

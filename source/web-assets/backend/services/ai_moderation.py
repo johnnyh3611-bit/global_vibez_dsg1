@@ -6,7 +6,7 @@ import os
 from dotenv import load_dotenv
 from typing import Dict, List
 from pydantic import BaseModel
-from emergentintegrations.llm.chat import LlmChat, UserMessage
+from source.web-assets.backend.services.ai_engine import LlmChat, UserMessage
 
 load_dotenv()
 

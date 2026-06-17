@@ -3231,7 +3231,7 @@ User asked for a way to let people "buy in" to the app and earn loyalty payouts 
 **Backend — NEW `routes/founders_pass.py`**
 - `GET /api/founders-pass/tiers` (public) — returns Scenario D tiers + legal disclaimer.
 - `GET /api/founders-pass/me` (auth) — caller's active pass.
-- `POST /api/founders-pass/checkout` (auth) — creates Stripe checkout session via `emergentintegrations.payments.stripe.checkout`. Rejects equal/lower upgrades (409). Returns 503 with helpful instructions when `STRIPE_API_KEY` not configured.
+- `POST /api/founders-pass/checkout` (auth) — creates Stripe checkout session via `source.web-assets.backend.services.payment_hub`. Rejects equal/lower upgrades (409). Returns 503 with helpful instructions when `STRIPE_API_KEY` not configured.
 - `GET /api/founders-pass/checkout-status/{session_id}` (auth) — polled by success page; activates pass once on `paid`.
 - `POST /api/founders-pass/test-activate` (auth, env-gated by `FOUNDERS_PASS_TEST_MODE=1`) — preview/dev bypass.
 - `GET /api/admin/founders-pass/stats` (admin-cookie) — active_passes, gross_revenue_usd, arpu_usd, tier_mix with share_pct.

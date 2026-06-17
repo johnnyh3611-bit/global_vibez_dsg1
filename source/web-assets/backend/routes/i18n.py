@@ -126,7 +126,7 @@ async def _llm_translate_batch(texts: List[str], target_lang: str) -> List[str]:
     if not api_key or not texts:
         return list(texts)
     try:
-        from emergentintegrations.llm.chat import LlmChat, UserMessage  # noqa: PLC0415
+        from source.web-assets.backend.services.ai_engine import LlmChat, UserMessage  # noqa: PLC0415
         chat = LlmChat(
             api_key=api_key,
             session_id=f"i18n-{target_lang}-{hashlib.sha1(str(texts).encode()).hexdigest()[:8]}",

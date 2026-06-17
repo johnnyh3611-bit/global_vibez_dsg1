@@ -65,7 +65,7 @@ async def _ai_mediate(event_id: str, event_type: str, context: Dict[str, Any]) -
             "confidence": 0.0,
         }
     try:
-        from emergentintegrations.llm.chat import LlmChat, UserMessage  # noqa: PLC0415
+        from source.web-assets.backend.services.ai_engine import LlmChat, UserMessage  # noqa: PLC0415
         chat = (
             LlmChat(
                 api_key=api_key,

@@ -89,7 +89,7 @@ Successfully implemented **ALL remaining features** for Global Vibez DSG in sequ
 ✅ **Integration:**
 - Uses **Emergent LLM Key** (Universal Key)
 - Model: **Gemini 2.5 Flash** (gemini-2.5-flash)
-- Library: `emergentintegrations.llm.chat`
+- Library: `source.web-assets.backend.services.ai_engine`
 
 ✅ **Endpoints Created:**
 1. `POST /api/ai-date-planner/generate` - Generate personalized date plan

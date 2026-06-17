@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from typing import Dict, Any
 from datetime import datetime, timezone, timedelta
-from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionRequest
+from source.web-assets.backend.services.payment_hub import StripeCheckout, CheckoutSessionRequest
 from utils.database import get_database, get_current_user
 import os
 import uuid

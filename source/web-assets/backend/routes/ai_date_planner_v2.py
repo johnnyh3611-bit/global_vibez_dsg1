@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 import os
 import json
 from dotenv import load_dotenv
-from emergentintegrations.llm.chat import LlmChat, UserMessage
+from source.web-assets.backend.services.ai_engine import LlmChat, UserMessage
 from motor.motor_asyncio import AsyncIOMotorClient
 
 load_dotenv()

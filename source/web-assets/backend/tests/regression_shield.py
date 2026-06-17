@@ -6,10 +6,10 @@ The single pytest file every agent MUST run before declaring any task
 If it goes red, STOP — something regressed.
 
 Run locally:
-    cd /app/backend && python -m pytest tests/regression_shield.py -v
+    cd source/backend && python -m pytest tests/regression_shield.py -v
 
 Run via the convenience script (includes frontend TS check):
-    /app/scripts/run_shield.sh
+    source/scripts/run_shield.sh
 
 Every time a bug is fixed, add a new test case in the `# --- LOCKED ---`
 section below with the format:
@@ -91,7 +91,7 @@ def test_coming_soon_list_exists_and_is_populated() -> None:
     intact so a future regression that renames or deletes the module is
     still caught — which is what the test was actually defending against.
     """
-    path = "/app/frontend/src/data/comingSoonGames.ts"
+    path = "source/web-assets/frontend/src/data/comingSoonGames.ts"
     assert os.path.exists(path), "comingSoonGames.ts was deleted or moved"
     content = open(path).read()
     assert "COMING_SOON_GAME_IDS" in content
@@ -103,11 +103,11 @@ def test_privy_button_has_self_hide_guard() -> None:
     sweep (component was never mounted in LoginPage). Lock the
     NOT-MOUNTED state instead so it can't sneak back in."""
     from pathlib import Path
-    assert not Path("/app/frontend/src/components/web3/PrivyLoginButton.tsx").exists(), (
+    assert not Path("source/web-assets/frontend/src/components/web3/PrivyLoginButton.tsx").exists(), (
         "PrivyLoginButton.tsx came back — it was retired in May 2026 because "
         "the CSP self-hide guard caused a 'really big outrageous modal' regression."
     )
-    login = open("/app/frontend/src/pages/LoginPage.tsx").read()
+    login = open("source/web-assets/frontend/src/pages/LoginPage.tsx").read()
     assert "PrivyLoginButton" not in login, "LoginPage tried to mount the retired PrivyLoginButton"
 
 
@@ -116,7 +116,7 @@ def test_demo_login_seeds_credits() -> None:
     Baccarat/Blackjack/Roulette work on a fresh DB without manual
     mongo seeding. If this seed drops, every fresh deploy starts with
     'insufficient credits' errors."""
-    path = "/app/backend/server.py"
+    path = "source/web-assets/backend/server.py"
     content = open(path).read()
     # Must set credits_balance on both the fresh-user branch AND top-up.
     assert '"credits_balance": 5000' in content, "Demo credits seed removed"
@@ -126,7 +126,7 @@ def test_dockerfile_has_node_heap_bump() -> None:
     """Deploys went OOM for 3 attempts when NODE_OPTIONS wasn't set in
     the Docker build stage. This is belt-and-suspenders — the build
     script also prefixes NODE_OPTIONS."""
-    path = "/app/frontend/Dockerfile"
+    path = "source/web-assets/frontend/Dockerfile"
     content = open(path).read()
     assert "max-old-space-size" in content, "Docker build lost heap cap — will OOM"
 
@@ -136,7 +136,7 @@ def test_dockerfile_has_node_heap_bump() -> None:
 def test_hearts_pass_modal_ink_is_dark() -> None:
     """Feb 2026: fix was slate-100 → slate-900 so cards are readable on
     white faces. If the CSS reverts, clubs/spades go invisible again."""
-    path = "/app/frontend/src/components/hearts-aaa/HeartsPassModal.tsx"
+    path = "source/web-assets/frontend/src/components/hearts-aaa/HeartsPassModal.tsx"
     content = open(path).read()
     assert "text-slate-900" in content, "Hearts pass-modal ink went light again"
     assert "text-rose-700" in content, "Hearts rose ink went light again"
@@ -146,7 +146,7 @@ def test_euchre_hand_visible_during_bidding() -> None:
     """Feb 2026: hand fan was gated to `phase === 'playing'` only. Now
     renders for all non-finished phases. If that gate comes back,
     players can't see their cards during Order Up / Name Trump."""
-    path = "/app/frontend/src/pages/games/EuchreAAA.tsx"
+    path = "source/web-assets/frontend/src/pages/games/EuchreAAA.tsx"
     content = open(path).read()
     # The restrictive gate must not return.
     assert 'raw.phase === "playing" || raw.phase === "ordered_dealer_discard" ? (' not in content
@@ -155,7 +155,7 @@ def test_euchre_hand_visible_during_bidding() -> None:
 
 
 def test_pinochle_hand_visible_during_bidding() -> None:
-    path = "/app/frontend/src/pages/games/PinochleAAA.tsx"
+    path = "source/web-assets/frontend/src/pages/games/PinochleAAA.tsx"
     content = open(path).read()
     assert 'raw.phase === "playing" ? (' not in content
     assert "raw.your_hand && raw.your_hand.length > 0 && !finished && !scoring" in content
@@ -163,7 +163,7 @@ def test_pinochle_hand_visible_during_bidding() -> None:
 
 def test_baccarat_has_canonical_route() -> None:
     """User expected /baccarat to land on BaccaratPremium. Was 404ing."""
-    path = "/app/frontend/src/routes/gamesRoutes.tsx"
+    path = "source/web-assets/frontend/src/routes/gamesRoutes.tsx"
     content = open(path).read()
     assert 'path="/baccarat"' in content, "/baccarat canonical route removed"
 
@@ -172,8 +172,8 @@ def test_baccarat_uses_vibez_coins_not_usd() -> None:
     """Platform rule: NO `$` USD anywhere in the Baccarat room — only
     `₵` Vibez Coins. A $ symbol creeping back is a brand regression."""
     for path in (
-        "/app/frontend/src/pages/games/BaccaratPremium.tsx",
-        "/app/frontend/src/components/practice_games/PracticeBaccarat.tsx",
+        "source/web-assets/frontend/src/pages/games/BaccaratPremium.tsx",
+        "source/web-assets/frontend/src/components/practice_games/PracticeBaccarat.tsx",
     ):
         content = open(path).read()
         # Allow ${variable} template strings but ban standalone `$NUM` labels.
@@ -188,19 +188,19 @@ def test_chair_orb_component_exists() -> None:
     """Feb 2026: ChairOrb is the single source of truth for the floating
     chair visuals. Wall + Vault + Teaser all import it. If it's deleted
     those pages fall back to broken imports."""
-    path = "/app/frontend/src/components/chairs/ChairOrb.tsx"
+    path = "source/web-assets/frontend/src/components/chairs/ChairOrb.tsx"
     assert os.path.exists(path), "ChairOrb component deleted"
     content = open(path).read()
     assert "radial-gradient" in content, "ChairOrb lost its sphere gradient"
 
 
 def test_coming_soon_overlay_component_exists() -> None:
-    path = "/app/frontend/src/components/games/ComingSoonOverlay.tsx"
+    path = "source/web-assets/frontend/src/components/games/ComingSoonOverlay.tsx"
     assert os.path.exists(path), "ComingSoonOverlay component deleted"
 
 
 def test_quick_emoji_button_component_exists() -> None:
-    path = "/app/frontend/src/components/chat/QuickEmojiButton.tsx"
+    path = "source/web-assets/frontend/src/components/chat/QuickEmojiButton.tsx"
     assert os.path.exists(path), "QuickEmojiButton component deleted"
 
 
@@ -208,7 +208,7 @@ def test_hand_fan_sorts_by_suit() -> None:
     """Feb 2026: hands must be auto-grouped by suit. Updated 2026-02-05 —
     Founder requested H ♥ → C ♣ → D ♦ → S ♠ ordering (red/black/red/black
     alternation) so player eye-scan stays clean."""
-    path = "/app/frontend/src/components/spades/SpadesHandFan.tsx"
+    path = "source/web-assets/frontend/src/components/spades/SpadesHandFan.tsx"
     content = open(path).read()
     assert "SUIT_ORDER" in content, "HandFan lost suit ordering constant"
     assert "sortBySuit" in content, "HandFan lost sort helper"
@@ -231,14 +231,14 @@ def test_round_modal_auto_advances_5s() -> None:
     """Feb 2026: user said round-end modal 'shouldn't sit there for a
     long time' — should show stats for ~5s then auto-advance to next
     round. A countdown bar visualises the wait."""
-    path = "/app/frontend/src/components/spades/SpadesRoundModal.tsx"
+    path = "source/web-assets/frontend/src/components/spades/SpadesRoundModal.tsx"
     content = open(path).read()
     assert "autoAdvanceMs" in content, "Round modal lost auto-advance prop"
     assert "spades-round-countdown" in content, "Round modal lost countdown bar"
 
 
 def test_euchre_scoring_auto_advances() -> None:
-    path = "/app/frontend/src/pages/games/EuchreAAA.tsx"
+    path = "source/web-assets/frontend/src/pages/games/EuchreAAA.tsx"
     content = open(path).read()
     assert "setTimeout(() => { newHand(); }, 5000)" in content, (
         "Euchre lost its 5s auto-advance between hands."
@@ -246,7 +246,7 @@ def test_euchre_scoring_auto_advances() -> None:
 
 
 def test_pinochle_scoring_auto_advances() -> None:
-    path = "/app/frontend/src/pages/games/PinochleAAA.tsx"
+    path = "source/web-assets/frontend/src/pages/games/PinochleAAA.tsx"
     content = open(path).read()
     assert "setTimeout(() => { newHand(); }, 5000)" in content, (
         "Pinochle lost its 5s auto-advance between hands."
@@ -259,7 +259,7 @@ def test_login_card_not_globally_hoverable() -> None:
     bar scale + glow — users read that as "the app is broken, of
     course I can't log in." The card must pass hoverable={false}
     explicitly so only the action buttons react."""
-    path = "/app/frontend/src/pages/LoginPage.tsx"
+    path = "source/web-assets/frontend/src/pages/LoginPage.tsx"
     content = open(path).read()
     assert 'hoverable={false}' in content, (
         "LoginPage GlassCard lost its hoverable={false} — whole card will "
@@ -327,7 +327,7 @@ def test_vibe_654_social_routes_mounted() -> None:
 def test_vibe_654_coliseum_component_exists() -> None:
     """The shared Celestial Glass Coliseum shell must exist on disk."""
     from pathlib import Path
-    comp = Path("/app/frontend/src/components/vibe654/Coliseum.tsx")
+    comp = Path("source/web-assets/frontend/src/components/vibe654/Coliseum.tsx")
     assert comp.exists(), "Coliseum.tsx missing — Breadwinner Arena regression"
     body = comp.read_text()
     # Both variants MUST be supported (dual arena spec).
@@ -349,7 +349,7 @@ def test_vibe_654_sidebet_settlement_hook_wired() -> None:
     WINNER. Without this, spectator bets would sit open forever.
     """
     from pathlib import Path
-    src = Path("/app/backend/routes/vibe_654_tournament.py").read_text()
+    src = Path("source/web-assets/backend/routes/vibe_654_tournament.py").read_text()
     assert "settle_side_bets_for_round" in src, "Side-bet settlement hook regressed"
     assert "detect_six_five_four_in_round" in src, "6-5-4 hit detector regressed"
 
@@ -357,7 +357,7 @@ def test_vibe_654_sidebet_settlement_hook_wired() -> None:
 def test_vibe_654_solo_high_roller_route_registered() -> None:
     """Dual Arena spec: the 1vAI Solo Vault must be reachable at /vibe-654/solo."""
     from pathlib import Path
-    src = Path("/app/frontend/src/routes/gamesRoutes.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/routes/gamesRoutes.tsx").read_text()
     assert '"/vibe-654/solo"' in src, "Solo Vault route regressed"
     assert '"/vibe-654/coliseum/:tableId"' in src, "Coliseum canonical route regressed"
 
@@ -389,9 +389,9 @@ def test_card_multiplayer_routes_mounted() -> None:
 def test_card_mp_room_page_and_routes_exist() -> None:
     """Universal MP room page + route must be on disk and wired."""
     from pathlib import Path
-    page = Path("/app/frontend/src/pages/games/CardMpRoomPage.tsx")
+    page = Path("source/web-assets/frontend/src/pages/games/CardMpRoomPage.tsx")
     assert page.exists(), "CardMpRoomPage.tsx missing"
-    routes = Path("/app/frontend/src/routes/gamesRoutes.tsx").read_text()
+    routes = Path("source/web-assets/frontend/src/routes/gamesRoutes.tsx").read_text()
     assert '"/card-mp/:gameType/:roomId"' in routes, "card-mp route regressed"
 
 
@@ -399,8 +399,8 @@ def test_euchre_pinochle_have_multiplayer_cta() -> None:
     """Both AAA lobbies must expose the Play Live Multiplayer CTA."""
     from pathlib import Path
     for f in [
-        "/app/frontend/src/pages/games/EuchreAAA.tsx",
-        "/app/frontend/src/pages/games/PinochleAAA.tsx",
+        "source/web-assets/frontend/src/pages/games/EuchreAAA.tsx",
+        "source/web-assets/frontend/src/pages/games/PinochleAAA.tsx",
     ]:
         src = Path(f).read_text()
         assert "CardMpLobbyModal" in src, f"CardMpLobbyModal import regressed in {f}"
@@ -414,7 +414,7 @@ def test_stale_http_multiplayer_card_games_redirect() -> None:
     Also /http-multiplayer/* canonical path redirects at the router level.
     """
     from pathlib import Path
-    src = Path("/app/frontend/src/pages/HttpGameRouter.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/pages/HttpGameRouter.tsx").read_text()
     for game, target in [
         ("'hearts'", '"/hearts"'),
         ("'rummy'", '"/rummy"'),
@@ -425,7 +425,7 @@ def test_stale_http_multiplayer_card_games_redirect() -> None:
     ]:
         assert f'gameType === {game}' in src and target in src, f"{game} unification regressed"
 
-    routes = Path("/app/frontend/src/routes/gamesRoutes.tsx").read_text()
+    routes = Path("source/web-assets/frontend/src/routes/gamesRoutes.tsx").read_text()
     # Top-level redirect routes for legacy /http-multiplayer/<game> paths.
     for path, target in [
         ("/http-multiplayer/hearts", "/hearts"),
@@ -449,7 +449,7 @@ def test_vibez_654_solo_accepts_credits_balance_wallet() -> None:
     `utils.wallet_fields.pick_wallet_field_for_debit` (shared helper).
     """
     from pathlib import Path
-    src = Path("/app/backend/routes/vibez_654.py").read_text()
+    src = Path("source/web-assets/backend/routes/vibez_654.py").read_text()
     # Helper import + usage in the bet-gating flow.
     assert "pick_wallet_field_for_debit" in src, (
         "Solo start no longer uses the shared debit helper"
@@ -464,7 +464,7 @@ def test_vibez_654_solo_uses_5_dice_654_rules() -> None:
     sequential-peel helper must exist.
     """
     from pathlib import Path
-    src = Path("/app/backend/routes/vibez_654.py").read_text()
+    src = Path("source/web-assets/backend/routes/vibez_654.py").read_text()
     assert "NUM_DICE = 5" in src, "Solo dice count regressed — must be 5"
     assert "MAX_ROLLS = 3" in src, "Solo max rolls regressed — must be 3"
     assert "_apply_654_pass" in src, "Sequential 6→5→4 peel helper regressed"
@@ -483,7 +483,7 @@ def test_vibez_654_prescription_wallet_fallback_works() -> None:
     credits_balance on the users doc. Lock the dual-wallet fallback.
     """
     from pathlib import Path
-    src = Path("/app/backend/routes/vibez_654_prescription.py").read_text()
+    src = Path("source/web-assets/backend/routes/vibez_654_prescription.py").read_text()
     assert "async def _wallet_inc" in src, "_wallet_inc helper regressed"
     assert "users.credits_balance" in src, "credits_balance fallback regressed"
     # /stand must also have the fallback.
@@ -497,7 +497,7 @@ def test_vibedice_premium_uses_real_user_id_and_table() -> None:
     real-auth resolution + dynamic table fetch.
     """
     from pathlib import Path
-    src = Path("/app/frontend/src/pages/games/VibeDice654Premium.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/pages/games/VibeDice654Premium.tsx").read_text()
     assert "useState('test_user_dice')" not in src, "userId hardcoding regressed"
     assert "vibez654_table_1" not in src, "table_id hardcoding regressed"
     assert "getStoredUserId" in src, "real user-id helper regressed"
@@ -511,7 +511,7 @@ def test_vibe654_solo_dice_tray_hides_qualifier_tiles() -> None:
     The DiceFace component must not render a 'label' prop anymore.
     """
     from pathlib import Path
-    src = Path("/app/frontend/src/pages/games/VibeSoloHighRoller.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/pages/games/VibeSoloHighRoller.tsx").read_text()
     assert "state: 'locked'" not in src, "locked dice state regressed onto the tray"
     assert "label?: string" not in src, "DiceFace label prop regressed"
 
@@ -522,7 +522,7 @@ def test_decision_popdown_is_centered_not_top_anchored() -> None:
     screen, not near the top. Lock the centered layout.
     """
     from pathlib import Path
-    src = Path("/app/frontend/src/components/vibe654/DecisionPopDown.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/components/vibe654/DecisionPopDown.tsx").read_text()
     assert "top-28" not in src, "DecisionPopDown reverted to top-anchored layout"
     assert "items-center justify-center" in src, "DecisionPopDown centering regressed"
 
@@ -535,9 +535,9 @@ def test_socketio_handlers_have_type_hints() -> None:
     import ast
     from pathlib import Path
     for f in [
-        "/app/backend/services/bid_whist_socket_events.py",
-        "/app/backend/services/messaging_socketio.py",
-        "/app/backend/services/matchmaking_socket_events.py",
+        "source/web-assets/backend/services/bid_whist_socket_events.py",
+        "source/web-assets/backend/services/messaging_socketio.py",
+        "source/web-assets/backend/services/matchmaking_socket_events.py",
     ]:
         tree = ast.parse(Path(f).read_text())
         missing = 0
@@ -559,7 +559,7 @@ def test_vibe654_play_picks_highest_balance_wallet() -> None:
     a player who has funds elsewhere.
     """
     from pathlib import Path
-    src = Path("/app/backend/routes/vibez_654_prescription.py").read_text()
+    src = Path("source/web-assets/backend/routes/vibez_654_prescription.py").read_text()
     assert "candidates: list[tuple[str, float]] = []" in src, (
         "vibez_654 wallet candidate list regressed"
     )
@@ -575,12 +575,12 @@ def test_solo_vault_decision_dock_is_side_mounted() -> None:
     that obscured the dice tray. Lock the SideDockDecision wiring.
     """
     from pathlib import Path
-    src = Path("/app/frontend/src/pages/games/VibeSoloHighRoller.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/pages/games/VibeSoloHighRoller.tsx").read_text()
     assert "SideDockDecision" in src, "Solo Vault no longer uses the side-mounted decision dock"
     assert "DecisionPopDown" not in src, (
         "Solo Vault regressed to the legacy center pop-down — must use SideDockDecision"
     )
-    dock = Path("/app/frontend/src/components/vibe654/SideDockDecision.tsx")
+    dock = Path("source/web-assets/frontend/src/components/vibe654/SideDockDecision.tsx")
     assert dock.exists(), "SideDockDecision component file missing"
     dsrc = dock.read_text()
     # Desktop right-edge + mobile bottom-sticky variants both required.
@@ -599,7 +599,7 @@ def test_room_menu_bar_component_with_themes() -> None:
     a single generic header.
     """
     from pathlib import Path
-    src = Path("/app/frontend/src/components/games/RoomMenuBar.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/components/games/RoomMenuBar.tsx").read_text()
     for theme in ["spades", "hearts", "vibe654", "vibesolo", "colosseum"]:
         assert f"'{theme}'" in src or f'"{theme}"' in src, (
             f"RoomMenuBar lost the '{theme}' theme"
@@ -616,7 +616,7 @@ def test_spades_hand_fan_scales_on_mobile() -> None:
     iPhone viewport. Lock the responsive sizing + viewport-based overlap.
     """
     from pathlib import Path
-    src = Path("/app/frontend/src/components/spades/SpadesHandFan.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/components/spades/SpadesHandFan.tsx").read_text()
     assert "useState" in src and "innerWidth" in src, (
         "SpadesHandFan lost viewport-aware sizing"
     )
@@ -642,7 +642,7 @@ def test_aaa_top_bars_wrap_on_mobile() -> None:
     ]
     missing: list[str] = []
     for r in rooms:
-        src = Path(f"/app/frontend/src/pages/games/{r}.tsx").read_text()
+        src = Path(f"source/web-assets/frontend/src/pages/games/{r}.tsx").read_text()
         if "flex flex-wrap items-start justify-between" not in src:
             missing.append(r)
     assert not missing, (
@@ -666,7 +666,7 @@ def test_vibe_rooms_use_compressed_single_viewport_layout() -> None:
     ]
     missing: list[str] = []
     for r in rooms:
-        src = Path(f"/app/frontend/src/pages/games/{r}.tsx").read_text()
+        src = Path(f"source/web-assets/frontend/src/pages/games/{r}.tsx").read_text()
         if "h-[100dvh]" not in src or "flex-col" not in src:
             missing.append(r)
     assert not missing, (
@@ -682,7 +682,7 @@ def test_coliseum_center_stage_shows_live_qualifier_chips() -> None:
     row + tiny dice + cyan-emerald button.
     """
     from pathlib import Path
-    src = Path("/app/frontend/src/pages/games/VibeColiseum.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/pages/games/VibeColiseum.tsx").read_text()
     assert 'data-testid="vibe654-coliseum-qualifier-row"' in src, (
         "Coliseum lost the live qualifier chip row"
     )
@@ -709,8 +709,8 @@ def test_vibedice_premium_drawer_toggles_present() -> None:
     locations so we never regress.
     """
     from pathlib import Path
-    page_src = Path("/app/frontend/src/pages/games/VibeDice654Premium.tsx").read_text()
-    bc_src = Path("/app/frontend/src/components/games/vibedice654/BettingControls.tsx").read_text()
+    page_src = Path("source/web-assets/frontend/src/pages/games/VibeDice654Premium.tsx").read_text()
+    bc_src = Path("source/web-assets/frontend/src/components/games/vibedice654/BettingControls.tsx").read_text()
 
     # New contract — pills live inside the compact betting strip.
     assert 'data-testid="sidebets-dropdown-trigger"' in bc_src, (
@@ -748,7 +748,7 @@ def test_universal_2_to_20_player_signaling_endpoint_present() -> None:
     delete the multi-human voice/video plumbing.
     """
     from pathlib import Path
-    backend = Path("/app/backend/routes/vibe_room_signaling.py").read_text()
+    backend = Path("source/web-assets/backend/routes/vibe_room_signaling.py").read_text()
     # Endpoint
     assert "@router.websocket(" in backend, "WS endpoint disappeared"
     assert "/vibe-room/ws/{room_id}/{user_id}" in backend, (
@@ -764,14 +764,14 @@ def test_universal_2_to_20_player_signaling_endpoint_present() -> None:
     assert "ROOM_CAP = 20" in backend, "Vibe room hard cap of 20 regressed"
 
     # Frontend Focus System component
-    front = Path("/app/frontend/src/components/games/VibeRoomVoice.tsx").read_text()
+    front = Path("source/web-assets/frontend/src/components/games/VibeRoomVoice.tsx").read_text()
     assert "Focus System" in front, "VibeRoomVoice lost the Focus System docstring"
     assert "maxFocusTiles" in front, "VibeRoomVoice lost the configurable focus-tile cap"
     assert "data-testid=\"vibe-room-tile\"" in front, (
         "VibeRoomVoice lost the per-peer testid"
     )
     # The room is wired into VibeColiseum (most-multi-player surface).
-    coli = Path("/app/frontend/src/pages/games/VibeColiseum.tsx").read_text()
+    coli = Path("source/web-assets/frontend/src/pages/games/VibeColiseum.tsx").read_text()
     assert "VibeRoomVoice" in coli, "VibeRoomVoice not wired into the Coliseum"
 
 
@@ -783,10 +783,10 @@ def test_http_room_shell_unifies_legacy_multiplayer_pages() -> None:
     `RoomMenuBar`). Lock the wrapper + Dominoes redirect.
     """
     from pathlib import Path
-    shell = Path("/app/frontend/src/pages/HttpRoomShell.tsx").read_text()
+    shell = Path("source/web-assets/frontend/src/pages/HttpRoomShell.tsx").read_text()
     assert "RoomMenuBar" in shell, "HttpRoomShell lost the shared menu bar"
     assert "THEME_BY_GAME" in shell, "HttpRoomShell lost the per-game theme map"
-    router = Path("/app/frontend/src/pages/HttpGameRouter.tsx").read_text()
+    router = Path("source/web-assets/frontend/src/pages/HttpGameRouter.tsx").read_text()
     assert "HttpRoomShell" in router, "HttpGameRouter not wrapping with HttpRoomShell"
     assert "Navigate to=\"/dominoes\"" in router, (
         "Dominoes legacy HTTP page must redirect to the AAA /dominoes room"
@@ -802,7 +802,7 @@ def test_privy_auth_skips_preview_domains() -> None:
     `*.preview.emergentagent.com`.
     """
     from pathlib import Path
-    src = Path("/app/frontend/src/components/web3/PrivyAuthProvider.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/components/web3/PrivyAuthProvider.tsx").read_text()
     assert "PRIVY_SKIP_PATTERNS" in src, (
         "PrivyAuthProvider lost the preview-host skip pattern list"
     )
@@ -826,7 +826,7 @@ def test_coliseum_e2e_probe_file_present() -> None:
     Universal 2-20 voice bar are all in the DOM. Lock the probe file.
     """
     from pathlib import Path
-    probe = Path("/app/backend/tests/test_coliseum_e2e_probe.py")
+    probe = Path("source/web-assets/backend/tests/test_coliseum_e2e_probe.py")
     assert probe.exists(), "Coliseum e2e probe deleted"
     src = probe.read_text()
     assert "vibe654-coliseum-qualifier-row" in src, (
@@ -845,7 +845,7 @@ def test_vibe_room_voice_does_real_webrtc_negotiation() -> None:
     back to a "no-video" state.
     """
     from pathlib import Path
-    src = Path("/app/frontend/src/components/games/VibeRoomVoice.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/components/games/VibeRoomVoice.tsx").read_text()
     for token in (
         "RTCPeerConnection",
         "createOffer",
@@ -877,7 +877,7 @@ def test_http_multiplayer_pages_drop_redundant_inline_headers() -> None:
     cleanup so future refactors can't reintroduce double headers.
     """
     from pathlib import Path
-    pages_dir = Path("/app/frontend/src/pages/games")
+    pages_dir = Path("source/web-assets/frontend/src/pages/games")
     bespoke_pattern = '<div className="text-center mb-6">'
     motion_h1 = "<motion.h1"
     offenders: list[str] = []
@@ -899,7 +899,7 @@ def test_dominoes_chain_uses_master_plan_dynamic_tile_scale() -> None:
     AAA Dominoes board doesn't blow up to 12 tiles wide on mobile.
     """
     from pathlib import Path
-    src = Path("/app/frontend/src/pages/games/DominoesAAA.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/pages/games/DominoesAAA.tsx").read_text()
     assert "0.7 - raw.chain.length * 0.01" in src, (
         "Dominoes dynamic tile scale formula regressed"
     )
@@ -922,7 +922,7 @@ def test_vibe_room_voice_has_turn_fallback_and_ptt() -> None:
     Lock both so future refactors can't silently regress them.
     """
     from pathlib import Path
-    src = Path("/app/frontend/src/components/games/VibeRoomVoice.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/components/games/VibeRoomVoice.tsx").read_text()
     # TURN fallback wiring
     assert "openrelay.metered.ca" in src, (
         "VibeRoomVoice lost the OpenRelay TURN fallback"
@@ -951,10 +951,10 @@ def test_no_jsx_files_remain_in_frontend() -> None:
     .jsx invariant so future PRs don't reintroduce mixed extensions.
     """
     from pathlib import Path
-    jsx = list(Path("/app/frontend/src").rglob("*.jsx"))
+    jsx = list(Path("source/web-assets/frontend/src").rglob("*.jsx"))
     assert not jsx, (
         f"{len(jsx)} .jsx file(s) reintroduced — should be .tsx for "
-        f"consistency: {[str(p.relative_to('/app/frontend/src')) for p in jsx][:10]}"
+        f"consistency: {[str(p.relative_to('source/web-assets/frontend/src')) for p in jsx][:10]}"
     )
 
 
@@ -968,11 +968,11 @@ def test_auth_dependency_accepts_bearer_header() -> None:
     flows never break again.
     """
     from pathlib import Path
-    src = Path("/app/backend/utils/auth_dependencies.py").read_text()
+    src = Path("source/web-assets/backend/utils/auth_dependencies.py").read_text()
     assert "Authorization" in src and "Bearer" in src and "auth_header" in src, (
         "auth_dependencies.py lost the Bearer header fallback"
     )
-    drive = Path("/app/backend/routes/vibe_drive.py").read_text()
+    drive = Path("source/web-assets/backend/routes/vibe_drive.py").read_text()
     assert "Bearer" in drive and "auth_header" in drive, (
         "vibe_drive.py lost the Bearer header fallback"
     )
@@ -987,14 +987,14 @@ def test_power_hour_master_plan_v4_endpoint_present() -> None:
     `POWER_HOUR_MULT`.
     """
     from pathlib import Path
-    src = Path("/app/backend/routes/power_hour_sponsors.py").read_text()
+    src = Path("source/web-assets/backend/routes/power_hour_sponsors.py").read_text()
     assert "is_power_hour_active" in src, "Power Hour gate function regressed"
     assert "POWER_HOUR_MULT = 1.10" in src, "Power Hour multiplier regressed"
     assert "America/New_York" in src, "Power Hour timezone regressed"
     assert "POWER_HOUR_START_HOUR = 17" in src and "POWER_HOUR_END_HOUR = 21" in src, (
         "Power Hour 5pm-9pm window regressed"
     )
-    chairs = Path("/app/backend/routes/chairs.py").read_text()
+    chairs = Path("source/web-assets/backend/routes/chairs.py").read_text()
     assert "power_hour_bonus" in chairs, (
         "chair_purchases.power_hour_bonus stamp regressed"
     )
@@ -1011,7 +1011,7 @@ def test_sponsor_achievement_v4_endpoint_present() -> None:
     pipeline + idempotency key.
     """
     from pathlib import Path
-    src = Path("/app/backend/routes/power_hour_sponsors.py").read_text()
+    src = Path("source/web-assets/backend/routes/power_hour_sponsors.py").read_text()
     assert "SPONSORS_PER_FREE_CHAIR = 5" in src, (
         "Sponsor achievement threshold regressed"
     )
@@ -1034,7 +1034,7 @@ def test_power_hour_badge_frontend_component_present() -> None:
     """Lock the frontend badge so future refactors don't delete the
     user-facing nudge that surfaces the 5pm-9pm window."""
     from pathlib import Path
-    src = Path("/app/frontend/src/components/chairs/PowerHourBadge.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/components/chairs/PowerHourBadge.tsx").read_text()
     assert "data-testid=\"power-hour-badge\"" in src, (
         "PowerHourBadge testid regressed"
     )
@@ -1042,7 +1042,7 @@ def test_power_hour_badge_frontend_component_present() -> None:
         "PowerHourBadge no longer polls the live status endpoint"
     )
     # Mounted on the chair-purchase landing surface.
-    chair_vault = Path("/app/frontend/src/pages/ChairVault.tsx").read_text()
+    chair_vault = Path("source/web-assets/frontend/src/pages/ChairVault.tsx").read_text()
     assert "PowerHourBadge" in chair_vault, (
         "PowerHourBadge no longer mounted on /chair-vault landing page"
     )
@@ -1056,7 +1056,7 @@ def test_vibe_drive_vote_skip_endpoint_present() -> None:
     primitive while building auto-DJ / tip-to-skip on top.
     """
     from pathlib import Path
-    src = Path("/app/backend/routes/vibe_drive.py").read_text()
+    src = Path("source/web-assets/backend/routes/vibe_drive.py").read_text()
     assert "/vote-skip" in src, "vote-skip endpoint regressed"
     assert "vibe_drive_skip_votes" in src, (
         "vote-skip audit collection regressed"
@@ -1072,13 +1072,13 @@ def test_vibe_drive_auto_dj_endpoints_present() -> None:
     """Auto-DJ ladder step 2 — `/auto-dj/seed` builds the queue from
     rider's last-5 played + driver's vibe genres via sp.recommendations."""
     from pathlib import Path
-    src = Path("/app/backend/routes/vibe_drive.py").read_text()
+    src = Path("source/web-assets/backend/routes/vibe_drive.py").read_text()
     assert '"/auto-dj/seed"' in src, "Auto-DJ seed endpoint regressed"
     assert '"/auto-dj/queue/{ride_id}"' in src, "Auto-DJ queue endpoint regressed"
     assert "recently_played" in src, "Auto-DJ rider seed (recently_played) regressed"
     assert "recommendations" in src, "Auto-DJ recommendations call regressed"
     assert "vibe_drive_auto_dj" in src, "Auto-DJ persistence collection regressed"
-    spot = Path("/app/backend/services/spotify_service.py").read_text()
+    spot = Path("source/web-assets/backend/services/spotify_service.py").read_text()
     assert "def recommendations" in spot, "spotify_service.recommendations regressed"
     assert "def recently_played" in spot, "spotify_service.recently_played regressed"
 
@@ -1088,7 +1088,7 @@ def test_vibe_drive_tip_skip_and_tip_add_endpoints_present() -> None:
     tax is applied, 70% post-tax is credited to the driver, and Spotify
     skip/queue is fired on the driver session."""
     from pathlib import Path
-    src = Path("/app/backend/routes/vibe_drive.py").read_text()
+    src = Path("source/web-assets/backend/routes/vibe_drive.py").read_text()
     assert '"/tip-skip"' in src, "tip-skip endpoint regressed"
     assert '"/tip-add"' in src, "tip-add endpoint regressed"
     assert "TIP_SKIP_COST = 100" in src, "tip-skip cost regressed"
@@ -1097,7 +1097,7 @@ def test_vibe_drive_tip_skip_and_tip_add_endpoints_present() -> None:
     # Treasury hook required so sovereign tax is applied per v9 PDF.
     assert "process_transaction" in src, "tip flow no longer hits sovereign tax"
     # Frontend control component must exist (UI lock).
-    ui = Path("/app/frontend/src/components/vibe-drive/VibeDriveTipControls.tsx").read_text()
+    ui = Path("source/web-assets/frontend/src/components/vibe-drive/VibeDriveTipControls.tsx").read_text()
     assert 'data-testid="tip-skip-btn"' in ui, "Tip-to-Skip frontend testid regressed"
     assert 'data-testid="tip-add-btn"' in ui, "Tip-to-Add frontend testid regressed"
 
@@ -1106,12 +1106,12 @@ def test_sovereign_engine_economy_status_endpoint_present() -> None:
     """Master Vault v9 — `/api/economy/status` powers the Chair Hall
     Infinity Table. Tax + supply constants must remain authoritative."""
     from pathlib import Path
-    routes = Path("/app/backend/routes/sovereign_engine_routes.py").read_text()
+    routes = Path("source/web-assets/backend/routes/sovereign_engine_routes.py").read_text()
     assert '"/economy/status"' in routes, "/economy/status route regressed"
     assert '"/engine/process-transaction"' in routes, (
         "/engine/process-transaction route regressed"
     )
-    svc = Path("/app/backend/services/sovereign_engine.py").read_text()
+    svc = Path("source/web-assets/backend/services/sovereign_engine.py").read_text()
     assert "TOTAL_SUPPLY_CAP" in svc and "3_000_000_000" in svc, (
         "Sovereign 3-Billion supply cap regressed"
     )
@@ -1148,7 +1148,7 @@ def test_v10_solana_bridge_constants_and_endpoint() -> None:
     assert calculate_bridge(4_000) == 1_000.0
     assert calculate_bridge(4_000, genius_bonus=True) == 1_500.0
     from pathlib import Path
-    routes = Path("/app/backend/routes/sovereign_engine_routes.py").read_text()
+    routes = Path("source/web-assets/backend/routes/sovereign_engine_routes.py").read_text()
     assert '"/bridge/calculate"' in routes, "/bridge/calculate route regressed"
 
 
@@ -1220,7 +1220,7 @@ def test_sovereign_ops_routes_mounted() -> None:
     """v11/v12 Sovereign Ops endpoints (bridge queue + inactivity reap + burn).
     All admin writes must default to dry-run."""
     from pathlib import Path
-    src = Path("/app/backend/routes/sovereign_ops_routes.py").read_text()
+    src = Path("source/web-assets/backend/routes/sovereign_ops_routes.py").read_text()
     # Bridge queue endpoints.
     assert '"/bridge/request"' in src, "/bridge/request (user) route regressed"
     assert '"/admin/bridge/queue"' in src, "/admin/bridge/queue route regressed"
@@ -1241,12 +1241,12 @@ def test_sovereign_ops_routes_mounted() -> None:
     # _id must be stripped before JSON response (testing agent caught 500).
     assert 'pop("_id", None)' in src, "ObjectId leak guard regressed"
     # Frontend panel wiring.
-    panel = Path("/app/frontend/src/components/admin/SovereignOpsPanel.tsx").read_text()
+    panel = Path("source/web-assets/frontend/src/components/admin/SovereignOpsPanel.tsx").read_text()
     assert 'data-testid="sovereign-ops-panel"' in panel
     assert 'data-testid="sovereign-ops-bridge-card"' in panel
     assert 'data-testid="sovereign-ops-inactivity-card"' in panel
     assert 'data-testid="sovereign-ops-burn-card"' in panel
-    god = Path("/app/frontend/src/pages/admin/GodModeDashboard.tsx").read_text()
+    god = Path("source/web-assets/frontend/src/pages/admin/GodModeDashboard.tsx").read_text()
     assert "SovereignOpsPanel" in god, "SovereignOpsPanel not mounted in God Mode"
 
 
@@ -1257,7 +1257,7 @@ def test_bridge_request_prefers_funded_wallet_field() -> None:
     value-based fallback (same pattern as vibez-654) — now centralized
     in `utils/wallet_fields`."""
     from pathlib import Path
-    src = Path("/app/backend/routes/sovereign_ops_routes.py").read_text()
+    src = Path("source/web-assets/backend/routes/sovereign_ops_routes.py").read_text()
     # The route must import AND call the shared helper.
     assert "from utils.wallet_fields import" in src, (
         "sovereign_ops_routes no longer imports the wallet_fields helper"
@@ -1280,7 +1280,7 @@ def test_wallet_field_helper_adopted_across_routes() -> None:
     drift.
     """
     from pathlib import Path
-    backend = Path("/app/backend")
+    backend = Path("source/backend")
 
     # Legacy WRITES are forbidden — they would re-create drift.
     forbidden_writes = [
@@ -1327,7 +1327,7 @@ def test_inactivity_run_is_race_safe_with_cas_and_rebenchmark() -> None:
     inside the loop (rebenchmark) + use an atomic CAS on the users collection
     so a user who logs in mid-sweep is safely skipped. Lock the mechanism."""
     from pathlib import Path
-    src = Path("/app/backend/routes/sovereign_ops_routes.py").read_text()
+    src = Path("source/web-assets/backend/routes/sovereign_ops_routes.py").read_text()
     run_section = src.split('async def admin_inactivity_run')[1].split('async def ')[0]
     # Rebenchmark — re-read staleness timestamps from DB.
     assert "live = await db.users.find_one" in run_section, (
@@ -1355,12 +1355,12 @@ def test_chair_hall_infinity_table_page_present() -> None:
     """Chair Hall (`/chair-hall`) page — high-fidelity Three.js scene
     that consumes /api/economy/status + /api/chairs/wall."""
     from pathlib import Path
-    page = Path("/app/frontend/src/pages/ChairHall.tsx").read_text()
+    page = Path("source/web-assets/frontend/src/pages/ChairHall.tsx").read_text()
     assert 'data-testid="chair-hall-page"' in page, "ChairHall page testid regressed"
     assert "InfinityTable" in page, "Infinity Table component regressed"
     assert "/api/economy/status" in page, "ChairHall no longer reads /economy/status"
     assert "/api/chairs/wall" in page, "ChairHall no longer reads /chairs/wall"
-    routes = Path("/app/frontend/src/routes/monetizationRoutes.tsx").read_text()
+    routes = Path("source/web-assets/frontend/src/routes/monetizationRoutes.tsx").read_text()
     assert "/chair-hall" in routes, "/chair-hall route regressed"
     assert "ChairHall" in routes, "ChairHall import regressed"
 
@@ -1370,7 +1370,7 @@ def test_sponsor_admin_panel_mounted_in_god_mode() -> None:
     Component lives at admin/SponsorAdminPanel.tsx and must be mounted
     inside the God Mode dashboard 'Founder Controls' tab."""
     from pathlib import Path
-    panel = Path("/app/frontend/src/components/admin/SponsorAdminPanel.tsx").read_text()
+    panel = Path("source/web-assets/frontend/src/components/admin/SponsorAdminPanel.tsx").read_text()
     assert 'data-testid="sponsor-admin-panel"' in panel, (
         "SponsorAdminPanel root testid regressed"
     )
@@ -1378,12 +1378,12 @@ def test_sponsor_admin_panel_mounted_in_god_mode() -> None:
     assert "/sponsors/" in panel and "/verify" in panel, (
         "SponsorAdminPanel verify call regressed"
     )
-    god = Path("/app/frontend/src/pages/admin/GodModeDashboard.tsx").read_text()
+    god = Path("source/web-assets/frontend/src/pages/admin/GodModeDashboard.tsx").read_text()
     assert "SponsorAdminPanel" in god, (
         "SponsorAdminPanel not mounted in GodModeDashboard"
     )
     # Backend admin endpoints exist.
-    src = Path("/app/backend/routes/power_hour_sponsors.py").read_text()
+    src = Path("source/web-assets/backend/routes/power_hour_sponsors.py").read_text()
     assert "/admin/sponsors" in src, "/admin/sponsors listing route regressed"
     assert "admin_reject_sponsor" in src, "admin sponsor reject route regressed"
 
@@ -1474,8 +1474,8 @@ def test_bid_whist_routes_delegate_to_sovereign_validator() -> None:
     must route trick resolution through `calculate_winner` — no more
     inline joker/suit math that can regress."""
     from pathlib import Path
-    route = Path("/app/backend/routes/bid_whist.py").read_text()
-    gm = Path("/app/backend/services/bid_whist_grand_master.py").read_text()
+    route = Path("source/web-assets/backend/routes/bid_whist.py").read_text()
+    gm = Path("source/web-assets/backend/services/bid_whist_grand_master.py").read_text()
     assert "from services.sovereign_validator import calculate_winner" in route, (
         "bid_whist route no longer delegates trick resolution"
     )
@@ -1492,24 +1492,24 @@ def test_card_game_payouts_wire_sovereign_tax() -> None:
     13.5% Sovereign Tax applies BEFORE the win animation. No raw
     `credits_balance += winnings` should survive in payout paths."""
     from pathlib import Path
-    helper = Path("/app/backend/services/card_game_payouts.py").read_text()
+    helper = Path("source/web-assets/backend/services/card_game_payouts.py").read_text()
     assert "settle_taxable_payout" in helper, "card_game_payouts helper missing"
     assert "process_transaction" in helper, "helper not routed through sovereign engine"
     assert "apply_sovereign_tax" in helper, "helper not applying 13.5% tax preview"
     # Spades payout path adopts the helper.
-    spades = Path("/app/backend/routes/spades.py").read_text()
+    spades = Path("source/web-assets/backend/routes/spades.py").read_text()
     assert "settle_taxable_payout" in spades, "Spades payout no longer uses tax helper"
     assert 'Won Spades game - Prize' not in spades, (
         "Spades raw-credit line regressed (pre-tax payout)"
     )
     # Bid Whist payout path adopts the helper.
-    bw = Path("/app/backend/routes/bid_whist.py").read_text()
+    bw = Path("source/web-assets/backend/routes/bid_whist.py").read_text()
     assert "settle_taxable_payout" in bw, "Bid Whist payout no longer uses tax helper"
     assert 'Won Bid Whist - Prize' not in bw, (
         "Bid Whist raw-credit line regressed (pre-tax payout)"
     )
     # Vibez 654 payout path taxes net winnings (not bet refund).
-    v654 = Path("/app/backend/routes/vibez_654.py").read_text()
+    v654 = Path("source/web-assets/backend/routes/vibez_654.py").read_text()
     assert "apply_sovereign_tax" in v654, (
         "Vibez 654 payout no longer applies Sovereign Tax pre-credit"
     )
@@ -1523,20 +1523,20 @@ def test_turn_timer_route_and_stamp_wired() -> None:
     endpoint exists and both Bid Whist + Spades play_card handlers
     stamp `turn_started_at_ms` on every state change."""
     from pathlib import Path
-    tt = Path("/app/backend/routes/turn_timer.py").read_text()
+    tt = Path("source/web-assets/backend/routes/turn_timer.py").read_text()
     assert '"/check"' in tt, "turn-timer check endpoint regressed"
     assert "stamp_turn_start" in tt, "stamp helper regressed"
     assert "pick_lowest_card" in tt, "auto-play lowest-card helper regressed"
     assert "TURN_TIMER_MS" in tt, "15s timer constant import regressed"
     # Registry wiring.
-    reg = Path("/app/backend/routes/registry.py").read_text()
+    reg = Path("source/web-assets/backend/routes/registry.py").read_text()
     assert "turn_timer_router" in reg, "turn_timer_router not registered"
     # Both play routes stamp the timer.
-    bw = Path("/app/backend/routes/bid_whist.py").read_text()
+    bw = Path("source/web-assets/backend/routes/bid_whist.py").read_text()
     assert 'stamp_turn_start(db, "bid_whist"' in bw, (
         "Bid Whist play_card no longer stamps turn-start"
     )
-    sp = Path("/app/backend/routes/spades.py").read_text()
+    sp = Path("source/web-assets/backend/routes/spades.py").read_text()
     assert 'stamp_turn_start(db, "spades"' in sp, (
         "Spades play_card no longer stamps turn-start"
     )
@@ -1778,9 +1778,9 @@ def test_v8_globe_fab_and_cultural_hub_components_exist() -> None:
 
 
 def test_v8_locked_spec_files_present() -> None:
-    """v8.0 — All 4 founder-PDF specs locked into /app/memory/locked_specs/."""
+    """v8.0 — All 4 founder-PDF specs locked into source/memory/locked_specs/."""
     from pathlib import Path
-    base = Path("/app/memory/locked_specs")
+    base = Path("source/memory/locked_specs")
     for f in [
         "v7_OMNI_BLUEPRINT.md",
         "v8_GISA_AUDIT_BLUEPRINT.md",
@@ -2208,7 +2208,7 @@ def test_landing_ctas_resolve() -> None:
 
     Walks every navigate('...') and href='...' on the landing pages,
     extracts the route literal, and confirms a matching <Route path='...'/>
-    is registered somewhere in /app/frontend/src/routes.
+    is registered somewhere in source/web-assets/frontend/src/routes.
     """
     import re
     from pathlib import Path
@@ -2290,7 +2290,7 @@ def test_gisa_visual_parity_deterministically_passes() -> None:
     """v8 — VisualParityChecker must score >=95% on every run so the
     audit doesn't oscillate between pass/warn (founder ask 2026-02-17)."""
     import sys
-    sys.path.insert(0, "/app/backend")
+    sys.path.insert(0, "source/backend")
     from services.gisa_agent import VisualParityChecker, _classify_visual
 
     # 5 samples — must all pass
@@ -2305,14 +2305,14 @@ def test_gisa_visual_parity_deterministically_passes() -> None:
 
 def test_sovereign_v9_1_test_loads_canonical_dotenv() -> None:
     """v8 — test_sovereign_v9_1_validator_and_payouts.py must force-load
-    /app/backend/.env so DB_NAME matches the live backend's database
+    source/web-assets/backend/.env so DB_NAME matches the live backend's database
     even when regression_shield runs first and sets DB_NAME via setdefault.
     Without this load, the cross-suite TestBidWhistTurnStamp.test_check_endpoint
     test inserts to a different DB and 404s."""
     from pathlib import Path
     src = (Path(__file__).resolve().parent /
            "test_sovereign_v9_1_validator_and_payouts.py").read_text(encoding="utf-8")
-    assert 'load_dotenv("/app/backend/.env"' in src, \
+    assert 'load_dotenv("source/web-assets/backend/.env"' in src, \
         "test_sovereign_v9_1 must force-load the canonical .env"
     assert "from dotenv import load_dotenv" in src
 
@@ -2522,7 +2522,7 @@ def test_translation_bridge_wired() -> None:
     assert i18n.exists(), "backend/routes/i18n.py must exist"
     body = i18n.read_text(encoding="utf-8")
     assert "EMERGENT_LLM_KEY" in body
-    assert "from emergentintegrations.llm.chat import LlmChat" in body
+    assert "from source.web-assets.backend.services.ai_engine import LlmChat" in body
     assert "/translate" in body and "/supported" in body
     assert "i18n_translations" in body, "Must persist translations to mongo cache"
     assert "_l1_set" in body and "_l2_lookup" in body, "L1+L2 caches must be present"
@@ -3070,7 +3070,7 @@ def test_staff_management_password_hashing_and_email() -> None:
 
 
 def test_my_vibez_uploads_persist_to_disk() -> None:
-    """File upload must actually save to disk under /app/backend/uploads/
+    """File upload must actually save to disk under source/web-assets/backend/uploads/
     so videos survive backend restarts. The mount in server.py exposes
     this dir at /api/uploads/."""
     from pathlib import Path
@@ -3119,7 +3119,7 @@ def test_voice_coach_router_registered():
 
 def test_voice_coach_uses_emergent_llm_key():
     """Voice Coach must read EMERGENT_LLM_KEY from env, not hard-code keys."""
-    src = open("/app/backend/routes/voice_coach.py").read()
+    src = open("source/web-assets/backend/routes/voice_coach.py").read()
     assert "EMERGENT_LLM_KEY" in src, \
         "voice_coach.py must read EMERGENT_LLM_KEY from os.environ"
     assert "claude-sonnet-4-5" in src, \
@@ -3144,7 +3144,7 @@ def test_roguelite_chess_router_registered():
 def test_roguelite_chess_default_lives():
     """Trial must start with 3 lives. Changing this breaks the daily
     leaderboard math + every regression that screenshots the badge."""
-    src = open("/app/backend/routes/roguelite_chess.py").read()
+    src = open("source/web-assets/backend/routes/roguelite_chess.py").read()
     assert "DEFAULT_LIVES = 3" in src, \
         "Roguelite default lives changed — leaderboard rules will drift"
 
@@ -3152,7 +3152,7 @@ def test_roguelite_chess_default_lives():
 def test_roguelite_chess_scoring_locked():
     """Scoring formula: win = 100 + max(0, elo_diff), draw = +25, loss = -1 life.
     If anyone tweaks these the leaderboard becomes incomparable across days."""
-    src = open("/app/backend/routes/roguelite_chess.py").read()
+    src = open("source/web-assets/backend/routes/roguelite_chess.py").read()
     assert "100 + max(0, body.elo_diff)" in src, \
         "Roguelite win-score formula must remain '100 + max(0, elo_diff)'"
     assert "new_score += 25" in src, \
@@ -3164,7 +3164,7 @@ def test_holopiece_static_mode_exists():
     react-chessboard's drag layer + multiplayer button onClick still
     work. If static mode goes missing, every move re-fires the
     scale-0 entrance animation and chess play feels broken."""
-    src = open("/app/frontend/src/components/games/HoloBoard/HoloPiece.tsx").read()
+    src = open("source/web-assets/frontend/src/components/games/HoloBoard/HoloPiece.tsx").read()
     assert "static?: boolean" in src, \
         "HoloPiece.tsx must expose `static?: boolean` prop"
     assert "static: isStatic" in src, \
@@ -3176,8 +3176,8 @@ def test_holopiece_static_mode_exists():
 def test_chess_rooms_use_holopiece_static_mode():
     """Both chess rooms must pass `static` to HoloPiece — without it
     every move re-pops the pieces and drag-drop breaks."""
-    practice = open("/app/frontend/src/components/practice_games/PracticeChess.tsx").read()
-    multi = open("/app/frontend/src/pages/games/HttpMultiplayerChess.tsx").read()
+    practice = open("source/web-assets/frontend/src/components/practice_games/PracticeChess.tsx").read()
+    multi = open("source/web-assets/frontend/src/pages/games/HttpMultiplayerChess.tsx").read()
     assert "HoloPiece" in practice and "static" in practice, \
         "PracticeChess.tsx must use HoloPiece with `static` mode"
     assert "HoloPiece" in multi and "static" in multi, \
@@ -3188,7 +3188,7 @@ def test_commhub_inline_inside_room_menu_bar():
     """Founder rule (May 2026): comms must live inside the in-game menu
     bar, not floating top-right. Floating CommHub auto-hides when a
     room-menu-bar marker is present in the DOM."""
-    src = open("/app/frontend/src/components/common/CommHubDropdown.tsx").read()
+    src = open("source/web-assets/frontend/src/components/common/CommHubDropdown.tsx").read()
     assert 'data-testid="room-menu-bar"' in src, \
         "CommHubDropdown.tsx must hide when room-menu-bar marker exists"
     assert "MutationObserver" in src, \
@@ -3199,11 +3199,11 @@ def test_commhub_button_in_every_aaa_game():
     """Each AAA game room must inject a CommHubButton next to its
     SpadesGameMenu so comms live inside the in-game bar."""
     rooms = [
-        "/app/frontend/src/pages/games/BidWhistAAA.tsx",
-        "/app/frontend/src/pages/games/SpadesAAA.tsx",
-        "/app/frontend/src/pages/games/HeartsAAA.tsx",
-        "/app/frontend/src/pages/games/PinochleAAA.tsx",
-        "/app/frontend/src/pages/games/CrazyEightsAAA.tsx",
+        "source/web-assets/frontend/src/pages/games/BidWhistAAA.tsx",
+        "source/web-assets/frontend/src/pages/games/SpadesAAA.tsx",
+        "source/web-assets/frontend/src/pages/games/HeartsAAA.tsx",
+        "source/web-assets/frontend/src/pages/games/PinochleAAA.tsx",
+        "source/web-assets/frontend/src/pages/games/CrazyEightsAAA.tsx",
     ]
     for path in rooms:
         body = open(path).read()
@@ -3218,7 +3218,7 @@ def test_battle_mode_primitives_exist():
     BattleModeWager UI was never wired to a route or game and got
     deleted in the May-2026 dead-file sweep. The ledger hook lives on
     in case the feature is revived."""
-    hook = "/app/frontend/src/hooks/useBattleModeLedger.ts"
+    hook = "source/web-assets/frontend/src/hooks/useBattleModeLedger.ts"
     assert os.path.exists(hook), "useBattleModeLedger.ts missing"
     hook_src = open(hook).read()
     assert "transferOnCapture" in hook_src
@@ -3229,8 +3229,8 @@ def test_universal_shot_clock_components():
     """Every multiplayer card game should have a 10-second shot clock
     (UDA §2). Loss of either ShotClockRing or the seconds badge in
     TurnIndicator breaks the whole "auto-play on idle" promise."""
-    ring = "/app/frontend/src/components/games/ShotClockRing.tsx"
-    indicator = "/app/frontend/src/components/games/TurnIndicator.tsx"
+    ring = "source/web-assets/frontend/src/components/games/ShotClockRing.tsx"
+    indicator = "source/web-assets/frontend/src/components/games/TurnIndicator.tsx"
     assert os.path.exists(ring), "ShotClockRing.tsx missing"
     assert os.path.exists(indicator), "TurnIndicator.tsx missing"
     indi_src = open(indicator).read()
@@ -3244,11 +3244,11 @@ def test_aaa_card_shaders_global():
     """Universal Design Agent §1 shaders (.gv-card-active neon-pulse,
     .gv-card-dim sharp-dim) must remain wired into the global stylesheet
     so every card game inherits the look."""
-    css = open("/app/frontend/src/styles/vibez-pro.css").read()
+    css = open("source/web-assets/frontend/src/styles/vibez-pro.css").read()
     assert ".gv-card-active" in css, ".gv-card-active shader missing"
     assert ".gv-card-dim" in css, ".gv-card-dim shader missing"
     assert ".gv-arena" in css, ".gv-arena helper missing"
-    index = open("/app/frontend/src/index.css").read()
+    index = open("source/web-assets/frontend/src/index.css").read()
     assert "styles/vibez-pro.css" in index, \
         "index.css must import vibez-pro.css globally"
 
@@ -3261,7 +3261,7 @@ def test_landing_language_switcher_sticky():
     block) so the God-Mode click hotspot can't hijack it. The
     `overflow-x: clip` rule on html/body still stays for layout
     stability across the page."""
-    header = open("/app/frontend/src/components/landing/LandingHeaderEnhanced.tsx").read()
+    header = open("source/web-assets/frontend/src/components/landing/LandingHeaderEnhanced.tsx").read()
     assert "<LandingLanguageSwitcher />" in header, \
         "LandingLanguageSwitcher must be rendered inside the new header"
     # Must sit AFTER the brand block (not nested inside it).
@@ -3270,7 +3270,7 @@ def test_landing_language_switcher_sticky():
     assert brand_idx > 0 and switcher_idx > 0
     assert switcher_idx > brand_idx, \
         "LandingLanguageSwitcher must NOT be nested inside the God-Mode brand hotspot"
-    css = open("/app/frontend/src/index.css").read()
+    css = open("source/web-assets/frontend/src/index.css").read()
     assert "overflow-x: clip" in css, \
         "html/body must keep `overflow-x: clip` for layout stability"
 
@@ -3279,14 +3279,14 @@ def test_dashboard_route_uses_DashboardNew():
     """Critical regression (May 2026): /dashboard must route to the rich
     18-room hub (DashboardNew.tsx), not the old stripped Dashboard.jsx
     that was deleted. miscRoutes.tsx is the override that lost it before."""
-    src = open("/app/frontend/src/routes/miscRoutes.tsx").read()
+    src = open("source/web-assets/frontend/src/routes/miscRoutes.tsx").read()
     assert "DashboardNew" in src, \
         "miscRoutes.tsx must import Dashboard from DashboardNew"
 
 
 def test_18_rooms_present_in_hub():
     """All 18 rooms the founder enumerated must remain wired in the hub."""
-    src = open("/app/frontend/src/pages/DashboardNew.tsx").read()
+    src = open("source/web-assets/frontend/src/pages/DashboardNew.tsx").read()
     rooms = [
         "Dating Universe",
         "Find Your Player 2",
@@ -3341,7 +3341,7 @@ def test_immutable_core_router_registered():
 def test_immutable_core_verify_at_boot():
     """`verify_locks()` must be called during route registration so the
     server crashes if a downstream service drifts."""
-    src = open("/app/backend/routes/registry.py").read()
+    src = open("source/web-assets/backend/routes/registry.py").read()
     assert "verify_locks()" in src, \
         "registry.py must call verify_locks() during route registration"
 
@@ -3349,10 +3349,10 @@ def test_immutable_core_verify_at_boot():
 def test_legacy_vault_page_exists_and_routes():
     """Legacy Vault must be reachable at /legacy-vault and pull live
     data from /api/immutable-core/constants."""
-    page = open("/app/frontend/src/pages/LegacyVaultPage.tsx").read()
+    page = open("source/web-assets/frontend/src/pages/LegacyVaultPage.tsx").read()
     assert "/api/immutable-core/constants" in page, \
         "LegacyVaultPage must poll /api/immutable-core/constants"
-    routes = open("/app/frontend/src/routes/miscRoutes.tsx").read()
+    routes = open("source/web-assets/frontend/src/routes/miscRoutes.tsx").read()
     assert "/legacy-vault" in routes, \
         "miscRoutes must register /legacy-vault"
     assert "LegacyVaultPage" in routes, \
@@ -3362,10 +3362,10 @@ def test_legacy_vault_page_exists_and_routes():
 def test_vigilant_design_agent_mounted():
     """Ultimate Blueprint v3 §1: VigilantDesignAgent must be mounted in
     App.js so the Emergent badge auto-repositions on overlap."""
-    src = open("/app/frontend/src/App.js").read()
+    src = open("source/web-assets/frontend/src/App.js").read()
     assert "VigilantDesignAgent" in src, \
         "App.js must import + mount VigilantDesignAgent"
-    agent = open("/app/frontend/src/components/common/VigilantDesignAgent.tsx").read()
+    agent = open("source/web-assets/frontend/src/components/common/VigilantDesignAgent.tsx").read()
     assert "MutationObserver" in agent, \
         "VigilantDesignAgent must observe DOM for badge injection"
     assert "0.5" in agent and "top-right" not in agent.lower() or "right: \"10px\"" in agent or '"right": "10px"' in agent, \
@@ -3376,7 +3376,7 @@ def test_landscape_zoom_to_fit_locked():
     """Ultimate Blueprint v3 §2: `.gv-arena` must use the verbatim
     spec — `max-height: 85vh` + `transform: scale(min(1, 0.85))` so
     table fits one viewport on landscape."""
-    css = open("/app/frontend/src/styles/vibez-pro.css").read()
+    css = open("source/web-assets/frontend/src/styles/vibez-pro.css").read()
     assert ".gv-arena" in css
     assert "max-height: 85vh" in css, \
         ".gv-arena must have `max-height: 85vh` per blueprint v3"
@@ -3396,7 +3396,7 @@ def test_trick_pile_offsets_tight_and_centered():
     SpadesTrickPile SEAT_OFFSET values must stay tight (|y| <= 14, |x|
     <= 24) so the centroid stays at the table center even on landscape
     phone rotation."""
-    src = open("/app/frontend/src/components/spades/SpadesTrickPile.tsx").read()
+    src = open("source/web-assets/frontend/src/components/spades/SpadesTrickPile.tsx").read()
     import re
     # Extract every numeric x: / y: value from the SEAT_OFFSET map.
     pairs = re.findall(r"x:\s*(-?\d+).*?y:\s*(-?\d+)", src)
@@ -3418,7 +3418,7 @@ def test_vigilant_agent_audits_pile_centering():
     the table centroid (within 8% tolerance). If the audit logic is
     deleted, regressions like the SpadesTrickPile y=±32 drift go
     silent again."""
-    src = open("/app/frontend/src/components/common/VigilantDesignAgent.tsx").read()
+    src = open("source/web-assets/frontend/src/components/common/VigilantDesignAgent.tsx").read()
     assert "auditTrickPileCentering" in src, \
         "VigilantDesignAgent must include the trick-pile centering audit"
     assert "data-vigilant-off-center" in src, \
@@ -3487,7 +3487,7 @@ def test_orientation_toggle_component_exists():
     in-app rotation control. It must export both `OrientationToggle`
     AND `OrientationApplier` + `OrientationFAB` so RoomMenuBar /
     App.js can mount them respectively."""
-    src = open("/app/frontend/src/components/common/OrientationToggle.tsx").read()
+    src = open("source/web-assets/frontend/src/components/common/OrientationToggle.tsx").read()
     assert "OrientationToggle" in src
     assert "OrientationApplier" in src, \
         "OrientationApplier must exist for App-level mount"
@@ -3503,7 +3503,7 @@ def test_orientation_toggle_component_exists():
 def test_orientation_toggle_in_room_menu_bar():
     """Every game room must inherit the OrientationToggle via the
     shared RoomMenuBar (founder mandate, May 2026 — no per-game wiring)."""
-    src = open("/app/frontend/src/components/games/RoomMenuBar.tsx").read()
+    src = open("source/web-assets/frontend/src/components/games/RoomMenuBar.tsx").read()
     assert "OrientationToggle" in src, \
         "RoomMenuBar MUST mount OrientationToggle so all 18 rooms inherit it"
 
@@ -3512,7 +3512,7 @@ def test_app_mounts_orientation_globals():
     """App.js must mount the OrientationApplier + OrientationFAB so the
     saved preference is applied on every page load and the floating
     mobile-only toggle is available outside game rooms."""
-    src = open("/app/frontend/src/App.js").read()
+    src = open("source/web-assets/frontend/src/App.js").read()
     assert "OrientationApplier" in src, \
         "App.js must mount OrientationApplier"
     assert "OrientationFAB" in src, \
@@ -3523,10 +3523,10 @@ def test_mobile_foundation_css_loaded():
     """The universal mobile foundation stylesheet must be imported
     once via index.css and must contain the fluid typography + fake-
     landscape rotation rules."""
-    idx = open("/app/frontend/src/index.css").read()
+    idx = open("source/web-assets/frontend/src/index.css").read()
     assert "mobile-foundation.css" in idx, \
         "index.css must @import the mobile-foundation stylesheet"
-    foundation = open("/app/frontend/src/styles/mobile-foundation.css").read()
+    foundation = open("source/web-assets/frontend/src/styles/mobile-foundation.css").read()
     assert "gv-orient-fake-landscape" in foundation, \
         "mobile-foundation.css must define the OS-lock fallback rotation"
     assert "clamp(" in foundation, \
@@ -3538,7 +3538,7 @@ def test_mobile_foundation_css_loaded():
 def test_viewport_meta_supports_safe_areas():
     """index.html viewport meta must include `viewport-fit=cover` so
     iOS notch / Android gesture bars are handled correctly."""
-    html = open("/app/frontend/public/index.html").read()
+    html = open("source/web-assets/frontend/public/index.html").read()
     assert "viewport-fit=cover" in html, \
         "<meta viewport> must include viewport-fit=cover for safe-area support"
 
@@ -3603,7 +3603,7 @@ def test_blackjack_action_endpoint_no_player_cards_keyerror():
     `session['player_cards']` (which would KeyError). If a future
     refactor accidentally reintroduces the bad lookup this gate
     catches it before the 500 hits production."""
-    src = open("/app/backend/routes/blackjack.py").read()
+    src = open("source/web-assets/backend/routes/blackjack.py").read()
     assert "session['player_cards']" not in src, \
         "Blackjack action handler must use session['player_hands'][hand_index]"
     assert 'session["player_cards"]' not in src
@@ -3640,7 +3640,7 @@ def test_may_2026_pdf_rooms_routed():
     """All seven May 2026 rooms must be importable AND have routes
     declared in `gamesRoutes.tsx`. If any of these fail to import
     (e.g. broken JSX), the dashboard tile will 404."""
-    routes_src = open("/app/frontend/src/routes/gamesRoutes.tsx").read()
+    routes_src = open("source/web-assets/frontend/src/routes/gamesRoutes.tsx").read()
     for path in [
         '/streamer/overlay/',
         '/party/vibe-tionary',
@@ -3656,7 +3656,7 @@ def test_may_2026_pdf_rooms_routed():
 def test_dashboard_surfaces_new_rooms():
     """The dashboard must include every May 2026 room as a tile so
     users can find them. If a tile is removed, this gate flags it."""
-    src = open("/app/frontend/src/pages/DashboardNew.tsx").read()
+    src = open("source/web-assets/frontend/src/pages/DashboardNew.tsx").read()
     for tile_id in [
         'vibetionary', 'meme_matchmaker', 'hide_seek',
         'blind_auction', 'vibeshopper', 'beat_vault_dlc',
@@ -3674,7 +3674,7 @@ def test_dashboard_surfaces_new_rooms():
 
 def test_p1_p2_rooms_routed():
     """Vibe Suite + Lyric Glasshouse must be wired in gamesRoutes."""
-    src = open("/app/frontend/src/routes/gamesRoutes.tsx").read()
+    src = open("source/web-assets/frontend/src/routes/gamesRoutes.tsx").read()
     for path in [
         "/music/vibe-suite",
         "/music/glasshouse",
@@ -3685,7 +3685,7 @@ def test_p1_p2_rooms_routed():
 def test_tv_survive_scheduler_registered():
     """TV Survive scheduler MUST be wired in lifespan.py so the queue
     auto-cuts pilots below the survival threshold every 5 min."""
-    src = open("/app/backend/lifespan.py").read()
+    src = open("source/web-assets/backend/lifespan.py").read()
     assert "_start_tv_survive" in src, \
         "TV Totem-Pole survive scheduler not registered"
     assert "TV Totem-Pole survive scheduler" in src
@@ -3696,7 +3696,7 @@ def test_tv_survive_scheduler_registered():
 def test_hideseek_uses_mapbox():
     """Vibe-Hide & Seek must use real Mapbox tiles in addition to
     the merchant grid (Master Tech Blueprint upgrade)."""
-    src = open("/app/frontend/src/pages/party/VibeHideSeek.tsx").read()
+    src = open("source/web-assets/frontend/src/pages/party/VibeHideSeek.tsx").read()
     assert "react-map-gl/mapbox" in src, "Hide & Seek must import react-map-gl"
     assert "MAPBOX_TOKEN" in src, "Must read REACT_APP_MAPBOX_TOKEN"
     assert 'data-testid="hideseek-map"' in src, "Map container missing testid"
@@ -3748,7 +3748,7 @@ def test_totem_pole_routes_mounted():
 def test_music_tv_rooms_routed():
     """The 4 Music Arena + TV Totem Pole pages MUST have route
     declarations in `gamesRoutes.tsx`."""
-    src = open("/app/frontend/src/routes/gamesRoutes.tsx").read()
+    src = open("source/web-assets/frontend/src/routes/gamesRoutes.tsx").read()
     for path in [
         "/music/sound-check",
         "/music/collab-matchmaker",
@@ -3764,7 +3764,7 @@ def test_streamer_setup_guide_marketing_page():
     converts streamers to OBS browser-source users in <60s. It must
     have all 5 setup steps + the unique-URL block + the 7 action
     catalog cards + the Lyric Glasshouse pro-tip CTA."""
-    src = open("/app/frontend/src/pages/streamer/StreamerSetupGuide.tsx").read()
+    src = open("source/web-assets/frontend/src/pages/streamer/StreamerSetupGuide.tsx").read()
     assert "streamer-setup-guide" in src
     assert "copy-overlay-url" in src, "Must have a one-click copy URL button"
     assert "setup-step-${" in src or "setup-step-" in src, \
@@ -3789,7 +3789,7 @@ def test_jftn_discovery_dual_rails():
     rooms into a 'Tonight' (PG-13) rail and an 'After Dark' (18+)
     rail, with a shimmer divider between them so first-time visitors
     instantly see both vibes."""
-    src = open("/app/frontend/src/pages/just-for-the-night/RoomDiscovery.tsx").read()
+    src = open("source/web-assets/frontend/src/pages/just-for-the-night/RoomDiscovery.tsx").read()
     assert 'jftn-rail-pg13' in src, "Discovery must render the PG-13 rail"
     assert 'jftn-rail-18plus' in src, "Discovery must render the 18+ rail"
     assert 'jftn-tier-divider' in src, "Discovery must render the After-Dark divider"
@@ -3834,7 +3834,7 @@ def test_sound_check_leaderboard_module_exists():
 def test_sound_check_vote_broadcasts():
     """`/sound-check/vote` must call broadcast_leaderboard so every
     connected client sees ranking changes immediately."""
-    src = open("/app/backend/routes/totem_pole.py").read()
+    src = open("source/web-assets/backend/routes/totem_pole.py").read()
     assert "broadcast_leaderboard" in src, \
         "Vote handler must trigger leaderboard broadcast"
     assert "sound_check_leaderboard" in src, \
@@ -3849,12 +3849,12 @@ def test_sound_check_vote_broadcasts():
 def test_roadmap_floating_food_menu_globally_mounted():
     """FloatingFoodMenu must be self-mounted in App.js so every
     protected route shows it (Roadmap §3 — "without pausing the game")."""
-    src = open("/app/frontend/src/App.js").read()
+    src = open("source/web-assets/frontend/src/App.js").read()
     assert "FloatingFoodMenu" in src, \
         "App.js must import + mount FloatingFoodMenu (Roadmap §3)"
     # Component file must still exist with its hide-pattern guard so it
     # can suppress itself on streamer overlay / login routes.
-    fm = open("/app/frontend/src/components/common/FloatingFoodMenu.tsx").read()
+    fm = open("source/web-assets/frontend/src/components/common/FloatingFoodMenu.tsx").read()
     assert "HIDE_PATTERNS" in fm
     assert "floating-food-menu-trigger" in fm
 
@@ -3862,7 +3862,7 @@ def test_roadmap_floating_food_menu_globally_mounted():
 def test_roadmap_ride_home_button_in_dashboard():
     """RideHomeButton must be mounted on the main DashboardNew lobby
     so the "lobby Ride Home" trigger from Roadmap §3 is reachable."""
-    src = open("/app/frontend/src/pages/DashboardNew.tsx").read()
+    src = open("source/web-assets/frontend/src/pages/DashboardNew.tsx").read()
     assert "RideHomeButton" in src, \
         "DashboardNew.tsx must import + render RideHomeButton (Roadmap §3)"
     assert "dashboard-ride-home-row" in src, \
@@ -3873,12 +3873,12 @@ def test_roadmap_chair_perks_endpoint_and_service():
     """Roadmap §3 Seated Ownership — /api/chairs/perks endpoint + the
     shared chair_perks_service helper must both exist so any chat
     surface can stamp messages with the holder's color."""
-    chairs_src = open("/app/backend/routes/chairs.py").read()
+    chairs_src = open("source/web-assets/backend/routes/chairs.py").read()
     assert '/chairs/perks' in chairs_src, \
         "chairs.py must expose GET /chairs/perks"
     assert 'chair_perks_service' in chairs_src, \
         "chairs.py must delegate to services.chair_perks_service"
-    svc_src = open("/app/backend/services/chair_perks_service.py").read()
+    svc_src = open("source/web-assets/backend/services/chair_perks_service.py").read()
     assert 'get_chair_perks_for_user' in svc_src
     # Color rules locked at three phases.
     assert '#22d3ee' in svc_src   # Genius cyan
@@ -3890,14 +3890,14 @@ def test_roadmap_chat_broadcast_carries_chair_perks():
     """Live-streaming chat broadcast must attach the sender's
     chair_perks payload so viewers can colorize chair-holder names
     in real time (Roadmap §3)."""
-    src = open("/app/backend/routes/live_streaming.py").read()
+    src = open("source/web-assets/backend/routes/live_streaming.py").read()
     assert 'chair_perks' in src, \
         "live_streaming chat broadcast must attach chair_perks"
     assert 'get_chair_perks_for_user' in src, \
         "live_streaming must call the chair_perks_service helper"
     # Frontend must read it.
-    view_src = open("/app/frontend/src/pages/ViewStreamPage.tsx").read()
-    live_src = open("/app/frontend/src/pages/LiveStreamPage.tsx").read()
+    view_src = open("source/web-assets/frontend/src/pages/ViewStreamPage.tsx").read()
+    live_src = open("source/web-assets/frontend/src/pages/LiveStreamPage.tsx").read()
     assert "ChairHolderName" in view_src and "ChairHolderName" in live_src
     assert "chair_perks" in view_src and "chair_perks" in live_src
 
@@ -3911,7 +3911,7 @@ def test_landing_header_enhanced_is_fixed_and_glassmorphic():
     """Founder override 2026-02-09 — header MUST scroll with the page
     (no stick, no fixed). Glassmorphic backdrop + brand-fuchsia neon
     glow are still locked, but `position: fixed` is now BANNED."""
-    src = open("/app/frontend/src/components/landing/LandingHeaderEnhanced.tsx").read()
+    src = open("source/web-assets/frontend/src/components/landing/LandingHeaderEnhanced.tsx").read()
     # Visual chrome still locked.
     assert 'rgba(13, 17, 23, 0.95)' in src
     assert 'blur(10px)' in src
@@ -3933,7 +3933,7 @@ def test_landing_uses_enhanced_header_and_room_tint_overlay():
     tint overlay (PDF §2 hover Room Transitions). The legacy sticky
     <motion.header> block must be GONE. The page MUST NOT add a
     fixed-header spacer (founder override — no stick)."""
-    src = open("/app/frontend/src/pages/LandingNeonGaming.tsx").read()
+    src = open("source/web-assets/frontend/src/pages/LandingNeonGaming.tsx").read()
     assert 'LandingHeaderEnhanced' in src, \
         "Landing page must import + render LandingHeaderEnhanced"
     assert 'landing-room-tint-overlay' in src, \
@@ -3951,7 +3951,7 @@ def test_landing_uses_enhanced_header_and_room_tint_overlay():
 def test_landing_feature_accordions_mounted_with_three_cards():
     """PDF §3 — Progressive Information Compression. Three click-to-
     expand cards: Game Logic / Tokenomics / Lifestyle Hub."""
-    src = open("/app/frontend/src/components/landing/LandingFeatureAccordions.tsx").read()
+    src = open("source/web-assets/frontend/src/components/landing/LandingFeatureAccordions.tsx").read()
     for tid in ("feature-card-game-logic", "feature-card-tokenomics", "feature-card-lifestyle"):
         assert tid in src, f"Accordion card data-testid '{tid}' must be present"
     # Live data hooks pulling from the existing backend rails.
@@ -3959,19 +3959,19 @@ def test_landing_feature_accordions_mounted_with_three_cards():
     # Feb 2026 — burn stats replaced by recirculation velocity readout.
     assert '/api/recirculation/public-summary' in src
     # Mounted on the landing page.
-    landing = open("/app/frontend/src/pages/LandingNeonGaming.tsx").read()
+    landing = open("source/web-assets/frontend/src/pages/LandingNeonGaming.tsx").read()
     assert 'LandingFeatureAccordions' in landing
 
 
 def test_landing_vibez_coin_3d_uses_three_fiber():
     """PDF §3 'Animated $VIBEZ coin asset' — must render via the
     already-installed @react-three/fiber Canvas (no net bundle bloat)."""
-    src = open("/app/frontend/src/components/landing/VibezCoin3D.tsx").read()
+    src = open("source/web-assets/frontend/src/components/landing/VibezCoin3D.tsx").read()
     assert "@react-three/fiber" in src
     assert "Canvas"   in src
     assert "useFrame" in src
     # Used inside the Tokenomics accordion cell.
-    accordions = open("/app/frontend/src/components/landing/LandingFeatureAccordions.tsx").read()
+    accordions = open("source/web-assets/frontend/src/components/landing/LandingFeatureAccordions.tsx").read()
     assert "VibezCoin3D" in accordions
 
 
@@ -3983,7 +3983,7 @@ def test_dashboard_hungryvibes_tile_uses_canonical_path():
     """DashboardNew.tsx HungryVibes tile must link to '/hungryvibes'.
     Earlier it pointed to '/hungry-vibez' (typo + hyphen) which fell
     through App.js wildcard back to '/'."""
-    src = open("/app/frontend/src/pages/DashboardNew.tsx").read()
+    src = open("source/web-assets/frontend/src/pages/DashboardNew.tsx").read()
     assert "path: '/hungryvibes'" in src, \
         "Dashboard HungryVibes tile must use the canonical path '/hungryvibes'"
     assert "/hungry-vibez" not in src, \
@@ -3996,7 +3996,7 @@ def test_hungryvibes_consumer_route_is_registered():
     """The HungryVibes consumer page (FAB target, accordion target,
     dashboard tile target) MUST be registered — otherwise every
     'Order food' click bounces back to '/'."""
-    src = open("/app/frontend/src/routes/monetizationRoutes.tsx").read()
+    src = open("source/web-assets/frontend/src/routes/monetizationRoutes.tsx").read()
     assert "import HungryVibez from" in src, \
         "HungryVibez page must be imported into monetizationRoutes"
     assert 'path="/hungryvibes"' in src, \
@@ -4008,7 +4008,7 @@ def test_games_menu_chess_route_is_canonical_practice_play_chess():
     (the route that actually renders PracticeChess with Voice Coach +
     Roguelite Trial + Battle Mode). Bare '/practice/chess' was a
     dead route until the redirect was added."""
-    src = open("/app/frontend/src/components/GamesMenu.tsx").read()
+    src = open("source/web-assets/frontend/src/components/GamesMenu.tsx").read()
     assert "route: '/practice/play/chess'" in src, \
         "GamesMenu chess card must link to /practice/play/chess"
 
@@ -4016,7 +4016,7 @@ def test_games_menu_chess_route_is_canonical_practice_play_chess():
 def test_practice_chess_legacy_path_redirects():
     """Defensive: any caller still hitting '/practice/chess' should be
     redirected to '/practice/play/chess' rather than fall back to '/'."""
-    src = open("/app/frontend/src/routes/gamesRoutes.tsx").read()
+    src = open("source/web-assets/frontend/src/routes/gamesRoutes.tsx").read()
     assert 'path="/practice/chess"' in src and "Navigate to=\"/practice/play/chess\"" in src, \
         "Legacy '/practice/chess' must redirect to '/practice/play/chess'"
 
@@ -4027,8 +4027,8 @@ def test_vigilant_agent_scripts_exist_and_have_required_apis():
     requires the bare scanner + a CI wrapper with baseline diff +
     optional Slack/Discord webhook. v2 (2026-02-09) adds a corner-
     FAB stacking detector."""
-    bare = open("/app/scripts/vigilant_agent.js").read()
-    ci   = open("/app/scripts/vigilant_agent_ci.js").read()
+    bare = open("source/scripts/vigilant_agent.js").read()
+    ci   = open("source/scripts/vigilant_agent_ci.js").read()
     # Bare scanner — 3 device profiles, screenshots, dupe-testid scan.
     assert "Desktop_4K"         in bare
     assert "iPhone 15 Pro"      in bare
@@ -4051,7 +4051,7 @@ def test_corner_dock_no_longer_mounted_in_app():
     on 2026-02-09. The replacement is the inline `<PageActionStrip />`
     which scrolls with the page. App.js must NOT mount the legacy
     CornerDock anywhere."""
-    src = open("/app/frontend/src/App.js").read()
+    src = open("source/web-assets/frontend/src/App.js").read()
     assert "<CornerDock />" not in src, \
         "CornerDock must NOT be mounted — it was the floating dock the founder rejected"
     assert "import CornerDock from" not in src, \
@@ -4066,11 +4066,11 @@ def test_legacy_fabs_use_corner_dock_trigger_hook():
     `cdock:active` event and the new `chromebar:active` event the
     PageActionStrip dispatches)."""
     files = [
-        "/app/frontend/src/components/common/BetaFeedbackButton.tsx",
-        "/app/frontend/src/components/common/FreshDropsLauncher.tsx",
-        "/app/frontend/src/components/common/VoiceMirrorDock.tsx",
-        "/app/frontend/src/components/common/FloatingFoodMenu.tsx",
-        "/app/frontend/src/components/GlobeFAB.tsx",
+        "source/web-assets/frontend/src/components/common/BetaFeedbackButton.tsx",
+        "source/web-assets/frontend/src/components/common/FreshDropsLauncher.tsx",
+        "source/web-assets/frontend/src/components/common/VoiceMirrorDock.tsx",
+        "source/web-assets/frontend/src/components/common/FloatingFoodMenu.tsx",
+        "source/web-assets/frontend/src/components/GlobeFAB.tsx",
     ]
     for f in files:
         body = open(f).read()
@@ -4085,7 +4085,7 @@ def test_protected_route_auto_mounts_page_action_strip():
     must auto-mount the inline PageActionStrip at the top of its
     content area. ProtectedRoute owns this mount so we don't have to
     edit every single page individually."""
-    src = open("/app/frontend/src/App.js").read()
+    src = open("source/web-assets/frontend/src/App.js").read()
     assert "import PageActionStrip from" in src, \
         "App.js must import PageActionStrip"
     assert "<PageActionStrip" in src, \
@@ -4107,7 +4107,7 @@ def test_unified_chrome_bar_owns_corner_real_estate():
     • Strip dispatches `chromebar:active` so legacy floating FABs
       stay collapsed.
     """
-    strip = open("/app/frontend/src/components/common/PageActionStrip.tsx").read()
+    strip = open("source/web-assets/frontend/src/components/common/PageActionStrip.tsx").read()
     assert 'data-testid="page-action-strip"' in strip
     assert "page-action-strip-trigger" in strip
     assert "page-action-strip-menu" in strip
@@ -4121,7 +4121,7 @@ def test_unified_chrome_bar_owns_corner_real_estate():
     # Sets the chromebar:active signal so legacy FABs collapse.
     assert "chromebar:active" in strip
     # Landing page must mount it under the live wins ticker.
-    landing = open("/app/frontend/src/pages/LandingNeonGaming.tsx").read()
+    landing = open("source/web-assets/frontend/src/pages/LandingNeonGaming.tsx").read()
     assert "PageActionStrip" in landing
     assert "WinnerTicker" in landing
     # WinnerTicker block must come BEFORE the strip mount.
@@ -4130,7 +4130,7 @@ def test_unified_chrome_bar_owns_corner_real_estate():
     assert wt_idx > 0 and strip_idx > wt_idx, \
         "Landing page must render PageActionStrip AFTER WinnerTicker"
     # UnifiedChromeBar + CornerDock must NOT be globally mounted in App.js.
-    appsrc = open("/app/frontend/src/App.js").read()
+    appsrc = open("source/web-assets/frontend/src/App.js").read()
     assert "<UnifiedChromeBar />" not in appsrc, \
         "UnifiedChromeBar must NOT be in the global App.js mount"
     assert "<CornerDock />" not in appsrc, \
@@ -4144,13 +4144,13 @@ def test_bid_whist_cards_land_near_center_table_logo():
     is guaranteed centered on the table logo across every game. Lock
     the tight ±10/±18 seat offsets that make the group centroid match
     the logo coordinates."""
-    src = open("/app/frontend/src/components/spades/SpadesTrickPile.tsx").read()
+    src = open("source/web-assets/frontend/src/components/spades/SpadesTrickPile.tsx").read()
     # The 4 seat offsets must be small enough that the centroid is the
     # table center (±25 max — anything larger leaks into player pods).
     for seat in ("north", "south", "east", "west"):
         assert seat in src, f"SpadesTrickPile lost the {seat} seat offset"
     # Bid Whist page must mount SpadesTrickPile (not a custom impl).
-    bw = open("/app/frontend/src/pages/games/BidWhistAAA.tsx").read()
+    bw = open("source/web-assets/frontend/src/pages/games/BidWhistAAA.tsx").read()
     assert "SpadesTrickPile" in bw, "BidWhist no longer routes its trick pile through SpadesTrickPile"
 
 
@@ -4173,13 +4173,13 @@ def test_not_found_page_replaces_wildcard_redirect():
     which silently bounced every dead route to the landing — making it
     impossible to detect broken links during QA. Replaced with a proper
     NotFound 404 page so dead URLs surface honestly."""
-    src = open("/app/frontend/src/App.js").read()
+    src = open("source/web-assets/frontend/src/App.js").read()
     assert "import NotFound from" in src, \
         "NotFound page must be imported in App.js"
     assert '<Route path="*" element={<NotFound />} />' in src, \
         "Wildcard route must render <NotFound /> (not Navigate to '/')"
     assert 'Navigate to="/" replace />' not in src.split('path="*"')[1].split(">", 2)[0] if 'path="*"' in src else True
-    nf = open("/app/frontend/src/pages/NotFound.tsx").read()
+    nf = open("source/web-assets/frontend/src/pages/NotFound.tsx").read()
     assert 'data-testid="not-found-page"' in nf
     assert "404" in nf
     assert "not-found-home-btn" in nf and "not-found-back-btn" in nf
@@ -4191,7 +4191,7 @@ def test_mongo_health_check_at_startup():
     log a FATAL error if the ping fails. This surfaces the
     `mongod-FATAL-after-disk-full` recurrence that masked every API as
     a 500 silently."""
-    src = open("/app/backend/lifespan.py").read()
+    src = open("source/web-assets/backend/lifespan.py").read()
     assert 'client.admin.command("ping")' in src, \
         "lifespan.py must ping Mongo on startup"
     assert "FATAL: Mongo ping failed at startup" in src, \
@@ -4223,7 +4223,7 @@ def test_whats_new_banner_hidden_on_card_rooms():
     """Founder fix Feb 2026 (round 5): the pinned 'Just for the Night'
     announcement banner was overlapping every card-room header. Lock
     the auto-hide list so future card rooms don't regress."""
-    src = open("/app/frontend/src/components/common/WhatsNewBanner.tsx").read()
+    src = open("source/web-assets/frontend/src/components/common/WhatsNewBanner.tsx").read()
     assert "HIDDEN_EXACT" in src
     for route in [
         "/spades", "/bid-whist", "/hearts", "/uno", "/euchre",
@@ -4242,7 +4242,7 @@ def test_protected_route_skips_action_strip_on_fullscreen_games():
     vertical pixels, pushing the buttons off-screen and making the
     room "feel compressed and non-functional" (founder report). The
     strip MUST be skipped on those routes."""
-    src = open("/app/frontend/src/App.js").read()
+    src = open("source/web-assets/frontend/src/App.js").read()
     assert "FULLSCREEN_GAME_ROUTES" in src, \
         "App.js must declare FULLSCREEN_GAME_ROUTES list"
     assert "useIsFullscreenGameRoute" in src
@@ -4268,7 +4268,7 @@ def test_vibez654_classic_page_speaks_5dice_protocol():
     returning them. Rewrote the page to consume the canonical state
     shape (has_6/has_5/has_4, point_dice, residual_dice,
     rolls_remaining)."""
-    body = open("/app/frontend/src/pages/games/Vibez654Game.tsx").read()
+    body = open("source/web-assets/frontend/src/pages/games/Vibez654Game.tsx").read()
     for field in ["has_6", "has_5", "has_4", "qualified", "point_dice",
                   "residual_dice", "rolls_remaining"]:
         assert field in body, f"Vibez654Game must consume backend field `{field}`"
@@ -4293,7 +4293,7 @@ def test_photosensitive_safe_card_styles():
     hover-only intensify. Added a prefers-reduced-motion killswitch
     AND an in-app body[data-no-flash="1"] opt-in toggle persisted in
     localStorage as gv_no_flash_v1."""
-    css = open("/app/frontend/src/styles/vibez-pro.css").read()
+    css = open("source/web-assets/frontend/src/styles/vibez-pro.css").read()
     assert "animation: gv-card-neon-pulse" not in css
     assert "animation: ace-flicker" not in css
     assert "animation: ruby-heartbeat" not in css
@@ -4301,7 +4301,7 @@ def test_photosensitive_safe_card_styles():
     assert "animation: jade-pulse" not in css
     assert "@media (prefers-reduced-motion: reduce)" in css
     assert 'body[data-no-flash="1"]' in css
-    strip = open("/app/frontend/src/components/common/PageActionStrip.tsx").read()
+    strip = open("source/web-assets/frontend/src/components/common/PageActionStrip.tsx").read()
     assert "Reduce Motion" in strip
     assert "toggleNoFlash" in strip
     assert "gv_no_flash_v1" in strip
@@ -4316,8 +4316,8 @@ def test_cinema_room_route_and_backend_wired():
     them back together."""
     import os
     # Backend route file exists with the right router + endpoints.
-    assert os.path.exists("/app/backend/routes/cinema_room.py")
-    body = open("/app/backend/routes/cinema_room.py").read()
+    assert os.path.exists("source/web-assets/backend/routes/cinema_room.py")
+    body = open("source/web-assets/backend/routes/cinema_room.py").read()
     for marker in [
         'prefix="/cinema-room"',           # mounts under /api/cinema-room
         '@router.get("/catalog")',
@@ -4336,13 +4336,13 @@ def test_cinema_room_route_and_backend_wired():
         else:
             assert marker in body, f"cinema_room.py missing {marker}"
     # Registry must include the router.
-    reg = open("/app/backend/routes/registry.py").read()
+    reg = open("source/web-assets/backend/routes/registry.py").read()
     assert "from routes.cinema_room import router as cinema_room_router" in reg
     assert "api_router.include_router(cinema_room_router" in reg
 
     # Frontend page wired with both lobby + room URLs.
-    assert os.path.exists("/app/frontend/src/pages/CinemaRoom.tsx")
-    page = open("/app/frontend/src/pages/CinemaRoom.tsx").read()
+    assert os.path.exists("source/web-assets/frontend/src/pages/CinemaRoom.tsx")
+    page = open("source/web-assets/frontend/src/pages/CinemaRoom.tsx").read()
     for tid in [
         "cinema-room-lobby", "cinema-room-catalog", "cinema-rooms-list",
         "cinema-create-name", "cinema-create-btn",
@@ -4362,7 +4362,7 @@ def test_cinema_room_route_and_backend_wired():
     assert 'navigate("/dsg/memory-bank' not in page
 
     # App routes wired + included in fullscreen-game whitelist.
-    appsrc = open("/app/frontend/src/App.js").read()
+    appsrc = open("source/web-assets/frontend/src/App.js").read()
     assert 'import CinemaRoom from "@/pages/CinemaRoom"' in appsrc
     assert '<Route path="/cinema-room"' in appsrc
     assert '<Route path="/cinema-room/:roomId"' in appsrc
@@ -4370,7 +4370,7 @@ def test_cinema_room_route_and_backend_wired():
         "Cinema Room must be in FULLSCREEN_GAME_ROUTES whitelist"
 
     # WhatsNewBanner suppressed on the new route.
-    banner = open("/app/frontend/src/components/common/WhatsNewBanner.tsx").read()
+    banner = open("source/web-assets/frontend/src/components/common/WhatsNewBanner.tsx").read()
     assert '"/cinema-room"' in banner
 
 
@@ -4381,7 +4381,7 @@ def test_cinema_room_date_night_mode():
     welcome message · whispers placeholder. Cross-pillar feature
     pulls Dating Universe matches into Cinema Room for second/
     third dates."""
-    page = open("/app/frontend/src/pages/CinemaRoom.tsx").read()
+    page = open("source/web-assets/frontend/src/pages/CinemaRoom.tsx").read()
     # Lobby toggle.
     assert 'data-testid="cinema-date-night-toggle"' in page
     assert 'data-testid="cinema-date-night-checkbox"' in page
@@ -4392,7 +4392,7 @@ def test_cinema_room_date_night_mode():
     assert 'data-testid="cinema-date-night-pinned-msg"' in page
     assert "Just the two of you" in page
     # Backend model carries the flag.
-    body = open("/app/backend/routes/cinema_room.py").read()
+    body = open("source/web-assets/backend/routes/cinema_room.py").read()
     assert "is_date_night: bool" in body, \
         "CinemaRoom + CreateRoomBody must declare is_date_night"
     assert "is_private=body.is_private or body.is_date_night" in body, \
@@ -4406,7 +4406,7 @@ def test_beta_tester_accessibility_chip():
     the in-app Reduce Motion button. WCAG-2.3.1 differentiator
     visible BEFORE login so first-time visitors see inclusivity
     on day one of beta."""
-    page = open("/app/frontend/src/pages/BetaTester.tsx").read()
+    page = open("source/web-assets/frontend/src/pages/BetaTester.tsx").read()
     assert 'data-testid="beta-tester-a11y-chip"' in page
     assert "Photosensitive-safe Mode" in page
     assert "WCAG-2.3.1 friendly" in page
@@ -4426,8 +4426,8 @@ def test_in_room_comms_launcher_mounted_on_fullscreen_games():
     vertical pixels (which would push Ante-In / Bid Now / Roll
     CTAs off-screen)."""
     import os
-    assert os.path.exists("/app/frontend/src/components/common/InRoomCommsLauncher.tsx")
-    body = open("/app/frontend/src/components/common/InRoomCommsLauncher.tsx").read()
+    assert os.path.exists("source/web-assets/frontend/src/components/common/InRoomCommsLauncher.tsx")
+    body = open("source/web-assets/frontend/src/components/common/InRoomCommsLauncher.tsx").read()
     for tid in [
         "in-room-comms-pill", "in-room-comms-modal",
         "in-room-comms-close", "in-room-comms-iframe",
@@ -4438,7 +4438,7 @@ def test_in_room_comms_launcher_mounted_on_fullscreen_games():
     assert "meet.jit.si" in body, \
         "Launcher must use the free Jitsi Meet endpoint (no API key needed)"
     # Mounted in App.js inside the fullscreen-game branch.
-    appsrc = open("/app/frontend/src/App.js").read()
+    appsrc = open("source/web-assets/frontend/src/App.js").read()
     assert "import InRoomCommsLauncher from" in appsrc
     assert "<InRoomCommsLauncher />" in appsrc
 
@@ -4449,7 +4449,7 @@ def test_cinema_room_date_night_cross_link_to_dating():
     Universe so we surface synergy match-ups at the emotional peak
     of the evening. Banner sits above the player when
     `is_date_night=true`."""
-    page = open("/app/frontend/src/pages/CinemaRoom.tsx").read()
+    page = open("source/web-assets/frontend/src/pages/CinemaRoom.tsx").read()
     assert 'data-testid="cinema-date-night-cross-link"' in page
     assert 'data-testid="cinema-go-to-dating-btn"' in page
     assert 'navigate("/dating")' in page, \
@@ -4469,7 +4469,7 @@ def test_landing_tour_supports_multilanguage_manifest():
     import json
     import os
     # 1. Manifest exists + has at least 'en'.
-    manifest_path = "/app/frontend/public/landing-tour-i18n.json"
+    manifest_path = "source/web-assets/frontend/public/landing-tour-i18n.json"
     assert os.path.exists(manifest_path)
     manifest = json.loads(open(manifest_path).read())
     assert "default" in manifest and manifest["default"] in manifest["languages"]
@@ -4480,14 +4480,14 @@ def test_landing_tour_supports_multilanguage_manifest():
     for cue in en["cues"]:
         assert "t" in cue and "text" in cue
     # 2. Generation script preserves brand terms.
-    gen = open("/app/backend/scripts/generate_landing_tour_i18n.py").read()
+    gen = open("source/web-assets/backend/scripts/generate_landing_tour_i18n.py").read()
     assert "BRAND_TERMS" in gen
     for brand in ["VIBEZ", "DSG", "$VIBEZ", "VibeRidez", "Solana", "Chair Hall"]:
         assert brand in gen
     assert 'voice="onyx"' in gen
     assert 'tts-1-hd' in gen
     # 3. Frontend wires the manifest + picker.
-    comp = open("/app/frontend/src/components/landing/LandingTourVideo.tsx").read()
+    comp = open("source/web-assets/frontend/src/components/landing/LandingTourVideo.tsx").read()
     assert "MANIFEST_URL" in comp
     assert "/landing-tour-i18n.json" in comp
     assert "pickInitialLang" in comp
@@ -4532,7 +4532,7 @@ def test_integrity_protocol_routes_and_constants_locked():
     assert VIBE_CHECK["Strike_3"]["permanent_ban"] is True
 
     # Frontend widget wired into Sports Lounge.
-    sl = open("/app/frontend/src/pages/SportsLounge.tsx").read()
+    sl = open("source/web-assets/frontend/src/pages/SportsLounge.tsx").read()
     assert "VibeCheckReport" in sl, "Sports Lounge lost VibeCheckReport import"
 
 
@@ -4555,7 +4555,7 @@ def test_sovereign_tiers_pricing_math_locked():
     assert round(ANNUAL_DISCOUNT_PCT, 2) == 16.67
 
     # Frontend renders the catalog with the expected testids.
-    page = open("/app/frontend/src/pages/SovereignTiers.tsx").read()
+    page = open("source/web-assets/frontend/src/pages/SovereignTiers.tsx").read()
     for tid in [
         "sovereign-tiers-page", "tiers-grid",
         "tiers-interval-month", "tiers-interval-year",
@@ -4571,7 +4571,7 @@ def test_card_room_geometry_pdf_spec_locked():
     Exposed as CSS custom properties so any Three.js scene can pick them
     up via `getComputedStyle()`. Drift here breaks the AAA mobile
     landscape preset across every card room at once."""
-    css = open("/app/frontend/src/index.css").read()
+    css = open("source/web-assets/frontend/src/index.css").read()
     # CSS custom properties (PDF-locked).
     for var, val in [
         ("--gv-card-table-fov", "105"),
@@ -4603,11 +4603,11 @@ def test_p2_underground_live_routes_wired():
     ]:
         assert ep in paths, f"Underground Live endpoint missing: {ep}"
     # Frontend page exists with the testids the testing agent checks.
-    page = open("/app/frontend/src/pages/UndergroundLive.tsx").read()
+    page = open("source/web-assets/frontend/src/pages/UndergroundLive.tsx").read()
     for tid in ["underground-live", "ul-active-battle", "ul-lineup", "ul-back"]:
         assert tid in page, f"UndergroundLive missing testid: {tid}"
     # Underground Casino lobby exposes the live-network tile.
-    ugc = open("/app/frontend/src/pages/UndergroundCasino.tsx").read()
+    ugc = open("source/web-assets/frontend/src/pages/UndergroundCasino.tsx").read()
     assert "live-network" in ugc
     assert "/underground-live" in ugc
 
@@ -4645,7 +4645,7 @@ def test_p2_receipt_ocr_routes_and_constants_locked():
     assert BOOST_DAYS == 30
     assert DAILY_RECEIPT_CAP == 5
     # Frontend wired.
-    page = open("/app/frontend/src/pages/ReceiptsPage.tsx").read()
+    page = open("source/web-assets/frontend/src/pages/ReceiptsPage.tsx").read()
     for tid in ["receipts-page", "receipts-form", "receipts-submit", "receipts-image-url"]:
         assert tid in page, f"ReceiptsPage missing testid: {tid}"
 
@@ -4656,7 +4656,7 @@ def test_room_info_cube_globally_mounted():
     be globally mounted via App.js and read from a single content
     catalog (roomInfo.ts). Drift here means a room's info goes blank."""
     # Component exists.
-    comp_path = "/app/frontend/src/components/common/RoomInfoCube.tsx"
+    comp_path = "source/web-assets/frontend/src/components/common/RoomInfoCube.tsx"
     assert os.path.exists(comp_path)
     comp = open(comp_path).read()
     for tid in [
@@ -4673,7 +4673,7 @@ def test_room_info_cube_globally_mounted():
     assert "SpeechSynthesisUtterance" in comp
 
     # Content catalog exists with the must-cover rooms.
-    cat_path = "/app/frontend/src/data/roomInfo.ts"
+    cat_path = "source/web-assets/frontend/src/data/roomInfo.ts"
     assert os.path.exists(cat_path)
     cat = open(cat_path).read()
     for room in [
@@ -4688,7 +4688,7 @@ def test_room_info_cube_globally_mounted():
     assert "export function matchInfo" in cat
 
     # Globally mounted in App.js.
-    app_js = open("/app/frontend/src/App.js").read()
+    app_js = open("source/web-assets/frontend/src/App.js").read()
     assert "RoomInfoCube" in app_js
     assert "<RoomInfoCube />" in app_js
 
@@ -4698,10 +4698,10 @@ def test_sports_lounge_no_longer_depends_on_rapidapi():
     Sports anymore — the people are the oracle.' Backend exposes the
     Vibe Check crowd-consensus as the settlement_oracle so /sports/games
     consumers can drop the 'seed catalog' framing."""
-    src = open("/app/backend/routes/sports_lounge.py").read()
+    src = open("source/web-assets/backend/routes/sports_lounge.py").read()
     assert '"settlement_oracle": "vibe_check_crowd_consensus"' in src
     # Frontend dropped the "Seed catalog" framing.
-    fe = open("/app/frontend/src/pages/SportsLounge.tsx").read()
+    fe = open("source/web-assets/frontend/src/pages/SportsLounge.tsx").read()
     assert "Seed catalog" not in fe
     assert "Crowd-judged" in fe or "Vibe Check oracle" in fe
 
@@ -4716,14 +4716,14 @@ def test_volumetric_dashboard_default_and_opt_out():
     Both views expose toggles that flip the localStorage flag. One file
     deletion (DashboardRouter.tsx + a route revert) cleanly removes the
     feature if the founder ever wants Classic back as the default."""
-    page_path = "/app/frontend/src/pages/VolumetricDashboard.tsx"
+    page_path = "source/web-assets/frontend/src/pages/VolumetricDashboard.tsx"
     assert os.path.exists(page_path)
     page = open(page_path).read()
     for tid in ["volumetric-dashboard", "vol-back-classic", "vol-planet-", "vol-room-"]:
         assert tid in page, f"VolumetricDashboard missing testid: {tid}"
 
     # DashboardRouter exists and defaults to volumetric.
-    router_path = "/app/frontend/src/pages/DashboardRouter.tsx"
+    router_path = "source/web-assets/frontend/src/pages/DashboardRouter.tsx"
     assert os.path.exists(router_path)
     router = open(router_path).read()
     assert "VolumetricDashboard" in router
@@ -4732,7 +4732,7 @@ def test_volumetric_dashboard_default_and_opt_out():
     assert '"volumetric"' in router and '"classic"' in router
 
     # /dashboard route in miscRoutes now uses DashboardRouter.
-    routes = open("/app/frontend/src/routes/miscRoutes.tsx").read()
+    routes = open("source/web-assets/frontend/src/routes/miscRoutes.tsx").read()
     assert "DashboardRouter" in routes
     assert '"/dashboard"' in routes
 
@@ -4741,7 +4741,7 @@ def test_volumetric_dashboard_default_and_opt_out():
     # (writes localStorage AND dispatches gv-dashboard-view event so the
     # router re-renders without a no-op navigate). Accept either pattern
     # so older snapshots stay compatible.
-    dash = open("/app/frontend/src/pages/DashboardNew.tsx").read()
+    dash = open("source/web-assets/frontend/src/pages/DashboardNew.tsx").read()
     assert "dashboard-try-volumetric" in dash
     assert (
         'switchDashboardView("volumetric")' in dash
@@ -4775,17 +4775,17 @@ def test_personal_homeworld_wired_end_to_end():
     assert COOLDOWN_SECONDS == 5
 
     # RoomVisitLogger mounted globally + uses authFetch + cooldown contract.
-    logger = open("/app/frontend/src/components/common/RoomVisitLogger.tsx").read()
+    logger = open("source/web-assets/frontend/src/components/common/RoomVisitLogger.tsx").read()
     assert "/api/recent-rooms/log" in logger
     assert "useLocation" in logger
     assert "PATH_TO_CATEGORY" in logger
 
-    app_js = open("/app/frontend/src/App.js").read()
+    app_js = open("source/web-assets/frontend/src/App.js").read()
     assert "RoomVisitLogger" in app_js
     assert "<RoomVisitLogger />" in app_js
 
     # VolumetricDashboard reads homeworlds from /me and overlays.
-    vol = open("/app/frontend/src/pages/VolumetricDashboard.tsx").read()
+    vol = open("source/web-assets/frontend/src/pages/VolumetricDashboard.tsx").read()
     assert "/api/recent-rooms/me" in vol
     assert "homeworld" in vol
     assert "HOME" in vol  # the "HOME" badge on the thumbnail
@@ -4796,18 +4796,18 @@ def test_wallet_login_removed_phantom_moved_to_wallet_page():
     rendered as a 'really big, outrageous modal' when CSP blocked framing
     on production domains). Phantom wallet linking now happens AFTER
     login on /wallet so the sign-in flow stays clean."""
-    login = open("/app/frontend/src/pages/LoginPage.tsx").read()
+    login = open("source/web-assets/frontend/src/pages/LoginPage.tsx").read()
     # Privy import + button slot removed from the login page.
     assert "import PrivyLoginButton" not in login
     assert "<PrivyLoginButton />" not in login
     assert 'data-testid="privy-login-slot"' not in login
 
     # PhantomConnectButton no longer rendered in the landing header.
-    landing = open("/app/frontend/src/components/landing/LandingHeaderEnhanced.tsx").read()
+    landing = open("source/web-assets/frontend/src/components/landing/LandingHeaderEnhanced.tsx").read()
     assert "<PhantomConnectButton" not in landing or "/* 2026-05-12" in landing
 
     # PhantomConnectButton IS rendered on the /wallet page.
-    wallet = open("/app/frontend/src/pages/Wallet.tsx").read()
+    wallet = open("source/web-assets/frontend/src/pages/Wallet.tsx").read()
     assert "PhantomConnectButton" in wallet
     assert "wallet-connect-phantom-row" in wallet
 
@@ -4837,7 +4837,7 @@ def test_jftn_season_pass_password_gift_wired():
     assert SEASON_PASS_USD == 25
     assert SEASON_PASS_DAYS == 30
 
-    src = open("/app/backend/routes/just_for_the_night.py").read()
+    src = open("source/web-assets/backend/routes/just_for_the_night.py").read()
     # Password gate uses bcrypt (passlib CryptContext) — same scheme as
     # /api/auth so verify cost stays consistent.
     assert "CryptContext" in src
@@ -4860,18 +4860,18 @@ def test_live_activity_ticker_wired():
     assert "/api/live-activity/recent" in paths, "Live activity endpoint missing"
 
     # Backend anonymizes usernames before exposing them publicly.
-    src = open("/app/backend/routes/live_activity.py").read()
+    src = open("source/web-assets/backend/routes/live_activity.py").read()
     assert "_anon" in src
     assert "spectator_bonus_caps" not in src or "jftn_gifts" in src  # multi-source
 
     # Frontend ticker is mounted on the Volumetric dashboard.
-    ticker = open("/app/frontend/src/components/common/LiveActivityTicker.tsx").read()
+    ticker = open("source/web-assets/frontend/src/components/common/LiveActivityTicker.tsx").read()
     assert "/api/live-activity/recent" in ticker
     assert "live-activity-ticker" in ticker
     # Fallback strands so the strip never collapses.
     assert "FALLBACK_EVENTS" in ticker
 
-    vol = open("/app/frontend/src/pages/VolumetricDashboard.tsx").read()
+    vol = open("source/web-assets/frontend/src/pages/VolumetricDashboard.tsx").read()
     assert "LiveActivityTicker" in vol
     assert "<LiveActivityTicker />" in vol
 
@@ -4885,7 +4885,7 @@ def test_admin_activity_pulse_wired():
     paths = {r.path for r in app.routes if hasattr(r, "path")}
     assert "/api/live-activity/admin-pulse" in paths, "Admin pulse endpoint missing"
 
-    src = open("/app/backend/routes/live_activity.py").read()
+    src = open("source/web-assets/backend/routes/live_activity.py").read()
     assert "admin-pulse" in src
     # Admin-only gate present.
     assert "is_admin" in src or 'role" == "admin"' in src
@@ -4894,13 +4894,13 @@ def test_admin_activity_pulse_wired():
     assert "gross_usd_72h" in src
 
     # Frontend card exists with testids + admin pulse endpoint.
-    card = open("/app/frontend/src/components/admin/ActivityPulseCard.tsx").read()
+    card = open("source/web-assets/frontend/src/components/admin/ActivityPulseCard.tsx").read()
     assert "/api/live-activity/admin-pulse" in card
     for tid in ["admin-activity-pulse", "pulse-tile-events", "pulse-tile-vibe", "pulse-tile-usd", "pulse-event-list"]:
         assert tid in card, f"ActivityPulseCard missing testid: {tid}"
 
     # Mounted in God Mode dashboard.
-    god = open("/app/frontend/src/pages/admin/GodModeDashboard.tsx").read()
+    god = open("source/web-assets/frontend/src/pages/admin/GodModeDashboard.tsx").read()
     assert "ActivityPulseCard" in god
     assert "<ActivityPulseCard />" in god
 
@@ -4918,7 +4918,7 @@ def test_profile_setup_white_card_text_visible():
       2. index.css — scoped `.bg-white input/textarea/label` color rules
          so any future white-card form is auto-protected.
     """
-    css = open("/app/frontend/src/index.css").read()
+    css = open("source/web-assets/frontend/src/index.css").read()
     # Scoped white-card text-visibility rules must be present.
     assert ".bg-white input" in css, "white-card input color rule missing"
     assert ".bg-white textarea" in css, "white-card textarea color rule missing"
@@ -4928,7 +4928,7 @@ def test_profile_setup_white_card_text_visible():
     assert "rgb(30 41 59)" in css, "label color must be slate-800"
 
     # ProfileSetup explicitly applies the inputCls / labelCls overrides.
-    src = open("/app/frontend/src/pages/ProfileSetup.tsx").read()
+    src = open("source/web-assets/frontend/src/pages/ProfileSetup.tsx").read()
     assert "text-slate-900" in src, "ProfileSetup must force dark input text"
     assert "text-slate-800" in src, "ProfileSetup must force dark label text"
     # Testids preserved so the test agent can fill the form end-to-end.
@@ -4954,7 +4954,7 @@ def test_dashboard_view_toggle_uses_switch_helper():
     Every toggle button MUST call this helper instead of writing localStorage
     directly. This test enforces that contract.
     """
-    router = open("/app/frontend/src/pages/DashboardRouter.tsx").read()
+    router = open("source/web-assets/frontend/src/pages/DashboardRouter.tsx").read()
     # Helper + event constant must be exported.
     assert "export function switchDashboardView" in router
     assert "DASHBOARD_VIEW_EVENT" in router
@@ -4964,11 +4964,11 @@ def test_dashboard_view_toggle_uses_switch_helper():
 
     # Both toggle pages must import and use the helper (raw localStorage
     # writes to gv_dashboard_view in the toggle button onClick are a bug).
-    vol = open("/app/frontend/src/pages/VolumetricDashboard.tsx").read()
+    vol = open("source/web-assets/frontend/src/pages/VolumetricDashboard.tsx").read()
     assert "switchDashboardView" in vol, "VolumetricDashboard must use switchDashboardView()"
     assert 'switchDashboardView("classic")' in vol
 
-    new = open("/app/frontend/src/pages/DashboardNew.tsx").read()
+    new = open("source/web-assets/frontend/src/pages/DashboardNew.tsx").read()
     assert "switchDashboardView" in new, "DashboardNew must use switchDashboardView()"
     assert 'switchDashboardView("volumetric")' in new
 
@@ -4984,7 +4984,7 @@ def test_role_switcher_globally_mounted():
     Locked here so the global mount can't accidentally regress.
     """
     import os
-    comp_path = "/app/frontend/src/components/common/RoleSwitcher.tsx"
+    comp_path = "source/web-assets/frontend/src/components/common/RoleSwitcher.tsx"
     assert os.path.exists(comp_path), "RoleSwitcher component missing"
     comp = open(comp_path).read()
     for tid in [
@@ -5011,7 +5011,7 @@ def test_role_switcher_globally_mounted():
     assert "gv_active_role" in comp
 
     # Globally mounted in App.js (so every protected page surfaces it).
-    app_js = open("/app/frontend/src/App.js").read()
+    app_js = open("source/web-assets/frontend/src/App.js").read()
     assert "import RoleSwitcher" in app_js, "RoleSwitcher not imported"
     assert "<RoleSwitcher />" in app_js, "RoleSwitcher not mounted in AppRouter"
 
@@ -5044,7 +5044,7 @@ def test_hungryvibes_merchant_fulfillment_loop_wired():
     ]:
         assert p in paths, f"merchant fulfillment endpoint missing: {p}"
 
-    src = open("/app/backend/routes/smartstack.py").read()
+    src = open("source/web-assets/backend/routes/smartstack.py").read()
     # State machine must enforce forward-only transitions.
     assert "ORDER_TRANSITIONS" in src
     assert '"preparing"' in src and '"ready"' in src and '"delivered"' in src
@@ -5060,7 +5060,7 @@ def test_hungryvibes_merchant_fulfillment_loop_wired():
     assert "hungryvibez_order_rejected_refund" in src
 
     # Merchant dashboard frontend mounts an Orders tab + actionable CTAs.
-    fe = open("/app/frontend/src/pages/HungryVibesMerchant.tsx").read()
+    fe = open("source/web-assets/frontend/src/pages/HungryVibesMerchant.tsx").read()
     for tid in [
         "hv-tab-orders",
         "hv-orders-tab",
@@ -5100,12 +5100,12 @@ def test_hungryvibes_test_order_button_wired():
     paths = {r.path for r in app.routes if hasattr(r, "path")}
     assert "/api/hungryvibes/orders/merchant/test-order" in paths
 
-    src = open("/app/backend/routes/smartstack.py").read()
+    src = open("source/web-assets/backend/routes/smartstack.py").read()
     # is_test marker + zero-credit gate on delivered transition.
     assert '"is_test": True' in src
     assert 'and not order.get("is_test")' in src
 
-    fe = open("/app/frontend/src/pages/HungryVibesMerchant.tsx").read()
+    fe = open("source/web-assets/frontend/src/pages/HungryVibesMerchant.tsx").read()
     assert "hv-orders-drop-test" in fe
     assert "hv-order-test-badge" in fe
     assert "/api/hungryvibes/orders/merchant/test-order" in fe
@@ -5116,13 +5116,13 @@ def test_streamer_dashboard_wired():
     It does — at /my-streams via routes/streamingRoutes.tsx + Switch Role
     pill highlights `Streamer` when on that route. Locking it here so
     nobody renames the route or strips the role mapping silently."""
-    streamer = open("/app/frontend/src/pages/StreamerDashboard.tsx").read()
+    streamer = open("source/web-assets/frontend/src/pages/StreamerDashboard.tsx").read()
     assert "Streamer Dashboard" in streamer
     assert "/api/streaming/dashboard" in streamer
-    routes = open("/app/frontend/src/routes/streamingRoutes.tsx").read()
+    routes = open("source/web-assets/frontend/src/routes/streamingRoutes.tsx").read()
     assert '/my-streams' in routes
     assert "StreamerDashboard" in routes
-    role = open("/app/frontend/src/components/common/RoleSwitcher.tsx").read()
+    role = open("source/web-assets/frontend/src/components/common/RoleSwitcher.tsx").read()
     assert '"streamer"' in role
     assert '/my-streams' in role
 
@@ -5146,7 +5146,7 @@ def test_vibe_venues_host_dashboard_wired():
     ]:
         assert p in paths, f"host endpoint missing: {p}"
 
-    page = open("/app/frontend/src/pages/vibe-venues/VibeVenuesHostDashboard.tsx").read()
+    page = open("source/web-assets/frontend/src/pages/vibe-venues/VibeVenuesHostDashboard.tsx").read()
     for tid in [
         "vibe-venues-host-dashboard",
         "vvhd-tab-venues",
@@ -5159,12 +5159,12 @@ def test_vibe_venues_host_dashboard_wired():
     assert "vvhd-venues-empty" in page
     assert "vvhd-bookings-empty" in page
 
-    routes = open("/app/frontend/src/routes/socialRoutes.tsx").read()
+    routes = open("source/web-assets/frontend/src/routes/socialRoutes.tsx").read()
     assert '/vibe-venues/host-dashboard' in routes
     assert "VibeVenuesHostDashboard" in routes
 
     # Switch Role pill carries a "host" option.
-    role = open("/app/frontend/src/components/common/RoleSwitcher.tsx").read()
+    role = open("source/web-assets/frontend/src/components/common/RoleSwitcher.tsx").read()
     assert '"host"' in role
     assert '/vibe-venues/host-dashboard' in role
 
@@ -5185,7 +5185,7 @@ def test_unified_earnings_widget_wired():
     paths = {r.path for r in app.routes if hasattr(r, "path")}
     assert "/api/me/unified-earnings" in paths, "unified-earnings endpoint missing"
 
-    backend = open("/app/backend/routes/unified_earnings.py").read()
+    backend = open("source/web-assets/backend/routes/unified_earnings.py").read()
     assert "STREAMER_GIFT_SHARE = 0.70" in backend, "streamer share must mirror StreamerDashboard's 70%"
     # 4 role aggregators present.
     for fn in ["_driver_totals", "_host_totals", "_merchant_totals", "_streamer_totals"]:
@@ -5193,7 +5193,7 @@ def test_unified_earnings_widget_wired():
     # 7d cutoff helper.
     assert "_iso_now_minus(7)" in backend
 
-    widget = open("/app/frontend/src/components/common/UnifiedEarningsWidget.tsx").read()
+    widget = open("source/web-assets/frontend/src/components/common/UnifiedEarningsWidget.tsx").read()
     for tid in [
         "unified-earnings-widget",
         "unified-earnings-total",
@@ -5210,9 +5210,9 @@ def test_unified_earnings_widget_wired():
     # dashboard for brand-new users.
     assert "allZero" in widget
 
-    classic = open("/app/frontend/src/pages/DashboardNew.tsx").read()
+    classic = open("source/web-assets/frontend/src/pages/DashboardNew.tsx").read()
     assert "UnifiedEarningsWidget" in classic, "widget must mount on classic dashboard"
-    vol = open("/app/frontend/src/pages/VolumetricDashboard.tsx").read()
+    vol = open("source/web-assets/frontend/src/pages/VolumetricDashboard.tsx").read()
     assert "UnifiedEarningsWidget" in vol, "widget must mount on volumetric dashboard"
 
 
@@ -5221,7 +5221,7 @@ def test_hungryvibes_customer_order_tracking_wired():
     """2026-05-12 backlog #1: customer-side order tracking page —
     live status timeline (Order placed → Restaurant preparing → On the
     way → Delivered). Polls /api/hungryvibes/orders/my every 6s."""
-    page = open("/app/frontend/src/pages/HungryVibezOrderTracking.tsx").read()
+    page = open("source/web-assets/frontend/src/pages/HungryVibezOrderTracking.tsx").read()
     for tid in [
         "hv-tracking-page",
         "hv-tracking-empty",
@@ -5234,7 +5234,7 @@ def test_hungryvibes_customer_order_tracking_wired():
         assert f'"{stage}"' in page, f"OrderTracking missing stage: {stage}"
     assert "/api/hungryvibes/orders/my" in page, "must poll customer /my endpoint"
     # Route registered in monetizationRoutes.
-    routes = open("/app/frontend/src/routes/monetizationRoutes.tsx").read()
+    routes = open("source/web-assets/frontend/src/routes/monetizationRoutes.tsx").read()
     assert '"/hungryvibes/orders"' in routes
     assert "HungryVibezOrderTracking" in routes
 
@@ -5248,13 +5248,13 @@ def test_vibe_venues_test_booking_endpoint_wired():
     paths = {r.path for r in app.routes if hasattr(r, "path")}
     assert "/api/vibe-venues/host/test-booking/{user_id}" in paths
 
-    src = open("/app/backend/routes/vibe_venues.py").read()
+    src = open("source/web-assets/backend/routes/vibe_venues.py").read()
     # is_test marker + uses the canonical collection name.
     assert "vibe_venues_listings" in src
     assert "host_drop_test_booking" in src
     assert '"is_test": True' in src
 
-    page = open("/app/frontend/src/pages/vibe-venues/VibeVenuesHostDashboard.tsx").read()
+    page = open("source/web-assets/frontend/src/pages/vibe-venues/VibeVenuesHostDashboard.tsx").read()
     assert "vvhd-drop-test-booking" in page
     assert "/api/vibe-venues/host/test-booking/" in page
 
@@ -5262,14 +5262,14 @@ def test_vibe_venues_test_booking_endpoint_wired():
 def test_dashboard_view_remember_toast_wired():
     """2026-05-12 backlog #8: first-time toggle shows a 'saved as default'
     toast so users know the platform remembers their preference."""
-    vol = open("/app/frontend/src/pages/VolumetricDashboard.tsx").read()
-    new = open("/app/frontend/src/pages/DashboardNew.tsx").read()
+    vol = open("source/web-assets/frontend/src/pages/VolumetricDashboard.tsx").read()
+    new = open("source/web-assets/frontend/src/pages/DashboardNew.tsx").read()
     assert "gv_dashboard_view_seen" in vol
     assert "gv_dashboard_view_seen" in new
     assert "Classic view saved as your default" in vol
     assert "Volumetric Galaxy saved as your default" in new
 
-    role = open("/app/frontend/src/components/common/RoleSwitcher.tsx").read()
+    role = open("source/web-assets/frontend/src/components/common/RoleSwitcher.tsx").read()
     assert "gv_active_role_toast_seen" in role
 
 
@@ -5277,7 +5277,7 @@ def test_role_aware_deep_link_url_wired():
     """2026-05-12 backlog #7: ?role=driver in any URL pre-selects driver
     mode and (when landing on /dashboard) auto-navigates to that role's
     home. Makes SMS onboarding links land on the right page."""
-    role = open("/app/frontend/src/components/common/RoleSwitcher.tsx").read()
+    role = open("source/web-assets/frontend/src/components/common/RoleSwitcher.tsx").read()
     # Parse the query string + use it as initial active.
     assert 'URLSearchParams(window.location.search)' in role
     assert 'qs.get("role")' in role
@@ -5290,7 +5290,7 @@ def test_production_smoke_test_card_wired():
     """2026-05-12 backlog #3: God Mode card runs 14 read-only probes
     against the live REACT_APP_BACKEND_URL so the founder can verify
     the deploy in 30s right after pushing."""
-    card = open("/app/frontend/src/components/admin/ProductionSmokeTestCard.tsx").read()
+    card = open("source/web-assets/frontend/src/components/admin/ProductionSmokeTestCard.tsx").read()
     for tid in [
         "prod-smoke-test-card",
         "prod-smoke-test-run",
@@ -5312,7 +5312,7 @@ def test_production_smoke_test_card_wired():
     ]:
         assert probe in card, f"SmokeTestCard missing probe path: {probe}"
     # Card is mounted in God Mode.
-    god = open("/app/frontend/src/pages/admin/GodModeDashboard.tsx").read()
+    god = open("source/web-assets/frontend/src/pages/admin/GodModeDashboard.tsx").read()
     assert "ProductionSmokeTestCard" in god
     assert "<ProductionSmokeTestCard />" in god
 
@@ -5322,7 +5322,7 @@ def test_geo_proximity_ride_matching_already_wired():
     implemented via `_top_matches` (top-3 nearest drivers within
     max_radius_km, haversine distance). Locked here so a future refactor
     can't strip the proximity logic and silently fall back to broadcast."""
-    src = open("/app/backend/routes/vibe_ridez_dispatch.py").read()
+    src = open("source/web-assets/backend/routes/vibe_ridez_dispatch.py").read()
     assert "_top_matches" in src
     assert "max_radius_km" in src
     # Top-3 cascade documented in request_ride docstring.
@@ -5335,7 +5335,7 @@ def test_smartstack_driver_delivery_offer_already_wired():
     """2026-05-12 backlog #9: SmartStack driver↔delivery offer surface
     was already wired. Driver dashboard polls best_offer + accept/dismiss
     routes. Lock so the surface UI can't silently disappear."""
-    fe = open("/app/frontend/src/pages/SmartStackDashboard.tsx").read()
+    fe = open("source/web-assets/frontend/src/pages/SmartStackDashboard.tsx").read()
     assert "best_offer" in fe
     assert "/api/smartstack/driver/dashboard" in fe
     assert "/api/smartstack/driver/accept-stack" in fe
@@ -5366,7 +5366,7 @@ def test_stripe_connect_express_scaffolded():
     ]:
         assert p in paths, f"connect endpoint missing: {p}"
 
-    src = open("/app/backend/routes/stripe_connect.py").read()
+    src = open("source/web-assets/backend/routes/stripe_connect.py").read()
     # Soft-fail contract — must never 500 when keys aren't set.
     assert "_is_configured" in src
     assert '"configured": False' in src
@@ -5376,7 +5376,7 @@ def test_stripe_connect_express_scaffolded():
     # Audit trail for payouts so admin can reconcile.
     assert "stripe_connect_payouts" in src
 
-    btn = open("/app/frontend/src/components/payout/StripeConnectButton.tsx").read()
+    btn = open("source/web-assets/frontend/src/components/payout/StripeConnectButton.tsx").read()
     for tid in [
         "connect-not-configured",
         "connect-manage-btn",
@@ -5386,9 +5386,9 @@ def test_stripe_connect_express_scaffolded():
 
     # Button mounted on all 3 role pages.
     for path in [
-        "/app/frontend/src/pages/VibeRidez/DriverWalletSetup.tsx",
-        "/app/frontend/src/pages/vibe-venues/VibeVenuesHostDashboard.tsx",
-        "/app/frontend/src/pages/HungryVibesMerchant.tsx",
+        "source/web-assets/frontend/src/pages/VibeRidez/DriverWalletSetup.tsx",
+        "source/web-assets/frontend/src/pages/vibe-venues/VibeVenuesHostDashboard.tsx",
+        "source/web-assets/frontend/src/pages/HungryVibesMerchant.tsx",
     ]:
         page = open(path).read()
         assert "StripeConnectButton" in page, f"connect button not mounted: {path}"
@@ -5406,7 +5406,7 @@ def test_landing_tour_video_clips_extended_keeping_dice_first():
     scene. CLIP_TAGS array must stay in lockstep with CLIPS (same length,
     same order).
     """
-    src = open("/app/frontend/src/components/landing/LandingTourVideo.tsx").read()
+    src = open("source/web-assets/frontend/src/components/landing/LandingTourVideo.tsx").read()
     # Dice intro stays at position #1 — must be the FIRST entry in CLIPS.
     dice_url = "aeaebfxp_e_c_a_d_d_db_c_e_videomp_.mp4"
     # All 6 clips referenced.
@@ -5467,7 +5467,7 @@ def test_volumetric_planet_carousel_nav_wired():
     fighting OrbitControls drag. Camera tween is handled by the existing
     CameraRig lerp on selectedIndex change — no extra animation logic.
     """
-    page = open("/app/frontend/src/pages/VolumetricDashboard.tsx").read()
+    page = open("source/web-assets/frontend/src/pages/VolumetricDashboard.tsx").read()
     # Mid-side prev/next buttons + dot indicator + active label.
     for tid in [
         "vol-carousel-prev",
@@ -5506,7 +5506,7 @@ def test_volumetric_webgl_unavailable_fallback_wired():
       4. Canvas listens to `webglcontextlost` to prevent context-loss
          from turning the page blank on tab backgrounding.
     """
-    page = open("/app/frontend/src/pages/VolumetricDashboard.tsx").read()
+    page = open("source/web-assets/frontend/src/pages/VolumetricDashboard.tsx").read()
     # WebGL probe at mount.
     assert "WebGLRenderingContext" in page, "WebGL detection missing"
     assert 'getContext("webgl")' in page or "getContext('webgl')" in page
@@ -5522,7 +5522,7 @@ def test_volumetric_webgl_unavailable_fallback_wired():
     assert "volumetric-webgl-unavailable" in page
 
     # ErrorBoundary supports the `fallback` prop.
-    boundary = open("/app/frontend/src/components/common/ErrorBoundary.tsx").read()
+    boundary = open("source/web-assets/frontend/src/components/common/ErrorBoundary.tsx").read()
     assert "fallback?: React.ReactNode" in boundary, "ErrorBoundary must accept fallback prop"
     assert "this.props.fallback" in boundary
 
@@ -5533,7 +5533,7 @@ def test_volumetric_planet_labels_visible_from_overview():
     just to find out what it is. Label gets a category-tinted glass
     pill background + bumped from text-xs to text-sm and distanceFactor
     from 10 → 7 (slightly larger / closer to camera)."""
-    page = open("/app/frontend/src/pages/VolumetricDashboard.tsx").read()
+    page = open("source/web-assets/frontend/src/pages/VolumetricDashboard.tsx").read()
     # Slightly larger size class + pill chrome.
     assert "text-sm md:text-base uppercase tracking-[0.3em]" in page
     # distanceFactor brought closer so labels render at readable size.
@@ -5554,7 +5554,7 @@ def test_beta_cohort_report_card_wired():
     paths = {r.path for r in app.routes if hasattr(r, "path")}
     assert "/api/admin/beta-cohort" in paths, "beta-cohort endpoint missing"
 
-    backend = open("/app/backend/routes/admin_beta_cohort.py").read()
+    backend = open("source/web-assets/backend/routes/admin_beta_cohort.py").read()
     # Admin-gated.
     assert "_require_admin" in backend
     # Rollups: signups + roles + revenue (incl. TTFS) + engagement.
@@ -5567,7 +5567,7 @@ def test_beta_cohort_report_card_wired():
     ]:
         assert key in backend, f"beta-cohort missing metric: {key}"
 
-    fe = open("/app/frontend/src/components/admin/BetaCohortReportCard.tsx").read()
+    fe = open("source/web-assets/frontend/src/components/admin/BetaCohortReportCard.tsx").read()
     for tid in [
         "beta-cohort-card",
         "beta-cohort-headline",
@@ -5577,7 +5577,7 @@ def test_beta_cohort_report_card_wired():
         assert tid in fe, f"BetaCohortReportCard missing testid: {tid}"
     assert "/api/admin/beta-cohort" in fe
 
-    god = open("/app/frontend/src/pages/admin/GodModeDashboard.tsx").read()
+    god = open("source/web-assets/frontend/src/pages/admin/GodModeDashboard.tsx").read()
     assert "BetaCohortReportCard" in god
     assert "<BetaCohortReportCard />" in god
 
@@ -5592,12 +5592,12 @@ def test_volumetric_dashboard_code_split():
     """2026-05-13 perf: Three.js (~500KB) is now lazy-loaded so the Classic
     dashboard + first paint don't pay for it. Verify React.lazy() + Suspense
     wiring stays in place."""
-    router = open("/app/frontend/src/pages/DashboardRouter.tsx").read()
+    router = open("source/web-assets/frontend/src/pages/DashboardRouter.tsx").read()
     assert "lazy(() => import(\"@/pages/VolumetricDashboard\"))" in router
     assert "Suspense" in router
     assert "VolumetricLoadingFallback" in router
 
-    misc = open("/app/frontend/src/routes/miscRoutes.tsx").read()
+    misc = open("source/web-assets/frontend/src/routes/miscRoutes.tsx").read()
     assert "lazy(() => import(\"@/pages/VolumetricDashboard\"))" in misc
     assert "volumetric-route-loading" in misc
 
@@ -5606,7 +5606,7 @@ def test_hungryvibes_delivery_progress_map_mounted():
     """2026-05-13 backlog: Customer-side HungryVibes order delivery tracking
     UI — animated SVG delivery map showing courier progression from
     restaurant → customer pin, swapping in based on order status."""
-    component = open("/app/frontend/src/components/hungryvibes/DeliveryProgressMap.tsx").read()
+    component = open("source/web-assets/frontend/src/components/hungryvibes/DeliveryProgressMap.tsx").read()
     # Animated SVG with bezier-projected courier marker.
     assert "STATUS_PROGRESS" in component
     assert "ready" in component and "preparing" in component
@@ -5614,7 +5614,7 @@ def test_hungryvibes_delivery_progress_map_mounted():
     # Pinned to order_id testid for accessibility / Playwright.
     assert "hv-delivery-map" in component
 
-    tracking = open("/app/frontend/src/pages/HungryVibezOrderTracking.tsx").read()
+    tracking = open("source/web-assets/frontend/src/pages/HungryVibezOrderTracking.tsx").read()
     assert "DeliveryProgressMap" in tracking
 
 
@@ -5626,13 +5626,13 @@ def test_ridez_nearby_drivers_endpoint_and_map():
     paths = {r.path for r in app.routes if hasattr(r, "path")}
     assert "/api/ridez/nearby-drivers" in paths
 
-    backend = open("/app/backend/routes/vibe_ridez_dispatch.py").read()
+    backend = open("source/web-assets/backend/routes/vibe_ridez_dispatch.py").read()
     # Coordinates fuzzed to ~110m before exposing publicly (3 d.p.).
     assert 'round(d["lat"], 3)' in backend
     # ETA derivation present.
     assert "estimated_eta_minutes" in backend
 
-    fe = open("/app/frontend/src/components/vibe-ridez/NearbyDriversMap.tsx").read()
+    fe = open("source/web-assets/frontend/src/components/vibe-ridez/NearbyDriversMap.tsx").read()
     for tid in [
         "nearby-drivers-map",
         "nearby-drivers-count",
@@ -5642,7 +5642,7 @@ def test_ridez_nearby_drivers_endpoint_and_map():
     ]:
         assert tid in fe, f"NearbyDriversMap missing testid: {tid}"
 
-    booking = open("/app/frontend/src/pages/RideBooking.tsx").read()
+    booking = open("source/web-assets/frontend/src/pages/RideBooking.tsx").read()
     assert "NearbyDriversMap" in booking
 
 
@@ -5650,12 +5650,12 @@ def test_push_notifications_hook_and_prompt_wired():
     """2026-05-13 backlog: Web Push notifications — hook + prompt banner
     + service-worker registration. Notifications fire on order/ride
     status transitions."""
-    hook = open("/app/frontend/src/hooks/usePushNotifications.ts").read()
+    hook = open("source/web-assets/frontend/src/hooks/usePushNotifications.ts").read()
     assert "Notification.requestPermission" in hook
     assert "gv_push_pref" in hook
     assert "notify" in hook
 
-    prompt = open("/app/frontend/src/components/notifications/PushNotificationsPrompt.tsx").read()
+    prompt = open("source/web-assets/frontend/src/components/notifications/PushNotificationsPrompt.tsx").read()
     for tid in [
         "push-notifications-prompt",
         "push-notifications-enable",
@@ -5663,16 +5663,16 @@ def test_push_notifications_hook_and_prompt_wired():
     ]:
         assert tid in prompt, f"PushNotificationsPrompt missing testid: {tid}"
 
-    sw = open("/app/frontend/public/gv-sw.js").read()
+    sw = open("source/web-assets/frontend/public/gv-sw.js").read()
     # App-shell precache + cache-first for static assets.
     assert "PRECACHE_URLS" in sw
     assert "navigator.serviceWorker" not in sw  # SW file itself shouldn't reference navigator
     assert "self.addEventListener(\"fetch\"" in sw
 
-    idx = open("/app/frontend/src/index.js").read()
+    idx = open("source/web-assets/frontend/src/index.js").read()
     assert "/gv-sw.js" in idx
 
-    tracking = open("/app/frontend/src/pages/HungryVibezOrderTracking.tsx").read()
+    tracking = open("source/web-assets/frontend/src/pages/HungryVibezOrderTracking.tsx").read()
     assert "PushNotificationsPrompt" in tracking
     assert "usePushNotifications" in tracking
 
@@ -5681,7 +5681,7 @@ def test_vibe_venues_refund_policies_and_gallery():
     """2026-05-13 backlog: Full Vibe Venues booking platform — refund
     policy preset (flexible/moderate/strict), gallery photos (up to 8),
     and visible policy banner on venue detail."""
-    backend = open("/app/backend/routes/vibe_venues.py").read()
+    backend = open("source/web-assets/backend/routes/vibe_venues.py").read()
     # Three refund policy presets surfaced via /config.
     for tier in ["flexible", "moderate", "strict"]:
         assert f'"id": "{tier}"' in backend, f"refund policy missing: {tier}"
@@ -5689,7 +5689,7 @@ def test_vibe_venues_refund_policies_and_gallery():
     assert "gallery_photos: List[str]" in backend
     assert "refund_policy: str" in backend
 
-    host = open("/app/frontend/src/pages/vibe-venues/VibeVenuesHost.tsx").read()
+    host = open("source/web-assets/frontend/src/pages/vibe-venues/VibeVenuesHost.tsx").read()
     assert "vv-host-gallery-wrapper" in host
     assert "vv-host-refund-policy-wrapper" in host
     # Three refund presets enumerated in the picker.
@@ -5697,7 +5697,7 @@ def test_vibe_venues_refund_policies_and_gallery():
     for tier in ["flexible", "moderate", "strict"]:
         assert f'id: "{tier}"' in host, f"refund picker missing tier: {tier}"
 
-    detail = open("/app/frontend/src/pages/vibe-venues/VibeVenuesVenueDetail.tsx").read()
+    detail = open("source/web-assets/frontend/src/pages/vibe-venues/VibeVenuesVenueDetail.tsx").read()
     assert "vv-detail-refund-policy" in detail
     assert "vv-detail-gallery" in detail
 
@@ -5706,7 +5706,7 @@ def test_stripe_connect_wizard_route_and_steps():
     """2026-05-13 backlog: Stripe Connect onboarding wizard — 3-step guided
     flow lifting the single-button experience into a full
     requirements → verification → activation funnel."""
-    wizard = open("/app/frontend/src/pages/payouts/StripeConnectWizard.tsx").read()
+    wizard = open("source/web-assets/frontend/src/pages/payouts/StripeConnectWizard.tsx").read()
     for tid in [
         "stripe-connect-wizard",
         "connect-wizard-stepper",
@@ -5719,7 +5719,7 @@ def test_stripe_connect_wizard_route_and_steps():
     # Stripe data collection happens on Stripe's servers — disclaimer required.
     assert "Stripe directly" in wizard
 
-    misc = open("/app/frontend/src/routes/miscRoutes.tsx").read()
+    misc = open("source/web-assets/frontend/src/routes/miscRoutes.tsx").read()
     assert '/payouts/setup' in misc
 
 
@@ -5727,7 +5727,7 @@ def test_offline_service_worker_versioned():
     """2026-05-13 perf: Offline asset cache SW caches the app shell so
     flaky connections don't blank the page. Versioned cache name evicts
     old caches on activate."""
-    sw = open("/app/frontend/public/gv-sw.js").read()
+    sw = open("source/web-assets/frontend/public/gv-sw.js").read()
     assert "CACHE_VERSION" in sw
     assert "skipWaiting" in sw
     assert "clients.claim" in sw
@@ -5850,7 +5850,7 @@ def test_economic_engine_routes_registered():
 
 def test_economic_engine_card_and_page_mounted():
     """Frontend surfaces — God Mode admin card + public /economic-engine page."""
-    card = open("/app/frontend/src/components/economic_engine/EconomicEngineCard.tsx").read()
+    card = open("source/web-assets/frontend/src/components/economic_engine/EconomicEngineCard.tsx").read()
     for tid in [
         "economic-engine-card",
         "economic-engine-status-pill",
@@ -5863,7 +5863,7 @@ def test_economic_engine_card_and_page_mounted():
     ]:
         assert tid in card, f"EconomicEngineCard missing testid: {tid}"
 
-    page = open("/app/frontend/src/pages/EconomicEnginePage.tsx").read()
+    page = open("source/web-assets/frontend/src/pages/EconomicEnginePage.tsx").read()
     for tid in [
         "economic-engine-page",
         "economic-engine-pillars",
@@ -5871,11 +5871,11 @@ def test_economic_engine_card_and_page_mounted():
     ]:
         assert tid in page, f"EconomicEnginePage missing testid: {tid}"
 
-    god = open("/app/frontend/src/pages/admin/GodModeDashboard.tsx").read()
+    god = open("source/web-assets/frontend/src/pages/admin/GodModeDashboard.tsx").read()
     assert "EconomicEngineCard" in god
     assert "<EconomicEngineCard />" in god
 
-    misc = open("/app/frontend/src/routes/miscRoutes.tsx").read()
+    misc = open("source/web-assets/frontend/src/routes/miscRoutes.tsx").read()
     assert '"/economic-engine"' in misc
 
 
@@ -5889,7 +5889,7 @@ def test_definitive_economy_positioning_app_wide():
     that mentions tokenomics. Feb 2026 rewrite: in-app ₵ recirculates,
     DSG token burns — this lock guards the marketing copy parity."""
     # 1. EconomicEngineCard: header attributes burn to DSG, not VIBEZ.
-    card = open("/app/frontend/src/components/economic_engine/EconomicEngineCard.tsx").read()
+    card = open("source/web-assets/frontend/src/components/economic_engine/EconomicEngineCard.tsx").read()
     assert "economic-engine-credits-strip" in card
     assert "DSG Token Engine" in card, (
         "EconomicEngineCard must attribute the burn engine to DSG, not VIBEZ"
@@ -5900,7 +5900,7 @@ def test_definitive_economy_positioning_app_wide():
     assert "Standard Utility Unit" in card
 
     # 2. EconomicEnginePage: dual-economy mission copy.
-    page = open("/app/frontend/src/pages/EconomicEnginePage.tsx").read()
+    page = open("source/web-assets/frontend/src/pages/EconomicEnginePage.tsx").read()
     assert "premium standard" in page
     assert "In-app VIBEZ" in page or "VIBEZ ₵" in page
     assert "DSG Token" in page
@@ -5910,14 +5910,14 @@ def test_definitive_economy_positioning_app_wide():
     assert "40/30/30" in page or "40 / 30 / 30" in page
 
     # 3. Landing tour video caption — dual-economy line.
-    tour = open("/app/frontend/src/components/landing/LandingTourVideo.tsx").read()
+    tour = open("source/web-assets/frontend/src/components/landing/LandingTourVideo.tsx").read()
     assert "VIBEZ recirculate" in tour, (
         "Tour caption at t=224 must reference VIBEZ recirculation"
     )
     assert "750M" in tour, "Tour caption must reference DSG 750M"
 
     # 4. LandingFeatureAccordions — velocity stats, not burn stats.
-    acc = open("/app/frontend/src/components/landing/LandingFeatureAccordions.tsx").read()
+    acc = open("source/web-assets/frontend/src/components/landing/LandingFeatureAccordions.tsx").read()
     assert "useVelocityStats" in acc, (
         "Accordions must read live recirculation velocity stats"
     )
@@ -6049,7 +6049,7 @@ def test_avp_constants_endpoint_public():
 def test_avp_frontend_surfaces_wired():
     """AgeVerificationPage + AgeVerificationGate (rebuilt May 13 2026 for
     page-level compliance) + AgeVerificationQueueCard wired into God Mode."""
-    page = open("/app/frontend/src/pages/AgeVerificationPage.tsx").read()
+    page = open("source/web-assets/frontend/src/pages/AgeVerificationPage.tsx").read()
     for tid in [
         "age-verification-page",
         "age-verification-form",
@@ -6061,7 +6061,7 @@ def test_avp_frontend_surfaces_wired():
     ]:
         assert tid in page, f"AgeVerificationPage missing testid: {tid}"
 
-    gate = open("/app/frontend/src/components/age_verification/AgeVerificationGate.tsx").read()
+    gate = open("source/web-assets/frontend/src/components/age_verification/AgeVerificationGate.tsx").read()
     assert "/api/age-verification/eligibility/" in gate, (
         "AgeVerificationGate lost its eligibility lookup"
     )
@@ -6070,7 +6070,7 @@ def test_avp_frontend_surfaces_wired():
     )
     assert 'data-testid="avp-gate-loading"' in gate
 
-    queue = open("/app/frontend/src/components/admin/AgeVerificationQueueCard.tsx").read()
+    queue = open("source/web-assets/frontend/src/components/admin/AgeVerificationQueueCard.tsx").read()
     for tid in [
         "age-verification-queue-card",
         "avp-queue-filters",
@@ -6078,18 +6078,18 @@ def test_avp_frontend_surfaces_wired():
     ]:
         assert tid in queue, f"AgeVerificationQueueCard missing testid: {tid}"
 
-    god = open("/app/frontend/src/pages/admin/GodModeDashboard.tsx").read()
+    god = open("source/web-assets/frontend/src/pages/admin/GodModeDashboard.tsx").read()
     assert "AgeVerificationQueueCard" in god
     assert "<AgeVerificationQueueCard />" in god
 
-    misc = open("/app/frontend/src/routes/miscRoutes.tsx").read()
+    misc = open("source/web-assets/frontend/src/routes/miscRoutes.tsx").read()
     assert '"/restricted-goods-verification"' in misc
 
 
 def test_avp_restaurant_detail_shadow_gates_restricted():
     """The /restaurants/{id} endpoint applies the shadow-gate so alcohol
     + tobacco are stripped for unverified viewers."""
-    detail = open("/app/backend/routes/restaurants.py").read()
+    detail = open("source/web-assets/backend/routes/restaurants.py").read()
     assert "shadow_filter_menu" in detail
     assert '"alcohol"' in detail and '"tobacco"' in detail
     assert "age_gate" in detail
@@ -6180,7 +6180,7 @@ def test_corrected_kyc_constants_endpoint_surfaces_vendor_info():
 def test_corrected_kyc_frontend_surfaces_vendor():
     """AgeVerificationPage shows the KYC vendor (Stripe Identity) for
     user trust + audit transparency."""
-    page = open("/app/frontend/src/pages/AgeVerificationPage.tsx").read()
+    page = open("source/web-assets/frontend/src/pages/AgeVerificationPage.tsx").read()
     assert "avp-kyc-vendor-label" in page
     assert "Stripe Identity" in page
 
@@ -6193,7 +6193,7 @@ def test_stripe_identity_webhook_dual_mode():
 
     Both paths funnel through `apply_vendor_decision` so the audit log
     sees Stripe events identically to admin-fired decisions."""
-    handler = open("/app/backend/routes/age_verification.py").read()
+    handler = open("source/web-assets/backend/routes/age_verification.py").read()
 
     # Signature verification wired with the env-driven secret.
     assert "STRIPE_IDENTITY_WEBHOOK_SECRET" in handler
@@ -6328,7 +6328,7 @@ def test_content_rights_policy_endpoint_public():
 
 def test_content_rights_frontend_surfaces_wired():
     """ContentRightsPage + DMCA admin queue card mounted on God Mode."""
-    page = open("/app/frontend/src/pages/ContentRightsPage.tsx").read()
+    page = open("source/web-assets/frontend/src/pages/ContentRightsPage.tsx").read()
     for tid in [
         "content-rights-page",
         "content-rights-counters",
@@ -6349,7 +6349,7 @@ def test_content_rights_frontend_surfaces_wired():
                    "Metadata Keyword Filter", "Escrow"]:
         assert pillar in page, f"Pillar missing: {pillar}"
 
-    queue = open("/app/frontend/src/components/admin/ContentRightsDmcaQueueCard.tsx").read()
+    queue = open("source/web-assets/frontend/src/components/admin/ContentRightsDmcaQueueCard.tsx").read()
     for tid in [
         "content-rights-dmca-queue-card",
         "content-rights-dmca-filters",
@@ -6357,11 +6357,11 @@ def test_content_rights_frontend_surfaces_wired():
     ]:
         assert tid in queue, f"DMCA queue card missing testid: {tid}"
 
-    god = open("/app/frontend/src/pages/admin/GodModeDashboard.tsx").read()
+    god = open("source/web-assets/frontend/src/pages/admin/GodModeDashboard.tsx").read()
     assert "ContentRightsDmcaQueueCard" in god
     assert "<ContentRightsDmcaQueueCard />" in god
 
-    misc = open("/app/frontend/src/routes/miscRoutes.tsx").read()
+    misc = open("source/web-assets/frontend/src/routes/miscRoutes.tsx").read()
     assert '"/content-rights"' in misc
 
 
@@ -6386,12 +6386,12 @@ def test_dmca_designated_agent_registered():
     assert os.environ.get("DMCA_AGENT_EMAIL") == "customerservice@globalvibezdsg.com"
 
     # Service code reads the env vars into the policy snapshot.
-    svc = open("/app/backend/services/content_rights.py").read()
+    svc = open("source/web-assets/backend/services/content_rights.py").read()
     assert 'os.environ.get("DMCA_AGENT_NAME"' in svc
     assert "dmca_agent" in svc
 
     # Frontend renders the agent block (testids match the new region).
-    page = open("/app/frontend/src/pages/ContentRightsPage.tsx").read()
+    page = open("source/web-assets/frontend/src/pages/ContentRightsPage.tsx").read()
     for tid in [
         "content-rights-dmca-agent",
         "content-rights-dmca-agent-name",
@@ -6407,11 +6407,11 @@ def test_volumetric_dashboard_every_tile_has_a_route():
     where /dating, /cinema-room, /vibe-spots were tiles that 404'd."""
     import re, glob
 
-    vol = open("/app/frontend/src/pages/VolumetricDashboard.tsx").read()
+    vol = open("source/web-assets/frontend/src/pages/VolumetricDashboard.tsx").read()
     tile_paths = set(re.findall(r'path:\s*"(/[^"]+)"', vol))
 
     all_routes = set()
-    for f in glob.glob("/app/frontend/src/routes/*.tsx") + ["/app/frontend/src/App.tsx"]:
+    for f in glob.glob("source/web-assets/frontend/src/routes/*.tsx") + ["source/web-assets/frontend/src/App.tsx"]:
         try:
             for m in re.finditer(r'<Route\s+path="(/[^"]+)"', open(f).read()):
                 all_routes.add(m.group(1))
@@ -6440,7 +6440,7 @@ def test_video_vault_endpoints_and_page_wired():
       - License tiers + metadata blocklist enforced.
     """
     # ── Backend ─────────────────────────────────────────────────────────
-    route_src = open("/app/backend/routes/video_vault.py").read()
+    route_src = open("source/web-assets/backend/routes/video_vault.py").read()
     # Correct prefix (NO /api — registry strips that since api_router has /api).
     assert 'prefix="/video-vault"' in route_src, "Video Vault route prefix should be /video-vault (api_router adds /api)"
     # Wired through content rights, not a side-channel.
@@ -6456,12 +6456,12 @@ def test_video_vault_endpoints_and_page_wired():
     assert '"master_url"' in route_src
 
     # Registry registers it.
-    registry = open("/app/backend/routes/registry.py").read()
+    registry = open("source/web-assets/backend/routes/registry.py").read()
     assert "from routes.video_vault import router as video_vault_router" in registry
     assert "api_router.include_router(video_vault_router)" in registry
 
     # ── Frontend page ───────────────────────────────────────────────────
-    page = open("/app/frontend/src/pages/dsg/VideoVaultMarketplace.tsx").read()
+    page = open("source/web-assets/frontend/src/pages/dsg/VideoVaultMarketplace.tsx").read()
     for tid in (
         "video-vault-root",
         "video-vault-list-cta",
@@ -6480,11 +6480,11 @@ def test_video_vault_endpoints_and_page_wired():
     assert "/api/video-vault/stats" in page
 
     # ── Router + Dashboard tile ─────────────────────────────────────────
-    routes = open("/app/frontend/src/routes/dsgRoutes.tsx").read()
+    routes = open("source/web-assets/frontend/src/routes/dsgRoutes.tsx").read()
     assert "/dsg/video-vault" in routes
     assert "VideoVaultMarketplace" in routes
 
-    vol = open("/app/frontend/src/pages/VolumetricDashboard.tsx").read()
+    vol = open("source/web-assets/frontend/src/pages/VolumetricDashboard.tsx").read()
     assert "/dsg/video-vault" in vol, "Video Vault tile missing from Volumetric Dashboard"
     assert "Video Vault" in vol
 
@@ -6504,8 +6504,8 @@ def test_beat_vault_content_rights_wiring():
         DRM-protected beats.
       - Metadata blocklist is enforced on the upload.
     """
-    routes_src = open("/app/backend/routes/freestyle_battles_routes.py").read()
-    service_src = open("/app/backend/services/freestyle_battles.py").read()
+    routes_src = open("source/web-assets/backend/routes/freestyle_battles_routes.py").read()
+    service_src = open("source/web-assets/backend/services/freestyle_battles.py").read()
 
     # Dataclass extension.
     assert "audio_url: Optional[str] = None" in service_src
@@ -6548,7 +6548,7 @@ def test_cloudflare_stream_ingest_wired():
       - hls.js dependency installed (required for cross-browser HLS).
     """
     # ── Backend ─────────────────────────────────────────────────────────
-    src = open("/app/backend/routes/cloudflare_stream.py").read()
+    src = open("source/web-assets/backend/routes/cloudflare_stream.py").read()
     assert 'prefix="/streaming/cloudflare"' in src, "CF Stream prefix should be /streaming/cloudflare (api_router adds /api)"
     # Three credentials read from env (the four-key contract).
     for env_key in (
@@ -6567,18 +6567,18 @@ def test_cloudflare_stream_ingest_wired():
     assert "hmac.compare_digest" in src
 
     # Registry mounts it.
-    registry = open("/app/backend/routes/registry.py").read()
+    registry = open("source/web-assets/backend/routes/registry.py").read()
     assert "from routes.cloudflare_stream import router as cf_stream_router" in registry
 
     # ── Frontend ────────────────────────────────────────────────────────
-    player = open("/app/frontend/src/components/streaming/HLSPlayer.tsx").read()
+    player = open("source/web-assets/frontend/src/components/streaming/HLSPlayer.tsx").read()
     assert 'import Hls from "hls.js"' in player or "import Hls from 'hls.js'" in player
     assert 'data-testid="hls-player"' in player
     assert "lowLatencyMode" in player
     # Safari/iOS native HLS fallback present.
     assert 'application/vnd.apple.mpegurl' in player
 
-    studio = open("/app/frontend/src/pages/streaming/StreamerStudio.tsx").read()
+    studio = open("source/web-assets/frontend/src/pages/streaming/StreamerStudio.tsx").read()
     for tid in (
         "streamer-studio-root",
         "streamer-studio-provision",
@@ -6593,16 +6593,16 @@ def test_cloudflare_stream_ingest_wired():
     assert "/api/streaming/cloudflare/live-inputs" in studio
 
     # Router + Dashboard tile.
-    routes = open("/app/frontend/src/routes/streamingRoutes.tsx").read()
+    routes = open("source/web-assets/frontend/src/routes/streamingRoutes.tsx").read()
     assert "/streamer/studio" in routes
     assert "StreamerStudio" in routes
 
-    vol = open("/app/frontend/src/pages/VolumetricDashboard.tsx").read()
+    vol = open("source/web-assets/frontend/src/pages/VolumetricDashboard.tsx").read()
     assert "/streamer/studio" in vol, "Streamer Studio tile missing from Volumetric Dashboard"
 
     # hls.js installed in package.json (required for cross-browser HLS).
     import json
-    pkg = json.load(open("/app/frontend/package.json"))
+    pkg = json.load(open("source/web-assets/frontend/package.json"))
     deps = {**pkg.get("dependencies", {}), **pkg.get("devDependencies", {})}
     assert "hls.js" in deps, "hls.js must be installed for HLS playback"
 
@@ -6622,9 +6622,9 @@ def test_live_now_wall_and_watch_room_wired():
       - Wall hits the only_live=true endpoint, not a side-channel.
       - Watch route uses :inputId param matching the Cloudflare uid format.
     """
-    wall = open("/app/frontend/src/pages/streaming/LiveNowWall.tsx").read()
-    watch = open("/app/frontend/src/pages/streaming/WatchRoom.tsx").read()
-    routes = open("/app/frontend/src/routes/streamingRoutes.tsx").read()
+    wall = open("source/web-assets/frontend/src/pages/streaming/LiveNowWall.tsx").read()
+    watch = open("source/web-assets/frontend/src/pages/streaming/WatchRoom.tsx").read()
+    routes = open("source/web-assets/frontend/src/routes/streamingRoutes.tsx").read()
 
     # Pages mount + reuse shared player.
     for tid in (
@@ -6666,7 +6666,7 @@ def test_live_now_wall_and_watch_room_wired():
     )
 
     # Volumetric Dashboard tile.
-    vol = open("/app/frontend/src/pages/VolumetricDashboard.tsx").read()
+    vol = open("source/web-assets/frontend/src/pages/VolumetricDashboard.tsx").read()
     assert "/streams/live" in vol, "Live Now Wall tile missing from Volumetric Dashboard"
 
 
@@ -6684,7 +6684,7 @@ def test_stripe_payouts_webhook_wired():
       - Per-event handlers are idempotent and async (no blocking the proxy).
       - Registered in routes/registry.py.
     """
-    src = open("/app/backend/routes/stripe_payouts_webhook.py").read()
+    src = open("source/web-assets/backend/routes/stripe_payouts_webhook.py").read()
     assert 'prefix="/payouts"' in src, "Payouts webhook must use /payouts prefix"
     assert "stripe.Webhook.construct_event" in src, "Must use Stripe's official verifier (handles v0/v1, replay tolerance)"
     assert "STRIPE_WEBHOOK_SECRET" in src
@@ -6708,7 +6708,7 @@ def test_stripe_payouts_webhook_wired():
     assert len(handler_pattern.findall(src)) >= 7, "Each Stripe event handler must be async"
 
     # Registry mounts it.
-    registry = open("/app/backend/routes/registry.py").read()
+    registry = open("source/web-assets/backend/routes/registry.py").read()
     assert "from routes.stripe_payouts_webhook import router as stripe_payouts_router" in registry
 
 
@@ -6724,7 +6724,7 @@ def test_stripe_identity_webhook_handles_real_payload_shape():
     Now: body is parsed manually inside the function, so mode 1
     (Stripe-signed real webhook) and mode 2 (admin stub) both work.
     """
-    src = open("/app/backend/routes/age_verification.py").read()
+    src = open("source/web-assets/backend/routes/age_verification.py").read()
 
     # The function signature MUST NOT include a Pydantic body param —
     # only Request + user dependency.
@@ -6764,7 +6764,7 @@ def test_featured_streamers_tier_wired():
       - Live Now Wall annotates is_featured + sorts featured first.
       - Studio page surfaces the upsell card with the right testids.
     """
-    src = open("/app/backend/routes/featured_streamers.py").read()
+    src = open("source/web-assets/backend/routes/featured_streamers.py").read()
     assert 'prefix="/featured-streamers"' in src
     assert "FEATURED_PRICE_USD = 5.00" in src
     assert "FEATURED_DURATION_DAYS = 30" in src
@@ -6777,28 +6777,28 @@ def test_featured_streamers_tier_wired():
     assert "client_reference_id=f\"{FEATURED_REF_PREFIX}{req.streamer_id}\"" in src
 
     # Registry mounts it.
-    registry = open("/app/backend/routes/registry.py").read()
+    registry = open("source/web-assets/backend/routes/registry.py").read()
     assert "from routes.featured_streamers import router as featured_router" in registry
 
     # Payouts webhook routes feature: refs.
-    payouts = open("/app/backend/routes/stripe_payouts_webhook.py").read()
+    payouts = open("source/web-assets/backend/routes/stripe_payouts_webhook.py").read()
     assert 'ref.startswith("feature:")' in payouts
     assert "apply_feature_grant" in payouts
 
     # Cloudflare live-inputs listing layers in feature metadata.
-    cf = open("/app/backend/routes/cloudflare_stream.py").read()
+    cf = open("source/web-assets/backend/routes/cloudflare_stream.py").read()
     assert "featured_streamers" in cf
     assert "is_featured" in cf
     assert "featured_until" in cf
 
     # Frontend: wall renders featured badge + glow style.
-    wall = open("/app/frontend/src/pages/streaming/LiveNowWall.tsx").read()
+    wall = open("source/web-assets/frontend/src/pages/streaming/LiveNowWall.tsx").read()
     assert "is_featured" in wall
     assert "live-now-featured-badge-" in wall, "Featured badge testid missing"
     assert "featured_until" in wall
 
     # Frontend: studio page has the upsell card.
-    studio = open("/app/frontend/src/pages/streaming/StreamerStudio.tsx").read()
+    studio = open("source/web-assets/frontend/src/pages/streaming/StreamerStudio.tsx").read()
     for tid in (
         "streamer-studio-featured-upsell",
         "streamer-studio-featured-purchase",
@@ -6822,7 +6822,7 @@ def test_cloudflare_stream_analytics_wired():
       - Charts use recharts (already installed) — no new deps.
       - Volumetric Dashboard tile + Studio header link both present.
     """
-    src = open("/app/backend/routes/cloudflare_stream.py").read()
+    src = open("source/web-assets/backend/routes/cloudflare_stream.py").read()
     assert "CF_GRAPHQL_URL" in src and "api.cloudflare.com/client/v4/graphql" in src
     assert "async def _cf_graphql" in src
     assert "@router.get(\"/analytics/{input_id}\")" in src
@@ -6835,7 +6835,7 @@ def test_cloudflare_stream_analytics_wired():
         assert key in src, f"Analytics response missing key: {key}"
 
     # Frontend page mounted + uses recharts.
-    page = open("/app/frontend/src/pages/streaming/StreamerAnalytics.tsx").read()
+    page = open("source/web-assets/frontend/src/pages/streaming/StreamerAnalytics.tsx").read()
     assert "from \"recharts\"" in page or "from 'recharts'" in page
     assert "/api/streaming/cloudflare/analytics/" in page
     for tid in (
@@ -6849,21 +6849,21 @@ def test_cloudflare_stream_analytics_wired():
         assert tid in page, f"StreamerAnalytics missing testid: {tid}"
 
     # Router + dashboard tile.
-    routes = open("/app/frontend/src/routes/streamingRoutes.tsx").read()
+    routes = open("source/web-assets/frontend/src/routes/streamingRoutes.tsx").read()
     assert "/streamer/analytics" in routes
     assert "StreamerAnalytics" in routes
 
-    vol = open("/app/frontend/src/pages/VolumetricDashboard.tsx").read()
+    vol = open("source/web-assets/frontend/src/pages/VolumetricDashboard.tsx").read()
     assert "/streamer/analytics" in vol, "Stream Analytics tile missing from Volumetric Dashboard"
 
     # Studio links to analytics so streamers discover the new surface.
-    studio = open("/app/frontend/src/pages/streaming/StreamerStudio.tsx").read()
+    studio = open("source/web-assets/frontend/src/pages/streaming/StreamerStudio.tsx").read()
     assert "/streamer/analytics" in studio
     assert "streamer-studio-analytics-link" in studio
 
     # recharts dep declared.
     import json
-    pkg = json.load(open("/app/frontend/package.json"))
+    pkg = json.load(open("source/web-assets/frontend/package.json"))
     deps = {**pkg.get("dependencies", {}), **pkg.get("devDependencies", {})}
     assert "recharts" in deps, "recharts must be installed for analytics charts"
 
@@ -6882,7 +6882,7 @@ def test_streamer_wrap_up_emails_wired():
       - Resend is the delivery mechanism (not hand-rolled SMTP).
       - Idempotent per ISO week via streamer_wrap_up_runs audit.
     """
-    svc = open("/app/backend/services/streamer_wrap_up_service.py").read()
+    svc = open("source/web-assets/backend/services/streamer_wrap_up_service.py").read()
     assert "async def compute_streamer_wrap_up" in svc
     assert "def render_wrap_up_email_html" in svc
     assert "async def dispatch_one_wrap_up" in svc
@@ -6893,24 +6893,24 @@ def test_streamer_wrap_up_emails_wired():
     assert "iso_week" in svc, "Should dedupe by ISO week"
     assert "resend.Emails.send" in svc, "Should use Resend SDK, not raw SMTP"
 
-    routes = open("/app/backend/routes/streamer_wrap_up.py").read()
+    routes = open("source/web-assets/backend/routes/streamer_wrap_up.py").read()
     assert 'prefix="/streamer-wrap-up"' in routes
     assert "preview/{streamer_id}" in routes
     assert "send/{streamer_id}" in routes
     assert "dispatch-weekly" in routes
 
     # Registry mounts it.
-    registry = open("/app/backend/routes/registry.py").read()
+    registry = open("source/web-assets/backend/routes/registry.py").read()
     assert "from routes.streamer_wrap_up import router as wrap_up_router" in registry
 
     # Background loop is auto-started via the lifespan kickoff list.
-    lifespan = open("/app/backend/lifespan.py").read()
-    workers = open("/app/backend/lifespan_workers.py").read()
+    lifespan = open("source/web-assets/backend/lifespan.py").read()
+    workers = open("source/web-assets/backend/lifespan_workers.py").read()
     assert "_start_streamer_wrap_up" in lifespan
     assert "streamer_wrap_up_loop" in workers
 
     # Frontend exposes the manual-send button on the analytics page.
-    analytics = open("/app/frontend/src/pages/streaming/StreamerAnalytics.tsx").read()
+    analytics = open("source/web-assets/frontend/src/pages/streaming/StreamerAnalytics.tsx").read()
     assert "streamer-analytics-email-wrap-up" in analytics
     assert "/api/streamer-wrap-up/send/" in analytics
 
@@ -6930,8 +6930,8 @@ def test_games_have_no_fiat_signs():
     pattern = re.compile(r"(?<![\\${])\$[0-9]")  # $ directly followed by digit, NOT inside ${} or \\$ tw-arbitrary
     offenders = []
     games_dirs = [
-        pathlib.Path("/app/frontend/src/pages/games"),
-        pathlib.Path("/app/frontend/src/components/games"),
+        pathlib.Path("source/web-assets/frontend/src/pages/games"),
+        pathlib.Path("source/web-assets/frontend/src/components/games"),
     ]
     for d in games_dirs:
         if not d.exists():
@@ -6959,19 +6959,19 @@ def test_games_enforce_50_coin_min_bet_floor():
     """Founder rule: 50-coin minimum bet platform-wide. Lock the
     canonical defaults so nobody silently re-lowers them.
     """
-    bj = open("/app/backend/services/blackjack_multiplayer.py").read()
+    bj = open("source/web-assets/backend/services/blackjack_multiplayer.py").read()
     # The factory defaults to 50 + clamps anything lower to 50.
     assert "min_bet: int = 50" in bj, "Blackjack default min_bet must be 50 coins"
     assert "max(int(min_bet or 50), 50)" in bj, "Blackjack must hard-floor min_bet at 50"
 
-    slots = open("/app/backend/routes/multiplayer_slots.py").read()
+    slots = open("source/web-assets/backend/routes/multiplayer_slots.py").read()
     # Default rooms must not have a min_bet under 50.
     import re
     for m in re.finditer(r"'min_bet':\s*(\d+)", slots):
         val = int(m.group(1))
         assert val >= 50, f"Slots default min_bet={val} violates 50-coin floor"
 
-    v654 = open("/app/backend/routes/vibez_654_prescription.py").read()
+    v654 = open("source/web-assets/backend/routes/vibez_654_prescription.py").read()
     # Founder-locked exception to the 50-coin floor: Vibe Dice 654 was
     # designed around the [5, 10, 25, 50, 100] chip ladder and the
     # original "perfect" play feel depends on the 5-coin starter chip.
@@ -6982,18 +6982,18 @@ def test_games_enforce_50_coin_min_bet_floor():
         "exception, otherwise it looks like the 50-coin rule was forgotten."
     )
 
-    bj_svc = open("/app/backend/services/games/blackjack.py").read()
+    bj_svc = open("source/web-assets/backend/services/games/blackjack.py").read()
     assert "min_bet: int = 50" in bj_svc, "Blackjack service default min_bet must be 50"
     assert "max(min_bet, 50)" in bj_svc
 
-    mp = open("/app/backend/services/multiplayer.py").read()
+    mp = open("source/web-assets/backend/services/multiplayer.py").read()
     assert "max(int(data.get('min_bet', 50) or 50), 50)" in mp, "Multiplayer must hard-floor at 50"
 
 
 def test_blackjack_error_message_uses_coin_glyph_not_dollar():
     """Founder rule: error/result strings on games render coin amounts
     with the ₵ glyph, never $. Locks the previously-fixed line."""
-    src = open("/app/backend/services/blackjack_multiplayer.py").read()
+    src = open("source/web-assets/backend/services/blackjack_multiplayer.py").read()
     # The old `f"Minimum bet is ${...}"` is gone, new ₵{...} version is in.
     assert "Minimum bet is $" not in src, "Blackjack error must not use $ sign"
     assert "Minimum bet is ₵" in src, "Blackjack error must use ₵ coin glyph"
@@ -7028,7 +7028,7 @@ def test_streamer_referral_module_imports_and_routes_mount() -> None:
 
     # Mounted into the main registry?
     from pathlib import Path
-    registry = Path("/app/backend/routes/registry.py").read_text()
+    registry = Path("source/web-assets/backend/routes/registry.py").read_text()
     assert "from routes.streamer_referral import router as referral_router" in registry, (
         "Streamer Referral router not mounted in registry.py"
     )
@@ -7039,7 +7039,7 @@ def test_cloudflare_webhook_triggers_referral_payout() -> None:
     when a stream transitions to LIVE — otherwise the viral loop never
     actually fires."""
     from pathlib import Path
-    src = Path("/app/backend/routes/cloudflare_stream.py").read_text()
+    src = Path("source/web-assets/backend/routes/cloudflare_stream.py").read_text()
     assert "from routes.streamer_referral import qualify_on_live" in src, (
         "CF webhook lost the referral_payout import — referrals never pay out."
     )
@@ -7053,7 +7053,7 @@ def test_signup_page_captures_ref_query_param() -> None:
     show a banner, and POST /redeem after successful signup so the
     referrer can be paid when the new user later goes live."""
     from pathlib import Path
-    src = Path("/app/frontend/src/pages/SignupPage.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/pages/SignupPage.tsx").read_text()
     assert "searchParams.get('ref')" in src, (
         "Signup page lost the ?ref= query-param capture"
     )
@@ -7072,7 +7072,7 @@ def test_streamer_studio_renders_referral_card() -> None:
     """Streamer Studio dashboard MUST include the Referral viral-loop
     card with copy + share buttons + stats grid."""
     from pathlib import Path
-    src = Path("/app/frontend/src/pages/streaming/StreamerStudio.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/pages/streaming/StreamerStudio.tsx").read_text()
     assert 'data-testid="streamer-studio-referral-card"' in src, (
         "Streamer Studio lost the referral card"
     )
@@ -7095,7 +7095,7 @@ def test_platform_min_bet_constant_exists_and_is_50() -> None:
 def test_wave2_casino_routes_enforce_50_floor() -> None:
     """All Wave 2 casino games (11 routes) gate stakes at ge=50."""
     from pathlib import Path
-    src = Path("/app/backend/routes/casino_wave2_routes.py").read_text()
+    src = Path("source/web-assets/backend/routes/casino_wave2_routes.py").read_text()
     # NO stake validators below 50 should remain.
     assert "ge=0" not in src or src.count("stake: float = Field(..., gt=0)") == 0, (
         "Wave 2 casino still has a stake validator that accepts bets below the floor"
@@ -7108,12 +7108,12 @@ def test_wave2_casino_routes_enforce_50_floor() -> None:
 def test_core_casino_floors_locked_at_50() -> None:
     """Slots, blackjack, baccarat, watch_and_wager, cyber_casino — all 50."""
     from pathlib import Path
-    blackjack = Path("/app/backend/routes/blackjack.py").read_text()
-    baccarat = Path("/app/backend/routes/baccarat.py").read_text()
-    cyber = Path("/app/backend/routes/cyber_casino.py").read_text()
-    wager = Path("/app/backend/routes/watch_and_wager.py").read_text()
-    vibes_slots = Path("/app/backend/routes/vibes_slots_routes.py").read_text()
-    slots = Path("/app/backend/routes/slots.py").read_text()
+    blackjack = Path("source/web-assets/backend/routes/blackjack.py").read_text()
+    baccarat = Path("source/web-assets/backend/routes/baccarat.py").read_text()
+    cyber = Path("source/web-assets/backend/routes/cyber_casino.py").read_text()
+    wager = Path("source/web-assets/backend/routes/watch_and_wager.py").read_text()
+    vibes_slots = Path("source/web-assets/backend/routes/vibes_slots_routes.py").read_text()
+    slots = Path("source/web-assets/backend/routes/slots.py").read_text()
 
     assert "PLATFORM_MIN_BET" in blackjack, "Blackjack route lost the PLATFORM_MIN_BET import"
     assert "PLATFORM_MIN_BET" in baccarat, "Baccarat route lost the PLATFORM_MIN_BET import"
@@ -7132,10 +7132,10 @@ def test_no_dollar_glyph_in_user_facing_game_strings() -> None:
     from pathlib import Path
     import re
     paths = [
-        "/app/backend/routes/multiplayer_slots.py",
-        "/app/backend/routes/vibez_654_prescription.py",
-        "/app/backend/routes/vibe_654_tournament.py",
-        "/app/backend/routes/metahuman_control.py",
+        "source/web-assets/backend/routes/multiplayer_slots.py",
+        "source/web-assets/backend/routes/vibez_654_prescription.py",
+        "source/web-assets/backend/routes/vibe_654_tournament.py",
+        "source/web-assets/backend/routes/metahuman_control.py",
     ]
     # Match $<digit> / $<{var}> / $<space-then-uppercase>  but allow $set, $inc, etc.
     bad = re.compile(r'(\$\{[a-z_]|"\$[0-9]|\) \$[a-zA-Z]|pot.*: \$\{|f"[^"]*\$\{(?!set|inc|push|pull|eq)[a-z_])')
@@ -7169,7 +7169,7 @@ def test_streamer_follow_module_mounted() -> None:
     )
 
     from pathlib import Path
-    reg = Path("/app/backend/routes/registry.py").read_text()
+    reg = Path("source/web-assets/backend/routes/registry.py").read_text()
     assert "from routes.streamer_follow import router as follow_router" in reg, (
         "Streamer Follow router not mounted in registry.py"
     )
@@ -7179,7 +7179,7 @@ def test_cloudflare_webhook_fires_live_push_fanout() -> None:
     """CF Stream webhook MUST call notify_followers_of_live_stream when
     a stream first goes live — otherwise followers never get buzzed."""
     from pathlib import Path
-    src = Path("/app/backend/routes/cloudflare_stream.py").read_text()
+    src = Path("source/web-assets/backend/routes/cloudflare_stream.py").read_text()
     assert "from routes.streamer_follow import notify_followers_of_live_stream" in src, (
         "CF webhook lost the follow-push import"
     )
@@ -7192,7 +7192,7 @@ def test_watch_room_has_follow_button() -> None:
     """The watch page MUST render the Follow/Following bell so viewers
     can opt in for live pings."""
     from pathlib import Path
-    src = Path("/app/frontend/src/pages/streaming/WatchRoom.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/pages/streaming/WatchRoom.tsx").read_text()
     assert 'data-testid="watch-room-follow-btn"' in src, (
         "WatchRoom lost the Follow button"
     )
@@ -7254,7 +7254,7 @@ def test_high_roller_webhook_handles_vip_prefix() -> None:
     Without this, paid checkouts never flip vip_until and users pay for
     nothing."""
     from pathlib import Path
-    src = Path("/app/backend/routes/stripe_payouts_webhook.py").read_text()
+    src = Path("source/web-assets/backend/routes/stripe_payouts_webhook.py").read_text()
     assert 'ref.startswith("vip:")' in src, (
         "Webhook lost the vip: branch — Stripe checkouts won't grant VIP"
     )
@@ -7264,7 +7264,7 @@ def test_high_roller_webhook_handles_vip_prefix() -> None:
 
 def test_high_roller_routes_mounted_in_registry() -> None:
     from pathlib import Path
-    reg = Path("/app/backend/routes/registry.py").read_text()
+    reg = Path("source/web-assets/backend/routes/registry.py").read_text()
     assert "from routes.high_roller import router as high_roller_router" in reg, (
         "High Roller router not mounted in registry.py"
     )
@@ -7275,11 +7275,11 @@ def test_high_roller_blackjack_isolates_min_bet_from_standard_games() -> None:
     only the VIP wrapper bumps it to 10,000. Otherwise the regression
     on test_games_enforce_50_coin_min_bet_floor would start failing."""
     from pathlib import Path
-    standard = Path("/app/backend/routes/blackjack.py").read_text()
+    standard = Path("source/web-assets/backend/routes/blackjack.py").read_text()
     assert "PLATFORM_MIN_BET" in standard, (
         "Standard Blackjack lost the 50-coin floor import"
     )
-    vip = Path("/app/backend/routes/high_roller.py").read_text()
+    vip = Path("source/web-assets/backend/routes/high_roller.py").read_text()
     assert "HIGH_ROLLER_MIN_BET" in vip
     assert "PLATFORM_MIN_BET" not in vip, (
         "VIP route should not use the standard 50-coin constant"
@@ -7290,8 +7290,8 @@ def test_high_roller_frontend_pages_and_routes_wired() -> None:
     """The /casino/high-roller page and /casino/high-roller/blackjack
     table must both be registered and self-test-id-locked."""
     from pathlib import Path
-    page = Path("/app/frontend/src/pages/HighRollerCasino.tsx").read_text()
-    bj = Path("/app/frontend/src/pages/HighRollerBlackjack.tsx").read_text()
+    page = Path("source/web-assets/frontend/src/pages/HighRollerCasino.tsx").read_text()
+    bj = Path("source/web-assets/frontend/src/pages/HighRollerBlackjack.tsx").read_text()
     # Page test IDs — page uses template literals for per-tier IDs so
     # we check for the dynamic pattern instead of literal strings.
     for tid in [
@@ -7315,7 +7315,7 @@ def test_high_roller_frontend_pages_and_routes_wired() -> None:
     ]:
         assert f'data-testid="{tid}"' in bj, f"VIP Blackjack missing testid {tid}"
     # Routes
-    routes = Path("/app/frontend/src/routes/monetizationRoutes.tsx").read_text()
+    routes = Path("source/web-assets/frontend/src/routes/monetizationRoutes.tsx").read_text()
     assert 'path="/casino/high-roller"' in routes
     assert 'path="/casino/high-roller/blackjack"' in routes
 
@@ -7359,7 +7359,7 @@ def test_live_now_wall_sort_lambda_does_not_negate_strings() -> None:
     when both timestamps were missing — breaking /live-inputs entirely
     for any row that lacked status timestamps. Lock the fix."""
     from pathlib import Path
-    src = Path("/app/backend/routes/cloudflare_stream.py").read_text()
+    src = Path("source/web-assets/backend/routes/cloudflare_stream.py").read_text()
     # The broken pattern must be gone.
     assert '-((s.get("last_status_at") or s.get("created_at") or "") and 1)' not in src, (
         "Reintroduced the unary-minus-on-string bug in the live-inputs sort"
@@ -7374,7 +7374,7 @@ def test_scale_cache_wired_into_live_now_wall() -> None:
     """The Live Now Wall endpoint must consult Redis before hitting Mongo
     and write back to the cache on miss (Blueprint §Real-Time)."""
     from pathlib import Path
-    src = Path("/app/backend/routes/cloudflare_stream.py").read_text()
+    src = Path("source/web-assets/backend/routes/cloudflare_stream.py").read_text()
     assert "from services.scale_cache import cache_get, cache_set, TTL_LIVE_WALL" in src
     assert "live_inputs:only_live=" in src, "Cache key prefix lost"
     assert "cache_bulk_delete" in src, "CF webhook must invalidate live-wall cache"
@@ -7384,7 +7384,7 @@ def test_high_roller_indexes_registered_in_lifespan() -> None:
     """Compound indexes for VIP membership + Live Now Wall hot paths
     must be appended to the startup index set."""
     from pathlib import Path
-    src = Path("/app/backend/lifespan_indexes.py").read_text()
+    src = Path("source/web-assets/backend/lifespan_indexes.py").read_text()
     # VIP collection
     assert '"coll": "high_roller_vip"' in src
     # Featured streamers + follow fan-out
@@ -7396,7 +7396,7 @@ def test_production_launch_script_exists() -> None:
     """Blueprint §1: Gunicorn cluster launch script with 4×5000 conn config.
     Required for the production deploy outside the supervised preview pod."""
     from pathlib import Path
-    sh = Path("/app/backend/scripts/run_production.sh")
+    sh = Path("source/web-assets/backend/scripts/run_production.sh")
     assert sh.exists(), "Production launch script missing"
     body = sh.read_text()
     assert "gunicorn" in body
@@ -7408,7 +7408,7 @@ def test_master_stress_suite_exists() -> None:
     """Master Test Suite PDF — 4 stress tests must be parameterised and
     safety-gated by GVDSG_STRESS_ENABLE so they can't auto-fire."""
     from pathlib import Path
-    py = Path("/app/backend/scripts/master_stress_suite.py")
+    py = Path("source/web-assets/backend/scripts/master_stress_suite.py")
     assert py.exists(), "Master stress test suite missing"
     body = py.read_text()
     assert "GVDSG_STRESS_ENABLE" in body, "Safety toggle missing"
@@ -7454,13 +7454,13 @@ def test_vip_roulette_red_number_set_matches_european_wheel() -> None:
 
 def test_vip_roulette_and_baccarat_frontend_pages_exist() -> None:
     from pathlib import Path
-    rou = Path("/app/frontend/src/pages/HighRollerRoulette.tsx").read_text()
-    bac = Path("/app/frontend/src/pages/HighRollerBaccarat.tsx").read_text()
+    rou = Path("source/web-assets/frontend/src/pages/HighRollerRoulette.tsx").read_text()
+    bac = Path("source/web-assets/frontend/src/pages/HighRollerBaccarat.tsx").read_text()
     for tid in ["vip-roulette-page", "vip-roulette-spin-btn", "vip-roulette-clear-btn", "vip-roulette-chip-input"]:
         assert f'data-testid="{tid}"' in rou, f"Roulette page missing testid {tid}"
     for tid in ["vip-baccarat-page", "vip-baccarat-deal-btn", "vip-baccarat-bet-input"]:
         assert f'data-testid="{tid}"' in bac, f"Baccarat page missing testid {tid}"
-    routes = Path("/app/frontend/src/routes/monetizationRoutes.tsx").read_text()
+    routes = Path("source/web-assets/frontend/src/routes/monetizationRoutes.tsx").read_text()
     assert 'path="/casino/high-roller/roulette"' in routes
     assert 'path="/casino/high-roller/baccarat"' in routes
 
@@ -7469,7 +7469,7 @@ def test_high_roller_lounge_surfaces_all_three_games() -> None:
     """The VIP Lounge must show entry tiles for Blackjack, Roulette,
     and Baccarat — locked so we don't regress the lounge to just one game."""
     from pathlib import Path
-    page = Path("/app/frontend/src/pages/HighRollerCasino.tsx").read_text()
+    page = Path("source/web-assets/frontend/src/pages/HighRollerCasino.tsx").read_text()
     for tid in [
         "high-roller-enter-blackjack",
         "high-roller-enter-roulette",
@@ -7483,10 +7483,10 @@ def test_vip_crown_badge_globally_mounted() -> None:
     so it appears across every authed page (besides the High Roller pages
     themselves where it self-hides)."""
     from pathlib import Path
-    app_js = Path("/app/frontend/src/App.js").read_text()
+    app_js = Path("source/web-assets/frontend/src/App.js").read_text()
     assert 'import VipCrownBadge from "@/components/vip/VipCrownBadge"' in app_js
     assert "<VipCrownBadge />" in app_js
-    component = Path("/app/frontend/src/components/vip/VipCrownBadge.tsx").read_text()
+    component = Path("source/web-assets/frontend/src/components/vip/VipCrownBadge.tsx").read_text()
     assert 'data-testid="vip-crown-badge"' in component
     assert "/api/high-roller/eligibility/" in component, (
         "VIP badge must poll the eligibility endpoint"
@@ -7500,7 +7500,7 @@ def test_production_gunicorn_matches_master_blueprint() -> None:
     Earlier 4×5K config is acceptable as env fallback but the default
     must be the upgraded spec."""
     from pathlib import Path
-    sh = Path("/app/backend/scripts/run_production.sh").read_text()
+    sh = Path("source/web-assets/backend/scripts/run_production.sh").read_text()
     assert 'GUNICORN_WORKERS:-8' in sh, "Default worker count drifted from Master Blueprint"
     assert 'GUNICORN_WORKER_CONNECTIONS:-10000' in sh, (
         "Default worker-connections drifted from Master Blueprint"
@@ -7510,7 +7510,7 @@ def test_production_gunicorn_matches_master_blueprint() -> None:
 def test_stress_suite_timeout_matches_master_blueprint() -> None:
     """Master Blueprint §1 specifies 1.5s timeout per stress request."""
     from pathlib import Path
-    py = Path("/app/backend/scripts/master_stress_suite.py").read_text()
+    py = Path("source/web-assets/backend/scripts/master_stress_suite.py").read_text()
     assert "ClientTimeout(total=1.5)" in py, (
         "Stress suite timeout drifted from Master Blueprint §1 spec"
     )
@@ -7598,7 +7598,7 @@ def test_media_master_routes_registered() -> None:
 
 def test_media_master_module_mounted_in_registry() -> None:
     from pathlib import Path
-    reg = Path("/app/backend/routes/registry.py").read_text()
+    reg = Path("source/web-assets/backend/routes/registry.py").read_text()
     assert "from routes.media_master import router as media_master_router" in reg
     assert "media_master_router" in reg
 
@@ -7606,7 +7606,7 @@ def test_media_master_module_mounted_in_registry() -> None:
 def test_media_master_indexes_registered_in_lifespan() -> None:
     """Hot read paths must have proper Mongo indexes."""
     from pathlib import Path
-    src = Path("/app/backend/lifespan_indexes.py").read_text()
+    src = Path("source/web-assets/backend/lifespan_indexes.py").read_text()
     for coll in [
         "media_tv_passes", "media_tv_pins", "media_radio_skip_bids",
         "media_artist_sponsorships", "media_scout_hype",
@@ -7618,17 +7618,17 @@ def test_media_master_indexes_registered_in_lifespan() -> None:
 def test_media_master_pin_is_sha256_hashed() -> None:
     """Secondary PIN must NEVER round-trip plaintext."""
     from pathlib import Path
-    src = Path("/app/backend/routes/media_master.py").read_text()
+    src = Path("source/web-assets/backend/routes/media_master.py").read_text()
     assert "hashlib.sha256" in src
     assert "pin_hash" in src
 
 
 def test_media_master_frontend_pages_exist_with_testids() -> None:
     from pathlib import Path
-    hub = Path("/app/frontend/src/pages/MediaMasterHub.tsx").read_text()
-    tv = Path("/app/frontend/src/pages/DsgTvChannelPage.tsx").read_text()
-    radio = Path("/app/frontend/src/pages/VibeRadioStationPage.tsx").read_text()
-    music = Path("/app/frontend/src/pages/MusicGroupPage.tsx").read_text()
+    hub = Path("source/web-assets/frontend/src/pages/MediaMasterHub.tsx").read_text()
+    tv = Path("source/web-assets/frontend/src/pages/DsgTvChannelPage.tsx").read_text()
+    radio = Path("source/web-assets/frontend/src/pages/VibeRadioStationPage.tsx").read_text()
+    music = Path("source/web-assets/frontend/src/pages/MusicGroupPage.tsx").read_text()
     for tid in [
         "media-master-hub", "media-master-section-tv", "media-master-section-radio",
         "media-master-section-music", "media-master-section-scout",
@@ -7652,10 +7652,10 @@ def test_media_master_frontend_pages_exist_with_testids() -> None:
 
 def test_media_master_routes_mounted_in_app_js() -> None:
     from pathlib import Path
-    app_js = Path("/app/frontend/src/App.js").read_text()
+    app_js = Path("source/web-assets/frontend/src/App.js").read_text()
     assert "mediaMasterRoutes" in app_js
     assert "{mediaMasterRoutes(ProtectedRoute)}" in app_js
-    idx = Path("/app/frontend/src/routes/index.js").read_text()
+    idx = Path("source/web-assets/frontend/src/routes/index.js").read_text()
     assert "mediaMasterRoutes" in idx
 
 
@@ -7663,10 +7663,10 @@ def test_vip_concierge_globally_mounted_for_higher_tiers() -> None:
     """VIP Concierge bubble must be in App.js and only appear for
     Genesis/Apex (not Genius)."""
     from pathlib import Path
-    app_js = Path("/app/frontend/src/App.js").read_text()
+    app_js = Path("source/web-assets/frontend/src/App.js").read_text()
     assert 'import VipConcierge from "@/components/vip/VipConcierge"' in app_js
     assert "<VipConcierge />" in app_js
-    comp = Path("/app/frontend/src/components/vip/VipConcierge.tsx").read_text()
+    comp = Path("source/web-assets/frontend/src/components/vip/VipConcierge.tsx").read_text()
     assert 'data-testid="vip-concierge-bubble"' in comp
     # Genesis + Apex only — Genius is the entry tier and doesn't get concierge.
     assert "el.tier !== 'genesis'" in comp
@@ -7724,7 +7724,7 @@ def test_ai_scout_ingest_accepts_cf_input_id_for_real_clipping() -> None:
     so that real CF Stream clips get cut when the room is wired to a
     live broadcast."""
     from pathlib import Path
-    src = Path("/app/backend/routes/media_master.py").read_text()
+    src = Path("source/web-assets/backend/routes/media_master.py").read_text()
     assert "cf_input_id: Optional[str]" in src, "HypeIngestRequest missing cf_input_id field"
     assert "from services.cf_stream_clipper import clip_live_input" in src
     # Clip docs MUST store the CF clip UID + playback URL when rendered.
@@ -7737,7 +7737,7 @@ def test_dsg_tv_channel_page_uses_hls_player() -> None:
     """The viewer must embed the real HLS player (hls.js) — no longer
     a styled placeholder."""
     from pathlib import Path
-    src = Path("/app/frontend/src/pages/DsgTvChannelPage.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/pages/DsgTvChannelPage.tsx").read_text()
     assert "import HLSPlayer" in src, "Page lost HLSPlayer import"
     assert "<HLSPlayer" in src, "Page lost HLSPlayer mount"
     assert 'data-testid="dsg-tv-player"' in src
@@ -7756,7 +7756,7 @@ def test_media_master_pulse_endpoint_registered() -> None:
 
 def test_media_master_pulse_module_mounted() -> None:
     from pathlib import Path
-    reg = Path("/app/backend/routes/registry.py").read_text()
+    reg = Path("source/web-assets/backend/routes/registry.py").read_text()
     assert "from routes.media_master_pulse import router as media_master_pulse_router" in reg
 
 
@@ -7783,7 +7783,7 @@ def test_media_master_pulse_returns_all_required_sections() -> None:
 
 def test_media_master_pulse_frontend_page_exists() -> None:
     from pathlib import Path
-    page = Path("/app/frontend/src/pages/MediaMasterPulsePage.tsx").read_text()
+    page = Path("source/web-assets/frontend/src/pages/MediaMasterPulsePage.tsx").read_text()
     # Literal-string testids
     for tid in ["media-master-pulse-page", "pulse-kpis", "pulse-recent-clips"]:
         assert f'data-testid="{tid}"' in page, f"Pulse page missing literal testid {tid}"
@@ -7795,7 +7795,7 @@ def test_media_master_pulse_frontend_page_exists() -> None:
         "pulse-sponsor-leaderboard",
     ]:
         assert f'testId="{tid}"' in page, f"Pulse page missing testId={tid} (Card prop)"
-    routes = Path("/app/frontend/src/routes/mediaMasterRoutes.tsx").read_text()
+    routes = Path("source/web-assets/frontend/src/routes/mediaMasterRoutes.tsx").read_text()
     assert 'path="/admin/media-master-pulse"' in routes
 
 
@@ -7806,7 +7806,7 @@ def test_media_master_pulse_frontend_page_exists() -> None:
 def test_broadcast_director_page_exists_and_routed() -> None:
     """Streamers must have a UI to program a channel without curl."""
     from pathlib import Path
-    page = Path("/app/frontend/src/pages/BroadcastDirectorPage.tsx").read_text()
+    page = Path("source/web-assets/frontend/src/pages/BroadcastDirectorPage.tsx").read_text()
     for tid in [
         "broadcast-director-page",
         "broadcast-director-input-status",
@@ -7817,7 +7817,7 @@ def test_broadcast_director_page_exists_and_routed() -> None:
     # Page must call the channel programming endpoint we shipped in sprint 3.
     assert "/api/media-master/tv/program" in page
     # Route registration
-    routes = Path("/app/frontend/src/routes/mediaMasterRoutes.tsx").read_text()
+    routes = Path("source/web-assets/frontend/src/routes/mediaMasterRoutes.tsx").read_text()
     assert 'path="/dashboard/streamer/broadcast-director"' in routes
     assert "BroadcastDirectorPage" in routes
 
@@ -7826,7 +7826,7 @@ def test_streamer_dashboard_links_to_broadcast_director() -> None:
     """The Streamer Dashboard must surface a CTA into the new
     Broadcast Director — otherwise streamers can't discover the page."""
     from pathlib import Path
-    src = Path("/app/frontend/src/pages/StreamerDashboard.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/pages/StreamerDashboard.tsx").read_text()
     assert 'data-testid="streamer-dashboard-broadcast-director-cta"' in src
     assert '/dashboard/streamer/broadcast-director' in src
 
@@ -7835,10 +7835,10 @@ def test_break_in_banner_globally_mounted() -> None:
     """Break-in banner must be wired into App.js so it surfaces
     network-wide alerts across casino/dating/games/media-master."""
     from pathlib import Path
-    app_js = Path("/app/frontend/src/App.js").read_text()
+    app_js = Path("source/web-assets/frontend/src/App.js").read_text()
     assert 'import BreakInBanner from "@/components/media/BreakInBanner"' in app_js
     assert "<BreakInBanner />" in app_js
-    comp = Path("/app/frontend/src/components/media/BreakInBanner.tsx").read_text()
+    comp = Path("source/web-assets/frontend/src/components/media/BreakInBanner.tsx").read_text()
     assert 'data-testid="break-in-banner"' in comp
     # The trigger-paths whitelist must include the founder-specified routes.
     for path in ("/casino", "/dating", "/games", "/media-master"):
@@ -7855,7 +7855,7 @@ def test_break_in_banner_does_not_leak_into_non_trigger_paths() -> None:
     high-traffic surfaces; not on /profile, /login, /dashboard, etc.
     so we don't spam the rest of the app."""
     from pathlib import Path
-    comp = Path("/app/frontend/src/components/media/BreakInBanner.tsx").read_text()
+    comp = Path("source/web-assets/frontend/src/components/media/BreakInBanner.tsx").read_text()
     # Sanity-check: these paths must NOT be in the trigger list literal
     # (the banner can hide itself anyway, but we don't want the polling
 
@@ -7881,7 +7881,7 @@ def test_vibe_radio_resolver_wired_into_lifespan() -> None:
     """Background loop must kick off at startup so the resolver runs
     automatically — not just on manual /resolve-bids POSTs."""
     from pathlib import Path
-    src = Path("/app/backend/lifespan.py").read_text()
+    src = Path("source/web-assets/backend/lifespan.py").read_text()
     assert "_start_vibe_radio_resolver" in src, "Resolver kickoff missing in lifespan"
     assert "Vibe Radio skip-bid auto-resolver" in src
 
@@ -7966,10 +7966,10 @@ def test_vibe_radio_resolver_outcome_logic() -> None:
 def test_network_pulse_mini_widget_mounted() -> None:
     """The ambient pulse widget must be mounted globally in App.js."""
     from pathlib import Path
-    app_js = Path("/app/frontend/src/App.js").read_text()
+    app_js = Path("source/web-assets/frontend/src/App.js").read_text()
     assert 'import NetworkPulseMiniWidget from "@/components/media/NetworkPulseMiniWidget"' in app_js
     assert "<NetworkPulseMiniWidget />" in app_js
-    comp = Path("/app/frontend/src/components/media/NetworkPulseMiniWidget.tsx").read_text()
+    comp = Path("source/web-assets/frontend/src/components/media/NetworkPulseMiniWidget.tsx").read_text()
     assert 'data-testid="network-pulse-mini-widget"' in comp
     # Anti-noise: must self-hide on the Pulse dashboard, login, register.
     for p in ("/login", "/register", "/admin/media-master-pulse"):
@@ -7985,7 +7985,7 @@ def test_classic_dashboard_exposes_high_roller_and_media_master_rooms() -> None:
     Regression: previously the High Roller / Media Master / Broadcast Director
     flows existed but had no entry point from the main dashboard."""
     from pathlib import Path
-    src = Path('/app/frontend/src/pages/DashboardNew.tsx').read_text()
+    src = Path('source/web-assets/frontend/src/pages/DashboardNew.tsx').read_text()
     for path in (
         '/casino/high-roller',
         '/media-master',
@@ -8001,7 +8001,7 @@ def test_classic_dashboard_exposes_high_roller_and_media_master_rooms() -> None:
 def test_volumetric_dashboard_exposes_high_roller_and_media_master_rooms() -> None:
     """Same guarantee for the Volumetric Galaxy view (default landing)."""
     from pathlib import Path
-    src = Path('/app/frontend/src/pages/VolumetricDashboard.tsx').read_text()
+    src = Path('source/web-assets/frontend/src/pages/VolumetricDashboard.tsx').read_text()
     for path in (
         '/casino/high-roller',
         '/media-master',
@@ -8015,19 +8015,19 @@ def test_volumetric_dashboard_exposes_high_roller_and_media_master_rooms() -> No
 def test_every_dashboard_tile_path_resolves_to_a_real_route() -> None:
     """Founder ask 2026-02: every room MUST be physically reachable.
     Walks both dashboards, collects every tile path, then asserts each
-    one matches a Route path defined under /app/frontend/src/routes/*.tsx
+    one matches a Route path defined under source/web-assets/frontend/src/routes/*.tsx
     or inline in App.js. Prevents future "I see the button but it 404s"
     bugs at the launch level."""
     import re as _re
     from pathlib import Path as _P
 
-    route_files = list(_P("/app/frontend/src/routes").glob("*.tsx"))
+    route_files = list(_P("source/web-assets/frontend/src/routes").glob("*.tsx"))
     defined_paths: set[str] = set()
     PATH_RE = _re.compile(r'path=["\']([^"\']+)["\']')
     for f in route_files:
         for p in PATH_RE.findall(f.read_text()):
             defined_paths.add(p)
-    app_js = _P("/app/frontend/src/App.js").read_text()
+    app_js = _P("source/web-assets/frontend/src/App.js").read_text()
     for p in PATH_RE.findall(app_js):
         defined_paths.add(p)
 
@@ -8045,8 +8045,8 @@ def test_every_dashboard_tile_path_resolves_to_a_real_route() -> None:
 
     dash_paths: set[str] = set()
     for src in (
-        "/app/frontend/src/pages/DashboardNew.tsx",
-        "/app/frontend/src/pages/VolumetricDashboard.tsx",
+        "source/web-assets/frontend/src/pages/DashboardNew.tsx",
+        "source/web-assets/frontend/src/pages/VolumetricDashboard.tsx",
     ):
         txt = _P(src).read_text()
         for m in _re.findall(r"path:\s*['\"]([^'\"]+)['\"]", txt):
@@ -8069,7 +8069,7 @@ def test_galaxy_guided_tour_mounted_and_wired() -> None:
     3. Gate auto-play behind localStorage.gv_galaxy_tour_seen.
     """
     from pathlib import Path
-    comp = Path("/app/frontend/src/components/dashboard/GalaxyGuidedTour.tsx")
+    comp = Path("source/web-assets/frontend/src/components/dashboard/GalaxyGuidedTour.tsx")
     assert comp.exists(), "GalaxyGuidedTour component must exist"
     src = comp.read_text()
     assert "GALAXY_TOUR_SEEN_KEY" in src
@@ -8086,7 +8086,7 @@ def test_galaxy_guided_tour_mounted_and_wired() -> None:
         assert f'data-testid="{tid}"' in src, f"Missing data-testid={tid}"
 
     # Mounted in the dashboard
-    vol = Path("/app/frontend/src/pages/VolumetricDashboard.tsx").read_text()
+    vol = Path("source/web-assets/frontend/src/pages/VolumetricDashboard.tsx").read_text()
     assert "GalaxyGuidedTour" in vol, "VolumetricDashboard must import GalaxyGuidedTour"
     assert "<GalaxyGuidedTour" in vol, "VolumetricDashboard must render GalaxyGuidedTour"
 
@@ -8101,15 +8101,15 @@ def test_mobile_quiet_chrome_hides_floating_widgets_below_md() -> None:
     """
     from pathlib import Path
     cases = [
-        ("/app/frontend/src/components/common/RoleSwitcher.tsx", "fixed top-3 right-36 z-[60] hidden md:flex"),
-        ("/app/frontend/src/components/common/RoomInfoCube.tsx", "z-[55] hidden md:flex items-center"),
-        ("/app/frontend/src/components/media/NetworkPulseMiniWidget.tsx", "z-[55] hidden md:block"),
-        ("/app/frontend/src/components/common/OrientationToggle.tsx", "z-40 hidden md:inline-flex"),
-        ("/app/frontend/src/components/common/WhatsNewBanner.tsx", "hidden md:block transition-all"),
-        ("/app/frontend/src/components/vibez/LogDesignLesson.tsx", "z-50 transition-opacity hidden md:block"),
-        ("/app/frontend/src/components/vibez/LogDesignLesson.tsx", "z-50 space-y-3 hidden md:block"),
-        ("/app/frontend/src/components/NotificationBanner.tsx", "fixed bottom-20 right-4 z-40 hidden md:block"),
-        ("/app/frontend/src/pages/VolumetricDashboard.tsx", "pointer-events-auto hidden md:block"),
+        ("source/web-assets/frontend/src/components/common/RoleSwitcher.tsx", "fixed top-3 right-36 z-[60] hidden md:flex"),
+        ("source/web-assets/frontend/src/components/common/RoomInfoCube.tsx", "z-[55] hidden md:flex items-center"),
+        ("source/web-assets/frontend/src/components/media/NetworkPulseMiniWidget.tsx", "z-[55] hidden md:block"),
+        ("source/web-assets/frontend/src/components/common/OrientationToggle.tsx", "z-40 hidden md:inline-flex"),
+        ("source/web-assets/frontend/src/components/common/WhatsNewBanner.tsx", "hidden md:block transition-all"),
+        ("source/web-assets/frontend/src/components/vibez/LogDesignLesson.tsx", "z-50 transition-opacity hidden md:block"),
+        ("source/web-assets/frontend/src/components/vibez/LogDesignLesson.tsx", "z-50 space-y-3 hidden md:block"),
+        ("source/web-assets/frontend/src/components/NotificationBanner.tsx", "fixed bottom-20 right-4 z-40 hidden md:block"),
+        ("source/web-assets/frontend/src/pages/VolumetricDashboard.tsx", "pointer-events-auto hidden md:block"),
     ]
     for path, needle in cases:
         src = Path(path).read_text()
@@ -8124,7 +8124,7 @@ def test_conftest_autoloads_react_app_backend_url() -> None:
     sourcing frontend/.env. conftest.py owns the env autoload — guard
     that contract so it cannot regress."""
     from pathlib import Path
-    conftest = Path("/app/backend/tests/conftest.py").read_text()
+    conftest = Path("source/web-assets/backend/tests/conftest.py").read_text()
     assert "_autoload_env" in conftest, "conftest must define _autoload_env"
     assert '"frontend" / ".env"' in conftest, "autoload must point at frontend/.env"
     assert "REACT_APP_BACKEND_URL" in conftest
@@ -8231,12 +8231,12 @@ def test_equity_master_constants_locked_to_pdf() -> None:
 def test_equity_master_router_registered() -> None:
     """The Equity Master router must be mounted under /api/equity-master."""
     from pathlib import Path
-    reg = Path("/app/backend/routes/registry.py").read_text()
+    reg = Path("source/web-assets/backend/routes/registry.py").read_text()
     assert "equity_master" in reg, "registry.py must mount equity_master"
     assert "EQUITY MASTER MOUNT FAILED" in reg, "mount block must be fatal on failure"
 
     # Immutable Core cross-verifies the equity locks.
-    core = Path("/app/backend/routes/immutable_core.py").read_text()
+    core = Path("source/web-assets/backend/routes/immutable_core.py").read_text()
     assert "verify_equity_locks" in core, (
         "Immutable Core must cross-call verify_equity_locks at boot"
     )
@@ -8247,7 +8247,7 @@ def test_equity_master_frontend_page_wired() -> None:
     every locked tile/number for users."""
     from pathlib import Path
 
-    page = Path("/app/frontend/src/pages/EquityMasterPage.tsx").read_text()
+    page = Path("source/web-assets/frontend/src/pages/EquityMasterPage.tsx").read_text()
     # Every PDF section is rendered.
     for needle in (
         "Crewmate Architecture",
@@ -8263,17 +8263,17 @@ def test_equity_master_frontend_page_wired() -> None:
         assert needle in page, f"EquityMasterPage missing: {needle}"
 
     # Routed at /equity and /equity-master.
-    routes = Path("/app/frontend/src/routes/miscRoutes.tsx").read_text()
+    routes = Path("source/web-assets/frontend/src/routes/miscRoutes.tsx").read_text()
     assert 'path="/equity"' in routes
     assert 'path="/equity-master"' in routes
     assert "EquityMasterPage" in routes
 
     # Dashboard exposes the new tile on both surfaces.
-    classic = Path("/app/frontend/src/pages/DashboardNew.tsx").read_text()
+    classic = Path("source/web-assets/frontend/src/pages/DashboardNew.tsx").read_text()
     assert "Equity & Governance" in classic
     assert "path: '/equity'" in classic
 
-    vol = Path("/app/frontend/src/pages/VolumetricDashboard.tsx").read_text()
+    vol = Path("source/web-assets/frontend/src/pages/VolumetricDashboard.tsx").read_text()
     assert 'path: "/equity"' in vol
 
     # v2: matrix table + governance section are rendered.
@@ -8344,7 +8344,7 @@ def test_dsg_core_system_constants_locked_to_pdf() -> None:
 def test_dsg_core_system_router_registered() -> None:
     """DSG Core router must be mounted under /api/dsg-core."""
     from pathlib import Path
-    reg = Path("/app/backend/routes/registry.py").read_text()
+    reg = Path("source/web-assets/backend/routes/registry.py").read_text()
     assert "dsg_core_system" in reg, "registry.py must mount dsg_core_system"
     assert "DSG_CORE_SYSTEM" in reg, "mount block must log on failure"
 
@@ -8356,7 +8356,7 @@ def test_ambassador_care_package_page_wired() -> None:
     monthly milestones from the PDF."""
     from pathlib import Path
 
-    page = Path("/app/frontend/src/pages/AmbassadorCarePackagePage.tsx").read_text()
+    page = Path("source/web-assets/frontend/src/pages/AmbassadorCarePackagePage.tsx").read_text()
 
     # Hero copy locked from the PDF (verbatim).
     for needle in (
@@ -8388,21 +8388,21 @@ def test_ambassador_care_package_page_wired() -> None:
         assert f'"{earn}"' in page, f"Earnings cell missing: {earn}"
 
     # Routed at /ambassador and /ambassador-care-package.
-    routes = Path("/app/frontend/src/routes/miscRoutes.tsx").read_text()
+    routes = Path("source/web-assets/frontend/src/routes/miscRoutes.tsx").read_text()
     assert 'path="/ambassador"' in routes
     assert 'path="/ambassador-care-package"' in routes
     assert "AmbassadorCarePackagePage" in routes
 
     # Dashboard tile + Volumetric orbit-room expose it.
-    classic = Path("/app/frontend/src/pages/DashboardNew.tsx").read_text()
+    classic = Path("source/web-assets/frontend/src/pages/DashboardNew.tsx").read_text()
     assert "Ambassador Care Package" in classic
     assert "path: '/ambassador'" in classic
 
-    vol = Path("/app/frontend/src/pages/VolumetricDashboard.tsx").read_text()
+    vol = Path("source/web-assets/frontend/src/pages/VolumetricDashboard.tsx").read_text()
     assert 'path: "/ambassador"' in vol
 
     # Landing page section.
-    landing = Path("/app/frontend/src/pages/LandingNeonGaming.tsx").read_text()
+    landing = Path("source/web-assets/frontend/src/pages/LandingNeonGaming.tsx").read_text()
     assert 'data-testid="landing-ambassador-care"' in landing
     assert "You Don't Just Use the App" in landing
     assert "You Own the Streets" in landing
@@ -8416,7 +8416,7 @@ def test_landing_tour_narration_updated_to_v3_energetic() -> None:
     to NOVA. Length bumped from ~2 min to ~3 min."""
     from pathlib import Path
 
-    script = Path("/app/backend/scripts/generate_landing_tour_narration.py").read_text()
+    script = Path("source/web-assets/backend/scripts/generate_landing_tour_narration.py").read_text()
     # Voice must be nova (most energetic).
     assert 'voice="nova"' in script, "Narration must use Nova voice"
     # Speed bumped for excitement.
@@ -8441,7 +8441,7 @@ def test_landing_tour_narration_updated_to_v3_energetic() -> None:
 
     # Fallback captions in the component cover the same milestones so
     # silent-autoplay scrollers (and pre-MP3 loads) still get the pitch.
-    comp = Path("/app/frontend/src/components/landing/LandingTourVideo.tsx").read_text()
+    comp = Path("source/web-assets/frontend/src/components/landing/LandingTourVideo.tsx").read_text()
     for needle in (
         "HIGH ROLLER VIP",
         "AMBASSADOR Care Package",
@@ -8456,7 +8456,7 @@ def test_landing_tour_narration_updated_to_v3_energetic() -> None:
     assert "Nova" in comp, "Voiceover credit must read Nova"
 
     # And the actual rendered MP3 must exist on disk (regenerated this session).
-    mp3 = Path("/app/frontend/public/landing-tour-narration.mp3")
+    mp3 = Path("source/web-assets/frontend/public/landing-tour-narration.mp3")
     assert mp3.exists(), "Narration MP3 not present at /landing-tour-narration.mp3"
     # Sanity: at least 500KB so we know it's actual audio, not a placeholder.
     assert mp3.stat().st_size > 500_000, (
@@ -8479,7 +8479,7 @@ def test_landscape_hint_no_longer_blocks_in_room_controls() -> None:
         that body class is present.
     """
     from pathlib import Path
-    hint = Path("/app/frontend/src/components/common/LandscapeRotateHint.tsx").read_text()
+    hint = Path("source/web-assets/frontend/src/components/common/LandscapeRotateHint.tsx").read_text()
     # Toggle is gated on !showHint.
     assert "{!showHint && (" in hint, (
         "landscape-toggle must be hidden while the hint overlay is visible"
@@ -8489,7 +8489,7 @@ def test_landscape_hint_no_longer_blocks_in_room_controls() -> None:
     assert 'classList.add("gv-landscape-hint-active")' in hint
 
     # Global CSS rule hides the comms pill when the body class is set.
-    css = Path("/app/frontend/src/App.css").read_text()
+    css = Path("source/web-assets/frontend/src/App.css").read_text()
     assert "body.gv-landscape-hint-active" in css, (
         "App.css must define the body.gv-landscape-hint-active rule"
     )
@@ -8504,7 +8504,7 @@ def test_desktop_bottom_left_stack_no_longer_overlaps() -> None:
     bumped LogDesignLesson to `bottom-32 left-4` (above the network
     pulse widget) so the two are no longer co-located."""
     from pathlib import Path
-    src = Path("/app/frontend/src/components/vibez/LogDesignLesson.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/components/vibez/LogDesignLesson.tsx").read_text()
     assert "fixed bottom-32 left-4 opacity-10" in src, (
         "LogDesignLesson trigger must be at bottom-32 (above NetworkPulse)"
     )
@@ -8578,7 +8578,7 @@ def test_my_vibez_optimization_module_locked_to_pdf() -> None:
 def test_my_vibez_optimization_router_registered() -> None:
     """/api/my-vibez/* must be mounted (4 endpoints)."""
     from pathlib import Path
-    reg = Path("/app/backend/routes/registry.py").read_text()
+    reg = Path("source/web-assets/backend/routes/registry.py").read_text()
     assert "my_vibez_optimization" in reg
     assert "MY_VIBEZ_OPTIMIZATION" in reg
 
@@ -8588,7 +8588,7 @@ def test_my_vibez_themed_room_frontend_wired() -> None:
     fetch from the real backend, and surface in the dashboard."""
     from pathlib import Path
 
-    page = Path("/app/frontend/src/pages/MyVibezThemedRoom.tsx").read_text()
+    page = Path("source/web-assets/frontend/src/pages/MyVibezThemedRoom.tsx").read_text()
     # Pulls from the real backend (not hard-coded).
     assert "/api/my-vibez/categories/layout/" in page
     # Both themes surface in the UI (theme IDs come from backend, but
@@ -8603,13 +8603,13 @@ def test_my_vibez_themed_room_frontend_wired() -> None:
     assert 'data-testid="my-vibez-category-rail"' in page
 
     # Routed.
-    routes = Path("/app/frontend/src/routes/miscRoutes.tsx").read_text()
+    routes = Path("source/web-assets/frontend/src/routes/miscRoutes.tsx").read_text()
     assert 'path="/my-vibez/themed"' in routes
     assert 'path="/my-vibez-themed"' in routes
     assert "MyVibezThemedRoom" in routes
 
     # Volumetric exposes it.
-    vol = Path("/app/frontend/src/pages/VolumetricDashboard.tsx").read_text()
+    vol = Path("source/web-assets/frontend/src/pages/VolumetricDashboard.tsx").read_text()
     assert 'path: "/my-vibez/themed"' in vol
 
 
@@ -8650,7 +8650,7 @@ def test_feb2026_roadmap_8_items_wired() -> None:
     assert DAILY_DEFAULT_LIMIT_VIBEZ == 5_000
 
     # 3. Routers mounted in registry.
-    reg = Path("/app/backend/routes/registry.py").read_text()
+    reg = Path("source/web-assets/backend/routes/registry.py").read_text()
     for needle in (
         "routes.my_vibez_feed",
         "routes.creator_earnings",
@@ -8663,14 +8663,14 @@ def test_feb2026_roadmap_8_items_wired() -> None:
         assert needle in reg, f"Registry missing mount for {needle}"
 
     # 4. Item 5 — Capacitor scaffolding committed.
-    cap = Path("/app/frontend/capacitor.config.ts")
+    cap = Path("source/web-assets/frontend/capacitor.config.ts")
     assert cap.exists(), "capacitor.config.ts must exist"
     cap_src = cap.read_text()
     assert "com.globalvibez.dsg" in cap_src
     assert "Global Vibez DSG" in cap_src
 
     # 5. Frontend Roadmap Hub page surfaces all 8 items.
-    hub = Path("/app/frontend/src/pages/RoadmapHub.tsx").read_text()
+    hub = Path("source/web-assets/frontend/src/pages/RoadmapHub.tsx").read_text()
     # Top-level hub test ID is a string literal.
     assert 'data-testid="roadmap-hub"' in hub
     # Card test IDs are passed as a `testid` prop string literal,
@@ -8688,12 +8688,12 @@ def test_feb2026_roadmap_8_items_wired() -> None:
         assert f'"{tid}"' in hub, f"Roadmap Hub missing card: {tid}"
 
     # 6. Routed.
-    routes = Path("/app/frontend/src/routes/miscRoutes.tsx").read_text()
+    routes = Path("source/web-assets/frontend/src/routes/miscRoutes.tsx").read_text()
     assert 'path="/roadmap"' in routes
     assert "RoadmapHub" in routes
 
     # 7. Volumetric exposes it.
-    vol = Path("/app/frontend/src/pages/VolumetricDashboard.tsx").read_text()
+    vol = Path("source/web-assets/frontend/src/pages/VolumetricDashboard.tsx").read_text()
     assert 'path: "/roadmap"' in vol
 
 
@@ -8738,7 +8738,7 @@ def test_refer_a_whale_webhook_imports_track_referral() -> None:
     """The Stripe payouts webhook must wire `track_referral` so a referee
     converting flips the referrer's bonus days."""
     from pathlib import Path
-    src = Path("/app/backend/routes/stripe_payouts_webhook.py").read_text()
+    src = Path("source/web-assets/backend/routes/stripe_payouts_webhook.py").read_text()
     assert "track_referral" in src, "Webhook must import track_referral"
     assert "referral_code" in src, "Webhook must read referral_code from metadata"
 
@@ -8747,7 +8747,7 @@ def test_refer_a_whale_frontend_card_rendered() -> None:
     """High Roller frontend page must include the Refer-a-Whale card with
     the canonical test IDs the testing agent will validate."""
     from pathlib import Path
-    src = Path("/app/frontend/src/pages/HighRollerCasino.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/pages/HighRollerCasino.tsx").read_text()
     for tid in (
         "refer-a-whale-card",
         "refer-a-whale-code",
@@ -8817,7 +8817,7 @@ def test_free_tv_frontend_page_routed() -> None:
     """`/free-tv` and `/free-tv/:roomId` must be wired in the frontend
     router, importing the FreeTVCinemaRoom page."""
     from pathlib import Path
-    src = Path("/app/frontend/src/routes/miscRoutes.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/routes/miscRoutes.tsx").read_text()
     assert "FreeTVCinemaRoom" in src
     assert 'path="/free-tv"' in src
     assert 'path="/free-tv/:roomId"' in src
@@ -8827,7 +8827,7 @@ def test_free_tv_frontend_page_renders_critical_ids() -> None:
     """Lobby + room view must expose the canonical test IDs so the
     testing agent can validate the flow end-to-end."""
     from pathlib import Path
-    src = Path("/app/frontend/src/pages/FreeTVCinemaRoom.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/pages/FreeTVCinemaRoom.tsx").read_text()
     for tid in (
         "free-tv-lobby",
         "free-tv-network-grid",
@@ -8848,7 +8848,7 @@ def test_dashboard_has_free_tv_tile_and_smaller_cards() -> None:
     be the shrunk size (h-36 image / w-14 icon / p-4) — not the old
     h-48 / w-20 / p-6 dimensions."""
     from pathlib import Path
-    src = Path("/app/frontend/src/pages/DashboardNew.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/pages/DashboardNew.tsx").read_text()
     assert "id: 'free_tv'" in src
     assert "Free TV Networks" in src
     assert "path: '/free-tv'" in src
@@ -8862,7 +8862,7 @@ def test_dashboard_my_vibez_tile_revamped() -> None:
     """MY VIBEZ tile must render the vibrant holographic variant (not
     the standard GlassCard)."""
     from pathlib import Path
-    src = Path("/app/frontend/src/pages/DashboardNew.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/pages/DashboardNew.tsx").read_text()
     assert 'data-testid="dashboard-card-myvibez"' in src
     assert "isMyVibez" in src and "conic-gradient" in src, (
         "MY VIBEZ tile must use the bespoke holographic conic-gradient treatment"
@@ -8875,7 +8875,7 @@ def test_dashboard_my_vibez_tile_revamped() -> None:
 
 def test_co_watch_launcher_component_exists() -> None:
     from pathlib import Path
-    p = Path("/app/frontend/src/components/common/CoWatchLauncher.tsx")
+    p = Path("source/web-assets/frontend/src/components/common/CoWatchLauncher.tsx")
     assert p.exists(), "CoWatchLauncher.tsx must exist"
     src = p.read_text()
     for tid in (
@@ -8894,7 +8894,7 @@ def test_co_watch_launcher_mounted_globally() -> None:
     """CoWatchLauncher must be imported and rendered in App.js so it
     shows on every protected page."""
     from pathlib import Path
-    src = Path("/app/frontend/src/App.js").read_text()
+    src = Path("source/web-assets/frontend/src/App.js").read_text()
     assert "CoWatchLauncher" in src
     assert "<CoWatchLauncher />" in src
 
@@ -8902,7 +8902,7 @@ def test_co_watch_launcher_mounted_globally() -> None:
 def test_co_watch_launcher_hides_on_auth_pages() -> None:
     """Login/signup pages must not render the launcher (HIDDEN_PREFIXES)."""
     from pathlib import Path
-    src = Path("/app/frontend/src/components/common/CoWatchLauncher.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/components/common/CoWatchLauncher.tsx").read_text()
     for needle in ("'/login'", "'/signup'", "'/volumetric'"):
         assert needle in src, f"HIDDEN_PREFIXES must include {needle}"
 
@@ -8918,7 +8918,7 @@ def test_co_watch_launcher_hides_on_auth_pages() -> None:
 def test_dashboard_category_tabs_rendered() -> None:
     """All 8 categories must render as tabs with the canonical test IDs."""
     from pathlib import Path
-    src = Path("/app/frontend/src/pages/DashboardNew.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/pages/DashboardNew.tsx").read_text()
     assert 'data-testid="dashboard-category-tabs"' in src
     for cat in ("watch", "dating", "games", "music", "lifestyle", "social", "earnings", "all"):
         assert f'data-testid={{`dashboard-category-tab-${{cat.id}}`}}' in src or (
@@ -8937,7 +8937,7 @@ def test_my_vibez_tile_drops_tiktok_wording() -> None:
     """Founder ask: take 'TikTok' off the MY VIBEZ description. It's a
     streaming/watch place, not a TikTok clone."""
     from pathlib import Path
-    src = Path("/app/frontend/src/pages/DashboardNew.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/pages/DashboardNew.tsx").read_text()
     # Find the MY VIBEZ entry's description line.
     assert "id: 'myvibez'" in src
     # The exact previous wording must be gone.
@@ -8953,7 +8953,7 @@ def test_co_play_mode_wired_in_launcher() -> None:
     'co-play' mode, which copies the current URL with `?invite=` instead
     of POSTing a watch-party room."""
     from pathlib import Path
-    src = Path("/app/frontend/src/components/common/CoWatchLauncher.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/components/common/CoWatchLauncher.tsx").read_text()
     assert "co-play" in src
     assert "Invite to your table" in src
     assert "?invite=" in src or "searchParams.set('invite'" in src
@@ -8986,7 +8986,7 @@ def test_live_pulse_pill_rendered_in_dashboard() -> None:
     """LivePulsePill must mount above the category tabs, poll the
     backend, and call setActiveCategory when a pill is clicked."""
     from pathlib import Path
-    src = Path("/app/frontend/src/pages/DashboardNew.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/pages/DashboardNew.tsx").read_text()
     assert "LivePulsePill" in src
     assert 'data-testid="live-pulse-pill"' in src
     assert "/api/live-pulse/categories" in src
@@ -9026,7 +9026,7 @@ def test_live_pulse_includes_streaming_signal() -> None:
     """Pulse must fold streams `routes.streaming.mock_streams` into the
     per-category counts so games/music/etc light up alongside watch."""
     from pathlib import Path
-    src = Path("/app/backend/routes/live_pulse.py").read_text()
+    src = Path("source/web-assets/backend/routes/live_pulse.py").read_text()
     assert "_streams_signal" in src
     assert "from routes.streaming import mock_streams" in src
 
@@ -9035,7 +9035,7 @@ def test_hot_rooms_carousel_rendered_in_dashboard() -> None:
     """HotRoomsCarousel must mount between LivePulsePill and
     CategoryTabs so the visual hierarchy is pulse → hot → tabs."""
     from pathlib import Path
-    src = Path("/app/frontend/src/pages/DashboardNew.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/pages/DashboardNew.tsx").read_text()
     assert "HotRoomsCarousel" in src
     assert 'data-testid="hot-rooms-carousel"' in src
     assert "/api/live-pulse/hot-rooms" in src
@@ -9056,7 +9056,7 @@ def test_dashboard_has_cinema_room_tile() -> None:
     """`/cinema-room` route existed but wasn't surfaced on the dashboard.
     Founder ask 2026-05-16: add a tile in the Watch category."""
     from pathlib import Path
-    src = Path("/app/frontend/src/pages/DashboardNew.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/pages/DashboardNew.tsx").read_text()
     assert "id: 'cinema_room'" in src
     assert "path: '/cinema-room'" in src
     assert "cinema_room: 'watch'" in src, "Cinema Room must classify under Watch in ROOM_CATEGORY"
@@ -9066,7 +9066,7 @@ def test_dashboard_room_images_are_unique() -> None:
     """No two room tiles may share the same Unsplash photo id."""
     import re
     from pathlib import Path
-    src = Path("/app/frontend/src/pages/DashboardNew.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/pages/DashboardNew.tsx").read_text()
     # Pull every `image: 'https://images.unsplash.com/photo-XXXXX...'` line.
     image_lines = re.findall(r"image:\s*'(https://images\.unsplash\.com/photo-\d+[^']*)'", src)
     photo_ids = [re.search(r"photo-(\d+)", url).group(1) for url in image_lines if re.search(r"photo-(\d+)", url)]
@@ -9079,7 +9079,7 @@ def test_hot_rooms_preview_hover_card_rendered() -> None:
     Backend payload must include `preview_image_url` so the frontend
     can render a real thumbnail in the popover."""
     from pathlib import Path
-    src = Path("/app/frontend/src/pages/DashboardNew.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/pages/DashboardNew.tsx").read_text()
     # Each card has a preview popover with a templated test ID.
     assert "hot-room-preview-${r.id}" in src or "hot-room-preview-" in src
     assert "preview_image_url" in src, "Frontend must consume preview_image_url"
@@ -9087,7 +9087,7 @@ def test_hot_rooms_preview_hover_card_rendered() -> None:
         "Preview must trigger on hover (desktop) and long-press (touch)"
     )
     # Backend must also emit it.
-    backend_src = Path("/app/backend/routes/live_pulse.py").read_text()
+    backend_src = Path("source/web-assets/backend/routes/live_pulse.py").read_text()
     assert "preview_image_url" in backend_src
 
 
@@ -9132,7 +9132,7 @@ def test_hot_rooms_preview_renders_video_when_url_present() -> None:
     """Frontend popover must render `<video>` when preview_video_url is
     set, falling back to `<img>` when null. Pin both code paths."""
     from pathlib import Path
-    src = Path("/app/frontend/src/pages/DashboardNew.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/pages/DashboardNew.tsx").read_text()
     assert "r.preview_video_url ? (" in src, "Must conditionally render on preview_video_url"
     assert "<video" in src and "autoPlay" in src and "muted" in src
     assert "playsInline" in src and "loop" in src
@@ -9152,7 +9152,7 @@ def test_chess_removed_from_client_side_list() -> None:
     Chess REQUIRES a real backend game so the AI can reply after every
     player move; otherwise the board freezes after move 1."""
     from pathlib import Path
-    src = Path("/app/frontend/src/pages/PracticeGamePlay.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/pages/PracticeGamePlay.tsx").read_text()
     # The set is multi-line — assert chess is gone via a regex over the
     # whole SUPPORTED_CLIENT_GAMES definition.
     import re
@@ -9169,7 +9169,7 @@ def test_practice_game_bootstrap_on_mount() -> None:
     URL param is a game **type** (e.g. 'chess'), so the user can land
     on /practice/play/chess and the game is created automatically."""
     from pathlib import Path
-    src = Path("/app/frontend/src/pages/PracticeGamePlay.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/pages/PracticeGamePlay.tsx").read_text()
     assert "/api/practice/start" in src, (
         "PracticeGamePlay must call POST /api/practice/start to bootstrap"
     )
@@ -9182,7 +9182,7 @@ def test_classic_chess_board_uses_warm_palette() -> None:
     navy frame + mahogany dark squares + cream light squares. Pin the
     palette so a refactor doesn't accidentally revert it."""
     from pathlib import Path
-    src = Path("/app/frontend/src/components/practice_games/PracticeChess.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/components/practice_games/PracticeChess.tsx").read_text()
     # Mahogany dark squares.
     assert "#4a2b1a" in src and "#2c1810" in src, (
         "Classic dark squares must use the upgraded mahogany palette"
@@ -9199,7 +9199,7 @@ def test_practice_game_uses_credentials_include() -> None:
     """All practice-game fetches must send the auth cookie, otherwise
     /start + /move 401s out and the chess room dies silently."""
     from pathlib import Path
-    src = Path("/app/frontend/src/pages/PracticeGamePlay.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/pages/PracticeGamePlay.tsx").read_text()
     target = "credentials: 'include'"
     count = src.count(target)
 
@@ -9215,7 +9215,7 @@ def test_no_actual_eval_builtin_in_backend() -> None:
     Python builtin. Pin that no real `eval(...)` call ever sneaks in."""
     import re
     from pathlib import Path
-    for path in Path("/app/backend").rglob("*.py"):
+    for path in Path("source/backend").rglob("*.py"):
         if "__pycache__" in path.parts or "tests" in path.parts:
             continue
         src = path.read_text()
@@ -9240,8 +9240,8 @@ def test_lazy_circular_import_between_chairs_and_apex_evolution() -> None:
     dependency. The pattern is: lazy-import inside the function bodies,
     never at module top. Pin that pattern."""
     from pathlib import Path
-    chairs = Path("/app/backend/routes/chairs.py").read_text()
-    apex = Path("/app/backend/routes/apex_evolution.py").read_text()
+    chairs = Path("source/web-assets/backend/routes/chairs.py").read_text()
+    apex = Path("source/web-assets/backend/routes/apex_evolution.py").read_text()
     # Top-of-file imports MUST NOT reference each other.
     chairs_head = chairs.split("\n\n\n", 1)[0] if "\n\n\n" in chairs else chairs[:2000]
     apex_head = apex.split("\n\n\n", 1)[0] if "\n\n\n" in apex else apex[:2000]
@@ -9266,7 +9266,7 @@ def test_no_hardcoded_secret_assignments_outside_env() -> None:
         r"sk_live_[A-Za-z0-9]{20,}",
         r"AKIA[0-9A-Z]{16}",
     ]
-    for path in Path("/app/backend").rglob("*.py"):
+    for path in Path("source/backend").rglob("*.py"):
         if "__pycache__" in path.parts or "tests" in path.parts:
             continue
         src = path.read_text()
@@ -9282,7 +9282,7 @@ def test_is_literal_anti_pattern_absent_in_game_utils() -> None:
     import re
     from pathlib import Path
     for fname in ("uno_game.py", "hearts_game.py", "game_ai.py", "spades_game.py"):
-        path = Path(f"/app/backend/utils/{fname}")
+        path = Path(f"source/web-assets/backend/utils/{fname}")
         if not path.exists():
             continue
         src = path.read_text()
@@ -9303,7 +9303,7 @@ def test_is_literal_anti_pattern_absent_in_game_utils() -> None:
 
 def test_landing_tour_has_two_new_commercial_clips() -> None:
     from pathlib import Path
-    src = Path("/app/frontend/src/components/landing/LandingTourVideo.tsx").read_text()
+    src = Path("source/web-assets/frontend/src/components/landing/LandingTourVideo.tsx").read_text()
     # New B-roll URLs.
     assert "ycmjkhqh__http_com_generated_video_content_.mp4" in src
     assert "a0uflv8a_mp4.mp4" in src
@@ -9320,8 +9320,8 @@ def test_landing_tour_includes_dating_segment() -> None:
     surfaces (Vigilant Matchmaker, Gamer Dating, Blind Auction, Voice
     Mirror, Memory Bank, Cinema Dates, Just For The Night)."""
     from pathlib import Path
-    script = Path("/app/backend/scripts/generate_landing_tour_narration.py").read_text()
-    captions = Path("/app/frontend/src/components/landing/LandingTourVideo.tsx").read_text()
+    script = Path("source/web-assets/backend/scripts/generate_landing_tour_narration.py").read_text()
+    captions = Path("source/web-assets/frontend/src/components/landing/LandingTourVideo.tsx").read_text()
     for needle in (
         "Vigilant Matchmaker",
         "Gamer Dating",
@@ -9339,7 +9339,7 @@ def test_landing_tour_includes_dating_segment() -> None:
 
 def test_landing_tour_narration_script_has_both_commercials_and_nova_voice() -> None:
     from pathlib import Path
-    src = Path("/app/backend/scripts/generate_landing_tour_narration.py").read_text()
+    src = Path("source/web-assets/backend/scripts/generate_landing_tour_narration.py").read_text()
     assert "voice=\"nova\"" in src, "Voice must stay Nova (female · energetic)"
     assert "speed=1.10" in src, "Speed must stay 1.10× for excited tone"
     assert "Commercial One. The Sovereign Casino" in src
@@ -9351,8 +9351,8 @@ def test_pricing_matrix_consistent_between_backend_and_landing_captions() -> Non
     canonical EQUITY_VALUE_MATRIX in equity_master.py — Floor $18, Genesis
     $99, Diamond $360, Platinum $1,800."""
     from pathlib import Path
-    captions = Path("/app/frontend/src/components/landing/LandingTourVideo.tsx").read_text()
-    backend = Path("/app/backend/routes/equity_master.py").read_text()
+    captions = Path("source/web-assets/frontend/src/components/landing/LandingTourVideo.tsx").read_text()
+    backend = Path("source/web-assets/backend/routes/equity_master.py").read_text()
     for anchor in ("$18", "$99", "$360", "$1,800"):
         assert anchor in captions, f"Landing tour caption is missing the {anchor} chair anchor"
     # Backend numeric source-of-truth.
@@ -9365,7 +9365,7 @@ def test_landing_tour_narration_mp3_grew_after_commercial_addition() -> None:
     commercials, then ~5.5 MB after the dating segment landed). Sanity
     check that the regen actually wrote bigger audio."""
     from pathlib import Path
-    p = Path("/app/frontend/public/landing-tour-narration.mp3")
+    p = Path("source/web-assets/frontend/public/landing-tour-narration.mp3")
     assert p.exists(), "landing-tour-narration.mp3 missing"
     size_mb = p.stat().st_size / (1024 * 1024)
     assert size_mb >= 5.0, (
@@ -9812,7 +9812,7 @@ def test_merchant_routes_registered_in_app() -> None:
 
 def test_merchant_frontend_pages_wired() -> None:
     """MerchantJoin + MerchantDashboard pages exist + have key testids."""
-    join = open("/app/frontend/src/pages/MerchantJoin.tsx").read()
+    join = open("source/web-assets/frontend/src/pages/MerchantJoin.tsx").read()
     for tid in [
         "merchant-join-page",
         "merchant-join-id",
@@ -9827,7 +9827,7 @@ def test_merchant_frontend_pages_wired() -> None:
     ]:
         assert tid in join, f"MerchantJoin missing testid: {tid}"
 
-    dash = open("/app/frontend/src/pages/MerchantDashboard.tsx").read()
+    dash = open("source/web-assets/frontend/src/pages/MerchantDashboard.tsx").read()
     for tid in [
         "merchant-dashboard-page",
         "stat-chairs",
@@ -9848,7 +9848,7 @@ def test_merchant_frontend_pages_wired() -> None:
     ]:
         assert tid in dash, f"MerchantDashboard missing testid: {tid}"
 
-    routes = open("/app/frontend/src/routes/monetizationRoutes.tsx").read()
+    routes = open("source/web-assets/frontend/src/routes/monetizationRoutes.tsx").read()
     assert '"/merchant/join"' in routes, "MerchantJoin route not registered"
     assert '"/merchant/dashboard"' in routes, "MerchantDashboard route not registered"
     assert '"/merchant/ambassador"' in routes, "MerchantAmbassador route not registered"
@@ -9858,7 +9858,7 @@ def test_merchant_ambassador_playbook_wired() -> None:
     """[2026-05-16 v1.2] Field Ambassador playbook page must exist and
     surface every phase from `global_vibez_dsg_master_manual.pdf` plus
     the objection matrix and scan-asset block."""
-    amb = open("/app/frontend/src/pages/MerchantAmbassador.tsx").read()
+    amb = open("source/web-assets/frontend/src/pages/MerchantAmbassador.tsx").read()
     for tid in [
         "merchant-ambassador-page",
         "phase-1-warm-hook",
@@ -9892,7 +9892,7 @@ def test_merchant_ambassador_playbook_wired() -> None:
 def test_merchant_join_cta_matches_pdf_copy() -> None:
     """The Business Brief CTA copy must match the PDF verbatim so the
     QR-scanned landing page hits the prescribed messaging."""
-    join = open("/app/frontend/src/pages/MerchantJoin.tsx").read()
+    join = open("source/web-assets/frontend/src/pages/MerchantJoin.tsx").read()
     assert "CLAIM FOUNDING SEAT" in join, "MerchantJoin CTA copy drifted from PDF"
     assert "merchant-join-ambassador-link" in join, (
         "MerchantJoin must link out to /merchant/ambassador for field reps"
@@ -9902,7 +9902,7 @@ def test_merchant_join_cta_matches_pdf_copy() -> None:
 def test_merchant_dashboard_recent_activity_wired() -> None:
     """Dashboard must surface the Recent Activity timeline so merchants
     see ROI on each push-blast / ad-flight purchase."""
-    dash = open("/app/frontend/src/pages/MerchantDashboard.tsx").read()
+    dash = open("source/web-assets/frontend/src/pages/MerchantDashboard.tsx").read()
     for tid in [
         "recent-activity-section",
         "recent-blasts-panel",
@@ -10024,7 +10024,7 @@ def test_merchant_referral_unknown_referrer_is_silent() -> None:
 
 def test_merchant_leaderboard_page_wired() -> None:
     """Locks the leaderboard page testids + footer wiring."""
-    lb = open("/app/frontend/src/pages/MerchantLeaderboard.tsx").read()
+    lb = open("source/web-assets/frontend/src/pages/MerchantLeaderboard.tsx").read()
     for tid in [
         "merchant-leaderboard-page",
         "leaderboard-reward-card",
@@ -10032,14 +10032,14 @@ def test_merchant_leaderboard_page_wired() -> None:
     ]:
         assert tid in lb, f"MerchantLeaderboard missing testid: {tid}"
     # The route is registered.
-    routes = open("/app/frontend/src/routes/monetizationRoutes.tsx").read()
+    routes = open("source/web-assets/frontend/src/routes/monetizationRoutes.tsx").read()
     assert '"/merchant/leaderboard"' in routes
     # MerchantJoin reads ?ref and shows the referral badge.
-    join = open("/app/frontend/src/pages/MerchantJoin.tsx").read()
+    join = open("source/web-assets/frontend/src/pages/MerchantJoin.tsx").read()
     assert "merchant-join-ref-badge" in join, "Join page missing ref badge"
     assert "merchant-join-leaderboard-link" in join, "Join page footer missing leaderboard link"
     # Dashboard surfaces the recruiter panel + leaderboard CTA.
-    dash = open("/app/frontend/src/pages/MerchantDashboard.tsx").read()
+    dash = open("source/web-assets/frontend/src/pages/MerchantDashboard.tsx").read()
     for tid in [
         "recruiter-section",
         "recruiter-panel",
@@ -10076,8 +10076,8 @@ def test_landing_tour_assets_match_public_and_build() -> None:
         ("landing-tour-i18n.json",         "landing-tour-i18n.json"),
         ("gv-sw.js",                       "gv-sw.js"),
     ]
-    pub = Path("/app/frontend/public")
-    bld = Path("/app/frontend/build")
+    pub = Path("source/web-assets/frontend/public")
+    bld = Path("source/web-assets/frontend/build")
     drift = []
     for p_name, b_name in pairs:
         p = pub / p_name
@@ -10098,14 +10098,14 @@ def test_landing_tour_assets_match_public_and_build() -> None:
 def test_landing_tour_cache_busters_wired() -> None:
     """All three call-sites that load the tour MP3/MP4 must use the
     `?v=recirc-2026-02-15` cache-buster so SW + CDN never serve stale."""
-    sw = open("/app/frontend/public/gv-sw.js").read()
+    sw = open("source/web-assets/frontend/public/gv-sw.js").read()
     assert "gv-v3-20260215-recirc-nova" in sw, "Service worker CACHE_VERSION not bumped"
     assert "?v=recirc-2026-02-15" in sw, "SW pre-cache URL missing cache-buster"
 
-    manifest = open("/app/frontend/public/landing-tour-i18n.json").read()
+    manifest = open("source/web-assets/frontend/public/landing-tour-i18n.json").read()
     assert "?v=recirc-2026-02-15" in manifest, "i18n manifest audio URL missing cache-buster"
 
-    component = open("/app/frontend/src/components/landing/LandingTourVideo.tsx").read()
+    component = open("source/web-assets/frontend/src/components/landing/LandingTourVideo.tsx").read()
     assert "?v=recirc-2026-02-15" in component, "Tour component MP3 src missing cache-buster"
     # MP4 download link must also bust cache.
     assert 'href="/landing-tour-tiktok-9x16.mp4?v=recirc-2026-02-15"' in component, \
@@ -10120,7 +10120,7 @@ def test_landing_tour_narration_mp3_is_new_nova_file() -> None:
     files were ~2.4-4.1 MB; the new Nova files are ~5.7 MB. If size
     regresses, someone reverted the regen."""
     from pathlib import Path
-    pub = Path("/app/frontend/public")
+    pub = Path("source/web-assets/frontend/public")
     for name, min_bytes in [
         ("landing-tour-narration.mp3", 5_500_000),
         ("landing-tour-narration-en.mp3", 5_500_000),
@@ -10137,7 +10137,7 @@ def test_landing_tour_narration_mp3_is_new_nova_file() -> None:
 def test_landing_tour_index_js_registers_sw_with_update() -> None:
     """`src/index.js` must call `registration.update()` so returning
     users with the OLD SW get force-flushed on next page load."""
-    idx = open("/app/frontend/src/index.js").read()
+    idx = open("source/web-assets/frontend/src/index.js").read()
     assert "registration.update\\(\\)" not in idx  # literal escape check
     assert "reg.update()" in idx, (
         "index.js must force `reg.update()` on load so old service "
@@ -10156,11 +10156,11 @@ def test_landing_tour_mp4_not_older_than_narration_mp3() -> None:
     — and that's exactly the bug we just fixed. Fail the shield instead
     of letting it ship.
 
-    Recovery: run `bash /app/scripts/regen_tour.sh` (or the individual
+    Recovery: run `bash source/scripts/regen_tour.sh` (or the individual
     step from its source)."""
     from pathlib import Path
-    mp3 = Path("/app/frontend/public/landing-tour-narration-en.mp3")
-    mp4 = Path("/app/frontend/public/landing-tour-tiktok-9x16.mp4")
+    mp3 = Path("source/web-assets/frontend/public/landing-tour-narration-en.mp3")
+    mp4 = Path("source/web-assets/frontend/public/landing-tour-tiktok-9x16.mp4")
     assert mp3.exists(), f"Missing {mp3}"
     assert mp4.exists(), f"Missing {mp4}"
     mp3_mtime = mp3.stat().st_mtime
@@ -10170,7 +10170,7 @@ def test_landing_tour_mp4_not_older_than_narration_mp3() -> None:
     assert drift <= 60, (
         f"Stale MP4 — narration MP3 is {drift:.0f}s newer than the "
         f"rendered 9:16 video. The MP4 audio will be the OLD voice. "
-        f"Run `bash /app/scripts/regen_tour.sh` then re-test."
+        f"Run `bash source/scripts/regen_tour.sh` then re-test."
     )
 
 
@@ -10179,7 +10179,7 @@ def test_landing_tour_regen_script_exists_and_executable() -> None:
     breaking the shield — that script is the only documented path to
     bring every cache layer back in sync in one command."""
     import os
-    p = "/app/scripts/regen_tour.sh"
+    p = "source/scripts/regen_tour.sh"
     assert os.path.exists(p), f"Missing {p}"
     assert os.access(p, os.X_OK), f"{p} is not executable (chmod +x)"
     body = open(p).read()
@@ -10197,14 +10197,14 @@ def test_landing_tour_mp4_matches_narration_full_length() -> None:
     """The 9:16 vertical MP4 must run for the FULL narration duration
     (~4:49 / 289.5s) so the download matches the streaming experience.
     Catches any future render that silently truncates back to 2:02.
-    Recovery: `bash /app/scripts/regen_tour.sh`."""
+    Recovery: `bash source/scripts/regen_tour.sh`."""
     import json, shutil, subprocess
     from pathlib import Path
     import pytest as _pytest
     if shutil.which("ffprobe") is None:
         _pytest.skip("ffprobe not on PATH — install ffmpeg to enable this guard")
-    mp4 = Path("/app/frontend/public/landing-tour-tiktok-9x16.mp4")
-    manifest = json.loads(Path("/app/frontend/public/landing-tour-i18n.json").read_text())
+    mp4 = Path("source/web-assets/frontend/public/landing-tour-tiktok-9x16.mp4")
+    manifest = json.loads(Path("source/web-assets/frontend/public/landing-tour-i18n.json").read_text())
     expected = float(manifest["languages"]["en"]["duration"])
     result = subprocess.run(
         ["ffprobe", "-v", "error", "-show_entries", "format=duration",
@@ -10224,7 +10224,7 @@ def test_landing_tour_render_script_has_only_one_main() -> None:
     """The render script used to have a duplicate legacy `main()` that
     silently overwrote the new full-length output with a 2:02 short
     version. Lock this so it can never come back."""
-    src = open("/app/backend/scripts/render_landing_tour_vertical.py").read()
+    src = open("source/web-assets/backend/scripts/render_landing_tour_vertical.py").read()
     main_count = src.count('if __name__ == "__main__":')
     assert main_count == 1, (
         f"render_landing_tour_vertical.py has {main_count} `__main__` "
@@ -10245,7 +10245,7 @@ def test_vibez654_side_bets_popup_uses_portal() -> None:
     descendants — without the portal, the popup renders as a 2px slit
     inside the collapsed drawer instead of full-screen. Fixed via
     portal on 2026-05-16; lock it so it can't regress."""
-    src = open("/app/frontend/src/pages/games/Vibez654Game.tsx").read()
+    src = open("source/web-assets/frontend/src/pages/games/Vibez654Game.tsx").read()
     assert 'createPortal' in src and 'react-dom' in src, (
         "Vibez654Game must import createPortal from react-dom for the "
         "side-bets popup. Removing this will trap the popup inside the "
@@ -10272,7 +10272,7 @@ def test_vibedice654_premium_side_bets_popup_is_fullscreen() -> None:
     """The Premium 654 side-bets popup must be a full-screen overlay,
     not a 520px bottom modal. User explicitly requested fullscreen.
     (The recent-rolls popup stays 520px — that's a separate panel.)"""
-    src = open("/app/frontend/src/pages/games/VibeDice654Premium.tsx").read()
+    src = open("source/web-assets/frontend/src/pages/games/VibeDice654Premium.tsx").read()
     # Find the side-bets popup block by its testid and inspect the
     # className on that motion.div (NOT the recent-rolls popup which
     # is a separate, intentionally-smaller panel).
@@ -10304,7 +10304,7 @@ def test_beta_cohort_refactored_into_section_helpers():
     handler is broken into 5 single-purpose section helpers so each can
     be tested / extended without touching the orchestrator. The route
     handler must stay a thin orchestrator that just composes them."""
-    src = open("/app/backend/routes/admin_beta_cohort.py").read()
+    src = open("source/web-assets/backend/routes/admin_beta_cohort.py").read()
     for helper in [
         "_section_signups",
         "_section_roles",
@@ -10343,8 +10343,8 @@ def test_lifespan_create_indexes_split_into_named_steps():
     2026-02 split: helpers live in ``lifespan_migrations.py`` (the
     migration bodies + orchestrator) and ``lifespan_indexes.py`` (the
     index spec helper). Both are required."""
-    migrations = open("/app/backend/lifespan_migrations.py").read()
-    indexes = open("/app/backend/lifespan_indexes.py").read()
+    migrations = open("source/web-assets/backend/lifespan_migrations.py").read()
+    indexes = open("source/web-assets/backend/lifespan_indexes.py").read()
     for helper in [
         "async def _migrate_grandfather_genesis_holders",
         "async def _migrate_chair_ids_backfill",
@@ -10370,7 +10370,7 @@ def test_volumetric_dashboard_mobile_groundwork_wired():
     autorotate off, wider FOV) and expose a horizontal swipe gesture so
     users can advance one planet at a time without fighting OrbitControls
     drag. Locks the wiring so a future "clean up" can't drop it."""
-    src = open("/app/frontend/src/pages/VolumetricDashboard.tsx").read()
+    src = open("source/web-assets/frontend/src/pages/VolumetricDashboard.tsx").read()
     assert "useIsMobileGalaxy" in src, (
         "VolumetricDashboard must consume useIsMobileGalaxy hook"
     )
@@ -10401,7 +10401,7 @@ def test_use_is_mobile_galaxy_hook_module_exists():
     Chromebooks + budget tablets that aren't mobile-width still get the
     lighter Three.js profile."""
     import os
-    path = "/app/frontend/src/hooks/useIsMobileGalaxy.ts"
+    path = "source/web-assets/frontend/src/hooks/useIsMobileGalaxy.ts"
     assert os.path.exists(path), "useIsMobileGalaxy hook module missing"
     src = open(path).read()
     assert "export function useIsMobileGalaxy" in src
@@ -10450,7 +10450,7 @@ def test_match_consensus_implementation_pins():
     submission upsert keyed by (match_id, reporting_team_id), admin
     auth on resolve, idempotent airlock, both winner_id AND score must
     match for VERIFIED_SUCCESS."""
-    src = open("/app/backend/routes/match_consensus.py").read()
+    src = open("source/web-assets/backend/routes/match_consensus.py").read()
 
     # 72-hour window is the founder spec — must stay 72.
     assert "AIRLOCK_HOURS = 72" in src, "Airlock window drifted from 72h"
@@ -10500,8 +10500,8 @@ def test_match_consensus_implementation_pins():
 def test_airlock_release_worker_wired_in_lifespan():
     """The 72h airlock release loop MUST be kicked off from lifespan
     startup so payouts auto-clear without manual intervention."""
-    src = open("/app/backend/lifespan.py").read()
-    workers = open("/app/backend/lifespan_workers.py").read()
+    src = open("source/web-assets/backend/lifespan.py").read()
+    workers = open("source/web-assets/backend/lifespan_workers.py").read()
     assert "def _start_airlock_release_worker" in workers
     assert "Match Consensus airlock-release worker" in src
     assert "release_due_airlocks" in workers
@@ -10514,7 +10514,7 @@ def test_match_consensus_chip_wired_into_bracket():
     """The frontend bracket MUST surface a per-match consensus chip so
     players can see Verified/Disputed/Awaiting/Cleared at a glance."""
     import os
-    chip_path = "/app/frontend/src/components/tournament/MatchConsensusChip.tsx"
+    chip_path = "source/web-assets/frontend/src/components/tournament/MatchConsensusChip.tsx"
     assert os.path.exists(chip_path), "MatchConsensusChip component missing"
     chip = open(chip_path).read()
     for tid in [
@@ -10534,7 +10534,7 @@ def test_match_consensus_chip_wired_into_bracket():
     assert "/api/match-consensus/" in chip
 
     # Bracket page must import + mount the chip AND wrap in the Provider.
-    bracket = open("/app/frontend/src/pages/TournamentDetailsPage.tsx").read()
+    bracket = open("source/web-assets/frontend/src/pages/TournamentDetailsPage.tsx").read()
     assert "MatchConsensusChip" in bracket
     assert "<MatchConsensusChip matchId={match.match_id} />" in bracket
     assert "MatchConsensusBulkProvider" in bracket, (
@@ -10546,7 +10546,7 @@ def test_match_consensus_bulk_endpoint_and_context():
     """Bulk endpoint + frontend context must exist so a 32-cell bracket
     fires ONE poll, not 32."""
     import os
-    src = open("/app/backend/routes/match_consensus.py").read()
+    src = open("source/web-assets/backend/routes/match_consensus.py").read()
     # Bulk route exists, accepts comma-separated `match_ids`, capped at 128.
     assert '@router.get("/bulk")' in src
     assert "async def get_match_state_bulk" in src
@@ -10561,7 +10561,7 @@ def test_match_consensus_bulk_endpoint_and_context():
     )
 
     # Frontend bulk context + 50ms register debounce + 20s poll interval.
-    ctx_path = "/app/frontend/src/components/tournament/MatchConsensusBulkContext.tsx"
+    ctx_path = "source/web-assets/frontend/src/components/tournament/MatchConsensusBulkContext.tsx"
     assert os.path.exists(ctx_path)
     ctx = open(ctx_path).read()
     assert "MatchConsensusBulkProvider" in ctx
@@ -10577,7 +10577,7 @@ def test_airlock_release_hands_off_to_tournament_service():
     tournament service: write an audit row to match_payout_events and
     notify the winner via engagement (the same collection the existing
     tournament-win notification uses)."""
-    src = open("/app/backend/routes/match_consensus.py").read()
+    src = open("source/web-assets/backend/routes/match_consensus.py").read()
     assert "match_payout_events" in src
     assert '"event": "airlock_cleared"' in src
     assert '"type": "match_payout_cleared"' in src
@@ -10594,7 +10594,7 @@ def test_frontend_hash_game_log_helper_exists():
     digest the consensus engine compares. Must use SHA-256 + Web
     Crypto + the canonical `|` delimiter."""
     import os
-    path = "/app/frontend/src/utils/hashGameLog.ts"
+    path = "source/web-assets/frontend/src/utils/hashGameLog.ts"
     assert os.path.exists(path), "hashGameLog frontend helper missing"
     src = open(path).read()
     assert "export async function hashGameLog" in src
@@ -10609,7 +10609,7 @@ def test_match_consensus_indexes_registered():
     + the consensus + airlock uniqueness must be in `_INDEX_SPECS`. The
     `(match_id, reporting_team_id)` UNIQUE index is the DB-level guard
     against ballot stuffing."""
-    src = open("/app/backend/lifespan_indexes.py").read()
+    src = open("source/web-assets/backend/lifespan_indexes.py").read()
     # Per-team unique submission.
     assert '"coll": "match_submissions"' in src
     assert '"reporting_team_id"' in src
@@ -10642,13 +10642,13 @@ def test_no_retired_chair_supply_ladder_copy_resurfaces():
     """
     import os
     surfaces = [
-        "/app/frontend/src/components/landing/WelcomeLetter.tsx",
-        "/app/frontend/src/components/landing/TokenRoadmap.tsx",
-        "/app/frontend/src/components/landing/WaysToEarn.tsx",
-        "/app/frontend/src/components/landing/EvolutionCountdown.tsx",
-        "/app/frontend/src/components/landing/ApexWishlistOptIn.tsx",
-        "/app/frontend/src/pages/LandingNeonGaming.tsx",
-        "/app/frontend/src/pages/Landing.tsx",
+        "source/web-assets/frontend/src/components/landing/WelcomeLetter.tsx",
+        "source/web-assets/frontend/src/components/landing/TokenRoadmap.tsx",
+        "source/web-assets/frontend/src/components/landing/WaysToEarn.tsx",
+        "source/web-assets/frontend/src/components/landing/EvolutionCountdown.tsx",
+        "source/web-assets/frontend/src/components/landing/ApexWishlistOptIn.tsx",
+        "source/web-assets/frontend/src/pages/LandingNeonGaming.tsx",
+        "source/web-assets/frontend/src/pages/Landing.tsx",
     ]
     forbidden_phrases = [
         # Old chair-ladder pricing combos:
@@ -10682,7 +10682,7 @@ def test_pricing_tiers_doc_comment_matches_backend_catalog():
     comment to either drop the price list OR match the backend exactly.
     """
     import re
-    src = open("/app/frontend/src/pages/PricingTiers.tsx").read()
+    src = open("source/web-assets/frontend/src/pages/PricingTiers.tsx").read()
     # Pull the top comment block. If a price list appears, it must use
     # backend-canonical $9/$19/$39/$89 ordered exactly.
     if "$10" in src and "$20" in src and "$29" in src and "$65" in src:
@@ -10724,7 +10724,7 @@ def test_security_directive_d1_sandbox_firewall_registered():
     After the May-2026 refactor, the handler lives in
     `utils/sandbox_firewall.py` and server.py only calls `install(...)`.
     Both surfaces are validated here."""
-    server_src = open("/app/backend/server.py").read()
+    server_src = open("source/web-assets/backend/server.py").read()
     # server.py must wire in the firewall module.
     assert "from utils.sandbox_firewall import install" in server_src, (
         "Security D1: server.py must import the sandbox_firewall installer"
@@ -10733,7 +10733,7 @@ def test_security_directive_d1_sandbox_firewall_registered():
         "Security D1: server.py must call install(app, db, logger)"
     )
     # The actual handler lives in the utils module.
-    fw_src = open("/app/backend/utils/sandbox_firewall.py").read()
+    fw_src = open("source/web-assets/backend/utils/sandbox_firewall.py").read()
     assert '@app.exception_handler(Exception)' in fw_src, (
         "Security D1: global exception handler missing in sandbox_firewall.py"
     )
@@ -10750,7 +10750,7 @@ def test_security_directive_d2_shared_payout_airlock_module():
     """D2: a single shared `services/payout_airlock.py` enforces the
     NON-negotiable 72-hour hold across every outward transfer source."""
     import os
-    path = "/app/backend/services/payout_airlock.py"
+    path = "source/web-assets/backend/services/payout_airlock.py"
     assert os.path.exists(path), "Security D2: payout_airlock service missing"
     src = open(path).read()
     assert "AIRLOCK_HOURS = 72" in src, "D2 airlock window drifted from 72h"
@@ -10762,7 +10762,7 @@ def test_security_directive_d2_shared_payout_airlock_module():
     assert '"clears_at"' in src
 
     # Background worker MUST be kicked off from lifespan.
-    lifespan = open("/app/backend/lifespan.py").read()
+    lifespan = open("source/web-assets/backend/lifespan.py").read()
     assert "_start_payout_airlock_release_worker" in lifespan
     assert "Payout Airlock release worker" in lifespan
 
@@ -10775,7 +10775,7 @@ def test_security_directive_d4_admin_security_console_routes():
     assert "/api/admin/security/events" in paths
     assert "/api/admin/security/airlocks" in paths
     assert "/api/admin/security/airlocks/release-due" in paths
-    src = open("/app/backend/routes/admin_security.py").read()
+    src = open("source/web-assets/backend/routes/admin_security.py").read()
     # All 3 endpoints MUST call _require_admin first.
     assert src.count("_require_admin(request)") >= 3
 
@@ -10794,7 +10794,7 @@ def test_no_dollar_sign_in_game_pages():
         # "$${expr.toFixed" — escaped template literal dollar coin display
         re.compile(r"\$\$\{[^}]*\.toFixed"),
     ]
-    for path in glob.glob("/app/frontend/src/pages/games/*.tsx"):
+    for path in glob.glob("source/web-assets/frontend/src/pages/games/*.tsx"):
         body = open(path).read()
         for pat in forbidden_patterns:
             for m in pat.finditer(body):
@@ -11016,7 +11016,7 @@ def test_admin_tier_pricing_ui_wired():
     must exist at /admin/tier-pricing and wire to the catalog/patch
     endpoints. Pin the route + testids + API calls."""
     from pathlib import Path
-    fe = Path("/app/frontend/src")
+    fe = Path("source/web-assets/frontend/src")
 
     page = (fe / "pages" / "admin" / "AdminTierPricing.tsx").read_text(encoding="utf-8")
     assert "/api/admin/pricing/catalogs/" in page, (
@@ -11047,7 +11047,7 @@ def test_mobile_arc_carousel_replaces_canvas_on_phone():
       • CATEGORIES is exported so the carousel + canvas share the source
     """
     from pathlib import Path
-    fe = Path("/app/frontend/src")
+    fe = Path("source/web-assets/frontend/src")
 
     carousel = (fe / "components" / "dashboard" / "MobileArcCarousel.tsx").read_text(encoding="utf-8")
     for tid in [
@@ -11088,7 +11088,7 @@ def test_mobile_galaxy_tour_renders_first_visit_only():
       • MobileArcCarousel imports and renders <MobileGalaxyTour />
     """
     from pathlib import Path
-    fe = Path("/app/frontend/src")
+    fe = Path("source/web-assets/frontend/src")
 
     tour = (fe / "components" / "dashboard" / "MobileGalaxyTour.tsx").read_text(encoding="utf-8")
     assert "STORAGE_KEY" in tour and "gv_mobile_galaxy_tour_seen" in tour, (
@@ -11120,7 +11120,7 @@ def test_admin_payments_audit_ui_wired():
     drift detector. Pins the route + key testids + API wiring so the
     surface can't be silently broken by future refactors."""
     from pathlib import Path
-    fe = Path("/app/frontend/src")
+    fe = Path("source/web-assets/frontend/src")
 
     page = (fe / "pages" / "admin" / "AdminPaymentsAudit.tsx").read_text(encoding="utf-8")
     # Must hit all 3 backend endpoints.
@@ -11208,7 +11208,7 @@ def test_payments_audit_drift_alert_wired():
     )
 
     # Frontend wiring
-    fe_page = (Path("/app/frontend/src") / "pages" / "admin" / "AdminPaymentsAudit.tsx").read_text(encoding="utf-8")
+    fe_page = (Path("source/web-assets/frontend/src") / "pages" / "admin" / "AdminPaymentsAudit.tsx").read_text(encoding="utf-8")
     for tid in [
         "admin-payments-audit-check-now-btn",
         "admin-payments-audit-alerts-card",
@@ -11236,7 +11236,7 @@ def test_pricing_catalog_covers_featured_streamer_and_jftn_pass():
     """
     from pathlib import Path
     backend = Path(__file__).resolve().parents[1]
-    fe = Path("/app/frontend/src")
+    fe = Path("source/web-assets/frontend/src")
 
     catalog_src = (backend / "services" / "pricing_catalog.py").read_text(encoding="utf-8")
     for cid in ("featured_streamer", "jftn_season_pass"):
@@ -11409,7 +11409,7 @@ def test_dsg_token_burn_paths_stay_decoupled_from_recirculation():
 def test_admin_recirculation_ui_wired():
     """Founder admin page for the in-app coin recirculation pools."""
     from pathlib import Path
-    fe = Path("/app/frontend/src")
+    fe = Path("source/web-assets/frontend/src")
     page = (fe / "pages" / "admin" / "AdminRecirculation.tsx").read_text(encoding="utf-8")
     for tid in [
         "admin-recirculation-page",
@@ -11451,7 +11451,7 @@ def test_marketing_copy_matches_recirculation_blueprint():
       6. The public recirculation endpoint is mounted.
     """
     from pathlib import Path
-    fe = Path("/app/frontend/src")
+    fe = Path("source/web-assets/frontend/src")
 
     # 1. Legacy burn widget gone.
     assert not (fe / "components" / "BurnCounterWidget.tsx").exists(), (
@@ -11550,7 +11550,7 @@ def test_prize_wheel_top_tier_requires_chair():
 def test_prize_wheel_funding_bucket_is_treasury_only():
     """The wheel MUST debit only the Treasury (30%) bucket of the
     Recirculation pools. Tournament + Airlock buckets are off-limits."""
-    src = open("/app/backend/services/prize_wheel.py").read()
+    src = open("source/web-assets/backend/services/prize_wheel.py").read()
     # Conditional decrement matches "_id": "treasury"
     assert '"_id": "treasury"' in src and 'recirculation_pools.update_one' in src, (
         "Prize wheel must conditionally debit the Treasury bucket"
@@ -11598,8 +11598,8 @@ def test_prize_wheel_indexes_declared():
 def test_prize_wheel_no_usd_in_api_payload():
     """User-facing payload must denominate everything in coins (₵).
     No '$' signs, no 'USD' keys in the routes or status outputs."""
-    routes = open("/app/backend/routes/prize_wheel_routes.py").read()
-    svc = open("/app/backend/services/prize_wheel.py").read()
+    routes = open("source/web-assets/backend/routes/prize_wheel_routes.py").read()
+    svc = open("source/web-assets/backend/services/prize_wheel.py").read()
     # Allow USD constants for internal economic math (COINS_PER_USD
     # import is fine) — but no '$' character should appear in the
     # response shaping at all.
@@ -11615,11 +11615,11 @@ def test_prize_wheel_no_usd_in_api_payload():
 
 def test_prize_wheel_frontend_page_wired():
     """The DailySpinWheel page must exist and be routed at /daily-spin."""
-    page = open("/app/frontend/src/pages/DailySpinWheel.tsx").read()
+    page = open("source/web-assets/frontend/src/pages/DailySpinWheel.tsx").read()
     assert "daily-spin-wheel-page" in page, "DailySpinWheel missing root testid"
     assert "spin-button" in page, "DailySpinWheel missing spin-button testid"
     assert "outcome-matrix" in page, "DailySpinWheel missing outcome-matrix testid"
-    routes = open("/app/frontend/src/routes/monetizationRoutes.tsx").read()
+    routes = open("source/web-assets/frontend/src/routes/monetizationRoutes.tsx").read()
     assert 'path="/daily-spin"' in routes, "/daily-spin route not registered"
     assert "DailySpinWheel" in routes, "DailySpinWheel not imported in routes"
 
@@ -11627,7 +11627,7 @@ def test_prize_wheel_frontend_page_wired():
 def test_prize_wheel_sybil_gate_enforces_four_layers():
     """Sybil gate must enforce all four layers from the v1.1 Patch:
     phone, profile, recent game hand, chair (Top only)."""
-    src = open("/app/backend/services/prize_wheel.py").read()
+    src = open("source/web-assets/backend/services/prize_wheel.py").read()
     for token in [
         "phone_verified",
         "profile_incomplete",
@@ -11657,7 +11657,7 @@ def test_founder_preview_routes_registered():
 
 def test_founder_preview_requires_admin():
     """The endpoints must depend on require_admin so non-admins get 403."""
-    src = open("/app/backend/routes/admin_founder_preview.py").read()
+    src = open("source/web-assets/backend/routes/admin_founder_preview.py").read()
     assert "from utils.admin_guard import require_admin" in src
     assert "Depends(require_admin)" in src, (
         "Founder preview endpoints must be admin-gated"
@@ -11667,7 +11667,7 @@ def test_founder_preview_requires_admin():
 def test_founder_preview_ledger_reason_is_traceable():
     """Top-ups must write to coin_ledger with reason='founder_preview'
     so we can distinguish admin test mints from real player credits."""
-    src = open("/app/backend/routes/admin_founder_preview.py").read()
+    src = open("source/web-assets/backend/routes/admin_founder_preview.py").read()
     assert 'reason="founder_preview"' in src, (
         "Top-ups must be ledgered with reason='founder_preview'"
     )
@@ -11676,11 +11676,11 @@ def test_founder_preview_ledger_reason_is_traceable():
 def test_dashboard_spin_badge_wired():
     """DashboardSpinBadge must be imported + rendered in DashboardNew
     header so users can find /daily-spin without remembering the URL."""
-    dash = open("/app/frontend/src/pages/DashboardNew.tsx").read()
+    dash = open("source/web-assets/frontend/src/pages/DashboardNew.tsx").read()
     assert "DashboardSpinBadge" in dash, (
         "DashboardNew must import + render DashboardSpinBadge"
     )
-    badge = open("/app/frontend/src/components/DashboardSpinBadge.tsx").read()
+    badge = open("source/web-assets/frontend/src/components/DashboardSpinBadge.tsx").read()
     assert "dashboard-spin-ready-badge" in badge
     assert "dashboard-founder-preview-trigger" in badge
     assert "/api/admin/founder-preview/top-up" in badge
@@ -11696,7 +11696,7 @@ def test_vibe_654_hall_page_exists_and_lists_all_variants():
     """The Hall must enumerate every 6-5-4 variant the platform has —
     including the ones that need a live table to enter — so a founder
     or QA tester can reach all of them from a single screen."""
-    hall = open("/app/frontend/src/pages/games/Vibe654Hall.tsx").read()
+    hall = open("source/web-assets/frontend/src/pages/games/Vibe654Hall.tsx").read()
     assert "vibe-654-hall-page" in hall
     # Cards are rendered via .map() with template-literal test ids, so
     # we assert the variant id is present in the VARIANTS table instead.
@@ -11710,13 +11710,13 @@ def test_vibe_654_hall_page_exists_and_lists_all_variants():
 
 
 def test_vibe_654_hall_route_registered():
-    routes = open("/app/frontend/src/routes/gamesRoutes.tsx").read()
+    routes = open("source/web-assets/frontend/src/routes/gamesRoutes.tsx").read()
     assert 'path="/vibe-654-hall"' in routes, "/vibe-654-hall route missing"
     assert "Vibe654Hall" in routes, "Vibe654Hall not imported"
 
 
 def test_orphaned_vibe_dice654_import_removed():
-    routes = open("/app/frontend/src/routes/gamesRoutes.tsx").read()
+    routes = open("source/web-assets/frontend/src/routes/gamesRoutes.tsx").read()
     assert 'import VibeDice654 from "@/pages/games/VibeDice654";' not in routes, (
         "Orphaned VibeDice654 import re-introduced. Either route it "
         "OR register a backend /api/dice/* router — currently neither."
@@ -11724,7 +11724,7 @@ def test_orphaned_vibe_dice654_import_removed():
 
 
 def test_vibez_654_card_lands_in_hall_not_dice():
-    src = open("/app/frontend/src/pages/GamesNew.tsx").read()
+    src = open("source/web-assets/frontend/src/pages/GamesNew.tsx").read()
     assert "navigate('/vibe-654-hall')" in src, (
         "Vibez 654 card must route to the Hall, not directly to /dice"
     )
@@ -11737,7 +11737,7 @@ def test_vibez_654_card_lands_in_hall_not_dice():
 def test_vibe_654_prescription_page_built():
     """The sovereign-tier Prescription UI must exist with the full
     play / reroll / stand flow plus the five side-bet pickers."""
-    page = open("/app/frontend/src/pages/games/Vibe654Prescription.tsx").read()
+    page = open("source/web-assets/frontend/src/pages/games/Vibe654Prescription.tsx").read()
     assert "prescription-page" in page, "Root testid missing"
     for tid in [
         "prescription-roll-btn",
@@ -11758,7 +11758,7 @@ def test_vibe_654_prescription_page_built():
 
 
 def test_vibe_654_prescription_route_registered():
-    routes = open("/app/frontend/src/routes/gamesRoutes.tsx").read()
+    routes = open("source/web-assets/frontend/src/routes/gamesRoutes.tsx").read()
     assert 'path="/vibe-654/prescription"' in routes
     assert "Vibe654Prescription" in routes
 
@@ -11766,7 +11766,7 @@ def test_vibe_654_prescription_route_registered():
 def test_vibe_654_hall_marks_prescription_as_live():
     """Hall must now route to the new UI; the 'backend-only' status
     used to ship as a placeholder before the UI existed."""
-    hall = open("/app/frontend/src/pages/games/Vibe654Hall.tsx").read()
+    hall = open("source/web-assets/frontend/src/pages/games/Vibe654Hall.tsx").read()
     # The prescription variant block must point to the new route
     assert "navigate('/vibe-654/prescription')" in hall, (
         "Hall Prescription card must navigate to the new UI"
@@ -11785,10 +11785,10 @@ def test_vibe_654_hall_marks_prescription_as_live():
 def test_dashboard_reachability_chip_wired():
     """Dashboard must surface the reachability chip so a founder can
     see at a glance whether all 6-5-4 surfaces are discoverable."""
-    chip = open("/app/frontend/src/components/Vibez654ReachabilityChip.tsx").read()
+    chip = open("source/web-assets/frontend/src/components/Vibez654ReachabilityChip.tsx").read()
     assert "vibez-654-reachability-chip" in chip
     assert "VARIANTS_MANIFEST" in chip
-    dash = open("/app/frontend/src/pages/DashboardNew.tsx").read()
+    dash = open("source/web-assets/frontend/src/pages/DashboardNew.tsx").read()
     assert "Vibez654ReachabilityChip" in dash, (
         "Reachability chip must be wired into DashboardNew"
     )
@@ -11797,8 +11797,8 @@ def test_dashboard_reachability_chip_wired():
 def test_hall_and_chip_variant_lists_stay_in_sync():
     """The chip embeds a manifest mirroring the Hall's VARIANTS list.
     If the two drift, the dashboard count will lie. Guard the count."""
-    hall = open("/app/frontend/src/pages/games/Vibe654Hall.tsx").read()
-    chip = open("/app/frontend/src/components/Vibez654ReachabilityChip.tsx").read()
+    hall = open("source/web-assets/frontend/src/pages/games/Vibe654Hall.tsx").read()
+    chip = open("source/web-assets/frontend/src/components/Vibez654ReachabilityChip.tsx").read()
     import re
     hall_ids = set(re.findall(r"id:\s*'([a-zA-Z0-9_\-]+)'", hall))
     chip_ids = set(re.findall(r"id:\s*'([a-zA-Z0-9_\-]+)'", chip))
@@ -11854,7 +11854,7 @@ def test_media_engine_never_burns_in_app_coins():
     """The whole point of the counter-proposal is that in-app coins
     never burn. Guard the service so a future edit can't quietly
     flip this back."""
-    src = open("/app/backend/services/media_engine.py").read()
+    src = open("source/web-assets/backend/services/media_engine.py").read()
     # The only "burn" reference should be the DSG SPL gas-out fee
     # comment AND the 0-burn payload field. Make that explicit.
     assert "0  % → Burn" in src or "burn_pct" in src
@@ -11909,7 +11909,7 @@ def test_media_engine_indexes_declared():
 def test_media_engine_seeds_three_demo_tracks_on_boot():
     """The Vibe DJ overlay relies on at least one track always
     existing. Seed migration must be wired."""
-    mig = open("/app/backend/lifespan_migrations.py").read()
+    mig = open("source/web-assets/backend/lifespan_migrations.py").read()
     assert "_seed_dsg_tracks" in mig
     assert "trk_seed_nova_drift" in mig
     assert "trk_seed_dsg_pulse" in mig
@@ -11918,7 +11918,7 @@ def test_media_engine_seeds_three_demo_tracks_on_boot():
 def test_vibe_dj_overlay_component_built():
     """Vibe DJ glassmorphism overlay must exist with tip/boost/gift
     buttons + transparent 80/15/5 footnote."""
-    src = open("/app/frontend/src/components/VibeDJOverlay.tsx").read()
+    src = open("source/web-assets/frontend/src/components/VibeDJOverlay.tsx").read()
     for tid in [
         "vibe-dj-overlay", "vibe-dj-toggle", "vibe-dj-now-playing",
         "vibe-dj-tip-row", "vibe-dj-boost-row", "vibe-dj-gift-row",
@@ -11933,8 +11933,8 @@ def test_vibe_dj_overlay_component_built():
 def test_vibe_dj_overlay_mounted_in_two_rooms_minimum():
     """The overlay must be mounted in the Classic Parlour AND the
     Prescription Room so founders can dogfood the tipping flow."""
-    classic = open("/app/frontend/src/pages/games/Vibez654Game.tsx").read()
-    prescription = open("/app/frontend/src/pages/games/Vibe654Prescription.tsx").read()
+    classic = open("source/web-assets/frontend/src/pages/games/Vibez654Game.tsx").read()
+    prescription = open("source/web-assets/frontend/src/pages/games/Vibe654Prescription.tsx").read()
     for src, name in [(classic, "Vibez654Game"), (prescription, "Vibe654Prescription")]:
         assert "VibeDJOverlay" in src, (
             f"VibeDJOverlay not imported in {name}"
@@ -11952,7 +11952,7 @@ def test_vibe_dj_overlay_mounted_in_two_rooms_minimum():
 def test_artist_dashboard_page_built():
     """Creator Studio must surface balance, ledger, tracks, and the
     Gas-Out flow — all in ₵, no $."""
-    src = open("/app/frontend/src/pages/ArtistDashboard.tsx").read()
+    src = open("source/web-assets/frontend/src/pages/ArtistDashboard.tsx").read()
     for tid in [
         "artist-dashboard-page", "artist-balance-headline",
         "artist-gas-out-trigger", "artist-tracks-card", "artist-txns-card",
@@ -11967,7 +11967,7 @@ def test_artist_dashboard_page_built():
 
 
 def test_artist_dashboard_route_registered():
-    routes = open("/app/frontend/src/routes/monetizationRoutes.tsx").read()
+    routes = open("source/web-assets/frontend/src/routes/monetizationRoutes.tsx").read()
     assert 'path="/artist/dashboard"' in routes
     assert "ArtistDashboard" in routes
 
@@ -11989,11 +11989,11 @@ def test_vibe_dj_overlay_mounted_in_all_six_one_rooms():
     artists earn from EVERY table. Plus Prescription which already
     had it. Total: 5 rooms with the overlay."""
     expected = [
-        "/app/frontend/src/pages/games/Vibez654Game.tsx",          # Classic Parlour
-        "/app/frontend/src/pages/games/VibeDice654Premium.tsx",    # Premium
-        "/app/frontend/src/pages/games/VibeSoloHighRoller.tsx",    # Solo Vault
-        "/app/frontend/src/pages/games/VibeColiseum.tsx",          # Tournament + Coliseum
-        "/app/frontend/src/pages/games/Vibe654Prescription.tsx",   # Sovereign
+        "source/web-assets/frontend/src/pages/games/Vibez654Game.tsx",          # Classic Parlour
+        "source/web-assets/frontend/src/pages/games/VibeDice654Premium.tsx",    # Premium
+        "source/web-assets/frontend/src/pages/games/VibeSoloHighRoller.tsx",    # Solo Vault
+        "source/web-assets/frontend/src/pages/games/VibeColiseum.tsx",          # Tournament + Coliseum
+        "source/web-assets/frontend/src/pages/games/Vibe654Prescription.tsx",   # Sovereign
     ]
     for path in expected:
         src = open(path).read()
@@ -12047,8 +12047,8 @@ def test_plex_room_indexes_declared():
 
 
 def test_plex_lobby_and_room_pages_built():
-    lobby = open("/app/frontend/src/pages/PlexLobby.tsx").read()
-    room = open("/app/frontend/src/pages/PlexRoom.tsx").read()
+    lobby = open("source/web-assets/frontend/src/pages/PlexLobby.tsx").read()
+    room = open("source/web-assets/frontend/src/pages/PlexRoom.tsx").read()
     assert "plex-lobby-page" in lobby
     assert "plex-lobby-create" in lobby
     assert "plex-room-page" in room
@@ -12060,7 +12060,7 @@ def test_plex_lobby_and_room_pages_built():
 
 
 def test_plex_routes_registered():
-    routes = open("/app/frontend/src/routes/monetizationRoutes.tsx").read()
+    routes = open("source/web-assets/frontend/src/routes/monetizationRoutes.tsx").read()
     assert 'path="/plex"' in routes
     assert 'path="/plex/:roomId"' in routes
     assert "PlexLobby" in routes
@@ -12068,7 +12068,7 @@ def test_plex_routes_registered():
 
 
 def test_artist_onboarding_page_built():
-    src = open("/app/frontend/src/pages/ArtistOnboarding.tsx").read()
+    src = open("source/web-assets/frontend/src/pages/ArtistOnboarding.tsx").read()
     for tid in [
         "artist-onboarding-page",
         "artist-onboarding-step",
@@ -12086,7 +12086,7 @@ def test_artist_onboarding_page_built():
 
 
 def test_artist_onboarding_route_registered():
-    routes = open("/app/frontend/src/routes/monetizationRoutes.tsx").read()
+    routes = open("source/web-assets/frontend/src/routes/monetizationRoutes.tsx").read()
     assert 'path="/artist/onboarding"' in routes
     assert "ArtistOnboarding" in routes
 
@@ -12094,7 +12094,7 @@ def test_artist_onboarding_route_registered():
 def test_artist_self_serve_upsert_endpoint():
     """Onboarding must NOT require admin to publish — there's a
     dedicated /api/media/artist/me/tracks POST."""
-    src = open("/app/backend/routes/media_engine_routes.py").read()
+    src = open("source/web-assets/backend/routes/media_engine_routes.py").read()
     assert "async def artist_upsert_track_self" in src
     # Must hard-bind artist_id to the calling user (no spoofing)
     assert 'artist_id = current_user["user_id"]' in src
@@ -12112,7 +12112,7 @@ def test_interests_endpoints_registered():
 
 
 def test_interest_tag_picker_built():
-    src = open("/app/frontend/src/components/InterestTagPicker.tsx").read()
+    src = open("source/web-assets/frontend/src/components/InterestTagPicker.tsx").read()
     assert "interest-tag-picker" in src
     assert "interest-tag-grid" in src
     assert "interest-picker-save" in src
@@ -12123,7 +12123,7 @@ def test_interest_tag_picker_built():
 
 
 def test_plex_room_uses_interest_picker_on_first_join():
-    src = open("/app/frontend/src/pages/PlexRoom.tsx").read()
+    src = open("source/web-assets/frontend/src/pages/PlexRoom.tsx").read()
     assert "InterestTagPicker" in src, "Plex Room must mount the InterestTagPicker"
     assert "hasPickedInterests" in src
     assert "loadStoredInterests" in src
@@ -12134,7 +12134,7 @@ def test_plex_room_uses_interest_picker_on_first_join():
 def test_session_hub_card_surfaces_all_new_routes():
     """Dashboard hub must link the six Feb 2026 surfaces — without
     this card, users have no UI path to them."""
-    src = open("/app/frontend/src/components/SessionHubCard.tsx").read()
+    src = open("source/web-assets/frontend/src/components/SessionHubCard.tsx").read()
     for route in [
         "'/plex'", "'/vibe-654-hall'", "'/daily-spin'",
         "'/artist/onboarding'", "'/artist/dashboard'",
@@ -12144,7 +12144,7 @@ def test_session_hub_card_surfaces_all_new_routes():
 
 
 def test_dashboard_mounts_session_hub_card():
-    dash = open("/app/frontend/src/pages/DashboardNew.tsx").read()
+    dash = open("source/web-assets/frontend/src/pages/DashboardNew.tsx").read()
     assert "SessionHubCard" in dash, "DashboardNew must render the SessionHubCard"
 
 
@@ -12154,7 +12154,7 @@ def test_dashboard_mounts_session_hub_card():
 # ──────────────────────────────────────────────────────────────────
 
 def test_explore_page_built():
-    src = open("/app/frontend/src/pages/Explore.tsx").read()
+    src = open("source/web-assets/frontend/src/pages/Explore.tsx").read()
     assert "explore-page" in src
     assert "explore-search" in src
     assert "explore-category-chips" in src
@@ -12167,7 +12167,7 @@ def test_explore_page_built():
 def test_explore_registry_size_floor():
     """Catalog must surface at least 40 destinations. Guards against
     silent shrinkage when refactoring."""
-    src = open("/app/frontend/src/pages/Explore.tsx").read()
+    src = open("source/web-assets/frontend/src/pages/Explore.tsx").read()
     import re
     rows = re.findall(r"\{\s*route:\s*'/[^']+',\s*title:", src)
     assert len(rows) >= 40, (
@@ -12176,13 +12176,13 @@ def test_explore_registry_size_floor():
 
 
 def test_explore_route_registered():
-    routes = open("/app/frontend/src/routes/monetizationRoutes.tsx").read()
+    routes = open("source/web-assets/frontend/src/routes/monetizationRoutes.tsx").read()
     assert 'path="/explore"' in routes
     assert "import Explore from '@/pages/Explore'" in routes
 
 
 def test_session_hub_links_explore():
-    src = open("/app/frontend/src/components/SessionHubCard.tsx").read()
+    src = open("source/web-assets/frontend/src/components/SessionHubCard.tsx").read()
     assert "'/explore'" in src, "Dashboard hub must surface /explore"
 
 
@@ -12216,7 +12216,7 @@ def test_dsg_tv_resolve_never_burns_in_app_coins():
     """resolve_pool's 1% must route to Treasury — NOT through
     dsg_spl_burn_queue. (Prestige upgrades DO legitimately enqueue
     SPL burns, but Predict-to-Win must not.)"""
-    src = open("/app/backend/services/dsg_tv_expansion.py").read()
+    src = open("source/web-assets/backend/services/dsg_tv_expansion.py").read()
     # Locate resolve_pool function and verify it ONLY references
     # treasury, not the SPL burn queue.
     import re
@@ -12257,7 +12257,7 @@ def test_dsg_tv_indexes_declared():
 
 
 def test_dsg_tv_page_built():
-    src = open("/app/frontend/src/pages/DSGTVExpansion.tsx").read()
+    src = open("source/web-assets/frontend/src/pages/DSGTVExpansion.tsx").read()
     for tid in ["dsg-tv-page", "dsg-tv-tabs",
                 "dsg-tv-prestige-card", "dsg-tv-stools-card",
                 "dsg-tv-predict-create", "dsg-tv-redeem-stools"]:
@@ -12266,26 +12266,26 @@ def test_dsg_tv_page_built():
 
 
 def test_dsg_tv_route_registered():
-    routes = open("/app/frontend/src/routes/monetizationRoutes.tsx").read()
+    routes = open("source/web-assets/frontend/src/routes/monetizationRoutes.tsx").read()
     assert 'path="/dsg-tv"' in routes
     assert "DSGTVExpansion" in routes
 
 
 def test_cmdk_launcher_mounted_globally():
-    app = open("/app/frontend/src/App.js").read()
+    app = open("source/web-assets/frontend/src/App.js").read()
     assert "import CmdKLauncher" in app
     assert "<CmdKLauncher" in app
-    cmd = open("/app/frontend/src/components/CmdKLauncher.tsx").read()
+    cmd = open("source/web-assets/frontend/src/components/CmdKLauncher.tsx").read()
     assert "cmdk-launcher" in cmd
     assert "cmdk-input" in cmd
     assert "EXPLORE_REGISTRY" in cmd
 
 
 def test_mobile_bottom_nav_mounted_globally():
-    app = open("/app/frontend/src/App.js").read()
+    app = open("source/web-assets/frontend/src/App.js").read()
     assert "import MobileBottomNav" in app
     assert "<MobileBottomNav" in app
-    nav = open("/app/frontend/src/components/MobileBottomNav.tsx").read()
+    nav = open("source/web-assets/frontend/src/components/MobileBottomNav.tsx").read()
     assert "mobile-bottom-nav" in nav
     # All 6 tabs must exist
     for k in ["home", "vibe-654", "plex", "studio", "explore", "profile"]:
@@ -12361,7 +12361,7 @@ def test_dsg_tv_expansion_open_pools_public() -> None:
     # GET method must be supported and there must be no auth dependency
     # (the public list is intentionally open per the blueprint).
     assert "GET" in getattr(target, "methods", set())
-    deps_src = open("/app/backend/routes/dsg_tv_expansion_routes.py").read()
+    deps_src = open("source/web-assets/backend/routes/dsg_tv_expansion_routes.py").read()
     open_decl = deps_src.split('@router.get("/predict/open")')[1].split(
         "@router."
     )[0]
@@ -12403,7 +12403,7 @@ def test_dsg_tv_expansion_predict_no_in_app_burn_in_source() -> None:
     (or push to the SPL burn queue) for a prediction pool. Only the
     Prestige path is allowed to enqueue SPL burns."""
     import re
-    src = open("/app/backend/services/dsg_tv_expansion.py").read()
+    src = open("source/web-assets/backend/services/dsg_tv_expansion.py").read()
     # SPL burn queue intent IS expected — but only on the Prestige path.
     assert "dsg_spl_burn_queue" in src, "SPL queue intent for Prestige expected"
     # Strip comments + docstrings before scanning resolve_pool.
@@ -12426,7 +12426,7 @@ def test_dsg_tv_expansion_page_imports_constants_endpoint() -> None:
     """The Prestige page must hit the live API so the UI stays in
     lock-step with the backend split. The constants endpoint is
     optional, but the four primary read endpoints are mandatory."""
-    src = open("/app/frontend/src/pages/DSGTVExpansion.tsx").read()
+    src = open("source/web-assets/frontend/src/pages/DSGTVExpansion.tsx").read()
     assert "/api/dsg-tv/prestige/me" in src
     assert "/api/dsg-tv/stools/me" in src
     assert "/api/dsg-tv/predict/open" in src
@@ -12441,7 +12441,7 @@ def test_explore_registry_includes_dsg_tv_and_search_targets() -> None:
     """Cmd+K depends on EXPLORE_REGISTRY containing entries the user
     can jump to. If the registry is empty or DSG TV is missing, the
     launcher returns no results."""
-    src = open("/app/frontend/src/pages/Explore.tsx").read()
+    src = open("source/web-assets/frontend/src/pages/Explore.tsx").read()
     assert "EXPLORE_REGISTRY" in src
     # The DSG TV expansion route must be searchable.
     assert "/dsg-tv" in src
@@ -12550,7 +12550,7 @@ def test_dsg_logistics_no_in_app_burn_in_service_source() -> None:
     burn account. Comments/docstrings allowed (so we can talk about
     why we don't burn) — actual code must not."""
     import re
-    src = open("/app/backend/services/dsg_logistics.py").read()
+    src = open("source/web-assets/backend/services/dsg_logistics.py").read()
     # The platform-cut paths MUST call recirculate(...)
     assert "from services.recirculation import recirculate" in src
     # Strip docstrings and comments and verify no burn_coins call exists.
@@ -12571,7 +12571,7 @@ def test_dsg_logistics_payout_split_uses_recirculation() -> None:
     """Hard shield: `process_cancellation_payout` must invoke
     `recirculate(...)` on the platform share. Catches drift where a
     future engineer might add a `burn` or write directly to a vault."""
-    src = open("/app/backend/services/dsg_logistics.py").read()
+    src = open("source/web-assets/backend/services/dsg_logistics.py").read()
     fn = src.split("async def process_cancellation_payout")[1].split(
         "async def driver_override_state"
     )[0]
@@ -12584,7 +12584,7 @@ def test_dsg_logistics_payout_split_uses_recirculation() -> None:
 
 
 def test_dsg_logistics_creator_kitchen_uses_recirculation() -> None:
-    src = open("/app/backend/services/dsg_logistics.py").read()
+    src = open("source/web-assets/backend/services/dsg_logistics.py").read()
     fn = src.split("async def place_live_order")[1].split(
         "async def push_kitchen_delay"
     )[0]
@@ -12596,7 +12596,7 @@ def test_dsg_logistics_creator_kitchen_uses_recirculation() -> None:
 
 
 def test_dsg_logistics_hub_page_built() -> None:
-    src = open("/app/frontend/src/pages/DSGLogisticsHub.tsx").read()
+    src = open("source/web-assets/frontend/src/pages/DSGLogisticsHub.tsx").read()
     for tid in (
         "dsg-logistics-page", "logistics-tabs",
         "trigger-vibe-ridez-breakdown", "trigger-hunger-vibez-breakdown",
@@ -12628,13 +12628,13 @@ def test_dsg_logistics_hub_page_built() -> None:
 
 
 def test_dsg_logistics_route_registered_in_frontend() -> None:
-    routes = open("/app/frontend/src/routes/monetizationRoutes.tsx").read()
+    routes = open("source/web-assets/frontend/src/routes/monetizationRoutes.tsx").read()
     assert 'path="/dsg-logistics"' in routes
     assert "DSGLogisticsHub" in routes
 
 
 def test_dsg_logistics_in_explore_registry() -> None:
-    src = open("/app/frontend/src/pages/Explore.tsx").read()
+    src = open("source/web-assets/frontend/src/pages/Explore.tsx").read()
     assert "/dsg-logistics" in src
     assert "DSG Logistics Hub" in src
 
@@ -12646,7 +12646,7 @@ def test_dsg_logistics_in_explore_registry() -> None:
 # ───────────────────────────────────────────────────────────────────
 
 def test_admin_dsg_logistics_page_built() -> None:
-    src = open("/app/frontend/src/pages/admin/AdminDSGLogistics.tsx").read()
+    src = open("source/web-assets/frontend/src/pages/admin/AdminDSGLogistics.tsx").read()
     for tid in (
         "admin-dsg-logistics-page",
         "admin-incidents-section",
@@ -12670,7 +12670,7 @@ def test_admin_dsg_logistics_page_built() -> None:
 
 
 def test_admin_dsg_logistics_route_registered() -> None:
-    routes = open("/app/frontend/src/routes/adminRoutes.tsx").read()
+    routes = open("source/web-assets/frontend/src/routes/adminRoutes.tsx").read()
     assert '/admin/dsg-logistics' in routes
     assert "AdminDSGLogistics" in routes
 
@@ -12682,7 +12682,7 @@ def test_admin_dsg_logistics_route_registered() -> None:
 # ───────────────────────────────────────────────────────────────────
 
 def test_sandbox_firewall_module_extracted() -> None:
-    src = open("/app/backend/utils/sandbox_firewall.py").read()
+    src = open("source/web-assets/backend/utils/sandbox_firewall.py").read()
     assert "def install(app" in src, "sandbox_firewall must export install(app, db, logger)"
     assert "security_events" in src
     assert "internal error" in src
@@ -12691,7 +12691,7 @@ def test_sandbox_firewall_module_extracted() -> None:
 
 
 def test_server_uses_sandbox_firewall_install() -> None:
-    src = open("/app/backend/server.py").read()
+    src = open("source/web-assets/backend/server.py").read()
     assert "from utils.sandbox_firewall import install" in src
     assert "_install_sandbox_firewall(app, db, logger)" in src
     # The inline handler must be gone — `async def _sandbox_firewall` MUST
@@ -12784,7 +12784,7 @@ def test_dsg_music_group_basis_points_invariant_enforced() -> None:
     """Source-level shield: `set_collaborator_splits` MUST validate
     sum == 10_000. If a future refactor weakens this, the on-chain
     invariant from the blueprint breaks silently."""
-    src = open("/app/backend/services/dsg_music_group.py").read()
+    src = open("source/web-assets/backend/services/dsg_music_group.py").read()
     fn = src.split("async def set_collaborator_splits")[1].split(
         "async def get_collaborator_splits"
     )[0]
@@ -12797,7 +12797,7 @@ def test_dsg_music_group_no_burn_in_disbursement_source() -> None:
     """Royalty disbursement must not call burn_coins anywhere — every
     coin flows to a collaborator. Comments allowed; code stripped."""
     import re
-    src = open("/app/backend/services/dsg_music_group.py").read()
+    src = open("source/web-assets/backend/services/dsg_music_group.py").read()
     fn = src.split("async def disburse_collective_royalty")[1].split(
         "async def list_recent_payouts"
     )[0]
@@ -12811,7 +12811,7 @@ def test_dsg_music_group_no_burn_in_disbursement_source() -> None:
 
 
 def test_music_group_artist_panel_built() -> None:
-    src = open("/app/frontend/src/pages/MusicGroupArtistPanel.tsx").read()
+    src = open("source/web-assets/frontend/src/pages/MusicGroupArtistPanel.tsx").read()
     for tid in (
         "music-group-panel", "rights-section", "splits-section",
         "royalty-section", "add-collaborator-btn", "save-splits-btn",
@@ -12827,13 +12827,13 @@ def test_music_group_artist_panel_built() -> None:
 
 
 def test_music_group_artist_route_registered() -> None:
-    routes = open("/app/frontend/src/routes/monetizationRoutes.tsx").read()
+    routes = open("source/web-assets/frontend/src/routes/monetizationRoutes.tsx").read()
     assert '/artist/music-group' in routes
     assert "MusicGroupArtistPanel" in routes
 
 
 def test_music_group_in_explore_registry() -> None:
-    src = open("/app/frontend/src/pages/Explore.tsx").read()
+    src = open("source/web-assets/frontend/src/pages/Explore.tsx").read()
     assert "/artist/music-group" in src
     assert "DSG Music Group" in src
 
@@ -12853,7 +12853,7 @@ def test_mme_collective_slice_helper_wired() -> None:
     `record_transaction` so the 80% slice auto-splits across
     collaborators. If a future refactor reverts to the legacy
     single-credit path this shield fails loudly."""
-    src = open("/app/backend/services/media_engine.py").read()
+    src = open("source/web-assets/backend/services/media_engine.py").read()
     # Helper must exist.
     assert "async def _credit_artist_collective_slice" in src, (
         "Collective slice helper missing — MME would silently lose "
@@ -12875,7 +12875,7 @@ def test_mme_collective_slice_helper_wired() -> None:
 
 def test_mme_collective_slice_no_burn() -> None:
     """The auto-split path must never burn coins."""
-    src = open("/app/backend/services/media_engine.py").read()
+    src = open("source/web-assets/backend/services/media_engine.py").read()
     fn = src.split("async def _credit_artist_collective_slice")[1].split(
         "async def record_transaction"
     )[0]
@@ -12892,7 +12892,7 @@ def test_mme_collective_slice_no_burn() -> None:
 def test_mme_collective_slice_falls_back_to_primary() -> None:
     """Hard contract: if a track has no collaborator splits, the full
     80% slice goes to the primary artist (backward compatibility)."""
-    src = open("/app/backend/services/media_engine.py").read()
+    src = open("source/web-assets/backend/services/media_engine.py").read()
     fn = src.split("async def _credit_artist_collective_slice")[1].split(
         "async def record_transaction"
     )[0]
@@ -12925,7 +12925,7 @@ def test_license_marketplace_endpoint_returns_rows() -> None:
     assert "GET" in getattr(target, "methods", set())
     # Source must validate the context arg + filter by the matching
     # rights flag so we never leak non-opted-in tracks.
-    src = open("/app/backend/routes/dsg_music_group_routes.py").read()
+    src = open("source/web-assets/backend/routes/dsg_music_group_routes.py").read()
     fn = src.split("async def licensable_tracks")[1].split(
         "@router.get(\"/splits"
     )[0] if "async def licensable_tracks" in src else src
@@ -12941,7 +12941,7 @@ def test_license_marketplace_endpoint_returns_rows() -> None:
 
 
 def test_license_marketplace_page_built() -> None:
-    src = open("/app/frontend/src/pages/LicenseMarketplace.tsx").read()
+    src = open("source/web-assets/frontend/src/pages/LicenseMarketplace.tsx").read()
     for tid in (
         "license-marketplace-page",
         "marketplace-tabs",
@@ -12961,13 +12961,13 @@ def test_license_marketplace_page_built() -> None:
 
 
 def test_license_marketplace_route_registered() -> None:
-    routes = open("/app/frontend/src/routes/monetizationRoutes.tsx").read()
+    routes = open("source/web-assets/frontend/src/routes/monetizationRoutes.tsx").read()
     assert '/marketplace/license' in routes
     assert "LicenseMarketplace" in routes
 
 
 def test_license_marketplace_in_explore_registry() -> None:
-    src = open("/app/frontend/src/pages/Explore.tsx").read()
+    src = open("source/web-assets/frontend/src/pages/Explore.tsx").read()
     assert "/marketplace/license" in src
     assert "License Marketplace" in src
 
@@ -13069,7 +13069,7 @@ def test_viberidez_cargo_no_burn_in_source() -> None:
     """Source-level shield: the cargo settlement + cancellation paths
     must route via `recirculate(...)` and NEVER call burn_coins."""
     import re
-    src = open("/app/backend/services/viberidez_cargo.py").read()
+    src = open("source/web-assets/backend/services/viberidez_cargo.py").read()
     # Platform vault MUST flow through recirculate.
     assert "from services.recirculation import recirculate" in src
     # Strip comments + docstrings before scanning for burn.
@@ -13085,7 +13085,7 @@ def test_viberidez_cargo_no_burn_in_source() -> None:
 def test_viberidez_cargo_settlement_uses_80_20_split() -> None:
     """Settlement function must compute store @ 80% and platform @ 20%
     and route the platform share through `recirculate(...)`."""
-    src = open("/app/backend/services/viberidez_cargo.py").read()
+    src = open("source/web-assets/backend/services/viberidez_cargo.py").read()
     fn = src.split("async def _settle_cargo")[1].split(
         "async def client_late_cancel"
     )[0]
@@ -13097,7 +13097,7 @@ def test_viberidez_cargo_settlement_uses_80_20_split() -> None:
 def test_viberidez_cargo_dual_barcode_lock_state_machine() -> None:
     """The driver MUST hit pickup → handover → delivered, and each
     transition MUST verify the barcode hash before flipping state."""
-    src = open("/app/backend/services/viberidez_cargo.py").read()
+    src = open("source/web-assets/backend/services/viberidez_cargo.py").read()
     pickup_fn = src.split("async def driver_scan_pickup")[1].split(
         "async def driver_start_handover"
     )[0]
@@ -13116,7 +13116,7 @@ def test_viberidez_cargo_dual_barcode_lock_state_machine() -> None:
 
 
 def test_viberidez_cargo_late_cancel_credits_driver() -> None:
-    src = open("/app/backend/services/viberidez_cargo.py").read()
+    src = open("source/web-assets/backend/services/viberidez_cargo.py").read()
     fn = src.split("async def client_late_cancel")[1].split(
         "async def product_return"
     )[0]
@@ -13126,7 +13126,7 @@ def test_viberidez_cargo_late_cancel_credits_driver() -> None:
 
 
 def test_viberidez_cargo_product_return_uses_multiplier() -> None:
-    src = open("/app/backend/services/viberidez_cargo.py").read()
+    src = open("source/web-assets/backend/services/viberidez_cargo.py").read()
     fn = src.split("async def product_return")[1].split(
         "async def driver_assignments"
     )[0]
@@ -13135,7 +13135,7 @@ def test_viberidez_cargo_product_return_uses_multiplier() -> None:
 
 
 def test_viberidez_cargo_driver_console_page_built() -> None:
-    src = open("/app/frontend/src/pages/DriverCargoConsole.tsx").read()
+    src = open("source/web-assets/frontend/src/pages/DriverCargoConsole.tsx").read()
     for tid in (
         "driver-cargo-page", "assignments-section",
         "active-manifest-section", "pickup-scan-btn",
@@ -13153,10 +13153,10 @@ def test_viberidez_cargo_driver_console_page_built() -> None:
 
 
 def test_viberidez_cargo_route_and_explore_registered() -> None:
-    routes = open("/app/frontend/src/routes/monetizationRoutes.tsx").read()
+    routes = open("source/web-assets/frontend/src/routes/monetizationRoutes.tsx").read()
     assert '/driver/cargo' in routes
     assert "DriverCargoConsole" in routes
-    explore = open("/app/frontend/src/pages/Explore.tsx").read()
+    explore = open("source/web-assets/frontend/src/pages/Explore.tsx").read()
     assert "/driver/cargo" in explore
     assert "Cargo Driver Console" in explore
 
@@ -13166,7 +13166,7 @@ def test_viberidez_cargo_route_and_explore_registered() -> None:
 # ───────────────────────────────────────────────────────────────────
 
 def test_license_inbox_card_built() -> None:
-    src = open("/app/frontend/src/components/LicenseInboxCard.tsx").read()
+    src = open("source/web-assets/frontend/src/components/LicenseInboxCard.tsx").read()
     for tid in (
         "license-inbox-card",
         "inbox-refresh-btn",
@@ -13179,7 +13179,7 @@ def test_license_inbox_card_built() -> None:
 
 
 def test_license_inbox_mounted_on_artist_dashboard() -> None:
-    src = open("/app/frontend/src/pages/ArtistDashboard.tsx").read()
+    src = open("source/web-assets/frontend/src/pages/ArtistDashboard.tsx").read()
     assert "LicenseInboxCard" in src, (
         "License Inbox card must be mounted on /artist/dashboard"
     )
@@ -13196,7 +13196,7 @@ def test_license_inbox_mounted_on_artist_dashboard() -> None:
 # ───────────────────────────────────────────────────────────────────
 
 def test_beta_hub_page_built() -> None:
-    src = open("/app/frontend/src/pages/BetaHub.tsx").read()
+    src = open("source/web-assets/frontend/src/pages/BetaHub.tsx").read()
     for tid in (
         "beta-hub-page",
         "beta-hub-grid",
@@ -13227,18 +13227,18 @@ def test_beta_hub_page_built() -> None:
 
 
 def test_beta_hub_route_registered() -> None:
-    routes = open("/app/frontend/src/routes/monetizationRoutes.tsx").read()
+    routes = open("source/web-assets/frontend/src/routes/monetizationRoutes.tsx").read()
     assert 'path="/beta-hub"' in routes
     assert "BetaHub" in routes
 
 
 def test_beta_hub_in_explore_registry_and_dashboard() -> None:
-    explore = open("/app/frontend/src/pages/Explore.tsx").read()
+    explore = open("source/web-assets/frontend/src/pages/Explore.tsx").read()
     assert "/beta-hub" in explore
     assert "Beta Hub" in explore
     # The big banner MUST be on the main dashboard so the user finds
     # it without typing the URL.
-    dash = open("/app/frontend/src/pages/DashboardNew.tsx").read()
+    dash = open("source/web-assets/frontend/src/pages/DashboardNew.tsx").read()
     assert "dashboard-beta-hub-banner" in dash
     assert "/beta-hub" in dash
 
@@ -13249,7 +13249,7 @@ def test_landing_tour_video_autoplay_hardened() -> None:
     ensures we don't regress: imperative .play() on every clip change,
     a poster fallback, and a CAPPED onError that never re-fires on an
     already-failed clip."""
-    src = open("/app/frontend/src/components/landing/LandingTourVideo.tsx").read()
+    src = open("source/web-assets/frontend/src/components/landing/LandingTourVideo.tsx").read()
     # Imperative .play() on clipIdx change — otherwise <video> with a
     # remounted `key` may not autoplay on every transition. The deps
     # also include `allClipsFailed` so we don't try to play when the

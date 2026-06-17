@@ -599,7 +599,7 @@ async def start_season_pass_checkout(
 ):
     """Create a Stripe checkout session for the $25/mo JFTN Season Pass."""
     try:
-        from emergentintegrations.payments.stripe.checkout import (  # noqa: PLC0415
+        from source.web-assets.backend.services.payment_hub import (  # noqa: PLC0415
             StripeCheckout,
             CheckoutSessionRequest,
         )
@@ -646,7 +646,7 @@ async def verify_season_pass(
 ):
     """Verify a Stripe checkout session paid → activate the pass."""
     try:
-        from emergentintegrations.payments.stripe.checkout import StripeCheckout  # noqa: PLC0415
+        from source.web-assets.backend.services.payment_hub import StripeCheckout  # noqa: PLC0415
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Stripe integration unavailable: {exc}")
     stripe_key = os.environ.get("STRIPE_API_KEY")

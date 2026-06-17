@@ -129,7 +129,7 @@
 ### 📋 Integration Details
 
 **Stripe Integration:**
-- Using `emergentintegrations.payments.stripe.checkout` library
+- Using `source.web-assets.backend.services.payment_hub` library
 - Test mode with `sk_test_emergent` key
 - Webhook signature validation enabled
 - Checkout session metadata includes user_id, package info

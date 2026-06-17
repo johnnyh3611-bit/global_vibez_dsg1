@@ -343,7 +343,7 @@ async def create_checkout(payload: CheckoutPayload, http_request: Request) -> Di
     # of the platform uses. Falls back to a clear 503 if Stripe isn't
     # configured in this preview env.
     try:
-        from emergentintegrations.payments.stripe.checkout import (
+        from source.web-assets.backend.services.payment_hub import (
             StripeCheckout, CheckoutSessionRequest,
         )
     except ImportError as e:
@@ -420,7 +420,7 @@ async def checkout_status(session_id: str, http_request: Request) -> Dict[str, A
         return {"status": "activated", "tier": pending["tier_id"]}
 
     try:
-        from emergentintegrations.payments.stripe.checkout import StripeCheckout
+        from source.web-assets.backend.services.payment_hub import StripeCheckout
     except ImportError as e:
         raise HTTPException(503, f"Stripe library unavailable: {e}")
 

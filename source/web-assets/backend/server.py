@@ -8,8 +8,8 @@ import uuid
 from datetime import datetime, timezone, timedelta
 import httpx
 from pydantic import BaseModel, Field, ConfigDict
-from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionResponse, CheckoutStatusResponse, CheckoutSessionRequest
-from emergentintegrations.llm.chat import LlmChat, UserMessage
+from source.web-assets.backend.services.payment_hub import StripeCheckout, CheckoutSessionResponse, CheckoutStatusResponse, CheckoutSessionRequest
+from source.web-assets.backend.services.ai_engine import LlmChat, UserMessage
 
 # Import configuration modules
 from config import db, setup_middleware, STRIPE_API_KEY, EMERGENT_LLM_KEY

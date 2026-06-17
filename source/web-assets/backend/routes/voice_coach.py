@@ -30,7 +30,7 @@ from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
-from emergentintegrations.llm.chat import LlmChat, UserMessage
+from source.web-assets.backend.services.ai_engine import LlmChat, UserMessage
 from emergentintegrations.llm.openai import OpenAISpeechToText
 
 load_dotenv()

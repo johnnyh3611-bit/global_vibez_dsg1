@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 import json
 import os
 from utils.database import get_database
-from emergentintegrations.llm.chat import LlmChat, UserMessage
+from source.web-assets.backend.services.ai_engine import LlmChat, UserMessage
 import secrets
 
 secure_random = secrets.SystemRandom()

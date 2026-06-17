@@ -13,7 +13,7 @@ import secrets
 secure_random = secrets.SystemRandom()
 from dotenv import load_dotenv
 import os
-from emergentintegrations.llm.chat import LlmChat, UserMessage
+from source.web-assets.backend.services.ai_engine import LlmChat, UserMessage
 
 load_dotenv()
 
