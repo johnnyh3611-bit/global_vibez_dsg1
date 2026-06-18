@@ -3,8 +3,19 @@ import { defineConfig, devices } from '@playwright/test';
 /**
  * Playwright config for the SolDate Next.js app.
  *
- * Requires a running standalone server:
- *   JWT_SECRET=... DEMO_LOGIN_ENABLED=true node .next/standalone/server.js
+ * To start a local standalone server for E2E tests:
+ *
+ *   # 1. Clean build
+ *   rm -rf .next
+ *   npx next build
+ *
+ *   # 2. Copy assets (required for standalone mode)
+ *   cp -r public .next/standalone/public
+ *   cp -r .next/static .next/standalone/.next/static
+ *
+ *   # 3. Start the server with demo login enabled
+ *   cd .next/standalone
+ *   JWT_SECRET="dev-secret" DEMO_LOGIN_ENABLED=true NEXT_PUBLIC_DEMO_LOGIN_ENABLED=true PORT=3300 node server.js
  *
  * Or set E2E_BASE_URL to point at a remote instance.
  */
