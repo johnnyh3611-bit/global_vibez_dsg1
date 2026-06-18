@@ -29,7 +29,9 @@ Full sign-in needs a real Solana wallet signature (Phantom/Solflare), which can'
 - `/login` renders the `WalletAuth` component: "Select Wallet" button (opens a modal with Phantom/Solflare) + a disabled "Sign in with wallet" button. The string "Auth Component Removed" must NOT appear. Note: the login page is client/Suspense, so curl SSR only shows "Loading..."; verify in a real browser.
 - Unauthenticated `/dealer` -> 307 redirect to `/login?redirect=%2Fdealer`.
 - Unauthenticated `/dating` -> 307 redirect to `/login?redirect=%2Fdating`.
-- `/` -> 200 (public). `POST /api/auth/demo-login` -> 404 (the old bypass endpoint was removed; if it returns 200 the bypass regressed).
+- `/` -> 200 (public). `POST /api/auth/demo-login` behaviour depends on the `DEMO_LOGIN_ENABLED` env var:
+  - **Not set (default / production):** returns 404 — bypass is disabled.
+  - **`DEMO_LOGIN_ENABLED=true`:** returns 200 and sets the `dating-auth-token` session cookie — useful for local testing without a wallet. Also set `NEXT_PUBLIC_DEMO_LOGIN_ENABLED=true` to show the "Demo Login (Quick Access)" button on the login page.
 - Quick curl checks: `curl -s -o /dev/null -D - http://localhost:3300/dating | grep -iE 'HTTP/|location'`.
 
 ## Devin Secrets Needed
