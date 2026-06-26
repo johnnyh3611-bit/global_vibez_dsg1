@@ -1,14 +1,8 @@
 import fs from "fs";
-import path from "path";
+import { fileURLToPath } from "url";
 
-const DEFAULT_HOLDERS_FILE = path.join(
-  /* turbopackIgnore: true */ process.cwd(),
-  "data",
-  "chair-holders.txt"
-);
-const DATA_DIRECTORY = path.join(
-  process.cwd(),
-  "data"
+const DEFAULT_HOLDERS_FILE = fileURLToPath(
+  new URL("../../../data/chair-holders.txt", import.meta.url)
 );
 
 let cachedHolders: Set<string> | null = null;
@@ -29,21 +23,7 @@ function loadEnvWallets(): string[] {
 }
 
 function getHoldersFilePath(): string {
-  const envFileName = process.env.CHAIR_HOLDERS_FILE?.trim();
-  if (!envFileName) {
-    return DEFAULT_HOLDERS_FILE;
-  }
-
-  const resolvedFilePath = path.normalize(
-    path.join(/* turbopackIgnore: true */ process.cwd(), "data", envFileName)
-  );
-  const dataDirectoryPrefix = `${DATA_DIRECTORY}${path.sep}`;
-
-  if (!resolvedFilePath.startsWith(dataDirectoryPrefix)) {
-    return DEFAULT_HOLDERS_FILE;
-  }
-
-  return resolvedFilePath;
+  return DEFAULT_HOLDERS_FILE;
 }
 
 function loadFileWallets(): string[] {

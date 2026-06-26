@@ -25,7 +25,6 @@ For Vercel deployments:
 - Set `JWT_SECRET` in Project Settings → Environment Variables. Wallet sign-in returns `503` until this is configured.
 - Optional chair-holder overrides:
   - `CHAIR_HOLDER_WALLETS` — comma-separated wallet list
-  - `CHAIR_HOLDERS_FILE` — file name inside `data/`
 - The production build no longer depends on fetching Google Fonts during `next build`.
 
 See the [Next.js documentation](https://nextjs.org/docs) for framework details.
