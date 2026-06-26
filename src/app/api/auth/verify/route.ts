@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
       error.message === "JWT_SECRET is not configured"
     ) {
       return NextResponse.json(
-        { error: "JWT_SECRET is not configured" },
+        { error: "Authentication service temporarily unavailable" },
         { status: 503 }
       );
     }

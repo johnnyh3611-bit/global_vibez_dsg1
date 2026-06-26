@@ -25,12 +25,12 @@ function loadEnvWallets(): string[] {
 }
 
 function getHoldersFilePath(): string {
-  const configuredFileName = process.env.CHAIR_HOLDERS_FILE?.trim();
-  if (!configuredFileName) {
+  const envFileName = process.env.CHAIR_HOLDERS_FILE?.trim();
+  if (!envFileName) {
     return DEFAULT_HOLDERS_FILE;
   }
 
-  return path.join(process.cwd(), "data", configuredFileName);
+  return path.join(process.cwd(), "data", envFileName);
 }
 
 function loadFileWallets(): string[] {
