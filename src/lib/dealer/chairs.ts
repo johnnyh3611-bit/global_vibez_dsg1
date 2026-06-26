@@ -30,15 +30,16 @@ function getHoldersFilePath(): string {
     return DEFAULT_HOLDERS_FILE;
   }
 
-  if (
-    envFileName.includes("/") ||
-    envFileName.includes("\\") ||
-    envFileName.includes("..")
-  ) {
+  const resolvedFilePath = path.normalize(
+    path.join(process.cwd(), "data", envFileName)
+  );
+  const dataDirectoryPrefix = `${path.join(process.cwd(), "data")}${path.sep}`;
+
+  if (!resolvedFilePath.startsWith(dataDirectoryPrefix)) {
     return DEFAULT_HOLDERS_FILE;
   }
 
-  return path.join(process.cwd(), "data", envFileName);
+  return resolvedFilePath;
 }
 
 function loadFileWallets(): string[] {
