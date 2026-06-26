@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { MIN_AGE, MAX_AGE } from "@/lib/dating/profiles";
 
 export interface ProfileFormValues {
   name: string;
@@ -108,8 +109,8 @@ export function EditProfileForm({ initial, onSave, onCancel }: EditProfileFormPr
           value={values.age}
           onChange={(e) => set("age", e.target.value)}
           placeholder="18"
-          min={18}
-          max={120}
+          min={MIN_AGE}
+          max={MAX_AGE}
           required
           className="w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 dark:border-zinc-700"
         />

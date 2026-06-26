@@ -6,6 +6,7 @@ import {
   upsertUserProfile,
   UserProfileInput,
 } from "@/lib/dating/user-profiles";
+import { MIN_AGE, MAX_AGE } from "@/lib/dating/profiles";
 
 export async function GET() {
   const session = await getSession();
@@ -41,9 +42,9 @@ export async function PATCH(request: NextRequest) {
   }
 
   const ageNum = Number(age);
-  if (!Number.isInteger(ageNum) || ageNum < 18 || ageNum > 120) {
+  if (!Number.isInteger(ageNum) || ageNum < MIN_AGE || ageNum > MAX_AGE) {
     return NextResponse.json(
-      { error: "age must be an integer between 18 and 120" },
+      { error: `age must be an integer between ${MIN_AGE} and ${MAX_AGE}` },
       { status: 400 }
     );
   }

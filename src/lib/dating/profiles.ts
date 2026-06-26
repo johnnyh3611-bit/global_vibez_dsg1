@@ -7,6 +7,9 @@ export interface DatingProfile {
   location: string;
 }
 
+export const MIN_AGE = 18;
+export const MAX_AGE = 120;
+
 export const SAMPLE_PROFILES: DatingProfile[] = [
   {
     id: "1",
