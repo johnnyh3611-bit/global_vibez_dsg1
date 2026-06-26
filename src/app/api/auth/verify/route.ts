@@ -36,10 +36,27 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
 
-  const token = await createSession({
-    publicKey,
-    hasChair: walletHasChair(publicKey),
-  });
+  let token: string;
+
+  try {
+    token = await createSession({
+      publicKey,
+      hasChair: walletHasChair(publicKey),
+    });
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === "JWT_SECRET is not configured"
+    ) {
+      return NextResponse.json(
+        { error: "JWT_SECRET is not configured" },
+        { status: 503 }
+      );
+    }
+
+    throw error;
+  }
+
   const response = NextResponse.json({ publicKey });
   response.cookies.set(sessionCookieOptions(token));
 
