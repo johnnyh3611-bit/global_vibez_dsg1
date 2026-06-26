@@ -281,6 +281,7 @@ export class RunwayVideoProvider implements VideoProvider {
       throw new Error(`Runway poll failed (${res.status}): ${await readError(res)}`);
     }
     const task = (await res.json()) as RunwayTask;
+    // Runway does not echo our script id; the feed refresh re-attaches it.
     return this.toClip("", task);
   }
 }
@@ -358,6 +359,7 @@ export class HeyGenVideoProvider implements VideoProvider {
             },
             voice: {
               type: "text",
+              // HeyGen's text-to-speech limit is 1 500 characters per input_text.
               input_text: narration.slice(0, 1500),
               voice_id: "2d5b0e6cf36f460aa7fc47e3eee4ba54",
             },
@@ -399,6 +401,7 @@ export class HeyGenVideoProvider implements VideoProvider {
     const body = (await res.json()) as HeyGenStatusResponse;
     const d = body.data;
     if (!d) return null;
+    // HeyGen does not echo our script id; the feed refresh re-attaches it.
     return {
       jobId,
       scriptId: "",

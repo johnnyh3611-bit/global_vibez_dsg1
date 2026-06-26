@@ -18,7 +18,7 @@ export function DealerInterface() {
   const [chatByDealer, setChatByDealer] = useState<ChatArchive>(
     loadChatArchiveFromStorage
   );
-  const hasMounted = useRef(false);
+  const isInitialRender = useRef(false);
 
   const chatHistory = useMemo(
     () => chatByDealer[dealerName] ?? [],
@@ -27,8 +27,8 @@ export function DealerInterface() {
 
   useEffect(() => {
     // Skip the initial render so we don't overwrite localStorage on mount.
-    if (!hasMounted.current) {
-      hasMounted.current = true;
+    if (!isInitialRender.current) {
+      isInitialRender.current = true;
       return;
     }
 
