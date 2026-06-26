@@ -22,14 +22,9 @@ function loadEnvWallets(): string[] {
     .filter(Boolean);
 }
 
-function getHoldersFilePath(): string {
-  return DEFAULT_HOLDERS_FILE;
-}
-
 function loadFileWallets(): string[] {
-  const filePath = getHoldersFilePath();
-  if (!fs.existsSync(filePath)) return [];
-  return parseWalletLines(fs.readFileSync(filePath, "utf-8"));
+  if (!fs.existsSync(DEFAULT_HOLDERS_FILE)) return [];
+  return parseWalletLines(fs.readFileSync(DEFAULT_HOLDERS_FILE, "utf-8"));
 }
 
 function buildChairHolderSet(): Set<string> {
@@ -47,8 +42,9 @@ function buildChairHolderSet(): Set<string> {
 }
 
 export function getChairHolders(): Set<string> {
-  const filePath = getHoldersFilePath();
-  const mtime = fs.existsSync(filePath) ? fs.statSync(filePath).mtimeMs : null;
+  const mtime = fs.existsSync(DEFAULT_HOLDERS_FILE)
+    ? fs.statSync(DEFAULT_HOLDERS_FILE).mtimeMs
+    : null;
 
   if (cachedHolders && cachedMtime === mtime) {
     return cachedHolders;
