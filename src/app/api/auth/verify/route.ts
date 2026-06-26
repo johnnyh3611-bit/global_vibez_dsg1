@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   consumeNonce,
   createSession,
+  JwtConfigurationError,
   sessionCookieOptions,
 } from "@/lib/auth";
 import {
@@ -44,10 +45,7 @@ export async function POST(request: NextRequest) {
       hasChair: walletHasChair(publicKey),
     });
   } catch (error) {
-    if (
-      error instanceof Error &&
-      error.message === "JWT_SECRET is not configured"
-    ) {
+    if (error instanceof JwtConfigurationError) {
       return NextResponse.json(
         { error: "Authentication service temporarily unavailable" },
         { status: 503 }
