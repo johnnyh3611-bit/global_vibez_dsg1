@@ -34,7 +34,6 @@ function loadFileWallets(): string[] {
     return [];
   }
 
-  warnedMissingHoldersFile = false;
   return parseWalletLines(fs.readFileSync(DEFAULT_HOLDERS_FILE, "utf-8"));
 }
 
