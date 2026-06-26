@@ -30,6 +30,14 @@ function getHoldersFilePath(): string {
     return DEFAULT_HOLDERS_FILE;
   }
 
+  if (
+    envFileName.includes("/") ||
+    envFileName.includes("\\") ||
+    envFileName.includes("..")
+  ) {
+    return DEFAULT_HOLDERS_FILE;
+  }
+
   return path.join(process.cwd(), "data", envFileName);
 }
 
