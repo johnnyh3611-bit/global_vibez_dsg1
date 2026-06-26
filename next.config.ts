@@ -3,8 +3,9 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   output: "standalone",
   turbopack: {}, // This silences the Turbopack error
-  // Add any other existing config settings here
+  outputFileTracingIncludes: {
+    "/api/auth/verify": ["data/chair-holders.txt"],
+  },
 };
 
 export default nextConfig;
-

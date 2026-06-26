@@ -2,9 +2,13 @@ import fs from "fs";
 import path from "path";
 
 const DEFAULT_HOLDERS_FILE = path.join(
-  process.cwd(),
+  /* turbopackIgnore: true */ process.cwd(),
   "data",
   "chair-holders.txt"
+);
+const DATA_DIRECTORY = path.join(
+  process.cwd(),
+  "data"
 );
 
 let cachedHolders: Set<string> | null = null;
@@ -31,9 +35,9 @@ function getHoldersFilePath(): string {
   }
 
   const resolvedFilePath = path.normalize(
-    path.join(process.cwd(), "data", envFileName)
+    path.join(/* turbopackIgnore: true */ process.cwd(), "data", envFileName)
   );
-  const dataDirectoryPrefix = `${path.join(process.cwd(), "data")}${path.sep}`;
+  const dataDirectoryPrefix = `${DATA_DIRECTORY}${path.sep}`;
 
   if (!resolvedFilePath.startsWith(dataDirectoryPrefix)) {
     return DEFAULT_HOLDERS_FILE;
