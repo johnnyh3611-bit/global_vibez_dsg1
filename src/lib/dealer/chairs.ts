@@ -1,8 +1,11 @@
 import fs from "fs";
 import path from "path";
 
-const DATA_DIRECTORY = path.join(process.cwd(), "data");
-const DEFAULT_HOLDERS_FILE = path.join(DATA_DIRECTORY, "chair-holders.txt");
+const DEFAULT_HOLDERS_FILE = path.join(
+  process.cwd(),
+  "data",
+  "chair-holders.txt"
+);
 
 let cachedHolders: Set<string> | null = null;
 let cachedMtime: number | null = null;
@@ -22,16 +25,12 @@ function loadEnvWallets(): string[] {
 }
 
 function getHoldersFilePath(): string {
-  const configuredPath = process.env.CHAIR_HOLDERS_FILE?.trim();
-  if (!configuredPath) {
+  const configuredFileName = process.env.CHAIR_HOLDERS_FILE?.trim();
+  if (!configuredFileName) {
     return DEFAULT_HOLDERS_FILE;
   }
 
-  if (path.isAbsolute(configuredPath)) {
-    return configuredPath;
-  }
-
-  return path.join(DATA_DIRECTORY, configuredPath);
+  return path.join(process.cwd(), "data", configuredFileName);
 }
 
 function loadFileWallets(): string[] {
