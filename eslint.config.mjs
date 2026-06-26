@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Unrelated source tree (Python extension scripts)
+    "source/**",
   ]),
 ]);
 

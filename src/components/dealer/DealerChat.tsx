@@ -80,25 +80,29 @@ export function DealerChat({
       const decoder = new TextDecoder();
       let dealerText = "";
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
 
-        dealerText += decoder.decode(value, { stream: true });
-        const snapshot = dealerText;
+          dealerText += decoder.decode(value, { stream: true });
+          const snapshot = dealerText;
 
-        updateDealerChat(activeDealer, (current) => {
-          const next = [...current];
-          const lastIndex = next.length - 1;
-          if (lastIndex >= 0 && next[lastIndex].role === "dealer") {
-            next[lastIndex] = {
-              role: "dealer",
-              content: snapshot,
-              streaming: true,
-            };
-          }
-          return next;
-        });
+          updateDealerChat(activeDealer, (current) => {
+            const next = [...current];
+            const lastIndex = next.length - 1;
+            if (lastIndex >= 0 && next[lastIndex].role === "dealer") {
+              next[lastIndex] = {
+                role: "dealer",
+                content: snapshot,
+                streaming: true,
+              };
+            }
+            return next;
+          });
+        }
+      } finally {
+        reader.releaseLock();
       }
 
       updateDealerChat(activeDealer, (current) => {
