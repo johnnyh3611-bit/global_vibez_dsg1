@@ -1,10 +1,13 @@
 import fs from "fs";
-import path from "path";
+import { fileURLToPath } from "node:url";
 
-const DEFAULT_HOLDERS_FILE = path.join(process.cwd(), "data/chair-holders.txt");
+const DEFAULT_HOLDERS_FILE = fileURLToPath(
+  new URL("../../../data/chair-holders.txt", import.meta.url)
+);
 
 let cachedHolders: Set<string> | null = null;
 let cachedMtime: number | null = null;
+let warnedMissingHoldersFile = false;
 
 function parseWalletLines(content: string): string[] {
   return content
@@ -20,14 +23,18 @@ function loadEnvWallets(): string[] {
     .filter(Boolean);
 }
 
-function getHoldersFilePath(): string {
-  return process.env.CHAIR_HOLDERS_FILE ?? DEFAULT_HOLDERS_FILE;
-}
-
 function loadFileWallets(): string[] {
-  const filePath = getHoldersFilePath();
-  if (!fs.existsSync(filePath)) return [];
-  return parseWalletLines(fs.readFileSync(filePath, "utf-8"));
+  if (!fs.existsSync(DEFAULT_HOLDERS_FILE)) {
+    if (!warnedMissingHoldersFile) {
+      console.warn(
+        `Chair holders file not found at ${DEFAULT_HOLDERS_FILE}; continuing with environment-configured holders only.`
+      );
+      warnedMissingHoldersFile = true;
+    }
+    return [];
+  }
+
+  return parseWalletLines(fs.readFileSync(DEFAULT_HOLDERS_FILE, "utf-8"));
 }
 
 function buildChairHolderSet(): Set<string> {
@@ -45,8 +52,9 @@ function buildChairHolderSet(): Set<string> {
 }
 
 export function getChairHolders(): Set<string> {
-  const filePath = getHoldersFilePath();
-  const mtime = fs.existsSync(filePath) ? fs.statSync(filePath).mtimeMs : null;
+  const mtime = fs.existsSync(DEFAULT_HOLDERS_FILE)
+    ? fs.statSync(DEFAULT_HOLDERS_FILE).mtimeMs
+    : null;
 
   if (cachedHolders && cachedMtime === mtime) {
     return cachedHolders;

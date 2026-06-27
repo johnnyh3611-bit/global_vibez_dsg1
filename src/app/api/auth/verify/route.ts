@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   consumeNonce,
   createSession,
+  JwtConfigurationError,
   sessionCookieOptions,
 } from "@/lib/auth";
 import {
@@ -36,10 +37,24 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
 
-  const token = await createSession({
-    publicKey,
-    hasChair: walletHasChair(publicKey),
-  });
+  let token: string;
+
+  try {
+    token = await createSession({
+      publicKey,
+      hasChair: walletHasChair(publicKey),
+    });
+  } catch (error) {
+    if (error instanceof JwtConfigurationError) {
+      return NextResponse.json(
+        { error: "Authentication service temporarily unavailable" },
+        { status: 503 }
+      );
+    }
+
+    throw error;
+  }
+
   const response = NextResponse.json({ publicKey });
   response.cookies.set(sessionCookieOptions(token));
 

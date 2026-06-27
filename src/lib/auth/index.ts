@@ -10,10 +10,17 @@ export interface SessionPayload {
   hasChair: boolean;
 }
 
+export class JwtConfigurationError extends Error {
+  constructor() {
+    super("JWT_SECRET is not configured");
+    this.name = "JwtConfigurationError";
+  }
+}
+
 function getJwtSecret(): Uint8Array {
   const secret = process.env.JWT_SECRET;
   if (!secret) {
-    throw new Error("JWT_SECRET is not configured");
+    throw new JwtConfigurationError();
   }
   return new TextEncoder().encode(secret);
 }
