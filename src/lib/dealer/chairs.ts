@@ -1,7 +1,10 @@
 import fs from "fs";
 import path from "path";
 
-const DEFAULT_HOLDERS_FILE = path.join(/*turbopackIgnore: true*/ process.cwd(), "data", "chair-holders.txt");
+// NOTE: a `/*turbopackIgnore*/` comment has no effect on `path.join`/`fs` calls
+// (it only applies to dynamic `import()`/`require()`), so it was removed. The
+// over-tracing this caused is handled via `outputFileTracing*` in next.config.ts.
+const DEFAULT_HOLDERS_FILE = path.join(process.cwd(), "data", "chair-holders.txt");
 
 let cachedHolders: Set<string> | null = null;
 let cachedMtime: number | null = null;
