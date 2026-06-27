@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "node:path";
 
+// Keep this runtime-resolved so Turbopack does not trace broad filesystem trees.
 const DEFAULT_HOLDERS_FILE = path.join(
   /* turbopackIgnore: true */ process.cwd(),
   "data",
