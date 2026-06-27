@@ -1,6 +1,5 @@
 import type { MetadataRoute } from "next";
-
-const BASE_URL = "https://www.globalvibezdsg.com";
+import { SITE_URL } from "@/lib/site-config";
 
 const routes = [
   { path: "", changeFrequency: "daily" as const, priority: 1 },
@@ -12,7 +11,7 @@ const routes = [
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return routes.map((route) => ({
-    url: `${BASE_URL}${route.path}`,
+    url: `${SITE_URL}${route.path}`,
     changeFrequency: route.changeFrequency,
     priority: route.priority,
   }));
