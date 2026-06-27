@@ -181,6 +181,241 @@ export class LumaVideoProvider implements VideoProvider {
   }
 }
 
+/**
+ * Runway Gen-3 Alpha provider — text-to-video synthesis via the Runway ML API.
+ *
+ * Render jobs are async: {@link generateClip} kicks off a generation and
+ * returns immediately (status "pending"); callers poll {@link getClip} until
+ * the task resolves to "ready" (with a playable `url`) or "failed".
+ *
+ * API: https://api.runwayml.com/v1
+ */
+interface RunwayTask {
+  id: string;
+  status: "PENDING" | "RUNNING" | "SUCCEEDED" | "FAILED" | "CANCELLED";
+  output?: string[] | null;
+  failure?: string | null;
+  failureCode?: string | null;
+}
+
+const RUNWAY_BASE = "https://api.runwayml.com/v1";
+
+function mapRunwayStatus(status: RunwayTask["status"]): ClipStatus {
+  switch (status) {
+    case "SUCCEEDED":
+      return "ready";
+    case "FAILED":
+    case "CANCELLED":
+      return "failed";
+    case "PENDING":
+      return "pending";
+    case "RUNNING":
+      return "processing";
+  }
+}
+
+export class RunwayVideoProvider implements VideoProvider {
+  readonly name = "runway";
+
+  constructor(
+    private readonly apiKey: string,
+    private readonly model = "gen3a_turbo"
+  ) {}
+
+  private headers(): Record<string, string> {
+    return {
+      Authorization: `Bearer ${this.apiKey}`,
+      "Content-Type": "application/json",
+      "X-Runway-Version": "2024-11-06",
+    };
+  }
+
+  private toClip(scriptId: string, task: RunwayTask): VideoClip {
+    return {
+      jobId: task.id,
+      scriptId,
+      status: mapRunwayStatus(task.status),
+      url: task.output?.[0] ?? null,
+      provider: this.name,
+      error:
+        task.status === "FAILED" || task.status === "CANCELLED"
+          ? task.failure ?? task.failureCode ?? "Runway generation failed"
+          : undefined,
+    };
+  }
+
+  async generateClip(script: VideoScript): Promise<VideoClip> {
+    const prompt = [
+      script.title,
+      script.narration,
+      script.scenes.map((s) => s.visual).join("; "),
+      "Cinematic, neon violet glassmorphism aesthetic.",
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+    const res = await fetch(`${RUNWAY_BASE}/text_to_video`, {
+      method: "POST",
+      headers: this.headers(),
+      body: JSON.stringify({
+        model: this.model,
+        promptText: prompt,
+        ratio: "1280:720",
+        duration: 5,
+      }),
+    });
+    if (!res.ok) {
+      const body = await readError(res);
+      throw new Error(`Runway generation request failed (${res.status}): ${body}`);
+    }
+    const task = (await res.json()) as RunwayTask;
+    return this.toClip(script.id, task);
+  }
+
+  async getClip(jobId: string): Promise<VideoClip | null> {
+    const res = await fetch(`${RUNWAY_BASE}/tasks/${jobId}`, {
+      headers: this.headers(),
+    });
+    if (res.status === 404) return null;
+    if (!res.ok) {
+      throw new Error(`Runway poll failed (${res.status}): ${await readError(res)}`);
+    }
+    const task = (await res.json()) as RunwayTask;
+    // Runway does not echo our script id; the feed refresh re-attaches it.
+    return this.toClip("", task);
+  }
+}
+
+/**
+ * HeyGen provider — AI avatar video synthesis.
+ *
+ * Render jobs are async: {@link generateClip} submits a video generation
+ * request and returns immediately; callers poll {@link getClip} until status
+ * resolves to "ready" or "failed".
+ *
+ * API: https://api.heygen.com
+ */
+interface HeyGenVideoResponse {
+  data?: { video_id?: string } | null;
+  error?: string | null;
+}
+
+interface HeyGenStatusResponse {
+  data?: {
+    video_id?: string;
+    status?: "pending" | "processing" | "waiting" | "failed" | "completed";
+    video_url?: string | null;
+    error?: string | null;
+  } | null;
+}
+
+const HEYGEN_BASE = "https://api.heygen.com";
+
+function mapHeyGenStatus(
+  status: NonNullable<HeyGenStatusResponse["data"]>["status"]
+): ClipStatus {
+  switch (status) {
+    case "completed":
+      return "ready";
+    case "failed":
+      return "failed";
+    case "pending":
+    case "waiting":
+      return "pending";
+    case "processing":
+      return "processing";
+    default:
+      return "pending";
+  }
+}
+
+export class HeyGenVideoProvider implements VideoProvider {
+  readonly name = "heygen";
+
+  constructor(private readonly apiKey: string) {}
+
+  private headers(): Record<string, string> {
+    return {
+      "x-api-key": this.apiKey,
+      "Content-Type": "application/json",
+    };
+  }
+
+  async generateClip(script: VideoScript): Promise<VideoClip> {
+    const narration = [script.title, script.narration]
+      .filter(Boolean)
+      .join(". ");
+
+    const res = await fetch(`${HEYGEN_BASE}/v2/video/generate`, {
+      method: "POST",
+      headers: this.headers(),
+      body: JSON.stringify({
+        video_inputs: [
+          {
+            character: {
+              type: "avatar",
+              avatar_id: "Daisy-inskirt-20220818",
+              avatar_style: "normal",
+            },
+            voice: {
+              type: "text",
+              // HeyGen's text-to-speech limit is 1 500 characters per input_text.
+              input_text: narration.slice(0, 1500),
+              voice_id: "2d5b0e6cf36f460aa7fc47e3eee4ba54",
+            },
+          },
+        ],
+        dimension: { width: 1280, height: 720 },
+        aspect_ratio: "16:9",
+      }),
+    });
+    if (!res.ok) {
+      const body = await readError(res);
+      throw new Error(`HeyGen generation request failed (${res.status}): ${body}`);
+    }
+    const data = (await res.json()) as HeyGenVideoResponse;
+    const videoId = data.data?.video_id;
+    if (!videoId) {
+      throw new Error(
+        `HeyGen returned no video_id: ${data.error ?? "unknown error"}`
+      );
+    }
+    return {
+      jobId: videoId,
+      scriptId: script.id,
+      status: "pending",
+      url: null,
+      provider: this.name,
+    };
+  }
+
+  async getClip(jobId: string): Promise<VideoClip | null> {
+    const res = await fetch(
+      `${HEYGEN_BASE}/v1/video_status.get?video_id=${jobId}`,
+      { headers: this.headers() }
+    );
+    if (res.status === 404) return null;
+    if (!res.ok) {
+      throw new Error(`HeyGen poll failed (${res.status}): ${await readError(res)}`);
+    }
+    const body = (await res.json()) as HeyGenStatusResponse;
+    const d = body.data;
+    if (!d) return null;
+    // HeyGen does not echo our script id; the feed refresh re-attaches it.
+    return {
+      jobId,
+      scriptId: "",
+      status: mapHeyGenStatus(d.status),
+      url: d.video_url ?? null,
+      provider: this.name,
+      error:
+        d.status === "failed"
+          ? d.error ?? "HeyGen generation failed"
+          : undefined,
+    };
+  }
+}
+
 const REAL_PROVIDERS = ["runway", "luma", "heygen"] as const;
 type RealProviderName = (typeof REAL_PROVIDERS)[number];
 
@@ -212,13 +447,14 @@ export function getVideoProvider(): VideoProvider {
       cached = new LumaVideoProvider(apiKey);
       return cached;
     }
-    // Remaining real providers are async render APIs that must be wired and
-    // tested against live credentials before shipping. Until then, fail loudly
-    // rather than silently faking output.
-    throw new Error(
-      `Video provider "${selected}" is not wired yet. Pending integration ` +
-        `against live credentials.`
-    );
+    if (selected === "runway") {
+      cached = new RunwayVideoProvider(apiKey);
+      return cached;
+    }
+    if (selected === "heygen") {
+      cached = new HeyGenVideoProvider(apiKey);
+      return cached;
+    }
   }
 
   throw new Error(`Unknown TV_VIDEO_PROVIDER "${selected}".`);
