@@ -4,10 +4,10 @@ const nextConfig: NextConfig = {
   output: "standalone",
   turbopack: {}, // This silences the Turbopack error
   outputFileTracingExcludes: {
-    "**": ["./source/**/*"],
+    "**": ["source/**/*"],
   },
   outputFileTracingIncludes: {
-    "/api/auth/verify": ["./data/**/*"],
+    "/api/auth/verify": ["data/**/*"],
   },
 };
 
