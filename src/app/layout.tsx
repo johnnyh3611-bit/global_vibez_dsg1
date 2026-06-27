@@ -6,6 +6,10 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "SolDate — Wallet-Powered Dating",
   description: "Connect your Solana wallet to find your on-chain match",
+  metadataBase: new URL("https://www.globalvibezdsg.com"),
+  alternates: {
+    canonical: "/",
+  },
 };
 
 export default function RootLayout({
