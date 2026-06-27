@@ -18,8 +18,22 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { dealerName, userMessage }: { dealerName: DealerName; userMessage: string } = await request.json();
-    const persona = dealerPersonas[dealerName] || "You are a friendly dealer.";
+    const body = await request.json().catch(() => null);
+    const { dealerName, userMessage } = body ?? {};
+
+    if (!dealerName || typeof dealerName !== "string" || !(dealerName in dealerPersonas)) {
+      return NextResponse.json({ error: "Invalid dealerName" }, { status: 400 });
+    }
+
+    if (!userMessage || typeof userMessage !== "string" || !userMessage.trim()) {
+      return NextResponse.json({ error: "userMessage is required" }, { status: 400 });
+    }
+
+    if (userMessage.length > 2000) {
+      return NextResponse.json({ error: "userMessage too long" }, { status: 400 });
+    }
+
+    const persona = dealerPersonas[dealerName as DealerName];
 
     const stream = await streamCompletion(
       `${persona} User says: "${userMessage}"`

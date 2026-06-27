@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ProfileCard } from "@/components/dating/ProfileCard";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,6 +14,15 @@ export default function DatingPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [matchMessage, setMatchMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const matchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (matchTimerRef.current !== null) {
+        clearTimeout(matchTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     fetch("/api/dating/profiles")
@@ -45,7 +54,7 @@ export default function DatingPage() {
       const data = await res.json();
       if (data.match) {
         setMatchMessage(`You matched with ${profile.name}!`);
-        setTimeout(advance, 2000);
+        matchTimerRef.current = setTimeout(advance, 2000);
       } else {
         advance();
       }

@@ -25,6 +25,12 @@ export function DealerInterface() {
     [chatByDealer, dealerName]
   );
 
+  // Allow localStorage writes only after the initial mount so the first render
+  // (which populates state from localStorage) never immediately writes back.
+  useEffect(() => {
+    canPersist.current = true;
+  }, []);
+
   useEffect(() => {
     if (!canPersist.current) return;
 
