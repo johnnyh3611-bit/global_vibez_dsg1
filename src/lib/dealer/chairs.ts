@@ -1,13 +1,13 @@
 import fs from "fs";
-import { fileURLToPath } from "node:url";
+import path from "path";
 
-const DEFAULT_HOLDERS_FILE = fileURLToPath(
-  new URL("../../../data/chair-holders.txt", import.meta.url)
-);
+// NOTE: a `/*turbopackIgnore*/` comment has no effect on `path.join`/`fs` calls
+// (it only applies to dynamic `import()`/`require()`), so it was removed. The
+// over-tracing this caused is handled via `outputFileTracing*` in next.config.ts.
+const DEFAULT_HOLDERS_FILE = path.join(process.cwd(), "data", "chair-holders.txt");
 
 let cachedHolders: Set<string> | null = null;
 let cachedMtime: number | null = null;
-let warnedMissingHoldersFile = false;
 
 function parseWalletLines(content: string): string[] {
   return content
@@ -23,18 +23,14 @@ function loadEnvWallets(): string[] {
     .filter(Boolean);
 }
 
-function loadFileWallets(): string[] {
-  if (!fs.existsSync(DEFAULT_HOLDERS_FILE)) {
-    if (!warnedMissingHoldersFile) {
-      console.warn(
-        `Chair holders file not found at ${DEFAULT_HOLDERS_FILE}; continuing with environment-configured holders only.`
-      );
-      warnedMissingHoldersFile = true;
-    }
-    return [];
-  }
+function getHoldersFilePath(): string {
+  return process.env.CHAIR_HOLDERS_FILE ?? DEFAULT_HOLDERS_FILE;
+}
 
-  return parseWalletLines(fs.readFileSync(DEFAULT_HOLDERS_FILE, "utf-8"));
+function loadFileWallets(): string[] {
+  const filePath = getHoldersFilePath();
+  if (!fs.existsSync(filePath)) return [];
+  return parseWalletLines(fs.readFileSync(filePath, "utf-8"));
 }
 
 function buildChairHolderSet(): Set<string> {
@@ -52,9 +48,8 @@ function buildChairHolderSet(): Set<string> {
 }
 
 export function getChairHolders(): Set<string> {
-  const mtime = fs.existsSync(DEFAULT_HOLDERS_FILE)
-    ? fs.statSync(DEFAULT_HOLDERS_FILE).mtimeMs
-    : null;
+  const filePath = getHoldersFilePath();
+  const mtime = fs.existsSync(filePath) ? fs.statSync(filePath).mtimeMs : null;
 
   if (cachedHolders && cachedMtime === mtime) {
     return cachedHolders;
