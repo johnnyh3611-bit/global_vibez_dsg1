@@ -359,7 +359,7 @@ export class HeyGenVideoProvider implements VideoProvider {
             },
             voice: {
               type: "text",
-              // HeyGen's text-to-speech limit is 1 500 characters per input_text.
+              // HeyGen's text-to-speech limit is 1,500 characters per input_text.
               input_text: narration.slice(0, 1500),
               voice_id: "2d5b0e6cf36f460aa7fc47e3eee4ba54",
             },
