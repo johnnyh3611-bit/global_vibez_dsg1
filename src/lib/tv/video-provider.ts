@@ -224,7 +224,7 @@ export class RunwayVideoProvider implements VideoProvider {
 
   private headers(): Record<string, string> {
     return {
-      Authorization: `******`,
+      Authorization: `Bearer ${this.apiKey}`,
       "Content-Type": "application/json",
       "X-Runway-Version": "2024-11-06",
     };
