@@ -1,11 +1,16 @@
 import type { Metadata } from "next";
 import { AppProviders } from "@/components/providers/AppProviders";
 import { GlobalNavbar } from "@/components/nav/GlobalNavbar";
+import { SITE_URL } from "@/lib/site-config";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "SolDate — Wallet-Powered Dating",
   description: "Connect your Solana wallet to find your on-chain match",
+  metadataBase: new URL(SITE_URL),
+  alternates: {
+    canonical: "/",
+  },
 };
 
 export default function RootLayout({
