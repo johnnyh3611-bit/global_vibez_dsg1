@@ -43,6 +43,9 @@ export default function DatingPage() {
         body: JSON.stringify({ profileId: profile.id }),
       });
       const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error ?? "Failed to send like");
+      }
       if (data.match) {
         setMatchMessage(`You matched with ${profile.name}!`);
         setTimeout(advance, 2000);

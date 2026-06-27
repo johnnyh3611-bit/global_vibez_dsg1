@@ -114,6 +114,7 @@ export function ProfileCard({ profile, onLike, onPass, loading }: ProfileCardPro
 
         <div className="flex gap-3 pt-2">
           <button
+            type="button"
             onClick={onPass}
             disabled={loading}
             className="flex-1 rounded-full border border-zinc-300 py-3 text-sm font-semibold transition-colors hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-700 dark:hover:bg-zinc-900"
@@ -121,6 +122,7 @@ export function ProfileCard({ profile, onLike, onPass, loading }: ProfileCardPro
             Pass
           </button>
           <button
+            type="button"
             onClick={onLike}
             disabled={loading}
             className="flex-1 rounded-full bg-violet-600 py-3 text-sm font-semibold text-white transition-colors hover:bg-violet-700 disabled:opacity-50"

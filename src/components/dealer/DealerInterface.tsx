@@ -25,6 +25,13 @@ export function DealerInterface() {
     [chatByDealer, dealerName]
   );
 
+  // Allow persistence after the initial render so the mount-time load from
+  // localStorage doesn't immediately overwrite saved data with the initial
+  // (empty) in-memory state.
+  useEffect(() => {
+    canPersist.current = true;
+  }, []);
+
   useEffect(() => {
     if (!canPersist.current) return;
 

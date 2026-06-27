@@ -101,7 +101,17 @@ export function clearSessionCookieOptions(): SessionCookie {
 
 const nonceStore = new Map<string, { nonce: string; expiresAt: number }>();
 
+function pruneExpiredNonces(): void {
+  const now = Date.now();
+  for (const [key, entry] of nonceStore.entries()) {
+    if (entry.expiresAt < now) {
+      nonceStore.delete(key);
+    }
+  }
+}
+
 export function createNonce(publicKey: string): string {
+  pruneExpiredNonces();
   const nonce = crypto.randomUUID();
   nonceStore.set(publicKey, { nonce, expiresAt: Date.now() + NONCE_TTL_MS });
   return nonce;
