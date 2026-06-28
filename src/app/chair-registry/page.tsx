@@ -5,7 +5,7 @@ import { getSession } from "@/lib/auth";
 import { walletHasChair } from "@/lib/dealer/chairs";
 
 export const metadata = {
-  title: "Global Vibez - Chair Registry",
+  title: "Global Vibez DSG - Chair Registry",
 };
 
 export default async function ChairRegistryPage() {

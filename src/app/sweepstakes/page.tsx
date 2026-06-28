@@ -1,7 +1,7 @@
 import { SweepstakesPanel } from "@/components/sweepstakes/SweepstakesPanel";
 
 export const metadata = {
-  title: "Global Vibez - Weekly Sweepstakes",
+  title: "Global Vibez DSG - Weekly Sweepstakes",
 };
 
 export default function SweepstakesPage() {

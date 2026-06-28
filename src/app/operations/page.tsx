@@ -1,7 +1,7 @@
 import { OperationsConsole } from "@/components/ops/OperationsConsole";
 
 export const metadata = {
-  title: "Global Vibez - Operations Console",
+  title: "Global Vibez DSG - Operations Console",
 };
 
 export default function OperationsPage() {

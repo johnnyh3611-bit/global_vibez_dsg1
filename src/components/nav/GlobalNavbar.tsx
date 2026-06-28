@@ -36,7 +36,7 @@ export function GlobalNavbar() {
           href="/"
           className="flex min-h-11 items-center text-lg font-bold tracking-tight text-white"
         >
-          Global <span className="ml-1 text-brand-accent">Vibez</span>
+          Global <span className="ml-1 text-brand-accent">Vibez DSG</span>
         </Link>
 
         {/* Desktop links */}

@@ -1,7 +1,7 @@
 import { GlobalCard } from "@/components/ui/GlobalCard";
 
 export const metadata = {
-  title: "Global Vibez — Game Lobby",
+  title: "Global Vibez DSG — Game Lobby",
 };
 
 const GAMES = [

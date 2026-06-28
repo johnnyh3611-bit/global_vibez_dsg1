@@ -4,7 +4,7 @@ import { CelestialGlasshousePanel } from "@/components/dashboard/CelestialGlassh
 import { getSession } from "@/lib/auth";
 
 export const metadata = {
-  title: "Global Vibez - Celestial Glasshouse",
+  title: "Global Vibez DSG - Celestial Glasshouse",
 };
 
 export default async function GlasshousePage() {

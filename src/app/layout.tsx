@@ -5,8 +5,8 @@ import { SITE_URL } from "@/lib/site-config";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "SolDate — Wallet-Powered Dating",
-  description: "Connect your Solana wallet to find your on-chain match",
+  title: "Global Vibez DSG | Next-Gen Dating & Social Gaming",
+  description: "Global Vibez DSG unifies dating, streaming, and gaming in one platform.",
   metadataBase: new URL(SITE_URL),
   alternates: {
     canonical: "/",
