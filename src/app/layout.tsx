@@ -1,8 +1,13 @@
 import type { Metadata } from "next";
+import dynamic from "next/dynamic";
 import { AppProviders } from "@/components/providers/AppProviders";
-import { GlobalNavbar } from "@/components/nav/GlobalNavbar";
 import { SITE_URL } from "@/lib/site-config";
 import "./globals.css";
+
+const GlobalNavbar = dynamic(
+  () => import("@/components/nav/GlobalNavbar").then((mod) => mod.GlobalNavbar),
+  { ssr: false },
+);
 
 export const metadata: Metadata = {
   title: "SolDate — Wallet-Powered Dating",
