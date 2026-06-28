@@ -14,6 +14,7 @@ import bs58 from "bs58";
 interface AuthState {
   authenticated: boolean;
   publicKey: string | null;
+  hasChair: boolean;
   loading: boolean;
   signingIn: boolean;
   error: string | null;
@@ -32,6 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({
     authenticated: false,
     publicKey: null,
+    hasChair: false,
     loading: true,
     signingIn: false,
     error: null,
@@ -46,6 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           ...s,
           authenticated: true,
           publicKey: data.publicKey,
+          hasChair: data.hasChair === true,
           loading: false,
           error: null,
         }));
@@ -54,6 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           ...s,
           authenticated: false,
           publicKey: null,
+          hasChair: false,
           loading: false,
         }));
       }
@@ -62,6 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ...s,
         authenticated: false,
         publicKey: null,
+        hasChair: false,
         loading: false,
       }));
     }
@@ -135,6 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setState({
       authenticated: false,
       publicKey: null,
+      hasChair: false,
       loading: false,
       signingIn: false,
       error: null,

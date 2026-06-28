@@ -1,9 +1,7 @@
 import fs from "fs";
-import { fileURLToPath } from "node:url";
+import path from "path";
 
-const DEFAULT_HOLDERS_FILE = fileURLToPath(
-  new URL("../../../data/chair-holders.txt", import.meta.url)
-);
+const DEFAULT_HOLDERS_FILE = path.join(process.cwd(), "data", "chair-holders.txt");
 
 let cachedHolders: Set<string> | null = null;
 let cachedMtime: number | null = null;

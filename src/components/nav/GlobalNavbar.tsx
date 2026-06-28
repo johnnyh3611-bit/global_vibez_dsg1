@@ -5,11 +5,14 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 const LINKS = [
+  { label: "Glasshouse", href: "/glasshouse" },
   { label: "Home", href: "/" },
   { label: "Dating", href: "/dating" },
   { label: "Games", href: "/games" },
   { label: "TV Network", href: "/tv" },
   { label: "Dealer Lounge", href: "/dealer" },
+  { label: "Chair Registry", href: "/chair-registry" },
+  { label: "Sweepstakes", href: "/sweepstakes" },
 ] as const;
 
 // Routes that own the full viewport / their own chrome — no global nav.
