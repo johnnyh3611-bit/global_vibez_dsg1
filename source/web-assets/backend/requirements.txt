@@ -23,7 +23,7 @@ certifi==2026.2.25
 cffi==2.0.0
 charset-normalizer==3.4.4
 chess==1.11.2
-click==8.1.8
+click>=8.2.1
 ConfigArgParse==1.7.5
 construct==2.10.70
 construct-typing==0.7.0
