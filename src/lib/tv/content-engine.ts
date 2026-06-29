@@ -71,7 +71,7 @@ export function generateBroadcastScripts(
   scripts.push({
     id: `economic-recap-${version}`,
     kind: "economic-recap",
-    title: "Global Vibez — House Report",
+    title: "Global Vibez DSG — House Report",
     narration:
       `Across the floor tonight: ${metrics.totalRolls} rolls placed, ` +
       `${metrics.creditsWagered} credits wagered, and a house pool of ` +

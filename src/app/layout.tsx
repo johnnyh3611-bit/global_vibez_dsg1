@@ -1,17 +1,10 @@
 import type { Metadata } from "next";
 import { AppProviders } from "@/components/providers/AppProviders";
 import { ClientNavbar } from "@/components/nav/ClientNavbar";
-import { SITE_URL } from "@/lib/site-config";
+import { metadata as seoMetadata } from "@/components/layout/SEO";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: "Global Vibez DSG | Next-Gen Dating & Social Gaming",
-  description: "Global Vibez DSG unifies dating, streaming, and gaming in one platform.",
-  metadataBase: new URL(SITE_URL),
-  alternates: {
-    canonical: "/",
-  },
-};
+export const metadata: Metadata = seoMetadata;
 
 export default function RootLayout({
   children,

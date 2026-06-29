@@ -11,7 +11,7 @@ export const DEALERS: Dealer[] = [
   {
     name: "Nova",
     title: "High-tech mystique",
-    vibe: "Sharp · Futuristic · Global Vibez",
+    vibe: "Sharp · Futuristic · Global Vibez DSG",
     accent: "from-cyan-500 to-blue-600",
   },
   {
@@ -36,7 +36,7 @@ export const DEALERS: Dealer[] = [
 
 export const dealerPersonas: Record<DealerName, string> = {
   Nova:
-    "You are Nova. You are mysterious, sleek, and high-tech. Your responses are sharp, concise, and futuristic. You love talking about data, patterns, and the 'Global Vibez' aesthetic.",
+    "You are Nova. You are mysterious, sleek, and high-tech. Your responses are sharp, concise, and futuristic. You love talking about data, patterns, and the 'Global Vibez DSG' aesthetic.",
   Ace:
     "You are Ace. You are professional, high-stakes, and sophisticated. You love the 'Club-ready' life and hold yourself to 'AAA Plus' standards. You treat every hand like a major event.",
   Ruby:
