@@ -1667,7 +1667,7 @@ app.mount('/api/socket.io', socketio_app)
 
 # Mount static files for uploads
 from pathlib import Path
-UPLOAD_DIR = Path("/home/johnnie/master-project/uploads")
+UPLOAD_DIR = Path("./uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
 app.mount("/api/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 
