@@ -20,12 +20,29 @@ function shortWallet(value: string): string {
 
 export function ChairRegistryView() {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/chair/ledger", { cache: "no-store" })
-      .then((res) => res.json())
-      .then((data) => setSnapshot(data));
+      .then(async (res) => {
+        if (!res.ok) {
+          const body = (await res.json().catch(() => ({}))) as { error?: string };
+          throw new Error(body.error ?? "Failed to load registry");
+        }
+        return (res.json() as Promise<Snapshot>);
+      })
+      .then((data) => {
+        setSnapshot(data);
+        setError(null);
+      })
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : "Failed to load registry");
+      });
   }, []);
+
+  if (error) {
+    return <p className="text-sm text-rose-300">Error loading registry: {error}</p>;
+  }
 
   if (!snapshot) {
     return <p className="text-sm text-white/70">Loading ledger...</p>;
