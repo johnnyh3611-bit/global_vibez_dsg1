@@ -23,6 +23,7 @@ ENV GENERATE_SOURCEMAP=false
 ENV TSC_COMPILE_ON_ERROR=true
 ENV DISABLE_ESLINT_PLUGIN=true
 ENV CI=false
+ENV REACT_APP_BACKEND_URL="https://global-vibez-dsg-production.up.railway.app"
 
 # Build for production
 RUN yarn build
