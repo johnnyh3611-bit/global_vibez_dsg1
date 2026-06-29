@@ -1665,11 +1665,11 @@ app.include_router(api_router)
 # OR use HTTP long polling which works over /api/* prefix
 app.mount('/api/socket.io', socketio_app)
 
+UPLOAD_DIR = Path("./uploads")
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/api/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 # Mount static files for uploads
 from pathlib import Path
-UPLOAD_DIR = Path("./uploads")
-UPLOAD_DIR.mkdir(exist_ok=True, parents=True)
-app.mount("/api/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 
 # Configure logging
 logging.basicConfig(
