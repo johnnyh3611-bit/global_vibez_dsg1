@@ -3,7 +3,7 @@ import bs58 from "bs58";
 import nacl from "tweetnacl";
 
 export function buildSignInMessage(nonce: string): string {
-  return `Sign in to SolDate\n\nNonce: ${nonce}`;
+  return `Sign in to Global Vibez DSG\n\nNonce: ${nonce}`;
 }
 
 export function verifyWalletSignature(

@@ -1,7 +1,7 @@
 import { brand, glassStyle, glassStyleStrong } from "@/styles/design-tokens";
 
 export const metadata = {
-  title: "Global Vibez — Design System",
+  title: "Global Vibez DSG — Design System",
 };
 
 const colors = [
@@ -71,7 +71,7 @@ export default function DesignSystemPage() {
 
         <Section title="Buttons (44px touch targets)">
           <div className="flex flex-wrap gap-4">
-            <button className={brand.button}>Enter Global Vibez</button>
+            <button className={brand.button}>Enter Global Vibez DSG</button>
             <button className={brand.buttonGhost}>Secondary</button>
             <button className={brand.button} disabled>
               Disabled

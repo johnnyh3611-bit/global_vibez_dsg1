@@ -1,24 +1,13 @@
 {
   "$schema": "https://railway.app/railway.schema.json",
+  "_comment": "Root-level reference only. Deploy using service-specific railway.json files in backend/ and frontend/ subdirectories. See RAILWAY_DEPLOY.md for full instructions.",
   "build": {
     "builder": "NIXPACKS"
   },
   "deploy": {
     "numReplicas": 1,
-    "startCommand": "supervisord -c /app/supervisord.conf",
+    "startCommand": "cd backend && uvicorn server:app --host 0.0.0.0 --port ${PORT:-8001}",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
-  },
-  "services": [
-    {
-      "name": "backend",
-      "env": {
-        "MONGO_URL": "${{MONGO_URL}}",
-        "DB_NAME": "${{DB_NAME}}",
-        "EMERGENT_LLM_KEY": "${{EMERGENT_LLM_KEY}}",
-        "STRIPE_API_KEY": "${{STRIPE_API_KEY}}",
-        "PORT": "8001"
-      }
-    }
-  ]
+  }
 }

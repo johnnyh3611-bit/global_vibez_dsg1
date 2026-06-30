@@ -1,5 +1,5 @@
 /**
- * Global Vibez design tokens — TS mirror of the canonical `@theme` block in
+ * Global Vibez DSG design tokens — TS mirror of the canonical `@theme` block in
  * `src/app/globals.css`. The CSS is the source of truth; this file exposes the
  * same concepts as ready-to-use Tailwind class strings for `.tsx` components.
  *

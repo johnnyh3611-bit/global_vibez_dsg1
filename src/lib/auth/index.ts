@@ -1,7 +1,7 @@
 import { SignJWT, jwtVerify } from "jose";
 
 export const AUTH_COOKIE_NAME = "dating-auth-token";
-export const AUTH_MESSAGE_PREFIX = "Sign in to SolDate";
+export const AUTH_MESSAGE_PREFIX = "Sign in to Global Vibez DSG";
 export const NONCE_TTL_MS = 5 * 60 * 1000;
 export const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 days
 

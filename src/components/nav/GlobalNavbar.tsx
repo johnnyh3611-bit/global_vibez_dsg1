@@ -5,11 +5,14 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 const LINKS = [
+  { label: "Glasshouse", href: "/glasshouse" },
   { label: "Home", href: "/" },
   { label: "Dating", href: "/dating" },
   { label: "Games", href: "/games" },
   { label: "TV Network", href: "/tv" },
   { label: "Dealer Lounge", href: "/dealer" },
+  { label: "Chair Registry", href: "/chair-registry" },
+  { label: "Sweepstakes", href: "/sweepstakes" },
 ] as const;
 
 // Routes that own the full viewport / their own chrome — no global nav.
@@ -33,7 +36,7 @@ export function GlobalNavbar() {
           href="/"
           className="flex min-h-11 items-center text-lg font-bold tracking-tight text-white"
         >
-          Global <span className="ml-1 text-brand-accent">Vibez</span>
+          Global <span className="ml-1 text-brand-accent">Vibez DSG</span>
         </Link>
 
         {/* Desktop links */}
