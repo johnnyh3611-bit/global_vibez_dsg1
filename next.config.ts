@@ -4,7 +4,8 @@ const nextConfig: NextConfig = {
   output: "standalone",
   turbopack: {}, // This silences the Turbopack error
 
-  // Avoid bundling the large vendored extension tree into server functions.
+  // Optimization to prevent hitting Vercel's 250MB limit by excluding 
+  // the 'source/' directory and including only necessary data
   outputFileTracingExcludes: {
     "**": ["source/**/*"],
   },
