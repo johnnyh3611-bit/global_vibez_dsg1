@@ -23,7 +23,7 @@ certifi==2026.2.25
 cffi==2.0.0
 charset-normalizer==3.4.4
 chess==1.11.2
-click==8.1.8
+click>=7.1,<8.2
 ConfigArgParse==1.7.5
 construct==2.10.70
 construct-typing==0.7.0
@@ -60,7 +60,7 @@ googleapis-common-protos==1.72.0
 greenlet==3.4.0
 grpcio==1.78.0
 grpcio-status==1.71.2
-gTTS==2.5.4
+gTTS>=2.4.0
 gunicorn==26.0.0
 h11==0.16.0
 h2==4.3.0
@@ -168,7 +168,7 @@ tiktoken==0.12.0
 tokenizers==0.22.2
 tqdm==4.67.3
 twilio==9.10.5
-typer==0.24.1
+typer==0.12.5
 typing-inspection==0.4.2
 typing_extensions==4.15.0
 tzdata==2025.3

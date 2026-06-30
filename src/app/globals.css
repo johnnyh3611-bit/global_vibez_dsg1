@@ -12,7 +12,7 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* Global Vibez design tokens — canonical source of truth (Deep Violet & Glass).
+/* Global Vibez DSG design tokens — canonical source of truth (Deep Violet & Glass).
    Tailwind v4 turns these into utilities: bg-brand-primary, rounded-glass,
    shadow-glass, etc. The 4px/8px spacing grid is Tailwind's default scale
    (--spacing 0.25rem → p-1=4px, p-2=8px, p-4=16px). */

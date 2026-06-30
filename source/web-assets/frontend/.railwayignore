@@ -1,0 +1,14 @@
+node_modules/
+build/
+dist/
+.git/
+.next/
+.cache/
+coverage/
+.env.local
+.env.*.local
+*.log
+npm-debug.log*
+yarn-error.log*
+public/landing-tour-narration-en.mp3.bak-pre-recirc
+public/GlobalVibezDSG_ComingSoonGames_Handoff.pdf

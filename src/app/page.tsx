@@ -23,7 +23,7 @@ export default function Home() {
         </div>
 
         <h1 className="text-5xl font-bold tracking-tight drop-shadow-lg sm:text-7xl">
-          Global <span className="text-brand-accent">Vibez</span>
+          Global <span className="text-brand-accent">Vibez DSG</span>
         </h1>
 
         <p className="mt-4 max-w-xl text-base text-white/80 drop-shadow sm:text-lg">
@@ -31,10 +31,10 @@ export default function Home() {
         </p>
 
         <Link
-          href="/login"
+          href="/games"
           className="mt-10 inline-flex min-h-11 items-center justify-center rounded-full bg-brand-primary px-10 py-4 text-base font-semibold text-white shadow-brand-glow transition-all hover:scale-105 hover:bg-brand-primary-hover"
         >
-          Enter Global Vibez
+          Enter Global Vibez DSG
         </Link>
       </div>
     </div>

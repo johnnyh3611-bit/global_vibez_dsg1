@@ -1665,11 +1665,11 @@ app.include_router(api_router)
 # OR use HTTP long polling which works over /api/* prefix
 app.mount('/api/socket.io', socketio_app)
 
+UPLOAD_DIR = Path("./uploads")
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/api/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 # Mount static files for uploads
 from pathlib import Path
-UPLOAD_DIR = Path("/home/johnnie/master-project/uploads")
-UPLOAD_DIR.mkdir(exist_ok=True)
-app.mount("/api/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 
 # Configure logging
 logging.basicConfig(
@@ -1709,3 +1709,4 @@ import services.treasury_socketio  # noqa: F401  — registers join/leave handle
 
 # Mount Socket.IO for real-time multiplayer
 app.mount("/socket.io", socket_app)
+# Cloud config fix

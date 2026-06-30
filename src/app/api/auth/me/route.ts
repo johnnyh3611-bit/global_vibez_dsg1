@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { getSession } from "@/lib/auth";
+import { createSession, getSession, sessionCookieOptions } from "@/lib/auth";
+import { walletHasChair } from "@/lib/dealer/chairs";
 
 export async function GET() {
   const session = await getSession();
@@ -9,9 +10,21 @@ export async function GET() {
     return NextResponse.json({ authenticated: false }, { status: 401 });
   }
 
-  return NextResponse.json({
+  const hasChair = walletHasChair(session.publicKey);
+
+  const response = NextResponse.json({
     authenticated: true,
     publicKey: session.publicKey,
-    hasChair: session.hasChair,
+    hasChair,
   });
+
+  if (session.hasChair !== hasChair) {
+    const refreshedToken = await createSession({
+      publicKey: session.publicKey,
+      hasChair,
+    });
+    response.cookies.set(sessionCookieOptions(refreshedToken));
+  }
+
+  return response;
 }
