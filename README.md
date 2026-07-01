@@ -57,4 +57,19 @@ Workflow rule:
   surfaces in Vercel or Azure.
 - Avoid editing the legacy `source/web-assets` subtree for production work.
 
+## Workspace Sync
+
+To keep every workspace at the exact same point:
+
+```bash
+./scripts/sync-workspace.sh main
+```
+
+This command:
+
+- verifies your working tree is clean,
+- fetches `origin`,
+- fast-forwards local `main` to `origin/main`,
+- verifies local and remote commit SHAs match.
+
 See the [Next.js documentation](https://nextjs.org/docs) for framework details.

@@ -6,7 +6,8 @@
     "dev": "NODE_ENV=development next dev",
     "build": "NODE_ENV=production next build",
     "start": "NODE_ENV=production next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "sync:workspace": "bash ./scripts/sync-workspace.sh main"
   },
   "dependencies": {
     "@solana/wallet-adapter-base": "^0.9.27",
