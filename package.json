@@ -7,7 +7,8 @@
     "build": "NODE_ENV=production next build",
     "start": "NODE_ENV=production next start",
     "lint": "eslint",
-    "sync:workspace": "bash ./scripts/sync-workspace.sh main"
+    "sync:workspace": "bash ./scripts/sync-workspace.sh main",
+    "verify:full": "npm run build && ls source/web-assets/frontend/public/landing-tour-tiktok-en-9x16.mp4 source/web-assets/frontend/public/landing-tour-tiktok-9x16.mp4 && echo 'Emergent Assets Verified' && node scripts/check-env.js"
   },
   "dependencies": {
     "@solana/wallet-adapter-base": "^0.9.27",
