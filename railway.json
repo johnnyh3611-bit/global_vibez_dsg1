@@ -1,0 +1,12 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "_comment": "Guard config: do not deploy repo root to Railway. Deploy source/web-assets/backend and source/web-assets/frontend as separate services in one Railway project.",
+  "build": {
+    "builder": "NIXPACKS"
+  },
+  "deploy": {
+    "numReplicas": 1,
+    "startCommand": "bash -lc 'echo \"ERROR: Wrong Railway target. Use source/web-assets/backend or source/web-assets/frontend as the service Root Directory.\" && exit 1'",
+    "restartPolicyType": "NEVER"
+  }
+}
