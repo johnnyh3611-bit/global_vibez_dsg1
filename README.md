@@ -24,6 +24,12 @@ npm run build
 
 ## Deployment Notes
 
+Railway target for the original app (with landing intro/tour video):
+
+- Deploy `source/web-assets/backend` and `source/web-assets/frontend` as two services in one Railway project.
+- Do not deploy repo root (`.`) or `source/web-assets` root directly.
+- Use `source/web-assets/RAILWAY_DEPLOY.md` for full setup.
+
 For Vercel deployments:
 
 - Set `JWT_SECRET` in Project Settings → Environment Variables. Wallet sign-in returns `503` until this is configured.
