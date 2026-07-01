@@ -1,0 +1,53 @@
+{
+  "summary": "End-to-end verification of P3 Streamer Referral Program. 7/7 pytest backend tests pass against real preview backend with real auth tokens (betatester1/2). All 8 happy/error flows exercised: code mint idempotency, lookup valid + 404, redeem (signup), redeem-again (already_redeemed), self-redeem (400), already-redeemed-different-code (409), qualify-on-live PAID + featured_until extension, qualify-again no_pending. Stats endpoint confirmed: invites_paid=2, coins_earned_lifetime=2000, featured_days_earned_lifetime=10 for betatester1 after this run (1 from main agent smoke test + 1 fresh from this test). Frontend playwright verified: (a) Streamer Studio referral card data-testid=streamer-studio-referral-card renders with share URL (https://globalvibezdsg.com/signup?ref=VIBE-NYE56VHM), copy button (referral-copy-btn), share button (referral-share-btn), and stats grid (Code, Sign-ups, Paid Out, ₵ Earned, days of Featured). (b) /signup?ref=VIBE-NYE56VHM shows green signup-ref-banner with referrer name 'Beta Tester 1' and reward details. (c) /signup?ref=VIBE-NOTREAL correctly shows signup-ref-banner-invalid amber banner. The P3 program is production-ready for beta redeploy.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "SignupPage refCode lookup effect",
+        "issue": "The /signup?ref=NOPE case (a non-VIBE prefixed code) does NOT render data-testid=signup-ref-banner-invalid. The useEffect early-returns when !refCode.startsWith('VIBE-') at line ~68, so refValid stays as initial state (null) and neither banner renders. Review request explicitly asked for ?ref=NOPE → invalid banner. Fix: drop the startsWith('VIBE-') guard OR set refValid=false in that branch.",
+        "selector": "/app/frontend/src/pages/SignupPage.tsx line 68",
+        "priority": "LOW"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Streamer Studio",
+        "issues": [
+          "ReferralCard is rendered as a child of the provisioned-ingest section, so it only shows AFTER the streamer clicks 'Provision My Ingest'. A fresh streamer on /streamer/studio sees the pre-provision empty state with no hint about the referral program. Consider promoting the referral card above the ingest empty state, or rendering it always (regardless of streamer_id) so users can share even before they've gone live the first time."
+        ]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_streamer_referral_p3.py",
+    "/app/test_reports/pytest/p3_referral.xml"
+  ],
+  "action_items": [
+    "(OPTIONAL / LOW) Fix /signup?ref=NOPE (non-VIBE prefix) to render signup-ref-banner-invalid — currently only codes starting with VIBE- trigger the lookup, so arbitrary garbage codes silently render the plain form. Drop the startsWith('VIBE-') early-return in SignupPage.tsx ~line 68.",
+    "(OPTIONAL) Move ReferralCard out of the post-provisioned ingest block in StreamerStudio.tsx so it shows even before a user provisions their ingest — gives more viral surface area."
+  ],
+  "critical_code_review_comments": [
+    "Backend code in /app/backend/routes/streamer_referral.py is excellent: idempotent code mint with 8-retry collision check, atomic state transition (SIGNED_UP→PAID via update_one with status filter, modified_count guard prevents concurrent double-pay), proper $inc on credit_balance, featured_until extends from max(now, current_until) so existing paid Featured isn't shortened. All endpoints exclude _id. _new_code() de-ambiguates 0/O/1/l/I — verbal-safe.",
+    "Reward constants (1000 coins / 5 days) are correctly hardcoded as module-level constants and surfaced in /my-code, /lookup, /stats responses — frontend can stay in sync without env config.",
+    "qualify_on_live is callable both as helper (from cloudflare_stream webhook) and as HTTP endpoint (for ops) — clean separation.",
+    "Frontend ReferralCard correctly uses REACT_APP_BACKEND_URL via process.env, has data-testid on card + copy-btn + share-btn, and refetches stats on mount."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_streamer_referral_p3.py (NEW — 7 pytest tests for P3 referral)"
+  ],
+  "success_rate": {
+    "backend": "100% (7/7 pytest)",
+    "frontend": "95% (3/3 UI flows render correctly; minor gap on ?ref=NOPE non-VIBE prefix)"
+  },
+  "test_credentials": "betatester1@globalvibez.com / BetaTester2026! (user_id: 8f707bb9-dc0f-43cd-acf4-065f7d86cd54). betatester2@globalvibez.com / BetaTester2026!",
+  "seed_data_creation": "Created 1 fresh fake referral redemption per test run via /redeem with uuid-based new_user_id, then paid out via /qualify-on-live. After test run, betatester1 stats show invites_paid=2, coins_earned_lifetime=2000, featured_days_earned_lifetime=10. featured_streamers row for betatester1 has featured_until ~10 days in future. No teardown done (fake referred_id is unique per run so no collision risk).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend P3 referral fully working — 7-test pytest at /app/backend/tests/test_streamer_referral_p3.py can be re-run for regression. Each run will mint a new fake referred user and add +1000 ₵ / +5 days to betatester1 stats. To reset stats for clean baseline, drop streamer_referrals rows where referred_id starts with 'e2e-fake-' via mongo shell. Frontend ReferralCard only shows AFTER /streamer/studio has 'Provision My Ingest' clicked — keep that in mind for any future playwright tests on the card.",
+  "rca of the issue": "N/A — no functional bugs found. The /signup?ref=NOPE gap is by design (frontend only validates VIBE- prefixed codes against /lookup) and easy to widen if main agent wants stricter UX coverage."
+}

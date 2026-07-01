@@ -1,0 +1,28 @@
+🎬 DOWNLOAD DEALER VIDEOS
+
+To enable realistic animated AI dealer, download these 4 videos:
+
+1. DEALER IDLE:
+   - Go to: https://www.pexels.com/search/videos/casino%20dealer/
+   - Download any dealer standing/waiting video
+   - Save as: dealer-idle.mp4
+
+2. DEALER SHUFFLING:
+   - Go to: https://www.pexels.com/video/close-up-of-casino-dealer-shuffling-playing-cards-7459201/
+   - Click Download > Select HD 720p
+   - Save as: dealer-shuffle.mp4
+
+3. DEALER DEALING:
+   - Go to: https://mixkit.co/free-stock-video/croupier-dealing-cards-100391/
+   - Click Free Download
+   - Save as: dealer-dealing.mp4
+
+4. DEALER CELEBRATING:
+   - Duplicate dealer-idle.mp4 OR find celebration video
+   - Save as: dealer-celebrating.mp4
+
+Place all 4 files in this folder: /app/frontend/public/videos/
+
+Then restart: sudo supervisorctl restart frontend
+
+Currently using animated emoji fallback (🎰 🎴 🃏 🎉)

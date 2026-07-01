@@ -1,0 +1,46 @@
+{
+  "summary": "Comprehensive validation of High Roller VIP MVP + 100K scaling foundation. Backend: 13/14 new tests PASS; regression shield 339/339 GREEN. Frontend: /casino/high-roller renders all 3 tier cards (Genius $49 / Genesis $99 / Apex $249) with locked pricing; /casino/high-roller/blackjack correctly renders VIP-required upsell (vip-blackjack-locked) for non-VIP demo user. CRITICAL ISOLATION GUARANTEE VERIFIED: standard /api/blackjack/deal still enforces 50-coin floor — VIP 10k floor does NOT leak. apply_vip_grant idempotency confirmed via direct DB.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "/api/streaming/cloudflare/live-inputs",
+        "issue": "Returns HTTP 500 due to TypeError in sort lambda at routes/cloudflare_stream.py:276. Expression `-((s.get('last_status_at') or s.get('created_at') or '') and 1)` short-circuits to empty string '' when both timestamps are missing/empty, then unary minus on str raises TypeError. This breaks the Live Now Wall endpoint. NOT a Redis cache issue — cache fallback works (cache_get returns None gracefully without REDIS_URL). Fix: replace lambda with `-1 if (s.get('last_status_at') or s.get('created_at')) else 0` (or use proper key ordering).",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_high_roller_mvp.py",
+    "/app/test_reports/pytest/high_roller_mvp.xml",
+    "/app/backend/tests/regression_shield.py"
+  ],
+  "action_items": [
+    "Fix routes/cloudflare_stream.py:276 sort lambda — `-(str and 1)` fails when both timestamps absent (TypeError: bad operand type for unary -: 'str'). Endpoint /api/streaming/cloudflare/live-inputs currently returns 500."
+  ],
+  "critical_code_review_comments": [
+    "routes/high_roller.py is clean, ~307 lines, idiomatic. Idempotency, tier-downgrade-protection, and VIP gate logic all correct.",
+    "services/high_roller_economy.py centralises pricing constants — good single source of truth.",
+    "Test isolation verified: VIP 10k floor lives only in /api/high-roller/blackjack/deal; public /api/blackjack/deal untouched.",
+    "scale_cache.py cache_get/cache_set both no-op gracefully without REDIS_URL — confirmed.",
+    "BUG: cloudflare_stream.py:276 lambda has falsy short-circuit landmine — see action item."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_high_roller_mvp.py (new — 14 tests)"
+  ],
+  "success_rate": {
+    "backend": "92.8% (13/14 new tests pass; 1 fail is pre-existing cloudflare_stream bug unrelated to High Roller MVP)",
+    "frontend": "100% (all High Roller MVP testids present; VIP-locked upsell renders correctly)"
+  },
+  "test_credentials": "Demo login via login-demo-btn; betatester1@globalvibez.com / BetaTester2026!",
+  "seed_data_creation": "Tests create TEST_-prefixed users in high_roller_vip collection; cleaned up via pymongo delete_one in fixture teardown.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Run `cd /app/backend && set -a && source .env && set +a && DISABLE_BG_SCHEDULERS=1 pytest tests/test_high_roller_mvp.py tests/regression_shield.py -q` — expect 339+13/14 pass. The single fail (TestCloudflareLiveInputs::test_live_inputs_endpoint_responds) is a pre-existing cloudflare_stream.py sort-lambda bug, not a High Roller regression. Once that lambda is fixed, all 14 will pass. To re-grant VIP without Stripe, write directly to mongo collection `high_roller_vip` with `{user_id, tier, vip_until: <future ISO>, last_grant_session_id, grant_count: 1}`.",
+  "rca_of_the_issue": "Cloudflare 500: lambda `-((a or b or '') and 1)` — when both `a` and `b` are None/empty, Python evaluates `'' and 1` = `''` (empty string is falsy, `and` short-circuits to LHS). Then `-''` → TypeError. Triggered whenever any returned live-input row has both `last_status_at` AND `created_at` missing. Fix: `-(1 if (s.get('last_status_at') or s.get('created_at')) else 0)`."
+}

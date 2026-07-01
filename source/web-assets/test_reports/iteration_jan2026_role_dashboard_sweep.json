@@ -1,0 +1,52 @@
+{
+  "summary": "PRE-REDEPLOY ROLE-DASHBOARD SWEEP — 248/248 regression_shield.py GREEN, 14/14 new role-dashboard backend sweep GREEN, all 16 role-specific routes render 200 with 0 page-errors. Dashboard toggle (Volumetric↔Classic) confirmed working in BOTH directions WITHOUT full page reload (sentinel preserved across click). season-pass/me unauth now returns 401 (was 500) — FIX VERIFIED. NO white-on-white bug on driver-registration (white text on dark slate-800 card — fully readable). Only 1 functional regression found: legacy /driver/dashboard is stuck on 'Loading driver dashboard...' indefinitely for an authenticated beta tester (newer /vibe-ridez/driver-dashboard works fine). All other role dashboards (Vibe Ridez driver, dispatch, earnings, wallet, registration, license verification, status, HungryVibes merchant + customer, Streamer /my-streams, SmartStack) render and have clickable CTAs.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/just-for-the-night/season-pass/me", "issue": "Returns 405 (Method Not Allowed) for POST — route is defined as GET only. The previous test report mentioned 'POST returns 401' but the route is in fact GET. GET unauth correctly returns 401 ✓. No action needed unless founder expected POST to be supported."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Legacy DriverDashboard.tsx", "issue": "/driver/dashboard is stuck on 'Loading driver dashboard...' indefinitely (8s+ wait, body remains 84 chars). Component likely awaits a fetch that never resolves for the betatester1 account. Newer /vibe-ridez/driver-dashboard works correctly. Founder explicitly asked about this legacy path.", "selector": "n/a (route /driver/dashboard)", "priority": "MEDIUM"},
+      {"component": "RoomInfoCube modal (WHAT IS THIS ROOM)", "issue": "Clicking 'WHAT IS THIS ROOM?' on Volumetric dashboard sometimes does not open a [role=\"dialog\"] element (intermittent — opened once, didn't open on second attempt). 'READ THIS ALOUD' CTA was not findable inside the popped surface. May be transient or the modal uses a non-standard role.", "selector": "button:has-text(\"WHAT IS THIS ROOM\")", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_role_dashboard_sweep.py",
+    "/app/test_reports/pytest/regression_shield_role_dashboard_sweep.xml",
+    "/app/test_reports/pytest/role_dashboard_backend.xml"
+  ],
+  "action_items": [
+    "(MEDIUM) Investigate why legacy /driver/dashboard hangs on 'Loading driver dashboard...' for authenticated users. Either redirect /driver/dashboard → /vibe-ridez/driver-dashboard, or fix the data fetch that never resolves. Founder explicitly called out 'driver dashboard' and the legacy route is broken.",
+    "(LOW) RoomInfoCube 'READ THIS ALOUD' button is not findable inside the WHAT IS THIS ROOM popover — add data-testid='room-info-cube-read-aloud' and confirm the dialog uses role='dialog' so screen-readers + tests can find it.",
+    "(INFO) Confirm with founder that /api/just-for-the-night/season-pass/me is intended GET-only. The previous test report referenced a POST endpoint that does not exist."
+  ],
+  "critical_code_review_comments": [
+    "Dashboard toggle fix is SOLID — switchDashboardView() helper + gv-dashboard-view event correctly re-renders router without full page reload. Verified by setting window-level sentinels (window.__sentinel) before each toggle click — sentinel preserved after click in BOTH directions.",
+    "Driver registration form input styling is correct — color: rgb(255,255,255) on background rgba(30,41,59,0.5) (slate-800/50). High contrast, no white-on-white regression of the ProfileSetup bug.",
+    "Driver Wallet (/driver/wallet) has 0 input fields BY DESIGN — it's a Solana wallet-connect page with 'Connect Solana Wallet' CTA. Not a Stripe form. The review-request item 'form inputs accept text' is N/A for this page. Recommend updating the spec.",
+    "All 6 Volumetric Galaxy planets render visually but their labels (GAMES/DATING/RIDES/FOOD/STREAMING/VAULT) live in canvas/SVG so they are not exposed as DOM text — Playwright cannot click them via text selector. If tap-targets need automation coverage, add data-testid='galaxy-planet-{name}' on the hit-region overlays.",
+    "Legacy /driver/dashboard never resolves its loading state — needs investigation or deprecation."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_role_dashboard_sweep.py (new)"
+  ],
+  "success_rate": {
+    "backend": "100% (248/248 regression + 14/14 role-dashboard sweep)",
+    "frontend": "94% (15/16 role-dashboard routes fully working; legacy /driver/dashboard hangs on loading state)"
+  },
+  "test_credentials": "betatester1@globalvibez.com / BetaTester2026! — login worked, lands on /dashboard (volumetric).",
+  "seed_data_creation": "None.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Platform is SHIP-READY for redeploy. ROLE-SPECIFIC DASHBOARDS sweep complete — all newer routes (Vibe Ridez driver-dashboard, dispatch, earnings, wallet, registration, license verify, status; HungryVibes merchant + customer; Streamer; SmartStack) render and have clickable CTAs. Dashboard toggle Volumetric↔Classic works without page reload (verified with window-level sentinel). season-pass/me 500→401 fix verified. ONE NEW BUG: legacy /driver/dashboard is stuck on 'Loading driver dashboard...' — recommend redirecting it to /vibe-ridez/driver-dashboard or fixing the hung fetch. NO white-on-white regression of the ProfileSetup bug — checked driver-registration explicitly.",
+  "rca of the issue": {
+    "bug": "legacy /driver/dashboard hangs on loading state",
+    "reproduction": "Login as betatester1@globalvibez.com → navigate to /driver/dashboard → page shows only 'Loading driver dashboard...' for 8+ seconds (body text remains 84 chars).",
+    "likely_cause": "The legacy DriverDashboard.tsx fetches some driver-profile or session state on mount that never resolves for a non-driver-flagged account (betatester1 is not yet enrolled as a driver). Either the fetch hangs without an error boundary, or the loading-state spinner has no timeout fallback / error-to-CTA recovery.",
+    "mitigation": "Quickest fix: redirect /driver/dashboard → /vibe-ridez/driver-dashboard in App router. Proper fix: add timeout + error UI to legacy DriverDashboard.tsx fetch."
+  }
+}

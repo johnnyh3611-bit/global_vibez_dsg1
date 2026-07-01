@@ -1,0 +1,13 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "_comment": "Root-level reference only. Deploy using service-specific railway.json files in backend/ and frontend/ subdirectories. See RAILWAY_DEPLOY.md for full instructions.",
+  "build": {
+    "builder": "NIXPACKS"
+  },
+  "deploy": {
+    "numReplicas": 1,
+    "startCommand": "cd backend && uvicorn server:app --host 0.0.0.0 --port ${PORT:-8001}",
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
+  }
+}

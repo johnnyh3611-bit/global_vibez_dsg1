@@ -1,0 +1,45 @@
+{
+  "summary": "Retest of all 6 action items from iteration_2026_05_v654_sidebets_visual_sweep.json. 5 of 6 items VERIFIED FIXED. 1 item PARTIALLY FIXED — /games/cyber-casino and /games/cyber-casino/roulette STILL show voice-mirror-dock, beta-feedback-toggle, floating-food-menu-trigger FABs (founder-rule violation persists). Sub-routes /games/cyber-casino/slots and /games/cyber-casino/blackjack DO hide them correctly. Vibez 654 drawer testids work, v654-payout renders on outcome card (verified end-to-end Bust scenario), /chess redirects, smoke test on 5 spot-check routes pass.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/games/cyber-casino (root) and /games/cyber-casino/roulette", "issues": ["REGRESSION/INCOMPLETE FIX: data-testid='voice-mirror-dock', 'beta-feedback-toggle', 'floating-food-menu-trigger' still present in DOM and visible. The fix added /games/cyber-casino to App.js FULLSCREEN_GAME_ROUTES, but VoiceMirrorDock.tsx, BetaFeedbackButton.tsx, FloatingFoodMenu.tsx each maintain their OWN internal hide-route lists (HIDDEN_PUBLIC_ROUTES Set / HIDE_PATTERNS regex) — they do NOT consult App.js FULLSCREEN_GAME_ROUTES. Sub-routes /slots and /blackjack happen to hide FABs only because they wrap content in <ProtectedRoute> which mounts <PageActionStrip /> firing chromebar:active that triggers useCornerDockTrigger to hide. Root /games/cyber-casino and /roulette skip ProtectedRoute, so triggers stay visible."]}
+    ]
+  },
+  "verified_fixes": [
+    "WhatsNewBanner HIDDEN on all 11 tested routes: /vibez-654, /games/vibez-654, /vibe-654/solo, /cinema-room, /three-card-poker, /games/cyber-casino, /games/cyber-casino/roulette, /games/cyber-casino/slots, /games/cyber-casino/blackjack, /casino-war, /chess",
+    "/chess now redirects to /practice/play/chess and renders Chess practice board (Marcus Johnson AI opponent) — no more 404",
+    "GameVoiceDockMounter correctly suppresses on /three-card-poker, all cyber-casino routes, /casino-war (data-testid='game-voice-dock' NOT present)",
+    "Vibez 654 v654-side-bets-total testid present in drawer header — shows ₵0 initial, updates to ₵25 after picking ₵25 quick-pick (REAL-TIME UPDATE WORKS)",
+    "Vibez 654 v654-payout testid rendered on outcome card — verified end-to-end: started ₵50 game, rolled 3x, busted, outcome card shows 'Bust' / 'Main stake lost' with [data-testid='v654-payout'] in DOM",
+    "Vibez 654 quick-pick buttons ₵10/25/100/500 all functional",
+    "Vibez 654 side-bet picker exposes 11 types (88 sub-elements detected via [data-testid^='v654-side-bet-'])",
+    "Smoke test on /spades, /baccarat, /blackjack, /uno, /vibe-654/solo at 1366x768 — all render without errors or 'Not Found' state"
+  ],
+  "test_report_links": [
+    "/app/test_reports/iteration_2026_05_v654_sidebets_retest.json",
+    "/app/backend/tests/test_v654_sidebets_iter_2026_05.py"
+  ],
+  "action_items": [
+    "FIX REMAINING REGRESSION: Hide voice-mirror-dock, beta-feedback-toggle, floating-food-menu-trigger on /games/cyber-casino root + /games/cyber-casino/roulette. Two equivalent options: (a) add cyber-casino + games/cyber-casino prefix checks to HIDDEN_PUBLIC_ROUTES / HIDE_PATTERNS in VoiceMirrorDock.tsx, BetaFeedbackButton.tsx, FloatingFoodMenu.tsx, or (b) (preferred) extract the FULLSCREEN_GAME_ROUTES list to a shared module like @/lib/fullscreenRoutes and have all 3 FAB components import + check it via useLocation. Option (b) prevents future regressions when new game routes are added.",
+    "Optional: also wrap /games/cyber-casino root + /roulette in <ProtectedRoute> if they should require auth — would auto-mount PageActionStrip which side-effect-hides the FAB triggers."
+  ],
+  "critical_code_review_comments": [
+    "The fix surface for fullscreen-game-route detection is fragmented across 4+ components: App.js (FULLSCREEN_GAME_ROUTES), GameVoiceDockMounter.tsx (FULLSCREEN_PREFIXES), VoiceMirrorDock.tsx (HIDDEN_PUBLIC_ROUTES), BetaFeedbackButton.tsx (no list — uses chromebar:active event), FloatingFoodMenu.tsx (HIDE_PATTERNS regex), WhatsNewBanner.tsx (HIDDEN_EXACT + prefix checks). When the founder adds a new fullscreen game route, all 4-5 lists must be updated in lock-step — guaranteed source of regressions. Strong recommendation: extract single FULLSCREEN_GAME_ROUTES + isFullscreenGameRoute() helper to /app/frontend/src/lib/fullscreenRoutes.ts and refactor all consumers to import it.",
+    "GameVoiceDockMounter.tsx FULLSCREEN_PREFIXES correctly includes /three-card-poker, /chess, /cyber-casino, /games/cyber-casino, /casino-war — verified working.",
+    "Vibez654Game.tsx outcome card renders v654-payout testid in both win and bust paths — verified via real game flow."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "100% (no backend changes — 240/240 prior pytest baseline holds)",
+    "frontend": "92% — 5 of 6 action items verified fixed; 1 item incomplete (FAB regression on 2 of 4 cyber-casino routes)"
+  },
+  "test_credentials": "betatester1@globalvibez.com / BetaTester2026! (pre-DOB'd, login + game flow OK; ₵39k+ balance after multiple games)",
+  "seed_data_creation": "None — used live Vibez 654 endpoints (/start, /roll, /stand) on betatester1's existing wallet; one losing game spent ₵50.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "The cyber-casino FAB regression has a definitive RCA — see action_items[0]. Verify by visiting /games/cyber-casino and /games/cyber-casino/roulette logged-in and querying [data-testid='voice-mirror-dock'], [data-testid='beta-feedback-toggle'], [data-testid='floating-food-menu-trigger']. Currently all 3 return non-null. After the proposed fix all 3 should return null on these routes. /games/cyber-casino/slots and /blackjack already work because ProtectedRoute → PageActionStrip → chromebar:active fires; the regression is only on routes WITHOUT ProtectedRoute. Test artifacts: I drove a real Vibez 654 game to bust (3 rolls + auto-bust on 3/3 cap) which proved v654-payout always renders. Recent rolls drawer returned 0 rows for the test user but that's expected when no prior history exists — re-test if a regression suspect.",
+  "rca_of_the_issue": "Why /games/cyber-casino root and /roulette still show FABs even though these paths were added to App.js FULLSCREEN_GAME_ROUTES: the FAB components (VoiceMirrorDock, BetaFeedbackButton, FloatingFoodMenu) each maintain INDEPENDENT hide-route lists in their own files. They never read FULLSCREEN_GAME_ROUTES from App.js — they use useLocation() and check their own HIDDEN_PUBLIC_ROUTES Set / HIDE_PATTERNS regex. The fix was applied at the wrong layer. The /slots and /blackjack subroutes coincidentally hide FABs via a side effect of ProtectedRoute mounting <PageActionStrip /> which dispatches the chromebar:active event causing useCornerDockTrigger to hide trigger buttons. The two cyber-casino routes that don't use ProtectedRoute miss this side-effect and the FABs leak through. Reproduction: login as betatester1 → visit /games/cyber-casino → inspect DOM → all three testids present and visible at fixed bottom positions."
+}

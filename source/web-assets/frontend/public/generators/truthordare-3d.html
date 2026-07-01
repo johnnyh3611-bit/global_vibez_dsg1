@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><style>body{margin:0;background:#000;}</style></head><body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(75,1,0.1,1000),renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(1000,1000);renderer.setClearColor(0x000000);document.body.appendChild(renderer.domElement);
+const heartGeometry=new THREE.SphereGeometry(1,32,32);
+const heartMaterial=new THREE.MeshStandardMaterial({color:0xff0055,metalness:0.9,roughness:0.1,emissive:0xff0055,emissiveIntensity:2.0});
+for(let i=0;i<2;i++){
+  const heart=new THREE.Mesh(heartGeometry,heartMaterial);
+  heart.position.x=(i===0?-1.5:1.5);heart.position.y=2;heart.scale.set(2,2,1.5);scene.add(heart);
+}
+const tipGeometry=new THREE.ConeGeometry(2,4,32);
+const tipMaterial=new THREE.MeshStandardMaterial({color:0xff0055,metalness:0.9,roughness:0.1,emissive:0xff0055,emissiveIntensity:2.0});
+const tip=new THREE.Mesh(tipGeometry,tipMaterial);
+tip.position.y=-2;tip.rotation.z=Math.PI;scene.add(tip);
+const lipsGeometry=new THREE.TorusGeometry(3,0.8,16,100,Math.PI);
+const lipsMaterial=new THREE.MeshStandardMaterial({color:0xff00ff,metalness:0.8,roughness:0.2,emissive:0xff00ff,emissiveIntensity:1.5});
+const lips=new THREE.Mesh(lipsGeometry,lipsMaterial);
+lips.position.set(-8,0,2);lips.rotation.y=Math.PI/2;scene.add(lips);
+for(let i=0;i<3;i++){
+  const ringGeometry=new THREE.TorusGeometry(10+i*2,0.3,8,50);
+  const ringMaterial=new THREE.MeshBasicMaterial({color:i%2===0?0xff0055:0xff00ff,transparent:true,opacity:0.5});
+  const ring=new THREE.Mesh(ringGeometry,ringMaterial);
+  scene.add(ring);
+}
+const ambientLight=new THREE.AmbientLight(0x440022,1.5);scene.add(ambientLight);
+const pointLight1=new THREE.PointLight(0xff0055,4,100);pointLight1.position.set(15,15,20);scene.add(pointLight1);
+const pointLight2=new THREE.PointLight(0xff00ff,4,100);pointLight2.position.set(-15,15,20);scene.add(pointLight2);
+camera.position.set(0,0,25);camera.lookAt(0,0,0);let time=0;
+function animate(){requestAnimationFrame(animate);time+=0.02;scene.rotation.y=Math.sin(time)*0.1;scene.children.forEach((child,i)=>{if(i<2){child.scale.set(2+Math.sin(time*3+i)*0.2,2+Math.sin(time*3+i)*0.2,1.5);}if(child.geometry&&child.geometry.type==='TorusGeometry'&&i>3)child.rotation.z+=0.01;});renderer.render(scene,camera);}
+animate();
+</script></body></html>

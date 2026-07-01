@@ -1,0 +1,47 @@
+{
+  "summary": "Final pre-redeploy regression for WelcomeLetter + collapsed ChairExpansionPlan + Genesis-aligned legacy chair pricing + MissionBriefing 'What's Next' refresh. 4/4 backend tests pass (health probes, /api/chairs/phase Genesis $10/3×/50K, /api/chairs/expansion-plan still 10 tiers $10..$55). 50/50 frontend Playwright assertions pass — section order Hero→MissionBriefing→WelcomeLetter→ChairExpansionPlan→TokenRoadmap→LatestAdditions verified, 5 Beat blocks present, ceiling reveal toggles correctly with $55/5.5×/chair #500,000 text, founders-info-box collapses by default and reveals 9 tiers (chair-tier-10 absent, apex-teaser present), chair-stat-multiplier shows '3×' / 'locked at buy time', mission-briefing-roadmap shows 'What's Next' with Squads Multi-Sig Treasury (Live Now) / $VIBEZ TGE (Coming Soon) / Reserve Vault Unlock (Post-Milestone) and old Q3/Q4-2026/2027 entries fully removed. TokenRoadmap retains 9 milestones; Phantom Connect button intact. Safe to redeploy.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_iter_jan_2026_welcome_letter_redeploy.py",
+    "/app/test_reports/pytest/iter_jan_2026_welcome_letter_redeploy.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "WelcomeLetter ceiling block uses native conditional render gated by showCeiling state — exit animation isn't wrapped in AnimatePresence so the close transition is instant (initial reveal still animates via motion.div). Functional but not parallel with ChairExpansionPlan AnimatePresence pattern. Cosmetic only.",
+    "ChairExpansionPlan filters tier 10 client-side (visibleTiers = plan.tiers.filter(t => t.order < 10)). The /api/chairs/expansion-plan endpoint still returns the Apex tier so admin-side / DevTools inspection can see it — matches the user's intent that Apex is hidden in public UI but available via API. No code change needed; just a note.",
+    "Public preview URL routes /health to the React dev server (returns 200 + index.html), not to backend port 8001. The backend /health returns proper {status:ok} on internal :8001 (verified). For deploy probe, ingress in production environment should route /health directly to backend — confirm that ingress rule, otherwise probe will see HTML payload and possibly fail strict JSON checks.",
+    "Console error 'TypeError: e is not a function' at minified bundle.js still present (pre-existing across multiple prior iterations — perf_alert_qr_sdk, chair_expansion_plan_redeploy). Not caused by this change; Sentry/3rd-party init swallowed in la.initialize. Should be tracked separately."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter_jan_2026_welcome_letter_redeploy.py",
+    "/app/test_reports/iteration_jan_2026_welcome_letter_redeploy.json"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "Admin: GlobalVibez_Founder_2025! / 000000 (not exercised this run — admin surface untouched by this change; verified-by-prior-iteration)",
+  "seed_data_creation": "None — read-only regression",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Ladder visibility split: Apex/Phase X/$55 is filtered out of public ChairExpansionPlan UI (chair-tier-10 selector returns null), but /api/chairs/expansion-plan still serves all 10 tiers — Playwright tests must check for chair-tier-1..9 only and use apex-teaser to validate the hidden-by-design intent. Legacy /api/chairs/phase now returns Genesis $10 / 50K cap / weight 3.0 (was $5 / 20K / unspecified) — any older test asserting price_usd==5 will now fail and is correct to update. WelcomeLetter ceiling block toggles via state (no AnimatePresence on exit); after a click, wait ~500ms before re-querying. Public preview /health is intercepted by frontend; check internal http://localhost:8001/health for actual backend probe response. Pre-existing minified bundle TypeError unrelated to this change.",
+  "rca of the issue": "N/A — no defects found",
+  "verified_endpoints_status": {
+    "GET /health (internal 8001)": "200 {status:ok}",
+    "GET /health (public)": "200 (frontend index.html — preview routing quirk)",
+    "GET /api/health (public)": "200 {status:ok}",
+    "GET /api/chairs/phase": "200 — phase=Genesis, price_usd=10.0, weight=3.0, in_phase_capacity=50000, tagline references '3× earn rate'",
+    "GET /api/chairs/expansion-plan": "200 — 10 tiers, prices $10..$55 in $5 steps, Apex tier (order=10) present in API"
+  },
+  "frontend_verified_testids": [
+    "DOM order: mission-briefing-section < welcome-letter-section < chair-expansion-section < token-roadmap-section",
+    "welcome-letter-section + welcome-beat-what/why-ramp/current-price/reserve/ceiling",
+    "welcome-show-ceiling-btn toggles welcome-ceiling-block (shows $55, 5.5×, chair #500,000)",
+    "welcome-letter-disclaimer 'A chair is not a security'",
+    "founders-info-box (header 'Important Information for Founders') collapsed by default",
+    "founders-info-toggle expands → founders-info-content reveals chair-tier-1..9 (chair-tier-10 NOT in DOM)",
+    "apex-teaser present with 'Phase X — Apex' copy",
+    "chair-stat-multiplier '3×' / 'locked at buy time'",
+    "mission-briefing-roadmap header 'What's Next'; 3 entries Squads Multi-Sig Treasury / $VIBEZ TGE / Reserve Vault Unlock; old Q3-2026/Q4-2026/2027 entries gone",
+    "9 TokenRoadmap milestones present",
+    "Phantom connect button in nav"
+  ]
+}

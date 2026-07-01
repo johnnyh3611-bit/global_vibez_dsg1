@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* Global Vibez DSG design tokens — canonical source of truth (Deep Violet & Glass).
+   Tailwind v4 turns these into utilities: bg-brand-primary, rounded-glass,
+   shadow-glass, etc. The 4px/8px spacing grid is Tailwind's default scale
+   (--spacing 0.25rem → p-1=4px, p-2=8px, p-4=16px). */
+@theme {
+  /* Brand palette */
+  --color-brand-primary: #7c3aed;
+  --color-brand-primary-hover: #6d28d9;
+  --color-brand-accent: #a78bfa;
+  --color-brand-glow: #c4b5fd;
+
+  /* Surfaces (dark + glass) */
+  --color-background-deep: #0f172a;
+  --color-background-abyss: #050508;
+  --color-surface-glass: rgba(255, 255, 255, 0.1);
+  --color-surface-glass-strong: rgba(255, 255, 255, 0.16);
+  --color-surface-glass-border: rgba(255, 255, 255, 0.12);
+
+  /* Radius — radius-glass is the standard card corner */
+  --radius-glass: 16px;
+
+  /* Layered depth */
+  --shadow-glass: 0 8px 32px 0 rgba(2, 6, 23, 0.45),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+  --shadow-glass-lg: 0 24px 60px 0 rgba(2, 6, 23, 0.55),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+  --shadow-brand-glow: 0 0 40px rgba(124, 58, 237, 0.45);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}

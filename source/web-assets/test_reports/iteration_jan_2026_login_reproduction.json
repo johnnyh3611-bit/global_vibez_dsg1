@@ -1,0 +1,71 @@
+{
+  "summary": "Attempted to reproduce 'cannot login/signin' bug reported by user via end-to-end Playwright on the live preview URL. Could NOT reproduce — BOTH demo login AND real-user login work flawlessly: token saved to localStorage, hard redirect to /dashboard, /api/auth/me returns 200, and the dashboard renders fully ('Welcome Back, Johnny' / 'Welcome Back, Demo'). Backend auth endpoints all returned 200. Pre-existing console error 'TypeError: e is not a function' is still firing on every page mount but is NOT blocking the auth flow.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "console_noise_observed_but_not_blocking_auth": [
+    {
+      "error": "TypeError: e is not a function at bundle.js:776319 inside `la.initialize`",
+      "fires_on": "Every page mount (both /login and /dashboard)",
+      "impact": "NONE on auth flow — login + redirect + /api/auth/me all succeed. Likely a 3rd-party SDK init failure (Privy/Phantom/Agora). Worth a deep-dive in a future cleanup pass but is NOT the cause of any login symptom.",
+      "suspect_source": "One of the wallet/auth SDKs in the provider tree (PrivyAuthProvider / PhantomConnectProvider / SolanaWalletProvider / LedgerSignerProvider) — try unwrapping providers one at a time and source-mapping bundle.js:776319 to find the exact module."
+    },
+    {
+      "error": "DataCloneError on postMessage in https://assets.emergent.sh/scripts/emergent-main.js",
+      "impact": "NONE — Emergent platform iframe artifact, not app code."
+    },
+    {
+      "error": "404s on the dashboard (2 resources) + WS close-before-connect on /api/ws/vibe-phone & /api/ws/friend-events",
+      "impact": "Cosmetic — does not affect auth or dashboard render."
+    }
+  ],
+  "reproduction_attempt_results": {
+    "1_demo_login": {
+      "status": "PASSED",
+      "POST_/api/auth/demo-login": "200",
+      "localStorage_after": {"auth_token": "demo_session_b00928a3dd3449e8b34ffcf62fb03ade", "user_id": "demo_b88a4250", "username": "Demo User"},
+      "final_url": "/dashboard",
+      "auth_me_after_redirect": "200 (×4 calls, all success)",
+      "dashboard_rendered": "YES — 'Welcome Back, Demo' + all 6 universe cards"
+    },
+    "2_real_user_login": {
+      "status": "PASSED",
+      "credentials": "johnnyh3611@gmail.com / FreshStart2026!",
+      "POST_/api/auth/login": "200",
+      "localStorage_after": {"auth_token": "010a14ac-d32d-4bbc-9dd1-30ded82ef033", "user_id": "user_6377cdfe3be4"},
+      "final_url": "/dashboard",
+      "auth_me_after_redirect": "200 (×4 calls, all success)",
+      "dashboard_rendered": "YES — 'Welcome Back, Johnny' + all universe cards"
+    },
+    "3_login_page_mount": {
+      "status": "PASSED",
+      "welcome_back_card_rendered": true,
+      "demo_button_present_with_testid": true,
+      "page_errors": "0 (only console-level errors noted above; nothing crashes React)"
+    }
+  },
+  "test_report_links": [],
+  "action_items": [
+    "TELL THE USER: backend + frontend auth flow are 100% working in headless Chrome against the live preview URL. Login flow is NOT broken in this environment.",
+    "Ask the user for: (a) the exact email they're using, (b) a screenshot of the /login screen with browser devtools Network tab open showing the POST /api/auth/login request + response, (c) browser + OS, (d) whether they're on the preview URL or a custom domain, (e) whether they have a stale auth_token in localStorage that's failing /api/auth/me silently. A console screenshot would be ideal.",
+    "Optional cleanup (not the cause of the reported bug): track down 'TypeError: e is not a function' at bundle.js:776319 inside `la.initialize` — likely Privy/Phantom/Agora SDK init failing on a missing config; doesn't break auth but is noisy and could mask real bugs in future regressions.",
+    "Optional: the dashboard fires /api/auth/me FOUR times on mount — could be deduped with a single AuthProvider context to reduce load.",
+    "Optional: WebSocket /api/ws/vibe-phone and /api/ws/friend-events close before connection on the dashboard — verify backend WS handlers are actually mounted at those paths."
+  ],
+  "critical_code_review_comments": [
+    "LoginPage.tsx is solid: 15s AbortController timeout, auth_in_progress flag to gate versionManager reload, hard window.location.href redirect on demo login to bypass any stuck React transition, localStorage cleared then re-set on success. No defects spotted.",
+    "Backend invariant (Bearer-before-cookie in get_current_user) appears intact — /api/auth/me succeeds with the freshly-issued Bearer token immediately after both login flows.",
+    "data-testid='login-demo-btn' present and clickable. data-testid coverage on email/password inputs would be a nice-to-have but selectors by name='email'/name='password' worked fine."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "100% (login flow); pre-existing 3rd-party SDK noise unchanged"},
+  "test_credentials_used": "johnnyh3611@gmail.com / FreshStart2026! (per /app/memory/test_credentials.md) — works.",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Login is working end-to-end in headless Chrome on the preview URL as of this iteration. If the user re-reports the bug, ASK FOR A SCREENSHOT before re-testing — symptom is environment-specific (likely stale localStorage token, browser extension, or a custom domain CORS issue, none of which reproduce in our test env). Do NOT chase 'TypeError: e is not a function' — it's a 3rd-party SDK init noise, not the auth bug.",
+  "rca_of_the_issue": "UNABLE TO REPRODUCE. Demo login → 200, /dashboard renders. Real user login (johnnyh3611@gmail.com/FreshStart2026!) → 200, /dashboard renders with correct user name. Token persists in localStorage, /api/auth/me succeeds. The reported symptom is NOT present in our test environment. Most likely user-side cause: stale auth_token in localStorage from a previous deploy, browser extension blocking POST, or they're hitting a different (cached) frontend bundle. Recommend: have the user clear localStorage (`localStorage.clear()` in devtools) and try again, OR send a screenshot/HAR so we can diagnose the actual symptom they're seeing."
+}

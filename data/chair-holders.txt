@@ -1,0 +1,6 @@
+# One Solana wallet address per line.
+# Lines starting with # are ignored.
+# Append new chair holders here as they register.
+
+# --- Ambassador Batch (paste wallets below, one per line) ---
+p46P9aVGLW6fXyRngVPRunVHkYk9DgXF5JAx4Se9pyL

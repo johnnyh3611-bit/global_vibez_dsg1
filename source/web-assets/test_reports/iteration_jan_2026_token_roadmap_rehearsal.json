@@ -1,0 +1,40 @@
+{
+  "summary": "Comprehensive regression + new-feature pass for the TokenRoadmap (landing) and MainnetSignRehearsal (admin) additions. Backend: 15/15 pytest tests passed (1 skipped — solana-indexer/status now auth-gated). Frontend: TokenRoadmap renders cleanly with 7 milestones, live treasury pill shows 'MAINNET · 0.001000 SOL'; squads-treasury milestone correctly flips to SHIPPED; rehearsal checklist toggle + localStorage persistence + reset all verified end-to-end. Squad address corrected to 'ud2btD6BPdif...' is reflected in /api/admin/treasury/squads-status, /api/admin/treasury/dashboard.squads, and all 3 deep-link buttons (transactions/home/members). Public /api/treasury/public-status is auth-free, lean, and does NOT leak any cosigner addresses.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "console_warnings": [
+    {
+      "source": "@phantom/react-sdk init",
+      "message": "TypeError: e is not a function in la.initialize (bundle.js:765543)",
+      "impact": "Non-blocking. Same warning logged in iteration_jan_2026_phantom_sweep_perf_sparkline.json — a pre-existing SDK init quirk, NOT a regression.",
+      "priority": "LOW"
+    }
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_iter_jan_2026_token_roadmap_rehearsal.py",
+    "/app/test_reports/pytest/iter_jan_2026_token_roadmap.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "routes/treasury.py public_treasury_status(): correctly returns ONLY 5 keys (configured/network/is_mainnet/vault_balance_sol/rpc_ok). Verified by negative-assertion test — phantom_cosigner / founder_cosigner / vault_pda / squad_address / members are all absent. Good defensive coding.",
+    "TokenRoadmap.tsx: live polling every 60s with proper interval cleanup (no memory leak). treasuryLive flag is computed from configured && rpc_ok — robust against partial/down RPC. All 7 milestones have unique data-testids; status badges and dots use semantic colors per state.",
+    "MainnetSignRehearsal.tsx: localStorage key is namespaced ('vibez:mainnet-sign-rehearsal:v1') — versioned, future-proof. Toggle/reset/persistence verified across reload. Reset button only renders when completed > 0 (sensible UX).",
+    "SquadsVaultCard deep-links open https://app.squads.so/squads/<addr>/{transactions|home|members} with target=_blank — correct fuchsia CTA for transactions, slate for home/members.",
+    "Squad address env (SQUADS_ADDRESS / SQUADS_VAULT_PDA) was correctly updated from 5jtHu... to ud2btD6BPdif... — backend service now returns the right address and frontend deep-links pick it up via the admin endpoint. No stale data anywhere.",
+    "Minor: PerfSparkline's top-3 list now naturally surfaces /api/treasury/public-status because it's polled every 60s — a positive side-effect, no action needed."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter_jan_2026_token_roadmap_rehearsal.py (new)"
+  ],
+  "success_rate": {"backend": "100% (15/15 passed, 1 skipped)", "frontend": "100% — every requested testid + flow verified"},
+  "test_credentials": "Admin: GlobalVibez_Founder_2025! / 2FA: 000000 — POST /api/admin/vault-auth body keys are {password, code} (NOT 'totp'); fixed in test file.",
+  "seed_data_creation": "None — all reads against real Helius mainnet RPC + the vault PDA holding 0.001 SOL.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All session features verified: (1) public /api/treasury/public-status is the lean, unauth, no-leak roadmap feed, (2) admin squads-status returns the corrected squad address ud2btD6BPdif..., (3) admin dashboard still includes the squads block + buckets, (4) sweep/perf/indexer/vault-auth regressions all green, (5) TokenRoadmap landing component renders 7 milestones with live pill, (6) MainnetSignRehearsal checklist persists across reload via localStorage key 'vibez:mainnet-sign-rehearsal:v1', (7) SquadsVaultCard deep-links to Squads UI with correct address. IMPORTANT: vault-auth payload uses key 'code', NOT 'totp'; sweep endpoints use 'old_wallet'/'new_wallet' as QUERY params (not JSON body). Reuse /app/backend/tests/test_iter_jan_2026_token_roadmap_rehearsal.py for next regression cycle.",
+  "rca of the issue": "N/A — no bugs found this iteration."
+}

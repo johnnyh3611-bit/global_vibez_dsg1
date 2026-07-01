@@ -1,0 +1,95 @@
+/* ────────────────────────────────────────────────────────────────────
+   Mobile Foundation — universal phone/tablet responsive layer.
+   Founder mandate (May 2026): every page must be readable in portrait
+   without rotating the phone, AND the user must be able to flip
+   orientation from inside the app. Imported once via index.css.
+   ──────────────────────────────────────────────────────────────────── */
+
+/* Prevent horizontal scroll the entire app over from oversized hero
+   text, animated blob backgrounds, or overflowing motion containers. */
+html,
+body {
+  overflow-x: hidden;
+  max-width: 100vw;
+  /* iOS overscroll bounce was throwing off the fake-landscape origin */
+  overscroll-behavior-x: none;
+}
+
+#root {
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* ───── Fluid AAA typography on small screens ──────────────────────
+   The hero on /  uses Tailwind's text-7xl (4.5rem) and text-8xl (6rem)
+   which overflow a 360-390px phone in portrait. Scale them down with
+   clamp() so the same visual weight survives without pushing the
+   layout off-screen. We deliberately keep the !important because the
+   landing was pre-built with hard-coded utility classes. */
+@media (max-width: 640px) {
+  .text-9xl { font-size: clamp(3rem, 16vw, 5.5rem) !important; line-height: 1.0 !important; }
+  .text-8xl { font-size: clamp(2.75rem, 14vw, 5rem)   !important; line-height: 1.05 !important; }
+  .text-7xl { font-size: clamp(2.25rem, 12vw, 4.25rem) !important; line-height: 1.05 !important; }
+  .text-6xl { font-size: clamp(2rem,    10vw, 3.5rem)  !important; line-height: 1.08 !important; }
+  .text-5xl { font-size: clamp(1.75rem,  8vw, 3rem)    !important; line-height: 1.1  !important; }
+}
+
+/* Tame absurd hero blocks that still want to be desktop-wide on phones. */
+@media (max-width: 640px) {
+  .max-w-7xl, .max-w-6xl, .max-w-5xl { max-width: 100% !important; }
+  /* Tighten gutters so 24px of padding doesn't eat 1/3 of a 360px screen. */
+  .px-6 { padding-left: 1rem !important; padding-right: 1rem !important; }
+  .px-8 { padding-left: 1.25rem !important; padding-right: 1.25rem !important; }
+  /* Vertical breathing room — desktop py-20 (5rem) is too much on phones. */
+  .py-20 { padding-top: 2.5rem !important; padding-bottom: 2.5rem !important; }
+}
+
+/* ───── Orientation lock fallbacks ────────────────────────────────── */
+
+/* When OS-level orientation.lock() succeeded we don't need any CSS
+   tricks — the browser is handling everything natively. These classes
+   ONLY apply when the OS lock failed (most desktops, Safari iOS, any
+   non-fullscreen mobile browser). They rotate `#root` so the user's
+   chosen layout stays correct regardless of how the phone is held. */
+
+@media (max-width: 1024px) {
+  html.gv-orient-fake-landscape #root {
+    position: fixed;
+    top: 0;
+    left: 0;
+    transform-origin: top left;
+    transform: rotate(90deg) translateY(-100vw);
+    width: 100vh;
+    height: 100vw;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  html.gv-orient-fake-portrait #root {
+    position: fixed;
+    top: 0;
+    left: 0;
+    transform-origin: top left;
+    transform: rotate(-90deg) translateX(-100vh);
+    width: 100vh;
+    height: 100vw;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+}
+
+/* On a tablet or laptop the browser window itself is the orientation
+   — never apply the rotation hack on a real desktop. */
+@media (min-width: 1025px) {
+  html.gv-orient-fake-landscape #root,
+  html.gv-orient-fake-portrait #root {
+    transform: none !important;
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+  }
+}
+
+/* ───── Safe-area handling for iOS notches / Android gestures ────── */
+.safe-pt { padding-top: max(env(safe-area-inset-top, 0px), 0.5rem); }
+.safe-pb { padding-bottom: max(env(safe-area-inset-bottom, 0px), 0.5rem); }

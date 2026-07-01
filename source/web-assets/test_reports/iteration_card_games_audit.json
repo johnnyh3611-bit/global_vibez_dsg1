@@ -1,0 +1,417 @@
+{
+  "summary": "Card games audit Jan 2026 \u2014 report only. 20 routes scanned post demo login.",
+  "results": [
+    {
+      "route": "/spades-aaa",
+      "name": "Spades AAA",
+      "page_renders": true,
+      "title_or_heading": "Spades AAA",
+      "console_errors": [
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/vibe-phone/demo_23970ac9' failed: WebSocket is closed before the connection is established.",
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/friend-events/demo_23970ac9' failed: WebSocket is closed before the connection is established.",
+        "warning: [VigilantAgent] Click-blocker detected: BUTTON[game-voice-dock-join] is occluded by P",
+        "warning: [VigilantAgent] Click-blocker detected: BUTTON[spades-score-badge-btn] is occluded by BUTTON[commhub-trigger].flex items-center gap-1.5 px-3 py-2 rounded-full backdrop-bl"
+      ],
+      "page_errors": [],
+      "deal_button_found": true,
+      "bet_input_found": false,
+      "card_count_initial": 0,
+      "card_count_after_2s": 0,
+      "card_count_after_5s": 13,
+      "deal_animation_visible": "STAGGERED",
+      "redirect_to": "/spades-aaa",
+      "blocker_severity": "OK"
+    },
+    {
+      "route": "/hearts-aaa",
+      "name": "Hearts AAA",
+      "page_renders": true,
+      "title_or_heading": "Hearts AAA",
+      "console_errors": [
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/vibe-phone/demo_23970ac9' failed: WebSocket is closed before the connection is established.",
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/friend-events/demo_23970ac9' failed: WebSocket is closed before the connection is established.",
+        "warning: [VigilantAgent] Click-blocker detected: BUTTON[spades-score-badge-btn] is occluded by BUTTON[commhub-trigger].flex items-center gap-1.5 px-3 py-2 rounded-full backdrop-bl",
+        "warning: [VigilantAgent] Click-blocker detected: BUTTON[hearts-aaa-back-btn] is occluded by DIV[hearts-pass-modal].fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-c",
+        "warning: [VigilantAgent] Click-blocker detected: BUTTON[spades-game-menu-btn] is occluded by DIV[hearts-pass-modal].fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-c",
+        "warning: [VigilantAgent] Click-blocker detected: BUTTON[commhub-inline-trigger] is occluded by DIV[hearts-pass-modal].fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-c"
+      ],
+      "page_errors": [],
+      "deal_button_found": true,
+      "bet_input_found": false,
+      "card_count_initial": 0,
+      "card_count_after_2s": 0,
+      "card_count_after_5s": 13,
+      "deal_animation_visible": "STAGGERED",
+      "redirect_to": "/hearts",
+      "blocker_severity": "OK"
+    },
+    {
+      "route": "/bid-whist-aaa",
+      "name": "BidWhist AAA",
+      "page_renders": true,
+      "title_or_heading": "Bid Whist AAA",
+      "console_errors": [
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/vibe-phone/demo_23970ac9' failed: WebSocket is closed before the connection is established.",
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/friend-events/demo_23970ac9' failed: WebSocket is closed before the connection is established.",
+        "warning: [VigilantAgent] Click-blocker detected: BUTTON[spades-score-badge-btn] is occluded by BUTTON[commhub-trigger].flex items-center gap-1.5 px-3 py-2 rounded-full backdrop-bl"
+      ],
+      "page_errors": [],
+      "deal_button_found": true,
+      "bet_input_found": false,
+      "card_count_initial": 0,
+      "card_count_after_2s": 0,
+      "card_count_after_5s": 12,
+      "deal_animation_visible": "STAGGERED",
+      "redirect_to": "/bid-whist",
+      "blocker_severity": "OK"
+    },
+    {
+      "route": "/uno-aaa",
+      "name": "Uno AAA",
+      "page_renders": true,
+      "title_or_heading": "UNO AAA",
+      "console_errors": [
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/vibe-phone/demo_23970ac9' failed: WebSocket is closed before the connection is established.",
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/friend-events/demo_23970ac9' failed: WebSocket is closed before the connection is established.",
+        "warning: [VigilantAgent] Click-blocker detected: BUTTON[fresh-drops-launcher-btn] is occluded by P",
+        "warning: [VigilantAgent] Click-blocker detected: BUTTON[voice-mirror-dock-enable] is occluded by SPAN",
+        "warning: [VigilantAgent] Click-blocker detected: BUTTON[beta-feedback-toggle] is occluded by unknown overlay",
+        "warning: [VigilantAgent] Click-blocker detected: BUTTON[log-design-lesson-toggle] is occluded by SPAN"
+      ],
+      "page_errors": [],
+      "deal_button_found": true,
+      "bet_input_found": false,
+      "card_count_initial": 0,
+      "card_count_after_2s": 9,
+      "card_count_after_5s": 9,
+      "deal_animation_visible": "INSTANT_FLASH",
+      "redirect_to": "/uno",
+      "blocker_severity": "WARNING"
+    },
+    {
+      "route": "/crazy-eights-aaa",
+      "name": "Crazy Eights AAA",
+      "page_renders": true,
+      "title_or_heading": "Crazy Eights AAA",
+      "console_errors": [
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/vibe-phone/demo_23970ac9' failed: WebSocket is closed before the connection is established.",
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/friend-events/demo_23970ac9' failed: WebSocket is closed before the connection is established.",
+        "warning: [VigilantAgent] Click-blocker detected: BUTTON[spades-score-badge-btn] is occluded by BUTTON[commhub-trigger].flex items-center gap-1.5 px-3 py-2 rounded-full backdrop-bl"
+      ],
+      "page_errors": [],
+      "deal_button_found": true,
+      "bet_input_found": false,
+      "card_count_initial": 0,
+      "card_count_after_2s": 6,
+      "card_count_after_5s": 6,
+      "deal_animation_visible": "INSTANT_FLASH",
+      "redirect_to": "/crazy-eights",
+      "blocker_severity": "WARNING"
+    },
+    {
+      "route": "/gin-rummy-aaa",
+      "name": "Gin Rummy AAA",
+      "page_renders": true,
+      "title_or_heading": "Gin Rummy AAA",
+      "console_errors": [
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/vibe-phone/demo_23970ac9' failed: WebSocket is closed before the connection is established.",
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/friend-events/demo_23970ac9' failed: WebSocket is closed before the connection is established.",
+        "warning: [VigilantAgent] Click-blocker detected: BUTTON[spades-score-badge-btn] is occluded by BUTTON[commhub-trigger].flex items-center gap-1.5 px-3 py-2 rounded-full backdrop-bl"
+      ],
+      "page_errors": [],
+      "deal_button_found": true,
+      "bet_input_found": false,
+      "card_count_initial": 0,
+      "card_count_after_2s": 11,
+      "card_count_after_5s": 11,
+      "deal_animation_visible": "INSTANT_FLASH",
+      "redirect_to": "/gin-rummy",
+      "blocker_severity": "WARNING"
+    },
+    {
+      "route": "/rummy-aaa",
+      "name": "Rummy AAA",
+      "page_renders": true,
+      "title_or_heading": "Rummy AAA",
+      "console_errors": [
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/vibe-phone/demo_23970ac9' failed: WebSocket is closed before the connection is established.",
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/friend-events/demo_23970ac9' failed: WebSocket is closed before the connection is established.",
+        "warning: [VigilantAgent] Click-blocker detected: BUTTON[fresh-drops-launcher-btn] is occluded by P",
+        "warning: [VigilantAgent] Click-blocker detected: BUTTON[voice-mirror-dock-enable] is occluded by SPAN",
+        "warning: [VigilantAgent] Click-blocker detected: BUTTON[beta-feedback-toggle] is occluded by unknown overlay",
+        "warning: [VigilantAgent] Click-blocker detected: BUTTON[log-design-lesson-toggle] is occluded by SPAN"
+      ],
+      "page_errors": [],
+      "deal_button_found": true,
+      "bet_input_found": false,
+      "card_count_initial": 0,
+      "card_count_after_2s": 14,
+      "card_count_after_5s": 14,
+      "deal_animation_visible": "INSTANT_FLASH",
+      "redirect_to": "/rummy",
+      "blocker_severity": "WARNING"
+    },
+    {
+      "route": "/euchre-aaa",
+      "name": "Euchre AAA",
+      "page_renders": true,
+      "title_or_heading": "Euchre AAA",
+      "console_errors": [
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/vibe-phone/demo_23970ac9' failed: WebSocket is closed before the connection is established.",
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/friend-events/demo_23970ac9' failed: WebSocket is closed before the connection is established.",
+        "error: React has detected a change in the order of Hooks called by %s. This will lead to bugs and errors if not fixed. For more information, read the Rules of Hooks: https://react.dev/link/rules-of-hooks\n\n   Previous render            Next render\n   ------------------------------------------------------\n%s",
+        "error: %o\n\n%s\n\n%s\n Error: Rendered more hooks than during the previous render.\n    at updateWorkInProgressHook (https://social-connect-953.preview.emergentagent.com/static/js/bundle.js:612880:15)\n    at updateEffectImpl (https://social-connect-953.preview.emergentagent.com/static/js/bundle.js:613400:16)\n  ",
+        "error: \ud83d\udd34 ERROR: Rendered more hooks than during the previous render. {timestamp: 2026-05-09T14:16:37.120Z, message: Rendered more hooks than during the previous render., stack: Error: Rendered more hooks than during the previou\u2026.emergentagent.com/static/js/bundle.js:609993:14), context: Object, userAgent: "
+      ],
+      "page_errors": [],
+      "deal_button_found": true,
+      "bet_input_found": false,
+      "card_count_initial": 0,
+      "card_count_after_2s": 0,
+      "card_count_after_5s": 0,
+      "deal_animation_visible": "NO_CARDS_APPEARED",
+      "redirect_to": "/euchre",
+      "blocker_severity": "OK"
+    },
+    {
+      "route": "/dominoes-aaa",
+      "name": "Dominoes AAA",
+      "page_renders": true,
+      "title_or_heading": "Dominoes AAA",
+      "console_errors": [
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/vibe-phone/demo_23970ac9' failed: WebSocket is closed before the connection is established.",
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/friend-events/demo_23970ac9' failed: WebSocket is closed before the connection is established.",
+        "warning: [VigilantAgent] Click-blocker detected: BUTTON[spades-score-badge-btn] is occluded by BUTTON[commhub-trigger].flex items-center gap-1.5 px-3 py-2 rounded-full backdrop-bl"
+      ],
+      "page_errors": [],
+      "deal_button_found": true,
+      "bet_input_found": false,
+      "card_count_initial": 0,
+      "card_count_after_2s": 0,
+      "card_count_after_5s": 0,
+      "deal_animation_visible": "NO_CARDS_APPEARED",
+      "redirect_to": "/dominoes",
+      "blocker_severity": "OK"
+    },
+    {
+      "route": "/go-fish-aaa",
+      "name": "Go Fish AAA",
+      "page_renders": true,
+      "title_or_heading": "Go Fish AAA",
+      "console_errors": [
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/vibe-phone/demo_23970ac9' failed: WebSocket is closed before the connection is established.",
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/friend-events/demo_23970ac9' failed: WebSocket is closed before the connection is established.",
+        "warning: [VigilantAgent] Click-blocker detected: BUTTON[corner-dock-left-trigger] is occluded by BUTTON[orientation-fab].fixed bottom-4 left-4 z-[9998] inline-flex items-center gap-",
+        "warning: [VigilantAgent] Click-blocker detected: BUTTON[spades-score-badge-btn] is occluded by BUTTON[commhub-trigger].flex items-center gap-1.5 px-3 py-2 rounded-full backdrop-bl",
+        "warning: [VigilantAgent] Click-blocker detected: BUTTON[go-fish-aaa-back-btn] is occluded by DIV[go-fish-ask-modal].fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-c",
+        "warning: [VigilantAgent] Click-blocker detected: BUTTON[spades-game-menu-btn] is occluded by DIV[go-fish-ask-modal].fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-c"
+      ],
+      "page_errors": [],
+      "deal_button_found": true,
+      "bet_input_found": false,
+      "card_count_initial": 0,
+      "card_count_after_2s": 0,
+      "card_count_after_5s": 0,
+      "deal_animation_visible": "NO_CARDS_APPEARED",
+      "redirect_to": "/go-fish",
+      "blocker_severity": "OK"
+    },
+    {
+      "route": "/pinochle-aaa",
+      "name": "Pinochle AAA",
+      "page_renders": true,
+      "title_or_heading": "Pinochle AAA",
+      "console_errors": [
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/vibe-phone/demo_23970ac9' failed: WebSocket is closed before the connection is established.",
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/friend-events/demo_23970ac9' failed: WebSocket is closed before the connection is established.",
+        "error: React has detected a change in the order of Hooks called by %s. This will lead to bugs and errors if not fixed. For more information, read the Rules of Hooks: https://react.dev/link/rules-of-hooks\n\n   Previous render            Next render\n   ------------------------------------------------------\n%s",
+        "error: %o\n\n%s\n\n%s\n Error: Rendered more hooks than during the previous render.\n    at updateWorkInProgressHook (https://social-connect-953.preview.emergentagent.com/static/js/bundle.js:612880:15)\n    at updateEffectImpl (https://social-connect-953.preview.emergentagent.com/static/js/bundle.js:613400:16)\n  ",
+        "error: \ud83d\udd34 ERROR: Rendered more hooks than during the previous render. {timestamp: 2026-05-09T14:17:04.572Z, message: Rendered more hooks than during the previous render., stack: Error: Rendered more hooks than during the previou\u2026.emergentagent.com/static/js/bundle.js:609993:14), context: Object, userAgent: "
+      ],
+      "page_errors": [],
+      "deal_button_found": true,
+      "bet_input_found": false,
+      "card_count_initial": 0,
+      "card_count_after_2s": 0,
+      "card_count_after_5s": 0,
+      "deal_animation_visible": "NO_CARDS_APPEARED",
+      "redirect_to": "/pinochle",
+      "blocker_severity": "OK"
+    },
+    {
+      "route": "/practice/play/blackjack",
+      "name": "Blackjack practice",
+      "page_renders": true,
+      "title_or_heading": "Global Vibez DSG | Next-Gen Dating & Social Gaming",
+      "console_errors": [
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/vibe-phone/demo_23970ac9' failed: WebSocket is closed before the connection is established.",
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/friend-events/demo_23970ac9' failed: WebSocket is closed before the connection is established."
+      ],
+      "page_errors": [],
+      "deal_button_found": true,
+      "bet_input_found": true,
+      "card_count_initial": 0,
+      "card_count_after_2s": 0,
+      "card_count_after_5s": 0,
+      "deal_animation_visible": "NO_CARDS_APPEARED",
+      "redirect_to": "/practice/play/blackjack",
+      "blocker_severity": "OK"
+    },
+    {
+      "route": "/poker-practice",
+      "name": "Poker practice",
+      "page_renders": true,
+      "title_or_heading": "Global Vibez DSG | Next-Gen Dating & Social Gaming",
+      "console_errors": [
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/vibe-phone/demo_23970ac9' failed: WebSocket is closed before the connection is established.",
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/friend-events/demo_23970ac9' failed: WebSocket is closed before the connection is established.",
+        "warning: [VigilantAgent] Click-blocker detected: BUTTON[game-voice-dock-join] is occluded by P"
+      ],
+      "page_errors": [],
+      "deal_button_found": false,
+      "bet_input_found": true,
+      "card_count_initial": 0,
+      "card_count_after_2s": 0,
+      "card_count_after_5s": 0,
+      "deal_animation_visible": "unknown",
+      "redirect_to": "/poker-practice",
+      "blocker_severity": "WARNING"
+    },
+    {
+      "route": "/three-card-poker",
+      "name": "Three Card Poker",
+      "page_renders": true,
+      "title_or_heading": "Three Card Poker",
+      "console_errors": [
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/vibe-phone/demo_23970ac9' failed: WebSocket is closed before the connection is established.",
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/friend-events/demo_23970ac9' failed: WebSocket is closed before the connection is established.",
+        "warning: [VigilantAgent] Click-blocker detected: BUTTON[game-voice-dock-join] is occluded by P"
+      ],
+      "page_errors": [],
+      "deal_button_found": true,
+      "bet_input_found": true,
+      "card_count_initial": 1,
+      "card_count_after_2s": 1,
+      "card_count_after_5s": 1,
+      "deal_animation_visible": "NO_CARDS_APPEARED",
+      "redirect_to": "/three-card-poker",
+      "blocker_severity": "OK"
+    },
+    {
+      "route": "/practice/play/baccarat",
+      "name": "Baccarat practice",
+      "page_renders": true,
+      "title_or_heading": "Baccarat",
+      "console_errors": [
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/vibe-phone/demo_23970ac9' failed: WebSocket is closed before the connection is established.",
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/friend-events/demo_23970ac9' failed: WebSocket is closed before the connection is established."
+      ],
+      "page_errors": [],
+      "deal_button_found": true,
+      "bet_input_found": true,
+      "card_count_initial": 0,
+      "card_count_after_2s": 0,
+      "card_count_after_5s": 0,
+      "deal_animation_visible": "NO_CARDS_APPEARED",
+      "redirect_to": "/practice/play/baccarat",
+      "blocker_severity": "OK"
+    },
+    {
+      "route": "/caribbean-stud",
+      "name": "Caribbean Stud",
+      "page_renders": true,
+      "title_or_heading": "Caribbean Stud",
+      "console_errors": [
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/vibe-phone/demo_23970ac9' failed: WebSocket is closed before the connection is established.",
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/friend-events/demo_23970ac9' failed: WebSocket is closed before the connection is established.",
+        "warning: [VigilantAgent] Click-blocker detected: BUTTON[game-voice-dock-join] is occluded by P"
+      ],
+      "page_errors": [],
+      "deal_button_found": true,
+      "bet_input_found": true,
+      "card_count_initial": 0,
+      "card_count_after_2s": 10,
+      "card_count_after_5s": 10,
+      "deal_animation_visible": "INSTANT_FLASH",
+      "redirect_to": "/caribbean-stud",
+      "blocker_severity": "WARNING"
+    },
+    {
+      "route": "/casino-war",
+      "name": "Casino War",
+      "page_renders": true,
+      "title_or_heading": "Casino War",
+      "console_errors": [
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/vibe-phone/demo_23970ac9' failed: WebSocket is closed before the connection is established.",
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/friend-events/demo_23970ac9' failed: WebSocket is closed before the connection is established."
+      ],
+      "page_errors": [],
+      "deal_button_found": true,
+      "bet_input_found": true,
+      "card_count_initial": 0,
+      "card_count_after_2s": 0,
+      "card_count_after_5s": 0,
+      "deal_animation_visible": "NO_CARDS_APPEARED",
+      "redirect_to": "/casino-war",
+      "blocker_severity": "OK"
+    },
+    {
+      "route": "/chemin-de-fer",
+      "name": "Chemin de Fer",
+      "page_renders": true,
+      "title_or_heading": "Chemin de Fer",
+      "console_errors": [
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/vibe-phone/demo_23970ac9' failed: WebSocket is closed before the connection is established.",
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/friend-events/demo_23970ac9' failed: WebSocket is closed before the connection is established.",
+        "warning: [VigilantAgent] Click-blocker detected: BUTTON[game-voice-dock-join] is occluded by P"
+      ],
+      "page_errors": [],
+      "deal_button_found": true,
+      "bet_input_found": true,
+      "card_count_initial": 0,
+      "card_count_after_2s": 0,
+      "card_count_after_5s": 0,
+      "deal_animation_visible": "NO_CARDS_APPEARED",
+      "redirect_to": "/chemin-de-fer",
+      "blocker_severity": "OK"
+    },
+    {
+      "route": "/big-six-wheel",
+      "name": "Big Six Wheel",
+      "page_renders": true,
+      "title_or_heading": "Big Six Wheel",
+      "console_errors": [
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/vibe-phone/demo_23970ac9' failed: WebSocket is closed before the connection is established.",
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/friend-events/demo_23970ac9' failed: WebSocket is closed before the connection is established."
+      ],
+      "page_errors": [],
+      "deal_button_found": true,
+      "bet_input_found": true,
+      "card_count_initial": 0,
+      "card_count_after_2s": 0,
+      "card_count_after_5s": 0,
+      "deal_animation_visible": "NO_CARDS_APPEARED",
+      "redirect_to": "/big-six-wheel",
+      "blocker_severity": "OK"
+    },
+    {
+      "route": "/games/cyber-casino/blackjack",
+      "name": "Cyber Casino Blackjack",
+      "page_renders": true,
+      "title_or_heading": "Neon Blackjack",
+      "console_errors": [
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/vibe-phone/demo_23970ac9' failed: WebSocket is closed before the connection is established.",
+        "warning: WebSocket connection to 'wss://social-connect-953.preview.emergentagent.com/api/ws/friend-events/demo_23970ac9' failed: WebSocket is closed before the connection is established."
+      ],
+      "page_errors": [],
+      "deal_button_found": true,
+      "bet_input_found": true,
+      "card_count_initial": 3,
+      "card_count_after_2s": 3,
+      "card_count_after_5s": 3,
+      "deal_animation_visible": "NO_CARDS_APPEARED",
+      "redirect_to": "/games/cyber-casino/blackjack",
+      "blocker_severity": "OK"
+    }
+  ]
+}

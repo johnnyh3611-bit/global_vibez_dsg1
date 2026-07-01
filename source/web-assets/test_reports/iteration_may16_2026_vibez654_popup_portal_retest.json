@@ -1,0 +1,51 @@
+{
+  "summary": "RETEST PASSED. Portal fix (ReactDOM.createPortal to document.body) for Vibez 654 side-bets popup is verified working. Popup now renders full-screen as designed on both desktop and mobile. Premium /dice popup regression is also intact.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_results": {
+    "vibez_654_desktop": {
+      "viewport": "1920x1080",
+      "popup_bbox": "x=32, y=32, width=1856, height=1016 (96.7% w x 94.1% h)",
+      "expected_width_md_inset_8": 1856,
+      "actual_width": 1856,
+      "backdrop_bbox": "0,0,1920,1080 (full viewport)",
+      "popup_parent": "BODY (portal escape confirmed)",
+      "close_button_works": true,
+      "backdrop_click_closes": true,
+      "bet_placement_reflects_on_trigger_label": "₵0 -> ₵10 confirmed via v654-side-bets-total selector"
+    },
+    "vibez_654_mobile": {
+      "viewport": "390x844",
+      "popup_bbox": "x=0, y=0, width=390, height=844 (100% w x 100% h)",
+      "popup_parent": "BODY",
+      "note": "had to dismiss landscape-hint-overlay (game prompts rotate-to-landscape in portrait mobile, unrelated to popup fix). Once dismissed, popup renders perfectly full-screen with inset-0."
+    },
+    "premium_dice_regression": {
+      "url": "/dice",
+      "viewport": "1920x1080",
+      "result": "PASS - Side Bets popup opens full-screen on Premium with all bet types (Triple 6, One & Done, Straight 1s, Straight 6s, Large Straight, Predict Point, Qualify Roll 1/2/3, etc) visible. Premium uses its own implementation (different data-testid), so the v654 portal change had no regression impact.",
+      "screenshot_evidence": ".screenshots/premium_popup.png"
+    }
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Portal implementation is correct: createPortal with document.body guards against SSR via 'typeof document !== \"undefined\"' check.",
+    "z-index 60/70 is appropriate, sits above most overlays (the landscape-hint-overlay is z-57, so popup correctly renders above it on mobile-portrait once dismissed)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (frontend-only test)", "frontend": "100%"},
+  "test_credentials": "betatester1@globalvibez.com / BetaTester2026!",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Vibez 654 side-bets popup uses ReactDOM.createPortal to document.body (lines 736-768 of Vibez654Game.tsx) to escape the parent Drawer's backdrop-blur-md containing block. Verified working on 1920x1080 (96.7%x94.1% via md:inset-8) and 390x844 (100%x100% via inset-0). Premium /dice popup is a separate component and is unaffected by the v654 change.",
+  "rca of the issue": "Previously diagnosed: parent Drawer had 'backdrop-blur-md' (a CSS filter), which per CSS Filter Effects spec creates a containing block for fixed-positioned descendants. This caused the 'fixed inset-0' popup to be sized relative to the collapsed 670x2px Drawer instead of the viewport. Fix: portal the overlay to document.body so it is no longer a descendant of the filtered ancestor. Retested and confirmed: popup parent is now BODY and bounding rect matches viewport bounds exactly."
+}

@@ -1,0 +1,65 @@
+{
+  "summary": "Frontend-only testing for /beta-hub QA dashboard + LandingTourVideo hardening. CRITICAL: the founder-reported 'just voice, no video' bug is REPRODUCED and ROOT-CAUSED. The hardened <video> with crossOrigin='anonymous' + onError={setClipIdx(prev+1)} creates a tight infinite retry loop that fires onError for EVERY clip (1..11), repeatedly, locking the page (networkidle never reached, 30s nav timeout). The asset host DOES return Access-Control-Allow-Origin:* (curl confirmed), but headless Chromium under Playwright cannot decode the H.264 MP4 — and because onError unconditionally advances to the next URL with NO retry cap and NO 'broken-source' state, the cycle never settles. Same behaviour likely manifests for the founder in any browser where the first decode fails momentarily. /beta-hub and dashboard banner tests were SKIPPED because the public landing route never finished loading (30s timeout per nav) due to the same retry storm — this is a regression blocker for any test that needs to mount the landing page.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "LandingTourVideo",
+        "issue": "Founder bug 'just voice talking, no video overlay' is REAL. Video element fires onError on every clip URL (1..11) before any frame paints. Audio MP3 still autoplays, hence the 'instrumental/voice with no video' symptom. Affects /  (public landing).",
+        "selector": "[data-testid='landing-tour-video-clip']",
+        "priority": "CRITICAL"
+      },
+      {
+        "component": "LandingTourVideo onError handler",
+        "issue": "onError={() => setClipIdx(prev => (prev+1) % CLIPS.length)} has NO retry cap, NO cooldown, NO 'all-clips-failed' fallback state. When the first decode fails, this races through all 11 URLs and loops back to the start FOREVER. Console floods with [landing-tour] clip failed to load warnings (50+ within 5 seconds, observed). This prevents page networkidle and locks downstream tests.",
+        "selector": "[data-testid='landing-tour-video-clip']",
+        "priority": "CRITICAL"
+      },
+      {
+        "component": "LandingTourVideo <video crossOrigin>",
+        "issue": "crossOrigin='anonymous' is set but the component never decodes pixels into a canvas; the attribute only ADDS friction (Safari/iOS edge cases, CORS preflight noise). Asset host DOES return ACAO:* so it shouldn't break, but the attribute is gratuitous and worth removing while diagnosing.",
+        "selector": "video[data-testid='landing-tour-video-clip']",
+        "priority": "MEDIUM"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Landing → Tour Video play",
+        "issue": "After clicking [data-testid='landing-tour-play-overlay'] in headless Chromium, video.paused stays true, video.currentTime stays 0, video.videoWidth=0 — confirmed via page.evaluate. Audio element does start (narration MP3 plays). Matches founder report exactly.",
+        "affected_selectors": ["[data-testid='landing-tour-video-clip']", "[data-testid='landing-tour-audio']"]
+      }
+    ],
+    "design_issues": []
+  },
+  "tests_not_executed_due_to_blocker": [
+    "/beta-hub renders + 9 cards + auto-ping runAll",
+    "/beta-hub navigation clicks (beta-hub-open-*)",
+    "/beta-hub re-ping cargo button",
+    "/beta-hub Re-ping All button",
+    "/dashboard beta-hub banner navigation",
+    "Regression smoke /dsg-tv, /dsg-logistics, /artist/music-group, /marketplace/license, /driver/cargo, /artist/dashboard, /admin/dsg-logistics"
+  ],
+  "test_report_links": [],
+  "action_items": [
+    "URGENT — Throttle / cap the onError-driven setClipIdx in LandingTourVideo.tsx. Suggested: track a failedClips Set; once all 11 are in the Set, stop advancing and render a static poster image + keep audio playing. Or: only advance once per (clipIdx, hasStarted) tuple, never re-fire for the same idx.",
+    "Diagnose whether real (non-headless) Chrome/Safari can decode the founder MP4s with the crossOrigin='anonymous' attribute set. Try toggling crossOrigin OFF since the canvas pixel buffer is never read.",
+    "Add a max-retries counter (e.g. >=CLIPS.length consecutive failures => bail out and show a poster). Right now a single broken decoder bombards the network with hundreds of failed requests within seconds.",
+    "Add a fallback poster image (data-testid='landing-tour-poster-fallback') for the all-failed state so the section never goes black.",
+    "Verify Playwright/headless-chromium codec support is NOT what's masking the real-browser fix — test in real Chrome before claiming the founder bug is fixed.",
+    "After tour video is unblocked, re-run /beta-hub + /dashboard banner + regression smoke (none were testable this iteration because landing page nav timed out)."
+  ],
+  "critical_code_review_comments": [
+    "LandingTourVideo.tsx is 615 lines — exceeds the 700-line guideline soon; refactor language picker, controls, and clip loop into sub-components.",
+    "onError handler is fire-and-forget; needs failure state and retry budget — this is the root cause of today's outage.",
+    "Stack of CLIPS[] is hard-coded; consider hoisting to a JSON manifest aligned with /landing-tour-i18n.json so founders can swap URLs without a redeploy.",
+    "BetaHub.tsx auto-fires runAll() on mount with no rate-limit — fine for now, but if the page is mounted in dev hot-reload it will hammer the constants endpoints."
+  ],
+  "updated_files": [],
+  "success_rate": { "backend": "n/a", "frontend": "0% — landing page nav timed out, all dependent tests blocked" },
+  "test_credentials": "betatester1@globalvibez.com / BetaTester2026! (not used — login path never reached)",
+  "seed_data_creation": "",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "DO NOT attempt /beta-hub or /dashboard banner verification until LandingTourVideo's onError retry storm is fixed by E1 — the public landing route is currently unloadable within 30s because of it. Once fixed, verify (a) video.paused===false 3s after clicking landing-tour-play-overlay, (b) video.currentTime > 0, (c) console has no more than ~5 'clip failed to load' warnings total (not per-second), then proceed with the rest of the matrix.",
+  "rca of the issue": "ROOT CAUSE: In /app/frontend/src/components/landing/LandingTourVideo.tsx around line 370, the <video onError> handler calls setClipIdx(prev => (prev + 1) % CLIPS.length) unconditionally. When the very first <video> decode attempt errors out (could be transient buffering, chromium codec, momentary network blip, or anything that fires HTMLMediaElement 'error'), React swaps src to the next URL via key={CLIPS[clipIdx]}. The useEffect on [clipIdx, hasStarted] calls v.load()+v.play() against the new clip. If that one also errors (or even if it just hasn't loaded yet when the next render cycle hits), onError fires again, advances again, etc. With 11 clips × failure-on-every-clip = an infinite loop bombarding the network and the React render scheduler. Playwright observed 50+ '[landing-tour] clip failed to load' warnings in <5s, confirming the storm. REPRO: Playwright chromium, goto / , scroll to landing-tour-video, click play overlay, observe video.paused===true forever + console flood. MITIGATION: (1) wrap onError with a Set<string> of failed URLs, only advance if the current clip URL is NOT already in the Set; (2) when Set.size === CLIPS.length, stop and render poster fallback; (3) optionally remove crossOrigin='anonymous' since canvas pixel access is never used; (4) keep narration audio playing so the tour doesn't go totally silent in the poster-fallback state."
+}

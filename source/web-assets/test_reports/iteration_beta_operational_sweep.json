@@ -1,0 +1,59 @@
+{
+  "summary": "Beta operational sweep on https://social-connect-953.preview.emergentagent.com. Regression shield 209/209 PASS (with PYTHONPATH=/app/backend). Backend health spot-check 23/23 PASS. Frontend room sweep clicked 38 routes — found 4 BLOCKERS where critical rooms fall through to '/' (App.js wildcard fallback) and the entire '/practice/chess' VoiceCoach+Roguelite+BattleMode feature path is unreachable.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/streamer-actions/health", "issue": "No /health sub-route exists. /api/streamer-actions/constants works (used as proxy). Founder request listed /health — either add it or update spec."},
+      {"endpoint": "/api/totem-pole/health", "issue": "No /health sub-route exists. /api/totem-pole/constants works."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "DashboardNew.tsx (HungryVibes tile, line ~176)", "issue": "Tile path is '/hungry-vibes' (with hyphen). No such route registered → SPA wildcard sends user back to '/'. ALL other usages (FloatingFoodMenu, LandingFeatureAccordions, monetizationRoutes) use '/hungryvibes' (no hyphen). Fix: change tile path to '/hungryvibes'.", "selector": "DashboardNew tile array index for HungryVibes", "priority": "BLOCKER"},
+      {"component": "Routes registry (App.js / routes/*.tsx)", "issue": "NO route for '/hungryvibes' (root) is registered anywhere. Only '/hungryvibes/merchant' exists. FloatingFoodMenu FAB links to '/hungryvibes', '/hungryvibes?cat=pizza|coffee|desserts', and LandingFeatureAccordions also links to '/hungryvibes' — all currently DEAD (fall back to '/'). Need to register a '/hungryvibes' page route (HungryVibes consumer index/landing).", "selector": "n/a — missing route", "priority": "BLOCKER"},
+      {"component": "Routes registry — '/streamer/action-hub'", "issue": "Listed in QA spec and dashboard messaging ('Powered by Streamer Action Hub'), but NO route is registered for '/streamer/action-hub'. Falls back to '/'. Either register the page or remove references.", "selector": "n/a — missing route", "priority": "BLOCKER"},
+      {"component": "Routes registry — '/practice/chess'", "issue": "PracticeChess.tsx exists with VoiceCoachButton + RogueliteTrialBadge + BattleMode toggle, but ONLY '/practice' is registered (renders generic Games hub). Direct hit to '/practice/chess' falls back to '/'. The 'previously 100% verified' Voice Coach / Roguelite / Battle Mode chess feature is unreachable for beta testers. Register '/practice/chess' (and presumably other '/practice/<game>' routes) explicitly.", "selector": "n/a — missing route", "priority": "BLOCKER"},
+      {"component": "Games hub /games page", "issue": "Only 3 of 12 expected game names (UNO/Blackjack/Spades) are detectable in body text. Poker/Chess/Hearts/Bid Whist/Crazy Eights/Gin Rummy/Euchre/Go Fish/Dominoes not text-rendered on the landing of /games. Could be lazy-loading or hidden behind tabs — needs visual verification by main agent.", "selector": "/games", "priority": "HIGH"},
+      {"component": "/streamer/overlay/demo", "issue": "Page renders only 199 chars of body text (likely just chrome shell). Verify content is real, not a stub.", "selector": "/streamer/overlay/demo", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [
+      {"flow": "Floating Food Menu → HungryVibes", "issue": "FAB opens 3 quick-cat overlay correctly (Pizza/Coffee/Late-Night Sweet) with proper hrefs, BUT every click lands the user back at '/' because /hungryvibes route is absent.", "affected_selectors": ["[data-testid=\"floating-food-menu-trigger\"]", "a[href='/hungryvibes?cat=pizza']", "a[href='/hungryvibes?cat=coffee']", "a[href='/hungryvibes?cat=desserts']", "a[href='/hungryvibes']"]},
+      {"flow": "Dashboard HungryVibes tile", "issue": "Tile uses /hungry-vibes; clicking it kicks user back to '/'. Triple confusion vs FFM."}
+    ],
+    "design_issues": [
+      {"screen": "Dashboard", "issues": ["'Notifications Blocked' toast appears on first load (browser permission prompt) — overlaps with FloatingFoodMenu FAB at bottom-right. Add dismiss-and-remember logic."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter_beta_operational_sweep.py",
+    "/app/backend/tests/regression_shield.py"
+  ],
+  "action_items": [
+    "BLOCKER: Register a '/hungryvibes' frontend route (the HungryVibes consumer page). FFM, Landing accordions, and dashboard tile all link here.",
+    "BLOCKER: Fix DashboardNew.tsx HungryVibes tile path from '/hungry-vibes' → '/hungryvibes'.",
+    "BLOCKER: Register '/streamer/action-hub' route OR remove the 'Powered by Streamer Action Hub' link target from dashboard banner.",
+    "BLOCKER: Register '/practice/chess' (and other /practice/<game> sub-routes) so PracticeChess.tsx with Voice Coach + Roguelite Trial + Battle Mode toggle is reachable. Currently only '/practice' is registered and hits the generic Games component.",
+    "Verify /games hub renders all 12 game cards (UNO/Poker/Chess/Blackjack/Spades/Hearts/Bid Whist/Crazy Eights/Gin Rummy/Euchre/Go Fish/Dominoes). 9 of 12 not text-detectable on initial DOM.",
+    "Verify /streamer/overlay/demo body is more than chrome shell (only 199 chars rendered).",
+    "OPTIONAL: Add /api/streamer-actions/health and /api/totem-pole/health convenience endpoints (currently spec says they exist but they don't — /constants works in their place).",
+    "Note: pytest must be run from /app/backend dir with PYTHONPATH=/app/backend (otherwise 26/209 regression-shield tests fail with ModuleNotFoundError). Recommend adding pytest.ini with rootdir/python_paths in /app/backend/."
+  ],
+  "critical_code_review_comments": [
+    "App.js wildcard '*' route silently redirects to '/' — masks every dead-link bug. Recommend a dedicated 404 page in non-prod so misrouted clicks are visible to QA instead of silently bouncing.",
+    "DashboardNew.tsx room-tile array (line 76+) is a 30+-entry hand-maintained map of titles → paths → blurbs. Diverges from actual route registry. Add a build-time check that every tile.path is a registered route.",
+    "Three different code paths reference HungryVibes: DashboardNew tile uses '/hungry-vibes', FFM uses '/hungryvibes', Landing uses '/hungryvibes'. Hard-coded everywhere — extract to a const ROUTES constants file."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter_beta_operational_sweep.py (new file — 23 backend tests, all passing)"
+  ],
+  "success_rate": {
+    "backend": "100% (23/23 sweep + 209/209 regression shield)",
+    "frontend": "~89% (34/38 routes render real content; 4 BLOCKER dead routes)"
+  },
+  "test_credentials": "Demo Login button (testid=login-demo-btn) works one-tap. Beta tester creds in /app/memory/test_credentials.md use @globalvibez.com (request mentioned @globalvibezdsg.com — both /api/auth/login calls returned 200 with the same password 'BetaTester2026!', so seeder accepts both? Or fixture re-seeds. Either way login works).",
+  "seed_data_creation": "None.",
+  "retest_needed": true,
+  "main_agent_can_self_test": false,
+  "context_for_next_testing_agent": "Regression shield only passes when run from /app/backend with PYTHONPATH=/app/backend. The 4 BLOCKER routes (/hungryvibes, /hungry-vibes, /streamer/action-hub, /practice/chess) all fall back to '/' due to App.js wildcard. After main agent fixes, retest by visiting each URL directly and confirming page.url stays at the target path. Use the Vigilant Agent script for regression on testid uniqueness post-fix.",
+  "rca of the issue": "ROOT CAUSE (all 4 blockers): The SPA's catch-all '<Route path=\"*\">' in App.js redirects every unmatched URL to '/'. When the founder added new feature pages (HungryVibes consumer page, Streamer Action Hub, Practice Chess sub-route) the route declarations in /app/frontend/src/routes/*.tsx were never wired up — even though the page components exist. The dashboard tile array, FloatingFoodMenu, and LandingFeatureAccordions all confidently link to those URLs because the developer assumed they were registered. REPRO: open https://social-connect-953.preview.emergentagent.com/hungryvibes (or any of the other 3 dead URLs) in a fresh tab → instantly bounces to '/'. MITIGATION: (1) register the 3 missing routes in /app/frontend/src/routes/gamesRoutes.tsx (PracticeChess) and a new /app/frontend/src/routes/hungryVibesRoutes.tsx (HungryVibes index) and /app/frontend/src/routes/streamerRoutes.tsx (action-hub); (2) fix DashboardNew tile path '/hungry-vibes' → '/hungryvibes'; (3) replace App.js wildcard with a Not-Found component in dev so future dead links are visible."
+}

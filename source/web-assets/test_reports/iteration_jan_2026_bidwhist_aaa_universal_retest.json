@@ -1,0 +1,54 @@
+{
+  "summary": "Retested Universal Card Room (Spades AAA canonical reused for Bid Whist AAA) after the BidWhistAAA adapter fix. The CRITICAL adapter crash is GONE. /bid-whist now mounts the SpadesTable with data-variant='cobalt', and the per-seat 'tricks/bid' progress pills render correctly: north='0/5', east='0/5' (bots pre-bid 5), west='0' (raw count, pre-bid). South pill is null by design (own seat). Spades AAA continues to work perfectly with data-variant='emerald' and N/E/W='0' pre-bid. 2 spec deviations remain: (1) /bid-whist-aaa and /bid-whist-aaa/:gameId are NOT redirects in routes — they render BidWhistAAA directly. The PRD says they MUST `Navigate replace` to /bid-whist. (2) /games game tiles for bid_whist / bid_whist_premium / bid_whist_platinum could not be located by data-testid='game-tile-{id}' or data-game-id='{id}', so click→navigate to /bid-whist could not be confirmed.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Legacy redirect /bid-whist-aaa → /bid-whist",
+        "issue": "Spec requires /bid-whist-aaa and /bid-whist-aaa/:gameId to be redirects (Navigate replace) so URL ends up at /bid-whist. Currently /app/frontend/src/routes/gamesRoutes.tsx lines 170-171 render <BidWhistAAA/> directly at those paths instead of redirecting. Functional impact is minor (the page works) but URL canonicalisation is broken — users land on /bid-whist-aaa and bookmarks/back-button keep that URL instead of /bid-whist.",
+        "affected_selectors": ["url: /bid-whist-aaa", "url: /bid-whist-aaa/:gameId"]
+      },
+      {
+        "flow": "/games Bid Whist tile → /bid-whist",
+        "issue": "Could not locate game tiles by data-testid='game-tile-bid_whist' (or _premium / _platinum) or data-game-id='bid_whist' on /games. Either the testid pattern differs or the tiles aren't rendered for the demo user. Click→navigate to /bid-whist therefore could not be programmatically verified.",
+        "affected_selectors": ["[data-testid=\"game-tile-bid_whist\"]", "[data-testid=\"game-tile-bid_whist_premium\"]", "[data-testid=\"game-tile-bid_whist_platinum\"]"]
+      }
+    ],
+    "design_issues": []
+  },
+  "verified_working": [
+    "/bid-whist lobby renders with [data-testid='bidwhist-aaa-lobby'] and [data-testid='bidwhist-aaa-lobby-start-btn'] ✓",
+    "After Start AI Match: NO TypeError, NO blank screen. The previous adaptPlayers crash is fully fixed ✓",
+    "[data-testid='spades-table'] mounts with data-variant='cobalt' on /bid-whist ✓",
+    "Progress pills: spades-seat-progress-north='0/5', east='0/5' (bots have already bid 5), west='0' (pre-bid raw count) ✓",
+    "spades-seat-progress-south is null by design (south = own seat) ✓",
+    "Pre-bid format = digits only ('0'); post-bid format = digits/digits ('0/5') ✓",
+    "Legacy redirects working: /bid-whist-lobby → /bid-whist, /bid-whist-practice → /bid-whist, /bid-whist-premium → /bid-whist, /bid-whist-premium/:gameId → /bid-whist ✓",
+    "/spades lobby + Start AI Match → spades-table data-variant='emerald', N/E/W progress all '0' pre-bid ✓"
+  ],
+  "test_report_links": [
+    "/app/test_reports/iteration_jan_2026_bidwhist_aaa_universal_retest.json",
+    "/app/test_reports/iteration_jan_2026_bidwhist_aaa_universal_prototype.json (prior iteration with original RCA)"
+  ],
+  "action_items": [
+    "Convert /bid-whist-aaa and /bid-whist-aaa/:gameId in /app/frontend/src/routes/gamesRoutes.tsx (lines 170-171) from <Route element={<ProtectedRoute><BidWhistAAA/></ProtectedRoute>}/> to <Route element={<Navigate to=\"/bid-whist\" replace />}/> (or, for /:gameId, Navigate to a path that preserves gameId) to satisfy the spec's URL-canonicalisation requirement.",
+    "Confirm/expose the data-testid pattern for Bid Whist game tiles on /games. If tiles use a different testid (e.g., game-card-bid_whist, tile-bid_whist), update either the tile attributes to data-testid=\"game-tile-{game_id}\" OR document the actual pattern so testing agents can verify the click→navigate flow."
+  ],
+  "critical_code_review_comments": [
+    "Adapter fix in BidWhistAAA.tsx is correct — null-safe defaults to {} and consumes raw.player_tricks for book-count overrides; matches the Spades AAA universal prototype contract. Good.",
+    "Routes file has both 'render BidWhistAAA at /bid-whist-aaa' AND 'declare it as a legacy route' in the same comment block (lines 165-176). The intent (per PRD) is that /bid-whist-aaa is LEGACY → should redirect, not render. Fix together with action item #1.",
+    "Consider adding a Sentry/console.error breadcrumb in the BidWhistAAA adapter on raw.players_data === undefined so future shape regressions surface immediately rather than via TypeError."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (not retested — backend untouched)", "frontend": "85% (core crash fixed; 2 minor deviations: /bid-whist-aaa redirect missing, /games tile testids not located)"},
+  "test_credentials": "Demo login via [data-testid=login-demo-btn] on /login (auto-provisioned guest session).",
+  "seed_data_creation": "None.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Adapter crash from prior iteration is FIXED — Bid Whist AAA game view renders cleanly with cobalt variant + correct progress pills. Two open items: (1) /bid-whist-aaa[/:gameId] should be Navigate replace not direct render, (2) /games Bid Whist tile testids need confirmation. Ignore Privy CSP 403 / 'TypeError: e is not a function' / WebSocket close warnings — pre-existing environmental noise unrelated to this feature.",
+  "rca_of_the_issue": "PRIOR iteration's RCA: BidWhistAAA.tsx adapter assumed Spades response shape (raw.players, raw.current_turn, raw.bids[].bidder/bid_type) but BW backend returns raw.players_data, raw.whose_turn/current_bidder, raw.winning_bid (with .player), raw.bids[].player/type. Main agent's fix: BwRawState interface aligned to actual BW shape, adaptPlayers/adaptTrickPile null-safe with {} fallback, currentTurn = raw.whose_turn ?? raw.current_bidder ?? raw.your_position, currentHighBid built from raw.winning_bid {amount, .player→bidder}. Verified live: spades-table[data-variant='cobalt'] mounts, progress pills render '0/5'/'0/5'/'0' as expected. NEW residual: /bid-whist-aaa is still a render-route, not a redirect — diverges from PRD."
+}

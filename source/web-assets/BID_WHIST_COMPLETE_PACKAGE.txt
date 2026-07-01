@@ -1,0 +1,3322 @@
+================================================================================
+🃏 BID WHIST - COMPLETE GAME PACKAGE 🃏
+The Perfect Game from Game Arena - All Source Code
+================================================================================
+
+✨ FEATURES INCLUDED:
+- Design 4: Casino Chip Table Center + Diamond Pattern Cards
+- 15-Second Bidding Timer with Auto-Pass
+- 30-Second Kitty Timer with Auto-Select
+- Compact Game Menu (pops left)
+- View Mode Selector (Classic/Mobile)
+- Round Stats Modal
+- Player Profile Dropdown  
+- Realistic Card Dealing Animation
+- "GLOBAL VIBEZ DSG" + "WHIST" Branding
+- Real-time Multiplayer via Socket.io
+
+📊 PACKAGE CONTENTS:
+- 1 Main Game Component (1,216 lines)
+- 9 Supporting React Components
+- 4 Backend Python Files
+- Total: 2,723+ lines of frontend code
+- Total Package: ~150KB
+
+================================================================================
+
+================================================================================
+BID WHIST - COMPLETE SOURCE CODE (GAME ARENA VERSION)
+Everything we built - Design 4, Timers, Auto-features
+================================================================================
+
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Trophy, AlertCircle, Crown, Zap, Users, ArrowLeft, Sparkles } from 'lucide-react';
+import MetaHumanDealerVideo from '@/components/MetaHumanDealerVideo';
+import ImperialCard from '@/components/bidwhist/ImperialCard';
+import KittyExchangeModal from '@/components/bidwhist/KittyExchangeModal';
+import GameChat from '@/components/bidwhist/GameChat';
+import GameStatsPanel from '@/components/bidwhist/GameStatsPanel';
+import UnifiedGameMenu from '@/components/bidwhist/UnifiedGameMenu';
+import RoundStatsModal from '@/components/bidwhist/RoundStatsModal';
+import PlayerProfileDropdown from '@/components/bidwhist/PlayerProfileDropdown';
+import CardDealingAnimation from '@/components/bidwhist/CardDealingAnimation';
+import OrientationGuide from '@/components/bidwhist/OrientationGuide';
+import { toast } from 'react-hot-toast';
+import { io } from 'socket.io-client';
+import { authFetch, getUsername } from '@/utils/secureAuth';
+
+const API = process.env.REACT_APP_BACKEND_URL;
+
+// Bidding Ring Component - Circular Glowing HUD
+const BiddingRing = ({ onBid, onPass, currentBid, disabled, timeLeft }) => {
+  const [selectedAmount, setSelectedAmount] = useState(4);
+  const [selectedType, setSelectedType] = useState('uptown');
+  const [selectedSuit, setSelectedSuit] = useState('spades');
+
+  const bidAmounts = [3, 4, 5, 6, 7];
+  const bidTypes = [
+    { id: 'uptown', label: 'Uptown', icon: '↑', color: 'from-blue-500 to-cyan-500' },
+    { id: 'downtown', label: 'Downtown', icon: '↓', color: 'from-orange-500 to-red-500' },
+    { id: 'no_trump', label: 'No Trump', icon: '⊗', color: 'from-purple-500 to-pink-500' }
+  ];
+
+  const suits = [
+    { id: 'spades', symbol: '♠', color: '#000' },
+    { id: 'hearts', symbol: '♥', color: '#dc2626' },
+    { id: 'diamonds', symbol: '♦', color: '#2563eb' },
+    { id: 'clubs', symbol: '♣', color: '#15803d' }
+  ];
+
+  const handlePlaceBid = () => {
+    onBid(selectedAmount, selectedType, selectedType !== 'no_trump' ? selectedSuit : null);
+  };
+  
+  // Timer color based on time remaining
+  const getTimerColor = () => {
+    if (timeLeft > 10) return 'text-green-400 border-green-400';
+    if (timeLeft > 5) return 'text-yellow-400 border-yellow-400';
+    return 'text-red-400 border-red-400 animate-pulse';
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="relative w-full max-w-xl mx-auto p-4"
+    >
+      {/* Glowing Ring Background */}
+      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-amber-500/20 via-purple-500/20 to-blue-500/20 blur-2xl animate-pulse" />
+      
+      <div className="relative bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-xl rounded-xl border border-amber-500/30 shadow-xl p-4">
+        {/* Header with Timer */}
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-['Cinzel'] text-amber-400 flex items-center gap-2">
+            <Zap className="w-5 h-5" />
+            Place Your Bid
+          </h2>
+          
+          {/* Countdown Timer */}
+          <motion.div
+            animate={timeLeft <= 5 ? { scale: [1, 1.1, 1] } : {}}
+            transition={{ duration: 0.5, repeat: timeLeft <= 5 ? Infinity : 0 }}
+            className={`px-3 py-1.5 rounded-lg border-2 font-['Cinzel'] font-bold text-xl ${getTimerColor()}`}
+          >
+            {timeLeft}s
+          </motion.div>
+        </div>
+
+        {currentBid && (
+          <div className="mb-3 p-2 bg-blue-900/30 rounded-lg border border-blue-400/30">
+            <div className="text-[10px] text-blue-300 mb-0.5">Current High Bid:</div>
+            <div className="text-base font-bold text-blue-400">
+              {currentBid.amount} books - {currentBid.type}
+            </div>
+          </div>
+        )}
+
+        {/* Circular Bid Amount Selector */}
+        <div className="mb-4">
+          <div className="text-amber-200/70 text-[10px] mb-2 text-center">Select Books (3-7)</div>
+          <div className="flex items-center justify-center gap-2">
+            {bidAmounts.map((amount) => (
+              <motion.button
+                key={amount}
+                onClick={() => setSelectedAmount(amount)}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                className={`w-12 h-12 rounded-full font-['Cinzel'] font-bold text-lg transition-all ${
+                  selectedAmount === amount
+                    ? 'bg-gradient-to-br from-amber-500 to-yellow-600 text-white shadow-lg shadow-amber-500/50 scale-110'
+                    : 'bg-slate-700/50 text-amber-200/60 hover:bg-slate-700'
+                }`}
+              >
+                {amount}
+              </motion.button>
+            ))}
+          </div>
+        </div>
+
+        {/* Bid Type Selector */}
+        <div className="mb-4">
+          <div className="text-amber-200/70 text-[10px] mb-2 text-center">Bid Direction</div>
+          <div className="flex items-center justify-center gap-4">
+            {bidAmounts.map((amount) => (
+              <motion.button
+                key={amount}
+                onClick={() => setSelectedAmount(amount)}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                className={`w-16 h-16 rounded-full font-['Cinzel'] font-bold text-2xl transition-all ${
+                  selectedAmount === amount
+                    ? 'bg-gradient-to-br from-amber-500 to-yellow-600 text-white shadow-lg shadow-amber-500/50 scale-110'
+                    : 'bg-slate-700/50 text-amber-200/60 hover:bg-slate-700'
+                }`}
+              >
+                {amount}
+              </motion.button>
+            ))}
+          </div>
+        </div>
+
+        {/* Bid Type Selector */}
+        <div className="mb-4">
+          <div className="text-amber-200/70 text-[10px] mb-2 text-center">Bid Direction</div>
+          <div className="grid grid-cols-3 gap-2">
+            {bidTypes.map((type) => (
+              <motion.button
+                key={type.id}
+                onClick={() => setSelectedType(type.id)}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className={`py-2 px-2 rounded-lg font-['Crimson_Text'] text-sm transition-all ${
+                  selectedType === type.id
+                    ? `bg-gradient-to-br ${type.color} text-white shadow-lg`
+                    : 'bg-slate-700/50 text-amber-200/60 hover:bg-slate-700'
+                }`}
+              >
+                <div className="text-2xl mb-0.5">{type.icon}</div>
+                <div className="text-xs">{type.label}</div>
+              </motion.button>
+            ))}
+          </div>
+        </div>
+
+        {/* Trump Suit Selector (only if not No Trump) */}
+        {selectedType !== 'no_trump' && (
+          <div className="mb-4">
+            <div className="text-amber-200/70 text-[10px] mb-2 text-center">Trump Suit</div>
+            <div className="grid grid-cols-4 gap-2">
+              {suits.map((suit) => (
+                <motion.button
+                  key={suit.id}
+                  onClick={() => setSelectedSuit(suit.id)}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                  className={`py-3 rounded-lg transition-all ${
+                    selectedSuit === suit.id
+                      ? 'bg-white shadow-lg scale-105'
+                      : 'bg-slate-700/50 hover:bg-slate-700'
+                  }`}
+                >
+                  <div className="text-3xl" style={{ color: selectedSuit === suit.id ? suit.color : '#f5f5dc' }}>
+                    {suit.symbol}
+                  </div>
+                </motion.button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        <div className="flex gap-4">
+          <motion.button
+            onClick={handlePlaceBid}
+            disabled={disabled}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="flex-1 py-4 rounded-xl font-['Cinzel'] font-bold text-xl
+              bg-gradient-to-r from-amber-600 via-yellow-600 to-amber-600
+              text-white shadow-xl hover:shadow-2xl transition-all
+              disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Place Bid
+          </motion.button>
+          <motion.button
+            onClick={onPass}
+            disabled={disabled}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="px-8 py-4 rounded-xl font-['Cinzel'] font-bold text-lg
+              bg-slate-700 text-amber-200 hover:bg-slate-600 transition-all
+              disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Pass
+          </motion.button>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+// Dealer Component - SIMPLIFIED & READABLE
+const DealerDilla = () => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="flex flex-col items-center gap-1 p-3 bg-gradient-to-br from-slate-900 to-slate-800 backdrop-blur-md rounded-xl border-2 border-amber-500/50 shadow-lg min-w-[100px]"
+    >
+      {/* Dealer Label */}
+      <div className="text-xs font-['Cinzel'] text-amber-400 font-bold uppercase tracking-wider">
+        Dealer
+      </div>
+      {/* Dealer Name */}
+      <div className="text-base font-['Cinzel'] text-white font-bold">
+        Dilla
+      </div>
+      {/* Active Indicator */}
+      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-400/50"></div>
+    </motion.div>
+  );
+};
+
+// 4-Player Table Layout - WITH VIEW MODE SUPPORT
+const FourPlayerTable = ({ players, currentTrick, userPosition, dealerPosition, playerTricks, onPlayerClick, viewMode = 'classic' }) => {
+  const positions = {
+    north: { top: '-1.5rem', left: '50%', transform: 'translateX(-50%)' },
+    south: { bottom: '-1.5rem', left: '50%', transform: 'translateX(-50%)' },
+    east: { right: '-2rem', top: '50%', transform: 'translateY(-50%)' },
+    west: { left: '-2rem', top: '50%', transform: 'translateY(-50%)' }
+  };
+
+  // Team colors: Team 1 = Red, Team 2 = Blue
+  const teamColors = {
+    team1: {
+      border: 'border-red-500',
+      ring: 'ring-red-400',
+      bg: 'bg-red-900/20',
+      text: 'text-red-400'
+    },
+    team2: {
+      border: 'border-blue-500',
+      ring: 'ring-blue-400',
+      bg: 'bg-blue-900/20',
+      text: 'text-blue-400'
+    }
+  };
+
+  // Classic View (Original Perfect Design) or Responsive View
+  const tableClasses = viewMode === 'classic' 
+    ? "relative w-[850px] h-[550px] max-w-[95vw] max-h-[60vh] rounded-[250px] bg-emerald-800 border-[16px] border-amber-900/90 shadow-[0_0_60px_rgba(6,78,59,0.6)] mx-auto"
+    : `relative w-full h-[400px] rounded-[150px] sm:h-[450px] sm:rounded-[180px] md:h-[500px] md:rounded-[200px] lg:w-[850px] lg:h-[550px] lg:rounded-[250px] max-w-[95vw] mx-auto bg-emerald-800 border-[8px] sm:border-[12px] lg:border-[16px] border-amber-900/90 shadow-[0_0_40px_rgba(6,78,59,0.5)] lg:shadow-[0_0_60px_rgba(6,78,59,0.6)]`;
+
+  return (
+    <div className={tableClasses}>
+      {/* Subtle felt pattern */}
+      <div className="absolute inset-0 opacity-5 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] bg-repeat rounded-[250px]" />
+      
+      {/* ============================================ */}
+      {/* TABLE CENTER LOGO - 4 DESIGN OPTIONS */}
+      {/* Choose ONE design by uncommenting it */}
+      {/* ============================================ */}
+
+      {/* DESIGN 1: MINIMALIST BADGE (Clean & Simple) */}
+      {/* <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10">
+        <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm rounded-2xl -m-4"></div>
+        <div className="relative flex flex-col items-center gap-2 px-4 py-3">
+          <div className="font-['Cinzel'] font-bold text-amber-400 text-center drop-shadow-[0_0_12px_rgba(251,191,36,0.8)]">
+            <div className="text-3xl lg:text-4xl tracking-wider">GLOBAL VIBEZ</div>
+            <div className="text-xl lg:text-2xl tracking-[0.3em] mt-1">DSG</div>
+          </div>
+          <div className="text-2xl">🎴</div>
+          <div className="font-['Cinzel'] text-amber-300 text-2xl lg:text-3xl font-bold tracking-[0.4em] italic">
+            WHIST
+          </div>
+        </div>
+      </div> */}
+
+      {/* DESIGN 2: ORNATE VICTORIAN (Fancy Decorative Borders) */}
+      {/* <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10">
+        <div className="relative bg-gradient-to-br from-slate-900/90 via-amber-900/30 to-slate-900/90 backdrop-blur-md rounded-xl border-4 border-double border-amber-500/60 p-6 shadow-2xl">
+          <div className="absolute -top-3 -left-3 w-6 h-6 bg-amber-500 rounded-full border-2 border-amber-300"></div>
+          <div className="absolute -top-3 -right-3 w-6 h-6 bg-amber-500 rounded-full border-2 border-amber-300"></div>
+          <div className="absolute -bottom-3 -left-3 w-6 h-6 bg-amber-500 rounded-full border-2 border-amber-300"></div>
+          <div className="absolute -bottom-3 -right-3 w-6 h-6 bg-amber-500 rounded-full border-2 border-amber-300"></div>
+          
+          <div className="text-center">
+            <div className="text-amber-400 text-xs mb-2">♠ ♥ ♦ ♣</div>
+            <div className="font-['Cinzel'] text-amber-400 font-bold">
+              <div className="text-2xl tracking-widest">GLOBAL</div>
+              <div className="text-3xl tracking-wider my-1">VIBEZ</div>
+              <div className="text-lg tracking-[0.3em]">DSG</div>
+            </div>
+            <div className="text-amber-400 text-xs my-2">♣ ♦ ♥ ♠</div>
+            <div className="font-['Cinzel'] text-amber-300 text-2xl font-bold italic tracking-[0.4em] border-t-2 border-b-2 border-amber-500/40 py-1">
+              WHIST
+            </div>
+          </div>
+        </div>
+      </div> */}
+
+      {/* DESIGN 3: MODERN GEOMETRIC (Sharp Angular Style) */}
+      {/* <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10">
+        <div className="relative bg-gradient-to-br from-slate-950 to-slate-800 backdrop-blur-lg p-6 clip-hexagon border-2 border-amber-500 shadow-[0_0_30px_rgba(251,191,36,0.5)]">
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-amber-500/10"></div>
+          
+          <div className="relative text-center space-y-2">
+            <div className="font-['Cinzel'] font-bold text-amber-400">
+              <div className="text-sm tracking-[0.5em] opacity-80">GLOBAL</div>
+              <div className="text-4xl font-black tracking-wider bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 bg-clip-text text-transparent">
+                VIBEZ
+              </div>
+              <div className="text-xs tracking-[0.4em] opacity-80">DSG</div>
+            </div>
+            
+            <div className="flex items-center justify-center gap-2">
+              <div className="w-8 h-px bg-gradient-to-r from-transparent via-amber-400 to-transparent"></div>
+              <div className="text-xl">🎴</div>
+              <div className="w-8 h-px bg-gradient-to-r from-transparent via-amber-400 to-transparent"></div>
+            </div>
+            
+            <div className="font-['Cinzel'] text-amber-300 text-3xl font-black tracking-[0.5em] italic transform -skew-x-6">
+              WHIST
+            </div>
+          </div>
+        </div>
+      </div> */}
+
+      {/* DESIGN 4: CASINO CHIP (Classic Vegas Style) ✅ ACTIVE */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10">
+        <div className="relative w-48 h-48 rounded-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-8 border-amber-500 shadow-2xl">
+          <div className="absolute inset-2 rounded-full border-4 border-dashed border-amber-400/40"></div>
+          <div className="absolute inset-4 rounded-full bg-gradient-to-br from-amber-500/20 to-transparent"></div>
+          
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+            <div className="font-['Cinzel'] font-bold text-amber-400">
+              <div className="text-xs tracking-widest">GLOBAL</div>
+              <div className="text-3xl tracking-wider my-1">VIBEZ</div>
+              <div className="text-xs tracking-[0.3em]">DSG</div>
+            </div>
+            
+            <div className="my-2 text-2xl">🎴</div>
+            
+            <div className="font-['Cinzel'] text-amber-300 text-2xl font-bold tracking-[0.4em] italic bg-slate-950/80 px-4 py-1 rounded-full border border-amber-500/50">
+              WHIST
+            </div>
+          </div>
+          
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 text-amber-400 text-2xl">♠</div>
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-amber-400 text-2xl">♥</div>
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-amber-400 text-2xl">♦</div>
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 text-amber-400 text-2xl">♣</div>
+        </div>
+      </div>
+
+      {/* Center Area for Current Trick */}
+      <div className="absolute inset-0 flex items-center justify-center z-20">
+        <div className="flex flex-wrap gap-2 justify-center items-center">
+          <AnimatePresence>
+            {currentTrick && currentTrick.map((play, idx) => (
+              <motion.div
+                key={`trick-${idx}`}
+                initial={{ scale: 0, rotate: 180 }}
+                animate={{ scale: 0.8, rotate: 0 }}
+                exit={{ scale: 0, opacity: 0 }}
+                className="relative"
+              >
+                <div className="scale-75">
+                  <ImperialCard card={play.card} disabled />
+                </div>
+                <div className="absolute -bottom-5 left-1/2 transform -translate-x-1/2 text-[10px] text-amber-300 whitespace-nowrap">
+                  {play.position || play.player}
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      </div>
+
+      {/* Player Badges with Book Count Cubes - CLICKABLE with TEAM COLORS */}
+      {Object.entries(players).map(([position, player]) => {
+        const booksWon = playerTricks?.[position] || player.books_won || 0;
+        const teamColor = teamColors[player.team] || teamColors.team1;
+        
+        return (
+          <div
+            key={position}
+            className="absolute z-20"
+            style={positions[position]}
+          >
+            <div className="flex items-center gap-2">
+              {/* Dealer Chip - Poker Style */}
+              {dealerPosition === position && (
+                <motion.div
+                  initial={{ scale: 0, rotate: 180 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                  className="w-8 h-8 rounded-full bg-white border-2 border-amber-500 shadow-lg flex items-center justify-center"
+                  title="Dealer - Bids Last"
+                >
+                  <span className="text-amber-900 font-black text-sm">D</span>
+                </motion.div>
+              )}
+              
+              {/* Player Badge - WITH VIEW MODE SUPPORT */}
+              <button
+                onClick={() => onPlayerClick && onPlayerClick(position, player)}
+                className={viewMode === 'classic'
+                  ? `px-4 py-2 border-2 backdrop-blur-sm shadow-lg rounded-lg flex items-center gap-2 transition-all hover:scale-105 cursor-pointer ${teamColor.bg} ${position === userPosition ? `${teamColor.border} ring-2 ${teamColor.ring}` : teamColor.border}`
+                  : `px-2 py-1 sm:px-3 sm:py-1.5 md:px-4 md:py-2 border-2 backdrop-blur-sm shadow-lg rounded-lg flex items-center gap-1 sm:gap-1.5 md:gap-2 transition-all hover:scale-105 cursor-pointer text-xs sm:text-sm ${teamColor.bg} ${position === userPosition ? `${teamColor.border} ring-2 ${teamColor.ring}` : teamColor.border}`
+                }
+              >
+                <div className={viewMode === 'classic' ? "flex items-center gap-1.5" : "flex items-center gap-1 sm:gap-1.5"}>
+                  {position === userPosition && <Crown className={viewMode === 'classic' ? "w-3 h-3 text-amber-400" : "w-2.5 h-2.5 sm:w-3 sm:h-3 text-amber-400"} />}
+                  <span className={`font-['Cinzel'] font-bold uppercase tracking-wider ${teamColor.text} ${viewMode === 'responsive' ? 'text-xs sm:text-sm' : 'text-sm'}`}>
+                    {position}
+                  </span>
+                </div>
+                
+                {/* Book Count Cube */}
+                <div 
+                  className={viewMode === 'classic'
+                    ? "w-6 h-6 rounded-sm border border-amber-500 bg-slate-950 flex items-center justify-center shadow-[0_0_8px_rgba(251,191,36,0.3)]"
+                    : "w-5 h-5 sm:w-6 sm:h-6 rounded-sm border border-amber-500 bg-slate-950 flex items-center justify-center shadow-[0_0_8px_rgba(251,191,36,0.3)]"
+                  }
+                  title={`${booksWon} books won`}
+                >
+                  <span className={viewMode === 'classic' ? "text-[11px] font-['Cinzel'] font-bold text-amber-400" : "text-[9px] sm:text-[11px] font-['Cinzel'] font-bold text-amber-400"}>{booksWon}</span>
+                </div>
+              </button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+export default function BidWhistPremium() {
+  const navigate = useNavigate();
+  const { gameId } = useParams();
+  const [gameState, setGameState] = useState(null);
+  const [myHand, setMyHand] = useState([]);
+  const [selectedCards, setSelectedCards] = useState([]);
+  const [phase, setPhase] = useState('bidding');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [userPosition, setUserPosition] = useState('');
+  const [showBiddingRing, setShowBiddingRing] = useState(false);
+  
+  // Kitty Exchange
+  const [showKittyModal, setShowKittyModal] = useState(false);
+  const [kittyCards, setKittyCards] = useState([]);
+  
+  // Anti-cheat: Playable cards
+  const [playableCards, setPlayableCards] = useState([]);
+  const [ledSuit, setLedSuit] = useState(null);
+  
+  // Chat state
+  const [showChat, setShowChat] = useState(false);
+  const [unreadMessages, setUnreadMessages] = useState(0);
+  
+  // View mode - Classic (original) or Responsive
+  const [viewMode, setViewMode] = useState('classic'); // Default to original perfect view
+  
+  // Round stats modal
+  const [showRoundStats, setShowRoundStats] = useState(false);
+  const [roundStatsData, setRoundStatsData] = useState(null);
+  const [prevTricksPlayed, setPrevTricksPlayed] = useState(0);
+  
+  // Player profile dropdown
+  const [showPlayerProfile, setShowPlayerProfile] = useState(false);
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
+  
+  // Socket.io state
+  const [socket, setSocket] = useState(null);
+  const [dealerReaction, setDealerReaction] = useState(null);
+  
+  // Game start countdown
+  const [gameStartCountdown, setGameStartCountdown] = useState(10);
+  const [gameStarted, setGameStarted] = useState(false);
+  
+  // Card dealing animation
+  const [isDealing, setIsDealing] = useState(false);
+  const [dealingCardIndex, setDealingCardIndex] = useState(0);
+  const [dealingComplete, setDealingComplete] = useState(false);
+  
+  // Win celebration
+  const [showWinCelebration, setShowWinCelebration] = useState(false);
+  const [winAmount, setWinAmount] = useState(0);
+  
+  // Bidding timer (15 seconds per turn)
+  const [biddingTimeLeft, setBiddingTimeLeft] = useState(15);
+  
+  // Initialize Socket.io connection
+  useEffect(() => {
+    if (!gameId) return;
+    
+    const newSocket = io(API, {
+      path: '/api/socket.io',
+      transports: ['websocket', 'polling']
+    });
+    
+    setSocket(newSocket);
+    
+    // Join the game room
+    newSocket.emit('join_bid_whist', {
+      game_id: gameId,
+      username: getUsername()
+    });
+    
+    // Listen for real-time updates
+    newSocket.on('update_table_state', (data) => {
+      console.log('🎴 Table update received:', data);
+      // Trigger a re-fetch by updating a counter
+      setLoading(true); // Force re-render to trigger fetchGameState
+    });
+    
+    newSocket.on('dealer_reaction', (reaction) => {
+      console.log('🎭 Dealer reaction:', reaction);
+      setDealerReaction(reaction);
+      // Clear reaction after 3 seconds
+      setTimeout(() => setDealerReaction(null), 3000);
+    });
+    
+    newSocket.on('player_sat_at_table', (data) => {
+      console.log('👤 Player joined:', data.player);
+      toast.success(`${data.player} joined the table`);
+    });
+    
+    return () => {
+      newSocket.disconnect();
+    };
+  }, [gameId]);
+  
+  // Card dealing animation - triggers when cards first appear
+  const [visibleHandCards, setVisibleHandCards] = useState([]);
+  
+  useEffect(() => {
+    if (myHand.length > 0 && !dealingComplete && !isDealing) {
+      // Start dealing animation
+      setIsDealing(true);
+      setDealingCardIndex(0);
+      setVisibleHandCards([]); // Clear visible cards
+    }
+  }, [myHand.length, dealingComplete, isDealing]);
+
+  // Dealing animation progress - Add cards to hand one by one
+  useEffect(() => {
+    if (isDealing && dealingCardIndex < 48) {
+      const timer = setTimeout(() => {
+        // Calculate which player's turn and if it's the user
+        const playerOrder = ['north', 'east', 'south', 'west'];
+        const currentPlayerIndex = dealingCardIndex % 4;
+        const currentPlayer = playerOrder[currentPlayerIndex];
+        const cardNumber = Math.floor(dealingCardIndex / 4);
+        
+        // If it's the user's turn, add card to visible hand
+        if (currentPlayer === userPosition && cardNumber < myHand.length) {
+          setVisibleHandCards(prev => [...prev, myHand[cardNumber]]);
+        }
+        
+        setDealingCardIndex(prev => prev + 1);
+      }, 500); // SLOWED DOWN: 500ms per card = ~24 seconds total (more realistic)
+      return () => clearTimeout(timer);
+    } else if (isDealing && dealingCardIndex >= 48) {
+      // Dealing complete - show all cards
+      setIsDealing(false);
+      setDealingComplete(true);
+      setVisibleHandCards(myHand);
+    }
+  }, [isDealing, dealingCardIndex, myHand, userPosition]);
+
+  // Game start countdown timer (starts AFTER dealing completes)
+  useEffect(() => {
+    if (!gameStarted && myHand.length > 0 && dealingComplete && gameStartCountdown > 0) {
+      const timer = setTimeout(() => {
+        setGameStartCountdown(prev => prev - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+    
+    if (gameStartCountdown === 0 && !gameStarted && dealingComplete) {
+      setGameStarted(true);
+    }
+  }, [gameStartCountdown, gameStarted, myHand, dealingComplete]);
+
+  // Auto-show bidding ring when it's player's turn (ONLY after game starts)
+  useEffect(() => {
+    if (phase === 'bidding' && myHand.length > 0 && gameState && gameStarted) {
+      // Check if it's the player's turn to bid
+      const isMyTurn = gameState.current_bidder === userPosition || 
+                       gameState.whose_turn === userPosition ||
+                       gameState.is_your_turn === true;
+      
+      setShowBiddingRing(isMyTurn);
+      
+      // Reset timer when turn changes
+      if (isMyTurn) {
+        setBiddingTimeLeft(15);
+      }
+    } else {
+      setShowBiddingRing(false);
+    }
+  }, [phase, myHand, gameState, userPosition, gameStarted]);
+  
+  // Countdown timer for bidding
+  useEffect(() => {
+    if (showBiddingRing && biddingTimeLeft > 0) {
+      const timer = setInterval(() => {
+        setBiddingTimeLeft(prev => prev - 1);
+      }, 1000);
+      
+      return () => clearInterval(timer);
+    }
+    
+    // Auto-pass when time runs out
+    if (showBiddingRing && biddingTimeLeft === 0) {
+      toast.error('Time expired - Auto-passing');
+      handlePass();
+    }
+  }, [showBiddingRing, biddingTimeLeft]);
+
+  const fetchGameState = useCallback(async () => {
+    if (!gameId) return;
+    
+    try {
+      const response = await authFetch(`${API}/api/bid-whist/game/${gameId}`);
+
+      if (!response.ok) throw new Error('Failed to fetch game state');
+
+      const data = await response.json();
+      setGameState(data);
+      setMyHand(data.your_hand || []);
+      setUserPosition(data.your_position || '');
+      setPhase(data.phase || 'bidding');
+      
+      // Anti-cheat: Set playable cards and led suit
+      setPlayableCards(data.playable_cards || []);
+      setLedSuit(data.led_suit || null);
+      
+      // Kitty exchange: Show modal if player won bid
+      if (data.phase === 'kitty_exchange' && data.your_position === data.bid_winner && data.kitty) {
+        setKittyCards(data.kitty);
+        setShowKittyModal(true);
+      } else {
+        setShowKittyModal(false);
+      }
+      
+      // Round Stats: Detect when a hand (12 tricks) completes
+      const currentTricksPlayed = data.tricks_played || 0;
+      if (currentTricksPlayed === 12 && prevTricksPlayed < 12) {
+        // Hand just completed - show round stats
+        setRoundStatsData({
+          bid_winner: data.bid_winner,
+          winning_bid: data.winning_bid,
+          bid_type: data.bid_type,
+          trump_suit: data.trump_suit,
+          player_tricks: data.player_tricks || {},
+          tricks_won: data.tricks_won || {},
+          scores: data.scores || {},
+          round_winner: data.winner,
+          bid_made: data.bid_made // Backend should provide this
+        });
+        setShowRoundStats(true);
+        
+        // Auto-close after 10 seconds
+        setTimeout(() => {
+          setShowRoundStats(false);
+        }, 10000);
+      }
+      setPrevTricksPlayed(currentTricksPlayed);
+      
+      setLoading(false);
+    } catch (err) {
+      console.error('Error fetching game state:', err);
+      setError(err.message);
+      setLoading(false);
+    }
+  }, [gameId]);
+
+  // Fetch game state on mount and when loading changes
+  useEffect(() => {
+    if (loading && gameId) {
+      fetchGameState();
+    }
+  }, [loading, gameId, fetchGameState]);
+
+  useEffect(() => {
+    fetchGameState();
+    const interval = setInterval(fetchGameState, 2000);
+    return () => clearInterval(interval);
+  }, [fetchGameState]);
+
+  const handleBid = async (amount, type, trumpSuit) => {
+    try {
+      const response = await authFetch(`${API}/api/bid-whist/bid`, {
+        method: 'POST',
+        body: JSON.stringify({
+          game_id: gameId,
+          amount,
+          bid_type: type
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to place bid');
+
+      toast.success(`Bid placed: ${amount} ${type}`);
+      setShowBiddingRing(false);
+      await fetchGameState();
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
+  const handlePass = async () => {
+    try {
+      const response = await authFetch(`${API}/api/bid-whist/bid`, {
+        method: 'POST',
+        body: JSON.stringify({
+          game_id: gameId,
+          amount: 0,
+          bid_type: 'pass'
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to pass');
+
+      toast.success('Passed');
+      setShowBiddingRing(false);
+      await fetchGameState();
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
+  const handleKittyExchange = async (trumpSuit, discards) => {
+    try {
+      const response = await authFetch(`${API}/api/bid-whist/kitty`, {
+        method: 'POST',
+        body: JSON.stringify({
+          game_id: gameId,
+          trump_suit: trumpSuit,
+          discards
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to exchange kitty');
+
+      toast.success(`Trump set to ${trumpSuit}!`);
+      setShowKittyModal(false);
+      await fetchGameState();
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
+  const handlePlayCard = async (card) => {
+    // Anti-cheat: Check if card is playable
+    const isPlayable = playableCards.some(c => c.suit === card.suit && c.rank === card.rank);
+    
+    if (!isPlayable && playableCards.length > 0) {
+      toast.error(`Must follow ${ledSuit}!`);
+      return;
+    }
+    
+    try {
+      const response = await authFetch(`${API}/api/bid-whist/play`, {
+        method: 'POST',
+        body: JSON.stringify({
+          game_id: gameId,
+          card
+        })
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to play card');
+      }
+
+      await fetchGameState();
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
+  const handleCardClick = (card) => {
+    if (phase === 'playing') {
+      handlePlayCard(card);
+    } else if (phase === 'kitty_exchange') {
+      if (selectedCards.includes(card)) {
+        setSelectedCards(selectedCards.filter(c => c !== card));
+      } else if (selectedCards.length < 6) {
+        setSelectedCards([...selectedCards, card]);
+      }
+    }
+  };
+
+  const handlePlayerClick = (position, playerData) => {
+    setSelectedPlayer({
+      position,
+      name: playerData.name || position.toUpperCase(),
+      team: playerData.team
+    });
+    setShowPlayerProfile(true);
+  };
+
+  const handleAddFriend = (playerName, position) => {
+    toast.success(`Friend request sent to ${playerName}!`);
+    // TODO: Backend API call to send friend request
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="text-white text-2xl">Loading Bid Whist...</div>
+      </div>
+    );
+  }
+
+  if (!gameState) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="bg-slate-900/50 backdrop-blur-xl rounded-2xl p-8 text-center border border-slate-700">
+          <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-white mb-2">Game Not Found</h2>
+          <p className="text-slate-300 mb-4">{error}</p>
+          <Button onClick={() => navigate('/games')}>Back to Games</Button>
+        </div>
+      </div>
+    );
+  }
+
+  const currentBid = gameState.bids && gameState.bids.length > 0 
+    ? gameState.bids[gameState.bids.length - 1] 
+    : null;
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 relative overflow-hidden">
+      {/* Unified Menu (Top Right) */}
+      <UnifiedGameMenu 
+        gameId={gameId} 
+        onLeave={() => navigate('/bid-whist-lobby')}
+        onOpenChat={() => {
+          setShowChat(true);
+          setUnreadMessages(0);
+        }}
+        unreadMessages={unreadMessages}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+      />
+      
+      {/* Game Stats Panel (Top Right, below menu) */}
+      <GameStatsPanel gameState={gameState} userPosition={userPosition} />
+      
+      {/* Game Chat (Controlled by menu) */}
+      {showChat && (
+        <GameChat 
+          gameId={gameId} 
+          playerName={getUsername()} 
+          socket={socket}
+          onClose={() => setShowChat(false)}
+          onNewMessage={() => !showChat && setUnreadMessages(prev => prev + 1)}
+        />
+      )}
+
+      <div className="h-screen flex items-center justify-center p-4 relative">
+        {/* Dealer Dilla - Left Side (Perfect Spot!) */}
+        <div className="absolute left-4 top-1/2 -translate-y-1/2 z-40">
+          <DealerDilla />
+        </div>
+        
+        {/* Mini Stats Panel - Top Right below menu */}
+        <GameStatsPanel gameState={gameState} userPosition={userPosition} />
+
+        <div className="max-w-6xl w-full">
+          {/* Original 4-Player Table */}
+          <FourPlayerTable
+            players={gameState.players_data || {}}
+            currentTrick={gameState.current_trick || []}
+            userPosition={userPosition}
+            dealerPosition={gameState.dealer || 'south'}
+            playerTricks={gameState.player_tricks || {}}
+            onPlayerClick={handlePlayerClick}
+            viewMode={viewMode}
+          />
+
+            {/* Bidding Ring - CENTERED ON SCREEN */}
+            {phase === 'bidding' && myHand.length > 0 && showBiddingRing && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+              >
+                <BiddingRing
+                  onBid={handleBid}
+                  onPass={handlePass}
+                  currentBid={currentBid}
+                  disabled={false}
+                  timeLeft={biddingTimeLeft}
+                />
+              </motion.div>
+            )}
+
+            {/* Waiting for turn indicator */}
+            {phase === 'bidding' && myHand.length > 0 && !showBiddingRing && (
+              <div className="mt-4 text-center">
+                <motion.div
+                  animate={{ opacity: [0.5, 1, 0.5] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className="inline-block px-6 py-3 bg-slate-800/50 rounded-lg border border-slate-600"
+                >
+                  <p className="text-slate-300 text-sm">Waiting for other players to bid...</p>
+                  <div className="flex items-center justify-center gap-2 mt-2">
+                    <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
+                    <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse delay-100"></div>
+                    <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse delay-200"></div>
+                  </div>
+                </motion.div>
+              </div>
+            )}
+            
+            {/* Waiting for cards message */}
+            {phase === 'bidding' && myHand.length === 0 && (
+              <div className="mt-4 text-center">
+                <p className="text-amber-300 text-lg animate-pulse">Waiting for cards to be dealt...</p>
+              </div>
+            )}
+
+            {/* Player's Hand - FAN LAYOUT (FULLY RESPONSIVE) */}
+            {(visibleHandCards.length > 0 || myHand.length > 0) && (
+              <div className="mt-2 sm:mt-4">
+                <div className="text-center mb-2 sm:mb-3">
+                  <h3 className="text-base sm:text-lg font-['Cinzel'] text-amber-300">Your Hand</h3>
+                  {phase === 'kitty_exchange' && (
+                    <p className="text-[10px] sm:text-xs text-slate-400">Select 6 cards to discard</p>
+                  )}
+                </div>
+                
+                {/* Fan Layout - RESPONSIVE - Using Flex with Overlapping */}
+                <div className="flex justify-center items-end -mt-8 sm:-mt-12 px-2" style={{ paddingBottom: '10px' }}>
+                  {/* Show visibleHandCards during dealing, myHand after dealing complete */}
+                  {(isDealing ? visibleHandCards : myHand).map((card, idx) => {
+                    const totalCards = isDealing ? visibleHandCards.length : myHand.length;
+                    const centerIndex = (totalCards - 1) / 2;
+                    const offset = idx - centerIndex;
+                    
+                    // Rotation for arc effect
+                    const rotation = offset * 4; // 4 degrees per card from center
+                    
+                    // Vertical lift for arc curve
+                    const verticalLift = Math.abs(offset) * 3;
+                    
+                    // Anti-cheat: Check if card is playable
+                    const isPlayable = phase !== 'playing' || playableCards.length === 0 || 
+                                     playableCards.some(c => c.suit === card.suit && c.rank === card.rank);
+                    
+                    return (
+                      <motion.div
+                        key={`hand-${idx}`}
+                        initial={{ y: 100, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: idx * 0.05 }}
+                        whileHover={isPlayable ? { 
+                          y: -30,
+                          scale: 1.15,
+                          zIndex: 100,
+                          transition: { duration: 0.2 }
+                        } : {}}
+                        className={isPlayable ? "cursor-pointer" : "cursor-not-allowed"}
+                        style={{
+                          marginLeft: idx === 0 ? 0 : '-50px', // Overlap by 50px
+                          transform: `rotate(${rotation}deg) translateY(${verticalLift}px)`,
+                          zIndex: selectedCards.includes(card) ? 50 : idx,
+                          transformOrigin: 'bottom center',
+                          // REMOVED: filter for disabled cards - cards should always look normal
+                        }}
+                        title={!isPlayable && ledSuit ? `Must follow ${ledSuit}` : ''}
+                      >
+                        <ImperialCard
+                          card={card}
+                          onClick={() => isPlayable && handleCardClick(card)}
+                          selected={selectedCards.includes(card)}
+                          disabled={phase === 'waiting' || !isPlayable}
+                        />
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            
+            {/* Game Start Countdown - NON-BLOCKING so cards are readable (ONLY AFTER DEALING) */}
+            {!gameStarted && myHand.length > 0 && dealingComplete && (
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="fixed top-24 left-1/2 -translate-x-1/2 z-30 px-8 py-4 bg-gradient-to-r from-amber-600/95 to-yellow-600/95 rounded-2xl border-2 border-amber-400 shadow-2xl"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="flex flex-col">
+                    <h2 className="text-2xl font-['Cinzel'] font-bold text-white">Study Your Cards!</h2>
+                    <p className="text-sm text-amber-100">Bidding starts in...</p>
+                  </div>
+                  <motion.div
+                    animate={{ scale: [1, 1.15, 1] }}
+                    transition={{ duration: 1, repeat: Infinity }}
+                    className="text-5xl font-black text-white w-16 h-16 flex items-center justify-center bg-amber-800 rounded-full border-4 border-white shadow-lg"
+                  >
+                    {gameStartCountdown}
+                  </motion.div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Game Status */}
+            {gameState.status === 'completed' && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="mt-4 bg-gradient-to-br from-purple-900/50 to-blue-900/50 backdrop-blur-xl rounded-2xl p-6 border-2 border-purple-500/30 text-center"
+                onAnimationComplete={() => {
+                  const isWinner = gameState.winner === gameState.players_data[userPosition]?.team;
+                  if (isWinner && !showWinCelebration) {
+                    const booksWon = gameState.tricks_won?.[gameState.winner] || 0;
+                    setWinAmount(booksWon);
+                    setShowWinCelebration(true);
+                    setTimeout(() => setShowWinCelebration(false), 3000);
+                  }
+                }}
+              >
+                <Trophy className="w-16 h-16 text-amber-400 mx-auto mb-3" />
+                <h2 className="text-3xl font-['Cinzel'] text-white mb-3">
+                  {gameState.winner === gameState.players_data[userPosition]?.team
+                    ? '🎉 Victory!'
+                    : 'Game Over'}
+                </h2>
+                <p className="text-slate-300 text-base mb-4">
+                  Final Score: Team 1: {gameState.scores?.team1 || 0} | Team 2: {gameState.scores?.team2 || 0}
+                </p>
+                <Button
+                  onClick={() => navigate('/games')}
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-2"
+                >
+                  Back to Lobby
+                </Button>
+              </motion.div>
+            )}
+        </div>
+
+        {error && (
+          <Alert className="mt-6 bg-red-500/20 border-red-500/50">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="text-white">{error}</AlertDescription>
+          </Alert>
+        )}
+      </div>
+      
+      {/* Win Celebration Modal */}
+      <AnimatePresence>
+        {showWinCelebration && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.5 }}
+            transition={{ 
+              type: "spring",
+              stiffness: 300,
+              damping: 20
+            }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          >
+            <motion.div
+              animate={{
+                scale: [1, 1.05, 1],
+                rotate: [0, 2, -2, 0]
+              }}
+              transition={{
+                duration: 0.6,
+                repeat: Infinity,
+                repeatType: "reverse"
+              }}
+              className="relative"
+            >
+              {/* Glowing background effect */}
+              <div className="absolute inset-0 bg-gradient-to-br from-amber-400/30 via-yellow-500/30 to-orange-500/30 blur-3xl rounded-full" />
+              
+              {/* Main win card */}
+              <div className="relative bg-gradient-to-br from-amber-950 via-yellow-900 to-amber-950 border-4 border-amber-400 rounded-3xl p-12 text-center shadow-[0_0_60px_rgba(251,191,36,0.6)]">
+                {/* Trophy icon */}
+                <motion.div
+                  animate={{
+                    y: [0, -10, 0],
+                    rotate: [0, 5, -5, 0]
+                  }}
+                  transition={{
+                    duration: 1,
+                    repeat: Infinity,
+                    repeatType: "reverse"
+                  }}
+                  className="mb-6"
+                >
+                  <Trophy className="w-24 h-24 mx-auto text-amber-400 drop-shadow-[0_0_20px_rgba(251,191,36,1)]" />
+                </motion.div>
+                
+                {/* Win text */}
+                <h2 className="text-5xl font-['Cinzel'] text-amber-300 mb-4 drop-shadow-[0_0_10px_rgba(251,191,36,0.8)]">
+                  VICTORY!
+                </h2>
+                
+                {/* Team info */}
+                <p className="text-2xl text-amber-200 mb-2 font-semibold">Your Team Wins!</p>
+                <p className="text-xl text-amber-300/80">Books Won: {winAmount}</p>
+                
+                {/* Sparkles */}
+                <div className="absolute -top-4 -left-4">
+                  <Sparkles className="w-12 h-12 text-amber-300 animate-pulse" />
+                </div>
+                <div className="absolute -top-4 -right-4">
+                  <Sparkles className="w-12 h-12 text-yellow-300 animate-pulse" />
+                </div>
+                <div className="absolute -bottom-4 -left-4">
+                  <Sparkles className="w-12 h-12 text-orange-300 animate-pulse" />
+                </div>
+                <div className="absolute -bottom-4 -right-4">
+                  <Sparkles className="w-12 h-12 text-amber-300 animate-pulse" />
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      {/* Card Dealing Animation - Shows cards being dealt one by one */}
+      <CardDealingAnimation
+        isDealing={isDealing}
+        currentDealIndex={dealingCardIndex}
+        totalCards={48}
+        onComplete={() => {
+          setIsDealing(false);
+          setDealingComplete(true);
+        }}
+      />
+      
+      {/* Player Profile Dropdown - SAME LEVEL AS BIDDING RING */}
+      <AnimatePresence>
+        {showPlayerProfile && selectedPlayer && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[250] flex items-center justify-center bg-black/70 backdrop-blur-md"
+            onClick={() => setShowPlayerProfile(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.8, y: -50 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.8, y: -50 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <PlayerProfileDropdown
+                isOpen={true}
+                onClose={() => setShowPlayerProfile(false)}
+                playerName={selectedPlayer.name}
+                position={selectedPlayer.position}
+                team={selectedPlayer.team}
+                onAddFriend={handleAddFriend}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      {/* Round Stats Modal */}
+      <RoundStatsModal
+        isOpen={showRoundStats}
+        onClose={() => setShowRoundStats(false)}
+        roundData={roundStatsData || {}}
+        gameState={gameState || {}}
+        onPlayAgain={() => {
+          // Create new game logic
+          setShowRoundStats(false);
+          navigate('/bid-whist-lobby');
+        }}
+        onLeave={() => navigate('/games')}
+      />
+      
+      {/* Kitty Exchange Modal */}
+      {showKittyModal && (
+        <KittyExchangeModal
+          kittyCards={kittyCards}
+          yourHand={myHand}
+          onSubmit={handleKittyExchange}
+          onClose={() => setShowKittyModal(false)}
+        />
+      )}
+      
+      {/* Orientation Guide - Only show in responsive mode */}
+      {viewMode === 'responsive' && <OrientationGuide />}
+    </div>
+  );
+}
+
+
+================================================================================
+COMPONENT: ImperialCard.jsx (Card Component - Design 4 Diamond Pattern)
+Location: /app/frontend/src/components/bidwhist/ImperialCard.jsx
+================================================================================
+
+import { motion } from 'framer-motion';
+
+const IMPERIAL_PALETTE = {
+  mahogany: '#420d09',
+  gold: '#d4af37',
+  cream: '#f5f5dc',
+  ivory: '#fffff0',
+  burgundy: '#800020'
+};
+
+const IMPERIAL_SUITS = {
+  'spades': { symbol: '♠', color: '#000000', name: 'Spades' },
+  'hearts': { symbol: '♥', color: '#dc2626', name: 'Hearts' },
+  'diamonds': { symbol: '♦', color: '#2563eb', name: 'Diamonds' },
+  'clubs': { symbol: '♣', color: '#15803d', name: 'Clubs' },
+  'joker': { symbol: '🃏', color: '#7c2d12', name: 'Joker' }
+};
+
+export default function ImperialCard({ card, onClick, disabled, selected, isInKitty = false, showBack = false }) {
+  if (!card || showBack) {
+    // ============================================
+    // CARD BACK DESIGNS - 4 OPTIONS
+    // Choose ONE by uncommenting the return statement
+    // ============================================
+
+    /* DESIGN 1: DIAGONAL STRIPES (Bold & Modern)
+    return (
+      <motion.div
+        initial={{ rotateY: 180 }}
+        animate={{ rotateY: 0 }}
+        transition={{ duration: 0.6, type: 'spring' }}
+        className="relative w-20 h-32 rounded-lg overflow-hidden"
+        style={{
+          background: `linear-gradient(135deg, ${IMPERIAL_PALETTE.burgundy} 0%, ${IMPERIAL_PALETTE.mahogany} 100%)`,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.6)'
+        }}
+      >
+        <div className="absolute inset-0" style={{
+          backgroundImage: 'repeating-linear-gradient(45deg, rgba(212,175,55,0.1) 0px, rgba(212,175,55,0.1) 10px, transparent 10px, transparent 20px)'
+        }} />
+        
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <div className="font-['Cinzel'] font-bold text-center" style={{ color: IMPERIAL_PALETTE.gold }}>
+            <div className="text-xs tracking-wider mb-1">VIBEZ</div>
+            <div className="text-2xl mb-1">🎴</div>
+            <div className="text-[8px] tracking-widest">DSG</div>
+          </div>
+        </div>
+        
+        <div className="absolute top-1 left-1 text-xs opacity-40" style={{ color: IMPERIAL_PALETTE.gold }}>♠</div>
+        <div className="absolute top-1 right-1 text-xs opacity-40" style={{ color: IMPERIAL_PALETTE.gold }}>♥</div>
+        <div className="absolute bottom-1 left-1 text-xs opacity-40" style={{ color: IMPERIAL_PALETTE.gold }}>♦</div>
+        <div className="absolute bottom-1 right-1 text-xs opacity-40" style={{ color: IMPERIAL_PALETTE.gold }}>♣</div>
+      </motion.div>
+    ); */
+
+    /* DESIGN 2: ORNATE BORDER (Classic & Elegant)
+    return (
+      <motion.div
+        initial={{ rotateY: 180 }}
+        animate={{ rotateY: 0 }}
+        transition={{ duration: 0.6, type: 'spring' }}
+        className="relative w-20 h-32 rounded-lg overflow-hidden"
+        style={{
+          background: `linear-gradient(135deg, #1a0505 0%, ${IMPERIAL_PALETTE.mahogany} 100%)`,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.6)'
+        }}
+      >
+        <div className="absolute inset-1 border-2 rounded-md" style={{ borderColor: IMPERIAL_PALETTE.gold, opacity: 0.6 }}>
+          <div className="absolute inset-1 border border-dashed rounded-sm" style={{ borderColor: IMPERIAL_PALETTE.gold, opacity: 0.3 }} />
+        </div>
+        
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <div className="font-['Cinzel'] font-bold text-center" style={{ color: IMPERIAL_PALETTE.gold }}>
+            <div className="text-[10px] tracking-widest opacity-80">GLOBAL</div>
+            <div className="text-lg font-black my-1">VIBEZ</div>
+            <div className="text-[8px] tracking-[0.3em] opacity-80">DSG</div>
+          </div>
+          
+          <div className="mt-2 flex gap-1 text-xs" style={{ color: IMPERIAL_PALETTE.gold }}>
+            <span className="opacity-60">♠</span>
+            <span className="opacity-60">♥</span>
+            <span className="opacity-60">♦</span>
+            <span className="opacity-60">♣</span>
+          </div>
+        </div>
+        
+        <div className="absolute top-2 left-2 w-3 h-3 rounded-full border-2 opacity-30" style={{ borderColor: IMPERIAL_PALETTE.gold }} />
+        <div className="absolute top-2 right-2 w-3 h-3 rounded-full border-2 opacity-30" style={{ borderColor: IMPERIAL_PALETTE.gold }} />
+        <div className="absolute bottom-2 left-2 w-3 h-3 rounded-full border-2 opacity-30" style={{ borderColor: IMPERIAL_PALETTE.gold }} />
+        <div className="absolute bottom-2 right-2 w-3 h-3 rounded-full border-2 opacity-30" style={{ borderColor: IMPERIAL_PALETTE.gold }} />
+      </motion.div>
+    ); */
+
+    /* DESIGN 3: CENTERED LOGO (Bold & Simple)
+    return (
+      <motion.div
+        initial={{ rotateY: 180 }}
+        animate={{ rotateY: 0 }}
+        transition={{ duration: 0.6, type: 'spring' }}
+        className="relative w-20 h-32 rounded-lg overflow-hidden"
+        style={{
+          background: `radial-gradient(circle at center, ${IMPERIAL_PALETTE.mahogany} 0%, #1a0000 100%)`,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.6)'
+        }}
+      >
+        <div className="absolute inset-0 opacity-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMTAiIGN5PSIxMCIgcj0iMSIgZmlsbD0iI2Q0YWYzNyIvPjwvc3ZnPg==')] bg-repeat" />
+        
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="text-center bg-black/40 backdrop-blur-sm px-3 py-4 rounded-lg border border-amber-500/30">
+            <div className="font-['Cinzel'] font-black text-center" style={{ color: IMPERIAL_PALETTE.gold }}>
+              <div className="text-2xl tracking-wider leading-tight">GLOBAL</div>
+              <div className="text-3xl font-black tracking-wide my-1 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 bg-clip-text text-transparent">
+                VIBEZ
+              </div>
+              <div className="text-sm tracking-[0.4em]">DSG</div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    ); */
+
+    // DESIGN 4: DIAMOND PATTERN (Geometric & Luxe) ✅ ACTIVE
+    return (
+      <motion.div
+        initial={{ rotateY: 180 }}
+        animate={{ rotateY: 0 }}
+        transition={{ duration: 0.6, type: 'spring' }}
+        className="relative w-20 h-32 rounded-lg overflow-hidden"
+        style={{
+          background: `linear-gradient(135deg, #000000 0%, ${IMPERIAL_PALETTE.burgundy} 50%, #000000 100%)`,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.6)'
+        }}
+      >
+        {/* Crosshatch Diamond Pattern */}
+        <div className="absolute inset-0" style={{
+          backgroundImage: 'repeating-linear-gradient(45deg, rgba(212,175,55,0.05) 0px, rgba(212,175,55,0.05) 5px, transparent 5px, transparent 10px), repeating-linear-gradient(-45deg, rgba(212,175,55,0.05) 0px, rgba(212,175,55,0.05) 5px, transparent 5px, transparent 10px)'
+        }} />
+        
+        {/* Rotated Border Accent */}
+        <div className="absolute inset-4 border-2 rotate-45 opacity-20" style={{ borderColor: IMPERIAL_PALETTE.gold }} />
+        
+        {/* Center Logo */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <div className="font-['Cinzel'] font-bold text-center transform -rotate-0" style={{ color: IMPERIAL_PALETTE.gold }}>
+            <div className="text-[9px] tracking-[0.3em] opacity-70">VIBES</div>
+            <div className="text-3xl my-1.5">♦</div>
+            <div className="text-[8px] tracking-[0.4em] opacity-70">DSG</div>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
+  const suit = IMPERIAL_SUITS[card.suit];
+  const isJoker = card.suit === 'joker';
+
+  return (
+    <motion.button
+      onClick={onClick}
+      disabled={disabled}
+      whileHover={!disabled ? { y: -20, scale: 1.08 } : {}}
+      whileTap={!disabled ? { scale: 0.95 } : {}}
+      animate={selected ? { y: -10, boxShadow: `0 0 30px ${IMPERIAL_PALETTE.gold}80` } : {}}
+      className={`relative w-20 h-32 rounded-lg overflow-hidden transition-all duration-300
+        ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}
+        ${isInKitty ? 'ring-2 ring-amber-500/50' : ''}`}
+      style={{
+        background: `linear-gradient(135deg, ${IMPERIAL_PALETTE.ivory} 0%, ${IMPERIAL_PALETTE.cream} 100%)`,
+        boxShadow: selected ? `0 0 20px ${IMPERIAL_PALETTE.gold}` : '0 2px 8px rgba(0,0,0,0.3)'
+      }}
+    >
+      <div className="absolute inset-0 p-2 flex flex-col justify-between">
+        {/* Global Vibez DSG Watermark */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none z-0">
+          <div className="font-['Cinzel'] font-bold text-center leading-tight text-gray-800">
+            <div className="text-[10px] tracking-wider">GLOBAL VIBEZ</div>
+            <div className="text-[8px] tracking-widest">DSG</div>
+          </div>
+        </div>
+
+        <div className="flex justify-between items-start relative z-10">
+          <div className="text-left">
+            <div className="text-sm font-bold leading-tight" style={{ color: suit.color }}>
+              {isJoker ? '' : card.rank}
+            </div>
+            <div className="text-xl leading-none" style={{ color: suit.color }}>
+              {suit.symbol}
+            </div>
+          </div>
+        </div>
+        
+        <div className="text-center relative z-10">
+          <div className="text-4xl" style={{ color: suit.color }}>
+            {suit.symbol}
+          </div>
+          {isJoker && <div className="text-xs font-bold text-amber-900">JOKER</div>}
+        </div>
+        
+        <div className="flex justify-between items-end transform rotate-180 relative z-10">
+          <div className="text-left">
+            <div className="text-sm font-bold leading-tight" style={{ color: suit.color }}>
+              {isJoker ? '' : card.rank}
+            </div>
+            <div className="text-xl leading-none" style={{ color: suit.color }}>
+              {suit.symbol}
+            </div>
+          </div>
+        </div>
+      </div>
+    </motion.button>
+  );
+}
+
+================================================================================
+COMPONENT: UnifiedGameMenu.jsx (Game Menu - Compact Design)
+Location: /app/frontend/src/components/bidwhist/UnifiedGameMenu.jsx
+================================================================================
+
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Menu, Volume2, VolumeX, Maximize, LogOut, HelpCircle, MessageCircle, X, Monitor, Smartphone } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
+
+export default function UnifiedGameMenu({ 
+  gameId, 
+  onLeave, 
+  onOpenChat,
+  unreadMessages = 0,
+  viewMode = 'classic',
+  onViewModeChange
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const navigate = useNavigate();
+
+  const toggleSound = () => {
+    setSoundEnabled(!soundEnabled);
+  };
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
+  const handleLeaveGame = () => {
+    if (confirm('Are you sure you want to leave the game?')) {
+      if (onLeave) onLeave();
+      navigate('/bid-whist-lobby');
+    }
+  };
+
+  const handleOpenChat = () => {
+    setIsOpen(false);
+    if (onOpenChat) onOpenChat();
+  };
+
+  return (
+    <div className="fixed top-4 right-4 z-50">
+      
+      {/* Menu Toggle Button - ENHANCED VISIBILITY */}
+      <motion.button
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={() => setIsOpen(!isOpen)}
+        className="relative w-16 h-16 bg-gradient-to-br from-amber-600 via-yellow-600 to-amber-600 backdrop-blur-xl rounded-2xl border-3 border-amber-400 hover:border-yellow-300 flex items-center justify-center shadow-[0_0_20px_rgba(251,191,36,0.5)] hover:shadow-[0_0_30px_rgba(251,191,36,0.8)] transition-all"
+      >
+        {isOpen ? (
+          <X className="w-7 h-7 text-white drop-shadow-lg" />
+        ) : (
+          <Menu className="w-7 h-7 text-white drop-shadow-lg" />
+        )}
+        
+        {/* Unread Messages Badge */}
+        {unreadMessages > 0 && !isOpen && (
+          <div className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center border-2 border-white shadow-lg">
+            <span className="text-white text-xs font-bold">{unreadMessages}</span>
+          </div>
+        )}
+      </motion.button>
+
+      {/* Dropdown Menu - POPS OUT TO THE LEFT */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, x: 20, scale: 0.9 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 20, scale: 0.9 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            className="absolute top-20 right-20 w-72 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 backdrop-blur-2xl rounded-2xl border-3 border-amber-500/50 shadow-[0_0_40px_rgba(0,0,0,0.9)] overflow-hidden"
+          >
+            {/* Header - CENTERED & COMPACT */}
+            <div className="bg-gradient-to-r from-amber-600 via-yellow-600 to-amber-600 p-3 border-b-2 border-amber-400">
+              <h3 className="text-white text-sm font-bold text-center drop-shadow-lg font-['Cinzel']">
+                Game Menu
+              </h3>
+            </div>
+
+            {/* Menu Items - COMPACT SIZE */}
+            <div className="p-2 space-y-1">{/* Messages - COMPACT */}
+              <button
+                onClick={handleOpenChat}
+                className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-amber-600/20 hover:border hover:border-amber-500/50 transition-all text-left group"
+              >
+                <div className="relative flex-shrink-0">
+                  <MessageCircle className="w-4 h-4 text-blue-400 group-hover:text-blue-300 transition-colors" />
+                  {unreadMessages > 0 && (
+                    <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-red-500 rounded-full flex items-center justify-center border border-white">
+                      <span className="text-white text-[9px] font-bold">{unreadMessages}</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-white text-xs font-semibold truncate group-hover:text-amber-200">Messages</p>
+                  {unreadMessages > 0 && (
+                    <p className="text-blue-300 text-[10px] truncate">{unreadMessages} new</p>
+                  )}
+                </div>
+              </button>
+
+              {/* Sound Toggle - COMPACT */}
+              <button
+                onClick={toggleSound}
+                className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-amber-600/20 hover:border hover:border-amber-500/50 transition-all group"
+              >
+                {soundEnabled ? (
+                  <Volume2 className="w-4 h-4 text-green-400 flex-shrink-0 group-hover:text-green-300" />
+                ) : (
+                  <VolumeX className="w-4 h-4 text-slate-400 flex-shrink-0 group-hover:text-slate-300" />
+                )}
+                <span className="text-white text-xs font-semibold truncate group-hover:text-amber-200">
+                  Sound {soundEnabled ? 'On' : 'Off'}
+                </span>
+              </button>
+
+              {/* Fullscreen - COMPACT */}
+              <button
+                onClick={toggleFullscreen}
+                className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-amber-600/20 hover:border hover:border-amber-500/50 transition-all group"
+              >
+                <Maximize className="w-4 h-4 text-purple-400 flex-shrink-0 group-hover:text-purple-300" />
+                <span className="text-white text-xs font-semibold truncate group-hover:text-amber-200">Fullscreen</span>
+              </button>
+
+              {/* View Mode Selector - COMPACT VERTICAL */}
+              <div className="p-2 bg-slate-800/50 rounded-xl border border-amber-500/30">
+                <div className="text-[10px] text-amber-300 font-['Cinzel'] font-bold mb-1.5 text-center">View Mode</div>
+                <div className="flex flex-col gap-1.5">
+                  {/* Classic View */}
+                  <button
+                    onClick={() => onViewModeChange && onViewModeChange('classic')}
+                    className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-all ${
+                      viewMode === 'classic'
+                        ? 'bg-gradient-to-br from-amber-600 to-yellow-600 text-white shadow-lg shadow-amber-500/50'
+                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                    }`}
+                  >
+                    <Monitor className="w-4 h-4" />
+                    <span className="text-xs font-bold">Classic View</span>
+                  </button>
+
+                  {/* Responsive/Mobile View */}
+                  <button
+                    onClick={() => onViewModeChange && onViewModeChange('responsive')}
+                    className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-all ${
+                      viewMode === 'responsive'
+                        ? 'bg-gradient-to-br from-amber-600 to-yellow-600 text-white shadow-lg shadow-amber-500/50'
+                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                    }`}
+                  >
+                    <Smartphone className="w-4 h-4" />
+                    <span className="text-xs font-bold">Mobile View</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Help/Rules - COMPACT */}
+              <details className="group/details">
+                <summary className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-amber-600/20 hover:border hover:border-amber-500/50 transition-all cursor-pointer list-none group">
+                  <HelpCircle className="w-4 h-4 text-amber-400 flex-shrink-0 group-hover:text-amber-300" />
+                  <span className="text-white text-xs font-semibold flex-1 truncate group-hover:text-amber-200">Rules</span>
+                  <span className="text-amber-400 group-open/details:rotate-180 transition-transform text-xs">▼</span>
+                </summary>
+                
+                <div className="mt-1 p-2 bg-slate-800/70 rounded-xl border border-amber-500/20 space-y-1.5 text-[10px] text-slate-200">
+                  <div>
+                    <p className="font-bold text-amber-300 text-[10px] mb-0.5">Objective:</p>
+                    <p className="leading-relaxed">Win 7 books first</p>
+                  </div>
+                  <div>
+                    <p className="font-bold text-amber-300 text-[10px] mb-0.5">Bidding:</p>
+                    <p className="leading-relaxed">Bid 3-7 books</p>
+                  </div>
+                  <div>
+                    <p className="font-bold text-amber-300 text-[10px] mb-0.5">Playing:</p>
+                    <p className="leading-relaxed">Follow suit required</p>
+                  </div>
+                </div>
+              </details>
+
+              {/* Divider */}
+              <div className="my-1.5 border-t-2 border-amber-500/30"></div>
+
+              {/* Leave Game - COMPACT */}
+              <button
+                onClick={handleLeaveGame}
+                className="w-full flex items-center gap-2 p-2 rounded-lg bg-red-900/30 hover:bg-red-900/50 transition-all border-2 border-red-500/50 hover:border-red-400 group"
+              >
+                <LogOut className="w-4 h-4 text-red-400 flex-shrink-0 group-hover:text-red-300" />
+                <span className="text-red-300 text-xs font-bold truncate group-hover:text-red-200">Leave Game</span>
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+================================================================================
+COMPONENT: KittyExchangeModal.jsx (30-Second Timer, Auto-Submit)
+Location: /app/frontend/src/components/bidwhist/KittyExchangeModal.jsx
+================================================================================
+
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { Crown, Sparkles, Clock } from 'lucide-react';
+import ImperialCard from '@/components/bidwhist/ImperialCard';
+
+const KITTY_TIMER = 30; // 30 seconds to make decision
+
+export default function KittyExchangeModal({ 
+  kittyCards = [], 
+  yourHand = [], 
+  onSubmit, 
+  onClose 
+}) {
+  const [selectedTrump, setSelectedTrump] = useState(null);
+  const [selectedDiscards, setSelectedDiscards] = useState([]);
+  const [timeLeft, setTimeLeft] = useState(KITTY_TIMER);
+  const [showWarning, setShowWarning] = useState(false);
+  
+  // Countdown timer
+  useEffect(() => {
+    if (timeLeft <= 0) {
+      // Auto-submit with first available trump and random discards
+      handleAutoSubmit();
+      return;
+    }
+    
+    const timer = setInterval(() => {
+      setTimeLeft(prev => prev - 1);
+    }, 1000);
+    
+    // Show warning at 10 seconds
+    if (timeLeft === 10) {
+      setShowWarning(true);
+    }
+    
+    return () => clearInterval(timer);
+  }, [timeLeft]);
+  
+  const handleAutoSubmit = () => {
+    // Auto-select first trump option
+    const autoTrump = 'spades';
+    
+    // Auto-select first 6 cards from combined hand
+    const combinedHand = [...yourHand, ...kittyCards];
+    const autoDiscards = combinedHand.slice(0, 6);
+    
+    onSubmit(autoTrump, autoDiscards);
+  };
+  
+  const trumpOptions = [
+    { suit: 'spades', label: 'Spades', symbol: '♠', color: 'from-slate-700 to-slate-900' },
+    { suit: 'hearts', label: 'Hearts', symbol: '♥', color: 'from-red-600 to-red-800' },
+    { suit: 'diamonds', label: 'Diamonds', symbol: '♦', color: 'from-red-600 to-red-800' },
+    { suit: 'clubs', label: 'Clubs', symbol: '♣', color: 'from-slate-700 to-slate-900' },
+    { suit: 'no_trump', label: 'No Trump', symbol: '⊗', color: 'from-purple-600 to-pink-600' }
+  ];
+  
+  const handleTrumpSelect = (suit) => {
+    setSelectedTrump(suit);
+  };
+  
+  const handleCardSelect = (card) => {
+    if (selectedDiscards.find(c => c.suit === card.suit && c.rank === card.rank)) {
+      // Deselect
+      setSelectedDiscards(selectedDiscards.filter(c => !(c.suit === card.suit && c.rank === card.rank)));
+    } else if (selectedDiscards.length < 6) {
+      // Select (max 6)
+      setSelectedDiscards([...selectedDiscards, card]);
+    }
+  };
+  
+  const handleSubmit = () => {
+    if (!selectedTrump) {
+      alert('Please select a trump suit!');
+      return;
+    }
+    
+    if (selectedDiscards.length !== 6) {
+      alert('Please select exactly 6 cards to discard!');
+      return;
+    }
+    
+    onSubmit(selectedTrump, selectedDiscards);
+  };
+  
+  const combinedHand = [...yourHand, ...kittyCards];
+  const canSubmit = selectedTrump && selectedDiscards.length === 6;
+  
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      >
+        <motion.div
+          initial={{ scale: 0.9, y: 50 }}
+          animate={{ scale: 1, y: 0 }}
+          exit={{ scale: 0.9, y: 50 }}
+          className="bg-gradient-to-br from-slate-900 via-purple-900/30 to-slate-900 rounded-3xl border-2 border-amber-500 shadow-[0_0_60px_rgba(251,191,36,0.3)] max-w-5xl w-full max-h-[90vh] overflow-y-auto"
+        >
+          {/* Header */}
+          <div className="bg-gradient-to-r from-amber-600 to-yellow-500 p-6 rounded-t-3xl relative overflow-hidden">
+            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAwIDEwIEwgNDAgMTAgTSAxMCAwIEwgMTAgNDAgTSAwIDIwIEwgNDAgMjAgTSAyMCAwIEwgMjAgNDAgTSAwIDMwIEwgNDAgMzAgTSAzMCAwIEwgMzAgNDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-20"></div>
+            
+            <div className="relative flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Crown className="w-12 h-12 text-white drop-shadow-lg animate-pulse" />
+                <div>
+                  <h2 className="text-3xl font-['Cinzel'] text-white font-black tracking-wide">
+                    You Won the Bid!
+                  </h2>
+                  <p className="text-amber-100 text-sm flex items-center gap-2 mt-1">
+                    <Sparkles className="w-4 h-4" />
+                    Choose Trump & Discard 6 Cards
+                  </p>
+                </div>
+              </div>
+              
+              {/* Timer */}
+              <div className={`flex items-center gap-3 px-6 py-3 rounded-xl ${
+                timeLeft <= 10 
+                  ? 'bg-red-500 animate-pulse' 
+                  : 'bg-white/20 backdrop-blur-md'
+              }`}>
+                <Clock className={`w-6 h-6 ${timeLeft <= 10 ? 'text-white' : 'text-amber-200'}`} />
+                <div className="text-center">
+                  <div className={`text-3xl font-black ${timeLeft <= 10 ? 'text-white' : 'text-white'}`}>
+                    {timeLeft}s
+                  </div>
+                  <div className="text-xs text-white/80">Remaining</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Warning Message */}
+          {showWarning && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-red-500/20 border-l-4 border-red-500 p-4 mx-6 mt-4 rounded-lg"
+            >
+              <p className="text-red-200 font-bold">⚠️ Hurry! Auto-submit in {timeLeft} seconds!</p>
+            </motion.div>
+          )}
+          
+          {/* Kitty Cards - Highlighted */}
+          <div className="p-6 border-b border-amber-500/30">
+            <h3 className="text-xl font-['Cinzel'] text-amber-400 mb-3 flex items-center gap-2">
+              <Sparkles className="w-5 h-5" />
+              The Kitty (6 New Cards)
+            </h3>
+            <div className="flex justify-center gap-3 flex-wrap">
+              {kittyCards.map((card, idx) => (
+                <motion.div
+                  key={`kitty-${idx}`}
+                  initial={{ opacity: 0, scale: 0, rotate: -180 }}
+                  animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                  transition={{ delay: idx * 0.1, type: 'spring' }}
+                  className="relative"
+                >
+                  <div className="absolute -inset-2 bg-gradient-to-r from-amber-400 to-yellow-300 rounded-lg blur opacity-50 animate-pulse"></div>
+                  <ImperialCard card={card} size="md" />
+                </motion.div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Trump Selection */}
+          <div className="p-6 border-b border-purple-500/30">
+            <h3 className="text-xl font-['Cinzel'] text-purple-300 mb-4">Select Trump Suit</h3>
+            <div className="grid grid-cols-5 gap-3">
+              {trumpOptions.map((option) => (
+                <motion.button
+                  key={option.suit}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => handleTrumpSelect(option.suit)}
+                  className={`
+                    relative p-4 rounded-xl border-2 transition-all
+                    ${selectedTrump === option.suit 
+                      ? 'border-amber-400 bg-gradient-to-br ' + option.color + ' shadow-lg shadow-amber-500/50' 
+                      : 'border-slate-600 bg-slate-800/50 hover:border-purple-400'
+                    }
+                  `}
+                >
+                  {selectedTrump === option.suit && (
+                    <div className="absolute -top-2 -right-2 w-6 h-6 bg-amber-400 rounded-full flex items-center justify-center">
+                      <span className="text-slate-900 font-black text-xs">✓</span>
+                    </div>
+                  )}
+                  <div className="text-4xl mb-2">{option.symbol}</div>
+                  <div className="text-xs text-white font-bold">{option.label}</div>
+                </motion.button>
+              ))}
+            </div>
+          </div>
+          
+          {/* Discard Selection */}
+          <div className="p-6">
+            <h3 className="text-xl font-['Cinzel'] text-blue-300 mb-3">
+              Select 6 Cards to Discard ({selectedDiscards.length}/6)
+            </h3>
+            <div className="flex justify-center gap-2 flex-wrap">
+              {combinedHand.map((card, idx) => {
+                const isSelected = selectedDiscards.find(c => c.suit === card.suit && c.rank === card.rank);
+                const isKittyCard = kittyCards.find(c => c.suit === card.suit && c.rank === card.rank);
+                
+                return (
+                  <motion.div
+                    key={`combined-${idx}`}
+                    whileHover={{ y: -10 }}
+                    onClick={() => handleCardSelect(card)}
+                    className={`cursor-pointer relative ${isSelected ? 'ring-4 ring-red-500 rounded-lg' : ''}`}
+                  >
+                    {isKittyCard && !isSelected && (
+                      <div className="absolute -top-1 -right-1 w-5 h-5 bg-amber-400 rounded-full text-xs flex items-center justify-center text-slate-900 font-black">
+                        K
+                      </div>
+                    )}
+                    {isSelected && (
+                      <div className="absolute -top-2 -right-2 w-7 h-7 bg-red-500 rounded-full flex items-center justify-center shadow-lg">
+                        <span className="text-white font-black">X</span>
+                      </div>
+                    )}
+                    <ImperialCard card={card} size="sm" selected={isSelected} />
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
+          
+          {/* Submit Button */}
+          <div className="p-6 bg-slate-900/50 rounded-b-3xl flex gap-4">
+            <Button
+              onClick={handleSubmit}
+              disabled={!canSubmit}
+              className={`flex-1 py-6 text-lg font-bold ${
+                canSubmit
+                  ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500'
+                  : 'bg-slate-700 cursor-not-allowed'
+              }`}
+            >
+              <Crown className="w-5 h-5 mr-2" />
+              Confirm Trump & Discards
+            </Button>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+================================================================================
+COMPONENT: RoundStatsModal.jsx (End of Round Summary)
+Location: /app/frontend/src/components/bidwhist/RoundStatsModal.jsx
+================================================================================
+
+import { motion, AnimatePresence } from 'framer-motion';
+import { Trophy, Target, Award, TrendingUp, Users } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+
+/**
+ * Round Stats Modal - Shows comprehensive stats after each hand
+ * Displays for 10 seconds, then auto-closes
+ * Shows: Books won, bid results, team scores, player performance
+ */
+export default function RoundStatsModal({ 
+  isOpen,
+  onClose,
+  roundData = {},
+  gameState = {},
+  onPlayAgain,
+  onLeave
+}) {
+  const {
+    bid_winner,
+    winning_bid,
+    bid_type,
+    trump_suit,
+    player_tricks = {},
+    tricks_won = {},
+    scores = {},
+    round_winner,
+    bid_made
+  } = roundData;
+
+  const players_data = gameState.players_data || {};
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[200] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            className="bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-900 rounded-3xl border-2 border-amber-500 shadow-2xl max-w-2xl w-full p-8"
+          >
+            {/* Header */}
+            <div className="text-center mb-6">
+              <motion.div
+                animate={{ rotate: [0, 10, -10, 0] }}
+                transition={{ duration: 0.5 }}
+                className="inline-block"
+              >
+                <Trophy className="w-16 h-16 text-amber-400 mx-auto mb-3" />
+              </motion.div>
+              <h2 className="text-4xl font-['Cinzel'] font-bold text-amber-300 mb-2">
+                Round Complete!
+              </h2>
+              <p className="text-slate-300 text-lg">
+                {bid_made ? '✅ Bid Made!' : '❌ Bid Set'}
+              </p>
+            </div>
+
+            {/* Bid Info */}
+            <div className="bg-slate-950/50 rounded-xl p-4 mb-6 border border-amber-500/30">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Target className="w-5 h-5 text-amber-400" />
+                  <span className="text-sm text-slate-400">Winning Bid:</span>
+                </div>
+                <span className="font-['Cinzel'] font-bold text-lg text-amber-300">
+                  {winning_bid?.amount || 0} books - {bid_type} {trump_suit ? `(${trump_suit})` : ''}
+                </span>
+              </div>
+              <div className="flex items-center justify-between mt-2">
+                <span className="text-sm text-slate-400">Bid Winner:</span>
+                <span className="font-bold text-white uppercase">{bid_winner}</span>
+              </div>
+            </div>
+
+            {/* Player Stats - Books Won */}
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              {['north', 'south', 'east', 'west'].map((position) => {
+                const booksWon = player_tricks[position] || 0;
+                const playerData = players_data[position] || {};
+                
+                return (
+                  <div 
+                    key={position}
+                    className="bg-slate-800/50 rounded-lg p-3 border border-white/10"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-xs text-slate-400 uppercase">{position}</div>
+                        <div className="text-[10px] text-slate-500">{playerData.team}</div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Award className="w-4 h-4 text-amber-400" />
+                        <span className="text-2xl font-['Cinzel'] font-bold text-amber-300">
+                          {booksWon}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Team Scores */}
+            <div className="bg-gradient-to-r from-blue-900/30 to-purple-900/30 rounded-xl p-4 mb-6 border border-white/10">
+              <div className="flex items-center justify-center gap-8">
+                <div className="text-center">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Users className="w-4 h-4 text-blue-400" />
+                    <span className="text-sm text-slate-300">Team 1</span>
+                  </div>
+                  <div className="text-3xl font-['Cinzel'] font-bold text-blue-400">
+                    {scores.team1 || 0}
+                  </div>
+                  <div className="text-xs text-slate-400 mt-1">
+                    {tricks_won.team1 || 0} books this round
+                  </div>
+                </div>
+                
+                <div className="w-px h-16 bg-white/20"></div>
+                
+                <div className="text-center">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Users className="w-4 h-4 text-purple-400" />
+                    <span className="text-sm text-slate-300">Team 2</span>
+                  </div>
+                  <div className="text-3xl font-['Cinzel'] font-bold text-purple-400">
+                    {scores.team2 || 0}
+                  </div>
+                  <div className="text-xs text-slate-400 mt-1">
+                    {tricks_won.team2 || 0} books this round
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Round Winner */}
+            {round_winner && (
+              <div className="text-center mb-6">
+                <motion.div
+                  animate={{ scale: [1, 1.05, 1] }}
+                  transition={{ duration: 1, repeat: Infinity }}
+                  className="inline-block px-6 py-3 bg-gradient-to-r from-amber-600 to-yellow-600 rounded-full"
+                >
+                  <span className="font-['Cinzel'] font-bold text-white text-lg">
+                    🏆 {round_winner} wins this round!
+                  </span>
+                </motion.div>
+              </div>
+            )}
+
+            {/* Auto-close timer */}
+            <div className="text-center text-sm text-slate-400 mb-4">
+              Auto-closing in 10 seconds...
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-4">
+              <Button
+                onClick={onClose}
+                className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-['Cinzel']"
+              >
+                Continue
+              </Button>
+              {gameState.status === 'completed' && (
+                <>
+                  <Button
+                    onClick={onPlayAgain}
+                    className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-['Cinzel']"
+                  >
+                    Play Again
+                  </Button>
+                  <Button
+                    onClick={onLeave}
+                    className="flex-1 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-['Cinzel']"
+                  >
+                    Leave Room
+                  </Button>
+                </>
+              )}
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+================================================================================
+COMPONENT: PlayerProfileDropdown.jsx (Player Stats)
+Location: /app/frontend/src/components/bidwhist/PlayerProfileDropdown.jsx
+================================================================================
+
+import { motion } from 'framer-motion';
+import { User, Trophy, Target, UserPlus, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useState } from 'react';
+
+/**
+ * Player Profile Dropdown - Shows when clicking on a player badge
+ * Displays: Profile picture, game stats, win statistics, Add Friend button
+ * Team colors: Team 1 = Red, Team 2 = Blue
+ */
+export default function PlayerProfileDropdown({ 
+  playerName,
+  position,
+  team,
+  isOpen,
+  onClose,
+  onAddFriend
+}) {
+  const [friendRequestSent, setFriendRequestSent] = useState(false);
+
+  // Team colors
+  const teamColors = {
+    team1: {
+      bg: 'from-red-600 to-rose-600',
+      border: 'border-red-500',
+      text: 'text-red-400',
+      glow: 'shadow-[0_0_20px_rgba(239,68,68,0.4)]'
+    },
+    team2: {
+      bg: 'from-blue-600 to-cyan-600',
+      border: 'border-blue-500',
+      text: 'text-blue-400',
+      glow: 'shadow-[0_0_20px_rgba(59,130,246,0.4)]'
+    }
+  };
+
+  const teamColor = teamColors[team] || teamColors.team1;
+
+  // Mock stats - these would come from backend in real implementation
+  const playerStats = {
+    gamesPlayed: 247,
+    wins: 156,
+    losses: 91,
+    winRate: 63,
+    totalBooks: 1842,
+    avgBooksPerGame: 7.5,
+    highestBid: 7,
+    bidSuccessRate: 71
+  };
+
+  const handleAddFriend = () => {
+    setFriendRequestSent(true);
+    if (onAddFriend) {
+      onAddFriend(playerName, position);
+    }
+    setTimeout(() => {
+      onClose();
+    }, 2000);
+  };
+
+  return (
+    <div
+      className={`w-full max-w-lg bg-gradient-to-br ${teamColor.bg} rounded-2xl border-4 ${teamColor.border} ${teamColor.glow} p-6 shadow-2xl`}
+      style={{
+        maxHeight: '90vh',
+        overflowY: 'auto'
+      }}
+    >
+            {/* Close Button - Larger and more visible */}
+            <button
+              onClick={onClose}
+              className="absolute top-3 right-3 w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-all hover:scale-110 border-2 border-white/30"
+            >
+              <X className="w-6 h-6 text-white" />
+            </button>
+
+            {/* Profile Header */}
+            <div className="flex items-center gap-4 mb-6 mt-2">
+              {/* Profile Picture - Larger */}
+              <div className={`w-24 h-24 rounded-full border-4 ${teamColor.border} bg-slate-900 flex items-center justify-center overflow-hidden shadow-lg`}>
+                <User className="w-14 h-14 text-slate-400" />
+              </div>
+              
+              {/* Player Info */}
+              <div className="flex-1">
+                <h3 className="text-3xl font-['Cinzel'] font-bold text-white mb-1 drop-shadow-lg">
+                  {playerName || position.toUpperCase()}
+                </h3>
+                <div className="flex items-center gap-2">
+                  <span className="text-base text-white/90 uppercase tracking-wider font-bold">
+                    {position}
+                  </span>
+                  <span className="text-white/60">•</span>
+                  <span className={`text-base font-bold ${teamColor.text} drop-shadow-md`}>
+                    {team === 'team1' ? 'Red Team' : 'Blue Team'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Game Stats */}
+            <div className="bg-black/40 rounded-xl p-5 mb-4 border border-white/20">
+              <div className="flex items-center gap-2 mb-4">
+                <Trophy className="w-6 h-6 text-amber-400" />
+                <h4 className="font-['Cinzel'] font-bold text-white text-lg">Game Statistics</h4>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                {/* Games Played */}
+                <div className="bg-white/10 rounded-lg p-3 border border-white/20">
+                  <div className="text-xs text-white/70 mb-1 font-medium">Games Played</div>
+                  <div className="text-2xl font-bold text-white">{playerStats.gamesPlayed}</div>
+                </div>
+                
+                {/* Win Rate */}
+                <div className="bg-white/10 rounded-lg p-3 border border-white/20">
+                  <div className="text-xs text-white/70 mb-1 font-medium">Win Rate</div>
+                  <div className="text-2xl font-bold text-green-400">{playerStats.winRate}%</div>
+                </div>
+                
+                {/* Wins */}
+                <div className="bg-white/10 rounded-lg p-3 border border-white/20">
+                  <div className="text-xs text-white/70 mb-1 font-medium">Wins</div>
+                  <div className="text-xl font-bold text-white">{playerStats.wins}</div>
+                </div>
+                
+                {/* Losses */}
+                <div className="bg-white/10 rounded-lg p-3 border border-white/20">
+                  <div className="text-xs text-white/70 mb-1 font-medium">Losses</div>
+                  <div className="text-xl font-bold text-white">{playerStats.losses}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Bid Whist Specific Stats */}
+            <div className="bg-black/40 rounded-xl p-5 mb-5 border border-white/20">
+              <div className="flex items-center gap-2 mb-4">
+                <Target className="w-6 h-6 text-amber-400" />
+                <h4 className="font-['Cinzel'] font-bold text-white text-lg">Bid Whist Stats</h4>
+              </div>
+              
+              <div className="space-y-3">
+                <div className="flex justify-between items-center bg-white/5 rounded-lg p-3 border border-white/10">
+                  <span className="text-sm text-white/80 font-medium">Total Books Won</span>
+                  <span className="text-lg font-bold text-amber-300">{playerStats.totalBooks}</span>
+                </div>
+                <div className="flex justify-between items-center bg-white/5 rounded-lg p-3 border border-white/10">
+                  <span className="text-sm text-white/80 font-medium">Avg Books/Game</span>
+                  <span className="text-lg font-bold text-amber-300">{playerStats.avgBooksPerGame}</span>
+                </div>
+                <div className="flex justify-between items-center bg-white/5 rounded-lg p-3 border border-white/10">
+                  <span className="text-sm text-white/80 font-medium">Highest Bid</span>
+                  <span className="text-lg font-bold text-amber-300">{playerStats.highestBid}</span>
+                </div>
+                <div className="flex justify-between items-center bg-white/5 rounded-lg p-3 border border-white/10">
+                  <span className="text-sm text-white/80 font-medium">Bid Success Rate</span>
+                  <span className="text-lg font-bold text-green-400">{playerStats.bidSuccessRate}%</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Add Friend Button */}
+            <Button
+              onClick={handleAddFriend}
+              disabled={friendRequestSent}
+              className={`w-full py-4 font-['Cinzel'] font-bold text-lg ${
+                friendRequestSent
+                  ? 'bg-green-600 hover:bg-green-600'
+                  : 'bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-700 hover:to-yellow-700'
+              } text-white shadow-xl`}
+            >
+              {friendRequestSent ? (
+                <>✓ Friend Request Sent</>
+              ) : (
+                <>
+                  <UserPlus className="w-5 h-5 mr-2 inline" />
+                  Add Friend
+                </>
+              )}
+            </Button>
+          </div>
+  );
+}
+
+================================================================================
+COMPONENT: CardDealingAnimation.jsx (Realistic Card Dealing)
+Location: /app/frontend/src/components/bidwhist/CardDealingAnimation.jsx
+================================================================================
+
+import { motion, AnimatePresence } from 'framer-motion';
+import ImperialCard from '@/components/bidwhist/ImperialCard';
+
+/**
+ * Card Dealing Animation
+ * Shows cards being dealt one-by-one to each player (North, East, South, West)
+ * 12 cards per player = 48 total animations
+ * Then 6 cards to kitty
+ */
+export default function CardDealingAnimation({ 
+  isDealing, 
+  currentDealIndex,
+  totalCards = 48,
+  onComplete
+}) {
+  // Calculate which player is receiving the current card
+  const playerOrder = ['north', 'east', 'south', 'west'];
+  const currentPlayer = playerOrder[currentDealIndex % 4];
+  
+  // Position coordinates for each player
+  const playerPositions = {
+    north: { top: '10%', left: '50%' },
+    east: { right: '10%', top: '50%' },
+    south: { bottom: '20%', left: '50%' },
+    west: { left: '10%', top: '50%' }
+  };
+
+  const targetPosition = playerPositions[currentPlayer];
+
+  return (
+    <AnimatePresence>
+      {isDealing && (
+        <motion.div
+          className="fixed inset-0 z-[150] pointer-events-none"
+        >
+          {/* Dealing Card Animation */}
+          <motion.div
+            initial={{ 
+              top: '50%', 
+              left: '50%',
+              x: '-50%',
+              y: '-50%',
+              scale: 0.5,
+              rotateY: 180
+            }}
+            animate={{ 
+              top: targetPosition.top || 'auto',
+              bottom: targetPosition.bottom || 'auto',
+              left: targetPosition.left || 'auto',
+              right: targetPosition.right || 'auto',
+              x: '-50%',
+              y: targetPosition.top || targetPosition.bottom ? '-50%' : '-50%',
+              scale: 0.8,
+              rotateY: 0
+            }}
+            transition={{
+              duration: 0.6, // Slower animation
+              ease: "easeInOut"
+            }}
+            className="absolute"
+            onAnimationComplete={() => {
+              // Move to next card after short delay
+              setTimeout(() => {
+                if (currentDealIndex < totalCards - 1) {
+                  // Continue dealing
+                } else {
+                  // Dealing complete
+                  if (onComplete) onComplete();
+                }
+              }, 100);
+            }}
+          >
+            {/* Card back during dealing - WITH BRANDING */}
+            <div className="w-24 h-36 bg-gradient-to-br from-red-800 to-red-950 rounded-lg border-2 border-amber-500 shadow-2xl flex items-center justify-center overflow-hidden relative">
+              {/* Decorative Pattern */}
+              <div className="absolute inset-0 opacity-10">
+                <div className="absolute inset-2 border-2 border-amber-400 rounded-md"></div>
+                <div className="absolute inset-4 border border-amber-400/50 rounded-sm"></div>
+              </div>
+              
+              {/* Global Vibez DSG Logo */}
+              <div className="relative z-10 text-center">
+                <div className="font-['Cinzel'] font-bold text-amber-400">
+                  <div className="text-lg tracking-wider drop-shadow-lg">GLOBAL</div>
+                  <div className="text-lg tracking-wider drop-shadow-lg">VIBEZ</div>
+                  <div className="text-sm tracking-[0.3em] mt-1">DSG</div>
+                </div>
+                <div className="text-4xl mt-2">🎴</div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Player Label */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: 'absolute',
+              ...targetPosition,
+              transform: 'translate(-50%, calc(-50% - 80px))'
+            }}
+            className="bg-amber-600 px-4 py-2 rounded-full border-2 border-amber-400"
+          >
+            <span className="text-white font-['Cinzel'] font-bold text-sm uppercase">
+              Dealing to {currentPlayer}
+            </span>
+          </motion.div>
+
+          {/* Deal Progress */}
+          <div className="absolute top-8 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md px-6 py-3 rounded-full border border-amber-500">
+            <div className="text-center">
+              <div className="text-sm text-amber-300 font-['Cinzel']">Dealing Cards...</div>
+              <div className="text-xs text-slate-400 mt-1">
+                {currentDealIndex + 1} / {totalCards}
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+================================================================================
+COMPONENT: GameStatsPanel.jsx (Score Display)
+Location: /app/frontend/src/components/bidwhist/GameStatsPanel.jsx
+================================================================================
+
+import { motion } from 'framer-motion';
+import { Trophy, Target, Crown, Zap } from 'lucide-react';
+
+export default function GameStatsPanel({ gameState, userPosition }) {
+  if (!gameState) return null;
+
+  const myTeam = gameState.players_data?.[userPosition]?.team || 'team1';
+  const opponentTeam = myTeam === 'team1' ? 'team2' : 'team1';
+
+  const myScore = gameState.scores?.[myTeam] || 0;
+  const opponentScore = gameState.scores?.[opponentTeam] || 0;
+
+  const myTricks = gameState.tricks_won?.[myTeam] || 0;
+  const opponentTricks = gameState.tricks_won?.[opponentTeam] || 0;
+
+  const trumpSuit = gameState.trump_suit;
+
+  const trumpSymbols = {
+    'spades': '♠',
+    'hearts': '♥',
+    'diamonds': '♦',
+    'clubs': '♣',
+    'no_trump': '⊗'
+  };
+
+  const trumpColors = {
+    'spades': 'text-slate-300',
+    'hearts': 'text-red-500',
+    'diamonds': 'text-blue-500',
+    'clubs': 'text-green-500',
+    'no_trump': 'text-purple-500'
+  };
+
+  return (
+    <div className="absolute top-4 left-4 z-30">
+      
+      {/* Compact Rectangle Score Box - TOP LEFT */}
+      <motion.div
+        initial={{ opacity: 0, x: -100 }}
+        animate={{ opacity: 1, x: 0 }}
+        className="bg-slate-900/85 backdrop-blur-lg rounded-lg border-2 border-amber-500/40 p-2.5 shadow-xl w-44"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-1.5">
+            <Trophy className="w-3.5 h-3.5 text-amber-400" />
+            <h3 className="text-[11px] font-bold text-amber-300">Scores</h3>
+          </div>
+          <span className="text-[9px] text-slate-400">Target: {gameState.winning_score || 7}</span>
+        </div>
+
+        {/* Team Scores - Horizontal Layout */}
+        <div className="flex gap-2 mb-2">
+          <div className="flex-1 flex items-center justify-between p-1.5 bg-blue-900/30 rounded border border-blue-500/30">
+            <span className="text-[10px] text-blue-300">You</span>
+            <span className="text-lg font-black text-blue-300">{myScore}</span>
+          </div>
+
+          <div className="flex-1 flex items-center justify-between p-1.5 bg-red-900/30 rounded border border-red-500/30">
+            <span className="text-[10px] text-red-300">Opp</span>
+            <span className="text-lg font-black text-red-300">{opponentScore}</span>
+          </div>
+        </div>
+
+        {/* Bottom Row: Books, Trump, Phase */}
+        <div className="flex items-center justify-between pt-1.5 border-t border-slate-700/50">
+          
+          {/* Books (if playing) */}
+          {gameState.phase === 'playing' && (
+            <div className="flex items-center gap-2">
+              <Target className="w-3 h-3 text-purple-400" />
+              <span className="text-[9px] text-slate-300">{myTricks}-{opponentTricks}</span>
+            </div>
+          )}
+          
+          {/* Trump */}
+          {trumpSuit && (
+            <div className="flex items-center gap-1">
+              <span className="text-[8px] text-slate-400">Trump:</span>
+              <span className={`text-lg ${trumpColors[trumpSuit]}`}>
+                {trumpSymbols[trumpSuit]}
+              </span>
+            </div>
+          )}
+          
+          {/* Phase */}
+          <div className="flex items-center gap-1">
+            {gameState.phase === 'bidding' && <Zap className="w-3 h-3 text-yellow-400" />}
+            {gameState.phase === 'kitty_exchange' && <Crown className="w-3 h-3 text-amber-400" />}
+            {gameState.phase === 'playing' && <Target className="w-3 h-3 text-blue-400" />}
+            <span className="text-[9px] text-white capitalize truncate max-w-[60px]">
+              {gameState.phase?.replace('_', ' ')}
+            </span>
+          </div>
+        </div>
+        
+        {/* Your Turn Indicator */}
+        {gameState.is_your_turn && (
+          <div className="mt-1.5 p-1 bg-green-900/40 rounded text-center">
+            <span className="text-green-300 text-[9px] font-bold animate-pulse">YOUR TURN</span>
+          </div>
+        )}
+      </motion.div>
+    </div>
+  );
+}
+
+================================================================================
+COMPONENT: GameChat.jsx (In-Game Chat)
+Location: /app/frontend/src/components/bidwhist/GameChat.jsx
+================================================================================
+
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Send, X, MessageCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+
+export default function GameChat({ gameId, playerName, socket, onClose, onNewMessage }) {
+  const [messages, setMessages] = useState([
+    { sender: 'System', text: 'Game started! Good luck!', time: new Date().toLocaleTimeString() }
+  ]);
+  const [inputMessage, setInputMessage] = useState('');
+
+  // Listen for new messages via socket
+  useEffect(() => {
+    if (!socket) return;
+    
+    const handleNewMessage = (data) => {
+      setMessages(prev => [...prev, data.message]);
+      if (onNewMessage) onNewMessage();
+    };
+    
+    socket.on('game_chat', handleNewMessage);
+    
+    return () => {
+      socket.off('game_chat', handleNewMessage);
+    };
+  }, [socket, onNewMessage]);
+
+  const handleSendMessage = () => {
+    if (!inputMessage.trim()) return;
+
+    const newMessage = {
+      sender: playerName,
+      text: inputMessage,
+      time: new Date().toLocaleTimeString()
+    };
+
+    setMessages([...messages, newMessage]);
+    
+    // Emit to socket for multiplayer
+    if (socket) {
+      socket.emit('game_chat', {
+        game_id: gameId,
+        message: newMessage
+      });
+    }
+
+    setInputMessage('');
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSendMessage();
+    }
+  };
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0, x: 400 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: 400 }}
+        className="fixed right-6 top-24 z-40 w-80 h-96 bg-slate-900/95 backdrop-blur-xl rounded-2xl border-2 border-blue-500/50 shadow-2xl flex flex-col overflow-hidden"
+      >
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-cyan-600 p-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <MessageCircle className="w-5 h-5 text-white" />
+            <h3 className="font-bold text-white">Game Chat</h3>
+          </div>
+          <button onClick={onClose} className="text-white/80 hover:text-white">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          {messages.map((msg, idx) => (
+            <motion.div
+              key={idx}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`${
+                msg.sender === 'System' 
+                  ? 'bg-amber-900/20 border-l-4 border-amber-500' 
+                  : msg.sender === playerName
+                  ? 'bg-blue-900/30 border-l-4 border-blue-500'
+                  : 'bg-slate-800/50 border-l-4 border-slate-600'
+              } p-3 rounded-lg`}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-bold text-blue-300">{msg.sender}</span>
+                <span className="text-[10px] text-slate-500">{msg.time}</span>
+              </div>
+              <p className="text-sm text-slate-200">{msg.text}</p>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Input */}
+        <div className="p-4 bg-slate-800/50 border-t border-slate-700">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Type a message..."
+              className="flex-1 bg-slate-900 text-white px-4 py-2 rounded-lg border border-slate-600 focus:border-blue-500 focus:outline-none text-sm"
+            />
+            <Button
+              onClick={handleSendMessage}
+              className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500"
+            >
+              <Send className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+================================================================================
+COMPONENT: ViewModeSelector.jsx (Classic/Mobile Toggle)
+Location: /app/frontend/src/components/bidwhist/ViewModeSelector.jsx
+================================================================================
+
+import { useState, useEffect } from 'react';
+import { Monitor, Smartphone } from 'lucide-react';
+import { motion } from 'framer-motion';
+
+/**
+ * ViewModeSelector - Lets users choose between Classic and Responsive views
+ * Classic: Original desktop-optimized view (perfect view)
+ * Responsive: Scales for all devices
+ */
+export default function ViewModeSelector({ currentMode, onModeChange }) {
+  return (
+    <div className="fixed top-20 right-4 z-50 bg-slate-900/90 backdrop-blur-md rounded-xl border border-amber-500/30 p-3 shadow-2xl">
+      <div className="text-xs text-amber-300 font-['Cinzel'] mb-2 text-center">View Mode</div>
+      
+      <div className="flex gap-2">
+        {/* Classic View */}
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => onModeChange('classic')}
+          className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-all ${
+            currentMode === 'classic'
+              ? 'bg-amber-600 text-white'
+              : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+          }`}
+        >
+          <Monitor className="w-5 h-5" />
+          <span className="text-[10px] font-bold">Classic</span>
+        </motion.button>
+
+        {/* Responsive View */}
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => onModeChange('responsive')}
+          className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-all ${
+            currentMode === 'responsive'
+              ? 'bg-amber-600 text-white'
+              : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+          }`}
+        >
+          <Smartphone className="w-5 h-5" />
+          <span className="text-[10px] font-bold">Mobile</span>
+        </motion.button>
+      </div>
+    </div>
+  );
+}
+
+================================================================================
+TOTAL SOURCE CODE: 2721 lines
+================================================================================
+
+================================================================================
+BACKEND CODE - Python/FastAPI
+================================================================================
+
+================================================================================
+FILE: bid_whist.py (Main Game Routes)
+Location: /app/backend/routes/bid_whist.py
+================================================================================
+
+from fastapi import APIRouter, HTTPException, Request, BackgroundTasks
+from typing import List, Dict
+from pydantic import BaseModel
+from utils.database import get_database, get_current_user
+from utils.bid_whist_game import BidWhistGame, get_bid_whist_ai_bid, get_bid_whist_ai_play
+from datetime import datetime, timezone
+import uuid
+import asyncio
+
+router = APIRouter(prefix="/bid-whist", tags=["bid_whist"])
+
+
+# ==================== AI DEALER REACTION SYSTEM ====================
+
+async def process_ai_dealer_reaction(game_id: str, db):
+    """
+    Triggers AI Dealer (Nova/Ace) to react to big plays in the Celestial Glasshouse.
+    This runs without blocking the game so the AI feels "Human".
+    """
+    await asyncio.sleep(0.5)  # Brief delay for realism
+    
+    # Import here to avoid circular dependency
+    from websocket_server import sio
+    
+    game_doc = await db.bid_whist_games.find_one({"game_id": game_id}, {"_id": 0})
+    if not game_doc:
+        return
+    
+    # Determine dealer reaction based on game state
+    reactions = [
+        {"action": "DEAL_SINGLE_CARD", "message": "Smooth play!"},
+        {"action": "CHEER", "message": "Big move!"},
+        {"action": "NOD", "message": "Well played."},
+        {"action": "SHUFFLE", "message": "Let's see what happens..."}
+    ]
+    
+    # Pick a random reaction
+    import secrets
+    reaction = secrets.choice(reactions)
+    
+    # Emit to all players in the game room
+    await sio.emit("dealer_reaction", reaction, room=game_id)
+
+
+async def process_ai_plays(game_id: str, db):
+    """Process AI player card plays automatically"""
+    await asyncio.sleep(1)  # Brief delay for realism
+    
+    game_doc = await db.bid_whist_games.find_one({"game_id": game_id}, {"_id": 0})
+    if not game_doc or game_doc["phase"] != "playing":
+        return
+    
+    # Reconstruct game
+    game = BidWhistGame()
+    game.players = game_doc["players_data"]
+    game.current_trick = game_doc.get("current_trick", [])
+    game.trump_suit = game_doc.get("trump_suit")
+    game.tricks_won = game_doc.get("tricks_won", {"team1": 0, "team2": 0})
+    
+    # Determine whose turn it is
+    play_order = ['north', 'east', 'south', 'west']
+    trick_leader = game_doc.get("trick_leader", "north")
+    leader_idx = play_order.index(trick_leader)
+    
+    # Rotate play order based on leader
+    current_play_order = play_order[leader_idx:] + play_order[:leader_idx]
+    
+    # Find next player to play
+    cards_played = len(game.current_trick)
+    if cards_played >= 4:
+        return  # Trick complete
+    
+    next_position = current_play_order[cards_played]
+    
+    # Check if next player is AI
+    player_id = game_doc["player_mapping"].get(next_position, "")
+    if player_id and not player_id.startswith("AI_"):
+        return  # Human player's turn
+    
+    # Get AI card to play
+    ai_hand = game.players[next_position]['hand']
+    led_suit = game.current_trick[0]['suit'] if game.current_trick else None
+    
+    ai_card = get_bid_whist_ai_play(
+        hand=ai_hand,
+        current_trick=game.current_trick,
+        led_suit=led_suit,
+        trump_suit=game.trump_suit
+    )
+    
+    # Play the card
+    game.current_trick.append({
+        'player': next_position,
+        'card': ai_card,
+        'suit': ai_card['suit'],
+        'value': ai_card['value']
+    })
+    
+    # Remove card from AI hand
+    game.players[next_position]['hand'] = [
+        c for c in ai_hand if not (c['suit'] == ai_card['suit'] and c['value'] == ai_card['value'])
+    ]
+    
+    # Check if trick is complete (4 cards played)
+    if len(game.current_trick) == 4:
+        # Determine winner
+        winner_pos = determine_trick_winner(game.current_trick, led_suit, game.trump_suit)
+        winner_team = game.players[winner_pos]['team']
+        game.tricks_won[winner_team] += 1
+        
+        # Update database with trick completion
+        await db.bid_whist_games.update_one(
+            {"game_id": game_id},
+            {"$set": {
+                "current_trick": [],
+                "trick_leader": winner_pos,
+                "tricks_won": game.tricks_won,
+                "players_data": game.players,
+                "last_trick": game.current_trick
+            }}
+        )
+        
+        # Check if all 13 tricks played (game over)
+        total_tricks = game.tricks_won["team1"] + game.tricks_won["team2"]
+        if total_tricks >= 13:
+            # Game complete - determine winner
+            await db.bid_whist_games.update_one(
+                {"game_id": game_id},
+                {"$set": {"phase": "completed", "status": "completed"}}
+            )
+            return
+        
+        # Start next trick with AI if winner is AI
+        if game_doc["player_mapping"].get(winner_pos, "").startswith("AI_"):
+            await process_ai_plays(game_id, db)
+    else:
+        # Update with current trick
+        await db.bid_whist_games.update_one(
+            {"game_id": game_id},
+            {"$set": {
+                "current_trick": game.current_trick,
+                "players_data": game.players
+            }}
+        )
+        
+        # Continue AI plays if next player is also AI
+        await process_ai_plays(game_id, db)
+
+
+def determine_trick_winner(trick: list, led_suit: str, trump_suit: str) -> str:
+    """Determine winner of a trick"""
+    if not trick:
+        return None
+    
+    winning_card = trick[0]
+    winner = trick[0]['player']
+    
+    for play in trick[1:]:
+        # Trump beats non-trump
+        if play['suit'] == trump_suit and winning_card['suit'] != trump_suit:
+            winning_card = play
+            winner = play['player']
+        # Higher trump beats lower trump
+        elif play['suit'] == trump_suit and winning_card['suit'] == trump_suit:
+            if play['value'] > winning_card['value']:
+                winning_card = play
+                winner = play['player']
+        # Higher card of led suit
+        elif play['suit'] == led_suit and winning_card['suit'] == led_suit:
+            if play['value'] > winning_card['value']:
+                winning_card = play
+                winner = play['player']
+    
+    return winner
+
+
+# ==================== AI HELPER FUNCTIONS ====================
+
+async def process_ai_bids(game_id: str, db):
+    """Process AI player bids automatically"""
+    await asyncio.sleep(1)  # Brief delay for realism
+    
+    game_doc = await db.bid_whist_games.find_one({"game_id": game_id}, {"_id": 0})
+    if not game_doc or game_doc["phase"] != "bidding":
+        return
+    
+    # Reconstruct game
+    game = BidWhistGame()
+    game.players = game_doc["players_data"]
+    game.bids = game_doc.get("bids", [])
+    game.kitty = game_doc.get("kitty", [])
+    
+    # Check if all 4 players have bid
+    if len(game.bids) >= 4:
+        return  # Bidding complete
+    
+    # Find next AI player to bid
+    bid_order = ['north', 'east', 'south', 'west']
+    num_bids = len(game.bids)
+    next_position = bid_order[num_bids]
+    
+    # Check if next player is AI (not in player_mapping or is AI marker)
+    player_id = game_doc["player_mapping"].get(next_position, "")
+    if player_id and not player_id.startswith("AI_"):
+        return  # Human player's turn, wait for them
+    
+    # Get AI bid
+    ai_hand = game.players[next_position]['hand']
+    ai_bid_decision = get_bid_whist_ai_bid(ai_hand)
+    
+    # Place AI bid
+    if ai_bid_decision['amount'] == 0:
+        game.bids.append({'player': next_position, 'amount': 0, 'type': 'pass', 'value': 0})
+    else:
+        game.place_bid(next_position, ai_bid_decision['amount'], ai_bid_decision['type'])
+    
+    # Update game
+    await db.bid_whist_games.update_one(
+        {"game_id": game_id},
+        {"$set": {
+            "bids": game.bids,
+            "phase": game.game_phase,
+            "winning_bid": game.winning_bid,
+            "bid_winner": game.bid_winner,
+            "bid_type": game.bid_type
+        }}
+    )
+    
+    # Recursively process next AI bid if needed
+    if len(game.bids) < 4:
+        await process_ai_bids(game_id, db)
+
+
+# ==================== MODELS ====================
+
+class StartBidWhistGame(BaseModel):
+    partner_id: str
+    opponent1_id: str
+    opponent2_id: str
+    wager: int = 0
+    winning_score: int = 7  # 7 or 11
+
+
+class BidWhistBid(BaseModel):
+    game_id: str
+    amount: int  # 3-7 or 0 for pass
+    bid_type: str  # 'uptown', 'downtown', 'no_trump'
+
+
+class BidWhistKittyExchange(BaseModel):
+    game_id: str
+    trump_suit: str  # 'spades', 'hearts', 'diamonds', 'clubs', or 'no_trump'
+    discards: List[Dict]  # 6 cards to discard
+
+
+class BidWhistPlay(BaseModel):
+    game_id: str
+    card: Dict
+
+
+# ==================== ENDPOINTS ====================
+
+@router.post("/start")
+async def start_bid_whist_game(game_data: StartBidWhistGame, request: Request, background_tasks: BackgroundTasks):
+    """Start a new Bid Whist game"""
+    current_user = await get_current_user(request)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    db = get_database()
+    
+    # Create game
+    game = BidWhistGame(winning_score=game_data.winning_score)
+    game.deal_cards()
+    
+    # Map players (use AI for missing players)
+    player_mapping = {
+        'north': current_user.user_id,
+        'south': game_data.partner_id if game_data.partner_id else "AI_SOUTH",
+        'east': game_data.opponent1_id if game_data.opponent1_id else "AI_EAST",
+        'west': game_data.opponent2_id if game_data.opponent2_id else "AI_WEST"
+    }
+    
+    # Create game document
+    game_doc = {
+        "game_id": f"bidwhist_{uuid.uuid4().hex[:12]}",
+        "game_type": "bid_whist",
+        "player_mapping": player_mapping,
+        "dealer": "south",  # Dealer position (rotates each hand, dealer bids last)
+        "players_data": {
+            pos: {
+                'hand': player['hand'],
+                'team': player['team']
+            } for pos, player in game.players.items()
+        },
+        "scores": game.scores,
+        "tricks_won": game.tricks_won,
+        "kitty": game.kitty,
+        "phase": game.game_phase,
+        "bids": game.bids,
+        "current_trick": game.current_trick,
+        "wager": game_data.wager,
+        "pot": game_data.wager * 4,
+        "winning_score": game_data.winning_score,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "status": "active"
+    }
+    
+    await db.bid_whist_games.insert_one(game_doc)
+    
+    # Get user's hand
+    user_position = [pos for pos, uid in player_mapping.items() if uid == current_user.user_id][0]
+    user_hand = game.players[user_position]['hand']
+    
+    # ALWAYS start AI bidding task - it will check if next player is AI
+    background_tasks.add_task(process_ai_bids, game_doc["game_id"], db)
+    
+    return {
+        "game_id": game_doc["game_id"],
+        "message": "Bid Whist game started! Place your bids.",
+        "your_position": user_position,
+        "your_hand": user_hand,
+        "phase": "bidding",
+        "winning_score": game_data.winning_score,
+        "wager": game_data.wager,
+        "ai_players": [pos for pos, uid in player_mapping.items() if uid.startswith("AI_")]
+    }
+
+
+@router.post("/bid")
+async def place_bid_whist_bid(bid_data: BidWhistBid, request: Request, background_tasks: BackgroundTasks):
+    """Place a bid"""
+    current_user = await get_current_user(request)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    db = get_database()
+    
+    game_doc = await db.bid_whist_games.find_one({"game_id": bid_data.game_id}, {"_id": 0})
+    if not game_doc:
+        raise HTTPException(status_code=404, detail="Game not found")
+    
+    # Reconstruct game
+    game = BidWhistGame()
+    game.players = game_doc["players_data"]
+    game.scores = game_doc["scores"]
+    game.game_phase = game_doc["phase"]
+    game.bids = game_doc.get("bids", [])
+    game.kitty = game_doc.get("kitty", [])
+    
+    # Find user position
+    user_position = [pos for pos, uid in game_doc["player_mapping"].items() if uid == current_user.user_id][0]
+    
+    # Place bid
+    if bid_data.amount == 0:
+        # Pass
+        game.bids.append({'player': user_position, 'amount': 0, 'type': 'pass', 'value': 0})
+    else:
+        success = game.place_bid(user_position, bid_data.amount, bid_data.bid_type)
+        if not success:
+            raise HTTPException(status_code=400, detail="Invalid bid")
+    
+    # Update game
+    await db.bid_whist_games.update_one(
+        {"game_id": bid_data.game_id},
+        {"$set": {
+            "bids": game.bids,
+            "phase": game.game_phase,
+            "winning_bid": game.winning_bid,
+            "bid_winner": game.bid_winner,
+            "bid_type": game.bid_type
+        }}
+    )
+    
+    # Trigger AI bids in background
+    if len(game.bids) < 4:
+        background_tasks.add_task(process_ai_bids, bid_data.game_id, db)
+    
+    return {
+        "message": f"Bid placed: {bid_data.amount} {bid_data.bid_type}" if bid_data.amount > 0 else "Passed",
+        "phase": game.game_phase,
+        "winning_bid": game.winning_bid,
+        "bid_winner": game.bid_winner
+    }
+
+
+@router.post("/kitty")
+async def exchange_kitty(exchange_data: BidWhistKittyExchange, request: Request):
+    """Exchange kitty and declare trump"""
+    current_user = await get_current_user(request)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    db = get_database()
+    
+    game_doc = await db.bid_whist_games.find_one({"game_id": exchange_data.game_id}, {"_id": 0})
+    if not game_doc:
+        raise HTTPException(status_code=404, detail="Game not found")
+    
+    # Reconstruct game
+    game = BidWhistGame()
+    game.players = game_doc["players_data"]
+    game.kitty = game_doc["kitty"]
+    game.bid_winner = game_doc["bid_winner"]
+    game.bid_type = game_doc["bid_type"]
+    
+    user_position = [pos for pos, uid in game_doc["player_mapping"].items() if uid == current_user.user_id][0]
+    
+    # Exchange kitty
+    success = game.exchange_kitty(user_position, exchange_data.trump_suit, exchange_data.discards)
+    if not success:
+        raise HTTPException(status_code=400, detail="Invalid kitty exchange")
+    
+    # Update game
+    await db.bid_whist_games.update_one(
+        {"game_id": exchange_data.game_id},
+        {"$set": {
+            "players_data": {
+                pos: {'hand': p['hand'], 'team': p['team']}
+                for pos, p in game.players.items()
+            },
+            "trump_suit": game.trump_suit,
+            "phase": game.game_phase
+        }}
+    )
+    
+    return {
+        "message": f"Trump set to {exchange_data.trump_suit}",
+        "phase": game.game_phase,
+        "trump_suit": game.trump_suit
+    }
+
+
+@router.post("/play")
+async def play_card_bid_whist(play_data: BidWhistPlay, request: Request, background_tasks: BackgroundTasks):
+    """Play a card - AAA Refactored with State Management"""
+    current_user = await get_current_user(request)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    db = get_database()
+    
+    game_doc = await db.bid_whist_games.find_one({"game_id": play_data.game_id}, {"_id": 0})
+    if not game_doc:
+        raise HTTPException(status_code=404, detail="Game not found")
+    
+    # Initialize Engine with DB data (NEW: Using load_state helper)
+    game = BidWhistGame(play_data.game_id)
+    game.load_state(game_doc)
+    
+    # Find user position
+    user_position = [pos for pos, uid in game_doc["player_mapping"].items() if uid == current_user.user_id][0]
+    
+    # Execute Move
+    result = game.play_card(user_position, play_data.card)
+    
+    # Handle winnings if game finished
+    if game.game_phase == 'finished' and game_doc.get("wager", 0) > 0:
+        pot = game_doc["pot"]
+        winning_team = game.winner
+        
+        winners = [uid for pos, uid in game_doc["player_mapping"].items()
+                  if game.players[pos]['team'] == winning_team]
+        
+        winnings_per_player = pot // 2
+        
+        for winner_id in winners:
+            await db.users.update_one(
+                {"user_id": winner_id},
+                {"$inc": {"credits_balance": winnings_per_player}}
+            )
+            
+            await db.credit_transactions.insert_one({
+                "user_id": winner_id,
+                "amount": winnings_per_player,
+                "type": "bid_whist_winnings",
+                "game_id": play_data.game_id,
+                "description": f"🏆 Won Bid Whist - Prize: {winnings_per_player} credits!",
+                "created_at": datetime.now(timezone.utc).isoformat()
+            })
+    
+    # Update DB with the NEW state (Using save_state helper)
+    await db.bid_whist_games.update_one(
+        {"game_id": play_data.game_id},
+        {"$set": game.save_state()}
+    )
+    
+    # Trigger AI plays in background if game still active
+    if game.game_phase == 'playing':
+        background_tasks.add_task(process_ai_plays, play_data.game_id, db)
+    
+    # Trigger "Perfect Dealer" response if trick ends
+    if result.get('trick_complete'):
+        background_tasks.add_task(process_ai_dealer_reaction, play_data.game_id, db)
+    
+    return {
+        "status": "success",
+        "new_state": game.get_client_state(current_user.user_id),
+        "trick_winner": result.get("trick_winner"),
+        "trick_complete": result.get("trick_complete")
+    }
+
+
+@router.get("/game/{game_id}")
+async def get_bid_whist_game(game_id: str, request: Request):
+    """Get game state"""
+    current_user = await get_current_user(request)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    db = get_database()
+    
+    game_doc = await db.bid_whist_games.find_one({"game_id": game_id}, {"_id": 0})
+    if not game_doc:
+        raise HTTPException(status_code=404, detail="Game not found")
+    
+    user_position = [pos for pos, uid in game_doc["player_mapping"].items() if uid == current_user.user_id][0]
+    user_hand = game_doc["players_data"][user_position]["hand"]
+    
+    # Show kitty only if in kitty_exchange phase and user is bid winner
+    kitty = None
+    if game_doc["phase"] == "kitty_exchange" and user_position == game_doc.get("bid_winner"):
+        kitty = game_doc.get("kitty", [])
+    
+    # Build players_data for display (hide other players' hands)
+    players_data = {}
+    for pos, data in game_doc["players_data"].items():
+        players_data[pos] = {
+            "team": data["team"],
+            "card_count": len(data["hand"])
+        }
+    
+    # Calculate whose turn it is to bid
+    bid_order = ['north', 'east', 'south', 'west']
+    num_bids = len(game_doc.get("bids", []))
+    current_bidder = bid_order[num_bids] if num_bids < 4 else None
+    
+    return {
+        "game_id": game_id,
+        "your_position": user_position,
+        "your_hand": user_hand,
+        "kitty": kitty,
+        "dealer": game_doc.get("dealer", "south"),
+        "phase": game_doc["phase"],
+        "scores": game_doc["scores"],
+        "tricks_won": game_doc["tricks_won"],
+        "current_trick": game_doc["current_trick"],
+        "winning_bid": game_doc.get("winning_bid"),
+        "trump_suit": game_doc.get("trump_suit"),
+        "status": game_doc["status"],
+        "players_data": players_data,
+        "bids": game_doc.get("bids", []),
+        "current_bidder": current_bidder,
+        "whose_turn": current_bidder,
+        "is_your_turn": current_bidder == user_position
+    }
+
+
+================================================================================
+📦 PACKAGE COMPLETE
+Total Lines: 3319
+File Size: 133K
+================================================================================

@@ -1,0 +1,64 @@
+{
+  "summary": "Final pre-redeploy regression for Chair Economy Expansion Plan ladder (PDF-spec) plus full sanity sweep of legacy chair pricing + admin/treasury endpoints. 15/15 backend tests pass. Frontend landing page renders cleanly with all new ChairExpansionPlan testids + extended TokenRoadmap milestones. No regressions detected. Safe to redeploy.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter_jan_2026_chair_expansion_plan.py",
+    "/app/test_reports/pytest/iter_jan_2026_chair_expansion_plan.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "services/chair_expansion.py supply math has a quirk: tier 1 supply = high - low + 0 = 50000, every other tier supply = high - low + 1 = 50000. This produces identical supply per tier (50K) and hits the user-spec total $16.25M revenue exactly, so the result is correct, but the inline ternary `(1 if t['order'] > 1 else 0)` is non-obvious — worth a docstring note that tier 1 starts at 0 (inclusive of seat 0) while later tiers start at low+1 to avoid double-counting boundary chairs.",
+    "ChairExpansionPlan.tsx polls /api/chairs/expansion-plan only once on mount (no interval). That's intentional for a roadmap section, but if the user later wants the 'current tier' badge to flip live as Genesis fills up, add a 60s interval (mirror TokenRoadmap pattern).",
+    "Frontend uses CSS `uppercase` on the status badge, so rendered text is 'NOW SELLING' / 'UPCOMING'. Future Playwright tests should case-insensitive match (small note for next test agent)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter_jan_2026_chair_expansion_plan.py"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "Admin: GlobalVibez_Founder_2025! / 000000 (POST /api/admin/vault-auth)",
+  "seed_data_creation": "None — read-only regression",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "ChairExpansionPlan section on landing renders 10 tiers with testids chair-tier-1..10 and ladder data-testid chair-tier-ladder. Tier-1 active state uses CSS-uppercase text 'Now Selling'; Playwright inner_text returns 'NOW SELLING' due to text-transform — match case-insensitively. Backend endpoint /api/chairs/expansion-plan is public, no auth. Legacy /api/chairs/phase + /api/chairs/checkout untouched and still gate as before. Console error 'TypeError: e is not a function' from minified bundle.js is PRE-EXISTING (visible in iteration_jan_2026_perf_alert_qr_sdk too) — not caused by this change, not blocking. Treasury panel + admin cards weren't re-tested via UI but all underlying admin endpoints (squads-status, squads-rpc, perf-alert/status+test, perf-snapshot, vault-auth, solana-indexer sweep-balance/instructions) returned 200/expected — no regressions on the admin surface.",
+  "rca of the issue": "N/A — no defects found",
+  "verified_endpoints_status": {
+    "GET /api/chairs/expansion-plan": "200 + matches PDF spec (10 tiers, $10→$55 +$5/50K, 500K+500K, 5.5x, $16.25M, current_tier_order=1)",
+    "GET /api/chairs/phase": "200 — legacy 5-phase pricing intact",
+    "POST /api/chairs/checkout": "401 unauth (expected gate)",
+    "GET /api/treasury/public-status": "200",
+    "GET /api/admin/treasury/squads-status": "200 (admin)",
+    "GET /api/admin/treasury/squads-rpc": "200 (admin)",
+    "GET /api/admin/perf-alert/status": "200 (admin)",
+    "POST /api/admin/perf-alert/test": "200/503 (admin)",
+    "GET /api/admin/solana-indexer/sweep-balance?old_wallet=...": "200/502/503 (admin)",
+    "POST /api/admin/solana-indexer/sweep-instructions?old_wallet=...": "200/400/502/503 (admin)",
+    "GET /api/admin/perf-snapshot": "200 (admin)",
+    "POST /api/admin/vault-auth": "200 valid / 401 invalid"
+  },
+  "frontend_verified_testids": [
+    "chair-expansion-section",
+    "chair-tier-ladder (10 children)",
+    "chair-tier-1..chair-tier-10",
+    "chair-stat-capacity",
+    "chair-stat-active",
+    "chair-stat-reserve",
+    "chair-stat-multiplier",
+    "reserve-vault-block",
+    "chair-expansion-disclaimer",
+    "token-roadmap-section",
+    "roadmap-milestone-chair-expansion (NEW)",
+    "roadmap-milestone-reserve-unlock (NEW)",
+    "roadmap-milestone-vibez-coins",
+    "roadmap-milestone-tge",
+    "DOM order: ChairExpansionPlan precedes TokenRoadmap as required",
+    "Phantom Connect button present in nav"
+  ]
+}

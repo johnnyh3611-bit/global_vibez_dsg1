@@ -1,0 +1,57 @@
+{
+  "summary": "Diagnostic-only frontend sweep of 12 AAA card rooms (no code changes). All 12 lobbies render & navigate cleanly after demo login. Spades/Bid-Whist/Hearts/UNO games successfully entered via Start AI Match. Trick centering, joker card render, currency-leak, and pass-modal contrast were probed. P0 candidates focus on Spades hand-fan collision with played-card landing zone and the inability to functionally exercise the Bid-Whist Big/Little Joker direction logic via UI alone (recommend backend unit assertions). Hearts pass modal text contrast is FIXED (black-on-white visible). Baccarat shows ¢ currency only — no USD '$' leaks detected in HTML.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "SpadesAAA / SpadesTrickPile", "issue": "South seat's hand fan and the south trick-card landing slot overlap visually — hand cards and the bottom played card occupy the same vertical band (~y=550–680 at 1920x1080). Trick zone itself is correctly horizontally centered (left=880,w=160 → center≈960px) but the south card lands inside the hand-fan region instead of comfortably above it. Recommend bumping south offset upward (closer to 58% rather than 62%) OR pulling the hand fan down by ~80px.", "selector": "[data-testid='spades-trick-pile'] / .player-hand-fan", "priority": "P1"},
+      {"component": "Spades / Bid Whist game tables", "issue": "'REVIEW 10s' and 'BID NOW' chips render directly on top of (or overlapping) the player's hand cards during the bidding phase, partially occluding the leftmost cards.", "selector": "bid-now-btn / review-timer-chip", "priority": "P1"}
+    ],
+    "integration_issues": [
+      {"flow": "Bid Whist joker rule (Big Joker rank 100, Little Joker rank 90 must beat any card under both Uptown AND Downtown when trump is declared, inert in NT)", "issue": "UI alone cannot deterministically reach a joker-decides trick state without scripting a full bid + 4-play sequence. Joker card visually renders in hand ('LITTLE · JOKER ★ ✦' present in DOM body text) but functional rule cannot be confirmed end-to-end via Playwright. Strongly recommend (a) main agent expose a debug seed endpoint OR (b) lock down the rule with a backend pytest in /app/backend/tests/ exercising sovereign_validator.determine_trick_winner under both directions.", "affected_selectors": ["bid-whist-table", "bid-whist-trick-card"]},
+      {"flow": "UNO Wild +4 challenge modal", "issue": "Could not naturally play a +4 in Trick 1 because the bot played first (opponent's turn). Modal element [data-testid='uno-wild4-challenge-modal'] is wired but not triggered in this run. Verified visually that 8 colors + +4/Reverse/Skip cards exist in the player hand."}
+    ],
+    "design_issues": [
+      {"screen": "Spades / Bid Whist game tables", "issues": ["Hand fan vertical position collides with bottom edge of trick zone — needs ~60–80px more breathing room"]},
+      {"screen": "All AAA rooms", "issues": ["The 'What's new: Just for the Night...' announcement banner remains pinned at the very top center, overlapping the page header on every game route. Consider auto-hiding inside protected card rooms."]}
+    ]
+  },
+  "verifications_passed": [
+    "All 12 AAA card-room lobbies render: /spades /bid-whist /hearts /uno /euchre /pinochle /gin-rummy /rummy /war /crazy-eights /go-fish /baccarat",
+    "Hearts Pass Modal shows BLACK ink on WHITE card faces (3♣, 9♣, Q♣, 3♦, 5♦, 10♦, 7♠, 9♠, 10♠, A♠, 4♥, 8♥, K♥) — 'text-slate-900 not white-on-white' regression is FIXED",
+    "Baccarat AAA shows ¢ currency only (¢4,995 CREDITS, ¢5/¢10/¢25/¢50/¢100/¢500 chips) — zero USD '$' matches in rendered HTML",
+    "Bid Whist hand renders 'LITTLE · JOKER' card (with ★ ✦ marks) as a real card-face in the south player hand",
+    "Spades trick zone is horizontally centered around the table logo (left=880px, w=160px → midpoint ≈960px on a 1920px viewport)",
+    "Demo login [data-testid='login-demo-btn'] works and lands on /dashboard with credits preloaded"
+  ],
+  "test_report_links": [
+    "/app/test_reports/playwright_screenshots/diag_card_sweep/spades_after_start.png",
+    "/app/test_reports/playwright_screenshots/diag_card_sweep/bidwhist_after_start.png",
+    "/app/test_reports/playwright_screenshots/diag_card_sweep/hearts_after_start.png",
+    "/app/test_reports/playwright_screenshots/diag_card_sweep/uno_after_start.png",
+    "/app/test_reports/playwright_screenshots/diag_card_sweep/baccarat_lobby.png",
+    "/app/test_reports/playwright_screenshots/diag_card_sweep/pinochle_lobby.png",
+    "/app/test_reports/playwright_screenshots/diag_card_sweep/war_lobby.png",
+    "/app/test_reports/playwright_screenshots/diag_card_sweep/crazy-eights_lobby.png",
+    "/app/test_reports/playwright_screenshots/diag_card_sweep/go-fish_lobby.png"
+  ],
+  "action_items": [
+    "P1: Increase vertical separation between south hand-fan and the south played-card slot in SpadesTrickPile / BidWhistTable (e.g., south offset from 62% → ~58%, or push hand fan down ~80px).",
+    "P1: Reposition 'REVIEW 10s' and 'BID NOW' chips so they don't overlap the left edge of the player's hand during the bidding phase in Spades + Bid Whist.",
+    "P1: Add a backend pytest covering sovereign_validator.joker_power_indexing — explicit assertions: Big Joker (100) beats Ace under Uptown+Spades-trump AND Downtown+Spades-trump AND any other suit trump; Big/Little Joker are INERT in NT (rank treated as 0).",
+    "P2: Auto-hide the global 'What's new' announcement banner inside /spades, /bid-whist etc. routes, or move it under the page action strip so it stops covering the room header.",
+    "P2: In a future visual-regression pass, drive Spades through bidding (3-bid) + at least one trick to capture an actual landed-card-pile screenshot near the table logo for Spades + Bid Whist."
+  ],
+  "critical_code_review_comments": [
+    "BidWhistTable.tsx hard-codes the 38%/62% center-band offsets (per founder fix Feb 2026). Spades AAA should use the SAME constants — main agent should verify SpadesTrickPile.tsx uses identical 38%/62% percentages, otherwise the two rooms will drift again.",
+    "The 'protected-route-action-strip' mounts on every protected page including card games — confirm it doesn't z-index-overlap the bid panel on small viewports.",
+    "Console floods with WebSocket reconnect failures for /api/ws/vibe-phone/<demo_uid> and /api/ws/friend-events/<demo_uid> repeatedly during card-game play (10+ reconnects/min). Not a card-room blocker but creates noise that masks real errors and can throttle card-game WS traffic on the same origin."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (frontend-only)", "frontend": "lobbies 12/12 (100%) load · in-game probes 4/4 enter game state · 1 P1 visual collision (hand-fan/trick-zone) · joker rule not exercised end-to-end via UI"},
+  "test_credentials": "Demo login button [data-testid='login-demo-btn'] used (no email needed). betatester1@globalvibez.com / BetaTester2026! also valid per /app/memory/test_credentials.md",
+  "seed_data_creation": "None — used demo guest only.",
+  "retest_needed": true,
+  "main_agent_can_self_test": false,
+  "context_for_next_testing_agent": "Next agent: after main agent fixes the south offset + bid-chip overlap, drive Spades through a full 3-bid + 1 trick cycle to capture a 'landed card pile' screenshot. For Bid Whist joker direction logic, prefer adding a backend unit test asserting both Uptown + Downtown joker power rather than a Playwright path — UI alone cannot deterministically reach the joker-wins trick state without backend test seams. Hearts pass modal contrast already verified GREEN; do not regress.",
+  "rca of the issue": "Spades hand-fan/trick-zone collision RCA: SpadesTrickPile likely uses its own offsets that don't match BidWhistTable's 38%/62% post-Feb-2026 fix. The trick zone IS centered (verified left=880,w=160) but the south landing slot is biased toward the hand region. Bid-chip overlap RCA: 'BID NOW' / 'REVIEW 10s' chips appear to be absolutely positioned without z-index above the hand-fan layer or without a top-anchored offset that respects hand-fan height. Joker direction rule cannot be RCA'd via UI in this run — recommend backend pytest as primary regression shield."
+}

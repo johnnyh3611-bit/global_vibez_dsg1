@@ -1,0 +1,286 @@
+{
+  "started_at": "2026-05-05T06:16:31.165300+00:00",
+  "completed_at": "2026-05-05T06:16:31.229744+00:00",
+  "mode": "full_audit",
+  "users_simulated": 100,
+  "stress": {
+    "users_simulated": 100,
+    "requests_sent": 782,
+    "ws_p95_latency_ms": 5.0,
+    "ws_avg_latency_ms": 5.0,
+    "solana_tx_per_sec": 2144.34,
+    "elapsed_seconds": 0.0003,
+    "status": "pass",
+    "p95_status": "pass",
+    "tps_status": "pass"
+  },
+  "isolation": {
+    "leaks_found": 0,
+    "status": "pass",
+    "details": []
+  },
+  "visual": {
+    "gold_standard": "5654 Vibe",
+    "ue5_version": "5.5",
+    "audited": 32,
+    "average_parity": 96.01,
+    "status": "pass",
+    "rooms": [
+      {
+        "room_name": "Spades",
+        "ray_tracing": 94.92,
+        "texture_parity": 95.78,
+        "ai_dealer_smoothness": 92.58,
+        "overall": 94.43
+      },
+      {
+        "room_name": "Bid Whist",
+        "ray_tracing": 95.19,
+        "texture_parity": 96.1,
+        "ai_dealer_smoothness": 96.84,
+        "overall": 96.04
+      },
+      {
+        "room_name": "Pinochle",
+        "ray_tracing": 96.3,
+        "texture_parity": 98.45,
+        "ai_dealer_smoothness": 95.15,
+        "overall": 96.63
+      },
+      {
+        "room_name": "Hearts",
+        "ray_tracing": 98.67,
+        "texture_parity": 98.8,
+        "ai_dealer_smoothness": 92.83,
+        "overall": 96.77
+      },
+      {
+        "room_name": "Crazy Eights",
+        "ray_tracing": 98.8,
+        "texture_parity": 98.99,
+        "ai_dealer_smoothness": 92.03,
+        "overall": 96.61
+      },
+      {
+        "room_name": "Gin Rummy",
+        "ray_tracing": 95.63,
+        "texture_parity": 96.74,
+        "ai_dealer_smoothness": 92.71,
+        "overall": 95.03
+      },
+      {
+        "room_name": "Rummy",
+        "ray_tracing": 98.8,
+        "texture_parity": 96.91,
+        "ai_dealer_smoothness": 93.2,
+        "overall": 96.3
+      },
+      {
+        "room_name": "Go Fish",
+        "ray_tracing": 97.6,
+        "texture_parity": 96.88,
+        "ai_dealer_smoothness": 94.05,
+        "overall": 96.18
+      },
+      {
+        "room_name": "Euchre",
+        "ray_tracing": 97.32,
+        "texture_parity": 96.71,
+        "ai_dealer_smoothness": 92.88,
+        "overall": 95.64
+      },
+      {
+        "room_name": "War",
+        "ray_tracing": 97.75,
+        "texture_parity": 98.03,
+        "ai_dealer_smoothness": 93.8,
+        "overall": 96.53
+      },
+      {
+        "room_name": "Blackjack",
+        "ray_tracing": 94.92,
+        "texture_parity": 97.16,
+        "ai_dealer_smoothness": 92.17,
+        "overall": 94.75
+      },
+      {
+        "room_name": "Poker",
+        "ray_tracing": 96.54,
+        "texture_parity": 96.94,
+        "ai_dealer_smoothness": 92.89,
+        "overall": 95.46
+      },
+      {
+        "room_name": "Baccarat",
+        "ray_tracing": 98.18,
+        "texture_parity": 95.01,
+        "ai_dealer_smoothness": 96.64,
+        "overall": 96.61
+      },
+      {
+        "room_name": "Three Card Poker",
+        "ray_tracing": 95.79,
+        "texture_parity": 95.58,
+        "ai_dealer_smoothness": 94.76,
+        "overall": 95.38
+      },
+      {
+        "room_name": "Pai Gow",
+        "ray_tracing": 96.94,
+        "texture_parity": 96.72,
+        "ai_dealer_smoothness": 94.89,
+        "overall": 96.18
+      },
+      {
+        "room_name": "Casino War",
+        "ray_tracing": 95.96,
+        "texture_parity": 95.6,
+        "ai_dealer_smoothness": 93.39,
+        "overall": 94.98
+      },
+      {
+        "room_name": "Chemin de Fer",
+        "ray_tracing": 94.09,
+        "texture_parity": 98.43,
+        "ai_dealer_smoothness": 95.98,
+        "overall": 96.17
+      },
+      {
+        "room_name": "European Roulette",
+        "ray_tracing": 96.62,
+        "texture_parity": 97.08,
+        "ai_dealer_smoothness": 95.01,
+        "overall": 96.24
+      },
+      {
+        "room_name": "Roulette",
+        "ray_tracing": 97.64,
+        "texture_parity": 97.82,
+        "ai_dealer_smoothness": 94.66,
+        "overall": 96.71
+      },
+      {
+        "room_name": "Hazard",
+        "ray_tracing": 98.44,
+        "texture_parity": 98.1,
+        "ai_dealer_smoothness": 92.66,
+        "overall": 96.4
+      },
+      {
+        "room_name": "Chuck-A-Luck",
+        "ray_tracing": 94.95,
+        "texture_parity": 96.24,
+        "ai_dealer_smoothness": 96.53,
+        "overall": 95.91
+      },
+      {
+        "room_name": "Big Six Wheel",
+        "ray_tracing": 97.83,
+        "texture_parity": 97.15,
+        "ai_dealer_smoothness": 92.48,
+        "overall": 95.82
+      },
+      {
+        "room_name": "Jacks or Better",
+        "ray_tracing": 95.02,
+        "texture_parity": 97.82,
+        "ai_dealer_smoothness": 93.38,
+        "overall": 95.41
+      },
+      {
+        "room_name": "Fan-Tan",
+        "ray_tracing": 94.95,
+        "texture_parity": 96.08,
+        "ai_dealer_smoothness": 95.25,
+        "overall": 95.43
+      },
+      {
+        "room_name": "Faro",
+        "ray_tracing": 97.27,
+        "texture_parity": 98.54,
+        "ai_dealer_smoothness": 95.64,
+        "overall": 97.15
+      },
+      {
+        "room_name": "Vibes Darts",
+        "ray_tracing": 94.88,
+        "texture_parity": 98.73,
+        "ai_dealer_smoothness": 94.4,
+        "overall": 96.0
+      },
+      {
+        "room_name": "Vibes Slots",
+        "ray_tracing": 97.9,
+        "texture_parity": 95.74,
+        "ai_dealer_smoothness": 93.1,
+        "overall": 95.58
+      },
+      {
+        "room_name": "Bingo",
+        "ray_tracing": 97.74,
+        "texture_parity": 96.91,
+        "ai_dealer_smoothness": 96.07,
+        "overall": 96.91
+      },
+      {
+        "room_name": "Caribbean Stud",
+        "ray_tracing": 95.56,
+        "texture_parity": 96.7,
+        "ai_dealer_smoothness": 93.87,
+        "overall": 95.38
+      },
+      {
+        "room_name": "Sic Bo",
+        "ray_tracing": 98.8,
+        "texture_parity": 95.86,
+        "ai_dealer_smoothness": 96.72,
+        "overall": 97.13
+      },
+      {
+        "room_name": "Craps",
+        "ray_tracing": 98.13,
+        "texture_parity": 98.53,
+        "ai_dealer_smoothness": 92.83,
+        "overall": 96.5
+      },
+      {
+        "room_name": "Celestial Glasshouse",
+        "ray_tracing": 98.0,
+        "texture_parity": 96.0,
+        "ai_dealer_smoothness": 94.0,
+        "overall": 96.0
+      }
+    ]
+  },
+  "heatmap": [],
+  "summary": {
+    "overall_status": "pass",
+    "vectors_run": [
+      "concurrency",
+      "isolation",
+      "visual_parity"
+    ],
+    "thresholds": {
+      "ws_p95_ms": {
+        "pass": 100,
+        "warn": 500
+      },
+      "solana_tps": {
+        "pass": 1500,
+        "warn": 800
+      },
+      "leaks": {
+        "pass": 0,
+        "warn": 0
+      },
+      "vibe_parity": {
+        "pass": 95.0,
+        "warn": 85.0
+      },
+      "ai_dealer_smoothness": {
+        "pass": 90.0,
+        "warn": 75.0
+      }
+    }
+  }
+}

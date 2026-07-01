@@ -1,0 +1,621 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Universal Design Agent v2 — global card shaders + arena helpers
+   (.gv-card-active, .gv-card-dim, .gv-arena). Inheriting from a
+   single stylesheet means every game picks them up automatically. */
+@import './styles/vibez-pro.css';
+
+/* Universal Mobile Foundation — phone/tablet responsive baseline +
+   orientation-lock fallback. Founder mandate (May 2026). */
+@import './styles/mobile-foundation.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ========================================
+   MASTER_RULEBOOK utilities
+   ======================================== */
+
+@layer utilities {
+    /* Rule §2.1 — `scrollbar-hide` is the sanctioned scroll style */
+    .scrollbar-hide {
+        -ms-overflow-style: none;   /* IE + old Edge */
+        scrollbar-width: none;       /* Firefox */
+    }
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;               /* Chromium + Safari */
+    }
+
+    /* Rule §2.4 — 3D card-table depth */
+    .perspective-1000 {
+        perspective: 1000px;
+    }
+}
+
+body {
+    margin: 0;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', sans-serif;
+    letter-spacing: -0.02em;
+}
+
+code {
+    font-family:
+        source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+}
+
+/* ========================================
+   CELESTIAL GLASSHOUSE - AAA+ Effects
+   ======================================== */
+
+/* Glassmorphism for Panels */
+.celestial-glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(15px) saturate(180%);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+  transition: all 0.3s ease;
+}
+
+.celestial-glass:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Florida-Flow manifest aliases — same Celestial Glasshouse aesthetic,
+   but matches the class names called out in the project manifest so
+   any code authored against the spec drops in clean. */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(15px) saturate(180%);
+  -webkit-backdrop-filter: blur(15px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px 0 rgba(0, 242, 255, 0.2);
+}
+
+.neon-text {
+  color: #00f2ff;
+  text-shadow: 0 0 5px #00f2ff, 0 0 10px #00f2ff;
+}
+
+.neon-text-amber {
+  color: #ffb86b;
+  text-shadow: 0 0 5px #ffb86b, 0 0 10px #ffb86b;
+}
+
+.neon-border {
+  border: 1px solid #00f2ff;
+  box-shadow: 0 0 10px rgba(0, 242, 255, 0.4),
+              inset 0 0 10px rgba(0, 242, 255, 0.1);
+}
+
+/* Metal Trim for Buttons & Borders */
+.metal-button {
+  background: linear-gradient(145deg, #1a1a1a, #0a0a0a);
+  border: 1px solid #333;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1);
+  transition: all 0.2s ease;
+}
+
+.metal-button:hover {
+  background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.15);
+  transform: translateY(-1px);
+}
+
+.metal-button:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.8);
+}
+
+/* Metal Trim Variant */
+.metal-trim {
+  background: linear-gradient(145deg, #2c2c2c, #000000);
+  border: 1px solid #444;
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.2);
+}
+
+@layer base {
+    :root {
+        --background: 0 0% 100%;
+        --foreground: 0 0% 3.9%;
+        --card: 0 0% 100%;
+        --card-foreground: 0 0% 3.9%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 0 0% 3.9%;
+        --primary: 0 0% 9%;
+        --primary-foreground: 0 0% 98%;
+        --secondary: 0 0% 96.1%;
+        --secondary-foreground: 0 0% 9%;
+        --muted: 0 0% 96.1%;
+        --muted-foreground: 0 0% 45.1%;
+        --accent: 0 0% 96.1%;
+        --accent-foreground: 0 0% 9%;
+        --destructive: 0 84.2% 60.2%;
+        --destructive-foreground: 0 0% 98%;
+        --border: 0 0% 89.8%;
+        --input: 0 0% 89.8%;
+        --ring: 0 0% 3.9%;
+        --chart-1: 12 76% 61%;
+        --chart-2: 173 58% 39%;
+        --chart-3: 197 37% 24%;
+        --chart-4: 43 74% 66%;
+        --chart-5: 27 87% 67%;
+        --radius: 0.5rem;
+    }
+    .dark {
+        --background: 0 0% 3.9%;
+        --foreground: 0 0% 98%;
+        --card: 0 0% 3.9%;
+        --card-foreground: 0 0% 98%;
+        --popover: 0 0% 3.9%;
+        --popover-foreground: 0 0% 98%;
+        --primary: 0 0% 98%;
+        --primary-foreground: 0 0% 9%;
+        --secondary: 0 0% 14.9%;
+        --secondary-foreground: 0 0% 98%;
+        --muted: 0 0% 14.9%;
+        --muted-foreground: 0 0% 63.9%;
+        --accent: 0 0% 14.9%;
+        --accent-foreground: 0 0% 98%;
+        --destructive: 0 62.8% 30.6%;
+        --destructive-foreground: 0 0% 98%;
+        --border: 0 0% 14.9%;
+        --input: 0 0% 14.9%;
+        --ring: 0 0% 83.1%;
+        --chart-1: 220 70% 50%;
+        --chart-2: 160 60% 45%;
+        --chart-3: 30 80% 55%;
+        --chart-4: 280 65% 60%;
+        --chart-5: 340 75% 55%;
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+    body {
+        @apply bg-background text-foreground;
+    }
+
+    /* Global focus-visible fallback — any interactive element that
+       doesn't already define its own :focus-visible treatment gets a
+       subtle fuchsia ring for keyboard navigation. Does NOT affect
+       mouse interactions (focus-visible only triggers on keyboard
+       focus). Individual components can override by defining any
+       focus-visible:ring / focus-visible:outline utility. */
+    :where(button, [role="button"], a[href]):focus-visible {
+        outline: 2px solid rgb(244 114 182 / 0.8); /* fuchsia-400 */
+        outline-offset: 2px;
+        border-radius: inherit;
+    }
+}
+
+@layer base {
+    [data-debug-wrapper="true"] {
+        display: contents !important;
+    }
+
+    [data-debug-wrapper="true"] > * {
+        margin-left: inherit;
+        margin-right: inherit;
+        margin-top: inherit;
+        margin-bottom: inherit;
+        padding-left: inherit;
+        padding-right: inherit;
+        padding-top: inherit;
+        padding-bottom: inherit;
+        column-gap: inherit;
+        row-gap: inherit;
+        gap: inherit;
+        border-left-width: inherit;
+        border-right-width: inherit;
+        border-top-width: inherit;
+        border-bottom-width: inherit;
+        border-left-style: inherit;
+        border-right-style: inherit;
+        border-top-style: inherit;
+        border-bottom-style: inherit;
+        border-left-color: inherit;
+        border-right-color: inherit;
+        border-top-color: inherit;
+        border-bottom-color: inherit;
+    }
+}
+
+/* Custom Animations */
+@keyframes blob {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(20px, -50px) scale(1.1);
+  }
+  50% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  75% {
+    transform: translate(20px, 20px) scale(1.05);
+  }
+}
+
+@keyframes bounce-slow {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes gradient-x {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@layer utilities {
+  .animate-blob {
+    animation: blob 7s infinite;
+  }
+  .animate-bounce-slow {
+    animation: bounce-slow 3s ease-in-out infinite;
+  }
+  .animate-gradient-x {
+    animation: gradient-x 3s ease infinite;
+    background-size: 200% 200%;
+  }
+  .animation-delay-2000 {
+    animation-delay: 2s;
+  }
+  .animation-delay-4000 {
+    animation-delay: 4s;
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   Per-user table styles. Five cosmetic skins for card-game tables.
+   Switched via /api/preferences/table-style + useTableStyle() hook.
+   Applied as a class on the parent wrapper of any game-table component.
+   ──────────────────────────────────────────────────────────────── */
+.table-style-celestial {
+  background-color: #050507;
+  background-image:
+    linear-gradient(rgba(34, 211, 238, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 211, 238, 0.12) 1px, transparent 1px),
+    radial-gradient(circle at 50% 30%, rgba(34, 211, 238, 0.10), transparent 60%);
+  background-size: 56px 56px, 56px 56px, 100% 100%;
+}
+
+.table-style-neon {
+  background-color: #0a0716;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(232, 121, 249, 0.30), transparent 55%),
+    radial-gradient(circle at 80% 70%, rgba(132, 204, 22, 0.22), transparent 55%),
+    linear-gradient(rgba(232, 121, 249, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(132, 204, 22, 0.05) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 64px 64px, 64px 64px;
+}
+
+.table-style-cherry {
+  background-color: #1a0509;
+  background-image:
+    radial-gradient(ellipse at 50% 40%, rgba(244, 63, 94, 0.28), transparent 60%),
+    repeating-linear-gradient(
+      45deg,
+      rgba(255, 255, 255, 0.025) 0 2px,
+      transparent 2px 22px
+    );
+}
+
+.table-style-midnight {
+  background-color: #03061a;
+  background-image:
+    radial-gradient(circle at 50% -10%, rgba(96, 165, 250, 0.22), transparent 60%),
+    linear-gradient(rgba(148, 163, 184, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.06) 1px, transparent 1px),
+    linear-gradient(135deg, transparent 0%, rgba(56, 189, 248, 0.06) 100%);
+  background-size: 100% 100%, 72px 72px, 72px 72px, 100% 100%;
+}
+
+.table-style-royal {
+  background-color: #03130c;
+  background-image:
+    radial-gradient(ellipse at 50% 30%, rgba(34, 197, 94, 0.20), transparent 65%),
+    radial-gradient(ellipse at 50% 70%, rgba(252, 211, 77, 0.20), transparent 65%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(252, 211, 77, 0.03) 0 1px,
+      transparent 1px 18px
+    );
+}
+
+/* Responsive Casino Games */
+
+/* ─────────────────────────────────────────────────────────────────
+   FORCE LANDSCAPE — CSS rotation override for any device.
+   Triggered by <LandscapeRotateHint /> when the user taps "Force".
+   Founder ask 2026-05-10 (PDF Implementation Guide §5: Camera viewport
+   should always present the room in landscape regardless of device).
+   ───────────────────────────────────────────────────────────────── */
+body.gv-force-landscape {
+  overflow: hidden;
+}
+@media (orientation: portrait) {
+  body.gv-force-landscape #root > div {
+    transform: rotate(90deg);
+    transform-origin: left top;
+    width: 100vh;
+    height: 100vw;
+    overflow-x: hidden;
+    position: absolute;
+    top: 100vh;
+    left: 0;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   CARD ROOM LAYOUT — Implementation Guide PDF §1-2 (locked spec).
+   Apply via `.card-room-frame` on any multiplayer card room wrapper.
+   • Table geometry scale strictly 0.55 × 0.75 × 1.00 (PDF §2 §3).
+   • Played-card stack offset toward center-top (+25px Y) to avoid
+     overlap with the player's hand (PDF §2).
+   • Player hand anchored to the bottom safe area (PDF §5).
+   • CSS vars exposed so any Three.js scene can read:
+        --gv-card-table-fov         = 105
+        --gv-card-table-scale-x     = 0.55
+        --gv-card-table-scale-y     = 0.75
+        --gv-card-table-scale-z     = 1.00
+        --gv-card-host-yaw-deg      = 135
+   ───────────────────────────────────────────────────────────────── */
+:root {
+  --gv-card-table-fov: 105;
+  --gv-card-table-scale-x: 0.55;
+  --gv-card-table-scale-y: 0.75;
+  --gv-card-table-scale-z: 1.00;
+  --gv-card-host-yaw-deg: 135;
+}
+.card-room-frame {
+  max-height: calc(100vh - env(safe-area-inset-bottom, 0px) - env(safe-area-inset-top, 0px));
+  overflow: hidden;
+}
+.card-room-frame .table-mesh {
+  /* PDF §2: table = 55vw × 75vh, capped so it never bleeds. */
+  max-width: 55vw;
+  max-height: min(75vh, 600px);
+  aspect-ratio: 1.467 / 1;  /* 0.55/0.75 ≈ 0.733 → table reads wider than tall */
+  margin-left: auto;
+  margin-right: auto;
+}
+@media (max-width: 768px) {
+  /* On phones the PDF allows the table to scale up to 95vw so it stays
+     readable; the 0.55 ratio is desktop-canonical. */
+  .card-room-frame .table-mesh {
+    max-width: 95vw;
+  }
+}
+.card-room-frame .trick-play-area {
+  /* Push trick area toward center-top to avoid hand overlap. */
+  transform: translateY(-25px);
+}
+.card-room-frame .player-hand {
+  /* Anchor hand to bottom safe area. */
+  position: sticky;
+  bottom: env(safe-area-inset-bottom, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 8px);
+  z-index: 2;
+}
+/* AI host side-car (135° yaw means right-rear quadrant — translate via
+   trig: x=cos(135°)≈-0.707, y=sin(135°)≈+0.707, scaled down). Reserve
+   the slot even when the component hasn't mounted. */
+.card-room-frame .ai-host-sidecar {
+  position: absolute;
+  top: 12%;
+  right: 8%;
+  transform: rotate(-15deg);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Landscape Mobile Optimization */
+@media (orientation: landscape) and (max-height: 500px) {
+  .landscape-mode {
+    padding: 0.5rem !important;
+  }
+  
+  /* Compact cards in landscape */
+  .landscape-mode .card {
+    transform: scale(0.85);
+  }
+  
+  /* Reduce gaps */
+  .landscape-mode > div {
+    gap: 0.5rem !important;
+  }
+}
+
+/* Mobile Portrait */
+@media (max-width: 640px) {
+  /* Touch-friendly buttons */
+  button {
+    min-height: 44px;
+  }
+  
+  /* Prevent zoom on double-tap */
+  * {
+    touch-action: manipulation;
+  }
+}
+
+/* Tablet & Desktop */
+@media (min-width: 1024px) {
+  /* Use more horizontal space */
+  .roulette-landscape {
+    display: flex;
+    flex-direction: row;
+  }
+}
+
+/* Viewport height optimization for mobile */
+@supports (-webkit-touch-callout: none) {
+  /* iOS Safari */
+  .min-h-screen {
+    min-height: -webkit-fill-available;
+  }
+}
+
+/* Mobile-First Responsive Scaling for ALL Devices */
+@media (max-width: 767px) {
+  /* Force all casino games to fit within viewport */
+  body {
+    overflow-x: hidden;
+  }
+  
+  /* Blackjack mobile scaling */
+  .blackjack-container {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+  
+  /* Roulette mobile scaling */
+  .roulette-wheel {
+    width: min(90vw, 300px) !important;
+    height: min(90vw, 300px) !important;
+  }
+  
+  /* Betting table mobile */
+  .betting-grid {
+    transform: scale(0.7);
+    transform-origin: top center;
+  }
+  
+  /* Chips smaller on mobile */
+  .chip {
+    transform: scale(0.8);
+  }
+  
+  /* Buttons touch-friendly */
+  button {
+    min-height: 44px;
+    padding: 0.5rem 1rem;
+  }
+}
+
+/* Small phones (320px-374px like iPhone SE) */
+@media (max-width: 374px) {
+  .betting-grid {
+    transform: scale(0.6);
+  }
+  
+  .roulette-wheel {
+    width: min(85vw, 280px) !important;
+    height: min(85vw, 280px) !important;
+  }
+}
+
+/* Medium phones (375px-413px like iPhone 12/13) */
+@media (min-width: 375px) and (max-width: 413px) {
+  .betting-grid {
+    transform: scale(0.75);
+  }
+}
+
+/* Large phones (414px+ like iPhone Pro Max, Android) */
+@media (min-width: 414px) and (max-width: 767px) {
+  .betting-grid {
+    transform: scale(0.85);
+  }
+}
+
+/* Prevent horizontal scroll on ALL devices */
+* {
+  max-width: 100%;
+}
+
+html, body {
+  /* Use `clip` instead of `hidden` — `overflow-x: hidden` on html/body
+     creates a scrolling context which silently breaks `position: sticky`
+     on descendants. `clip` keeps the same visual cap but doesn't create
+     a scroll container, so sticky headers (e.g. landing language
+     switcher) work correctly on every page. */
+  overflow-x: clip;
+  width: 100%;
+}
+
+/* 2026-05-12 — White-card text-visibility hardening.
+ *
+ * Bug: shadcn <Input>/<Textarea>/<Label> primitives intentionally have NO
+ * explicit text color (they inherit from theme `--foreground`). On the
+ * dark global theme, foreground = near-white. ProfileSetup, ProfileEdit,
+ * and SignupPage render those primitives on a WHITE card → white-on-white
+ * = users could type but their text was invisible. Reported by founder.
+ *
+ * Fix: any input / textarea / select-trigger / label inside a `.bg-white`
+ * ancestor is forced to slate-900 text + slate-400 placeholders. The rule
+ * is scoped to `.bg-white` so it cannot break dark-themed forms.
+ * Date attribute selector tightens it further to avoid hitting things
+ * styled-but-not-visible. */
+.bg-white input,
+.bg-white textarea,
+.bg-white [role="combobox"],
+.bg-white [data-radix-select-trigger] {
+  color: rgb(15 23 42); /* slate-900 */
+}
+.bg-white input::placeholder,
+.bg-white textarea::placeholder {
+  color: rgb(148 163 184); /* slate-400 */
+}
+.bg-white label {
+  color: rgb(30 41 59); /* slate-800 */
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   MOBILE-OVERLAP GLOBAL FIXES (founder ask, May 2026)
+   These rules apply only on phone-sized viewports so desktop layouts
+   are untouched. Two surfaces get the treatment:
+
+   1. Any element with classes `fixed bottom-0` / `sticky bottom-0` /
+      `bottom-0 left-0 right-0` gets padded by the iOS gesture-bar safe
+      area so the bottom-nav, action bar, or in-game controls never sit
+      under the home indicator.
+
+   2. Any `fixed inset-0` modal/overlay gets a max-h-[90vh] cap so its
+      content never bleeds past the viewport on small phones.
+
+   To opt out (rare — e.g. true full-screen video player), add the
+   class `no-safe-bottom` or `no-mobile-cap`.
+   ───────────────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .fixed.bottom-0:not(.no-safe-bottom),
+  .sticky.bottom-0:not(.no-safe-bottom),
+  .gv-safe-bottom {
+    padding-bottom: max(env(safe-area-inset-bottom, 12px), 12px);
+  }
+
+  /* Cap any backdrop-style overlay so the modal body inside it can
+     scroll when content is taller than the phone. */
+  .fixed.inset-0:not(.no-mobile-cap) > * {
+    max-height: 92vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Pages that mount a full game table benefit from a "main scroller"
+     container — opt-in by adding `gv-room-scroll` to the outer wrapper. */
+  .gv-room-scroll {
+    padding-bottom: max(env(safe-area-inset-bottom, 16px), 16px);
+  }
+}
+

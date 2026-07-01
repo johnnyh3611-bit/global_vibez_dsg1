@@ -1,0 +1,42 @@
+{
+  "summary": "Founder follow-up sweep (4 verify items + full card-room re-sweep). ALL 4 VERIFY ITEMS PASS. Backend: 5/5 vibez_654 unit tests + 224/224 regression_shield = 229/229 GREEN. VERIFY-1 Vibez 654 dice tray correctness CONFIRMED — after 2 rolls with qualifiers 6 and 5 locked, the dice tray (testid=vibe654-dice-tray) rendered exactly 3 dice (5 - 2 qualified = 3 residual). Qualifier chips vibe654-qualifier-6-locked + vibe654-qualifier-5-locked visible above the tray, and the tray no longer duplicates the qualified faces. VERIFY-2 NotFound 404 page renders on /this-route-does-not-exist with testid=not-found-page, displays the path '/this-route-does-not-exist' in code style, all 4 suggestion tiles (Dashboard / Games / Chair Hall / Join Beta) present, Go Back + Take Me Home buttons functional — clicking Take Me Home lands on '/' (no longer a silent Navigate-to-/). VERIFY-3 backend_error.log shows 'Mongo ping OK — proceeding with startup.' on every recent backend boot (3 occurrences logged). VERIFY-4 BOTH suites green: regression_shield.py reports 224 passed and test_vibez_654_5dice.py reports 5 passed = 229 total. VERIFY-FULL all 12 card rooms (/spades /bid-whist /hearts /uno /euchre /pinochle /gin-rummy /rummy /war /crazy-eights /go-fish /baccarat) load cleanly: Quick Access pill present, 'Just for the Night' banner hidden, zero JS pageerrors. Safe to redeploy.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "verifications_passed": [
+    "VERIFY-1 Vibez 654 dice tray drops locked dice — tray=3 dice when 2 qualifiers (6,5) locked, math 5-2=3 confirmed visually",
+    "VERIFY-1 Qualifier chips vibe654-qualifier-6-locked + vibe654-qualifier-5-locked render as the sole indicator of qualified values",
+    "VERIFY-1b backend pytest test_vibez_654_5dice.py 5/5 PASS (test_apply_654_pass_logic_unit asserts residual_dice across qualified/not-qualified)",
+    "VERIFY-1b suite invoked from /app cwd (no PYTHONPATH needed — backend/conftest.py sys.path injection works)",
+    "VERIFY-2 /this-route-does-not-exist renders <NotFound /> with data-testid=not-found-page (not Navigate-to-/)",
+    "VERIFY-2 Path '/this-route-does-not-exist' shown in code style, 4 suggestion tiles + Go Back + Take Me Home buttons present",
+    "VERIFY-2 Take Me Home button click lands on '/' (root) successfully",
+    "VERIFY-3 /var/log/supervisor/backend_error.log shows 'Mongo ping OK — proceeding with startup.' on 3 consecutive recent boots",
+    "VERIFY-3 Lifespan hook uses asyncio.wait_for(client.admin.command('ping'), timeout=5.0) — verified in /app/backend/lifespan.py:39",
+    "VERIFY-4 regression_shield.py: 224 passed in 4.23s",
+    "VERIFY-4 test_vibez_654_5dice.py: 5 passed in 0.98s — total 229 backend tests green",
+    "VERIFY-FULL all 12 card rooms: Quick Access pill visible, JFTN banner hidden, zero JS pageerrors on load",
+    "VERIFY-FULL /vibe-654/solo: Ante In ₵1k → Roll → 2 rolls drove qualifiers 6 + 5 locked, dice tray correctly shrunk to 3 dice"
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_vibez_654_5dice.py",
+    "/app/backend/tests/regression_shield.py",
+    "/app/test_reports/playwright_screenshots/notfound.png",
+    "/app/test_reports/playwright_screenshots/vibe654.png"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "lifespan.py Mongo ping uses 5s timeout and logs FATAL but does NOT raise — relies on supervisor autorestart. This is the right call for prod (no tight crash loop) but means the backend will accept HTTP requests while Mongo is down and return 500s until ping succeeds on next boot. Consider adding a /api/health endpoint that re-pings on demand so a load-balancer can mark the pod unhealthy until Mongo recovers.",
+    "WhatsNewBanner ('Just for the Night room') correctly hidden on the 12 listed card-room routes via HIDDEN_EXACT array. Note: it IS still visible on the NotFound page (/this-route-does-not-exist) — that's expected since 404 isn't in HIDDEN_EXACT, but founder may want to hide it there too for cleanliness.",
+    "backend/conftest.py sys.path injection works — pytest now runs from /app cwd without manual PYTHONPATH. Good fix.",
+    "diceToRender uses residual_dice from server response when not all qualifiers locked; once all 3 qualifiers (6,5,4) lock the game flips to settle which is correct.",
+    "229 backend tests / 12 card-room frontend smoke / Vibez 654 dice tray DOM measurement all green — no regressions surfaced in this sweep."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "229/229 (100%)", "frontend": "12/12 card rooms clean + Vibez 654 dice tray + NotFound page all GREEN"},
+  "test_credentials": "Demo login [data-testid='login-demo-btn'] on /login — confirmed working, lands on /dashboard",
+  "seed_data_creation": "None — demo guest only",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All 4 follow-up verifications PASS plus full 12-room card sweep is clean. Backend regression_shield is now invocable from /app cwd (conftest.py sys.path fix). Mongo ping startup health-check logs 'Mongo ping OK' on every boot — if next agent sees 'FATAL: Mongo ping failed at startup', supervisor's autorestart will retry. Vibez 654 residual_dice math is locked into test_apply_654_pass_logic_unit. NotFound page is wired at the wildcard route (App.js) and renders for any unknown path. Safe to proceed straight to BETA REDEPLOY prep.",
+  "rca of the issue": "N/A — no failures. All 4 founder follow-ups shipped correctly and the 12-card-room post-fix re-sweep is clean."
+}

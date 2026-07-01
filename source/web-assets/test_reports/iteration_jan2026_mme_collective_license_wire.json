@@ -1,0 +1,42 @@
+{
+  "summary": "Comprehensive test of the MME collective-split wire + License Marketplace iteration. Regression shield 601/601 PASS. New integration suite 8/8 PASS after fixing one MongoDB-ObjectId serialization bug in services/dsg_music_group.py:set_collaborator_splits. Frontend License Marketplace renders with all 3 context tabs, license buttons populated for tv_sync seeded tracks, empty state correct for casino_background, smoke regression on /artist/music-group + /admin/dsg-logistics OK. THE CRITICAL WIRE verified end-to-end: a 1000-coin fan tip on a track with 60/40 splits credited collaborator A by exactly 480 and B by exactly 320 (asserted via balance deltas).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/music-group/splits/set", "issue": "FIXED — was returning 500 PydanticSerializationError because Mongo's insert_many mutates the rows dicts to add _id (ObjectId) and the route was returning those rows as-is. Patched services/dsg_music_group.py to pop('_id') after insert_many before returning."},
+      {"endpoint": "POST /api/media/tip", "issue": "Response body omits collective_split_count and collective_distribution. These ARE persisted on the music_transactions row, but exposing them on the tip response would let the UI render the split breakdown without an extra round-trip. Not blocking — balance deltas are correct."},
+      {"endpoint": "MME collective wire", "issue": "The iteration spec hinted at writing a music_royalty_payouts row with source='mme_auto_split' on every tip. Current implementation credits collaborators via _credit_artist_balance only — the music_royalty_payouts collection is written by services/dsg_music_group.disburse_collective_royalty (admin/manual path), NOT by the MME tip path. Audit/tax-export trail therefore lives on music_transactions.collective_distribution instead. Confirm with main agent whether the duplicate audit row is desired."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter_jan2026_mme_collective_license.py",
+    "/app/test_reports/pytest/iter_mme_collective_license.xml"
+  ],
+  "action_items": [
+    "Confirm whether music_royalty_payouts row with source='mme_auto_split' is required for tax-export — current MME tip path does NOT write one (relies on music_transactions.collective_distribution).",
+    "Consider returning collective_split_count + collective_distribution in the POST /api/media/tip response body so the UI can render the per-collaborator share inline.",
+    "Update /app/memory/test_credentials.md — `demo@globalvibez.com` rejected by the live login endpoint; only johnnyh3611@gmail.com + betatester{1,2,3}@globalvibez.com work."
+  ],
+  "critical_code_review_comments": [
+    "services/dsg_music_group.py set_collaborator_splits — fixed mongo _id leak; same pattern (returning post-insert dicts) should be audited across other services to prevent the same Pydantic serialization 500.",
+    "services/media_engine.py:_credit_artist_collective_slice — clean implementation, deterministic rounding (largest holder absorbs the cent), explicit no-burn semantics, lazy import keeps backwards compat. LGTM.",
+    "routes/dsg_music_group_routes.py:licensable_tracks — proper JOIN with dsg_tracks status='active' filter, momentum-sorted, limit-capped at 100. LGTM.",
+    "regression_shield.py — good shields for no-burn invariant + helper wiring + endpoint mount. 601/601 pass."
+  ],
+  "updated_files": [
+    "/app/backend/services/dsg_music_group.py (popped mongo _id from insert_many response to prevent Pydantic serialization 500)",
+    "/app/backend/tests/test_iter_jan2026_mme_collective_license.py (new integration suite — 8 tests)"
+  ],
+  "success_rate": {"backend": "100% (601 regression + 8 new integration = 609/609)", "frontend": "100% (license marketplace + 3 tabs + empty state + 2 regression pages render)"},
+  "test_credentials": "betatester1@globalvibez.com / BetaTester2026! (also betatester2/3). demo@globalvibez.com from the request is INVALID on the live backend.",
+  "seed_data_creation": "Tests create TEST_LIC_* and TEST_SPLIT_* tracks owned by betatester1. Two of those (TEST_LIC_9991ee07, TEST_LIC_5d6c47ac) are visible in the tv_sync marketplace tab UI.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "License Marketplace at /marketplace/license is auth-gated. Test seed leaves 2 opted-in tv_sync tracks visible in UI. Critical MME wire (60/40 split → 480/320 coin credit) verified end-to-end. The bug in splits/set (mongo _id leak in response) is already patched.",
+  "rca of the issue": "splits/set 500: PyMongo's insert_many() mutates the input dicts by injecting bson.ObjectId at key '_id'. The route then returned those same dicts inside the JSON response, and Pydantic's serializer rejected ObjectId → PydanticSerializationError → 500. Fix: pop('_id', None) on each row before return. Reproduction: POST /api/music-group/splits/set with valid 60/40 splits; before fix returned 500, after fix returns 200 with clean rows."
+}

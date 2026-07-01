@@ -1,0 +1,39 @@
+{
+  "summary": "Frontend-only retest of bot-play staging fixes across 5 AAA card rooms (Hearts, Crazy Eights, Gin Rummy, Rummy, Go Fish) + joker rendering in Rummy + 8-room regression. ALL 5 STAGING FIXES VERIFIED: bots' actions are now visible one-by-one with appropriate delays, narrated via the SpadesStatusBanner. Joker cards render correctly with the new violet/fuchsia gradient + JKR label and no overflow. 7/8 rooms regression-OK; /spades direct route doesn't expose its queue/table testid on cold load (pre-existing, noted in prior iteration; Bid-Whist and the other 6 verified clean).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/iteration_jan_2026_aaa_card_staging_fixes.json"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Hearts staging: playCard's play_sequence walk + 850ms inter-play / 1200ms hold renders correctly; trick pile shows multiple cards before clearing.",
+    "Crazy Eights stagePlaySequence helper drives top-card through each play_sequence event (4 distinct top cards observed in 5.6s after one user play with bot follow-ups).",
+    "Gin Rummy submitDiscard staging: banner walks 'Opponent drew from stock' -> 'Opponent discarded 10C', and top-discard mirrors the banner.",
+    "Rummy submitDiscard staging is the most complete: all 3 bots narrated sequentially (Hawks/Vipers/Cobras drew + discarded), 6 distinct banner messages over ~5s.",
+    "Go Fish ask staging: 6 distinct narration messages (user ask, Pearl ask + draw result, Sailor turn). Modal closes after submit and re-opens only on user's turn.",
+    "Joker render: rummy-card-joker-{id} testid present, violet/fuchsia gradient (from-violet-500 via-fuchsia-500 to-violet-700) + JKR top/bottom labels, no overflow.",
+    "Pre-existing benign noise still present: Privy 403, CSP frame-ancestors block on auth.privy.io iframe, generic 'TypeError: e is not a function' from bundle (Privy SDK init). Not a regression."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (frontend-only)", "frontend": "100% on the 5 staging flows + joker render; 7/8 regression rooms (spades cold-route testid pre-existing)"},
+  "test_credentials": "POST /api/auth/demo-login via [data-testid=login-demo-btn]",
+  "seed_data_creation": "None — demo-login auto-provisions guest session.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Status banner is rendered via shared <SpadesStatusBanner /> with testid 'spades-status-banner' (NOT 'gin-rummy-flash' / 'rummy-flash' / 'go-fish-flash' — those testids do NOT exist; only 'gin-rummy-status' / 'rummy-status' which are the deadwood info row). To assert flash narration, sample the textContent of [data-testid=spades-status-banner] every ~400ms for 5-7s. Hand cards in Hearts/CrazyEights/Spades/BidWhist render via SpadesHandFan -> SpadesCard with testid 'spades-card-{rank}-{suit}' (no game-specific prefix). Trick pile is 'spades-trick-pile' (no per-card testids — count children with selector div.absolute). Spades direct /spades route: lobby uses different naming than spades-aaa-lobby; it lands on a queue screen ('spades-queue-screen') only after start, on cold load it renders match-finder UI without that testid — pre-existing per iteration_jan_2026_final_aaa_ginrummy_rummy_war.json.",
+  "e2e_validation_table": {
+    "Hearts staging": "PASS — 13 hand cards, pass modal works, after play trick pile holds multiple motion cards (max=17 layered) then clears to 1",
+    "Crazy Eights staging": "PASS — 4 distinct top-card values (4♣,6♣,2♣,K♣) within 5.6s; user-play+bot-plays staged at ~700ms intervals",
+    "Gin Rummy staging": "PASS — 'Opponent drew from stock' then 'Opponent discarded 10C' banners visible; top-discard updates to 10♣",
+    "Rummy staging": "PASS — all 3 bots (Hawks/Vipers/Cobras) narrated drew+discarded sequentially over ~5s, 6 distinct messages",
+    "Go Fish staging": "PASS — 6 distinct narration banners covering user ask + Pearl bot's go-fish + Sailor's took action; ask-modal closes after submit",
+    "Rummy joker render": "PASS — rummy-card-joker-1 present, violet/fuchsia gradient bg, JKR labels, no overflow",
+    "Regression /hearts /crazy-eights /go-fish /gin-rummy /rummy /war /bid-whist": "PASS",
+    "Regression /spades": "Cold-load doesn't expose spades-queue-screen/spades-aaa testid — pre-existing, not blocker (noted prior iteration)"
+  }
+}

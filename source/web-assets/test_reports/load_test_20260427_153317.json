@@ -1,0 +1,13 @@
+{
+  "duration_sec": 932.85,
+  "total_requests": 291,
+  "success": 291,
+  "failed": 0,
+  "success_rate": 100.0,
+  "rps": 0.31,
+  "avg_ms": 464.04,
+  "p95_ms": 627.61,
+  "bots_created": 180,
+  "games_played": 80,
+  "errors": []
+}

@@ -1,0 +1,50 @@
+{
+  "summary": "Tested the Universal Card Room prototype (Spades AAA canonical reused for Bid Whist AAA). Spades AAA is healthy end-to-end — lobby, table variant='emerald', progress pills on N/E/W render '0' pre-bid exactly as spec'd. Bid Whist AAA LOBBY is healthy (title, 54-card rules, start button all present) and ALL legacy routes (/bid-whist-lobby, /bid-whist-premium) correctly redirect to /bid-whist. Backend /api/bid-whist-practice/start returns 200 with phase='bidding' + 12-card hand + 6-card kitty as spec'd. HOWEVER the Bid Whist game view CRASHES immediately after Start AI Match due to a field-name shape mismatch between the backend response and the adapter inside BidWhistAAA.tsx — Error: 'Cannot read properties of undefined (reading north)' inside adaptPlayers. The Spades table never mounts, so variant='cobalt' + N/E/W progress pills cannot be verified. Spades progress-pill feature works as designed.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/bid-whist-practice/start", "issue": "Returns legacy field names (players_data, whose_turn, winning_bid, bids[].player, bids[].type) that don't match the Spades-prototype shape the new BidWhistAAA.tsx adapter expects. Either backend should normalise to the Spades shape or the frontend adapter must be updated."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "BidWhistAAA / adaptPlayers", "issue": "TypeError: Cannot read properties of undefined (reading 'north') — raw.players is null because backend ships players under 'players_data'. Crashes the whole game view; error boundary shows blank screen.", "selector": "[data-testid='bidwhist-aaa']", "priority": "CRITICAL"}
+    ],
+    "integration_issues": [
+      {"flow": "BidWhist game start → table render", "issue": "Field-name mismatch: FE expects raw.players, raw.current_turn, raw.current_bid, raw.bids[].bidder/bid_type. BE returns raw.players_data, raw.whose_turn (+ current_bidder), raw.winning_bid, raw.bids[].player/type. Fix: update adaptPlayers/trickPile/phase helpers or the BwRawState interface in /app/frontend/src/pages/games/BidWhistAAA.tsx.", "affected_selectors": ["[data-testid='spades-table'][data-variant='cobalt']", "[data-testid='spades-seat-progress-north']", "[data-testid='spades-seat-progress-east']", "[data-testid='spades-seat-progress-west']"]}
+    ],
+    "design_issues": []
+  },
+  "verified_working": [
+    "/bid-whist lobby renders — title 'Bid Whist AAA', start-btn testid, rules text '54-card deck' ✓",
+    "Legacy /bid-whist-lobby → /bid-whist redirect ✓",
+    "Legacy /bid-whist-premium → /bid-whist redirect ✓",
+    "/spades lobby renders with spades-lobby + spades-lobby-start-btn testids ✓",
+    "Spades start AI match: spades-table mounts with data-variant='emerald', N/E/W progress pills render '0' pre-bid ✓",
+    "Backend POST /api/spades-practice/start → phase=bidding, 13-card hand, N/E/S/W seats in players ✓",
+    "Backend POST /api/bid-whist-practice/start → phase=bidding, 12-card hand, kitty_count=6 ✓ (but uses players_data not players — see integration issue)"
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_bid_whist_aaa_universal.py",
+    "/app/test_reports/pytest/iter_jan_2026_bidwhist_aaa_universal.xml"
+  ],
+  "action_items": [
+    "CRITICAL: Fix adapter in /app/frontend/src/pages/games/BidWhistAAA.tsx — map raw.players_data → players, raw.whose_turn → current_turn, raw.winning_bid → current_bid (with .player → .bidder), raw.bids[].player → bidder, raw.bids[].type → bid_type. Without this, BidWhistAAA is completely unusable after clicking Start AI Match.",
+    "After the fix, re-verify data-variant='cobalt' on spades-table and that spades-seat-progress-{north|east|west} pills render at Bid Whist."
+  ],
+  "critical_code_review_comments": [
+    "BidWhistAAA.tsx BwRawState interface is a fiction — it was modeled on the Spades schema instead of the actual Bid Whist backend shape. Either align backend to emit the Spades shape (preferred for universal prototype cleanliness) or normalise at the adapter layer.",
+    "adaptPlayers should null-guard: if the shape is unexpected, fall back to a safe empty dict instead of crashing the entire route.",
+    "Consider adding a Sentry/console.error breadcrumb in BidWhistAAA adapter when raw.players is falsy, so this class of bug surfaces faster next time."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_bid_whist_aaa_universal.py (new)"
+  ],
+  "success_rate": {"backend": "100% (2/2 smoke endpoints 200)", "frontend": "50% (Spades healthy, BidWhist game view crashes)"},
+  "test_credentials": "Demo login via [data-testid=login-demo-btn] — no seeded account needed.",
+  "seed_data_creation": "None.",
+  "retest_needed": true,
+  "main_agent_can_self_test": false,
+  "context_for_next_testing_agent": "Backend returns 200 for both start endpoints. BidWhistAAA front-end adapter has a field-name shape mismatch; after main agent patches the adapter, re-run: (1) POST /api/bid-whist-practice/start confirms 12-card hand/6-card kitty, (2) /bid-whist Start AI Match → spades-table has data-variant='cobalt', (3) spades-seat-progress-{north,east,west} all visible with '0' pre-bid and format 'X/Y' after auction. Ignore Privy CSP 403 / 'TypeError: e is not a function' — those are pre-existing noise.",
+  "rca of the issue": "ROOT CAUSE: BidWhistAAA.tsx was authored assuming the Bid Whist backend returns the Spades AAA response schema (players, current_turn, current_bid, bids[].bidder/bid_type). It doesn't — BW backend returns players_data, whose_turn/current_bidder, winning_bid, bids[].player/type. The `adaptPlayers(raw.players, raw.bids, youPosition)` call therefore passes null as its first arg; the inner loop `raw[pos]` throws 'Cannot read properties of undefined (reading north)'. REPRO: login via demo → navigate /bid-whist → click Start AI Match → within ~4s the game view disappears and console logs the TypeError. MITIGATION: update the adapter (or BwRawState interface + field access sites) to pull from the BW shape. Example patch: const rawPlayers = raw.players_data ?? raw.players ?? {}; const currentTurn = raw.current_turn ?? raw.whose_turn ?? raw.current_bidder; for (const b of bids) bidMap[b.bidder ?? b.player] = b.amount; const currentHighBid = (raw.current_bid ?? raw.winning_bid) ? { amount: (raw.current_bid ?? raw.winning_bid).amount, bidder: (raw.current_bid ?? raw.winning_bid).bidder ?? (raw.winning_bid as any).player } : null;"
+}

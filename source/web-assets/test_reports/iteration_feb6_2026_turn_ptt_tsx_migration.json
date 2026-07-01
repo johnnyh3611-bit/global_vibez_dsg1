@@ -1,0 +1,54 @@
+{
+  "summary": "Iteration 5 (Feb 6 2026) regression test for TURN fallback + Push-to-Talk + .jsx → .tsx migration. Backend regression_shield + vibe_room_signaling = 62 PASSED (was 60, +2 new locks confirmed). Frontend smoke on mobile 390x844 confirms PTT button + spacebar hotkey + mic disable + typing-guard all functional. Three random shadcn-importing pages (/games, /vibe-vault-admin, /spades) compile and render with 0 'Module not found' errors. Zero .jsx files remain in /app/frontend/src.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/regression_shield.py",
+    "/app/backend/tests/test_vibe_room_signaling.py"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "VibeRoomVoice.tsx now 745 lines — approaching 700-line guideline. Consider splitting WebRTC peer-connection logic, PTT hooks, and presentation layout into separate files in a future refactor.",
+    "DEFAULT_ICE_SERVERS IIFE is clean and correctly switches private TURN (REACT_APP_TURN_URL/USER/PASS) over OpenRelay public fallback. iceServers prop default wires through.",
+    "PTT spacebar listener correctly e.preventDefault()s, gates on e.repeat (no key-repeat retrigger), and skips INPUT/TEXTAREA/SELECT/contentEditable targets. Cleanup unsets pttPressed on unmount.",
+    "Mic button correctly disabled (HTML disabled + opacity-40 cursor-not-allowed) when pushToTalk active.",
+    "PTT button glow (emerald shadow) bound to pttPressed state — visual feedback verified in DOM."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (62/62)", "frontend": "100% (PTT smoke + 3 shadcn pages)"},
+  "test_credentials": "POST /api/auth/demo-login (no body) — used during browser tests; cookie session established.",
+  "seed_data_creation": "Created 1 vibe654 tournament table id=4235a350-530b-4b86-b48e-eb7fea0d82d9 ('Test PTT', host=demo_23970ac9, buy_in=100) for live coliseum render. Status WAITING; can be left to age out or cleaned via admin.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Round 5 verified: (1) backend regression 62/62; (2) PTT toggle + spacebar + typing-guard + mic-disable confirmed in browser; (3) shadcn imports survive .jsx→.tsx rename across /games, /vibe-vault-admin, /spades. find /app/frontend/src -name '*.jsx' = 0 results. Live human QA (real mic/cam negotiation) deferred to beta testers per /app/memory/MULTI_HUMAN_QA_CHECKLIST.md.",
+  "rca of the issue": "N/A — no defects found this round.",
+  "evidence": {
+    "backend_pytest_tail": "62 passed, 10 warnings in 3.96s",
+    "ptt_browser_results": {
+      "voice_bar_present": true,
+      "ptt_toggle_present": true,
+      "mic_toggle_present": true,
+      "video_toggle_present": true,
+      "hint_hidden_when_ptt_off": true,
+      "hint_text_when_ptt_on_idle": "· Hold SPACE",
+      "hint_text_when_space_held": "· TALKING",
+      "hint_text_after_space_release": "· Hold SPACE",
+      "mic_disabled_when_ptt_on": true,
+      "mic_has_opacity_40_class": true,
+      "spacebar_guarded_when_input_focused": true
+    },
+    "shadcn_smoke": {
+      "/games": "rendered, bodyLen=1156, no module errors",
+      "/vibe-vault-admin": "rendered admin password gate, no module errors",
+      "/spades": "rendered Spades AAA mode picker, no module errors"
+    },
+    "jsx_residue_count": 0
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "summary": "FINAL PRE-REDEPLOY VERIFICATION — Global Vibez DSG. Regression shield: 263/263 PASSED. Backend smoke probes: 13/14 endpoints OK. Frontend: all critical pages render with no white screens, login works for beta tester, dashboard toggle (Classic/Volumetric) works in same tab, ?role= deep-link routes correctly, legacy /driver/dashboard redirects to /vibe-ridez/driver-dashboard, profile setup text is slate-900 (verified rgb(15,23,42)), 404 page is branded, unified earnings widget visible, landing tour video present. ONE real bug found: God Mode smoke probe targets `/api/just-for-the-night/rooms` but the actual endpoint is `/api/just-for-the-night/rooms/discover` — probe will show RED on production smoke card. All other accepted pre-launch gaps (Stripe Connect configured=false, Resend default sender, LLM budget cap, Solana stubbed) behaved as documented and were NOT flagged.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "/api/just-for-the-night/rooms",
+        "issue": "Returns 404 — ProductionSmokeTestCard probe at line 36 expects 200 but the implemented route is `/api/just-for-the-night/rooms/discover`. Either add a `/rooms` alias OR update the smoke probe path to `/rooms/discover`. Founder will see this as RED in /vibe-vault-admin pulse panel.",
+        "priority": "HIGH"
+      },
+      {
+        "endpoint": "/api/auth/login (demo@globalvibez.com / FreshStart2026!)",
+        "issue": "Review request mentioned this account for password login, but 401 returned. The seeded demo flow is the anonymous /api/auth/demo-login button (test_credentials.md confirms). Founder login `johnnyh3611@gmail.com / FreshStart2026!` works (200). Likely a stale credential reference in the prompt, NOT a bug — verified via test_credentials.md.",
+        "priority": "LOW"
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Driver dashboard + /my-streams",
+        "issue": "2 console 404 errors on page load (data/asset fetch — page itself renders fine, not blocking). Likely a missing optional resource (image/feed).",
+        "affected_selectors": []
+      }
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/regression_shield.py (263 passed)",
+    "/app/backend/tests/test_pre_redeploy_final_jan2026.py"
+  ],
+  "action_items": [
+    "FIX BEFORE REDEPLOY (HIGH): Update /app/frontend/src/components/admin/ProductionSmokeTestCard.tsx line 36 — change probe path from `/api/just-for-the-night/rooms` to `/api/just-for-the-night/rooms/discover` (OR add a `/rooms` alias in /app/backend/routes/just_for_the_night.py). Without this, the God Mode pulse panel shows 13/14 green + 1 red, which will look like a regression to the founder.",
+    "OPTIONAL: Investigate 404 console resource errors on /vibe-ridez/driver-dashboard and /my-streams (page renders fine but minor noise in console)."
+  ],
+  "critical_code_review_comments": [
+    "ProductionSmokeTestCard probe URL mismatch with backend route (see action item)",
+    "demo@globalvibez.com password login mentioned in review request is not seeded — only anonymous /api/auth/demo-login is implemented; founder/beta accounts use real seeded passwords. test_credentials.md is the source of truth."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_pre_redeploy_final_jan2026.py (new — re-runnable smoke suite)"
+  ],
+  "success_rate": {
+    "backend": "98%",
+    "frontend": "100%"
+  },
+  "test_credentials": "betatester1@globalvibez.com / BetaTester2026! (verified login OK); johnnyh3611@gmail.com / FreshStart2026! (founder, verified OK); /api/auth/demo-login (anonymous, verified OK)",
+  "seed_data_creation": "None — used pre-seeded beta tester from beta_tester_seeder",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Pre-redeploy verification PASSED with one HIGH-priority smoke-probe URL mismatch (ProductionSmokeTestCard JFTN rooms probe). Regression shield 263/263. All role dashboards render, dashboard toggle works, deep-link works, profile setup text fix verified at computed color rgb(15,23,42), legacy redirect works, 404 branded, Stripe Connect gracefully degraded. After main agent fixes the smoke-probe URL, GREEN LIGHT for redeploy.",
+  "rca_of_the_issue": "ProductionSmokeTestCard was written referencing a public list endpoint `/api/just-for-the-night/rooms`, but the JFTN router (registered in /app/backend/routes/just_for_the_night.py) only exposes `/rooms/create` (POST), `/rooms/discover` (GET, list), `/rooms/{room_id}` (GET, detail). There is no bare `/rooms` GET handler. Reproduction: `curl https://social-connect-953.preview.emergentagent.com/api/just-for-the-night/rooms` returns 404. Mitigation: either (a) add `@router.get(\"/rooms\")` in just_for_the_night.py that calls discover_rooms, or (b) edit ProductionSmokeTestCard.tsx line 36 path to `/api/just-for-the-night/rooms/discover`. Both single-line fixes."
+}

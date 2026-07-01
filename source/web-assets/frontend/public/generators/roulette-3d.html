@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Roulette Card</title>
+  <style>
+    body { margin: 0; overflow: hidden; background: #000; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    // Setup Scene
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setSize(1000, 1000);
+    renderer.setClearColor(0x000000);
+    document.body.appendChild(renderer.domElement);
+
+    // Create Roulette Wheel
+    const wheelGeometry = new THREE.TorusGeometry(8, 1, 16, 100);
+    const wheelMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0xffd700, 
+      metalness: 0.8, 
+      roughness: 0.2,
+      emissive: 0xff00ff,
+      emissiveIntensity: 0.5
+    });
+    const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+    scene.add(wheel);
+
+    // Add segments
+    for (let i = 0; i < 12; i++) {
+      const segmentGeometry = new THREE.BoxGeometry(0.5, 6, 0.3);
+      const isRed = i % 2 === 0;
+      const segmentMaterial = new THREE.MeshStandardMaterial({ 
+        color: isRed ? 0xff0055 : 0x000000,
+        metalness: 0.7,
+        roughness: 0.3,
+        emissive: isRed ? 0xff0055 : 0x00ffff,
+        emissiveIntensity: isRed ? 0.8 : 0.6
+      });
+      const segment = new THREE.Mesh(segmentGeometry, segmentMaterial);
+      const angle = (i / 12) * Math.PI * 2;
+      segment.position.x = Math.cos(angle) * 7;
+      segment.position.y = Math.sin(angle) * 7;
+      segment.rotation.z = angle;
+      scene.add(segment);
+    }
+
+    // Center ball
+    const ballGeometry = new THREE.SphereGeometry(1.5, 32, 32);
+    const ballMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0xffffff,
+      metalness: 1.0,
+      roughness: 0.1,
+      emissive: 0x00ffff,
+      emissiveIntensity: 1.0
+    });
+    const ball = new THREE.Mesh(ballGeometry, ballMaterial);
+    scene.add(ball);
+
+    // Neon glow rings
+    for (let i = 0; i < 3; i++) {
+      const ringGeometry = new THREE.TorusGeometry(10 + i * 2, 0.2, 8, 50);
+      const ringMaterial = new THREE.MeshBasicMaterial({ 
+        color: i === 0 ? 0xff00ff : (i === 1 ? 0x00ffff : 0xff0055),
+        transparent: true,
+        opacity: 0.6 - i * 0.15
+      });
+      const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+      scene.add(ring);
+    }
+
+    // Lights
+    const ambientLight = new THREE.AmbientLight(0x440044, 1.5);
+    scene.add(ambientLight);
+
+    const pointLight1 = new THREE.PointLight(0xff00ff, 3, 100);
+    pointLight1.position.set(15, 15, 15);
+    scene.add(pointLight1);
+
+    const pointLight2 = new THREE.PointLight(0x00ffff, 3, 100);
+    pointLight2.position.set(-15, -15, 15);
+    scene.add(pointLight2);
+
+    const pointLight3 = new THREE.PointLight(0xff0055, 2, 100);
+    pointLight3.position.set(0, 0, 20);
+    scene.add(pointLight3);
+
+    camera.position.z = 30;
+
+    // Animation
+    let rotation = 0;
+    function animate() {
+      requestAnimationFrame(animate);
+      rotation += 0.01;
+      
+      wheel.rotation.z = rotation * 0.5;
+      scene.rotation.y = Math.sin(rotation * 0.5) * 0.1;
+      
+      // Animate neon rings
+      scene.children.forEach((child, index) => {
+        if (child.geometry && child.geometry.type === 'TorusGeometry' && index > 3) {
+          child.rotation.z = rotation * (index * 0.3);
+        }
+      });
+      
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+</html>
