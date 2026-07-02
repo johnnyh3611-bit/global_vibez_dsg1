@@ -1,4 +1,5 @@
 import { EarningsWidget } from "@/components/dashboard/EarningsWidget";
+import { EarningsBanner } from "@/components/dashboard/EarningsBanner";
 import { JobBoard } from "@/components/dashboard/JobBoard";
 
 export const metadata = {
@@ -11,7 +12,7 @@ export default function DashboardPage() {
     <main className="min-h-[calc(100vh-64px)] w-full bg-background-deep px-4 py-8 text-white sm:px-6">
       <div className="mx-auto w-full max-w-6xl">
         {/* Header */}
-        <header className="mb-12">
+        <header className="mb-8">
           <h1 className="text-4xl font-bold sm:text-5xl">
             Your Vibe Hub
           </h1>
@@ -23,6 +24,9 @@ export default function DashboardPage() {
 
         {/* Earnings Stats */}
         <EarningsWidget />
+
+        {/* Play to Earn Banner */}
+        <EarningsBanner variant="full" />
 
         {/* Job Board */}
         <JobBoard />

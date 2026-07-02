@@ -10,6 +10,7 @@ const LINKS = [
   { label: "Dating", href: "/dating" },
   { label: "Games", href: "/games" },
   { label: "TV Network", href: "/tv" },
+  { label: "Earn 💸", href: "/earn", highlight: true },
   { label: "Dealer Lounge", href: "/dealer" },
   { label: "Chair Registry", href: "/chair-registry" },
   { label: "Sweepstakes", href: "/sweepstakes" },
@@ -43,15 +44,18 @@ export function GlobalNavbar() {
         <ul className="hidden items-center gap-1 md:flex">
           {LINKS.map((link) => {
             const active = isActive(pathname, link.href);
+            const isHighlight = "highlight" in link && link.highlight;
             return (
               <li key={link.href}>
                 <Link
                   href={link.href}
                   aria-current={active ? "page" : undefined}
                   className={`inline-flex min-h-11 items-center rounded-full px-4 text-sm font-medium transition-colors ${
-                    active
-                      ? "bg-surface-glass-strong text-white"
-                      : "text-white/60 hover:bg-surface-glass hover:text-white"
+                    isHighlight && !active
+                      ? "bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-400 hover:from-green-500/30 hover:to-emerald-500/30"
+                      : active
+                        ? "bg-surface-glass-strong text-white"
+                        : "text-white/60 hover:bg-surface-glass hover:text-white"
                   }`}
                 >
                   {link.label}
@@ -78,6 +82,7 @@ export function GlobalNavbar() {
         <ul className="flex flex-col gap-1 border-t border-surface-glass-border px-4 pb-4 pt-2 md:hidden">
           {LINKS.map((link) => {
             const active = isActive(pathname, link.href);
+            const isHighlight = "highlight" in link && link.highlight;
             return (
               <li key={link.href}>
                 <Link
@@ -85,9 +90,11 @@ export function GlobalNavbar() {
                   onClick={() => setOpen(false)}
                   aria-current={active ? "page" : undefined}
                   className={`flex min-h-11 items-center rounded-glass px-4 text-base font-medium transition-colors ${
-                    active
-                      ? "bg-surface-glass-strong text-white"
-                      : "text-white/70 hover:bg-surface-glass hover:text-white"
+                    isHighlight && !active
+                      ? "bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-400 hover:from-green-500/30 hover:to-emerald-500/30"
+                      : active
+                        ? "bg-surface-glass-strong text-white"
+                        : "text-white/70 hover:bg-surface-glass hover:text-white"
                   }`}
                 >
                   {link.label}

@@ -1,4 +1,5 @@
 import { GlobalCard } from "@/components/ui/GlobalCard";
+import { EarningsBanner } from "@/components/dashboard/EarningsBanner";
 
 export const metadata = {
   title: "Global Vibez DSG — Game Lobby",
@@ -31,9 +32,12 @@ export default function GamesLobbyPage() {
           </p>
           <h1 className="mt-2 text-3xl font-bold sm:text-4xl">Pick your table</h1>
           <p className="mt-2 max-w-xl text-sm text-white/60">
-            Sit down at a high-fidelity table. More games join the floor soon.
+            Sit down at a high-fidelity table. Win cash. More games join the floor soon.
           </p>
         </header>
+
+        {/* Play to Earn callout */}
+        <EarningsBanner variant="compact" />
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           {GAMES.map((game) => (
