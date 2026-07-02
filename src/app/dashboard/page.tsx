@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { EarningsWidget } from "@/components/dashboard/EarningsWidget";
 import { EarningsBanner } from "@/components/dashboard/EarningsBanner";
 import { JobBoard } from "@/components/dashboard/JobBoard";
+import { HapticButton } from "@/components/ui/HapticButton";
 
 export const metadata = {
   title: "Dashboard — Global Vibez DSG",
@@ -40,18 +42,16 @@ export default function DashboardPage() {
             Combine roles: Play games, stream your wins, and refer friends for maximum rewards.
           </p>
           <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-            <a
-              href="/earn"
-              className="inline-flex min-h-11 items-center justify-center rounded-full bg-brand-primary px-6 font-semibold text-white transition-all hover:scale-105 hover:bg-brand-primary-hover"
-            >
-              Explore All Earning Options
-            </a>
-            <a
-              href="/tv/broadcast"
-              className="inline-flex min-h-11 items-center justify-center rounded-full border border-surface-glass-border bg-transparent px-6 font-semibold text-white transition-all hover:bg-surface-glass"
-            >
-              Start Streaming Now
-            </a>
+            <Link href="/earn">
+              <HapticButton haptic="medium" variant="primary">
+                Explore All Earning Options
+              </HapticButton>
+            </Link>
+            <Link href="/tv/broadcast">
+              <HapticButton haptic="light" variant="secondary">
+                Start Streaming Now
+              </HapticButton>
+            </Link>
           </div>
         </div>
       </div>

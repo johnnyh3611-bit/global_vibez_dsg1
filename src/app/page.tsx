@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { HapticButton } from "@/components/ui/HapticButton";
 
 export default function Home() {
   return (
@@ -30,12 +31,13 @@ export default function Home() {
           One wallet. Every vibe. Connect, stream, and play — all on-chain.
         </p>
 
-        <Link
-          href="/games"
-          className="mt-10 inline-flex min-h-11 items-center justify-center rounded-full bg-brand-primary px-10 py-4 text-base font-semibold text-white shadow-brand-glow transition-all hover:scale-105 hover:bg-brand-primary-hover"
-        >
-          Enter Global Vibez DSG
-        </Link>
+        <div className="mt-10">
+          <Link href="/games">
+            <HapticButton haptic="success" variant="primary">
+              Enter Global Vibez DSG
+            </HapticButton>
+          </Link>
+        </div>
       </div>
     </div>
   );
