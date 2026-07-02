@@ -1,0 +1,8 @@
+
+> frontend@0.1.0 build
+> GENERATE_SOURCEMAP=false DISABLE_ESLINT_PLUGIN=true TSC_COMPILE_ON_ERROR=true INLINE_RUNTIME_CHUNK=false CI=false NODE_OPTIONS='--max-old-space-size=8192' craco build
+
+Cannot find ESLint plugin (ESLintWebpackPlugin).
+(node:63788) [DEP0176] DeprecationWarning: fs.F_OK is deprecated, use fs.constants.F_OK instead
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Creating an optimized production build...
