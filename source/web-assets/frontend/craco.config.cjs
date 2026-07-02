@@ -39,19 +39,17 @@ module.exports = {
         webpackConfig.devtool = false;
       }
 
-      // 2026-05-17 deploy fix: cap TerserPlugin parallel workers to 2.
-      // Default (= os.cpus().length) was spinning up 8 minify workers
-      // on Cloud Build's 8-core node — each consuming ~1.2GB — which
-      // blew past the 8GB node heap cap and silently OOM-stalled the
-      // build for 5+ minutes before timing out. 2 workers keeps the
-      // memory peak under control AND finishes minification ~3× faster
-      // because they don't thrash GC.
+      // 2026-05-17 deploy fix: cap TerserPlugin to a single worker.
+      // Even two workers can still exceed the memory budget in this
+      // recovered beta branch because the bundle surface is large and
+      // the build runs without swap. A single worker is slower but
+      // materially reduces the chance of the build being killed.
       if (Array.isArray(webpackConfig.optimization?.minimizer)) {
         webpackConfig.optimization.minimizer.forEach((m) => {
           if (m && m.constructor && m.constructor.name === "TerserPlugin") {
             try {
               m.options = m.options || {};
-              m.options.parallel = 2;
+              m.options.parallel = false;
             } catch {
               /* best-effort */
             }
