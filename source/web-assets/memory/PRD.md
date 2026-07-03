@@ -1413,7 +1413,7 @@
 >
 > **Status: 🟢 ready for beta redeploy.** No P0 blockers remaining for the V654 + visual-sweep workstream. The user has already deployed; preview ↑ matches what next deploy will ship.
 >
-> 1. **Stripe is FULLY WIRED and LIVE** — was incorrectly flagged as "missing keys" in handoff. The pod env auto-provisions `STRIPE_API_KEY=sk_test_emergent`, both Stripe checkout flows tested end-to-end with curl + the betatester1 token: `POST /api/coins/topup/checkout` (auth-gated, ₵-pack vibez coin top-up · 4 packs $5/$9/$20/$35) and `POST /api/wallet/topup/create-session` (vibez wallet · 5 packs $10–$250) both return valid `cs_test_…` Stripe-hosted checkout URLs. `TopUpVibezCoinsModal` is auto-opened on 402/insufficient errors across JFTN, VibeRidez, YellowPages, RestaurantDetail, plus a manual "Buy" CTA inside `/wallet`. `/wallet/topup-success` polls `/api/coins/topup/status/{id}` until credited. **No further wiring required for beta.**
+> 1. **Stripe is FULLY WIRED and LIVE** — was incorrectly flagged as "missing keys" in handoff. The pod env auto-provisions a Stripe test-key placeholder, both Stripe checkout flows tested end-to-end with curl + the betatester1 token: `POST /api/coins/topup/checkout` (auth-gated, ₵-pack vibez coin top-up · 4 packs $5/$9/$20/$35) and `POST /api/wallet/topup/create-session` (vibez wallet · 5 packs $10–$250) both return valid `cs_test_…` Stripe-hosted checkout URLs. `TopUpVibezCoinsModal` is auto-opened on 402/insufficient errors across JFTN, VibeRidez, YellowPages, RestaurantDetail, plus a manual "Buy" CTA inside `/wallet`. `/wallet/topup-success` polls `/api/coins/topup/status/{id}` until credited. **No further wiring required for beta.**
 > 2. **i18n script re-attempted** — same `budget_exceeded` (cap is still $0.40, current $0.4232). Generator is resumable; English (`en`) ships today, the other 7 languages auto-generate when the cap is raised. Founder must hit Profile → Universal Key → Add Balance.
 > 3. **Regression Shield: 232/232 GREEN.**
 >
@@ -3106,7 +3106,7 @@ User requested final pre-deployment check ("complete system check, God Mode, dem
 **4. Production-readiness env audit:**
 | Setting | Status | Action for prod |
 |---|---|---|
-| `STRIPE_API_KEY` | ✓ set (`sk_test_emergent`) | Replace with `sk_live_*` |
+| `STRIPE_API_KEY` | ✓ set (test placeholder) | Replace with a live Stripe secret key |
 | `ENV` | ⚠ unset (preview) | Set to `production` |
 | `FOUNDERS_PASS_TEST_MODE` | ⚠ `=1` | Remove or set to `0` |
 | `CHAIRS_TEST_MODE` | ⚠ `=1` | Remove or set to `0` |
@@ -3206,10 +3206,10 @@ User flagged the 3 "Next Action Items" from the previous turn. All closed.
 2. **`/test-activate` hardened with double-gate** — `routes/founders_pass.py::test_activate` now requires BOTH:
    - `FOUNDERS_PASS_TEST_MODE=1`
    - `ENV != "production"` (and `ENVIRONMENT != "production"` as alias)
-   
+
    Even if `FOUNDERS_PASS_TEST_MODE=1` is left on by mistake in a production deploy, the endpoint returns 503 with the message "Test activation is permanently disabled in production deployments. Use the Stripe checkout flow instead." Manually verified — flipping `ENV=production` blocks the endpoint; removing it restores normal preview operation.
 
-3. **`STRIPE_API_KEY` confirmed live** — `STRIPE_API_KEY=sk_test_emergent` already configured in `backend/.env`. Real Stripe checkout call returns a `cs_test_*` session URL with the actual checkout.stripe.com redirect — verified via curl + new pytest `test_real_stripe_checkout_returns_session_url`.
+3. **`STRIPE_API_KEY` confirmed live** — the backend `.env` already has the Stripe test-key placeholder configured. Real Stripe checkout call returns a `cs_test_*` session URL with the actual checkout.stripe.com redirect — verified via curl + new pytest `test_real_stripe_checkout_returns_session_url`.
 
 **Tests** — 50/50 pytest pass (1 new real-Stripe test added). No regressions.
 

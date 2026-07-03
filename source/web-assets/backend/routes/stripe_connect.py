@@ -60,7 +60,7 @@ VALID_ROLES = {"driver", "host", "merchant", "streamer"}
 def _is_configured() -> bool:
     """True once both the platform key + Connect Client ID are set."""
     return bool(STRIPE_API_KEY) and STRIPE_API_KEY.startswith("sk_") and \
-        STRIPE_API_KEY != "sk_test_emergent"
+        STRIPE_API_KEY != "stripe_test_key_placeholder"
 
 
 def _frontend_base() -> str:

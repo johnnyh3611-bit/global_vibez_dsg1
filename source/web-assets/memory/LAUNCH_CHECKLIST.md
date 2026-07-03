@@ -15,7 +15,7 @@ Tick boxes as you go. Items grouped by urgency:
 ## 🔴 BLOCKERS (must-do before paying users)
 
 ### 💳 Payments
-- [ ] **Swap Stripe from test to LIVE keys.** Backend `.env`: change `STRIPE_API_KEY` from `sk_test_emergent` to your real `sk_live_...`. Verify a $1 test card actually charges.
+- [ ] **Swap Stripe from test to LIVE keys.** Backend `.env`: change `STRIPE_API_KEY` from a test placeholder to your real live Stripe secret key. Verify a $1 test card actually charges.
 - [ ] **Add `STRIPE_WEBHOOK_SECRET`** to backend `.env`. Without this, webhook callbacks can be spoofed. Get from Stripe Dashboard → Developers → Webhooks → your endpoint → "Signing secret".
 - [ ] **Test every Stripe checkout path** in production once live keys are in:
   - [ ] Vibez Coin top-up (₵ packs)

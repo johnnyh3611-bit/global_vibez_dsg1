@@ -10,7 +10,7 @@ services:
       - "27017:27017"
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-change-me}
       MONGO_INITDB_DATABASE: global_vibez
     volumes:
       - mongodb_data:/data/db
@@ -27,7 +27,7 @@ services:
     ports:
       - "8001:8001"
     environment:
-      - MONGO_URL=mongodb://admin:password123@mongodb:27017/
+      - MONGO_URL=mongodb://admin:${MONGO_INITDB_ROOT_PASSWORD:-change-me}@mongodb:27017/
       - DB_NAME=global_vibez
       - EMERGENT_LLM_KEY=${EMERGENT_LLM_KEY}
       - STRIPE_API_KEY=${STRIPE_API_KEY}
