@@ -1,14 +1,13 @@
 {
-  "name": "dating-app",
+  "name": "global-vibez-dsg",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "NODE_ENV=development next dev",
-    "build": "NODE_ENV=production next build",
-    "start": "NODE_ENV=production next start",
-    "lint": "eslint",
-    "sync:workspace": "bash ./scripts/sync-workspace.sh main",
-    "verify:full": "npm run build && ls source/web-assets/frontend/public/landing-tour-tiktok-en-9x16.mp4 source/web-assets/frontend/public/landing-tour-tiktok-9x16.mp4 && echo 'Emergent Assets Verified' && node scripts/check-env.js"
+    "dev": "npm --prefix source/web-assets/frontend run start",
+    "build": "npm --prefix source/web-assets/frontend run build",
+    "start": "npm --prefix source/web-assets/frontend run start",
+    "backend": "cd source/web-assets/backend && uvicorn server:app --host 0.0.0.0 --port 8001",
+    "lint": "npm --prefix source/web-assets/frontend run lint"
   },
   "dependencies": {
     "@solana/wallet-adapter-base": "^0.9.27",
@@ -17,7 +16,6 @@
     "@solana/wallet-adapter-wallets": "^0.19.38",
     "@solana/web3.js": "^1.98.4",
     "bs58": "^6.0.0",
-    "geist": "^1.7.2",
     "jose": "^6.2.3",
     "next": "16.2.7",
     "react": "19.2.4",
@@ -33,8 +31,5 @@
     "eslint-config-next": "16.2.7",
     "tailwindcss": "^4",
     "typescript": "^5"
-  },
-  "optionalDependencies": {
-    "@tailwindcss/oxide-linux-x64-gnu": "4.3.0"
   }
 }

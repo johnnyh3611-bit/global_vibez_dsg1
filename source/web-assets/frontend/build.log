@@ -1,0 +1,8 @@
+(node:91595) [DEP0176] DeprecationWarning: fs.F_OK is deprecated, use fs.constants.F_OK instead
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Creating an optimized production build...
+
+                    The build failed because the process exited too early.
+                    Someone might have called  `kill` or `killall`, or the system could
+                    be shutting down.
+                
