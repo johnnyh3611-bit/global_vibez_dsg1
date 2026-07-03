@@ -1,0 +1,32 @@
+name: PR Up-To-Date Check
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  up-to-date:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Verify PR branch includes latest base
+        run: |
+          set -euo pipefail
+
+          BASE_REF="${{ github.event.pull_request.base.ref }}"
+          git fetch origin "$BASE_REF" --prune
+
+          if git merge-base --is-ancestor "origin/$BASE_REF" HEAD; then
+            echo "OK: PR branch is up to date with origin/$BASE_REF"
+          else
+            echo "ERROR: PR branch is behind or diverged from origin/$BASE_REF"
+            echo "Please update your branch with latest $BASE_REF before merge."
+            exit 1
+          fi
