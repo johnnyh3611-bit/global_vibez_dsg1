@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 from typing import List, Optional, Dict
 import uuid
 from datetime import datetime, timezone, timedelta
+from pathlib import Path
 import httpx
 from pydantic import BaseModel, Field, ConfigDict
 from services.payment_hub import StripeCheckout, CheckoutSessionResponse, CheckoutStatusResponse, CheckoutSessionRequest
@@ -1669,7 +1670,6 @@ UPLOAD_DIR = Path("./uploads")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/api/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 # Mount static files for uploads
-from pathlib import Path
 
 # Configure logging
 logging.basicConfig(
