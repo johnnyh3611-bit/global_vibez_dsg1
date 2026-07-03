@@ -15,11 +15,8 @@ git fetch origin --prune >/dev/null 2>&1 || true
 
 # Enforce strict sync when pushing main.
 if [[ "$current_branch" == "main" ]]; then
-  local_main="$(git rev-parse main)"
-  remote_main="$(git rev-parse origin/main)"
-
-  if [[ "$local_main" != "$remote_main" ]]; then
-    echo "Push blocked: local main is not in sync with origin/main."
+  if ! git merge-base --is-ancestor origin/main main; then
+    echo "Push blocked: local main is behind or diverged from origin/main."
     echo "Run: npm run sync:workspace"
     exit 1
   fi
