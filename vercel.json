@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "npm install && yarn --cwd source/web-assets/frontend install --frozen-lockfile",
   "git": {
     "deploymentEnabled": {
       "main": true,
