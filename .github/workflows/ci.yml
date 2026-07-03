@@ -48,6 +48,11 @@ jobs:
 
       - name: Backend Smoke Import
         working-directory: source/web-assets/backend
+        env:
+          MONGO_URL: 'mongodb://localhost:27017'
+          DB_NAME: 'test_db'
+          STRIPE_API_KEY: 'sk_test_dummy'
+          EMERGENT_LLM_KEY: 'dummy_key'
         run: |
           python - <<'PY'
           import importlib.util
