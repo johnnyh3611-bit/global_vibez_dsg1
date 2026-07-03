@@ -1,5 +1,5 @@
 {
-  "name": "dating-app",
+  "name": "global-vibez-dsg",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -7,10 +7,7 @@
     "build": "npm --prefix source/web-assets/frontend run build",
     "start": "npm --prefix source/web-assets/frontend run start",
     "backend": "cd source/web-assets/backend && uvicorn server:app --host 0.0.0.0 --port 8001",
-    "modern:dev": "NODE_ENV=development next dev",
-    "modern:build": "NODE_ENV=production next build",
-    "modern:start": "NODE_ENV=production next start",
-    "lint": "eslint"
+    "lint": "npm --prefix source/web-assets/frontend run lint"
   },
   "dependencies": {
     "@solana/wallet-adapter-base": "^0.9.27",

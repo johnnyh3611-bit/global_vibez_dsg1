@@ -1,5 +1,9 @@
 import { Route } from "react-router-dom";
 import { lazy, Suspense } from "react";
+import SweepstakesPage from "@/pages/SweepstakesPage";
+import GlasshouseOwnershipPage from "@/pages/GlasshouseOwnershipPage";
+import ChairLedgerPage from "@/pages/ChairLedgerPage";
+import OperationsConsolePage from "@/pages/OperationsConsolePage";
 import Demo from "@/pages/Demo";
 import ModernGamesShowcase from "@/pages/ModernGamesShowcase";
 import EngagementPreview from "@/pages/EngagementPreview";
@@ -65,7 +69,7 @@ export const miscRoutes = (ProtectedRoute) => (
     <Route path="/yellow-pages" element={<YellowPagesDirectory />} />
     <Route path="/yellow-pages/new" element={<ProtectedRoute><YellowPagesNewListing /></ProtectedRoute>} />
     <Route path="/yellow-pages/:listingId" element={<YellowPagesListingDetail />} />
-    
+
     {/* Public Demo Pages */}
     <Route path="/demo" element={<Demo />} />
     <Route path="/treasury" element={<Treasury />} />
@@ -77,14 +81,14 @@ export const miscRoutes = (ProtectedRoute) => (
     <Route path="/metahuman-dealer" element={<MetaHumanDealerDemo />} />  {/* Smart Table Demo */}
     <Route path="/private-suites" element={<PrivateVibeSuites />} />  {/* Private Vibe Suites */}
     <Route path="/matchmaking" element={<SkillBasedMatchmaking />} />  {/* Skill-Based Dating Matchmaking */}
-    
+
     {/* Settings & Profile */}
     <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-    
+
     {/* AI Features */}
     <Route path="/ai-date-planner" element={<ProtectedRoute><AIDatePlannerPage /></ProtectedRoute>} />
     <Route path="/moderation" element={<ProtectedRoute><ModerationDashboard /></ProtectedRoute>} />  {/* AI Moderation Dashboard */}
-    
+
     {/* Monetization */}
     <Route path="/referral" element={<ProtectedRoute><Referral /></ProtectedRoute>} />
     <Route path="/wallet-legacy" element={<ProtectedRoute><CreditsWallet /></ProtectedRoute>} />
@@ -125,5 +129,16 @@ export const miscRoutes = (ProtectedRoute) => (
         (Ultimate Blueprint v3 §4). Read-only investor / brand
         artifact viewer; locks 13.5% Sovereign Tax + 70/30 split. */}
     <Route path="/legacy-vault" element={<ProtectedRoute><LegacyVaultPage /></ProtectedRoute>} />
+
+    {/* ── New features merged from Genius Phase (2026-07) ── */}
+    {/* Weekly sweepstakes draw for chair holders */}
+    <Route path="/sweepstakes" element={<ProtectedRoute><SweepstakesPage /></ProtectedRoute>} />
+    {/* Wallet proof-of-ownership / Celestial Glasshouse dashboard */}
+    <Route path="/glasshouse" element={<ProtectedRoute><GlasshouseOwnershipPage /></ProtectedRoute>} />
+    {/* DSG Circulation Ledger — chair registry */}
+    <Route path="/chair-ledger" element={<ProtectedRoute><ChairLedgerPage /></ProtectedRoute>} />
+    <Route path="/chair-registry" element={<ProtectedRoute><ChairLedgerPage /></ProtectedRoute>} />
+    {/* Ops console — logistics audit / Azure data consistency */}
+    <Route path="/operations" element={<ProtectedRoute><OperationsConsolePage /></ProtectedRoute>} />
   </>
 );
