@@ -100,6 +100,8 @@
   "scripts": {
     "start": "craco start --config craco.config.cjs",
     "build": "GENERATE_SOURCEMAP=false DISABLE_ESLINT_PLUGIN=true TSC_COMPILE_ON_ERROR=true INLINE_RUNTIME_CHUNK=false CI=false NODE_OPTIONS='--max-old-space-size=8192' craco build --config craco.config.cjs",
+    "build:strict": "INLINE_RUNTIME_CHUNK=false CI=true NODE_OPTIONS='--max-old-space-size=8192' craco build --config craco.config.cjs",
+    "build:ci": "if [ \"${CI_STRICT:-false}\" = \"true\" ]; then yarn build:strict; else yarn build; fi",
     "test": "craco test --config craco.config.cjs",
     "typecheck": "tsc --noEmit",
     "ts-debt": "node scripts/ts-debt.cjs",

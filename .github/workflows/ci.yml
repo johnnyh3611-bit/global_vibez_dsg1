@@ -1,0 +1,92 @@
+name: Core Health Check
+
+on:
+  push:
+    branches:
+      - main
+      - 'fix/**'
+  pull_request:
+    branches:
+      - main
+      - 'fix/**'
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+          cache-dependency-path: source/web-assets/frontend/yarn.lock
+
+      - name: Frontend Install
+        working-directory: source/web-assets/frontend
+        run: yarn install --frozen-lockfile
+
+      - name: Frontend Build (Current Gate)
+        working-directory: source/web-assets/frontend
+        env:
+          CI_STRICT: 'false'
+        run: yarn build:ci
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Backend Install
+        working-directory: source/web-assets/backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Backend Smoke Import
+        working-directory: source/web-assets/backend
+        run: |
+          python - <<'PY'
+          import importlib.util
+          import pathlib
+
+          server_path = pathlib.Path('server.py')
+          spec = importlib.util.spec_from_file_location('server', server_path)
+          if spec is None or spec.loader is None:
+            raise RuntimeError('Unable to load server.py for smoke test')
+          module = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(module)
+          print('Backend smoke import OK')
+          PY
+
+  strict-audit:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+          cache-dependency-path: source/web-assets/frontend/yarn.lock
+
+      - name: Frontend Install
+        working-directory: source/web-assets/frontend
+        run: yarn install --frozen-lockfile
+
+      - name: Frontend Typecheck (Strict Audit)
+        working-directory: source/web-assets/frontend
+        run: yarn typecheck
+
+      - name: Frontend Build (Strict Audit)
+        working-directory: source/web-assets/frontend
+        env:
+          CI_STRICT: 'true'
+        run: yarn build:ci
