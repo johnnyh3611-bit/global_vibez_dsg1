@@ -130,7 +130,7 @@
 
 **Stripe Integration:**
 - Using `source.web-assets.backend.services.payment_hub` library
-- Test mode with `sk_test_emergent` key
+- Test mode with a Stripe test-key placeholder
 - Webhook signature validation enabled
 - Checkout session metadata includes user_id, package info
 - Payment transactions stored in MongoDB

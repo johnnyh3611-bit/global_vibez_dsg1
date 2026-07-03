@@ -21,7 +21,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'yarn'
           cache-dependency-path: source/web-assets/frontend/yarn.lock
 
@@ -48,6 +48,11 @@ jobs:
 
       - name: Backend Smoke Import
         working-directory: source/web-assets/backend
+        env:
+          MONGO_URL: 'mongodb://localhost:27017'
+          DB_NAME: 'test_db'
+          STRIPE_API_KEY: 'sk_test_dummy'
+          EMERGENT_LLM_KEY: 'dummy_key'
         run: |
           python - <<'PY'
           import importlib.util
@@ -73,7 +78,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'yarn'
           cache-dependency-path: source/web-assets/frontend/yarn.lock
 

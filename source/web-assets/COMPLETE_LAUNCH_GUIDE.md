@@ -100,10 +100,10 @@
 3. **Replace the test key:**
    ```
    # Change this line:
-   STRIPE_API_KEY=sk_test_emergent
-   
+   STRIPE_API_KEY=<your_test_stripe_secret_key>
+
    # To your key:
-   STRIPE_API_KEY=sk_live_YOUR_SECRET_KEY_HERE
+   STRIPE_API_KEY=<your_live_stripe_secret_key>
    ```
 
 4. **Save and restart:**
@@ -209,11 +209,11 @@ Hashtags: #SuccessStory #LoveStory #InternationalCouple #Dating
 IMAGE: Screenshot of app showing translation feature
 
 CAPTION:
-🌍 Breaking language barriers in dating! 
+🌍 Breaking language barriers in dating!
 
 Meet someone special from ANYWHERE in the world. Our AI instantly translates:
 ✨ Profile bios
-✨ Chat messages  
+✨ Chat messages
 ✨ Game conversations
 
 FREE to download. Premium unlocks translation.
@@ -253,7 +253,7 @@ Why Global Vibes is different:
 📍 GPS safety features
 🎮 Fun games to break the ice
 
-Join thousands finding love worldwide 
+Join thousands finding love worldwide
 
 Link in bio to start your global love story!
 
@@ -285,7 +285,7 @@ This is why we built Global Vibes.
 
 Real-time translation for:
 • Profiles
-• Messages  
+• Messages
 • Voice/video
 
 Date anyone, anywhere 🌍

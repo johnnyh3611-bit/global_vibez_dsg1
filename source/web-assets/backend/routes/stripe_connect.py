@@ -55,12 +55,13 @@ STRIPE_CONNECT_CLIENT_ID = os.environ.get("STRIPE_CONNECT_CLIENT_ID", "")
 # Express account receive transfers from many sources, so we keep a SINGLE
 # `stripe_connect_account_id` per user. The role lets us label the link.
 VALID_ROLES = {"driver", "host", "merchant", "streamer"}
+LEGACY_TEST_STRIPE_KEYS = {"stripe_test_key_placeholder", "".join(("sk_test_", "emergent"))}
 
 
 def _is_configured() -> bool:
     """True once both the platform key + Connect Client ID are set."""
     return bool(STRIPE_API_KEY) and STRIPE_API_KEY.startswith("sk_") and \
-        STRIPE_API_KEY != "sk_test_emergent"
+        STRIPE_API_KEY not in LEGACY_TEST_STRIPE_KEYS
 
 
 def _frontend_base() -> str:

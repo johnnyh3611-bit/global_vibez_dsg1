@@ -302,7 +302,7 @@ async def my_tier(http_request: Request):
 async def subscribe(payload: SubscribePayload, http_request: Request):
     """Create a Stripe checkout session for the chosen tier.
 
-    Today this returns the existing `sk_test_emergent` Stripe checkout
+    Today this returns the existing Stripe test-key placeholder checkout
     URL using one-time payment mode (since real subscription price IDs
     aren't wired yet). When the founder adds production price IDs into
     `.env` (STRIPE_PRICE_INSIDER, etc.), this function uses subscription
