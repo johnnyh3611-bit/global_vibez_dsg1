@@ -21,3 +21,10 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Large media files (too large for deployment)
+/public/landing-tour-narration*.mp3
+/public/GlobalVibezDSG*.pdf
+/public/*-card.png
+/public/global-vibez-logo-original-backup.png
+.large-files-backup/

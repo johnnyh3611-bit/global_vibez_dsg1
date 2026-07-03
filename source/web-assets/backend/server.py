@@ -1709,3 +1709,4 @@ import services.treasury_socketio  # noqa: F401  — registers join/leave handle
 
 # Mount Socket.IO for real-time multiplayer
 app.mount("/socket.io", socket_app)
+# Cloud config fix
