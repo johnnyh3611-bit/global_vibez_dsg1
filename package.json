@@ -7,7 +7,10 @@
     "build": "npm --prefix source/web-assets/frontend run build",
     "start": "npm --prefix source/web-assets/frontend run start",
     "backend": "cd source/web-assets/backend && uvicorn server:app --host 0.0.0.0 --port 8001",
-    "lint": "npm --prefix source/web-assets/frontend run lint"
+    "lint": "npm --prefix source/web-assets/frontend run lint",
+    "sync:workspace": "bash ./scripts/sync-workspace.sh main",
+    "sync:verify": "git fetch origin --prune && test \"$(git rev-parse HEAD)\" = \"$(git rev-parse origin/main)\" && echo 'Workspace matches origin/main'",
+    "sync:guards:install": "bash ./scripts/setup-sync-guards.sh"
   },
   "dependencies": {
     "@solana/wallet-adapter-base": "^0.9.27",

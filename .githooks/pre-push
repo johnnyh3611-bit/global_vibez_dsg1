@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+remote_name="${1:-origin}"
+remote_url="${2:-}"
+
+if [[ "$remote_name" != "origin" ]]; then
+  exit 0
+fi
+
+current_branch="$(git rev-parse --abbrev-ref HEAD)"
+
+# Always refresh remote refs so comparisons are accurate.
+git fetch origin --prune >/dev/null 2>&1 || true
+
+# Enforce strict sync when pushing main.
+if [[ "$current_branch" == "main" ]]; then
+  local_main="$(git rev-parse main)"
+  remote_main="$(git rev-parse origin/main)"
+
+  if [[ "$local_main" != "$remote_main" ]]; then
+    echo "Push blocked: local main is not in sync with origin/main."
+    echo "Run: npm run sync:workspace"
+    exit 1
+  fi
+fi
+
+# Block pushes if merge conflicts exist in index.
+if git ls-files -u | grep -q .; then
+  echo "Push blocked: unresolved merge conflicts detected."
+  exit 1
+fi
+
+# Light safety check for dirty tree when on main.
+if [[ "$current_branch" == "main" ]] && [[ -n "$(git status --porcelain)" ]]; then
+  echo "Push blocked: working tree is not clean on main."
+  echo "Commit or stash changes first."
+  exit 1
+fi
+
+exit 0
