@@ -5,7 +5,8 @@ import { Card } from '@/components/ui/card';
 import { Video, VideoOff, Mic, MicOff, Phone, Clock, Heart, X } from 'lucide-react';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
-const WS_URL = API_URL.replace('http', 'ws');
+// Safe fallback: uses API_URL if it exists, otherwise defaults to the local ws address
+const WS_URL = (API_URL || 'http://localhost:3000').replace('http', 'ws');
 
 export default function SpeedDatingVideo({ roomId, userId, partnerName, durationMinutes = 5 }) {
   const navigate = useNavigate();

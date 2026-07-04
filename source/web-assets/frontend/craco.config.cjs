@@ -28,6 +28,16 @@ module.exports = {
       add: [],
     },
     configure: (webpackConfig) => {
+      // Keep local dev server responsive even when the repo has a large
+      // backlog of TypeScript diagnostics. Type checks still run in editors
+      // and CI, but we don't block `craco start` on fork-ts-checker.
+      if (process.env.NODE_ENV !== "production") {
+        webpackConfig.plugins = (webpackConfig.plugins || []).filter((plugin) => {
+          const name = plugin && plugin.constructor && plugin.constructor.name;
+          return name !== "ForkTsCheckerWebpackPlugin";
+        });
+      }
+
       // 2026-05-17 deploy fix: explicitly disable source maps in
       // production. CRA respects GENERATE_SOURCEMAP=false at .env-load
       // time, but Emergent's Cloud Build rewrites .env with production

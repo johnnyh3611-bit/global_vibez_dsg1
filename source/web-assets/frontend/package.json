@@ -51,6 +51,7 @@
     "@turf/turf": "^7.3.4",
     "@use-gesture/react": "^10.3.1",
     "agora-rtc-sdk-ng": "^4.24.3",
+    "ajv": "^8.20.0",
     "axios": "^1.8.4",
     "buffer": "^6.0.3",
     "chess.js": "^1.4.0",

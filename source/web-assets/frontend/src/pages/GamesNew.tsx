@@ -309,11 +309,34 @@ const GAME_CATEGORIES = {
 export default function GamesNew() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('featured');
+  const [selectedCategory, setSelectedCategory] = useState('casino');
   const [rulesModalOpen, setRulesModalOpen] = useState(false);
   const [selectedGameForRules, setSelectedGameForRules] = useState(null);
   const [startingGame, setStartingGame] = useState(false);
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+
+  // Wave-I + Wave-II verified casino activation list (19 total).
+  const ACTIVATED_CASINO_GAME_IDS = [
+    'vibes_slots',
+    'bingo',
+    'caribbean_stud',
+    'sic_bo',
+    'craps',
+    'vibes_wheel',
+    'keno',
+    'three_card_poker',
+    'pai_gow',
+    'casino_war',
+    'chemin_de_fer',
+    'european_roulette',
+    'hazard',
+    'chuck_a_luck',
+    'big_six_wheel',
+    'jacks_or_better',
+    'fan_tan',
+    'faro',
+    'vibes_darts',
+  ];
 
   const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -589,12 +612,21 @@ export default function GamesNew() {
     ? Object.values(GAME_CATEGORIES)
         .flatMap(cat => cat.games)
         .filter(game => game.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    : GAME_CATEGORIES[selectedCategory].games;
+    : selectedCategory === 'casino'
+      ? GAME_CATEGORIES.casino.games
+          .filter(game => ACTIVATED_CASINO_GAME_IDS.includes(game.id))
+          .sort(
+            (a, b) => ACTIVATED_CASINO_GAME_IDS.indexOf(a.id) - ACTIVATED_CASINO_GAME_IDS.indexOf(b.id)
+          )
+      : GAME_CATEGORIES[selectedCategory].games;
 
   const openRulesModal = (game) => {
     setSelectedGameForRules(game.id);
     setRulesModalOpen(true);
   };
+
+  const isCasinoActivationView = !searchQuery && selectedCategory === 'casino';
+  const activatedCasinoGameCount = ACTIVATED_CASINO_GAME_IDS.length;
 
   return (
     <RoomLayout theme="games" showStars={true}>
@@ -686,7 +718,9 @@ export default function GamesNew() {
             Choose Your <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Battle</span>
           </h2>
           <p className="text-xl text-slate-300 mb-8">
-            34 games • Multiplayer • Real-time • Tournaments
+            {isCasinoActivationView
+              ? `${activatedCasinoGameCount} Activated Casino Games • Multiplayer • Real-time • Tournaments`
+              : '34 games • Multiplayer • Real-time • Tournaments'}
           </p>
 
           {/* Search Bar */}
@@ -706,8 +740,12 @@ export default function GamesNew() {
           {/* Stats */}
           <div className="flex gap-8 justify-center text-center">
             <div>
-              <p className="text-3xl font-bold text-cyan-400">24+</p>
-              <p className="text-sm text-slate-400">Games</p>
+              <p className="text-3xl font-bold text-cyan-400">
+                {isCasinoActivationView ? activatedCasinoGameCount : '24+'}
+              </p>
+              <p className="text-sm text-slate-400">
+                {isCasinoActivationView ? 'Activated Casino' : 'Games'}
+              </p>
             </div>
             <div>
               <p className="text-3xl font-bold text-blue-400">1000+</p>

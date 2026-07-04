@@ -282,7 +282,7 @@ export default function LoginPage() {
                     variant="ghost"
                     onClick={() => {
                       const redirectUrl = `${window.location.origin}/auth-callback`;
-                      window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+                      window.location.href = `http://localhost:3000/login?redirect=${encodeURIComponent(redirectUrl)}`;
                     }}
                     className="w-full mt-4 hover:shadow-[0_0_24px_rgba(34,211,238,0.55)] hover:scale-[1.02] transition-all duration-200"
                     data-testid="login-google-btn"

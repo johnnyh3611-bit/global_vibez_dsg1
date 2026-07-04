@@ -487,7 +487,7 @@ export default function SignupPage() {
                 variant="ghost"
                 onClick={() => {
                   const redirectUrl = `${window.location.origin}/auth-callback`;
-                  window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+                  window.location.href = `http://localhost:3000/login?redirect=${encodeURIComponent(redirectUrl)}`;
                 }}
                 className="w-full mt-4"
               >

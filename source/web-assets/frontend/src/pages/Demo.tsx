@@ -107,7 +107,7 @@ export default function Demo() {
           <Button
             onClick={() => {
               const redirectUrl = `${window.location.origin}/dashboard`;
-              window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+              window.location.href = `http://localhost:3000/login?redirect=${encodeURIComponent(redirectUrl)}`;
             }}
             className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-6 text-lg"
           >
