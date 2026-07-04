@@ -1,4 +1,4 @@
-import { Navigate, Route } from 'react-router-dom';
+import { Route } from 'react-router-dom';
 import VaultLogin from '@/pages/admin/VaultLogin';
 import GodModeDashboard from '@/pages/admin/GodModeDashboard';
 import MiningAdminDashboard from '@/pages/admin/MiningAdminDashboard';
@@ -8,8 +8,8 @@ import BetaWaitlistAdmin from '@/pages/admin/BetaWaitlistAdmin';
 
 export const adminVaultRoutes = () => (
   <>
-    <Route path="/god-mode" element={<Navigate to="/vibe-vault-admin/dashboard" replace />} />
-    <Route path="/god-mode/dashboard" element={<Navigate to="/vibe-vault-admin/dashboard" replace />} />
+    <Route path="/god-mode" element={<GodModeDashboard />} />
+    <Route path="/god-mode/dashboard" element={<GodModeDashboard />} />
     <Route path="/vibe-vault-admin" element={<VaultLogin />} />
     <Route path="/vibe-vault-admin/dashboard" element={<GodModeDashboard />} />
     <Route path="/vibe-vault-admin/mining" element={<MiningAdminDashboard />} />
