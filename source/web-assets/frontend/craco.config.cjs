@@ -37,6 +37,11 @@ module.exports = {
       // the setting platform-agnostic.
       if (process.env.NODE_ENV === "production") {
         webpackConfig.devtool = false;
+
+        // Emergency deploy mode: skip minification to reduce build time/memory
+        // pressure in constrained CI builders and unblock production cutovers.
+        webpackConfig.optimization = webpackConfig.optimization || {};
+        webpackConfig.optimization.minimize = false;
       }
 
       // 2026-05-17 deploy fix: cap TerserPlugin to a single worker.
