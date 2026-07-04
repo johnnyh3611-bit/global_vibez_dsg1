@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
-  "installCommand": "bash -lc 'if [ -f source/web-assets/frontend/package.json ]; then npm --prefix source/web-assets/frontend install --legacy-peer-deps; else npm install --legacy-peer-deps; fi'",
+  "installCommand": "bash -lc 'if [ -f source/web-assets/frontend/package.json ]; then npm --prefix source/web-assets/frontend install --legacy-peer-deps --include=dev; else npm install --legacy-peer-deps --include=dev; fi'",
   "buildCommand": "bash -lc 'if [ -f source/web-assets/frontend/package.json ]; then npm --prefix source/web-assets/frontend run build && rm -rf build && cp -R source/web-assets/frontend/build ./build; else npm run build; fi'",
   "outputDirectory": "build",
   "rewrites": [
