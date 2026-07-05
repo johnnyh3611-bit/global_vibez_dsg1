@@ -368,7 +368,7 @@ export default function HowChairsWork() {
                     testId="calc-out-weight"
                   />
                   <Output
-                    label="Quarterly Payout"
+                    label="Quarterly Reward"
                     value={fmtUsd(calc.quarterlyPayoutUsd)}
                     sub={`= ${fmtNum(calc.quarterlyPayoutCoins)} ₵`}
                     tone="emerald"
@@ -384,7 +384,7 @@ export default function HowChairsWork() {
                     sub={
                       isFinite(calc.breakevenQuarters)
                         ? `${(calc.breakevenQuarters / 4).toFixed(1)} years`
-                        : "(no payout)"
+                        : "(no reward)"
                     }
                     tone="fuchsia"
                     testId="calc-out-breakeven"

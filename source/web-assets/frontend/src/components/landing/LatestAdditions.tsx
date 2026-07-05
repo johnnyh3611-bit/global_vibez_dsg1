@@ -141,7 +141,7 @@ const FEATURES: Feature[] = [
     title: "God-Mode Audit",
     tag: "Every ₵ tracked, public ledger",
     body:
-      "Treasury reserve dashboard, Vibe Health Index, full audit log of every escrow and payout. Admins see everything; members see anonymized totals.",
+      "Treasury reserve dashboard, Vibe Health Index, full audit log of every escrow and reward. Admins see everything; members see anonymized totals.",
     icon: ShieldCheck,
     color: "from-amber-400 to-orange-500",
     testid: "landing-feature-godmode",

@@ -43,7 +43,7 @@ type Economics = {
 // testable + skimmable on mobile.
 const EARNING_PATHS = [
   {
-    id: "chair-payouts",
+    id: "chair-rewards",
     Icon: Crown,
     eyebrow: "Chairs",
     title: "Quarterly Profit Share",
@@ -78,7 +78,7 @@ const EARNING_PATHS = [
     eyebrow: "Hungry Vibez",
     title: "Food Delivery on the Same Fleet",
     body:
-      "Same driver network as VibeRidez, second task type. Pick up from Mom & Pop partner kitchens, drop off to customers, keep 70% of the delivery fee via the same on-chain split — plus restaurant tips and the $DSG payout token. Flat-fee partner restaurants pay no predatory per-order rake, so drivers see more per drop. Live dispatch, no idle rides.",
+      "Same driver network as VibeRidez, second task type. Pick up from Mom & Pop partner kitchens, drop off to customers, keep 70% of the delivery fee via the same on-chain split — plus restaurant tips and the $DSG reward token. Flat-fee partner restaurants pay no predatory per-order rake, so drivers see more per drop. Live dispatch, no idle rides.",
     rate: "70% of delivery fee + tips + $DSG",
     tone: "border-orange-500/40 bg-orange-950/20 text-orange-300",
   },
@@ -88,7 +88,7 @@ const EARNING_PATHS = [
     eyebrow: "Vibe Venues",
     title: "Host a House — Hourly Rental",
     body:
-      "List your loft, rooftop, kitchen, or pop-up space. Pick from 3 / 6 / 9 / 12 / 24 hr blocks. Customer pays full rent + (optional) chef fee up front into $DSG smart escrow. After their Vibe-Check, you get 80% of the house rental as on-chain payout — platform keeps 20% to fund the chair pool. Zero per-event hassle, no security-deposit fights.",
+      "List your loft, rooftop, kitchen, or pop-up space. Pick from 3 / 6 / 9 / 12 / 24 hr blocks. Customer pays full rent + (optional) chef fee up front into $DSG smart escrow. After their Vibe-Check, you get 80% of the house rental as on-chain reward — platform keeps 20% to fund the chair pool. Zero per-event hassle, no security-deposit fights.",
     rate: "80% of house rental per booking",
     tone: "border-fuchsia-500/40 bg-fuchsia-950/20 text-fuchsia-300",
   },
@@ -108,7 +108,7 @@ const EARNING_PATHS = [
     eyebrow: "Premium Tier",
     title: "1.5× Stake Multiplier",
     body:
-      "Active Premium subscription (Diamond / Gold / Premium tier) puts a permanent 1.5× boost on every loyalty stake you accrue AND keeps your chair payouts active each quarter. Without active premium, your chair holds its weight but skips that quarter's distribution. $9.99/mo recovers fast at 200+ stakes/renewal alone.",
+      "Active Premium subscription (Diamond / Gold / Premium tier) puts a permanent 1.5× boost on every loyalty stake you accrue AND keeps your chair rewards active each quarter. Without active premium, your chair holds its weight but skips that quarter's distribution. $9.99/mo recovers fast at 200+ stakes/renewal alone.",
     rate: "+50% on every stake while active",
     tone: "border-rose-500/40 bg-rose-950/20 text-rose-300",
   },
@@ -118,7 +118,7 @@ const EARNING_PATHS = [
     eyebrow: "$DSG Token",
     title: "Vibe Credits → $DSG at TGE",
     body:
-      "Every Vibez Coin (₵) you hold today converts 1:1 to the public $DSG SPL token at the Token Generation Event. Verified accounts only. Park-it-now mechanic: chair payouts, loyalty redemptions, driver fares, even gameplay rewards are all denominated in ₵ — and ₵ becomes $DSG on TGE day. Earn now, redeem on day 1.",
+      "Every Vibez Coin (₵) you hold today converts 1:1 to the public $DSG SPL token at the Token Generation Event. Verified accounts only. Park-it-now mechanic: chair rewards, loyalty redemptions, driver fares, even gameplay rewards are all denominated in ₵ — and ₵ becomes $DSG on TGE day. Earn now, redeem on day 1.",
     rate: "1 ₵ = 1 $DSG at TGE",
     tone: "border-violet-500/40 bg-violet-950/20 text-violet-300",
   },

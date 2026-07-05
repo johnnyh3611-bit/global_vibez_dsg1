@@ -118,7 +118,7 @@ export default function StripeConnectButton({ role, variant = "primary" }: Props
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        toast.error(err.detail || "Could not start payout setup");
+        toast.error(err.detail || "Could not start reward setup");
         return;
       }
       const d = await res.json();

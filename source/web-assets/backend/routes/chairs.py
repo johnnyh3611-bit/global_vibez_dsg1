@@ -1121,7 +1121,7 @@ async def vibe_health_index(_: bool = Depends(verify_admin_cookie)) -> Dict[str,
     """Vibe Health Index — the admin dashboard the user spec'd in the PDF."""
     db = get_database()
 
-    # Lifetime payouts (chair pool + legacy stake pool both flow through
+    # Lifetime rewards (chair pool + legacy stake pool both flow through
     # profit_share_payouts).
     paid_agg = await db.profit_share_payouts.aggregate([
         {"$group": {"_id": None, "total_coins": {"$sum": "$payout_coins"},
@@ -1131,7 +1131,7 @@ async def vibe_health_index(_: bool = Depends(verify_admin_cookie)) -> Dict[str,
 
     sold = await _total_chairs_sold(db)
 
-    # Active stakeholders = premium + has chairs.
+    # Active chair holders = premium + has chairs.
     active_chair_holders = await db.users.aggregate([
         {"$match": {"subscription_tier": {"$in": ["premium", "diamond", "gold"]}}},
         {"$lookup": {
@@ -1148,9 +1148,11 @@ async def vibe_health_index(_: bool = Depends(verify_admin_cookie)) -> Dict[str,
     phase = await _current_phase(db)
 
     return {
-        "lifetime_payouts": {
+        "lifetime_rewards": {
             "total_coins": int(total_paid["total_coins"]),
             "total_usd": round(float(total_paid["total_usd"]), 2),
+            "reward_count": int(total_paid["n"]),
+            # Backward-compatible alias.
             "payout_count": int(total_paid["n"]),
         },
         "chair_inventory": {
@@ -1163,6 +1165,8 @@ async def vibe_health_index(_: bool = Depends(verify_admin_cookie)) -> Dict[str,
                 for p in PHASES
             ],
         },
+        "active_chair_holders": active_count,
+        # Backward-compatible alias.
         "active_stakeholders": active_count,
     }
 
@@ -1176,7 +1180,7 @@ async def admin_run_chair_quarter(
     payload: RunChairQuarterPayload,
     _: bool = Depends(verify_admin_cookie),
 ):
-    """Manual chair-pool payout. Idempotent on quarter_key."""
+    """Manual chair-pool reward run. Idempotent on quarter_key."""
     from routes.profit_share import _run_quarter_chair_payout, _quarter_key
     qk = payload.quarter_key or _quarter_key(datetime.now(timezone.utc))
     return await _run_quarter_chair_payout(qk)

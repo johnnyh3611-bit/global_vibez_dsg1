@@ -89,7 +89,7 @@ const CARDS: Card[] = [
   },
   {
     Icon: Sparkles,
-    headline: "Game Win Payouts",
+    headline: "Game Win Rewards",
     rate: "Post-tax, pre-animation",
     body: "Spades / Bid Whist / Vibez 654 wins hit your wallet post-tax. Win animation shows the real net ₵.",
     tone: "border-lime-500/40 bg-lime-950/20 text-lime-200",

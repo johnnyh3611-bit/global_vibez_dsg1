@@ -150,7 +150,7 @@ export default function RidesLanding() {
           <Card className="p-6 text-center">
             <Zap className="w-12 h-12 mx-auto text-blue-600 mb-3" />
             <h3 className="text-3xl font-bold text-blue-600 mb-2">Fast</h3>
-            <p className="text-gray-600">Weekly payouts</p>
+            <p className="text-gray-600">Weekly rewards</p>
             <p className="text-sm text-gray-500 mt-2">Get paid quickly</p>
           </Card>
 

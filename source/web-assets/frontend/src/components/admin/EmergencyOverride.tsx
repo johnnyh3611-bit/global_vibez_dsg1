@@ -29,7 +29,7 @@ export default function EmergencyOverride() {
       );
       if (reason === null) return;
     } else {
-      const ok = window.confirm("Release the Emergency Lock and resume payouts?");
+      const ok = window.confirm("Release the Emergency Lock and resume rewards?");
       if (!ok) return;
     }
     setBusy(true);

@@ -579,7 +579,7 @@ export default function Landing() {
                 safety protocol.
               </p>
               <div className="flex flex-wrap gap-2 text-xs">
-                {['Local Sponsors', 'Hungry Vibes', 'DSG Guard', 'Geo-Pinned'].map(t => (
+                {['Local Sponsors', 'Hunger Vibez', 'DSG Guard', 'Geo-Pinned'].map(t => (
                   <span key={t} className="px-2 py-1 rounded-full bg-[#FF8A1F]/10 text-[#FF8A1F] font-bold">
                     {t}
                   </span>

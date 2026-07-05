@@ -107,7 +107,7 @@ export default function AdminDSGLogistics() {
       });
       const d = await r.json();
       if (d?.ok) {
-        toast.success(`Payout ${d.payout_id} · ${fmt(d.driver_share_coins)} ₵ to driver`);
+        toast.success(`Reward ${d.payout_id} · ${fmt(d.driver_share_coins)} ₵ to driver`);
         setFormJobId(''); setFormDriverId(''); setFormRiderId('');
         fetchAll();
       } else toast.error(d?.reason || 'Process failed');
@@ -228,7 +228,7 @@ export default function AdminDSGLogistics() {
               <table className="min-w-full text-xs">
                 <thead className="bg-white/5 text-white/50 text-[10px] uppercase tracking-widest">
                   <tr>
-                    <th className="px-3 py-2 text-left">Payout</th>
+                    <th className="px-3 py-2 text-left">Reward</th>
                     <th className="px-3 py-2 text-left">Kind</th>
                     <th className="px-3 py-2 text-right">Fee ₵</th>
                     <th className="px-3 py-2 text-right">Driver ₵</th>

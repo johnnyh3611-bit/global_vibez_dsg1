@@ -90,7 +90,7 @@ const EARNINGS = [
   {
     id: "chair_dividends",
     title: "Chair Dividends",
-    detail: "Quarterly payouts from the 30% House Split.",
+    detail: "Quarterly rewards from the 30% House Split.",
     icon: Crown,
     accent: "text-amber-300 border-amber-300/30",
   },

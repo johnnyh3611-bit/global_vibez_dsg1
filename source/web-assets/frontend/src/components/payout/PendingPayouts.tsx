@@ -37,7 +37,7 @@ const PendingPayouts = ({ userId, onCancel }) => {
   };
 
   const handleCancelPayout = async (payoutId) => {
-    if (!window.confirm('Are you sure you want to cancel this payout? Coins will be refunded to your account.')) {
+    if (!window.confirm('Are you sure you want to cancel this reward? Coins will be refunded to your account.')) {
       return;
     }
 
@@ -52,11 +52,11 @@ const PendingPayouts = ({ userId, onCancel }) => {
         if (onCancel) onCancel();
       } else {
         const error = await response.json();
-        alert(error.detail || 'Failed to cancel payout');
+        alert(error.detail || 'Failed to cancel reward');
       }
     } catch (error) {
       console.error('Failed to cancel payout:', error);
-      alert('Failed to cancel payout');
+      alert('Failed to cancel reward');
     } finally {
       setCancellingId(null);
     }

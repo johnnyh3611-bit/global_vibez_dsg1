@@ -50,25 +50,25 @@ By accessing or using the Global Vibez platform ("Platform", "Service", "we", "u
 
 ---
 
-## 4. CASH-OUT & PAYOUTS
+## 4. CASH-OUT & GIFT/REWARD
 
-### 4.1 Payout Eligibility
+### 4.1 Gift/Reward Eligibility
 - Users may request cash-out of Vibez Coins at the rate of 2,000 C = $1.00 USD.
-- **Minimum Payout:** $50.00 USD (100,000 C).
-- Payouts are subject to verification and anti-fraud checks.
+- **Minimum Gift/Reward:** $50.00 USD (100,000 C).
+- Gift/Rewards are subject to verification and anti-fraud checks.
 
 ### 4.2 Verification Requirements
-- First-time payouts require identity verification:
+- First-time gift/rewards require identity verification:
   - Government-issued photo ID
   - Proof of address
   - Payment method verification
 - Processing time: 3-7 business days after verification.
 
-### 4.3 Payout Fees
-- Payouts under $500: $5 processing fee.
-- Payouts $500+: Free processing.
+### 4.3 Gift/Reward Fees
+- Gift/Rewards under $500: $5 processing fee.
+- Gift/Rewards $500+: Free processing.
 
-### 4.4 Payout Limits
+### 4.4 Gift/Reward Limits
 - Daily limit: $5,000 USD.
 - Weekly limit: $20,000 USD.
 - Monthly limit: $50,000 USD.
@@ -196,7 +196,7 @@ If you or someone you know has a gambling problem:
 
 ### 12.1 Termination by User
 - You may close your account at any time by contacting support.
-- Remaining balance will be paid out according to payout terms.
+- Remaining balance will be paid out according to gift/reward terms.
 
 ### 12.2 Termination by Platform
 We may suspend or terminate accounts for:

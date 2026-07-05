@@ -38,11 +38,11 @@ export default function PayoutManagement() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
-        alert('✅ Payout processed!');
+        alert('✅ Reward processed!');
         fetchPayouts();
       }
     } catch (error) {
-      alert('Failed to process payout');
+      alert('Failed to process reward');
     }
   };
 

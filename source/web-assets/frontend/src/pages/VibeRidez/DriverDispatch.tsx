@@ -302,7 +302,7 @@ export default function DriverDispatch() {
     // wallet. Going OFFLINE is always allowed.
     if (next && !hasWallet) {
       setWalletError(
-        "Connect a Solana wallet before going online — that's where your payouts land.",
+        "Connect a Solana wallet before going online — that's where your rewards land.",
       );
       return;
     }

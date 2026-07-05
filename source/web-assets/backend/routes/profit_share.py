@@ -3,13 +3,13 @@ Vibe Stakes — Profit-Sharing Program (NOT a security).
 
 This is a loyalty / revenue-share system. Members accrue "Vibe Stakes"
 through Premium membership + platform activity. Every quarter, the
-platform automatically distributes a cut of revenue across stakeholders
+platform automatically distributes a cut of revenue across chair holders
 weighted by their stake count, with a 1.5× boost for Premium members.
 
 Why this is NOT a security (and doesn't need SEC registration):
   • Members do not BUY stakes — they EARN them through usage.
   • Stakes are non-transferable (no member-to-member exchange).
-  • Payouts are bonus distributions, not dividends on owned property.
+    • Rewards are bonus distributions, not dividends on owned property.
   • There is no expectation of capital appreciation — stakes don't have
     a "price". They're a counter, like frequent-flyer miles.
 
@@ -17,17 +17,17 @@ Patreon, Substack, Twitch Partner, Roblox DevEx, Spotify all run on
 this exact legal structure. No filing required.
 
 Endpoints (all under /api/profit-share):
-  GET  /me                       — my stake balance + projected next payout
+    GET  /me                       — my stake balance + projected next reward
   GET  /pool                     — current quarter's pool stats (public)
   POST /accrue                   — internal helper, used by other modules
-  GET  /history                  — my past payouts
+    GET  /history                  — my past rewards
   POST /admin/run-quarter        — admin-cookie-gated manual trigger
-  GET  /admin/leaderboard        — top 50 stakeholders
+    GET  /admin/leaderboard        — top 50 chair holders
 
 Background:
   • A scheduler (`profit_share_scheduler`) runs every 6h, checks if today
     is the start of a new quarter (Jan 1 / Apr 1 / Jul 1 / Oct 1 UTC),
-    and fires the payout exactly once per quarter (idempotent via the
+    and fires the reward run exactly once per quarter (idempotent via the
     `profit_share_quarters` collection).
 """
 from __future__ import annotations
@@ -53,7 +53,7 @@ router = APIRouter()
 # How much of platform revenue goes to the stake pool. Default 20%.
 PROFIT_SHARE_RATIO = float(os.environ.get("PROFIT_SHARE_RATIO", "0.20"))
 
-# Premium members get a 1.5× boost on every payout.
+# Premium members get a 1.5× boost on every reward.
 PREMIUM_DIVIDEND_MULTIPLIER = 1.5
 
 # Stake accrual rates per source.
@@ -69,7 +69,7 @@ ACCRUAL_RATES = {
     "manual_admin_grant":    0,   # admin discretion
 }
 
-# Currency conversion: 1 USD payout = 100 ₵ Vibez Coins.
+# Currency conversion: 1 USD reward = 100 ₵ Vibez Coins.
 USD_TO_VIBEZ_COINS = 100
 
 # Premium tier names that qualify for the 1.5× boost.
@@ -258,17 +258,17 @@ async def my_stakes(http_request: Request):
 
     is_prem = await _is_premium(db, user.user_id)
 
-    # Project next payout based on the current pool.
+    # Project next reward based on the current pool.
     pool = await _pool_snapshot(db)
     my_share = 0.0
-    my_payout_usd = 0.0
-    my_payout_coins = 0
+    my_reward_usd = 0.0
+    my_reward_coins = 0
     if pool["total_stakes"] > 0 and bal["current_stakes"] > 0:
         my_share = bal["current_stakes"] / pool["total_stakes"]
-        my_payout_usd = my_share * pool["pool_usd"]
+        my_reward_usd = my_share * pool["pool_usd"]
         if is_prem:
-            my_payout_usd *= PREMIUM_DIVIDEND_MULTIPLIER
-        my_payout_coins = int(round(my_payout_usd * USD_TO_VIBEZ_COINS))
+            my_reward_usd *= PREMIUM_DIVIDEND_MULTIPLIER
+        my_reward_coins = int(round(my_reward_usd * USD_TO_VIBEZ_COINS))
 
     return {
         "user_id": user.user_id,
@@ -278,8 +278,11 @@ async def my_stakes(http_request: Request):
         "premium_multiplier": PREMIUM_DIVIDEND_MULTIPLIER if is_prem else 1.0,
         "next_quarter_start": _next_quarter_start(datetime.now(timezone.utc)).isoformat(),
         "projected_share_pct": round(my_share * 100, 4),
-        "projected_payout_usd": round(my_payout_usd, 2),
-        "projected_payout_coins": my_payout_coins,
+        "projected_reward_usd": round(my_reward_usd, 2),
+        "projected_reward_coins": my_reward_coins,
+        # Backward-compatible aliases.
+        "projected_payout_usd": round(my_reward_usd, 2),
+        "projected_payout_coins": my_reward_coins,
     }
 
 
@@ -293,6 +296,8 @@ async def _pool_snapshot(db) -> Dict[str, Any]:
     pool_usd = DEMO_QUARTERLY_PROFIT_USD * PROFIT_SHARE_RATIO
     return {
         "total_stakes": total_stakes,
+        "chair_holders": members,
+        # Backward-compatible alias.
         "stakeholders": members,
         "quarterly_profit_usd": DEMO_QUARTERLY_PROFIT_USD,
         "profit_share_ratio": PROFIT_SHARE_RATIO,
@@ -323,7 +328,7 @@ async def pool_snapshot():
 async def treasury_dashboard():
     """
     Public Treasury Report — replaces the manifest's "GVPX governance"
-    panel. Shows pool, last-quarter payout total, top stakeholders
+    panel. Shows pool, last-quarter reward total, top chair holders
     (anonymized), reserve fund balance, and surge state.
 
     Read-only. No member-by-member identification.
@@ -338,7 +343,7 @@ async def treasury_dashboard():
         {}, {"_id": 0}, sort=[("ran_at", -1)]
     ) or {}
 
-    # Anonymized top stakeholder list — we slice the user_id so individual
+    # Anonymized top chair holder list — we slice the user_id so individual
     # members aren't deanonymized in a public dashboard.
     top_cursor = db.profit_share_balances.find(
         {"current_stakes": {"$gt": 0}},
@@ -365,12 +370,14 @@ async def treasury_dashboard():
             "key": _quarter_key(datetime.now(timezone.utc)),
             "pool_coins": snap["pool_coins"],
             "pool_usd": snap["pool_usd"],
+            "chair_holders": snap["chair_holders"],
             "stakeholders": snap["stakeholders"],
             "total_stakes": snap["total_stakes"],
         },
         "last_quarter": {
             "key": last_q.get("quarter_key"),
-            "stakeholders_paid": int(last_q.get("stakeholders", 0)),
+            "chair_holders_rewarded": int(last_q.get("chair_holders", last_q.get("stakeholders", 0))),
+            "stakeholders_paid": int(last_q.get("chair_holders", last_q.get("stakeholders", 0))),
             "premium_count": int(last_q.get("premium_count", 0)),
             "actually_paid_coins": int(last_q.get("actually_paid_coins", 0)),
             "actually_paid_usd": float(last_q.get("actually_paid_usd", 0)),
@@ -398,18 +405,24 @@ async def my_history(http_request: Request, limit: int = 50):
         {"user_id": user.user_id}, {"_id": 0}
     ).sort("paid_at", -1).limit(min(max(1, limit), 200))
     rows = await cursor.to_list(length=limit)
-    total = sum(int(r.get("payout_coins", 0)) for r in rows)
-    return {"count": len(rows), "rows": rows, "total_coins_received": total}
+    total = sum(int(r.get("reward_coins", r.get("payout_coins", 0))) for r in rows)
+    return {
+        "count": len(rows),
+        "rows": rows,
+        "total_coins_rewarded": total,
+        # Backward-compatible alias.
+        "total_coins_received": total,
+    }
 
 
 # ─────────────────────────── Quarterly distribution ──
 
 async def _run_quarter_payout(quarter_key: str, profit_usd: float) -> Dict[str, Any]:
     """
-    The actual payout engine. Iterates every stakeholder, computes their
+    The actual reward engine. Iterates every chair holder, computes their
     weighted share, applies the Premium multiplier, credits their ₵
     balance, and rolls their `current_stakes` to zero so the next quarter
-    starts fresh. Persists per-payout rows for the user's history.
+    starts fresh. Persists per-reward rows for the user's history.
 
     IDEMPOTENT — if `quarter_key` is already in `profit_share_quarters`,
     the call returns the existing run rather than double-paying.
@@ -435,6 +448,7 @@ async def _run_quarter_payout(quarter_key: str, profit_usd: float) -> Dict[str, 
             "pool_usd": pool_usd,
             "pool_coins": pool_coins,
             "total_stakes": 0,
+            "chair_holders": 0,
             "stakeholders": 0,
             "actually_paid_usd": 0,
             "actually_paid_coins": 0,
@@ -473,12 +487,14 @@ async def _run_quarter_payout(quarter_key: str, profit_usd: float) -> Dict[str, 
             upsert=False,
         )
 
-        # Write per-member payout row + reset their current_stakes for next quarter.
+        # Write per-member reward row + reset their current_stakes for next quarter.
         await db.profit_share_payouts.insert_one({
             "user_id": uid,
             "quarter_key": quarter_key,
             "stakes_at_payout": stakes,
             "share_pct": round(share * 100, 6),
+            "reward_usd": round(member_usd, 4),
+            "reward_coins": member_coins,
             "payout_usd": round(member_usd, 4),
             "payout_coins": member_coins,
             "premium_boost_applied": is_prem,
@@ -508,6 +524,7 @@ async def _run_quarter_payout(quarter_key: str, profit_usd: float) -> Dict[str, 
         "pool_usd": pool_usd,
         "pool_coins": pool_coins,
         "total_stakes": total_stakes,
+        "chair_holders": paid_count,
         "stakeholders": paid_count,
         "premium_count": premium_count,
         "actually_paid_usd": round(paid_usd, 2),
@@ -522,10 +539,10 @@ async def _run_quarter_payout(quarter_key: str, profit_usd: float) -> Dict[str, 
     return record
 
 
-# ─────────────────────────── Chair-pool quarterly payout ──
+# ─────────────────────────── Chair-pool quarterly reward ──
 # User's "Master Deployment Plan" requested chairs to be the primary
 # weight for quarterly distributions (premium-gated). This runs ALONGSIDE
-# the legacy stake-based payout above. Both share `profit_share_payouts`
+# the legacy stake-based reward above. Both share `profit_share_payouts`
 # for member history + audit, and both record idempotently.
 #
 # Pool split: 70% to chair holders, 30% legacy stakes (already paid above).
@@ -565,7 +582,7 @@ async def _run_quarter_chair_payout(quarter_key: str) -> Dict[str, Any]:
     """
     Chair-based distribution. Premium-gated: chair holders without an
     active premium subscription receive nothing from the chair pool that
-    quarter (their chairs persist; just no payout this cycle).
+    quarter (their chairs persist; just no reward this cycle).
 
     Idempotent — `profit_share_chair_quarters._id == quarter_key`.
     """
@@ -578,7 +595,7 @@ async def _run_quarter_chair_payout(quarter_key: str) -> Dict[str, Any]:
         return {**existing, "already_distributed": True}
 
     # Apply Economy Control safety multiplier — when reserve coverage is
-    # low, payouts scale down (never below 50%). Emergency lock = 0×.
+    # low, rewards scale down (never below 50%). Emergency lock = 0×.
     try:
         from routes.economy_control import (
             calculate_safety_multiplier,
@@ -588,7 +605,7 @@ async def _run_quarter_chair_payout(quarter_key: str) -> Dict[str, Any]:
         )
         cfg = await _get_config(db)
         if cfg.get("emergency_lock"):
-            logger.warning(f"[chair-pool] {quarter_key}: emergency_lock active, skipping payout")
+            logger.warning(f"[chair-pool] {quarter_key}: emergency_lock active, skipping reward")
             return {
                 "quarter_key": quarter_key,
                 "skipped": True,
@@ -607,7 +624,7 @@ async def _run_quarter_chair_payout(quarter_key: str) -> Dict[str, Any]:
 
     # Aggregate active chair holders (premium AND chairs > 0).
     # Read both chair count AND weighted_chairs (Genius 3× / Genesis 2×
-    # / Standard 1×) so payouts are weighted by earn-rate multiplier.
+    # / Standard 1×) so rewards are weighted by earn-rate multiplier.
     active = await db.profit_share_balances.aggregate([
         {"$match": {"locked_chairs": {"$gt": 0}}},
         {"$lookup": {
@@ -659,6 +676,8 @@ async def _run_quarter_chair_payout(quarter_key: str) -> Dict[str, Any]:
                 "chairs_at_payout": chairs,
                 "weighted_chairs_at_payout": round(weight_units, 4),
                 "share_pct": round(share * 100, 6),
+                "reward_usd": round(member_usd, 4),
+                "reward_coins": member_coins,
                 "payout_usd": round(member_usd, 4),
                 "payout_coins": member_coins,
                 "premium_boost_applied": True,
@@ -728,7 +747,7 @@ async def admin_run_quarter(
 
 
 @router.get("/admin/profit-share/leaderboard")
-async def stakeholder_leaderboard(_: bool = Depends(verify_admin_cookie), limit: int = 50):
+async def chair_holder_leaderboard(_: bool = Depends(verify_admin_cookie), limit: int = 50):
     db = get_database()
     cursor = db.profit_share_balances.find(
         {"current_stakes": {"$gt": 0}}, {"_id": 0}
@@ -743,7 +762,7 @@ async def profit_share_scheduler() -> None:
     """
     Long-running coroutine started in server.py's startup hook. Sleeps for
     6h between checks. When the wall clock crosses into a new quarter, the
-    payout engine fires exactly once (idempotent).
+    reward engine fires exactly once (idempotent).
     """
     last_seen_quarter: Optional[str] = None
     while True:

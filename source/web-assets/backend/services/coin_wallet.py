@@ -20,6 +20,7 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional
+from app_config import COINS_PER_USD
 
 log = logging.getLogger(__name__)
 
@@ -38,9 +39,6 @@ log = logging.getLogger(__name__)
 # USD-equivalent doubles. This is the single source of truth — every
 # other rate constant (watch_and_wager, wallet docs, PricingMasterVault)
 # is reconciled to this value.
-COINS_PER_USD = 1000
-
-
 def usd_to_coins(amount_usd: float) -> int:
     """Round to nearest coin so we never short the platform."""
     return int(round(amount_usd * COINS_PER_USD))

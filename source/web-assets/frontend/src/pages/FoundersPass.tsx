@@ -302,7 +302,7 @@ export default function FoundersPass() {
               },
               {
                 title: "Step 3 — Get paid quarterly",
-                body: "Jan 1 / Apr 1 / Jul 1 / Oct 1 — auto-payout in ₵ Vibez Coins, weighted by your stakes.",
+                body: "Jan 1 / Apr 1 / Jul 1 / Oct 1 — auto-reward in ₵ Vibez Coins, weighted by your stakes.",
                 icon: Diamond,
               },
             ].map((step) => {

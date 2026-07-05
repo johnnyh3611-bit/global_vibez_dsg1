@@ -17,7 +17,13 @@
 
 Every user — regardless of country, language, or dialect — receives a
 **culturally native** experience across Gaming (31 rooms), VibeRidez,
-Hungry Vibes, Dating, Streaming, and the AI Dealer.
+Hunger Vibez, Dating, Streaming, and the AI Dealer.
+
+## 🗂 Terminology Lock (Brand + Roles)
+
+- Hunger Vibez = canonical service label across all locales.
+- Chair Holder = canonical role name for chair-based ownership/reward language.
+- Gift/Reward = canonical user-facing distribution term.
 
 ---
 
@@ -69,7 +75,7 @@ segmented into 4 categories for "200% compatibility":
 
 ### 4. Cultural Values Filter (opt-in)
 - Traditions
-- Dietary habits (relevant for Hungry Vibes dates)
+- Dietary habits (relevant for Hunger Vibez dates)
 - Social etiquette / pace of communication
 
 All answers persist to `user_metadata.localization` AND
@@ -83,7 +89,7 @@ All answers persist to `user_metadata.localization` AND
 |---|---|
 | **Gaming (31 rooms)** | Swap string tables. Baccarat / Bid Whist rulesets adjust to regional variants if applicable. |
 | **VibeRidez** | Maps swap to local landmarks. Distance units swap (mi ⇄ km). Currency swap on fares. |
-| **Hungry Vibes** | Menu algorithm prioritizes local cuisine. |
+| **Hunger Vibez** | Menu algorithm prioritizes local cuisine. |
 | **AI Dealer** | Voice + slang matches dialect selection. |
 | **Dating** | Match-rank weights matching dialect / cultural values. |
 
@@ -103,7 +109,7 @@ const globalVibeSync = (userSelection) => {
   // 3. Swap React i18n string tables
   i18n.changeLanguage(userSelection.languageCode);
 
-  // 4. Refresh service menus (Hungry Vibes / VibeRidez / Gaming)
+  // 4. Refresh service menus (Hunger Vibez / VibeRidez / Gaming)
   refreshServiceMenus(userSelection.countryCode);
 };
 ```

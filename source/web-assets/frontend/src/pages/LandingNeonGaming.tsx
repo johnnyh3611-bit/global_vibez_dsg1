@@ -323,7 +323,7 @@ export default function LandingNeonGaming() {
               <div className="space-y-3 mb-8">
                 <p className="text-2xl text-purple-300 font-bold flex items-center gap-2">
                   <Zap className="w-6 h-6 text-fuchsia-500" />
-                  Six Utility Rooms · One Token · Real Payouts
+                  Six Utility Rooms · One Token · Real Rewards
                 </p>
                 <p className="text-xl text-gray-400">
                   Games · Dating · Rides · Food · Venues · Streaming
@@ -667,7 +667,7 @@ export default function LandingNeonGaming() {
                 safety protocol.
               </p>
               <div className="flex flex-wrap gap-2 text-xs">
-                {['Local Sponsors', 'Hungry Vibes', 'DSG Guard', 'Geo-Pinned'].map(t => (
+                {['Local Sponsors', 'Hunger Vibez', 'DSG Guard', 'Geo-Pinned'].map(t => (
                   <span key={t} className="px-2 py-1 rounded-full bg-[#FF8A1F]/10 text-[#FF8A1F] font-bold">{t}</span>
                 ))}
               </div>

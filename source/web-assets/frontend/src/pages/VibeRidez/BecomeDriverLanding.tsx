@@ -35,7 +35,7 @@ const PERKS = [
   },
   {
     icon: Bolt,
-    title: "Instant payout into your wallet",
+    title: "Instant reward into your wallet",
     body:
       "The minute a rider taps Complete, escrow releases into your daily total. Cash out to Solana whenever — no $1 instant-pay fee.",
   },

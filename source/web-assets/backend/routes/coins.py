@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from utils.database import get_database, get_current_user
 from datetime import datetime, timezone
 import uuid
+from app_config import COINS_PER_USD
 
 router = APIRouter(prefix="/coins", tags=["coins"])
 
@@ -28,7 +29,7 @@ class CoinBalance(BaseModel):
 
 # ==================== CONSTANTS ====================
 
-COINS_PER_DOLLAR = 1000  # 1,000 coins = $1 (updated 2026-05-18)
+COINS_PER_DOLLAR = COINS_PER_USD  # 1,000 coins = $1 (updated 2026-05-18)
 STARTING_BALANCE = 2000  # $2.00 value at 1000 ₵/$ (existing balances preserved)
 DAILY_LOGIN_BONUS = 100  # $0.05 value
 PRACTICE_GAME_WIN = 0  # REMOVED - no coins for practice
