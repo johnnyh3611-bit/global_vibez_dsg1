@@ -13,7 +13,8 @@ import { Eye, EyeOff, Mail, Lock, ArrowLeft, AlertCircle } from 'lucide-react';
 // 2026-05-12: Privy wallet login removed from login page per founder ask.
 // Wallet linking now happens AFTER login at /wallet (Connect Phantom flow).
 
-const API = process.env.REACT_APP_BACKEND_URL;
+const API = (process.env.REACT_APP_BACKEND_URL || window.location.origin).replace(/\/$/, '');
+const GOOGLE_AUTH_URL = (process.env.REACT_APP_GOOGLE_AUTH_URL || '').trim();
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -281,8 +282,13 @@ export default function LoginPage() {
                   <NeonButton
                     variant="ghost"
                     onClick={() => {
+                      if (!GOOGLE_AUTH_URL) {
+                        setError('Google Sign-In is not configured. Use email/password or Demo Login.');
+                        return;
+                      }
                       const redirectUrl = `${window.location.origin}/auth-callback`;
-                      window.location.href = `http://localhost:3000/login?redirect=${encodeURIComponent(redirectUrl)}`;
+                      const joiner = GOOGLE_AUTH_URL.includes('?') ? '&' : '?';
+                      window.location.href = `${GOOGLE_AUTH_URL}${joiner}redirect=${encodeURIComponent(redirectUrl)}`;
                     }}
                     className="w-full mt-4 hover:shadow-[0_0_24px_rgba(34,211,238,0.55)] hover:scale-[1.02] transition-all duration-200"
                     data-testid="login-google-btn"

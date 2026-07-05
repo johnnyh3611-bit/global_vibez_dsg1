@@ -1,10 +1,11 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = (process.env.REACT_APP_BACKEND_URL || window.location.origin).replace(/\/$/, '');
 const API = `${BACKEND_URL}/api`;
 
-// REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
+// This callback supports both legacy session exchange and token passthrough
+// providers. It intentionally avoids hardcoded provider URLs.
 
 export default function AuthCallback() {
   const navigate = useNavigate();
@@ -17,10 +18,33 @@ export default function AuthCallback() {
 
     const processAuth = async () => {
       try {
-        // Extract session_id from URL fragment (Emergent Auth puts it there).
+        const query = new URLSearchParams(window.location.search);
+
+        // Support providers that return a token directly.
+        const directToken = query.get('token');
+        if (directToken) {
+          localStorage.setItem('auth_token', directToken);
+          const profileRes = await fetch(`${API}/auth/me`, {
+            headers: { Authorization: `Bearer ${directToken}` },
+          });
+          if (profileRes.ok) {
+            const user = await profileRes.json();
+            if (user?.user_id) localStorage.setItem('user_id', user.user_id);
+            if (user?.name) localStorage.setItem('username', user.name);
+            if (user?.email) localStorage.setItem('user_email', user.email);
+            if (user?.profile_completed) {
+              navigate('/dashboard', { state: { user }, replace: true });
+            } else {
+              navigate('/profile/setup', { state: { user }, replace: true });
+            }
+            return;
+          }
+        }
+
+        // Support providers that return session_id in either query or hash.
         const hash = window.location.hash;
-        const params = new URLSearchParams(hash.substring(1));
-        const sessionId = params.get('session_id');
+        const hashParams = new URLSearchParams(hash.substring(1));
+        const sessionId = query.get('session_id') || hashParams.get('session_id');
 
         if (!sessionId) {
           navigate('/');

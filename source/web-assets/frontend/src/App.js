@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
-import { useState, useEffect, useRef, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import "@/App.css";
 
 // Install global guard FIRST — before any third-party SDK imports run —
@@ -105,7 +105,7 @@ function useIsFullscreenGameRoute() {
 // Import version manager for cache busting
 import { startVersionMonitoring } from "@/utils/versionManager";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = (process.env.REACT_APP_BACKEND_URL || window.location.origin).replace(/\/$/, '');
 
 // ProtectedRoute Component
 function ProtectedRoute({ children }) {

@@ -11,7 +11,8 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff, Mail, Lock, User, Calendar, ArrowLeft, AlertCircle, CheckCircle, Crown } from 'lucide-react';
 
-const API = process.env.REACT_APP_BACKEND_URL;
+const API = (process.env.REACT_APP_BACKEND_URL || window.location.origin).replace(/\/$/, '');
+const GOOGLE_AUTH_URL = (process.env.REACT_APP_GOOGLE_AUTH_URL || '').trim();
 
 export default function SignupPage() {
   const navigate = useNavigate();
@@ -486,8 +487,13 @@ export default function SignupPage() {
               <NeonButton
                 variant="ghost"
                 onClick={() => {
+                  if (!GOOGLE_AUTH_URL) {
+                    setError('Google Sign-In is not configured. Use email/password signup.');
+                    return;
+                  }
                   const redirectUrl = `${window.location.origin}/auth-callback`;
-                  window.location.href = `http://localhost:3000/login?redirect=${encodeURIComponent(redirectUrl)}`;
+                  const joiner = GOOGLE_AUTH_URL.includes('?') ? '&' : '?';
+                  window.location.href = `${GOOGLE_AUTH_URL}${joiner}redirect=${encodeURIComponent(redirectUrl)}`;
                 }}
                 className="w-full mt-4"
               >

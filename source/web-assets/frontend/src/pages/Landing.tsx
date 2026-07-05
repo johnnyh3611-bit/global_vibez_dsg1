@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Heart, Gamepad2, Users, MapPin, Star, Sparkles, TrendingUp, Shield, Zap, Video, Trophy, Utensils, ArrowRight, Play } from 'lucide-react';
+import { Heart, Gamepad2, Users, MapPin, Star, Sparkles, TrendingUp, Shield, Zap, Video, Trophy, Utensils, ArrowRight, Play, Globe } from 'lucide-react';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -158,6 +158,31 @@ export default function Landing() {
             </div>
           </div>
 
+          {/* Legacy motif restored: globe with orbiting planet */}
+          <div className="relative mx-auto mb-10 w-56 h-56" data-testid="landing-orbit-globe">
+            <motion.div
+              className="absolute inset-0 rounded-full bg-gradient-to-br from-cyan-500/30 via-blue-500/30 to-fuchsia-500/30 blur-2xl"
+              animate={{ scale: [1, 1.08, 1], opacity: [0.45, 0.75, 0.45] }}
+              transition={{ duration: 3.6, repeat: Infinity, ease: 'easeInOut' }}
+            />
+
+            <div className="absolute inset-8 rounded-full border border-cyan-300/35 bg-black/45 backdrop-blur-xl flex items-center justify-center shadow-[0_0_40px_rgba(34,211,238,0.3)]">
+              <Globe className="w-20 h-20 text-cyan-300" />
+            </div>
+
+            <div className="absolute inset-3 rounded-full border border-fuchsia-400/35" />
+
+            <motion.div
+              className="absolute inset-0"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 11, repeat: Infinity, ease: 'linear' }}
+            >
+              <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2">
+                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-300 to-orange-500 shadow-[0_0_22px_rgba(251,191,36,0.8)]" />
+              </div>
+            </motion.div>
+          </div>
+
           {/* Main Tagline */}
           <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight">
             Where <span className="text-pink-300">Dating</span> Meets <span className="text-purple-300">Live Streaming</span>,<br />
@@ -285,8 +310,7 @@ export default function Landing() {
                 </p>
                 <Button
                   onClick={() => {
-                    const redirectUrl = `${window.location.origin}/dashboard`;
-                    window.location.href = `http://localhost:3000/login?redirect=${encodeURIComponent(redirectUrl)}`;
+                    navigate('/login');
                   }}
                   className="bg-white text-purple-900 hover:bg-gray-100 px-6 py-3 font-bold rounded-full"
                 >
@@ -662,8 +686,7 @@ export default function Landing() {
           </p>
           <Button
             onClick={() => {
-              const redirectUrl = `${window.location.origin}/dashboard`;
-              window.location.href = `http://localhost:3000/login?redirect=${encodeURIComponent(redirectUrl)}`;
+              navigate('/login');
             }}
             data-testid="landing-final-cta-button"
             className="bg-[#FF8A1F] hover:bg-[#FFA040] text-black px-12 py-8 text-xl md:text-2xl font-black rounded-full shadow-2xl shadow-[#FF8A1F]/30 transform hover:scale-105 transition-all uppercase tracking-wider"
