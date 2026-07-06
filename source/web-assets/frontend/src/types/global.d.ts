@@ -17,3 +17,15 @@ declare global {
     [Symbol.toPrimitive](hint: 'number'): number;
   }
 }
+
+// Lazy-loaded Solana streaming SDK — not a direct dependency, imported
+// dynamically in StreamflowAdmin.tsx so the page still loads without it.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+declare module '@streamflow/stream' {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  export const SolanaStreamClient: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  export const GenericStreamClient: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  export const ICluster: any;
+}

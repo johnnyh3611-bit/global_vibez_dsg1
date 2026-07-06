@@ -31,8 +31,8 @@ PaginationItem.displayName = "PaginationItem"
 
 const PaginationLink = ({
   className,
-  isActive,
-  size = "icon",
+  isActive = false,
+  size = "icon" as "default" | "sm" | "lg" | "icon",
   ...props
 }) => (
   <a

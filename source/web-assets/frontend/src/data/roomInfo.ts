@@ -588,7 +588,6 @@ export const ROOM_INFO: Record<string, RoomInfo> = {
     ],
     safety: "Every Sovereign operation requires a 'project complete' safe-phrase before going live on mainnet.",
   },
-  "/vibe-vault-admin": { title: "Vibe Vault Admin", tagline: "Same as /admin.", howItWorks: ["See /admin."] },
   "/vibe-drive": {
     title: "Vibe Drive",
     tagline: "Driver-side dispatch HUD for Vibe Ridez.",

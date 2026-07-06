@@ -26,6 +26,7 @@ type Bet = {
   locked_odds: number; status: string; payout_vibe: number; sport?: string; league?: string;
 };
 type JumboRow = { game_id: string; choice: string; amount: number; status: string; payout_vibe: number; user_id: string };
+type BetOfDay = { game_id: string; choice: string; locked_odds: number; [key: string]: unknown } | null;
 
 const STAKE_PRESETS = [50, 250, 1000, 5000];
 

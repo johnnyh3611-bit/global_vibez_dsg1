@@ -692,7 +692,7 @@ export default function UnoPremium() {
       // Universal Design Agent §2 auto-action: try a valid play first,
       // otherwise draw. Keeps the table moving on idle hand-stalls.
       if (!socket || !myPlayer?.hand) return;
-      const top = table?.discard_top;
+      const top = table?.top_card;
       const findPlayable = (): number | null => {
         if (!myPlayer.hand || !top) return null;
         const wildIdx = myPlayer.hand.findIndex(
@@ -715,7 +715,7 @@ export default function UnoPremium() {
     }
     const t = setInterval(() => setTurnTimeLeft((v) => Math.max(0, v - 1)), 1000);
     return () => clearInterval(t);
-  }, [isMyTurn, turnTimeLeft, socket, myPlayer, table?.discard_top]);
+  }, [isMyTurn, turnTimeLeft, socket, myPlayer, table?.top_card]);
 
   // Seat mapping: me at SOUTH, opponents fill west → north → east in turn order.
   const opponentSeats: SeatPosition[] = useMemo(() => {

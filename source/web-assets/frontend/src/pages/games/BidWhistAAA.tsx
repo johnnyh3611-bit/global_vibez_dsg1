@@ -49,7 +49,6 @@ import type {
   SpadesCard as CardData,
   SpadesPosition,
   SpadesPlayerView,
-  SpadesScores,
   SpadesPhase,
   StatusMessage,
 } from "@/components/spades/types";
@@ -106,7 +105,7 @@ interface BwRawState {
   kitty_count: number;
   dealer: SpadesPosition;
   phase: "bidding" | "kitty_exchange" | "playing" | "scoring" | "finished";
-  scores: SpadesScores;
+  scores: { team1: number; team2: number };
   tricks_won: { team1: number; team2: number };
   players_data: Record<SpadesPosition, BwRawPlayer>;
   bids: BwRawBid[];
@@ -117,6 +116,7 @@ interface BwRawState {
   whose_turn: SpadesPosition;
   current_bidder?: SpadesPosition;
   current_trick: BwRawTrickPlay[];
+  player_tricks?: Record<SpadesPosition, number>;
   winner?: "team1" | "team2" | null;
   winning_score?: number;
   play_sequence?: Array<{

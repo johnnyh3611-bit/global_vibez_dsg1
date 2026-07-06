@@ -89,6 +89,6 @@ export interface SpadesPracticeState {
 
 export interface StatusMessage {
   text: string;
-  tone: "cyan" | "amber" | "rose" | "emerald";
+  tone: "cyan" | "amber" | "rose" | "emerald" | "indigo" | "fuchsia";
   id: number;
 }
