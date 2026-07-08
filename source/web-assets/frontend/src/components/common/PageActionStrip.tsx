@@ -55,7 +55,7 @@ interface SubItem {
   id: string;
   label: string;
   hint: string;
-  Icon: React.ElementType;
+  Icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   color: string;
   href?: string;
   onClick?: () => void;

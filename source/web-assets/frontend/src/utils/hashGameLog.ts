@@ -18,7 +18,7 @@
  */
 export async function hashGameLog(events: unknown[]): Promise<string> {
   const canonical = events.map((e) => String(e)).join("|");
-  const bytes = new TextEncoder().encode(canonical);
+  const bytes = new Uint8Array(new TextEncoder().encode(canonical));
   const digest = await crypto.subtle.digest("SHA-256", bytes);
   const hex = Array.from(new Uint8Array(digest))
     .map((b) => b.toString(16).padStart(2, "0"))

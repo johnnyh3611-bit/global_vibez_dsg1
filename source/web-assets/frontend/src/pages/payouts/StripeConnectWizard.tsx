@@ -61,7 +61,7 @@ const ROLE_COPY: Record<Role, { label: string; payoutDesc: string }> = {
   streamer: {
     label: "DSG TV Streamer",
     payoutDesc:
-      "Gift earnings and pay-per-view revenue payout monthly.",
+      "Gift earnings and pay-per-view revenue rewards settle monthly.",
   },
 };
 
@@ -112,7 +112,7 @@ export default function StripeConnectWizard() {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        toast.error(err.detail || "Could not start payout setup");
+        toast.error(err.detail || "Could not start reward setup");
         setStep(1);
         return;
       }

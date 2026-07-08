@@ -59,7 +59,7 @@ const PayoutQueueManager = () => {
   };
 
   const approvePayout = async (payoutId) => {
-    if (!window.confirm('Approve this payout? Funds will be released to user.')) {
+    if (!window.confirm('Approve this reward? Funds will be released to user.')) {
       return;
     }
     
@@ -78,7 +78,7 @@ const PayoutQueueManager = () => {
         throw new Error(errorData.detail || 'Failed to approve payout');
       }
       
-      alert('Payout approved successfully!');
+      alert('Reward approved successfully!');
       fetchPayouts(); // Refresh list
     } catch (err) {
       alert(`Error: ${err.message}`);
@@ -104,7 +104,7 @@ const PayoutQueueManager = () => {
         throw new Error('Failed to reject payout');
       }
       
-      alert('Payout rejected. Coins refunded to user.');
+      alert('Reward rejected. Coins refunded to user.');
       fetchPayouts(); // Refresh list
     } catch (err) {
       alert(`Error: ${err.message}`);

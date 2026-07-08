@@ -80,7 +80,7 @@ export default function WelcomeLetter() {
             Icon={Lock}
             title="Genius is the gate that unlocks everything"
             body={
-              "Genius caps at 50,000 chairs ($1M ceiling raise). The instant chair #50,000 sells, two things flip simultaneously: chair pricing switches from flat $20 to the live Equity Master valuation, AND the 200M DSG Founder Vault begins a 12-month release (25% immediate, balance monthly). Crew wallets hold 50M DSG exempt from ownership caps. This protects the floor for early holders AND roughly 2×'s payouts when we cross critical mass."
+              "Genius caps at 50,000 chairs ($1M ceiling raise). The instant chair #50,000 sells, two things flip simultaneously: chair pricing switches from flat $20 to the live Equity Master valuation, AND the 200M DSG Founder Vault begins a 12-month release (25% immediate, balance monthly). Crew wallets hold 50M DSG exempt from ownership caps. This protects the floor for early holders AND roughly 2×'s rewards when we cross critical mass."
             }
             tone="amber"
             testId="welcome-beat-reserve"

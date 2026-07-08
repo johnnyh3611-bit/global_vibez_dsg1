@@ -232,7 +232,7 @@ export default function PokerPractice() {
   const userSeat = state.seats.find((s) => s.is_user);
   const toCall = userSeat ? Math.max(0, state.current_bet - userSeat.bet) : 0;
   // Universal turn indicator — derive role + name from active_seat.
-  const activeSeat = state.seats.find((s) => s.id === state.active_seat);
+  const activeSeat = state.seats.find((s) => s.seat_id === state.active_seat);
   const turnRole: TurnRole = state.phase === 'gameover'
     ? 'system'
     : activeSeat?.is_user ? 'me' : 'opponent';

@@ -79,7 +79,7 @@ const FEATURES: Feature[] = [
   {
     key: 'admin-logistics',
     title: 'Admin Logistics Ops',
-    blurb: 'Active incidents · cancellation payouts (with recirc breakdown) · white-glove strikes.',
+    blurb: 'Active incidents · cancellation rewards (with recirc breakdown) · white-glove strikes.',
     route: '/admin/dsg-logistics',
     scope: 'ADMIN',
     Icon: Activity,

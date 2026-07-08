@@ -268,7 +268,7 @@ export default function CrazyEightsAAA() {
     if (!raw || busy) return;
     if (raw.turn !== raw.user_position || raw.phase !== "playing") return;
     if (raw.pending_wild) return; // wait for human suit pick — don't auto
-    const top = raw.discard_top;
+    const top = raw.top_card;
     const hand = raw.your_hand ?? [];
     const RANK_VALUES: Record<string, number> = {
       "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7, "8": 8,

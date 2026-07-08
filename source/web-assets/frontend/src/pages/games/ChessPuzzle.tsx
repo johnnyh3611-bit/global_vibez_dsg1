@@ -113,7 +113,7 @@ export default function ChessPuzzle() {
               <Chessboard
                 id="ChessPuzzle"
                 position={fen}
-                onPieceDrop={onDrop}
+                onPieceDrop={onDrop as unknown as (sourceSquare: string, targetSquare: string, piece: string) => boolean}
                 arePiecesDraggable={feedback !== "solved" && !submitting}
                 boardOrientation="white"
                 customBoardStyle={{ borderRadius: 12 }}

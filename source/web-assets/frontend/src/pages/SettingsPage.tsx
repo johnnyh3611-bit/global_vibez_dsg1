@@ -212,7 +212,7 @@ export default function SettingsPage() {
                   </h2>
                   <p className="text-gray-400 mb-6">
                     Pick your country and language. Game tables, the AI dealer's slang,
-                    Vibe Ridez units (mi ⇄ km) and Hungry Vibes menus all sync to your choice.
+                    Vibe Ridez units (mi ⇄ km) and Hunger Vibez menus all sync to your choice.
                   </p>
 
                   {/* Current locale summary */}

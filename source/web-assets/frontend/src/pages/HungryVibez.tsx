@@ -86,7 +86,7 @@ export default function HungryVibez() {
           <Pillar
             icon={Bike}
             title="Powered by VibeRidez"
-            body="Every Hungry Vibez order hands off to our VibeRidez driver network — 70% driver / chair-pool split, on-chain USDC payouts."
+            body="Every Hungry Vibez order hands off to our VibeRidez driver network — 70% driver / chair-pool split, on-chain USDC rewards."
             testid="pillar-viberidez"
           />
           <Pillar
@@ -138,7 +138,7 @@ export default function HungryVibez() {
 }
 
 const Pillar: React.FC<{
-  icon: React.ElementType;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   title: string;
   body: string;
   testid?: string;

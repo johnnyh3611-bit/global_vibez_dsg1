@@ -42,7 +42,7 @@ const STEPS = [
   },
   {
     n: 5,
-    title: 'Connect your wallet for payouts',
+    title: 'Connect your wallet for rewards',
     body: 'Tips clear instantly to your Vibez Credits. Convert to fiat from /wallet. 70% to you, 13.5% sovereign tax, 10% liquidity, 6.5% platform.',
     Icon: Wallet,
   },

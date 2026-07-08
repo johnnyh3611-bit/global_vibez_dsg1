@@ -235,7 +235,7 @@ export default function VibeVenues() {
   );
 }
 
-const Step: React.FC<{ n: number; icon: React.ElementType; title: string; body: string }> = ({
+const Step: React.FC<{ n: number; icon: React.ComponentType<React.SVGProps<SVGSVGElement>>; title: string; body: string }> = ({
   n,
   icon: Icon,
   title,

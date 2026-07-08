@@ -18,7 +18,7 @@ type Msg = {
   at: string;
 };
 
-const ROLE_ICONS: Record<string, { Icon: React.ElementType; tone: string }> = {
+const ROLE_ICONS: Record<string, { Icon: React.ComponentType<React.SVGProps<SVGSVGElement>>; tone: string }> = {
   customer: { Icon: Heart, tone: "text-fuchsia-300" },
   artisan: { Icon: ChefHat, tone: "text-orange-300" },
   host: { Icon: Crown, tone: "text-cyan-300" },

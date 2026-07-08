@@ -6,7 +6,7 @@
  * The canonical bridge function between:
  *   - React UI (i18n string tables)
  *   - MongoDB user_metadata.localization (Tier-3 deep persistence)
- *   - Service menus (Hungry Vibes / VibeRidez / Gaming AI Dealer)
+ *   - Service menus (Hunger Vibez / VibeRidez / Gaming AI Dealer)
  *   - Unreal Engine 5.5 container (when present)
  *
  * Every Cultural Hub manual selection MUST flow through this function

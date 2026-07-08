@@ -332,7 +332,7 @@ export default function ChairVault() {
                   <div className="mt-5 rounded-xl border border-emerald-400/40 bg-emerald-500/10 p-3 flex items-center gap-2">
                     <Diamond className="w-4 h-4 text-emerald-300 shrink-0" />
                     <p className="text-[12px] text-emerald-200">
-                      Rewards active · next quarterly auto-payout includes you.
+                      Rewards active · next quarterly auto-reward includes you.
                     </p>
                   </div>
                 )}

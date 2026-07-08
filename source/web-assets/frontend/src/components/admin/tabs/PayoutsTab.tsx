@@ -24,16 +24,16 @@ export const PayoutsTab = () => {
   }, [fetchPayouts]);
 
   const handlePayoutAction = async (payoutId, action) => {
-    if (!confirm(`Are you sure you want to ${action} this payout?`)) return;
+    if (!confirm(`Are you sure you want to ${action} this reward?`)) return;
     try {
       await fetchWithAuth(`${BACKEND_URL}/api/admin/payout-action`, {
         method: 'POST',
         body: JSON.stringify({ payout_id: payoutId, action }),
       });
-      alert(`Payout ${action}d successfully!`);
+      alert(`Reward ${action}d successfully!`);
       fetchPayouts();
     } catch (error) {
-      alert('Failed to process payout');
+      alert('Failed to process reward');
     }
   };
 

@@ -236,7 +236,7 @@ export default function CulturalOnboardingWizard() {
               testidPrefix="tradition"
             />
             <PillGroup
-              label="Dietary habits (helps Hungry Vibes dates)"
+              label="Dietary habits (helps Hunger Vibez dates)"
               options={['Omnivore', 'Vegetarian', 'Vegan', 'Halal', 'Kosher', 'Pescatarian', 'Gluten-Free']}
               value={dietary}
               onToggle={(v) => toggleIn(dietary, v, setDietary)}

@@ -100,7 +100,7 @@ export const EXPLORE_REGISTRY: Entry[] = [
   { route: '/admin/treasury', title: 'Treasury Operations', subtitle: 'Treasury bucket controls', cat: 'founder', tags: ['admin', 'treasury'] },
   { route: '/admin/payments-audit', title: 'Payments Audit', subtitle: 'Stripe drift detection', cat: 'founder', tags: ['admin', 'payments', 'audit'] },
   { route: '/admin/pricing', title: 'Pricing Catalog', subtitle: 'Live price editor', cat: 'founder', tags: ['admin', 'pricing'] },
-  { route: '/admin/payouts', title: 'Payouts', subtitle: 'Creator + driver payouts', cat: 'founder', tags: ['admin', 'payouts'] },
+  { route: '/admin/payouts', title: 'Rewards', subtitle: 'Creator + driver rewards', cat: 'founder', tags: ['admin', 'rewards'] },
   { route: '/admin/tier-pricing', title: 'Tier Pricing', subtitle: 'High-Roller tier config', cat: 'founder', tags: ['admin', 'tiers'] },
   { route: '/admin/users', title: 'User Management', subtitle: 'Search + moderation', cat: 'founder', tags: ['admin', 'users'] },
   { route: '/admin/analytics', title: 'Analytics', subtitle: 'Engagement + revenue charts', cat: 'founder', tags: ['admin', 'analytics'] },

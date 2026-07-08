@@ -243,7 +243,7 @@ export default function DriverEarnings() {
                     <th className="px-4 py-3 text-right">Platform</th>
                     <th className="px-4 py-3 text-right">Ins.</th>
                     <th className="px-4 py-3 text-right">Ref.</th>
-                    <th className="px-4 py-3 text-left">Payout</th>
+                    <th className="px-4 py-3 text-left">Reward</th>
                   </tr>
                 </thead>
                 <tbody>

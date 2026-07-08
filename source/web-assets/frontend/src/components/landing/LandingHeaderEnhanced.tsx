@@ -29,7 +29,7 @@ interface NavItem {
   key: Exclude<RoomKey, null>;
   label: string;
   href: string;          // anchor target id on the same page
-  Icon: React.ElementType;
+  Icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   glow: string;          // rgb glow used for the per-room hover tint
 }
 
@@ -47,7 +47,7 @@ interface Props {
   onRoomHover?: (room: RoomKey) => void;
 }
 
-const ParallaxIcon: React.FC<{ Icon: React.ElementType; color: string }> = ({ Icon, color }) => {
+const ParallaxIcon: React.FC<{ Icon: React.ComponentType<React.SVGProps<SVGSVGElement>>; color: string }> = ({ Icon, color }) => {
   const ref = useRef<HTMLSpanElement>(null);
   const onMove = (e: React.MouseEvent) => {
     const el = ref.current;

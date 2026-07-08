@@ -465,7 +465,7 @@ export default function PinochleAAA() {
               <SpadesSeat position="north" player={players.north} isTurn={raw.turn === "north" || raw.bid_turn === "north"} isYou={youPosition === "north"} isDealer={raw.dealer === "north"} onClick={() => setProfileOpen("north")} shotClockExpiresAt={(raw.turn === "north" || raw.bid_turn === "north") ? turnExpiresAt : null} onShotClockExpire={handleShotClockExpire} />
               <SpadesSeat position="east"  player={players.east}  isTurn={raw.turn === "east"  || raw.bid_turn === "east"}  isYou={youPosition === "east"}  isDealer={raw.dealer === "east"}  onClick={() => setProfileOpen("east")}  shotClockExpiresAt={(raw.turn === "east"  || raw.bid_turn === "east")  ? turnExpiresAt : null} onShotClockExpire={handleShotClockExpire} />
               <SpadesSeat position="west"  player={players.west}  isTurn={raw.turn === "west"  || raw.bid_turn === "west"}  isYou={youPosition === "west"}  isDealer={raw.dealer === "west"}  onClick={() => setProfileOpen("west")}  shotClockExpiresAt={(raw.turn === "west"  || raw.bid_turn === "west")  ? turnExpiresAt : null} onShotClockExpire={handleShotClockExpire} />
-              <SpadesTrickPile trick={raw.current_trick} />
+              <SpadesTrickPile trick={raw.current_trick.map((t) => ({ position: t.player, card: t.card }))} />
             </SpadesTable>
             <SpadesDealingAnimation active={dealing} />
           </div>

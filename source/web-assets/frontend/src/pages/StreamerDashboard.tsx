@@ -94,11 +94,11 @@ const StreamerDashboard = () => {
 
   const handleRequestPayout = async () => {
     if (!dashboard || dashboard.streamer_earnings < 100) {
-      alert('Minimum payout is $100 USD');
+      alert('Minimum reward request is $100 USD');
       return;
     }
 
-    if (!window.confirm(`Request payout of $${dashboard.streamer_earnings.toFixed(2)}?`)) {
+    if (!window.confirm(`Request reward of $${dashboard.streamer_earnings.toFixed(2)}?`)) {
       return;
     }
 
@@ -110,13 +110,13 @@ const StreamerDashboard = () => {
       const data = await response.json();
 
       if (data.success) {
-        alert(`✅ Payout requested!\n\nAmount: $${data.amount.toFixed(2)}\nProcessing time: 3-5 business days`);
+        alert(`✅ Reward requested!\n\nAmount: $${data.amount.toFixed(2)}\nProcessing time: 3-5 business days`);
         fetchDashboard();
       } else {
-        throw new Error(data.message || 'Failed to request payout');
+        throw new Error(data.message || 'Failed to request reward');
       }
     } catch (error) {
-      alert('Failed to request payout: ' + error.message);
+      alert('Failed to request reward: ' + error.message);
     }
   };
 
@@ -326,7 +326,7 @@ const StreamerDashboard = () => {
                   : 'bg-gray-700 text-gray-500 cursor-not-allowed'
               }`}
             >
-              {dashboard?.can_withdraw ? 'Request Payout' : 'Insufficient Balance'}
+              {dashboard?.can_withdraw ? 'Request Reward' : 'Insufficient Balance'}
             </button>
           </div>
         </div>

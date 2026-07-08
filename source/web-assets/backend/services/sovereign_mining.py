@@ -10,7 +10,7 @@ Implements the constitutional primitives from
    volume. Gated at 50 verified recruits.
 3. Stream-to-Earn (Audience Mining) — watch-time × rate, bot-gated
    by interaction count.
-4. Proof-of-Movement (VibeRidez / Hungry Vibes) — miles × rate.
+4. Proof-of-Movement (VibeRidez / Hunger Vibez) — miles × rate.
    Drivers earn 3× passengers.
 5. Tournament Minting (Skill Mining) — 10% of prize pool as fresh-mint
    bonus unlocked per tournament win.

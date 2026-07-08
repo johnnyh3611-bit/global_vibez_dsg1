@@ -147,7 +147,7 @@ export default function HungryVibezSpotlight() {
 }
 
 const PillarCard: React.FC<{
-  icon: React.ElementType;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   tone: "fuchsia" | "orange" | "purple";
   title: string;
   body: string;

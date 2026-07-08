@@ -17,3 +17,4 @@ declare global {
     [Symbol.toPrimitive](hint: 'number'): number;
   }
 }
+

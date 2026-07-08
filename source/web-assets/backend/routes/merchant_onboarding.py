@@ -27,6 +27,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Request
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, Field
+from app_config import CHAIR_PRICE_USD
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/merchant", tags=["merchant"])
@@ -43,7 +44,7 @@ def _db():
 # ────────────────────────────────────────────── Constants (PDF source) ──
 ACTIVATION_FEE_MIN = 100
 ACTIVATION_FEE_MAX = 150
-GENIUS_CHAIR_PRICE = 20
+GENIUS_CHAIR_PRICE = CHAIR_PRICE_USD
 GENIUS_CHAIR_CAP = 50_000
 INDIVIDUAL_CHAIR_CEILING = 100
 PUSH_BLAST_RADIUS_MILES = 3

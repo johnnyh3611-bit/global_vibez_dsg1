@@ -41,18 +41,18 @@ const Wallet = () => {
 
       if (response.ok) {
         const result = await response.json();
-        alert(`✅ ${result.message}\n\nPayout ID: ${result.payout_id}\nAmount: $${result.net_payout.toFixed(2)}\nRelease Date: ${new Date(result.release_date).toLocaleString()}`);
+        alert(`✅ ${result.message}\n\nReward ID: ${result.payout_id}\nAmount: $${result.net_payout.toFixed(2)}\nRelease Date: ${new Date(result.release_date).toLocaleString()}`);
         
         // Update balance
         setUserBalance(prev => prev - payoutData.coin_amount);
         setRefreshTrigger(prev => prev + 1);
       } else {
         const error = await response.json();
-        alert(`❌ Payout failed: ${error.detail}`);
+        alert(`❌ Reward failed: ${error.detail}`);
       }
     } catch (error) {
-      console.error('Payout request failed:', error);
-      alert('Failed to process payout request');
+      console.error('Reward request failed:', error);
+      alert('Failed to process reward request');
     }
   };
 

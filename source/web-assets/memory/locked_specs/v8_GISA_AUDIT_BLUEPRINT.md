@@ -18,10 +18,16 @@
 GISA is a **Blind Auditor** middleware agent that pressure-tests Global Vibez DSG
 across 4 health vectors PRE-BETA, so we ship a stable beta to real users.
 
+## 🗂 Terminology Lock (Brand + Roles)
+
+- Hunger Vibez = canonical service name (legacy "Hungry Vibes" retired).
+- Chair Holder = canonical owner-role term for chair-based participation.
+- Gift/Reward = canonical member-facing distribution term (legacy "payout" retired in UX/legal copy).
+
 | Vector | What it Audits |
 |---|---|
 | **Concurrency** | Up to 1,000,000 simulated socket connections |
-| **Isolation** | Zero cross-talk between Hungry Vibes / VibeRidez / Gaming / Dating / Private Rooms |
+| **Isolation** | Zero cross-talk between Hunger Vibez / VibeRidez / Gaming / Dating / Private Rooms |
 | **Transaction Velocity** | Solana TPS saturation on the DSG token gateway |
 | **Visual Parity** | All 31 game rooms match the **"5654 Vibe"** gold standard (UE5.5) |
 
@@ -101,7 +107,7 @@ class StressAgent(locust.HttpUser):
 | Module | Logic Check | Visual Check |
 |---|---|---|
 | **31 Game Rooms** | Physics collision & result sync | Ray-tracing & texture parity (5654 Vibe) |
-| **VibeRidez / Hungry Vibes** | GPS coordinate isolation | UI responsiveness under load |
+| **VibeRidez / Hunger Vibez** | GPS coordinate isolation | UI responsiveness under load |
 | **Blockchain Gateway (Solana)** | TPS saturation, double-entry detection | Transaction confirmation speed |
 | **Private Rooms** | End-to-end data silo check | N/A (performance-focused) |
 

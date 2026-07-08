@@ -32,7 +32,7 @@ const API = process.env.REACT_APP_BACKEND_URL;
 
 const SYMBOL_META: Record<
   string,
-  { Icon: React.ElementType; label: string; tint: string }
+  { Icon: React.ComponentType<React.SVGProps<SVGSVGElement>>; label: string; tint: string }
 > = {
   bolt:    { Icon: Zap,       label: "Bolt",    tint: "text-amber-300" },
   eye:     { Icon: Eye,       label: "Eye",     tint: "text-cyan-300" },

@@ -40,7 +40,7 @@ MODULE_MATRIX = [
         "visual_check": "Ray-tracing & texture parity (5654 Vibe)",
     },
     {
-        "module": "VibeRidez / Hungry Vibes",
+        "module": "VibeRidez / Hunger Vibez",
         "logic_check": "GPS coordinate isolation",
         "visual_check": "UI responsiveness under load",
     },

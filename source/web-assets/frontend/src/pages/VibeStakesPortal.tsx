@@ -3,7 +3,7 @@
  *
  * Members earn "Vibe Stakes" through Premium membership + platform
  * activity. Every quarter, the platform automatically distributes a
- * cut of revenue across stakeholders weighted by their stake count,
+ * cut of revenue across chair holders weighted by their stake count,
  * with a 1.5× boost for Premium members.
  *
  * NOT a security — no SEC, no exchange, no buy button. Just earn and
@@ -31,7 +31,8 @@ const API = process.env.REACT_APP_BACKEND_URL;
 
 type Pool = {
   total_stakes: number;
-  stakeholders: number;
+  chair_holders?: number;
+  stakeholders?: number;
   quarterly_profit_usd: number;
   profit_share_ratio: number;
   pool_usd: number;
@@ -52,23 +53,37 @@ type Me = {
   premium_multiplier: number;
   next_quarter_start: string;
   projected_share_pct: number;
-  projected_payout_usd: number;
-  projected_payout_coins: number;
+  projected_reward_usd?: number;
+  projected_reward_coins?: number;
+  projected_payout_usd?: number;
+  projected_payout_coins?: number;
 };
 
 type HistoryRow = {
   quarter_key: string;
   stakes_at_payout: number;
-  payout_coins: number;
-  payout_usd: number;
+  reward_coins?: number;
+  reward_usd?: number;
+  payout_coins?: number;
+  payout_usd?: number;
   premium_boost_applied: boolean;
   paid_at: string;
 };
 
 type Treasury = {
-  current_quarter: { key: string; pool_coins: number; pool_usd: number; stakeholders: number; total_stakes: number };
+  current_quarter: {
+    key: string;
+    pool_coins: number;
+    pool_usd: number;
+    chair_holders?: number;
+    stakeholders?: number;
+    total_stakes: number;
+  };
   last_quarter: {
-    key: string | null; stakeholders_paid: number; premium_count: number;
+    key: string | null;
+    chair_holders_rewarded?: number;
+    stakeholders_paid?: number;
+    premium_count: number;
     actually_paid_coins: number; actually_paid_usd: number; ran_at: string | null;
   };
   stability_reserve_usd: number;
@@ -170,7 +185,11 @@ export default function VibeStakesPortal() {
             {[
               { label: "This quarter", value: pool.quarter_key, color: "text-cyan-200" },
               { label: "Pool size", value: fmtCoins(pool.pool_coins), color: "text-amber-300" },
-              { label: "Stakeholders", value: pool.stakeholders.toLocaleString(), color: "text-white" },
+              {
+                label: "Chair Holders",
+                value: (pool.chair_holders ?? pool.stakeholders ?? 0).toLocaleString(),
+                color: "text-white",
+              },
               { label: "Total stakes", value: pool.total_stakes.toLocaleString(), color: "text-fuchsia-300" },
             ].map((s) => (
               <div key={s.label} className="glass-panel p-4 text-center">
@@ -215,13 +234,13 @@ export default function VibeStakesPortal() {
                 <div>
                   <p className="text-[10px] uppercase tracking-widest text-cyan-500">Projected USD</p>
                   <p className="text-2xl font-black text-amber-300">
-                    {fmtMoney(me.projected_payout_usd)}
+                    {fmtMoney(me.projected_reward_usd ?? me.projected_payout_usd ?? 0)}
                   </p>
                 </div>
                 <div>
                   <p className="text-[10px] uppercase tracking-widest text-cyan-500">In ₵ Vibez</p>
                   <p className="text-2xl font-black text-fuchsia-300" data-testid="vibe-stakes-projected">
-                    {fmtCoins(me.projected_payout_coins)}
+                    {fmtCoins(me.projected_reward_coins ?? me.projected_payout_coins ?? 0)}
                   </p>
                 </div>
                 <div>
@@ -307,7 +326,7 @@ export default function VibeStakesPortal() {
         {history.length > 0 && (
           <section className="mt-10" data-testid="vibe-stakes-history">
             <h2 className="text-2xl font-black text-white flex items-center gap-2">
-              <CheckCircle2 className="w-6 h-6 text-emerald-300" /> Past payouts
+              <CheckCircle2 className="w-6 h-6 text-emerald-300" /> Past rewards
             </h2>
             <div className="mt-3 glass-panel p-4">
               <table className="w-full text-xs">
@@ -315,7 +334,7 @@ export default function VibeStakesPortal() {
                   <tr>
                     <th className="text-left py-2">Quarter</th>
                     <th className="text-right">Stakes</th>
-                    <th className="text-right">Payout</th>
+                    <th className="text-right">Reward</th>
                     <th className="text-right">Boost</th>
                   </tr>
                 </thead>
@@ -327,7 +346,7 @@ export default function VibeStakesPortal() {
                         {row.stakes_at_payout.toLocaleString()}
                       </td>
                       <td className="py-2 text-right text-amber-300 font-bold">
-                        {fmtCoins(row.payout_coins)}
+                        {fmtCoins(row.reward_coins ?? row.payout_coins ?? 0)}
                       </td>
                       <td className="py-2 text-right">
                         {row.premium_boost_applied ? (
@@ -371,8 +390,8 @@ export default function VibeStakesPortal() {
                     : "—"}
                 </p>
                 <p className="text-[11px] text-cyan-500/70 mt-1">
-                  {treasury.last_quarter.stakeholders_paid
-                    ? `${treasury.last_quarter.stakeholders_paid} members · ${treasury.last_quarter.premium_count} premium`
+                  {(treasury.last_quarter.chair_holders_rewarded ?? treasury.last_quarter.stakeholders_paid ?? 0)
+                    ? `${treasury.last_quarter.chair_holders_rewarded ?? treasury.last_quarter.stakeholders_paid ?? 0} members · ${treasury.last_quarter.premium_count} premium`
                     : "First quarter pending."}
                 </p>
               </div>
@@ -382,7 +401,7 @@ export default function VibeStakesPortal() {
                   {fmtCoins(treasury.current_quarter.pool_coins)}
                 </p>
                 <p className="text-[11px] text-cyan-500/70 mt-1">
-                  {treasury.current_quarter.stakeholders.toLocaleString()} stakeholders ·{" "}
+                  {(treasury.current_quarter.chair_holders ?? treasury.current_quarter.stakeholders ?? 0).toLocaleString()} chair holders ·{" "}
                   {treasury.current_quarter.total_stakes.toLocaleString()} stakes total
                 </p>
               </div>
@@ -391,7 +410,7 @@ export default function VibeStakesPortal() {
             {treasury.leaderboard.length > 0 && (
               <div className="mt-3 glass-panel p-4">
                 <p className="text-[10px] uppercase tracking-widest text-cyan-500 mb-2">
-                  Top stakeholders this quarter (anonymized)
+                  Top chair holders this quarter (anonymized)
                 </p>
                 <table className="w-full text-xs">
                   <thead className="text-cyan-500 uppercase tracking-widest text-[10px]">
@@ -426,7 +445,7 @@ export default function VibeStakesPortal() {
         <p className="mt-12 text-center text-[10px] text-cyan-500/60 uppercase tracking-widest leading-relaxed max-w-3xl mx-auto">
           Vibe Stakes is a loyalty / profit-share program. Stakes are not
           shares, are not transferable, and have no monetary value
-          independent of platform payouts. Quarterly distributions are
+          independent of platform rewards. Quarterly distributions are
           discretionary and may be adjusted with notice.
         </p>
       </main>
