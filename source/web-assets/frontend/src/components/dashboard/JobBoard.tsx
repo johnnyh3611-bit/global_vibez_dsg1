@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "react-router-dom";
 import { GlobalCard } from "@/components/ui/GlobalCard";
 
 interface JobBoardItem {
@@ -183,7 +183,7 @@ export function JobBoard() {
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {items.map((item) => (
-                <Link key={item.id} href={item.href}>
+                <Link key={item.id} to={item.href}>
                   <GlobalCard
                     interactive
                     className="group relative h-full overflow-hidden p-5 transition-all hover:shadow-brand-glow"

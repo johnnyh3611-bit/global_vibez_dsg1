@@ -12,7 +12,7 @@ const FormFieldContext = React.createContext<{ name?: string }>({})
 const FormField = (
   {
     ...props
-  }
+  }: React.ComponentProps<typeof Controller>
 ) => {
   return (
     <FormFieldContext.Provider value={{ name: props.name }}>

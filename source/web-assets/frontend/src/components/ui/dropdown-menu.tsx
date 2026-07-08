@@ -91,7 +91,7 @@ const DropdownMenuCheckboxItem = React.forwardRef<any, any>(({ className, childr
 DropdownMenuCheckboxItem.displayName =
   DropdownMenuPrimitive.CheckboxItem.displayName
 
-const DropdownMenuRadioItem = React.forwardRef<any, any>(({ className, children, ...props }, ref) => (
+const DropdownMenuRadioItem = React.forwardRef<any, React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.RadioItem>>(({ className, children, ...props }, ref) => (
   <DropdownMenuPrimitive.RadioItem
     ref={ref}
     className={cn(

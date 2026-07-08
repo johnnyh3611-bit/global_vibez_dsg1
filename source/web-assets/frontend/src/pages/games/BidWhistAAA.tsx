@@ -50,6 +50,7 @@ import type {
   SpadesPosition,
   SpadesPlayerView,
   SpadesPhase,
+  SpadesScores,
   StatusMessage,
 } from "@/components/spades/types";
 
@@ -773,6 +774,10 @@ export default function BidWhistAAA() {
   );
   const trickPile = adaptTrickPile(raw.current_trick);
   const scores = raw.scores;
+  const scoreBadges: SpadesScores = {
+    team1: { points: scores?.team1 ?? 0, bags: 0 },
+    team2: { points: scores?.team2 ?? 0, bags: 0 },
+  };
   const uiPhase = adaptPhase(raw.phase);
   const tricksPlayed = (raw.tricks_won?.team1 ?? 0) + (raw.tricks_won?.team2 ?? 0);
   const currentHighBid = raw.winning_bid
@@ -864,7 +869,7 @@ export default function BidWhistAAA() {
           </div>
 
           <SpadesScoreBadge
-            scores={scores}
+            scores={scoreBadges}
             players={players}
             phase={uiPhase}
             tricksPlayed={tricksPlayed}
@@ -1041,7 +1046,7 @@ export default function BidWhistAAA() {
       <SpadesRoundModal
         open={roundModalOpen && !isFinished}
         summary={lastRoundSummary}
-        scores={scores}
+        scores={scoreBadges}
         players={players}
         onClose={handleRoundModalClose}
       />

@@ -26,6 +26,9 @@ type Kind =
   | "dish_sizzle"
   | "atmosphere_loop"
   | "menu_pdf"
+  | "gallery"
+  | "id_doc"
+  | "selfie"
   | "generic";
 
 type AcceptGroup = "image" | "video" | "pdf" | "image+video" | "all";

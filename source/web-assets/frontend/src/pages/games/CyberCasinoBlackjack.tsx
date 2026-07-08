@@ -53,7 +53,7 @@ function authHeaders(): HeadersInit {
   return tok ? { Authorization: `Bearer ${tok}` } : {};
 }
 
-const SUIT_META: Record<string, { Icon: React.ElementType; color: string }> = {
+const SUIT_META: Record<string, { Icon: React.ComponentType<React.SVGProps<SVGSVGElement>>; color: string }> = {
   S: { Icon: Spade,   color: "text-zinc-100" },
   C: { Icon: Club,    color: "text-zinc-100" },
   H: { Icon: Heart,   color: "text-rose-400" },

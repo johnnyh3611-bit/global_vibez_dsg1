@@ -19,6 +19,8 @@ const TONE_BG: Record<StatusMessage["tone"], string> = {
   amber:   "from-amber-500/95 to-orange-600/95 border-amber-300/50",
   rose:    "from-rose-500/95 to-pink-600/95 border-rose-300/50",
   emerald: "from-emerald-500/95 to-teal-600/95 border-emerald-300/50",
+  indigo:  "from-indigo-500/95 to-violet-600/95 border-indigo-300/50",
+  fuchsia: "from-fuchsia-500/95 to-purple-600/95 border-fuchsia-300/50",
 };
 
 interface Props {

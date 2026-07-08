@@ -9,7 +9,7 @@ const RadioGroup = React.forwardRef<any, any>(({ className, ...props }, ref) => 
 })
 RadioGroup.displayName = RadioGroupPrimitive.Root.displayName
 
-const RadioGroupItem = React.forwardRef<any, any>(({ className, ...props }, ref) => {
+const RadioGroupItem = React.forwardRef<any, React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Item>>(({ className, ...props }, ref) => {
   return (
     <RadioGroupPrimitive.Item
       ref={ref}

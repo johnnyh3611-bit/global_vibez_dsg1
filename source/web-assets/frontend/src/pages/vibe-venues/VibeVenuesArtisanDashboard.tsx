@@ -231,7 +231,7 @@ export default function VibeVenuesArtisanDashboard() {
 }
 
 const KPI: React.FC<{
-  icon: React.ElementType;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   label: string;
   value: string;
   sub: string;
@@ -256,7 +256,7 @@ const KPI: React.FC<{
 };
 
 const MembershipPill: React.FC<{ status: string }> = ({ status }) => {
-  const map: Record<string, { label: string; cls: string; Icon: React.ElementType }> = {
+  const map: Record<string, { label: string; cls: string; Icon: React.ComponentType<React.SVGProps<SVGSVGElement>> }> = {
     active: {
       label: "Active · $20/mo",
       cls: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",

@@ -251,7 +251,7 @@ const VibeVenuesSystem = {
 }
 
 const RevenueCard: React.FC<{
-  icon: React.ElementType;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   tone: "fuchsia" | "orange";
   eyebrow: string;
   title: string;

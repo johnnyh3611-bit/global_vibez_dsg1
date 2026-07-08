@@ -22,7 +22,7 @@ type Room = {
   to: string;
   label: string;
   blurb: string;
-  Icon: React.ElementType;
+  Icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   gradient: string;
   testid: string;
 };

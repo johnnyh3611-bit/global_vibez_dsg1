@@ -322,7 +322,7 @@ const LandingTourVideo: React.FC<Props> = ({ onJoinBeta }) => {
   const duration = audioRef.current?.duration || track?.duration || 230;
   const pct = Math.min(100, (progress / duration) * 100);
   const currentCaption = captions[captionIdx]?.text || "";
-  const langs = manifest?.languages ? Object.entries(manifest.languages) : [["en", { native: "English" } as LangTrack]];
+  const langs: [string, LangTrack][] = manifest?.languages ? Object.entries(manifest.languages) : [["en", { native: "English" } as LangTrack]];
 
   return (
     <section

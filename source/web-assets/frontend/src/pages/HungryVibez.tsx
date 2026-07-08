@@ -138,7 +138,7 @@ export default function HungryVibez() {
 }
 
 const Pillar: React.FC<{
-  icon: React.ElementType;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   title: string;
   body: string;
   testid?: string;

@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "react-router-dom";
 import { GlobalCard } from "@/components/ui/GlobalCard";
 
 interface EarningsBannerProps {
@@ -33,7 +33,7 @@ export function EarningsBanner({
             </p>
           </div>
           <Link
-            href="/earn"
+            to="/earn"
             className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-full bg-green-500/20 px-6 font-semibold text-green-400 transition-all hover:bg-green-500/30 hover:text-white"
           >
             Learn More →
@@ -76,7 +76,7 @@ export function EarningsBanner({
               </div>
             </div>
             <Link
-              href="/earn"
+              to="/earn"
               className="mt-6 inline-flex min-h-11 items-center justify-center rounded-full bg-green-500 px-8 font-semibold text-black transition-all hover:scale-105 hover:bg-green-400"
             >
               Explore Earning Options
@@ -90,25 +90,25 @@ export function EarningsBanner({
             </p>
             <div className="mt-4 space-y-3">
               <Link
-                href="/games"
+                to="/games"
                 className="block rounded-glass border border-surface-glass-border px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-surface-glass"
               >
                 🎲 Play First Game
               </Link>
               <Link
-                href="/earn/referral"
+                to="/earn/referral"
                 className="block rounded-glass border border-surface-glass-border px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-surface-glass"
               >
                 🎯 Share & Earn $5+
               </Link>
               <Link
-                href="/tv/broadcast"
+                to="/tv/broadcast"
                 className="block rounded-glass border border-surface-glass-border px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-surface-glass"
               >
                 📺 Go Live
               </Link>
               <Link
-                href="/earn/chair"
+                to="/earn/chair"
                 className="block rounded-glass border border-surface-glass-border px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-surface-glass"
               >
                 💺 Buy Chair

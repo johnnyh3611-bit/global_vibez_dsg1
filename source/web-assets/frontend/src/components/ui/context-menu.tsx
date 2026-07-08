@@ -87,7 +87,7 @@ const ContextMenuCheckboxItem = React.forwardRef<any, any>(({ className, childre
 ContextMenuCheckboxItem.displayName =
   ContextMenuPrimitive.CheckboxItem.displayName
 
-const ContextMenuRadioItem = React.forwardRef<any, any>(({ className, children, ...props }, ref) => (
+const ContextMenuRadioItem = React.forwardRef<any, React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.RadioItem>>(({ className, children, ...props }, ref) => (
   <ContextMenuPrimitive.RadioItem
     ref={ref}
     className={cn(

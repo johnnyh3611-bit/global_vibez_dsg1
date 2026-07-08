@@ -377,7 +377,7 @@ const Stat: React.FC<{ label: string; value: string; accent: string; icon?: Reac
 );
 
 const ServiceCell: React.FC<{
-  Icon: React.ElementType;
+  Icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   color: string;
   title: string;
   desc: string;

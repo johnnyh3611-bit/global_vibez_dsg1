@@ -98,7 +98,7 @@ export default function CasinoTableEnhancer({
       <TurnIndicator role={role} customLabel={label} />
       {history && history.length > 0 && (
         <div data-testid={`${gameId}-history-strip`}>
-          <HotColdStrip recentNumbers={history} />
+          <HotColdStrip history={history} />
         </div>
       )}
     </div>

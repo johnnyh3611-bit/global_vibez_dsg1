@@ -234,7 +234,7 @@ const ComingSoon: React.FC = () => (
 );
 
 const Pillar: React.FC<{
-  icon: React.ElementType;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   title: string;
   body: string;
 }> = ({ icon: Icon, title, body }) => (

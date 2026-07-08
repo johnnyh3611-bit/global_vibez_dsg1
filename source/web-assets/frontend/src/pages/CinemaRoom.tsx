@@ -366,7 +366,7 @@ function CinemaScreen({ roomId }: { roomId: string }) {
         videoId: content.youtube_id,
         playerVars: { autoplay: 0, modestbranding: 1, rel: 0, playsinline: 1 },
         events: {
-          onStateChange: (e: { data: number }) => {
+          onStateChange: (e: { data: number; target: unknown }) => {
             if (isApplyingRemoteRef.current) return;
             const p = e.target as { getCurrentTime: () => number };
             if (e.data === 1) sendSync("play", p.getCurrentTime());   // playing

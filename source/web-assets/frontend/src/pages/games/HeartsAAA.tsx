@@ -411,7 +411,7 @@ export default function HeartsAAA() {
   // the user's turn — bots are paced server-side already).
   const handleShotClockExpire = useCallback(() => {
     if (!raw || busy) return;
-    if (raw.turn !== raw.your_position) return;
+    if (raw.turn !== raw.user_position) return;
     if (raw.phase !== "playing") return;
     const candidates = raw.playable_cards?.length
       ? raw.playable_cards

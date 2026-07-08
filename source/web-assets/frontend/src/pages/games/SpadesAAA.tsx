@@ -615,7 +615,7 @@ export default function SpadesAAA() {
 
         {/* ── Universal turn indicator (LOCKED 2026-02-16 — every multiplayer room) ── */}
         {(() => {
-          const yourPos = game.user_position;
+          const yourPos = game.your_position;
           const turnPos = game.turn_position;
           if (!turnPos) return null;
           // Spades partnerships: north/south = team 1, east/west = team 2.
