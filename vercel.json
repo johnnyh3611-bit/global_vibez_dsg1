@@ -1,16 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
+  "framework": null,
   "installCommand": "yarn --cwd source/web-assets/frontend install --frozen-lockfile",
-  "builds": [
-    {
-      "src": "source/web-assets/frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "build"
-      }
-    }
-  ],
+  "buildCommand": "yarn --cwd source/web-assets/frontend build",
+  "outputDirectory": "source/web-assets/frontend/build",
   "routes": [
     {
       "handle": "filesystem"
