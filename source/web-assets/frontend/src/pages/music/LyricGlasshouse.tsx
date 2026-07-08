@@ -79,7 +79,7 @@ export default function LyricGlasshouse() {
   const [enabled, setEnabled] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
-  const dataRef = useRef<Uint8Array>(new Uint8Array(0));
+  const dataRef = useRef<Uint8Array<ArrayBuffer>>(new Uint8Array(0));
   const streamRef = useRef<MediaStream | null>(null);
 
   // Levels feed: 32 bars take their amplitude from FFT bins.
