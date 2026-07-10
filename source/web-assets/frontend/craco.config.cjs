@@ -19,10 +19,12 @@ if (config.enableHealthCheck && HealthCheckPlugin) {
   healthPluginInstance = new HealthCheckPlugin();
 }
 
+const srcRoot = path.resolve(__dirname, "src");
+
 module.exports = {
   webpack: {
     alias: {
-      "@": path.resolve(__dirname, "src"),
+      "@": srcRoot,
     },
     plugins: {
       add: [],
@@ -94,15 +96,28 @@ module.exports = {
       // that never run when walletChainType="solana-only". Stub them so
       // webpack stops choking on their internal module resolution.
       const stub = path.resolve(__dirname, "src/empty-module.js");
+      // Always re-assert `@` when merging stubs. Overwriting resolve.alias
+      // without `@` breaks `@/engine/*` and `@/plugins/*` imports.
       webpackConfig.resolve.alias = {
         ...(webpackConfig.resolve.alias || {}),
-        "@": path.resolve(__dirname, "src"),
+        "@": srcRoot,
         "@walletconnect/ethereum-provider": stub,
         "@iwer/devui": stub,
         "@iwer/sem": stub,
         "@base-org/account": stub,
         "@privy-io/ethereum": stub,
       };
+
+      webpackConfig.resolve.extensions = Array.from(
+        new Set([
+          ...(webpackConfig.resolve.extensions || []),
+          ".js",
+          ".jsx",
+          ".ts",
+          ".tsx",
+          ".json",
+        ])
+      );
 
       webpackConfig.module.rules.push({
         test: /\.m?js$/,
