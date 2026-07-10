@@ -12,7 +12,7 @@
  * @extends GamePlugin
  */
 
-import { GamePlugin } from '../engine/core/PluginInterface';
+import { GamePlugin } from '@/engine/core/PluginInterface';
 
 export class PokerPlugin extends GamePlugin {
   constructor() {

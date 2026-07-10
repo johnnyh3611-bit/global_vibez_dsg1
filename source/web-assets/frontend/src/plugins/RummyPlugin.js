@@ -13,7 +13,7 @@
  * @extends GamePlugin
  */
 
-import { GamePlugin } from '../engine/core/PluginInterface';
+import { GamePlugin } from '@/engine/core/PluginInterface';
 
 export class RummyPlugin extends GamePlugin {
   constructor() {
