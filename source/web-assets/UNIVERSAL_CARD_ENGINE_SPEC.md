@@ -273,12 +273,6 @@ export const TurnMechanics = {
   reverseTurn: (state) => { /* universal */ }
 };
 
-// /engine/mechanics/BettingMechanics.js (Used by betting games)
-export const BettingMechanics = {
-  placeBet: (player, amount, pot) => { /* universal */ },
-  calculatePot: (players) => { /* universal */ },
-  distributePot: (winners, pot) => { /* universal */ }
-};
 ```
 
 #### Rule 3: Plugin Validation
@@ -312,7 +306,6 @@ export class GamePlugin {
 
 // /plugins/PokerPlugin.js
 import { GamePlugin } from '@/engine/PluginInterface';
-import { BettingMechanics } from '@/engine/mechanics/BettingMechanics';
 
 export class PokerPlugin extends GamePlugin {
   validateAction(state, playerId, action) {
@@ -369,7 +362,6 @@ const engine = useGameEngine(plugin);
 │   ├── mechanics/
 │   │   ├── DeckMechanics.js        ← Atomic: shuffle, deal, draw
 │   │   ├── TurnMechanics.js        ← Atomic: turn order, skip
-│   │   ├── BettingMechanics.js     ← Atomic: bet, raise, fold
 │   │   └── TrickMechanics.js       ← Atomic: trick-taking
 │   └── PluginRegistry.js           ← Central plugin index
 ├── plugins/
@@ -447,7 +439,7 @@ export const SmartRoomLayout = ({ playerCount, seats }) => {
 Before adding ANY new game, enforce these rules:
 
 ✅ **Does this game use existing mechanics?**  
-   → Use `DeckMechanics`, `TurnMechanics`, `BettingMechanics`
+   → Use `DeckMechanics`, `TurnMechanics`, `TrickMechanics`
 
 ✅ **Is this a new Plugin, not a new Component?**  
    → Add to `/plugins/`, NOT `/pages/games/`
@@ -488,7 +480,7 @@ Routes: 15+ routes (conflicts)
 GameEngine.js            (300 lines, universal)
 DeckMechanics.js         (100 lines, used by all)
 TurnMechanics.js         (80 lines, used by all)
-BettingMechanics.js      (120 lines, used by betting games)
+TrickMechanics.js        (used by trick-taking games)
 
 PokerPlugin.js           (150 lines, rules only)
 BlackjackPlugin.js       (120 lines, rules only)
