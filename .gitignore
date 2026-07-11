@@ -19,6 +19,7 @@
 
 # production
 /build
+/deploy_pkg/
 
 # misc
 .DS_Store

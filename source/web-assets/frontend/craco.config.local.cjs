@@ -4,7 +4,6 @@
  *
  * Keep this as a thin re-export so local builds always get the `@` → src
  * alias (and Privy stubs) from craco.config.cjs. A divergent local config
- * that overwrites resolve.alias without re-adding `@` breaks imports like
- * `@/engine/mechanics/BettingMechanics`.
+ * that overwrites resolve.alias without re-adding `@` breaks `@/` imports.
  */
 module.exports = require("./craco.config.cjs");
