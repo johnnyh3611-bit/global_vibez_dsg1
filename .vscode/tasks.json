@@ -1,0 +1,19 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build & Prepare Deploy",
+            "type": "shell",
+            "command": "npm run build && rm -rf deploy_pkg && mkdir deploy_pkg && cp -r source/web-assets/frontend/build/* deploy_pkg/",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always"
+            },
+            "problemMatcher": ["$tsc"]
+        }
+    ]
+}
