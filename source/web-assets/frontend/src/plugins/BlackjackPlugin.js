@@ -15,7 +15,6 @@
 
 import { GamePlugin } from '@/engine/core/PluginInterface';
 import { DeckMechanics } from '@/engine/mechanics/DeckMechanics';
-import { BettingMechanics } from '@/engine/mechanics/BettingMechanics';
 
 export class BlackjackPlugin extends GamePlugin {
   constructor() {
