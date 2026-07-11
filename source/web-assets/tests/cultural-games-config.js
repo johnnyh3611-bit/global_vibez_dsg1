@@ -108,7 +108,7 @@ export const CULTURAL_GAME_TESTS = {
 
   mancala: {
     displayName: 'Mancala',
-    minTurns: 10,
+    minTurns: 20,
     maxTurns: 60,
     
     async validateGameState(page, gameState) {
@@ -154,7 +154,7 @@ export const CULTURAL_GAME_TESTS = {
 
   mahjong: {
     displayName: 'Mahjong',
-    minTurns: 10,
+    minTurns: 20,
     maxTurns: 50,
     
     async validateGameState(page, gameState) {
@@ -186,8 +186,8 @@ export const CULTURAL_GAME_TESTS = {
   // Additional games can follow same pattern...
   backgammon: {
     displayName: 'Backgammon',
-    minTurns: 10,
-    maxTurns: 100,
+    minTurns: 20,
+    maxTurns: 200,
     
     async validateGameState(page, gameState) {
       const validations = [];
@@ -206,18 +206,18 @@ export const CULTURAL_GAME_TESTS = {
 
   chinesecheckers: {
     displayName: 'Chinese Checkers',
-    minTurns: 10,
-    maxTurns: 100,
+    minTurns: 20,
+    maxTurns: 200,
     
     async validateGameState(page, gameState) {
       const validations = [];
       
       if (gameState.positions && gameState.positions.player1 && gameState.positions.player2) {
-        if (gameState.positions.player1.length === 10) {
-          validations.push({ passed: true, message: 'P1 has 10 pieces' });
+        if (gameState.positions.player1.length === 20) {
+          validations.push({ passed: true, message: 'P1 has 20 pieces' });
         }
-        if (gameState.positions.player2.length === 10) {
-          validations.push({ passed: true, message: 'P2 has 10 pieces' });
+        if (gameState.positions.player2.length === 20) {
+          validations.push({ passed: true, message: 'P2 has 20 pieces' });
         }
       }
       
@@ -227,7 +227,7 @@ export const CULTURAL_GAME_TESTS = {
 
   parcheesi: {
     displayName: 'Parcheesi',
-    minTurns: 10,
+    minTurns: 20,
     maxTurns: 80,
     
     async validateGameState(page, gameState) {
