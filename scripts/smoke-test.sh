@@ -37,20 +37,15 @@ else
   else
     fail "main.js too small (${size})"
   fi
-  # CRA must bake a string (even empty), never leave the key absent.
-  if grep -q 'REACT_APP_BACKEND_URL":"' "$js" \
-    || grep -q 'REACT_APP_BACKEND_URL:""' "$js" \
-    || grep -q 'REACT_APP_BACKEND_URL:".*"' "$js" \
-    || grep -qE 'REACT_APP_BACKEND_URL","[^"]*"' "$js"; then
-    pass "REACT_APP_BACKEND_URL baked into bundle"
+  # Fail if the known blank-screen crash pattern is still in the bundle.
+  if grep -q 'SpeedDatingVideo_API_URL.replace' "$js"; then
+    fail "Unsafe SpeedDatingVideo_API_URL.replace still present (blank-screen risk)"
   else
-    # Accept empty-string default from .env.production helpers path:
-    # SpeedDatingVideo must not call undefined.replace
-    if grep -q 'SpeedDatingVideo_API_URL.replace' "$js" && ! grep -q 'getBackendUrl\|getBackendWsUrl\|||""\|||'\'\' "$js"; then
-      fail "Unsafe SpeedDatingVideo_API_URL.replace still present (blank-screen risk)"
-    else
-      pass "No unsafe SpeedDatingVideo undefined.replace pattern"
-    fi
+    pass "No unsafe SpeedDatingVideo undefined.replace pattern"
+  fi
+  # Prefer an explicit baked key, but do not fail soft-empty builds that use helpers.
+  if grep -q 'REACT_APP_BACKEND_URL' "$js"; then
+    pass "REACT_APP_BACKEND_URL referenced in bundle"
   fi
   rm -f "$js"
 fi
