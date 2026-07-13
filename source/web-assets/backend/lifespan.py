@@ -57,28 +57,25 @@ def register_startup_tasks(app, logger: logging.Logger) -> None:
 
     @app.on_event("startup")
     async def _startup_db_indexes():
-        # Mongo health-check (founder fix Feb 2026): ping the DB BEFORE
-        # we kick off any background scheduler. If Mongo is unreachable
-        # at boot, log loudly and abort startup with a clear message
-        # instead of letting every request silently 500. Supervisor's
-        # `autorestart=true` will retry until Mongo comes back online.
-        try:
-            client = get_client()
-            # 5-second timeout — generous enough for cold cluster wake
-            # but short enough to fail fast in dev/CI.
-            await asyncio.wait_for(client.admin.command("ping"), timeout=5.0)
-            logger.info("Mongo ping OK — proceeding with startup.")
-        except Exception as ping_err:
-            logger.error(
-                "FATAL: Mongo ping failed at startup (%s). "
-                "All API requests will return 500 until Mongo is reachable. "
-                "Check `sudo supervisorctl status mongod` and disk usage.",
-                ping_err,
-            )
-            # Don't raise — let supervisor's autorestart logic kick in
-            # naturally. Raising here would just put us in a tight crash
-            # loop; logging loudly is enough to surface the issue.
+        # IMPORTANT (Railway healthchecks): do NOT await Mongo before this
+        # handler returns. Starlette blocks request handling until startup
+        # completes — awaiting a slow/unreachable Mongo ping would make
+        # `/health` miss Railway's probe window → "Healthcheck failure"/502.
+        # Ping + indexes run as background tasks; `/health` stays process-only.
+        async def _ping_mongo() -> None:
+            try:
+                client = get_client()
+                await asyncio.wait_for(client.admin.command("ping"), timeout=5.0)
+                logger.info("Mongo ping OK — proceeding with startup.")
+            except Exception as ping_err:
+                logger.error(
+                    "FATAL: Mongo ping failed at startup (%s). "
+                    "All API requests will return 500 until Mongo is reachable. "
+                    "Set MONGO_URL to the Railway Mongo plugin or Atlas URI.",
+                    ping_err,
+                )
 
+        asyncio.create_task(_ping_mongo())
         logger.info("Creating database indexes...")
         asyncio.create_task(_create_indexes_async(logger))
 

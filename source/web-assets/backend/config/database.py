@@ -14,14 +14,15 @@ load_dotenv(ROOT_DIR / '.env')
 MONGO_URL = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
 DB_NAME = os.environ.get('DB_NAME', 'global_vibez')
 
-# MongoDB client with optimized settings for Atlas
+# MongoDB client — keep minPoolSize low so cold Railway/Atlas free-tier
+# boots do not open a burst of sockets before `/health` is probed.
 client = AsyncIOMotorClient(
     MONGO_URL,
     serverSelectionTimeoutMS=30000,  # 30 seconds for Atlas replica sets
     connectTimeoutMS=20000,           # 20 seconds connection timeout
     socketTimeoutMS=20000,            # 20 seconds socket timeout
-    maxPoolSize=50,                   # Connection pool size
-    minPoolSize=10
+    maxPoolSize=20,
+    minPoolSize=0,
 )
 
 # Database instance

@@ -12,32 +12,41 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-# MongoDB connection
-MONGO_URL = os.environ.get("MONGO_URL")
+# MongoDB connection — never pass None/empty into Motor (TypeError on db name).
+MONGO_URL = os.environ.get("MONGO_URL") or "mongodb://127.0.0.1:27017"
+DB_NAME = os.environ.get("DB_NAME") or "global_vibez"
 client = AsyncIOMotorClient(MONGO_URL)
-db = client[os.environ.get("DB_NAME", "global_vibez_dsg")]
+db = client[DB_NAME]
 
-# Initialize Firebase Admin SDK
+# Initialize Firebase Admin SDK (optional — missing creds must not block boot)
+FIREBASE_ADMIN_INITIALIZED = False
 try:
     firebase_credentials_json = os.environ.get("FIREBASE_SERVICE_ACCOUNT_JSON")
-    
+
     if not firebase_admin._apps:
         if firebase_credentials_json:
-            # Load credentials from environment variable
             import json
             service_account_info = json.loads(firebase_credentials_json)
             cred = credentials.Certificate(service_account_info)
+            firebase_admin.initialize_app(cred)
+            FIREBASE_ADMIN_INITIALIZED = True
+            logger.info("Firebase Admin SDK initialized from env JSON")
         else:
-            # Fallback to file-based credentials (for local development)
-            service_account_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "firebase-service-account.json")
-            cred = credentials.Certificate(service_account_path)
-        
-        firebase_admin.initialize_app(cred)
-        logger.info("🔥 Firebase Admin SDK initialized successfully")
-    
-    FIREBASE_ADMIN_INITIALIZED = True
+            service_account_path = os.path.join(
+                os.path.dirname(os.path.dirname(__file__)),
+                "firebase-service-account.json",
+            )
+            if os.path.isfile(service_account_path):
+                cred = credentials.Certificate(service_account_path)
+                firebase_admin.initialize_app(cred)
+                FIREBASE_ADMIN_INITIALIZED = True
+                logger.info("Firebase Admin SDK initialized from file")
+            else:
+                logger.warning(
+                    "Firebase credentials missing — push notifications disabled"
+                )
 except Exception as e:
-    logger.error(f"❌ Failed to initialize Firebase Admin SDK: {e}")
+    logger.error("Failed to initialize Firebase Admin SDK: %s", e)
     FIREBASE_ADMIN_INITIALIZED = False
 
 class FCMTokenRequest(BaseModel):
