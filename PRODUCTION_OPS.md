@@ -41,7 +41,15 @@ Also confirm on the **backend service**:
 - **Settings → Networking → Public Domain** is generated
 - After each git merge to `main`, open **Deployments** and confirm a **new** deploy finished **Success** (not the old crashed one)
 
-If you see **502 Application failed to respond**: open that deploy → **View logs** and look for `FATAL: Mongo ping failed`, `OOM`, `Killed`, or Python tracebacks.
+If you see **502 Application failed to respond** or **Healthcheck failure**: open that deploy → **View Logs** and look for:
+
+- `[entrypoint] binding 0.0.0.0:<port>` — missing means the start command never reached the shell wrapper
+- `WARNING: MONGO_URL is unset` — add MongoDB (not Postgres) and wire `MONGO_URL`
+- `FATAL: Mongo ping failed` — bad URI / network / wrong plugin
+- `OOM` / `Killed` — keep `DISABLE_BG_SCHEDULERS=1`; upgrade plan if needed
+- `Invalid value for '--port'` — `$PORT` was not expanded (fixed by `entrypoint.sh`)
+
+`/health` is intentionally DB-free so Railway probes pass while Mongo is still warming.
 
 5. Deploy → copy public URL, e.g. `https://gv-api-xxxx.up.railway.app`
 6. Verify:

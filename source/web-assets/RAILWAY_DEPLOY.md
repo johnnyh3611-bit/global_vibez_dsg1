@@ -40,8 +40,9 @@ In your Railway project:
 
 ```
 MONGO_URL=<from MongoDB plugin above>
-DB_NAME=casino_db
+DB_NAME=global_vibez
 JWT_SECRET=<generate: openssl rand -hex 32>
+DISABLE_BG_SCHEDULERS=1
 ENVIRONMENT=production
 CORS_ORIGINS=*
 EMERGENT_LLM_KEY=<your Emergent LLM key>
@@ -113,7 +114,27 @@ In Railway frontend service → **Settings** → **Custom Domain**:
 ```bash
 # Backend health
 curl https://<backend-url>.up.railway.app/health
+# expect: {"status":"ok"}
 
 # Frontend
 curl -I https://<frontend-url>.up.railway.app
 ```
+
+### Healthcheck failure / edge 502
+
+Railway reports **Healthcheck failure** when the container is up but `/health` does not return 200 in time. Common causes:
+
+| Cause | Fix |
+|---|---|
+| **Wrong Root Directory** (repo root or `source/web-assets`) | Set backend Root Directory to `source/web-assets/backend` |
+| **Missing `MONGO_URL`** | Add MongoDB plugin (not Postgres) and set `MONGO_URL=${{MongoDB.MONGO_URL}}` |
+| **Wrong port bind** | Backend must listen on `$PORT` via `entrypoint.sh` (already in this repo) |
+| **OOM from schedulers** | Keep `DISABLE_BG_SCHEDULERS=1` |
+
+In Deployments → failed deploy → **View Logs**, look for:
+- `[entrypoint] binding 0.0.0.0:...` (confirms shell start + port)
+- `WARNING: MONGO_URL is unset`
+- `FATAL: Mongo ping failed`
+- `Killed` / OOM
+
+`/health` is process-only (no DB). It should pass even when Mongo is down; API routes will still 500 until Mongo is reachable.

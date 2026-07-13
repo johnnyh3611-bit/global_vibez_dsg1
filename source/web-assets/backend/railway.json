@@ -6,7 +6,7 @@
   },
   "deploy": {
     "numReplicas": 1,
-    "startCommand": "uvicorn server:app --host 0.0.0.0 --port $PORT --timeout-keep-alive 30 --log-level info",
+    "startCommand": "sh /app/entrypoint.sh",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE",
