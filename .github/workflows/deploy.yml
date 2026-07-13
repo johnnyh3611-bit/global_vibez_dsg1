@@ -1,4 +1,6 @@
 name: Deploy Global Vibez DSG (Azure VM)
+# Optional static mirror. Production DNS for www is Vercel — this job must
+# never block shipping. SSH to the VM is best-effort.
 on:
   push:
     branches:
@@ -8,28 +10,52 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # Soft-fail the job so a down VM / closed NSG does not red-badge main.
+    continue-on-error: true
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Resolve Azure target
+        id: target
+        env:
+          AZURE_VM_HOST: ${{ secrets.AZURE_VM_HOST }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          HOST="${AZURE_VM_HOST:-20.84.123.232}"
+          echo "host=$HOST" >> "$GITHUB_OUTPUT"
+          if [[ -z "${SSH_PRIVATE_KEY}" ]]; then
+            echo "reachable=false" >> "$GITHUB_OUTPUT"
+            echo "SKIP: SSH_PRIVATE_KEY secret is not set"
+            exit 0
+          fi
+          if timeout 8 bash -c "echo > /dev/tcp/${HOST}/22" 2>/dev/null; then
+            echo "reachable=true" >> "$GITHUB_OUTPUT"
+            echo "SSH port open on ${HOST}"
+          else
+            echo "reachable=false" >> "$GITHUB_OUTPUT"
+            echo "SKIP: ${HOST}:22 unreachable (NSG / VM stopped / wrong IP)"
+          fi
+
       - name: Setup Node.js
+        if: steps.target.outputs.reachable == 'true'
         uses: actions/setup-node@v4
         with:
           # camera-controls@3 requires Node >= 22
           node-version: "22"
 
       - name: Setup Yarn
+        if: steps.target.outputs.reachable == 'true'
         run: npm install -g yarn@1.22.22
 
       - name: Install & build frontend (web-assets)
+        if: steps.target.outputs.reachable == 'true'
         working-directory: source/web-assets/frontend
         env:
           CI: "false"
           DISABLE_ESLINT_PLUGIN: "true"
           GENERATE_SOURCEMAP: "false"
           NODE_OPTIONS: "--max-old-space-size=4096"
-          # Bake a string so production never crashes on undefined.replace.
-          # Override via GitHub Actions secrets when the live API URL is set.
           REACT_APP_BACKEND_URL: ${{ secrets.REACT_APP_BACKEND_URL }}
           REACT_APP_FRONTEND_URL: https://www.globalvibezdsg.com
         run: |
@@ -37,25 +63,29 @@ jobs:
           yarn build
 
       - name: Stage deploy package
+        if: steps.target.outputs.reachable == 'true'
         run: |
           rm -rf deploy_pkg
           mkdir -p deploy_pkg
           cp -R source/web-assets/frontend/build/. deploy_pkg/
 
       - name: Deploy to Azure VM
+        if: steps.target.outputs.reachable == 'true'
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: 20.84.123.232
+          host: ${{ steps.target.outputs.host }}
           username: azureuser
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "deploy_pkg/*"
           target: "~/master-project/frontend-build/"
           strip_components: 1
+          timeout: 60s
 
       - name: Restart Nginx with web-assets build
+        if: steps.target.outputs.reachable == 'true'
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: 20.84.123.232
+          host: ${{ steps.target.outputs.host }}
           username: azureuser
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |

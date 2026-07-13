@@ -22,8 +22,7 @@
       "REACT_APP_FRONTEND_URL": "https://www.globalvibezdsg.com",
       "DISABLE_ESLINT_PLUGIN": "true",
       "GENERATE_SOURCEMAP": "false",
-      "CI": "false",
-      "REACT_APP_BACKEND_URL": ""
+      "CI": "false"
     }
   },
   "git": {

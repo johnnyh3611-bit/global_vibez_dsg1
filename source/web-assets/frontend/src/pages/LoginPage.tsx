@@ -10,10 +10,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff, Mail, Lock, ArrowLeft, AlertCircle } from 'lucide-react';
+import { getBackendUrl } from '@/config/backendUrl';
 // 2026-05-12: Privy wallet login removed from login page per founder ask.
 // Wallet linking now happens AFTER login at /wallet (Connect Phantom flow).
 
-const API = process.env.REACT_APP_BACKEND_URL;
+const API = getBackendUrl();
 
 export default function LoginPage() {
   const navigate = useNavigate();
