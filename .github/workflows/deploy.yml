@@ -1,37 +1,65 @@
-name: Deploy Global Vibez DSG
+name: Deploy Global Vibez DSG (Azure VM)
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '18'
-      - name: Build Frontend
+          node-version: "20"
+
+      - name: Setup Yarn
+        run: npm install -g yarn@1.22.22
+
+      - name: Install & build frontend (web-assets)
+        working-directory: source/web-assets/frontend
+        env:
+          CI: "false"
+          DISABLE_ESLINT_PLUGIN: "true"
+          GENERATE_SOURCEMAP: "false"
+          NODE_OPTIONS: "--max-old-space-size=4096"
+          # Bake a string so production never crashes on undefined.replace.
+          # Override via GitHub Actions secrets when the live API URL is set.
+          REACT_APP_BACKEND_URL: ${{ secrets.REACT_APP_BACKEND_URL }}
+          REACT_APP_FRONTEND_URL: https://www.globalvibezdsg.com
         run: |
-          npm install --legacy-peer-deps
-          npm run build
-      - name: Deploy to Azure
-        uses: appleboy/scp-action@master
+          yarn install --frozen-lockfile
+          yarn build
+
+      - name: Stage deploy package
+        run: |
+          rm -rf deploy_pkg
+          mkdir -p deploy_pkg
+          cp -R source/web-assets/frontend/build/. deploy_pkg/
+
+      - name: Deploy to Azure VM
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: 20.84.123.232
           username: azureuser
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "source/scripts/build/*"
-          target: "~/master-project/"
-      - name: Restart Nginx
-        uses: appleboy/ssh-action@master
+          source: "deploy_pkg/*"
+          target: "~/master-project/frontend-build/"
+          strip_components: 1
+
+      - name: Restart Nginx with web-assets build
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: 20.84.123.232
           username: azureuser
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            set -euo pipefail
             sudo rm -rf /var/www/html/*
-            sudo cp -r ~/master-project/source/scripts/build/* /var/www/html/
+            sudo cp -R ~/master-project/frontend-build/* /var/www/html/
             sudo service nginx restart
+            echo "Deployed web-assets frontend build to /var/www/html"

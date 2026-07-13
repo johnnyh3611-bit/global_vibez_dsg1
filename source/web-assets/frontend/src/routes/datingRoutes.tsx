@@ -1,4 +1,5 @@
 import { Route } from "react-router-dom";
+import { lazy, Suspense } from "react";
 import Dashboard from "@/pages/DashboardNew";
 import DashboardRouter from "@/pages/DashboardRouter";
 import DiscoverPage from "@/pages/DiscoverPage";
@@ -9,7 +10,6 @@ import Categories from "@/pages/Categories";
 import DiscoverByCategory from "@/pages/DiscoverByCategory";
 import SpeedDating from "@/pages/SpeedDating";
 import SpeedDatingRoom from "@/pages/SpeedDatingRoom";
-import SpeedDatingLobby from "@/pages/SpeedDatingLobby";
 import { DatingProfileSetup } from "@/pages/DatingProfileSetup";
 import { DatingDiscovery } from "@/pages/DatingDiscovery";
 import { DatingMatches } from "@/pages/DatingMatches";
@@ -20,6 +20,17 @@ import ProfileSetup from "@/pages/ProfileSetup";
 import ProfileEdit from "@/pages/ProfileEdit";
 import BondsPage from "@/pages/BondsPage";
 import CulturalOnboardingWizard from "@/pages/CulturalOnboardingWizard";
+import PageLoader from "@/components/common/PageLoader";
+
+// Lazy: SpeedDatingLobby pulls SpeedDatingVideo which previously crashed the
+// entire SPA at import time when REACT_APP_BACKEND_URL was missing.
+const SpeedDatingLobby = lazy(() => import("@/pages/SpeedDatingLobby"));
+
+const LazyLobby = (
+  <Suspense fallback={<PageLoader message="Loading..." />}>
+    <SpeedDatingLobby />
+  </Suspense>
+);
 
 export const datingRoutes = (ProtectedRoute) => (
   <>
@@ -33,7 +44,7 @@ export const datingRoutes = (ProtectedRoute) => (
     {/* Volumetric Dashboard "Dating · Universe" tile lands here. */}
     <Route path="/dating" element={<ProtectedRoute><DatingDiscovery /></ProtectedRoute>} />
     <Route path="/speed-dating/room" element={<ProtectedRoute><SpeedDatingRoom /></ProtectedRoute>} />
-    <Route path="/speed-dating/lobby" element={<ProtectedRoute><SpeedDatingLobby /></ProtectedRoute>} />
+    <Route path="/speed-dating/lobby" element={<ProtectedRoute>{LazyLobby}</ProtectedRoute>} />
     <Route path="/dating/profile/setup" element={<ProtectedRoute><DatingProfileSetup /></ProtectedRoute>} />
     <Route path="/dating/cultural-onboarding" element={<ProtectedRoute><CulturalOnboardingWizard /></ProtectedRoute>} />
     <Route path="/dating/discover" element={<ProtectedRoute><DatingDiscovery /></ProtectedRoute>} />

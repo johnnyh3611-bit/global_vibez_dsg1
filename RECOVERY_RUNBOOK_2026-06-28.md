@@ -1,90 +1,57 @@
-# Global Vibez Recovery Runbook (2026-06-28)
+# Global Vibez Recovery Runbook (updated 2026-07-13)
 
 ## 1) Ground Truth (Verified)
 
-- Current production domain `www.globalvibezdsg.com` resolves to Vercel and serves the root Next.js app in this repo.
-- Current repo/branch: `johnnyh3611-bit/global_vibez_dsg1` on `main`.
-- Active app entrypoint is root-level Next.js (`package.json`, `next.config.ts`, `src/app/**`).
-- Root app includes its own API routes under `src/app/api/**` for wallet auth, dating, dealer, game, and tv.
-- Vercel aliases are declared in `vercel.json` for `globalvibezdsg.com` and `www.globalvibezdsg.com`.
-- Azure Container Apps (`web-vibez`, `api-vibez`) are currently a separate, unhealthy deployment track and are not attached to production DNS.
-- `source/web-assets/**` is a separate legacy/parallel full-stack codebase (React + FastAPI + Mongo compose) and should not be treated as current production unless explicitly migrated.
+- Production domain `www.globalvibezdsg.com` resolves to **Vercel** and serves the
+  **CRA app** from `source/web-assets/frontend` (see root `vercel.json`).
+- There is **no** root Next.js app in this tree (`next.config.*` / `src/app` absent).
+- Canonical product path: `source/web-assets/` (frontend CRA + backend FastAPI + Mongo).
+- Azure Container Apps (`web-vibez`, `api-vibez`) and the old Railway hostname in
+  `frontend/Dockerfile` are **not** healthy production backends as of 2026-07-13.
+- Azure VM deploy (`.github/workflows/deploy.yml`) now publishes
+  `source/web-assets/frontend/build` to nginx — not `source/scripts` extension artifacts.
 
-## 2) Repo Boundary Decision
+## 2) Blank-screen incident (fixed in repo)
 
-Treat the root Next.js app as the canonical production app.
+**Symptom:** black page + only “Made with Emergent” badge; console
+`TypeError: Cannot read properties of undefined (reading 'replace')`.
+
+**Cause:** Vercel production build omitted `REACT_APP_BACKEND_URL`. Eager import of
+`SpeedDatingVideo` did `undefined.replace('http','ws')` during module init.
+
+**Fix:**
+1. `src/config/backendUrl.ts` + safe usage in `SpeedDatingVideo.tsx`
+2. `frontend/.env.production` ensures the key exists at build time
+3. Set real `REACT_APP_BACKEND_URL` in the Vercel project env, then redeploy
+
+## 3) Repo boundary
 
 In-scope production surface:
-- `package.json`
-- `next.config.ts`
-- `vercel.json`
-- `src/**`
-- `public/**`
-
-Out-of-scope (legacy) surface for production deploys:
 - `source/web-assets/**`
-- `source/scripts/**`
+- `vercel.json`
+- `.github/workflows/ci.yml`
+- `.github/workflows/deploy.yml` (Azure VM static mirror)
 
-## 3) Immediate Security Actions
+Out-of-scope / do not treat as production:
+- Root Next.js leftovers (`eslint.config.mjs` Next preset, orphan `next` deps)
+- `source/scripts/**` (vendored VS Code Python extension)
+- `source/azure-infra/**` (Foundry AI sample)
 
-1. Rotate any secret previously exposed in Azure app settings (Mongo URI found earlier in Azure Container Apps env).
-2. Ensure `JWT_SECRET` is set in Vercel production environment.
-3. Add/update `.env.example` in repo root with only variable names, no real values.
-4. Confirm no plaintext secrets remain in committed files.
+## 4) Workspace open / sync
 
-## 4) Deployment Discipline (Single Source of Truth)
+```bash
+npm run sync:workspace
+npm run dev            # scripts/dev-up.sh
+npm run smoke          # production shell checks
+```
 
-1. GitHub `main` is production source of truth.
-2. Vercel production deploys only from `main`.
-3. No direct cloud-only edits unless mirrored back to code immediately.
-4. Azure changes must be defined from repo-based deployment artifacts (future IaC phase), not ad hoc portal edits.
+## 5) Azure reconciliation
 
-## 5) Validation Pipeline (from this repo)
+Short-term:
+- Keep DNS on Vercel for the frontend.
+- Point `REACT_APP_BACKEND_URL` at a live FastAPI host (Railway service or Azure
+  Container App once healthy).
+- Use fixed `deploy.yml` only if the Azure VM nginx mirror should stay in sync.
 
-Because `npm ci` was terminated by host limits, use staged validation:
-
-1. Dependency install with reduced pressure:
-   - `npm install --no-audit --no-fund`
-2. Static checks:
-   - `npm run lint`
-3. Build checks:
-   - `npm run build`
-4. Runtime checks:
-   - `npm run dev` and verify:
-     - `/`
-     - `/login`
-     - `/dating` (redirect behavior)
-     - `/games`
-     - `/tv`
-     - `/dealer`
-     - `/api/auth/nonce` and `/api/auth/verify` flow
-
-## 6) Azure Reconciliation Strategy (Do After Root App Is Stable)
-
-Target architecture options:
-
-Option A (recommended short-term):
-- Keep frontend production on Vercel.
-- Rebuild Azure only for backend/staging workloads from explicit code.
-
-Option B (later migration):
-- Move full stack to Azure from this same repo only after staging parity.
-
-Guardrails:
-- Do not cut DNS until staging passes full route/auth tests.
-- Ensure container target ports match actual listening ports.
-- Remove drifted/old revisions and duplicate container definitions.
-
-## 7) Legacy Subtree Handling
-
-For `source/web-assets/**`:
-- Mark as `legacy` in docs.
-- Freeze from production deploy workflows.
-- Decide later whether to archive or selectively migrate assets/features.
-
-## 8) Operational Next Steps
-
-1. Stabilize root app dependencies and pass lint/build.
-2. Capture Vercel env vars into a managed secret inventory document (without secret values).
-3. Create staging validation checklist and run it per commit.
-4. Reintroduce Azure via explicit deployment code and staged validation only.
+Do not cut DNS to Azure until `/health` on the API host returns JSON 200 and the
+frontend bundle includes a non-empty `REACT_APP_BACKEND_URL`.

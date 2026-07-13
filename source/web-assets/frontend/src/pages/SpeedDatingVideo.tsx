@@ -4,8 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Video, VideoOff, Mic, MicOff, Phone, Clock, Heart, X } from 'lucide-react';
 
-const API_URL = process.env.REACT_APP_BACKEND_URL;
-const WS_URL = API_URL.replace('http', 'ws');
+import { getBackendUrl, getBackendWsUrl } from '@/config/backendUrl';
+
+const API_URL = getBackendUrl();
+const WS_URL = getBackendWsUrl();
 
 export default function SpeedDatingVideo({ roomId, userId, partnerName, durationMinutes = 5 }) {
   const navigate = useNavigate();

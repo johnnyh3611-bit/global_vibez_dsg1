@@ -34,6 +34,8 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 !.env.example
+# Safe production defaults (no secrets) — prevents CRA undefined.replace blank screen
+!source/web-assets/frontend/.env.production
 
 # vercel
 .vercel

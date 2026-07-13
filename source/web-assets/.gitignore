@@ -373,3 +373,7 @@ credentials.json
 *.pem
 *.key
 .credentials
+
+# Allow committed CRA production defaults (no secrets)
+!.env.production
+!frontend/.env.production
