@@ -27,14 +27,21 @@ Production frontend DNS: **Vercel** → `www.globalvibezdsg.com`.
 4. Backend env vars:
 
 ```bash
-MONGO_URL=<railway mongo url>          # NOT DATABASE_URL / Postgres
+MONGO_URL=${{MongoDB.MONGO_URL}}   # Railway variable reference to your Mongo service
 DB_NAME=global_vibez
 JWT_SECRET=<openssl rand -hex 32>
-DISABLE_BG_SCHEDULERS=1
+DISABLE_BG_SCHEDULERS=1            # REQUIRED on trial/small plans (avoids OOM → 502)
 ENVIRONMENT=production
 CORS_ORIGINS=https://www.globalvibezdsg.com,https://globalvibezdsg.com
 FRONTEND_URL=https://www.globalvibezdsg.com
 ```
+
+Also confirm on the **backend service**:
+- **Settings → Root Directory** = `source/web-assets/backend`
+- **Settings → Networking → Public Domain** is generated
+- After each git merge to `main`, open **Deployments** and confirm a **new** deploy finished **Success** (not the old crashed one)
+
+If you see **502 Application failed to respond**: open that deploy → **View logs** and look for `FATAL: Mongo ping failed`, `OOM`, `Killed`, or Python tracebacks.
 
 5. Deploy → copy public URL, e.g. `https://gv-api-xxxx.up.railway.app`
 6. Verify:
