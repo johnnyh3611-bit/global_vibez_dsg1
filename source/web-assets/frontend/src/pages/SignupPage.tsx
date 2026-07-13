@@ -10,8 +10,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff, Mail, Lock, User, Calendar, ArrowLeft, AlertCircle, CheckCircle, Crown } from 'lucide-react';
+import { getBackendUrl } from '@/config/backendUrl';
 
-const API = process.env.REACT_APP_BACKEND_URL;
+const API = getBackendUrl();
 
 export default function SignupPage() {
   const navigate = useNavigate();

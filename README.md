@@ -19,16 +19,24 @@ Or with Docker Compose:
 npm run dev:docker
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Use **Demo Login** on `/login`
-(email auth paths are double-prefixed on the backend — see `AGENTS.md`).
+Open [http://localhost:3000](http://localhost:3000). Use **Demo Login** on `/login`.
+
+## Production (flawless www)
+
+See **`PRODUCTION_OPS.md`** — short version:
+
+1. Deploy FastAPI on Railway (`source/web-assets/backend`) + Mongo
+2. Set Vercel env `REACT_APP_BACKEND_URL` to that API URL
+3. Redeploy Vercel
+4. `npm run smoke https://www.globalvibezdsg.com https://YOUR-API`
 
 Useful commands:
 
 ```bash
-npm run build          # production frontend build
-npm run backend        # FastAPI only
-npm run typecheck      # frontend tsc --noEmit
-npm run smoke          # production domain blank-screen / shell checks
+npm run build
+npm run backend
+npm run typecheck
+npm run smoke
 ```
 
 ## Deployment (single source of truth)

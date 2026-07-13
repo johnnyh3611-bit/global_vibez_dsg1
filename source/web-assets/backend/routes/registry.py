@@ -17,4 +17,7 @@ def register_all_routes(api_router, app, logger):
     api_router.include_router(notifications_router)
     api_router.include_router(moderation_router)
     from routes.email_auth import router as auth_router
-    api_router.include_router(auth_router, prefix="/api/auth", tags=["auth"])
+    # api_router already has prefix="/api". Use "/auth" here so routes land at
+    # /api/auth/signup|login (matches the frontend). prefix="/api/auth" wrongly
+    # produced /api/api/auth/... and caused UI email auth 404s.
+    api_router.include_router(auth_router, prefix="/auth", tags=["auth"])
