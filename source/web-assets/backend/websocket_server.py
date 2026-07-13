@@ -12,10 +12,12 @@ import os
 
 logger = logging.getLogger(__name__)
 
-# MongoDB connection
-MONGO_URL = os.environ.get("MONGO_URL")
+# MongoDB connection — safe defaults so a missing DB_NAME cannot crash
+# import (Motor raises TypeError: name must be an instance of str).
+MONGO_URL = os.environ.get("MONGO_URL") or "mongodb://127.0.0.1:27017"
+DB_NAME = os.environ.get("DB_NAME") or "global_vibez"
 client = AsyncIOMotorClient(MONGO_URL)
-db = client[os.environ.get("DB_NAME")]  # No fallback - let it fail if not set
+db = client[DB_NAME]
 
 # Socket.IO server with CORS
 sio = socketio.AsyncServer(
