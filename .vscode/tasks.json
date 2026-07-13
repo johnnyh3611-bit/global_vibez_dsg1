@@ -1,19 +1,52 @@
 {
-    "version": "2.0.0",
-    "tasks": [
-        {
-            "label": "Build & Prepare Deploy",
-            "type": "shell",
-            "command": "npm run build && rm -rf deploy_pkg && mkdir deploy_pkg && cp -r source/web-assets/frontend/build/* deploy_pkg/",
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
-            "presentation": {
-                "echo": true,
-                "reveal": "always"
-            },
-            "problemMatcher": ["$tsc"]
-        }
-    ]
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Open Workspace (dev-up)",
+      "type": "shell",
+      "command": "bash ./scripts/dev-up.sh",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "none",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Sync workspace to origin/main",
+      "type": "shell",
+      "command": "npm run sync:workspace",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Production smoke (www.globalvibezdsg.com)",
+      "type": "shell",
+      "command": "npm run smoke",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Build & Prepare Deploy",
+      "type": "shell",
+      "command": "npm run build && rm -rf deploy_pkg && mkdir deploy_pkg && cp -r source/web-assets/frontend/build/* deploy_pkg/",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always"
+      },
+      "problemMatcher": ["$tsc"]
+    }
+  ]
 }

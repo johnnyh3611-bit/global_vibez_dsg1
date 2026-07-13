@@ -1,45 +1,51 @@
-This repository now defaults to the completed Global Vibez app in
-`source/web-assets` (the beta flow with the full games experience).
+This repository defaults to the completed **Global Vibez DSG** app in
+`source/web-assets` (CRA frontend + FastAPI backend + MongoDB).
 
-Root npm commands are wired to that app by default.
+Root npm commands are wired to that app.
 
-## Getting Started
+## Getting Started (opening script)
 
-Install dependencies for the completed app, then run it from the repo root:
-
-```bash
-cd source/web-assets/frontend && npm install
-cd ../..
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-Useful validation commands:
+One command starts Mongo (if available), backend `:8001`, and frontend `:3000`:
 
 ```bash
-npm run build
+npm run sync:guards:install   # once per clone
+npm run sync:workspace        # match origin/main
+npm run dev                   # scripts/dev-up.sh
 ```
 
-Run backend locally (separate terminal):
+Or with Docker Compose:
 
 ```bash
-pip install -r source/web-assets/backend/requirements.txt
-npm run backend
+npm run dev:docker
 ```
 
-The modern Next.js app is still available behind explicit scripts:
+Open [http://localhost:3000](http://localhost:3000). Use **Demo Login** on `/login`
+(email auth paths are double-prefixed on the backend — see `AGENTS.md`).
+
+Useful commands:
 
 ```bash
-npm run modern:dev
-npm run modern:build
-npm run modern:start
+npm run build          # production frontend build
+npm run backend        # FastAPI only
+npm run typecheck      # frontend tsc --noEmit
+npm run smoke          # production domain blank-screen / shell checks
 ```
 
-## Deployment Notes
+## Deployment (single source of truth)
 
-Primary deployment target for this default flow is the `source/web-assets`
-frontend/backend setup (Railway/docker configs under that folder).
+| Target | Role | Config |
+|--------|------|--------|
+| **Vercel** | Production frontend for `www.globalvibezdsg.com` | `vercel.json` → builds `source/web-assets/frontend` |
+| **Railway** | Full-stack option (backend + frontend services) | `source/web-assets/{backend,frontend}/railway.json` |
+| **Azure VM** | Optional static mirror via nginx | `.github/workflows/deploy.yml` → deploys `frontend/build` |
 
-If you intentionally deploy the modern Next.js app, use the `modern:*`
-scripts above.
+Set **`REACT_APP_BACKEND_URL`** in Vercel (and GitHub secret for Azure builds)
+to the live FastAPI base URL. Without that env var at **build** time, older
+bundles crashed on a blank black screen.
+
+## Workspace sync
+
+```bash
+npm run sync:workspace   # fast-forward local main to origin/main
+npm run sync:verify      # assert HEAD == origin/main
+```

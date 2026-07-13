@@ -1,41 +1,29 @@
 #!/usr/bin/env node
-// Validates that required environment variables are set before deploy.
-// Add variable names to REQUIRED to enforce them in CI / verify:full.
+// Validates environment before deploy / local open.
+// Prefer web-assets vars; legacy Next.js names are optional warnings only.
 
-const REQUIRED = [
-  'JWT_SECRET',
-];
+const REQUIRED_BACKEND = ["JWT_SECRET", "MONGO_URL", "DB_NAME"];
+const REQUIRED_FRONTEND_BUILD = ["REACT_APP_BACKEND_URL"];
 
-const OPTIONAL = [
-  'NEXT_PUBLIC_SITE_URL',
-  'CHAIR_HOLDER_WALLETS',
-  'AI_PROVIDER',
-  'OPENAI_API_KEY',
-  'OPENAI_MODEL',
-  'OLLAMA_BASE_URL',
-  'OLLAMA_MODEL',
-  'TV_VIDEO_PROVIDER',
-  'TV_VIDEO_API_KEY',
-  'LOGISTICS_SERVICE_ENDPOINT',
-  'REDIS_URL',
-  'DATABASE_URL',
-];
+const mode = process.argv[2] || "all";
 
 let missing = [];
-for (const key of REQUIRED) {
-  if (!process.env[key]) missing.push(key);
-}
+const check = (keys) => {
+  for (const key of keys) {
+    if (process.env[key] === undefined) missing.push(key);
+  }
+};
+
+if (mode === "backend" || mode === "all") check(REQUIRED_BACKEND);
+if (mode === "frontend" || mode === "all") check(REQUIRED_FRONTEND_BUILD);
 
 if (missing.length > 0) {
-  console.error('ERROR: Missing required environment variables:');
+  console.error("ERROR: Missing required environment variables:");
   for (const key of missing) console.error(`  - ${key}`);
+  console.error(
+    "Note: REACT_APP_BACKEND_URL may be an empty string, but the key must exist at CRA build time.",
+  );
   process.exit(1);
 }
 
-const unset = OPTIONAL.filter((k) => !process.env[k]);
-if (unset.length > 0) {
-  console.warn('WARN: Optional variables not set (features may be degraded):');
-  for (const key of unset) console.warn(`  - ${key}`);
-}
-
-console.log('ENV CHECK PASSED');
+console.log("ENV CHECK PASSED");
