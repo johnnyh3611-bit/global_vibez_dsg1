@@ -22,9 +22,12 @@ MongoDB: **Railway MongoDB plugin** OR **MongoDB Atlas** (free tier works)
 
 ## Step 2 — Add MongoDB
 
+> **Do not add PostgreSQL.** Global Vibez DSG uses MongoDB only (`MONGO_URL`).
+
 In your Railway project:
-- Click **+ New** → **Database** → **MongoDB**
-- Copy the `MONGO_URL` connection string from the MongoDB service variables
+- Click **+ New** → **Database** → **MongoDB** (not Postgres)
+- Copy the `MONGO_URL` / connection string from the MongoDB service variables
+- Optionally use **MongoDB Atlas** instead and paste that URI as `MONGO_URL`
 
 ---
 

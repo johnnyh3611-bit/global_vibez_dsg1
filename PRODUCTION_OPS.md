@@ -18,13 +18,16 @@ Production frontend DNS: **Vercel** → `www.globalvibezdsg.com`.
 
 ### 1) Stand up the FastAPI backend (Railway — recommended)
 
+> **Use MongoDB, not PostgreSQL.** This backend is Motor/PyMongo (`MONGO_URL` +
+> `DB_NAME`). A Railway **PostgreSQL** plugin / `DATABASE_URL` will not work.
+
 1. Railway → New Project → Deploy from GitHub (`johnnyh3611-bit/global_vibez_dsg1`)
-2. Add **MongoDB** plugin (or Atlas). Copy `MONGO_URL`.
+2. Add **MongoDB** plugin (Railway → + New → Database → **MongoDB**) **or** MongoDB Atlas. Copy `MONGO_URL` / connection string.
 3. New service → Root Directory: `source/web-assets/backend`
 4. Backend env vars:
 
 ```bash
-MONGO_URL=<railway mongo url>
+MONGO_URL=<railway mongo url>          # NOT DATABASE_URL / Postgres
 DB_NAME=global_vibez
 JWT_SECRET=<openssl rand -hex 32>
 DISABLE_BG_SCHEDULERS=1
