@@ -1,0 +1,64 @@
+name: Railway backend redeploy
+# Redeploy FastAPI on Railway when backend paths change, or on demand.
+# Requires repo secret RAILWAY_TOKEN (Railway account/project token).
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "source/web-assets/backend/**"
+      - ".github/workflows/railway-backend.yml"
+
+jobs:
+  redeploy:
+    runs-on: ubuntu-latest
+    # Soft-fail so missing token does not red-badge main.
+    continue-on-error: true
+    defaults:
+      run:
+        working-directory: source/web-assets/backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Check token
+        id: tok
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          if [[ -z "${RAILWAY_TOKEN}" ]]; then
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "RAILWAY_TOKEN secret not set — skip redeploy"
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set production vars + redeploy
+        if: steps.tok.outputs.present == 'true'
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          set -euo pipefail
+          railway variables set \
+            DISABLE_BG_SCHEDULERS=1 \
+            DB_NAME=global_vibez \
+            FRONTEND_URL=https://www.globalvibezdsg.com \
+            CORS_ORIGINS=https://www.globalvibezdsg.com,https://globalvibezdsg.com \
+            ENVIRONMENT=production \
+            --service global-vibez-dsg
+          railway up --detach --service global-vibez-dsg || railway redeploy --service global-vibez-dsg --yes
+
+      - name: Verify /health
+        if: steps.tok.outputs.present == 'true'
+        run: |
+          URL="${RAILWAY_PUBLIC_URL:-https://global-vibez-dsg-production.up.railway.app}"
+          for i in $(seq 1 36); do
+            body="$(curl -sS -m 15 "${URL}/health" || true)"
+            echo "attempt $i: $body"
+            echo "$body" | grep -q '"status"[[:space:]]*:[[:space:]]*"ok"' && exit 0
+            sleep 10
+          done
+          echo "health check failed"
+          exit 1

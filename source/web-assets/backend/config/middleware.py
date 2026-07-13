@@ -8,18 +8,30 @@ import os
 def setup_middleware(app) -> None:
     """Configure all middleware for the FastAPI app"""
     
-    # Read CORS origins from environment variable
-    cors_origins = os.environ.get('CORS_ORIGINS', os.environ.get('CORS_ORIGINS', 'https://globalvibezdsg.com'))
-    
+    # Default includes www + apex so Demo Login from production works even when
+    # Railway Variables omit CORS_ORIGINS.
+    _default_cors = (
+        "https://www.globalvibezdsg.com,"
+        "https://globalvibezdsg.com"
+    )
+    cors_origins = os.environ.get("CORS_ORIGINS") or _default_cors
+
     print("🔧 CORS Configuration Debug:")
     print(f"  Raw CORS_ORIGINS: {cors_origins}")
-    
-    if cors_origins == '*':
-        allow_origins = ['*']
+
+    if cors_origins == "*":
+        allow_origins = ["*"]
         allow_credentials = False  # Credentials not allowed with wildcard
         print("  Using wildcard CORS (credentials: False)")
     else:
-        allow_origins = [origin.strip() for origin in cors_origins.split(',')]
+        allow_origins = [origin.strip() for origin in cors_origins.split(",") if origin.strip()]
+        # Always allow production frontends (dedupe).
+        for origin in (
+            "https://www.globalvibezdsg.com",
+            "https://globalvibezdsg.com",
+        ):
+            if origin not in allow_origins:
+                allow_origins.append(origin)
         allow_credentials = True  # ✅ Enable credentials for HttpOnly cookies
         print(f"  Using specific origins: {allow_origins}")
         print(f"  Credentials allowed: {allow_credentials}")

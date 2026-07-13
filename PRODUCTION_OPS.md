@@ -8,9 +8,22 @@ Production frontend DNS: **Vercel** → `www.globalvibezdsg.com`.
 | Layer | Status |
 |-------|--------|
 | Frontend UI on www | ✅ Renders (blank-screen crash fixed) |
-| Backend API behind www | ❌ `/api/*` returns HTML (no FastAPI attached) |
+| Backend API (Railway) | ❌ `global-vibez-dsg-production.up.railway.app` → 502 |
+| Vercel `REACT_APP_BACKEND_URL` | ❌ still baked empty / not pointing at Railway |
 | Azure VM nginx mirror | ❌ `20.84.123.232:22` SSH timeout (NSG/VM) |
 | Email signup/login | Fixed in code (`/api/auth/*`); needs live backend |
+
+**Cloud Agent note:** `RAILWAY_TOKEN` / `VERCEL_TOKEN` / `VERCEL_ORG_ID` /
+`VERCEL_PROJECT_ID` must be injected as **process environment variables** for
+the agent (Cursor → Cloud Agents → Environment → Secrets). If they are only
+saved in the dashboard but absent from `printenv`, the agent cannot redeploy.
+Use `scripts/production-wire.sh` once those four are present in the shell.
+
+Canonical Railway API URL:
+`https://global-vibez-dsg-production.up.railway.app`
+
+`vercel.json` + `frontend/.env.production` now bake that URL so the next
+Vercel production build does not ship an empty backend host.
 
 ---
 
