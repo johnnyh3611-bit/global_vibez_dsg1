@@ -19,11 +19,29 @@ need() {
 
 need RAILWAY_TOKEN
 need VERCEL_TOKEN
-need VERCEL_ORG_ID
-need VERCEL_PROJECT_ID
+
+# Defaults from known production team (override via env if needed).
+export VERCEL_ORG_ID="${VERCEL_ORG_ID:-team_HzlvtSpbRCS0iJgTRZxWzrby}"
+export VERCEL_PROJECT_ID="${VERCEL_PROJECT_ID:-}"
 
 echo "==> Railway whoami"
 railway whoami
+
+if [[ -z "${VERCEL_PROJECT_ID}" ]]; then
+  echo "==> Resolve Vercel project id for global-vibez-dsg"
+  VERCEL_PROJECT_ID="$(vercel project ls --token "$VERCEL_TOKEN" --scope "$VERCEL_ORG_ID" 2>/dev/null \
+    | awk '/global-vibez-dsg([^1]|$)/ {print $1; exit}')"
+  # Fallback: query API
+  if [[ -z "${VERCEL_PROJECT_ID}" ]]; then
+    VERCEL_PROJECT_ID="$(curl -sS -H "Authorization: Bearer ${VERCEL_TOKEN}" \
+      "https://api.vercel.com/v9/projects?teamId=${VERCEL_ORG_ID}&search=global-vibez-dsg" \
+      | python3 -c 'import sys,json; d=json.load(sys.stdin); ps=d.get("projects") or [];
+print(next((p["id"] for p in ps if p.get("name")=="global-vibez-dsg"), ""))')"
+  fi
+  export VERCEL_PROJECT_ID
+  [[ -n "${VERCEL_PROJECT_ID}" ]] || { echo "Could not resolve VERCEL_PROJECT_ID" >&2; exit 2; }
+  echo "VERCEL_PROJECT_ID=${VERCEL_PROJECT_ID}"
+fi
 
 echo "==> Ensure backend vars on ${RAILWAY_SERVICE}"
 cd "$BACKEND_ROOT"
