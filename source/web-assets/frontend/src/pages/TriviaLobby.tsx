@@ -3,8 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Brain, Trophy, Play, ArrowLeft, Star, Target } from 'lucide-react';
+import { authFetch } from '@/utils/secureAuth';
 
 const API = process.env.REACT_APP_BACKEND_URL;
+/** Canonical party path (/api/trivia/* still aliased server-side). */
+const TRIVIA_API = `${API}/api/games/trivia`;
 
 export default function TriviaLobby() {
   const navigate = useNavigate();
@@ -22,15 +25,14 @@ export default function TriviaLobby() {
   const fetchData = async () => {
     try {
       // Fetch categories
-      const catRes = await fetch(`${API}/api/trivia/categories`);
+      const catRes = await authFetch(`${TRIVIA_API}/categories`);
       if (catRes.ok) {
         const catData = await catRes.json();
         setCategories(catData.categories || []);
       }
 
       // Fetch user stats
-      const statsRes = await fetch(`${API}/api/trivia/stats`, {
-      });
+      const statsRes = await authFetch(`${TRIVIA_API}/stats`);
       if (statsRes.ok) {
         const statsData = await statsRes.json();
         setStats(statsData);
@@ -43,10 +45,8 @@ export default function TriviaLobby() {
   const startGame = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${API}/api/trivia/start`, {
+      const response = await authFetch(`${TRIVIA_API}/start`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        
         body: JSON.stringify({
           category: selectedCategory,
           num_questions: numQuestions,

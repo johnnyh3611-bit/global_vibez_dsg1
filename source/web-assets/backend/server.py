@@ -1696,6 +1696,7 @@ from services.underground_spades_socket_events import register_underground_spade
 from services.room_socket_events import register_room_events
 # Import Matchmaking System events
 from services.matchmaking_socket_events import register_matchmaking_events
+from services.would_you_rather_socket_events import register_would_you_rather_events
 
 # Register all Socket.IO events
 register_omega_events(sio)
@@ -1703,6 +1704,7 @@ register_bid_whist_events(sio)
 register_underground_spades_events(sio)
 register_room_events(sio)  # Universal room system
 register_matchmaking_events(sio)  # Matchmaking queue system
+register_would_you_rather_events(sio)  # WYR immediate room init
 
 # Treasury live solvency broadcaster (manifesto §4)
 import services.treasury_socketio  # noqa: F401  — registers join/leave handlers

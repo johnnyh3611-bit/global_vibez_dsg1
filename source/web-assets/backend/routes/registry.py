@@ -488,6 +488,10 @@ def register_all_routes(
     _soft_mount(api_router, log, "quiz", "routes.quiz")
     _soft_mount(api_router, log, "would_you_rather", "routes.would_you_rather")
     _soft_mount(api_router, log, "trivia", "routes.trivia")
+    # Legacy /api/trivia/* aliases (canonical is /api/games/trivia/*)
+    _soft_mount(
+        api_router, log, "trivia_legacy", "routes.trivia", "legacy_router"
+    )
     _soft_mount(api_router, log, "dating", "routes.dating")
     _soft_mount(api_router, log, "enhanced_dating", "routes.enhanced_dating")
     _soft_mount(api_router, log, "dating_games", "routes.dating_games")

@@ -195,11 +195,15 @@ export const gamesRoutes = (ProtectedRoute) => (
 
 
     
-    {/* Trivia */}
+    {/* Trivia — /games/trivia aliases match canonical /api/games/trivia paths */}
     <Route path="/trivia" element={<ProtectedRoute><TriviaLobby /></ProtectedRoute>} />
+    <Route path="/games/trivia" element={<ProtectedRoute><TriviaLobby /></ProtectedRoute>} />
     <Route path="/trivia/play/:gameId" element={<ProtectedRoute><TriviaGame /></ProtectedRoute>} />
+    <Route path="/games/trivia/play/:gameId" element={<ProtectedRoute><TriviaGame /></ProtectedRoute>} />
     <Route path="/trivia/results/:gameId" element={<ProtectedRoute><TriviaResults /></ProtectedRoute>} />
+    <Route path="/games/trivia/results/:gameId" element={<ProtectedRoute><TriviaResults /></ProtectedRoute>} />
     <Route path="/trivia/leaderboard" element={<ProtectedRoute><TriviaLeaderboard /></ProtectedRoute>} />
+    <Route path="/games/trivia/leaderboard" element={<ProtectedRoute><TriviaLeaderboard /></ProtectedRoute>} />
     
     {/* 3D Lobby */}
     <Route path="/lobby" element={<ProtectedRoute><JazzClubLobby /></ProtectedRoute>} />

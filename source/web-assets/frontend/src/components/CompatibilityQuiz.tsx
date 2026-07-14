@@ -6,6 +6,7 @@ import { Card } from './ui/card';
 import { Progress } from './ui/progress';
 import { ArrowLeft, ArrowRight, Check, Sparkles } from 'lucide-react';
 import Confetti from 'react-confetti';
+import { authFetch } from '@/utils/secureAuth';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -27,8 +28,7 @@ const CompatibilityQuiz = ({ quizType }) => {
 
   const fetchQuiz = async () => {
     try {
-      const response = await fetch(`${API}/api/quiz/${quizType}/questions`, {
-      });
+      const response = await authFetch(`${API}/api/quiz/${quizType}/questions`);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -87,10 +87,8 @@ const CompatibilityQuiz = ({ quizType }) => {
     };
 
     try {
-      const response = await fetch(`${API}/api/quiz/${quizType}/submit`, {
+      const response = await authFetch(`${API}/api/quiz/${quizType}/submit`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        
         body: JSON.stringify(submission)
       });
 

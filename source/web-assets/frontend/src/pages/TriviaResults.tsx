@@ -3,8 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Trophy, CheckCircle, XCircle, ArrowLeft, RefreshCw, Share2, Star } from 'lucide-react';
+import { authFetch } from '@/utils/secureAuth';
 
 const API = process.env.REACT_APP_BACKEND_URL;
+const TRIVIA_API = `${API}/api/games/trivia`;
 
 export default function TriviaResults() {
   const { gameId } = useParams();
@@ -18,8 +20,7 @@ export default function TriviaResults() {
 
   const fetchResults = async () => {
     try {
-      const response = await fetch(`${API}/api/trivia/game/${gameId}/results`, {
-      });
+      const response = await authFetch(`${TRIVIA_API}/game/${gameId}/results`);
 
       if (!response.ok) {
         throw new Error('Failed to fetch results');

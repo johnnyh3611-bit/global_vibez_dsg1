@@ -9,7 +9,10 @@ import secrets
 import random
 secure_random = secrets.SystemRandom()
 
-router = APIRouter(prefix="/trivia", tags=["trivia"])
+# Canonical party-game path (matches /games/would-you-rather).
+# legacy_router keeps /trivia/* for older clients/tests.
+router = APIRouter(prefix="/games/trivia", tags=["trivia"])
+legacy_router = APIRouter(prefix="/trivia", tags=["trivia"])
 
 # ==================== HELPER FUNCTIONS ====================
 
@@ -389,3 +392,24 @@ async def get_user_trivia_stats(request: Request) -> Dict[str, Any]:
         "favorite_category": favorite_category,
         "category_breakdown": category_counts
     }
+
+# Mirror every route onto /trivia/* for backward compatibility.
+# route.path already includes router.prefix — strip it before re-mounting.
+_PREFIX = router.prefix or ""
+for _route in list(router.routes):
+    if not (hasattr(_route, "methods") and hasattr(_route, "endpoint")):
+        continue
+    _path = _route.path or "/"
+    if _PREFIX and _path.startswith(_PREFIX):
+        _path = _path[len(_PREFIX):] or "/"
+    legacy_router.add_api_route(
+        _path,
+        _route.endpoint,
+        methods=list(_route.methods - {"HEAD"}),
+        name=f"legacy_{getattr(_route, 'name', 'trivia')}",
+        response_model=getattr(_route, "response_model", None),
+        status_code=getattr(_route, "status_code", None) or 200,
+        tags=["trivia"],
+    )
+
+__all__ = ["router", "legacy_router"]
