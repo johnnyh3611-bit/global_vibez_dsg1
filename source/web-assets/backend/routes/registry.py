@@ -1,12 +1,11 @@
 """
-Route registry — Wave 1 (games + tokenomics) + Wave 2 (local utility).
+Route registry — Waves 1–3.
 
-Wave 1: playable games and economy routers.
-Wave 2: Hunger Vibez, Vibez Spots, Vibe Venues, Vibe Ridez (physical-world
-        / local merchant layer).
+Wave 1: games + tokenomics.
+Wave 2: Hunger Vibez / Vibez Spots / Vibe Venues / Vibe Ridez.
+Wave 3: DSG TV, media engine, streaming, social/community chat hooks.
 
 Each mount is try/except so one bad import never takes the whole API down.
-Later waves (streaming / TV / music / full admin) mount separately.
 """
 from __future__ import annotations
 
@@ -299,3 +298,145 @@ def register_all_routes(
     _soft_mount(api_router, log, "vibe_drive", "routes.vibe_drive")
 
     log.info("Wave-2 local-utility registry registration complete")
+
+    # ── Wave 3A — DSG TV / broadcast / media engine ──────────────────
+    _soft_mount(api_router, log, "dsg_tv", "routes.dsg_tv_expansion_routes")
+    _soft_mount(
+        api_router,
+        log,
+        "admin_dsg_tv",
+        "routes.dsg_tv_expansion_routes",
+        "admin_router",
+    )
+    _soft_mount(
+        api_router,
+        log,
+        "vibe_tv",
+        "routes.vibe_tv_routes",
+        "vibe_tv_router",
+    )
+    _soft_mount(api_router, log, "media_engine", "routes.media_engine_routes")
+    _soft_mount(
+        api_router,
+        log,
+        "admin_media_engine",
+        "routes.media_engine_routes",
+        "admin_router",
+    )
+    _soft_mount(api_router, log, "media_master", "routes.media_master")
+    _soft_mount(api_router, log, "media_master_pulse", "routes.media_master_pulse")
+    _soft_mount(
+        api_router,
+        log,
+        "cinema_date",
+        "routes.cinema_date_routes",
+        "cinema_router",
+    )
+    _soft_mount(api_router, log, "cinema_room", "routes.cinema_room", tags=["cinema-room"])
+    _soft_mount(
+        api_router,
+        log,
+        "cinema_network_room",
+        "routes.cinema_network_room",
+        tags=["cinema-network-room"],
+    )
+    _soft_mount(
+        api_router,
+        log,
+        "dsg_music_group",
+        "routes.dsg_music_group_routes",
+    )
+    _soft_mount(
+        api_router,
+        log,
+        "admin_dsg_music_group",
+        "routes.dsg_music_group_routes",
+        "admin_router",
+    )
+    _soft_mount(
+        api_router,
+        log,
+        "memory_bank",
+        "routes.memory_bank_routes",
+        "memory_bank_router",
+    )
+    _soft_mount(
+        api_router,
+        log,
+        "freestyle",
+        "routes.freestyle_battles_routes",
+        "freestyle_router",
+    )
+    _soft_mount(
+        api_router,
+        log,
+        "collab",
+        "routes.collab_matchmaker_routes",
+        "collab_router",
+    )
+    _soft_mount(
+        api_router,
+        log,
+        "beat_auctions",
+        "routes.beat_auctions_routes",
+        "auctions_router",
+    )
+    _soft_mount(api_router, log, "video_vault", "routes.video_vault")
+    _soft_mount(api_router, log, "landing_video", "routes.landing_video")
+
+    # ── Wave 3B — Streaming hooks / streamer dashboards ──────────────
+    _soft_mount(api_router, log, "streaming", "routes.streaming")
+    _soft_mount(api_router, log, "live_streaming", "routes.live_streaming")
+    _soft_mount(api_router, log, "cloudflare_stream", "routes.cloudflare_stream")
+    _soft_mount(api_router, log, "streamer_actions", "routes.streamer_actions")
+    _soft_mount(api_router, log, "streamer_follow", "routes.streamer_follow")
+    _soft_mount(api_router, log, "streamer_referral", "routes.streamer_referral")
+    _soft_mount(api_router, log, "streamer_wrap_up", "routes.streamer_wrap_up")
+    _soft_mount(api_router, log, "featured_streamers", "routes.featured_streamers")
+    _soft_mount(api_router, log, "streamer_copilot", "routes.streamer_copilot")
+    _soft_mount(
+        api_router,
+        log,
+        "streamflow_admin",
+        "routes.streamflow_admin",
+        tags=["Streamflow"],
+    )
+    _soft_mount(api_router, log, "underground_live", "routes.underground_live", tags=["underground-live"])
+    _soft_mount(api_router, log, "live_activity", "routes.live_activity", tags=["live-activity"])
+    _soft_mount(api_router, log, "live_pulse", "routes.live_pulse", tags=["live-pulse"])
+    _soft_mount(api_router, log, "live_commerce", "routes.live_commerce")
+    _soft_mount(api_router, log, "agora_token", "routes.agora_token", tags=["agora-vibe-call"])
+    _soft_mount(api_router, log, "admin_live_seats", "routes.admin_live_seats", tags=["admin-live-seats"])
+
+    # ── Wave 3C — Social / community chat + voice ────────────────────
+    # notifications already mounted in the always-on block above
+    _soft_mount(api_router, log, "chat", "routes.chat", tags=["chat"])
+    _soft_mount(api_router, log, "messaging", "routes.messaging")
+    _soft_mount(api_router, log, "friends", "routes.friends")
+    _soft_mount(api_router, log, "social", "routes.social")
+    _soft_mount(api_router, log, "social_features", "routes.social_features", tags=["social"])
+    _soft_mount(api_router, log, "friend_notifier", "routes.friend_notifier", tags=["friend-events"])
+    _soft_mount(api_router, log, "tournament_chat", "routes.tournament_chat")
+    _soft_mount(api_router, log, "video_chat", "routes.video_chat")
+    _soft_mount(api_router, log, "video_call", "routes.video_call")
+    _soft_mount(api_router, log, "ai_voice", "routes.ai_voice")
+    _soft_mount(api_router, log, "voice_mirror", "routes.voice_mirror")
+    _soft_mount(api_router, log, "voice_mirror_pair", "routes.voice_mirror_pair")
+    _soft_mount(api_router, log, "voice_coach", "routes.voice_coach")
+    _soft_mount(
+        api_router,
+        log,
+        "metahuman_websocket",
+        "routes.metahuman_websocket",
+        tags=["metahuman-ws"],
+    )
+    _soft_mount(
+        api_router,
+        log,
+        "vr_dating_websocket",
+        "routes.vr_dating_websocket",
+        tags=["vr-dating"],
+    )
+    _soft_mount(api_router, log, "vibe_room_signaling", "routes.vibe_room_signaling")
+
+    log.info("Wave-3 media-streaming registry registration complete")
