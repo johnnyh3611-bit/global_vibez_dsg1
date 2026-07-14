@@ -1,11 +1,12 @@
 """
-Route registry — Wave 1: core games + tokenomics.
+Route registry — Wave 1 (games + tokenomics) + Wave 2 (local utility).
 
-Restores playable game and economy routers that were stripped from the
-full Emergent-era registry. Each mount is try/except so one bad import
-never takes the whole API down.
+Wave 1: playable games and economy routers.
+Wave 2: Hunger Vibez, Vibez Spots, Vibe Venues, Vibe Ridez (physical-world
+        / local merchant layer).
 
-Later waves (rides / food / venues / streaming / admin) mount separately.
+Each mount is try/except so one bad import never takes the whole API down.
+Later waves (streaming / TV / music / full admin) mount separately.
 """
 from __future__ import annotations
 
@@ -231,3 +232,70 @@ def register_all_routes(
     _soft_mount(api_router, log, "vibez", "routes.vibez")
 
     log.info("Wave-1 registry registration complete")
+
+    # ── Wave 2A — Hunger Vibez (meal delivery + merchant) ────────────
+    _soft_mount(api_router, log, "hungryvibes_merchant", "routes.hungryvibes_merchant")
+    _soft_mount(
+        api_router,
+        log,
+        "hungryvibes_public",
+        "routes.hungryvibes_merchant",
+        "public_router",
+    )
+    _soft_mount(api_router, log, "smartstack", "routes.smartstack")
+    _soft_mount(
+        api_router,
+        log,
+        "smartstack_admin",
+        "routes.smartstack",
+        "admin_router",
+    )
+    _soft_mount(
+        api_router,
+        log,
+        "hungryvibes_orders",
+        "routes.smartstack",
+        "customer_router",
+    )
+    _soft_mount(api_router, log, "restaurants", "routes.restaurants")
+    _soft_mount(api_router, log, "merchant_onboarding", "routes.merchant_onboarding")
+    _soft_mount(api_router, log, "age_verification", "routes.age_verification")
+    _soft_mount(api_router, log, "unified_earnings", "routes.unified_earnings")
+    _soft_mount(api_router, log, "stripe_connect", "routes.stripe_connect")
+    _soft_mount(api_router, log, "yellow_pages", "routes.yellow_pages")
+
+    # ── Wave 2B — Vibez Spots + Vibe Venues (local / reservations) ───
+    _soft_mount(api_router, log, "vibe_spots", "routes.vibe_spots", tags=["vibe-spots"])
+    _soft_mount(api_router, log, "vibe_venues", "routes.vibe_venues")
+
+    # ── Wave 2C — Vibe Ridez (courier / delivery routing) ────────────
+    _soft_mount(api_router, log, "vibe_ridez", "routes.vibe_ridez")
+    _soft_mount(
+        api_router,
+        log,
+        "vibe_ridez_dispatch",
+        "routes.vibe_ridez_dispatch",
+        tags=["Vibe Ridez Dispatch"],
+    )
+    _soft_mount(
+        api_router,
+        log,
+        "viberidez_fare_split",
+        "routes.viberidez_fare_split",
+        tags=["VibeRidez Fare Split"],
+    )
+    _soft_mount(api_router, log, "viberidez_cargo", "routes.viberidez_cargo_routes")
+    _soft_mount(
+        api_router,
+        log,
+        "admin_viberidez_cargo",
+        "routes.viberidez_cargo_routes",
+        "admin_router",
+    )
+    _soft_mount(api_router, log, "drivers", "routes.drivers")
+    _soft_mount(api_router, log, "driver_verification", "routes.driver_verification")
+    _soft_mount(api_router, log, "rides", "routes.rides")
+    _soft_mount(api_router, log, "rides_safety", "routes.rides_safety")
+    _soft_mount(api_router, log, "vibe_drive", "routes.vibe_drive")
+
+    log.info("Wave-2 local-utility registry registration complete")
