@@ -15,14 +15,17 @@
     }
   ],
   "env": {
-    "REACT_APP_FRONTEND_URL": "https://www.globalvibezdsg.com"
+    "REACT_APP_FRONTEND_URL": "https://www.globalvibezdsg.com",
+    "REACT_APP_BACKEND_URL": "https://globalvibezdsg1-production.up.railway.app"
   },
   "build": {
     "env": {
       "REACT_APP_FRONTEND_URL": "https://www.globalvibezdsg.com",
+      "REACT_APP_BACKEND_URL": "https://globalvibezdsg1-production.up.railway.app",
       "DISABLE_ESLINT_PLUGIN": "true",
       "GENERATE_SOURCEMAP": "false",
-      "CI": "false"
+      "CI": "false",
+      "ESLINT_NO_DEV_ERRORS": "true"
     }
   },
   "git": {
