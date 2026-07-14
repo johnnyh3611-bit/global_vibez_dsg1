@@ -1,23 +1,233 @@
-from fastapi import APIRouter
+"""
+Route registry — Wave 1: core games + tokenomics.
 
-# Safely import notification routes
-try:
-    from routes.notifications import router as notifications_router
-except ImportError:
-    notifications_router = APIRouter()
+Restores playable game and economy routers that were stripped from the
+full Emergent-era registry. Each mount is try/except so one bad import
+never takes the whole API down.
 
-# Safely import moderation routes
-try:
-    from routes.moderation import router as moderation_router
-except ImportError:
-    moderation_router = APIRouter()
+Later waves (rides / food / venues / streaming / admin) mount separately.
+"""
+from __future__ import annotations
 
-# Register all other routes...
-def register_all_routes(api_router, app, logger):
-    api_router.include_router(notifications_router)
-    api_router.include_router(moderation_router)
-    from routes.email_auth import router as auth_router
-    # api_router already has prefix="/api". Use "/auth" here so routes land at
-    # /api/auth/signup|login (matches the frontend). prefix="/api/auth" wrongly
-    # produced /api/api/auth/... and caused UI email auth 404s.
-    api_router.include_router(auth_router, prefix="/auth", tags=["auth"])
+import logging
+from typing import Optional
+
+from fastapi import APIRouter, FastAPI
+
+
+def _soft_mount(
+    api_router: APIRouter,
+    log: logging.Logger,
+    label: str,
+    import_path: str,
+    attr: str = "router",
+    **include_kwargs,
+) -> bool:
+    """Import `import_path.attr` and include it. Returns True on success."""
+    try:
+        module = __import__(import_path, fromlist=[attr])
+        router = getattr(module, attr)
+        api_router.include_router(router, **include_kwargs)
+        log.info("mounted %s", label)
+        return True
+    except Exception as exc:  # noqa: BLE001 — boot must survive flaky routes
+        log.warning("Wave-1 skip %s: %s", label, exc)
+        return False
+
+
+def register_all_routes(
+    api_router: APIRouter,
+    app: FastAPI,
+    logger: Optional[logging.Logger] = None,
+) -> None:
+    log = logger or logging.getLogger(__name__)
+
+    # ── Always-on (existing production surface) ──────────────────────
+    try:
+        from routes.notifications import router as notifications_router
+
+        api_router.include_router(notifications_router)
+    except ImportError:
+        log.warning("notifications router missing")
+
+    try:
+        from routes.moderation import router as moderation_router
+
+        api_router.include_router(moderation_router)
+    except ImportError:
+        log.warning("moderation router missing")
+
+    # api_router already has prefix="/api". Use "/auth" so routes land at
+    # /api/auth/signup|login (matches the frontend).
+    try:
+        from routes.email_auth import router as auth_router
+
+        api_router.include_router(auth_router, prefix="/auth", tags=["auth"])
+    except ImportError:
+        log.warning("email_auth router missing")
+
+    # ── Wave 1A — Core games catalog + locks ─────────────────────────
+    _soft_mount(api_router, log, "categories", "routes.categories")
+    _soft_mount(api_router, log, "safety", "routes.safety")
+    _soft_mount(api_router, log, "games", "routes.games")
+    _soft_mount(api_router, log, "tournaments", "routes.tournaments")
+    _soft_mount(api_router, log, "games_lock", "routes.games_lock_routes", "games_lock_router")
+    _soft_mount(api_router, log, "leaderboard", "routes.leaderboard")
+    _soft_mount(api_router, log, "leaderboards", "routes.leaderboards", tags=["leaderboards"])
+    _soft_mount(api_router, log, "practice", "routes.practice")
+    _soft_mount(api_router, log, "stats", "routes.stats")
+    _soft_mount(api_router, log, "game_handshake", "routes.game_handshake")
+    _soft_mount(api_router, log, "turn_timer", "routes.turn_timer")
+
+    # ── Wave 1B — Card / table games ─────────────────────────────────
+    _soft_mount(api_router, log, "spades", "routes.spades")
+    _soft_mount(api_router, log, "spades_practice", "routes.spades_practice")
+    _soft_mount(api_router, log, "bid_whist", "routes.bid_whist")
+    _soft_mount(api_router, log, "bid_whist_practice", "routes.bid_whist_practice")
+    _soft_mount(api_router, log, "bid_whist_meta", "routes.bid_whist_meta")
+    _soft_mount(api_router, log, "blackjack", "routes.blackjack", prefix="/blackjack", tags=["blackjack"])
+    _soft_mount(api_router, log, "blackjack_universal", "routes.blackjack_universal")
+    _soft_mount(api_router, log, "baccarat", "routes.baccarat")
+    _soft_mount(api_router, log, "poker_practice", "routes.poker_practice")
+    _soft_mount(api_router, log, "card_royale", "routes.card_royale")
+    _soft_mount(api_router, log, "card_multiplayer", "routes.card_multiplayer")
+    _soft_mount(api_router, log, "card_styles", "routes.card_styles")
+    _soft_mount(api_router, log, "http_multiplayer", "routes.http_multiplayer")
+
+    # Practice pack
+    for label, path in (
+        ("uno_practice", "routes.uno_practice"),
+        ("hearts_practice", "routes.hearts_practice"),
+        ("rummy_practice", "routes.rummy_practice"),
+        ("gin_rummy_practice", "routes.gin_rummy_practice"),
+        ("crazy_eights_practice", "routes.crazy_eights_practice"),
+        ("euchre_practice", "routes.euchre_practice"),
+        ("go_fish_practice", "routes.go_fish_practice"),
+        ("pinochle_practice", "routes.pinochle_practice"),
+        ("war_practice", "routes.war_practice"),
+        ("dominoes_practice", "routes.dominoes_practice"),
+        ("dominoes_mp", "routes.dominoes_mp"),
+    ):
+        _soft_mount(api_router, log, label, path)
+
+    # Casino / specialty
+    _soft_mount(api_router, log, "roulette", "routes.roulette")
+    _soft_mount(api_router, log, "slots", "routes.slots")
+    _soft_mount(api_router, log, "cyber_casino", "routes.cyber_casino")
+    _soft_mount(api_router, log, "community_slots", "routes.community_slots")
+    _soft_mount(api_router, log, "multiplayer_slots", "routes.multiplayer_slots")
+    _soft_mount(api_router, log, "high_roller", "routes.high_roller")
+    _soft_mount(api_router, log, "chess_hall", "routes.chess_hall")
+    _soft_mount(api_router, log, "big_wheel_lounge", "routes.big_wheel_lounge")
+    _soft_mount(api_router, log, "thirty_one", "routes.thirty_one_routes")
+    _soft_mount(api_router, log, "yahtzee", "routes.yahtzee_routes")
+    _soft_mount(api_router, log, "vibes_slots", "routes.vibes_slots_routes")
+
+    # Vibez 654
+    _soft_mount(api_router, log, "vibez_654", "routes.vibez_654")
+    _soft_mount(
+        api_router,
+        log,
+        "vibez_654_prescription",
+        "routes.vibez_654_prescription",
+        prefix="/games/vibe654",
+        tags=["vibe654"],
+    )
+    _soft_mount(api_router, log, "vibe_654_social", "routes.vibe_654_social")
+    _soft_mount(api_router, log, "vibe_654_tournament", "routes.vibe_654_tournament")
+
+    # Founder-engine + wave-2 casino (coming-soon surfaces — soft mount)
+    try:
+        from routes.founder_engines_routes import (
+            bingo_router,
+            battle_router,
+            craps_router,
+            cs_router,
+            gifts_router,
+            keno_router,
+            sicbo_router,
+            vw_router,
+        )
+
+        for r in (
+            bingo_router,
+            cs_router,
+            sicbo_router,
+            craps_router,
+            vw_router,
+            keno_router,
+            gifts_router,
+            battle_router,
+        ):
+            api_router.include_router(r)
+        log.info("mounted founder_engines")
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Wave-1 skip founder_engines: %s", exc)
+
+    try:
+        from routes.casino_wave2_routes import (
+            big_six_router,
+            casino_war_router,
+            chemin_router,
+            chuck_router,
+            darts_router,
+            eu_roulette_router,
+            fan_tan_router,
+            faro_router,
+            hazard_router,
+            jacks_router,
+            pai_gow_router,
+            three_card_router,
+        )
+
+        for r in (
+            three_card_router,
+            pai_gow_router,
+            casino_war_router,
+            chemin_router,
+            eu_roulette_router,
+            hazard_router,
+            chuck_router,
+            big_six_router,
+            jacks_router,
+            fan_tan_router,
+            faro_router,
+            darts_router,
+        ):
+            api_router.include_router(r)
+        log.info("mounted casino_wave2")
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Wave-1 skip casino_wave2: %s", exc)
+
+    # ── Wave 1C — Tokenomics / economy ───────────────────────────────
+    _soft_mount(api_router, log, "coins", "routes.coins")
+    _soft_mount(api_router, log, "coin_topup", "routes.coin_topup")
+    _soft_mount(api_router, log, "coin_stats", "routes.coin_stats")
+    _soft_mount(api_router, log, "currency", "routes.currency")
+    _soft_mount(api_router, log, "vibe_wallet", "routes.vibe_wallet", prefix="/wallet", tags=["wallet"])
+    _soft_mount(api_router, log, "chairs", "routes.chairs")
+    _soft_mount(api_router, log, "chair_share", "routes.chair_share")
+    _soft_mount(api_router, log, "chair_holder_votes", "routes.chair_holder_votes")
+    _soft_mount(api_router, log, "pricing_tiers", "routes.pricing_tiers_routes", "pricing_router")
+    _soft_mount(api_router, log, "dynamic_pricing", "routes.dynamic_pricing", tags=["pricing"])
+    _soft_mount(api_router, log, "premium_pricing", "routes.premium_pricing")
+    _soft_mount(api_router, log, "admin_pricing", "routes.admin_pricing")
+    _soft_mount(api_router, log, "payout", "routes.payout_routes", tags=["treasury"])
+    _soft_mount(api_router, log, "treasury", "routes.treasury")
+    _soft_mount(api_router, log, "admin_treasury", "routes.admin_treasury_routes", tags=["admin-treasury"])
+    _soft_mount(api_router, log, "battle_pass", "routes.battle_pass")
+    _soft_mount(api_router, log, "cosmetics", "routes.cosmetics", tags=["cosmetics"])
+    _soft_mount(api_router, log, "cosmetics_shop", "routes.cosmetics_shop")
+    _soft_mount(api_router, log, "founders_pass", "routes.founders_pass")
+    _soft_mount(api_router, log, "economic_engine", "routes.economic_engine")
+    _soft_mount(api_router, log, "admin_recirculation", "routes.admin_recirculation")
+    _soft_mount(api_router, log, "vibez_rewards", "routes.vibez_rewards")
+    _soft_mount(api_router, log, "profit_share", "routes.profit_share")
+    _soft_mount(api_router, log, "entry_fee", "routes.entry_fee")
+    _soft_mount(api_router, log, "subscriptions", "routes.subscriptions")
+    _soft_mount(api_router, log, "subscription_tiers", "routes.subscription_tiers")
+    _soft_mount(api_router, log, "tge", "routes.tge")
+    _soft_mount(api_router, log, "rewards", "routes.rewards")
+    _soft_mount(api_router, log, "vibez", "routes.vibez")
+
+    log.info("Wave-1 registry registration complete")
