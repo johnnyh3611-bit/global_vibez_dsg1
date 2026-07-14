@@ -9,7 +9,9 @@ from datetime import datetime, timezone
 import os
 from motor.motor_asyncio import AsyncIOMotorClient
 
-router = APIRouter(prefix="/api/friends", tags=["friends"])
+# api_router already prefixes "/api", so this must be "/friends"
+# (not "/api/friends") or the live paths become /api/api/friends/*.
+router = APIRouter(prefix="/friends", tags=["friends"])
 
 # MongoDB connection
 MONGO_URL = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
