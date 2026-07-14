@@ -2,13 +2,18 @@
  * WatchRoom — single-stream viewer page. Big HLS player + simple
  * metadata card. Looks up the live input by ID from the backend so
  * users can deep-link / share a specific stream URL.
+ *
+ * Includes stream gift rail (POST /api/streaming/gift) + live gift FX
+ * via Socket.IO new_gift_effect.
  */
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { motion } from "framer-motion";
-import { ChevronLeft, Radio, AlertTriangle, Share2, Bell, BellOff } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronLeft, Radio, AlertTriangle, Share2, Bell, BellOff, Gift, Sparkles } from "lucide-react";
 import HLSPlayer from "@/components/streaming/HLSPlayer";
-import { getUserId } from "@/utils/secureAuth";
+import GiftCatalogPicker from "@/components/GiftCatalogPicker";
+import { getUserId, getUsername } from "@/utils/secureAuth";
+import { useStreamSocket } from "@/hooks/useStreamSocket";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -21,6 +26,13 @@ interface LiveStream {
   last_status?: string;
 }
 
+interface GiftFx {
+  id: number;
+  gift: string;
+  anim_asset?: string;
+  multiplier?: number;
+}
+
 export default function WatchRoom() {
   const nav = useNavigate();
   const { inputId } = useParams<{ inputId: string }>();
@@ -29,7 +41,18 @@ export default function WatchRoom() {
   const [copied, setCopied] = useState(false);
   const [following, setFollowing] = useState<boolean | null>(null);
   const [followBusy, setFollowBusy] = useState(false);
+  const [showGifts, setShowGifts] = useState(false);
+  const [giftFx, setGiftFx] = useState<GiftFx | null>(null);
   const me = getUserId();
+  const username = getUsername();
+
+  const {
+    isConnected,
+    joinStream,
+    leaveStream,
+    onNewGiftEffect,
+    viewerCount,
+  } = useStreamSocket(me, username);
 
   useEffect(() => {
     if (!inputId) return;
@@ -58,6 +81,29 @@ export default function WatchRoom() {
     const id = window.setInterval(load, 10000);
     return () => window.clearInterval(id);
   }, [inputId]);
+
+  // Join stream room for gift FX + viewer count
+  useEffect(() => {
+    if (!inputId || !me || !isConnected) return;
+    joinStream(inputId).catch(() => undefined);
+    return () => {
+      leaveStream(inputId).catch(() => undefined);
+    };
+  }, [inputId, me, isConnected]);
+
+  useEffect(() => {
+    const unsub = onNewGiftEffect((data) => {
+      if (data?.stream_id && data.stream_id !== inputId) return;
+      setGiftFx({
+        id: Date.now(),
+        gift: data?.gift || data?.gift_code || "Gift",
+        anim_asset: data?.anim_asset,
+        multiplier: data?.multiplier,
+      });
+      window.setTimeout(() => setGiftFx(null), 4000);
+    });
+    return () => unsub?.();
+  }, [onNewGiftEffect, inputId]);
 
   const share = async () => {
     try {
@@ -134,7 +180,31 @@ export default function WatchRoom() {
 
         {stream && (
           <>
-            <HLSPlayer src={stream.hls_playback_url} isLive autoPlay />
+            <div className="relative">
+              <HLSPlayer src={stream.hls_playback_url} isLive autoPlay />
+              <AnimatePresence>
+                {giftFx && (
+                  <motion.div
+                    key={giftFx.id}
+                    initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 1.1 }}
+                    className="absolute inset-0 pointer-events-none flex items-center justify-center"
+                    data-testid="watch-room-gift-fx"
+                  >
+                    <div className="bg-black/70 border border-amber-400/50 rounded-2xl px-6 py-4 text-center backdrop-blur-md">
+                      <Sparkles className="w-8 h-8 text-amber-300 mx-auto mb-2" />
+                      <p className="text-white font-black text-lg">{giftFx.gift}</p>
+                      {giftFx.multiplier && giftFx.multiplier > 1 && (
+                        <p className="text-amber-200 text-xs mt-1">
+                          Mining ×{giftFx.multiplier.toFixed(2)}
+                        </p>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
 
             <div className="rounded-2xl border border-red-500/20 bg-black/40 p-4 flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -155,9 +225,22 @@ export default function WatchRoom() {
                     }`}
                   />
                   {stream.is_live ? "Live" : stream.last_status || "Offline"}
+                  {viewerCount > 0 && (
+                    <span className="ml-2 opacity-80">· {viewerCount} watching</span>
+                  )}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap justify-end">
+                {me && (
+                  <button
+                    onClick={() => setShowGifts(true)}
+                    className="px-3 py-2 rounded-full border border-pink-500/40 bg-pink-500/15 hover:bg-pink-500/30 text-[10px] uppercase tracking-widest flex items-center gap-1.5 text-pink-100"
+                    data-testid="watch-room-gift-btn"
+                    title="Send a stream gift"
+                  >
+                    <Gift className="w-3.5 h-3.5" /> Gift
+                  </button>
+                )}
                 {me && stream.streamer_id !== me && (
                   <button
                     onClick={toggleFollow}
@@ -199,6 +282,24 @@ export default function WatchRoom() {
           <Radio className="w-3.5 h-3.5" /> Want to broadcast? Open your Studio →
         </Link>
       </main>
+
+      {showGifts && inputId && (
+        <GiftCatalogPicker
+          mode="streaming"
+          streamId={inputId}
+          toUserId={stream?.streamer_id}
+          onClose={() => setShowGifts(false)}
+          onSent={(result) => {
+            setGiftFx({
+              id: Date.now(),
+              gift: (result?.gift as string) || "Gift sent!",
+              anim_asset: result?.anim_asset as string | undefined,
+              multiplier: result?.multiplier as number | undefined,
+            });
+            window.setTimeout(() => setGiftFx(null), 4000);
+          }}
+        />
+      )}
     </div>
   );
 }

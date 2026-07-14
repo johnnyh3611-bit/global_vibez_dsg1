@@ -280,3 +280,30 @@ def get_online_users() -> list:
 def is_user_online(user_id: str) -> bool:
     """Check if user is currently online"""
     return user_id in online_users
+
+
+async def broadcast_reaction_updated(
+    message_id: str,
+    reactions: dict,
+    actor_id: str,
+    participant_ids: list,
+) -> None:
+    """Push reaction changes to online participants on the /messaging namespace."""
+    payload = {
+        "message_id": message_id,
+        "reactions": reactions,
+        "actor_id": actor_id,
+    }
+    for uid in participant_ids:
+        if not uid or uid not in online_users:
+            continue
+        for sid in list(online_users[uid]):
+            try:
+                await sio.emit(
+                    "reaction_updated",
+                    payload,
+                    room=sid,
+                    namespace="/messaging",
+                )
+            except Exception as exc:  # noqa: BLE001
+                print(f"[Messaging] reaction_updated emit failed: {exc}")

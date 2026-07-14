@@ -68,6 +68,18 @@ class TournamentTable:
             self.clients.remove(websocket)
             print(f"🔌 Client disconnected from table {self.table_id}. Remaining: {len(self.clients)}")
     
+    async def broadcast_json(self, event: Dict):
+        """Broadcast an arbitrary JSON event to all clients on this table."""
+        disconnected_clients = []
+        for client in self.clients:
+            try:
+                await client.send_json(event)
+            except Exception as e:
+                print(f"❌ Failed to send to client: {e}")
+                disconnected_clients.append(client)
+        for client in disconnected_clients:
+            self.disconnect_client(client)
+
     async def broadcast_dealer_event(
         self, 
         event_type: str, 
@@ -99,19 +111,7 @@ class TournamentTable:
                 "timestamp": datetime.now().isoformat()
             }
         }
-        
-        # Broadcast to all clients
-        disconnected_clients = []
-        for client in self.clients:
-            try:
-                await client.send_json(event)
-            except Exception as e:
-                print(f"❌ Failed to send to client: {e}")
-                disconnected_clients.append(client)
-        
-        # Clean up disconnected clients
-        for client in disconnected_clients:
-            self.disconnect_client(client)
+        await self.broadcast_json(event)
     
     async def handle_player_action(self, action: PlayerAction):
         """
@@ -314,6 +314,29 @@ async def tournament_websocket(websocket: WebSocket, table_id: str) -> Dict[str,
                     }
                 )
             
+            elif message['type'] == 'SEND_GIFT':
+                # Table gift FX — broadcast to UE5 Niagara + web overlays
+                gift_data = message.get('data') or {}
+                gift_type = gift_data.get('gift_type') or 'heart'
+                sender_id = gift_data.get('sender_id') or 'unknown'
+                recipient_id = gift_data.get('recipient_id') or 'table'
+                sender_name = gift_data.get('sender_name') or gift_data.get('sender') or sender_id
+                recipient_name = gift_data.get('recipient_name') or gift_data.get('recipient') or recipient_id
+
+                await table.broadcast_json({
+                    "type": "GIFT_SENT",
+                    "data": {
+                        "gift_type": gift_type,
+                        "sender": sender_name,
+                        "recipient": recipient_name,
+                        "sender_id": sender_id,
+                        "recipient_id": recipient_id,
+                        "sender_position": gift_data.get('sender_position'),
+                        "recipient_position": gift_data.get('recipient_position'),
+                        "timestamp": datetime.now().isoformat(),
+                    },
+                })
+
             elif message['type'] == 'PING':
                 # Heartbeat for connection monitoring
                 await websocket.send_json({

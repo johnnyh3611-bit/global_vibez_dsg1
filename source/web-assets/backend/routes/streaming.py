@@ -413,16 +413,26 @@ async def send_gift(payload: GiftPayload) -> Dict[str, Any]:
         "created_at": datetime.now(timezone.utc).isoformat(),
     })
 
-    # 4. The animation broadcast is handled by the streaming socket layer
-    # (clients subscribe to /ws/stream/{id}). For now we return the intent;
-    # frontend listens for stream-state updates and fires the animation.
-    return {
-        "ok": True,
+    # 4. Broadcast animation trigger to everyone in the stream Socket.IO room
+    effect_payload = {
         "stream_id": payload.stream_id,
+        "sender_id": payload.user_id,
+        "gift_code": payload.gift_code,
         "gift": gift["label"],
         "anim_asset": gift["anim_asset"],
         "multiplier": gift["multiplier"],
         "expires_in_sec": gift["duration_sec"],
+        "price_paid": gift["price"],
+    }
+    try:
+        from services.streaming_socketio import emit_gift_effect
+        await emit_gift_effect(payload.stream_id, effect_payload)
+    except Exception:
+        pass
+
+    return {
+        "ok": True,
+        **effect_payload,
     }
 
 

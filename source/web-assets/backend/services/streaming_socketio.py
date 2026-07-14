@@ -1,11 +1,26 @@
 """
 Streaming Socket.IO Events
 Real-time events for live streaming (viewer join/leave, gift effects)
+
+Registered on services.multiplayer.sio (mounted at /api/socket.io) so the
+CRA clients that connect with path=/api/socket.io receive these events.
 """
-from websocket_server import sio
+from services.multiplayer import sio
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+async def emit_gift_effect(stream_id: str, payload: dict) -> None:
+    """Broadcast a gift animation to everyone in the stream room."""
+    try:
+        await sio.emit(
+            "new_gift_effect",
+            payload,
+            room=f"stream_{stream_id}",
+        )
+    except Exception as e:  # noqa: BLE001
+        logger.error(f"emit_gift_effect failed: {e}")
 
 # Active streams and their viewers
 active_streams = {}  # {stream_id: {viewers: set(), streamer_sid: str}}
