@@ -1,6 +1,7 @@
 import React from 'react';
 
-const LOGO_URL = 'https://static.prod-images.emergentagent.com/jobs/c3f468d8-915e-4ce6-875b-05ac1d5140a1/images/2f76fac8085ba1f9ba0f247ad9db641014e451eb1da890963163722c0541513b.png';
+/** Canonical local brand mark (globe + V lockup). Cache-bust via query when swapping PNG. */
+const LOGO_URL = '/global-vibez-logo.png?v=11';
 
 export default function Logo({ size = 'md', className = '' }) {
   const sizes = {
