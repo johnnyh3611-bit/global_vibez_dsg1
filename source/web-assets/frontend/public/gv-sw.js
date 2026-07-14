@@ -13,7 +13,7 @@
  *
  * Versioned cache: bumping CACHE_VERSION evicts old caches on activate.
  */
-const CACHE_VERSION = "gv-v3-20260215-recirc-nova";
+const CACHE_VERSION = "gv-v4-20260714-globe-logo";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
