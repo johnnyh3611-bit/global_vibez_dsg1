@@ -1,11 +1,12 @@
 """
-Route registry — Waves 1–4.
+Route registry — Waves 1–5 (full surface).
 
 Wave 1: games + tokenomics.
 Wave 2: Hunger Vibez / Vibez Spots / Vibe Venues / Vibe Ridez.
 Wave 3: DSG TV, media engine, streaming, social/community chat hooks.
-Wave 4: game lobby (tables/dealers/matchmaking/spectators) + dating games
-        + social party games (trivia/quiz/WYR) + remaining game rooms.
+Wave 4: game lobby + dating/party games.
+Wave 5: My Vibez, admin/ops, economy extras, Solana/sovereign, AI, uploads,
+        and every remaining importable router.
 
 Each mount is try/except so one bad import never takes the whole API down.
 """
@@ -517,3 +518,177 @@ def register_all_routes(
     # api_router → /api/api/friends; frontend expects /api/friends).
 
     log.info("Wave-4 games-lobby registry registration complete")
+
+    # ── Wave 5A — My Vibez + content / uploads ───────────────────────
+    _soft_mount(api_router, log, "my_vibez", "routes.my_vibez")
+    _soft_mount(api_router, log, "my_vibez_content", "routes.my_vibez_content")
+    _soft_mount(api_router, log, "my_vibez_feed", "routes.my_vibez_feed")
+    _soft_mount(api_router, log, "my_vibez_optimization", "routes.my_vibez_optimization")
+    _soft_mount(api_router, log, "content_rights", "routes.content_rights")
+    _soft_mount(api_router, log, "creator_earnings", "routes.creator_earnings")
+    _soft_mount(api_router, log, "beat_dlc", "routes.beat_dlc")
+    _soft_mount(api_router, log, "ads", "routes.ads")
+    _soft_mount(api_router, log, "uploads", "routes.uploads")
+    _soft_mount(api_router, log, "profile_videos", "routes.profile_videos")
+    _soft_mount(api_router, log, "insurance_verification", "routes.insurance_verification")
+    _soft_mount(api_router, log, "receipts_ocr", "routes.receipts_ocr")
+    _soft_mount(api_router, log, "totem_pole", "routes.totem_pole")
+    _soft_mount(api_router, log, "plex_room", "routes.plex_room_routes")
+    _soft_mount(api_router, log, "vanishing_messages", "routes.vanishing_messages")
+    _soft_mount(api_router, log, "rum_collector", "routes.rum_collector")
+
+    # ── Wave 5B — Admin / ops / monitoring ───────────────────────────
+    _soft_mount(api_router, log, "admin", "routes.admin")
+    _soft_mount(api_router, log, "admin_dashboard", "routes.admin_dashboard", tags=["admin"])
+    _soft_mount(api_router, log, "admin_beta_cohort", "routes.admin_beta_cohort")
+    _soft_mount(api_router, log, "admin_founder_preview", "routes.admin_founder_preview")
+    _soft_mount(api_router, log, "admin_payments_audit", "routes.admin_payments_audit")
+    _soft_mount(api_router, log, "admin_security", "routes.admin_security")
+    _soft_mount(api_router, log, "audit_log", "routes.audit_log_routes")
+    _soft_mount(api_router, log, "god_mode_audit", "routes.god_mode_audit")
+    _soft_mount(api_router, log, "god_mode_casino", "routes.god_mode_casino")
+    _soft_mount(api_router, log, "god_mode_monitor", "routes.god_mode_monitor")
+    _soft_mount(api_router, log, "monitoring", "routes.monitoring")
+    _soft_mount(api_router, log, "system_monitor", "routes.system_monitor")
+    _soft_mount(api_router, log, "health_routes", "routes.health")
+    _soft_mount(api_router, log, "dsg_core_system", "routes.dsg_core_system")
+    _soft_mount(api_router, log, "dsg_guard", "routes.dsg_guard")
+    _soft_mount(api_router, log, "dsg_logistics", "routes.dsg_logistics_routes")
+    _soft_mount(
+        api_router,
+        log,
+        "admin_dsg_logistics",
+        "routes.dsg_logistics_routes",
+        "admin_router",
+    )
+    _soft_mount(api_router, log, "staff_management", "routes.staff_management_routes")
+    _soft_mount(api_router, log, "usdc_payout_admin", "routes.usdc_payout_admin")
+    _soft_mount(api_router, log, "kyc_aml", "routes.kyc_aml_routes")
+    _soft_mount(api_router, log, "reports", "routes.reports")
+    _soft_mount(api_router, log, "verification", "routes.verification")
+    _soft_mount(api_router, log, "beta_waitlist", "routes.beta_waitlist")
+    _soft_mount(
+        api_router,
+        log,
+        "admin_beta_waitlist",
+        "routes.beta_waitlist",
+        "admin_router",
+    )
+    _soft_mount(api_router, log, "gisa", "routes.gisa_routes", "gisa_router")
+    _soft_mount(
+        api_router,
+        log,
+        "integrity_protocol",
+        "routes.integrity_protocol",
+    )
+
+    # ── Wave 5C — Economy / engagement extras ────────────────────────
+    _soft_mount(api_router, log, "economy_control", "routes.economy_control")
+    _soft_mount(api_router, log, "elite_subscription", "routes.elite_subscription")
+    _soft_mount(api_router, log, "engagement", "routes.engagement")
+    _soft_mount(api_router, log, "gift_cards", "routes.gift_cards")
+    _soft_mount(api_router, log, "milestones", "routes.milestones")
+    _soft_mount(api_router, log, "monetization", "routes.monetization")
+    _soft_mount(api_router, log, "power_hour_sponsors", "routes.power_hour_sponsors")
+    _soft_mount(api_router, log, "referral_system", "routes.referral_system")
+    _soft_mount(api_router, log, "rewards_queue", "routes.rewards_queue")
+    _soft_mount(api_router, log, "ratings", "routes.ratings")
+    _soft_mount(api_router, log, "user_preferences", "routes.user_preferences")
+    _soft_mount(api_router, log, "user_interests", "routes.user_interests_routes")
+    _soft_mount(api_router, log, "teleport_cosmetics", "routes.teleport_cosmetics")
+    _soft_mount(api_router, log, "wallet_purchase", "routes.wallet")
+    _soft_mount(api_router, log, "stripe_payouts_webhook", "routes.stripe_payouts_webhook")
+    _soft_mount(api_router, log, "crypto_payments", "routes.crypto_payments")
+    _soft_mount(api_router, log, "manifesto_features", "routes.manifesto_features")
+    _soft_mount(api_router, log, "v4_closeout", "routes.v4_closeout")
+    _soft_mount(api_router, log, "vibe_score", "routes.vibe_score")
+    _soft_mount(api_router, log, "vibe_phone", "routes.vibe_phone")
+    _soft_mount(api_router, log, "vibe_suites", "routes.vibe_suites")
+    _soft_mount(api_router, log, "vibe_core_orchestrator", "routes.vibe_core_orchestrator")
+    _soft_mount(
+        api_router,
+        log,
+        "vibe_654_dice",
+        "routes.vibe_654_dice",
+        prefix="/games/vibe-654-dice",
+        tags=["vibe-654-dice"],
+    )
+    _soft_mount(api_router, log, "games_backup", "routes.games_backup")
+
+    # ── Wave 5D — Solana / sovereign / apex ──────────────────────────
+    _soft_mount(api_router, log, "solana_network", "routes.solana_network", tags=["solana-network"])
+    _soft_mount(api_router, log, "solana_indexer", "routes.solana_indexer", tags=["solana-indexer"])
+    _soft_mount(api_router, log, "jftn_solana", "routes.jftn_solana", tags=["JFTN Solana"])
+    _soft_mount(api_router, log, "hybrid_identity", "routes.hybrid_identity")
+    _soft_mount(api_router, log, "privy_auth", "routes.privy_auth")
+    _soft_mount(api_router, log, "mining", "routes.mining")
+    _soft_mount(api_router, log, "immutable_core", "routes.immutable_core")
+    _soft_mount(api_router, log, "equity_master", "routes.equity_master")
+    _soft_mount(api_router, log, "sovereign_engine", "routes.sovereign_engine_routes")
+    _soft_mount(api_router, log, "sovereign_ops", "routes.sovereign_ops_routes")
+    _soft_mount(
+        api_router,
+        log,
+        "sovereign_mining",
+        "routes.sovereign_mining_routes",
+        tags=["sovereign-mining"],
+    )
+    _soft_mount(api_router, log, "sovereign_tiers", "routes.sovereign_tiers", tags=["tiers"])
+    _soft_mount(api_router, log, "apex_evolution", "routes.apex_evolution", tags=["apex-evolution"])
+    _soft_mount(
+        api_router,
+        log,
+        "apex_sovereign",
+        "routes.apex_sovereign_routes",
+        "apex_router",
+    )
+    _soft_mount(
+        api_router,
+        log,
+        "celestial_glasshouse",
+        "routes.celestial_glasshouse_routes",
+        "arena_router",
+    )
+
+    # ── Wave 5E — AI / planners / integrations / i18n ────────────────
+    _soft_mount(api_router, log, "ai_coach", "routes.ai_coach")
+    _soft_mount(api_router, log, "ai_content_matching", "routes.ai_content_matching")
+    _soft_mount(api_router, log, "ai_date_planner", "routes.ai_date_planner")
+    _soft_mount(api_router, log, "ai_date_planner_v2", "routes.ai_date_planner_v2")
+    _soft_mount(api_router, log, "agent_learning", "routes.agent_learning")
+    _soft_mount(api_router, log, "metahuman_control", "routes.metahuman_control")
+    _soft_mount(api_router, log, "date_planner", "routes.date_planner")
+    _soft_mount(api_router, log, "group_planner", "routes.group_planner")
+    _soft_mount(api_router, log, "i18n", "routes.i18n")
+    _soft_mount(
+        api_router,
+        log,
+        "localization",
+        "routes.localization_routes",
+        "localization_router",
+    )
+    _soft_mount(
+        api_router,
+        log,
+        "cultural_onboarding",
+        "routes.cultural_onboarding_routes",
+        "cultural_onboarding_router",
+    )
+    _soft_mount(
+        api_router,
+        log,
+        "smartcar",
+        "routes.third_party_integrations",
+        "smartcar_router",
+    )
+    _soft_mount(
+        api_router,
+        log,
+        "spotify",
+        "routes.third_party_integrations",
+        "spotify_router",
+    )
+    _soft_mount(api_router, log, "twilio", "routes.twilio_routes")
+    _soft_mount(api_router, log, "vr_physical_bridge", "routes.vr_physical_bridge")
+
+    log.info("Wave-5 remaining-surface registry registration complete")

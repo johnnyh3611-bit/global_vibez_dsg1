@@ -125,7 +125,7 @@ async def check_ai_services() -> Dict[str, Any]:
             "error": str(e)
         }
 
-@router.get("/api/health")
+@router.get("/health/live")
 async def health_check_basic() -> Dict[str, Any]:
     """Quick health check endpoint (for load balancers)"""
     try:
@@ -134,7 +134,7 @@ async def health_check_basic() -> Dict[str, Any]:
     except Exception:
         raise HTTPException(status_code=503, detail="Service Unavailable")
 
-@router.get("/api/system-status")
+@router.get("/system-status")
 async def get_system_report() -> Dict[str, Any]:
     """
     Comprehensive system status report
@@ -189,17 +189,17 @@ async def get_system_report() -> Dict[str, Any]:
     
     return report
 
-@router.get("/api/health/database")
+@router.get("/health/database")
 async def database_health() -> Dict[str, Any]:
     """Detailed database health metrics"""
     return await check_mongodb()
 
-@router.get("/api/health/games")
+@router.get("/health/games")
 async def games_health() -> Dict[str, Any]:
     """Detailed game services health"""
     return await check_game_services()
 
-@router.get("/api/health/frontend")
+@router.get("/health/frontend")
 async def frontend_health() -> Dict[str, Any]:
     """Check if frontend is accessible"""
     try:

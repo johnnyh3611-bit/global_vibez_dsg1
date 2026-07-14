@@ -16,7 +16,8 @@ from logic.treasury import (
 )
 from config import db
 
-router = APIRouter(prefix="/api/v1/payout", tags=["Payouts"])
+# api_router already prefixes "/api"
+router = APIRouter(prefix="/v1/payout", tags=["Payouts"])
 
 
 # === REQUEST MODELS ===
