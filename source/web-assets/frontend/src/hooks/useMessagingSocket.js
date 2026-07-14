@@ -139,6 +139,13 @@ export const useMessagingSocket = (userId) => {
     return () => socketRef.current.off('user_status_changed', callback);
   };
 
+  const onReactionUpdated = (callback) => {
+    if (!socketRef.current) return () => {};
+
+    socketRef.current.on('reaction_updated', callback);
+    return () => socketRef.current.off('reaction_updated', callback);
+  };
+
   return {
     socket: socketRef.current,
     isConnected,
@@ -150,6 +157,7 @@ export const useMessagingSocket = (userId) => {
     onNewMessage,
     onMessageSent,
     onMessageRead,
-    onUserStatusChanged
+    onUserStatusChanged,
+    onReactionUpdated,
   };
 };

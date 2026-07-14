@@ -3,15 +3,19 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Globe, ArrowLeft, Send, Check, CheckCheck, Circle, Mic, Image as ImageIcon, Smile, Search, Play, Pause, Flag, UserX, MoreVertical } from 'lucide-react';
+import { Globe, ArrowLeft, Send, Check, CheckCheck, Circle, Mic, Image as ImageIcon, Smile, Search, Play, Pause, Flag, UserX, MoreVertical, Gift, Film } from 'lucide-react';
 import { useMessagingSocket } from '@/hooks/useMessagingSocket';
 import VoiceMessageRecorder from '@/components/VoiceMessageRecorder';
 import ImageUploader from '@/components/ImageUploader';
 import GifPicker from '@/components/GifPicker';
 import EmojiReactionPicker from '@/components/EmojiReactionPicker';
+import ComposeEmojiPicker from '@/components/ComposeEmojiPicker';
+import GiftCatalogPicker from '@/components/GiftCatalogPicker';
 import ReportUserModal from '@/components/ReportUserModal';
 import { useVoiceMirrorTarget } from '@/contexts/VoiceMirrorContext';
 import TranslatedSubtitle from '@/components/common/TranslatedSubtitle';
+import { authFetch } from '@/utils/secureAuth';
+import { expandEmojiShortcodes, indexEmojiManifest } from '@/utils/emojiShortcodes';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -29,6 +33,9 @@ export default function Chat() {
   const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
   const [showImageUploader, setShowImageUploader] = useState(false);
   const [showGifPicker, setShowGifPicker] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showGiftPicker, setShowGiftPicker] = useState(false);
+  const [emojiManifest, setEmojiManifest] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
@@ -44,6 +51,14 @@ export default function Chat() {
 
   useEffect(() => {
     fetchCurrentUser();
+    authFetch(`${API}/messaging/emoji-manifest`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (Array.isArray(data?.emojis)) {
+          setEmojiManifest(indexEmojiManifest(data.emojis));
+        }
+      })
+      .catch(() => undefined);
   }, []);
 
   useEffect(() => {
@@ -95,11 +110,23 @@ export default function Chat() {
       }
     });
 
+    const unsubscribeReaction = socket.onReactionUpdated?.((data) => {
+      if (!data?.message_id) return;
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.message_id === data.message_id
+            ? { ...msg, reactions: data.reactions || {} }
+            : msg
+        )
+      );
+    });
+
     return () => {
       unsubscribeNewMessage();
       unsubscribeMessageSent();
       unsubscribeMessageRead();
       unsubscribeUserStatus();
+      unsubscribeReaction?.();
     };
   }, [socket.isConnected, userId]);
 
@@ -113,7 +140,7 @@ export default function Chat() {
 
   const fetchCurrentUser = async () => {
     try {
-      const response = await fetch(`${API}/auth/me`, { });
+      const response = await authFetch(`${API}/auth/me`);
       if (!response.ok) throw new Error('Not authenticated');
       const userData = await response.json();
       setCurrentUser(userData);
@@ -124,8 +151,7 @@ export default function Chat() {
 
   const fetchConversation = async () => {
     try {
-      const response = await fetch(`${API}/messaging/conversation/${userId}`, {
-      });
+      const response = await authFetch(`${API}/messaging/conversation/${userId}`);
       if (!response.ok) throw new Error('Failed to fetch conversation');
       const data = await response.json();
       setMessages(data.messages || []);
@@ -138,7 +164,7 @@ export default function Chat() {
 
   const fetchOtherUser = async () => {
     try {
-      const response = await fetch(`${API}/dating/profile/${userId}`, { });
+      const response = await authFetch(`${API}/dating/profile/${userId}`);
       if (response.ok) {
         const userData = await response.json();
         setOtherUser(userData);
@@ -153,7 +179,7 @@ export default function Chat() {
 
   const fetchUserStatus = async () => {
     try {
-      const response = await fetch(`${API}/messaging/status/${userId}`, { });
+      const response = await authFetch(`${API}/messaging/status/${userId}`);
       if (response.ok) {
         const data = await response.json();
         setOnlineStatus(data);
@@ -221,10 +247,8 @@ export default function Chat() {
 
   const handleVoiceSend = async (audioData, duration) => {
     try {
-      const response = await fetch(`${API}/messaging/send-voice`, {
+      const response = await authFetch(`${API}/messaging/send-voice`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        
         body: JSON.stringify({ receiver_id: userId, audio_data: audioData, duration })
       });
       if (response.ok) {
@@ -238,10 +262,8 @@ export default function Chat() {
 
   const handleImageSend = async (imageData) => {
     try {
-      const response = await fetch(`${API}/messaging/send-image`, {
+      const response = await authFetch(`${API}/messaging/send-image`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        
         body: JSON.stringify({ receiver_id: userId, image_data: imageData })
       });
       if (response.ok) {
@@ -255,10 +277,8 @@ export default function Chat() {
 
   const handleGifSend = async (gifUrl) => {
     try {
-      const response = await fetch(`${API}/messaging/send-gif`, {
+      const response = await authFetch(`${API}/messaging/send-gif`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        
         body: JSON.stringify({ receiver_id: userId, gif_url: gifUrl })
       });
       if (response.ok) {
@@ -273,18 +293,16 @@ export default function Chat() {
   const handleReaction = async (messageId, emoji, action) => {
     try {
       if (action === 'add') {
-        await fetch(`${API}/messaging/add-reaction`, {
+        await authFetch(`${API}/messaging/add-reaction`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          
           body: JSON.stringify({ message_id: messageId, emoji })
         });
       } else {
-        await fetch(`${API}/messaging/remove-reaction/${messageId}/${emoji}`, {
+        await authFetch(`${API}/messaging/remove-reaction/${messageId}/${encodeURIComponent(emoji)}`, {
           method: 'DELETE',
         });
       }
-      // Refresh to get updated reactions
+      // Optimistic update; socket reaction_updated will sync peers
       fetchConversation();
     } catch (error) {
       // console.error('Error handling reaction:', error);
@@ -295,7 +313,7 @@ export default function Chat() {
     if (!window.confirm(`Are you sure you want to block ${otherUser?.name}?`)) return;
     
     try {
-      const response = await fetch(`${API}/reports/block/${userId}`, {
+      const response = await authFetch(`${API}/reports/block/${userId}`, {
         method: 'POST',
       });
       
@@ -312,7 +330,7 @@ export default function Chat() {
 
   const handleUnblockUser = async () => {
     try {
-      const response = await fetch(`${API}/reports/unblock/${userId}`, {
+      const response = await authFetch(`${API}/reports/unblock/${userId}`, {
         method: 'POST',
       });
       
@@ -332,9 +350,8 @@ export default function Chat() {
     }
 
     try {
-      const response = await fetch(
-        `${API}/messaging/search?query=${encodeURIComponent(searchQuery)}&other_user_id=${userId}`,
-        { }
+      const response = await authFetch(
+        `${API}/messaging/search?query=${encodeURIComponent(searchQuery)}&other_user_id=${userId}`
       );
       if (response.ok) {
         const data = await response.json();
@@ -381,7 +398,7 @@ export default function Chat() {
             {/* Text Message */}
             {message.message_type === 'text' && (
               <>
-                <p>{message.content}</p>
+                <p>{expandEmojiShortcodes(message.content, emojiManifest)}</p>
                 {!isOwn && <TranslatedSubtitle text={message.content} tone="solid" />}
               </>
             )}
@@ -603,6 +620,30 @@ export default function Chat() {
           />
         </div>
       )}
+      {showEmojiPicker && (
+        <ComposeEmojiPicker
+          onPick={(token) => {
+            setNewMessage((prev) => `${prev}${token}`);
+            setShowEmojiPicker(false);
+          }}
+          onClose={() => setShowEmojiPicker(false)}
+        />
+      )}
+      {showGiftPicker && (
+        <GiftCatalogPicker
+          mode="monetization"
+          toUserId={userId}
+          onClose={() => setShowGiftPicker(false)}
+          onSent={(result) => {
+            const name = (result as any)?.gift?.name || (result as any)?.gift || 'a gift';
+            if (socket.isConnected) {
+              socket
+                .sendMessage(userId, `🎁 sent you ${name}!`, 'text')
+                .catch(() => undefined);
+            }
+          }}
+        />
+      )}
 
       {/* Input */}
       <div className="bg-black/40 backdrop-blur-xl border-t border-cyan-500/30 px-4 py-4">
@@ -624,11 +665,28 @@ export default function Chat() {
               <ImageIcon className="w-5 h-5" />
             </button>
             <button
+              onClick={() => setShowEmojiPicker(true)}
+              className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-cyan-400"
+              title="Emoji"
+              data-testid="chat-emoji-btn"
+            >
+              <Smile className="w-5 h-5" />
+            </button>
+            <button
               onClick={() => setShowGifPicker(!showGifPicker)}
               className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-cyan-400"
               title="Send GIF"
+              data-testid="chat-gif-btn"
             >
-              <Smile className="w-5 h-5" />
+              <Film className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => setShowGiftPicker(true)}
+              className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-pink-400"
+              title="Send gift"
+              data-testid="chat-gift-btn"
+            >
+              <Gift className="w-5 h-5" />
             </button>
           </div>
 

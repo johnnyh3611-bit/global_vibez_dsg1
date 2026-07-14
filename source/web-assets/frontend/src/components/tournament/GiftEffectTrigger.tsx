@@ -148,7 +148,8 @@ const GiftEffectTrigger = ({
     wsRef.current.send(JSON.stringify({
       type: 'SEND_GIFT',
       data: {
-        sender_id: playerId,
+        sender_id: playerId || 'player',
+        sender_name: playerId || 'Player',
         recipient_id: recipientId,
         recipient_name: recipientName,
         gift_type: giftType,
@@ -229,10 +230,12 @@ const GiftEffectTrigger = ({
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => {
-                  // This would typically open a player selector
+                  // Table-wide gift FX — recipient is the table until a seat picker exists
+                  sendGift(key, 'table', 'Table');
                 }}
                 className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-xl flex items-center justify-center text-xl transition-all border border-white/10"
-                title={key}
+                title={`Send ${key}`}
+                data-testid={`tournament-quick-gift-${key}`}
                 style={{
                   boxShadow: `0 0 15px ${effect.color}40`
                 }}

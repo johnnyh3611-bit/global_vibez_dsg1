@@ -21,11 +21,13 @@ from services.ai_engine import LlmChat, UserMessage
 
 # Import configuration modules
 from config import db, setup_middleware, STRIPE_API_KEY, EMERGENT_LLM_KEY
-from websocket_server import sio, socket_app
+from websocket_server import sio as legacy_sio, socket_app
 # Route registry — all 130+ feature routers live in routes/registry.py.
 # server.py only keeps the imports it actually CALLS at runtime.
 from routes.registry import register_all_routes
-from services.multiplayer import socketio_app, get_multiplayer_stats
+# CRA clients use path=/api/socket.io → multiplayer.sio. Legacy UE5/tools
+# still mount websocket_server at /socket.io below.
+from services.multiplayer import sio, socketio_app, get_multiplayer_stats
 
 # Initialize shared database for route modules  
 from utils.database import initialize_database
@@ -1698,7 +1700,7 @@ from services.room_socket_events import register_room_events
 from services.matchmaking_socket_events import register_matchmaking_events
 from services.would_you_rather_socket_events import register_would_you_rather_events
 
-# Register all Socket.IO events
+# Register all Socket.IO events on the CRA-facing server (/api/socket.io)
 register_omega_events(sio)
 register_bid_whist_events(sio)
 register_underground_spades_events(sio)
@@ -1708,7 +1710,17 @@ register_would_you_rather_events(sio)  # WYR immediate room init
 
 # Treasury live solvency broadcaster (manifesto §4)
 import services.treasury_socketio  # noqa: F401  — registers join/leave handlers
+# DM messaging namespace (/messaging) + stream viewer/gift rooms
+import services.messaging_socketio  # noqa: F401
+import services.streaming_socketio  # noqa: F401
 
-# Mount Socket.IO for real-time multiplayer
+# Legacy Socket.IO mount (UE5 / older clients). Keep handlers mirrored so
+# tools that still hit /socket.io keep working.
+register_omega_events(legacy_sio)
+register_bid_whist_events(legacy_sio)
+register_underground_spades_events(legacy_sio)
+register_room_events(legacy_sio)
+register_matchmaking_events(legacy_sio)
+register_would_you_rather_events(legacy_sio)
 app.mount("/socket.io", socket_app)
 # Cloud config fix

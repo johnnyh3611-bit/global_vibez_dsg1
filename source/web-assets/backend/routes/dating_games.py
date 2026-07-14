@@ -145,12 +145,14 @@ async def submit_answer(answer: AnswerSubmission, request: Request) -> Dict[str,
     
     if game["status"] != "in_progress":
         raise HTTPException(status_code=400, detail="Game is not in progress")
+
+    player_id = current_user.user_id
     
     # Store answer
     if answer.question_id not in game["answers"]:
         game["answers"][answer.question_id] = {}
     
-    game["answers"][answer.question_id][answer.player_id] = answer.answer
+    game["answers"][answer.question_id][player_id] = answer.answer
     
     # Calculate scores for different game types
     if game["game_type"] == "partner_quiz":
@@ -161,7 +163,7 @@ async def submit_answer(answer: AnswerSubmission, request: Request) -> Dict[str,
             answers_list = list(question_answers.values())
             if answers_list[0].lower() == answers_list[1].lower():
                 # Answers match! Award points
-                if answer.player_id in game["couple_1"]:
+                if player_id in game["couple_1"]:
                     game["scores"]["couple_1"] += 10
                 else:
                     game["scores"]["couple_2"] += 10
@@ -170,7 +172,7 @@ async def submit_answer(answer: AnswerSubmission, request: Request) -> Dict[str,
         # Check if answer is correct
         question = next((q for q in game["questions"] if q["id"] == answer.question_id), None)
         if question and answer.answer == question["correct"]:
-            if answer.player_id in game["couple_1"]:
+            if player_id in game["couple_1"]:
                 game["scores"]["couple_1"] += 10
             else:
                 game["scores"]["couple_2"] += 10
@@ -240,7 +242,7 @@ async def send_chat_message(chat: ChatMessage, request: Request) -> Dict[str, An
     
     message = {
         "message_id": str(uuid.uuid4()),
-        "sender_id": chat.sender_id,
+        "sender_id": current_user.user_id,
         "message": chat.message,
         "timestamp": datetime.now(timezone.utc).isoformat()
     }
@@ -264,7 +266,8 @@ async def send_reaction(reaction: Reaction, request: Request) -> Dict[str, Any]:
     
     reaction_data = {
         "reaction_id": str(uuid.uuid4()),
-        "sender_id": reaction.sender_id,
+        # Always trust the authenticated user — ignore client-spoofed sender_id
+        "sender_id": current_user.user_id,
         "reaction": reaction.reaction,
         "timestamp": datetime.now(timezone.utc).isoformat()
     }

@@ -7,6 +7,7 @@ import { Heart, Trophy, MessageCircle, Smile, ThumbsUp, Laugh, Lightbulb, ArrowL
 import AppFooter from '@/components/AppFooter';
 import cardSoundManager from '@/utils/cardSoundManager';
 import ParticleEffectsOverlay, { ConfettiCelebration } from '@/components/ParticleEffectsOverlay';
+import { authFetch, getUserId } from '@/utils/secureAuth';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -18,6 +19,7 @@ export default function PartnerQuizGame() {
   const [currentAnswer, setCurrentAnswer] = useState('');
   const [chatMessage, setChatMessage] = useState('');
   const [showResults, setShowResults] = useState(false);
+  const me = getUserId();
   
   // AAA Card Juice
   const [showConfetti, setShowConfetti] = useState(false);
@@ -31,8 +33,7 @@ export default function PartnerQuizGame() {
 
   const fetchGame = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/dating-games/game/${gameId}`, {
-      });
+      const response = await authFetch(`${API_URL}/api/dating-games/game/${gameId}`);
       if (response.ok) {
         const data = await response.json();
         setGame(data);
@@ -48,7 +49,7 @@ export default function PartnerQuizGame() {
   };
 
   const submitAnswer = async () => {
-    if (!currentAnswer.trim()) return;
+    if (!currentAnswer.trim() || !me) return;
 
     // AAA Card Juice
     cardSoundManager.playCardSlam();
@@ -56,15 +57,13 @@ export default function PartnerQuizGame() {
     setTimeout(() => setParticleTrigger(null), 100);
 
     try {
-      const response = await fetch(`${API_URL}/api/dating-games/answer`, {
+      const response = await authFetch(`${API_URL}/api/dating-games/answer`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        
         body: JSON.stringify({
           game_id: gameId,
           question_id: game.questions[game.current_question].id,
           answer: currentAnswer,
-          player_id: 'current_user' // Will be set by backend
+          player_id: me,
         })
       });
 
@@ -78,17 +77,15 @@ export default function PartnerQuizGame() {
   };
 
   const sendChatMessage = async () => {
-    if (!chatMessage.trim()) return;
+    if (!chatMessage.trim() || !me) return;
 
     try {
-      await fetch(`${API_URL}/api/dating-games/chat`, {
+      await authFetch(`${API_URL}/api/dating-games/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        
         body: JSON.stringify({
           game_id: gameId,
           message: chatMessage,
-          sender_id: 'current_user'
+          sender_id: me,
         })
       });
       setChatMessage('');
@@ -99,15 +96,14 @@ export default function PartnerQuizGame() {
   };
 
   const sendReaction = async (reaction) => {
+    if (!me) return;
     try {
-      await fetch(`${API_URL}/api/dating-games/reaction`, {
+      await authFetch(`${API_URL}/api/dating-games/reaction`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        
         body: JSON.stringify({
           game_id: gameId,
           reaction: reaction,
-          sender_id: 'current_user'
+          sender_id: me,
         })
       });
     } catch (error) {

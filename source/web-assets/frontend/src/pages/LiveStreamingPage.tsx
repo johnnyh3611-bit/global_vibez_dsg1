@@ -1,10 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Radio, Users, Eye, TrendingUp, Play, Maximize2, Volume2, Heart, MessageCircle, Share2, Filter, Loader } from 'lucide-react';
+import { Radio, Users, Eye, TrendingUp, Play, Maximize2, Volume2, Heart, MessageCircle, Share2, Filter, Loader, Gift, Sparkles } from 'lucide-react';
 import UnifiedNavigation from '../components/hub/UnifiedNavigation';
+import GiftCatalogPicker from '../components/GiftCatalogPicker';
 import { useStreamSocket } from '../hooks/useStreamSocket';
+import { getUserId, getUsername } from '../utils/secureAuth';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -15,6 +17,10 @@ const LiveStreamingPage = () => {
   const [liveStreams, setLiveStreams] = useState([]);
   const [categories, setCategories] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
+  const [showGifts, setShowGifts] = useState(false);
+  const [giftFx, setGiftFx] = useState(null);
+  const me = getUserId();
+  const username = getUsername();
 
   // WebSocket for real-time stream updates
   const { 
@@ -23,8 +29,9 @@ const LiveStreamingPage = () => {
     joinStream, 
     leaveStream,
     onViewerJoined,
-    onViewerLeft 
-  } = useStreamSocket('current_user', 'Demo User');
+    onViewerLeft,
+    onNewGiftEffect,
+  } = useStreamSocket(me, username);
 
   // Fetch live streams from backend
   useEffect(() => {
@@ -52,11 +59,21 @@ const LiveStreamingPage = () => {
       }
     });
 
+    const unsubGift = onNewGiftEffect((data) => {
+      setGiftFx({
+        id: Date.now(),
+        gift: data?.gift || data?.gift_code || 'Gift',
+        multiplier: data?.multiplier,
+      });
+      window.setTimeout(() => setGiftFx(null), 4000);
+    });
+
     return () => {
       unsubJoin();
       unsubLeave();
+      unsubGift();
     };
-  }, [onViewerJoined, onViewerLeft, selectedStream]);
+  }, [onViewerJoined, onViewerLeft, onNewGiftEffect, selectedStream]);
 
   // Handle stream selection and WebSocket join
   const handleStreamClick = async (stream) => {
@@ -138,6 +155,23 @@ const LiveStreamingPage = () => {
                 </span>
               </div>
 
+              <AnimatePresence>
+                {giftFx && (
+                  <motion.div
+                    key={giftFx.id}
+                    initial={{ opacity: 0, scale: 0.85 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                  >
+                    <div className="bg-black/70 border border-amber-400/50 rounded-2xl px-6 py-4 text-center">
+                      <Sparkles className="w-7 h-7 text-amber-300 mx-auto mb-1" />
+                      <p className="text-white font-black">{giftFx.gift}</p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               {/* Controls */}
               <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -182,6 +216,18 @@ const LiveStreamingPage = () => {
                   <Heart className="w-5 h-5" />
                   Follow
                 </motion.button>
+                {me && (
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setShowGifts(true)}
+                    className="px-6 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-amber-100 font-bold rounded-xl flex items-center gap-2 transition-all"
+                    data-testid="live-stream-gift-btn"
+                  >
+                    <Gift className="w-5 h-5" />
+                    Gift
+                  </motion.button>
+                )}
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -194,6 +240,23 @@ const LiveStreamingPage = () => {
           </motion.div>
         </div>
       ) : null}
+
+      {showGifts && selectedStream && (
+        <GiftCatalogPicker
+          mode="streaming"
+          streamId={selectedStream.id || selectedStream.stream_id || selectedStream.input_id}
+          toUserId={selectedStream.hostId || selectedStream.streamer_id}
+          onClose={() => setShowGifts(false)}
+          onSent={(result) => {
+            setGiftFx({
+              id: Date.now(),
+              gift: result?.gift || 'Gift sent!',
+              multiplier: result?.multiplier,
+            });
+            window.setTimeout(() => setGiftFx(null), 4000);
+          }}
+        />
+      )}
 
       {/* Main Content */}
       <div className="pt-20 sm:pt-24 pb-12 px-4 sm:px-6">

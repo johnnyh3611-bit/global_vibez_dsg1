@@ -503,6 +503,17 @@ async def add_reaction(data: AddReactionRequest, request: Request) -> Dict[str, 
         {"message_id": data.message_id},
         {"$set": {"reactions": message["reactions"]}}
     )
+
+    try:
+        from services.messaging_socketio import broadcast_reaction_updated
+        await broadcast_reaction_updated(
+            message_id=data.message_id,
+            reactions=message["reactions"],
+            actor_id=current_user.user_id,
+            participant_ids=[message.get("sender_id"), message.get("receiver_id")],
+        )
+    except Exception:
+        pass
     
     return {
         "success": True,
@@ -518,6 +529,13 @@ async def remove_reaction(message_id: str, emoji: str, request: Request) -> Dict
         raise HTTPException(status_code=401, detail="Not authenticated")
     
     db = get_database()
+
+    message = await db.messages.find_one(
+        {"message_id": message_id},
+        {"_id": 0}
+    )
+    if not message:
+        raise HTTPException(status_code=404, detail="Message not found")
     
     # Remove user from reaction list
     result = await db.messages.update_one(
@@ -527,17 +545,47 @@ async def remove_reaction(message_id: str, emoji: str, request: Request) -> Dict
     
     if result.modified_count > 0:
         # Get updated reactions
-        message = await db.messages.find_one(
+        updated = await db.messages.find_one(
             {"message_id": message_id},
             {"_id": 0, "reactions": 1}
         )
+        reactions = (updated or {}).get("reactions", {})
+
+        try:
+            from services.messaging_socketio import broadcast_reaction_updated
+            await broadcast_reaction_updated(
+                message_id=message_id,
+                reactions=reactions,
+                actor_id=current_user.user_id,
+                participant_ids=[message.get("sender_id"), message.get("receiver_id")],
+            )
+        except Exception:
+            pass
         
         return {
             "success": True,
-            "reactions": message.get("reactions", {})
+            "reactions": reactions
         }
     
     return {"success": False, "error": "Reaction not found"}
+
+
+@router.get("/emoji-manifest")
+async def emoji_manifest(include_premium: bool = True) -> Dict[str, Any]:
+    """Custom inline emoji codes for chat compose/render (:vibez_fire:, etc.)."""
+    from utils.emoji_manifest import get_manifest
+    manifest = get_manifest(include_premium=include_premium)
+    return {
+        "success": True,
+        "emojis": [
+            {
+                "code": code,
+                "shortcode": f":{code}:",
+                **meta,
+            }
+            for code, meta in manifest.items()
+        ],
+    }
 
 
 # ==================== MESSAGE SEARCH ====================
