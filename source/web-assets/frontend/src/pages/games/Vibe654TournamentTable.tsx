@@ -22,7 +22,7 @@ const Vibe654TournamentTable = () => {
 
   const fetchTableStatus = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = (localStorage.getItem('auth_token') || localStorage.getItem('token'));
       const response = await fetch(`${API}/api/vibe654/tournament/table/${tableId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -42,7 +42,7 @@ const Vibe654TournamentTable = () => {
 
   const handleStartTournament = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = (localStorage.getItem('auth_token') || localStorage.getItem('token'));
       const response = await fetch(
         `${API}/api/vibe654/tournament/start-tournament/${tableId}?host_user_id=${userId}`,
         {
@@ -66,7 +66,7 @@ const Vibe654TournamentTable = () => {
     setPlayingRound(true);
     setRoundResult(null);
     try {
-      const token = localStorage.getItem('token');
+      const token = (localStorage.getItem('auth_token') || localStorage.getItem('token'));
       const response = await fetch(`${API}/api/vibe654/tournament/play-round/${tableId}`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }

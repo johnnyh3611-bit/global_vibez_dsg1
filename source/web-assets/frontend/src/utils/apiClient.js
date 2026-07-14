@@ -49,7 +49,8 @@ const request = async (method, endpoint, options = {}) => {
     body,
     credentials = 'include', // Include cookies by default
     showSuccessToast = false,
-    showErrorToast = true,
+    // Default off for GETs to avoid toast spam from background polls.
+    showErrorToast = method !== 'GET',
     successMessage,
     timeout = 30000
   } = options;
@@ -74,18 +75,11 @@ const request = async (method, endpoint, options = {}) => {
 
     // Handle different status codes
     if (response.status === 401) {
-      // Unauthorized - redirect to login
+      // Do not hard-redirect — ProtectedRoute owns login redirects.
+      // Callers can opt into toasts via showErrorToast: true.
       if (showErrorToast) {
         toast.error('Session expired. Please login again.');
       }
-      
-      // Only redirect if not already on login page
-      if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/auth')) {
-        setTimeout(() => {
-          window.location.href = '/login';
-        }, 1500);
-      }
-      
       throw new APIError('Unauthorized', 401);
     }
 

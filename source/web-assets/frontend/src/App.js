@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef, Suspense } from "react";
+import { clearLegacyTokenDupes } from "@/utils/secureAuth";
 import "@/App.css";
 
 // Install global guard FIRST — before any third-party SDK imports run —
@@ -368,6 +369,7 @@ function AppRouter() {
 export default function App() {
   // Start version monitoring on app mount
   useEffect(() => {
+    clearLegacyTokenDupes();
     startVersionMonitoring();
   }, []);
 

@@ -146,6 +146,52 @@ async def debit_wallet(user_id: str, amount: float, description: str, metadata: 
     }
 
 # API Endpoints
+@router.get("/overview")
+async def get_wallet_overview(request: Request) -> Dict[str, Any]:
+    """
+    Lightweight dashboard overview for Celestial Glasshouse / chair proof UI.
+    Returns coin-wallet balance plus best-effort Solana chair fields when present.
+    """
+    from utils.database import get_current_user
+
+    user = await get_current_user(request)
+    user_id = None
+    if user is not None:
+        user_id = getattr(user, "user_id", None) or getattr(user, "id", None)
+    if not user_id:
+        # Anonymous / unauthenticated — still return a stable shape for the panel.
+        return {
+            "publicKey": "",
+            "hasChair": False,
+            "chairUnitsOwned": 0,
+            "solBalance": 0.0,
+            "rpcUrl": os.getenv("SOLANA_RPC_URL", ""),
+            "rpcError": "Not authenticated",
+            "creditBalance": 0.0,
+        }
+
+    wallet = await get_wallet(user_id)
+    chair = await db.chairs.find_one({"user_id": user_id}, {"_id": 0}) or {}
+    sol_wallet = await db.solana_wallets.find_one({"user_id": user_id}, {"_id": 0}) or {}
+    public_key = (
+        sol_wallet.get("public_key")
+        or sol_wallet.get("publicKey")
+        or chair.get("wallet_pubkey")
+        or ""
+    )
+    units = int(chair.get("units") or chair.get("chair_units") or 0)
+    return {
+        "publicKey": public_key or f"user:{user_id}",
+        "hasChair": units > 0 or bool(chair.get("has_chair")),
+        "chairUnitsOwned": units,
+        "solBalance": float(sol_wallet.get("sol_balance") or sol_wallet.get("balance") or 0),
+        "rpcUrl": os.getenv("SOLANA_RPC_URL", ""),
+        "rpcError": None,
+        "creditBalance": float(wallet.get("balance") or 0),
+        "user_id": user_id,
+    }
+
+
 @router.get("/balance/{user_id}")
 async def get_wallet_balance(user_id: str) -> Dict[str, Any]:
     """Get user's current wallet balance"""

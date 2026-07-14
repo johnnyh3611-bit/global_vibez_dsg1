@@ -53,7 +53,7 @@ export function GamesMenu() {
 
   const fetchUserStats = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = (localStorage.getItem('auth_token') || localStorage.getItem('token'));
       if (!token) return;
 
       const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/stats/detailed`, {

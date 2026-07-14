@@ -532,8 +532,10 @@ async def _send_invite_email(to_email: str, name: str, token: str) -> bool:
     """Async, non-blocking. Returns True if Resend accepted the message."""
     api_key = os.environ.get("RESEND_API_KEY")
     sender = os.environ.get("RESEND_SENDER_EMAIL", "support@globalvibezdsg.com")
-    frontend_base = os.environ.get(
-        "REACT_APP_BACKEND_URL", "https://globalvibezdsg.com"
+    frontend_base = (
+        os.environ.get("FRONTEND_URL")
+        or os.environ.get("REACT_APP_FRONTEND_URL")
+        or "https://www.globalvibezdsg.com"
     )
     if not api_key:
         logger.warning("RESEND_API_KEY missing — skipping invite email")

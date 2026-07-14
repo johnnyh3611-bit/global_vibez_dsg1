@@ -166,7 +166,7 @@ export default function VibeSuitesDiscovery() {
   useEffect(() => {
     const fetchBalance = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = (localStorage.getItem('auth_token') || localStorage.getItem('token'));
         const r = await fetch(`${API}/api/vibe-suites/me/balance`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
@@ -202,7 +202,7 @@ export default function VibeSuitesDiscovery() {
 
   const handleJoinSuite = async (suite) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = (localStorage.getItem('auth_token') || localStorage.getItem('token'));
       const response = await fetch(`${API}/api/vibe-suites/join`, {
         method: 'POST',
         headers: {

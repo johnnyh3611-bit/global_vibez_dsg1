@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Wallet, CreditCard, Gift, Send, ArrowRight, Sparkles } from 'lucide-react';
+import { authFetch, getUserId, getBearerToken } from '@/utils/secureAuth';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -24,9 +25,9 @@ export default function CreditsWallet() {
   const fetchWalletData = async () => {
     try {
       const [balanceRes, packagesRes, transactionsRes] = await Promise.all([
-        fetch(`${API_URL}/api/wallet/balance`, { }),
-        fetch(`${API_URL}/api/wallet/packages`, { }),
-        fetch(`${API_URL}/api/wallet/transactions?limit=10`, { })
+        authFetch(`${API_URL}/api/wallet/balance`, { }),
+        authFetch(`${API_URL}/api/wallet/packages`, { }),
+        authFetch(`${API_URL}/api/wallet/transactions?limit=10`, { })
       ]);
 
       if (balanceRes.ok) {
@@ -52,7 +53,7 @@ export default function CreditsWallet() {
 
   const purchasePackage = async (packageId) => {
     try {
-      const response = await fetch(`${API_URL}/api/wallet/purchase`, {
+      const response = await authFetch(`${API_URL}/api/wallet/purchase`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         
@@ -79,7 +80,7 @@ export default function CreditsWallet() {
     }
 
     try {
-      const response = await fetch(`${API_URL}/api/gift-cards/create`, {
+      const response = await authFetch(`${API_URL}/api/gift-cards/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         
@@ -113,7 +114,7 @@ export default function CreditsWallet() {
     }
 
     try {
-      const response = await fetch(`${API_URL}/api/gift-cards/redeem`, {
+      const response = await authFetch(`${API_URL}/api/gift-cards/redeem`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         

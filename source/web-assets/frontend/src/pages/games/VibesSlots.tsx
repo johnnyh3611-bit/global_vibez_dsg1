@@ -114,6 +114,8 @@ export default function VibesSlots() {
       }
     } catch (e) {
       clearInterval(rollInterval);
+      console.error('VibesSlots spin failed', e);
+      alert('Spin failed — please try again.');
     }
     setRolling(false);
     setBusy(false);

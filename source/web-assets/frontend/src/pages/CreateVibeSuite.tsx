@@ -81,7 +81,7 @@ export default function CreateVibeSuite() {
 
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = (localStorage.getItem('auth_token') || localStorage.getItem('token'));
       const response = await fetch(`${API}/api/vibe-suites/create`, {
         method: 'POST',
         headers: {

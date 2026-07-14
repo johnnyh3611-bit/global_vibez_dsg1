@@ -6,6 +6,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import SolanaDepositPanel from '@/components/wallet/SolanaDepositPanel';
 import VibePhoneCard from '@/components/voice/VibePhoneCard';
 import WalletMemoCard from '@/components/wallet/WalletMemoCard';
+import { authFetch, getUserId } from '@/utils/secureAuth';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -14,7 +15,7 @@ export default function VibeWallet() {
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get('session_id');
   
-  const [userId] = useState('test_user_wallet');
+  const [userId, setUserId] = useState(() => getUserId() || '');
   const [balance, setBalance] = useState(0);
   const [packages, setPackages] = useState([]);
   const [transactions, setTransactions] = useState([]);
@@ -22,19 +23,44 @@ export default function VibeWallet() {
   const [paymentStatus, setPaymentStatus] = useState(null);
 
   useEffect(() => {
-    fetchBalance();
-    fetchPackages();
-    fetchTransactions();
-    
-    // Check payment status if returning from Stripe
-    if (sessionId) {
-      pollPaymentStatus(sessionId);
-    }
+    let cancelled = false;
+    (async () => {
+      let uid = getUserId();
+      if (!uid) {
+        try {
+          const me = await authFetch(`${API_URL}/api/auth/me`);
+          if (me.ok) {
+            const data = await me.json();
+            uid = data.user_id || data.id || '';
+            if (uid) {
+              localStorage.setItem('user_id', uid);
+              if (!cancelled) setUserId(uid);
+            }
+          }
+        } catch {
+          /* ignore */
+        }
+      } else if (!cancelled) {
+        setUserId(uid);
+      }
+      if (!cancelled && uid) {
+        fetchBalance(uid);
+        fetchTransactions(uid);
+      }
+      fetchPackages();
+      if (sessionId) {
+        pollPaymentStatus(sessionId);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [sessionId]);
 
-  const fetchBalance = async () => {
+  const fetchBalance = async (uid = userId) => {
+    if (!uid) return;
     try {
-      const res = await fetch(`${API_URL}/api/wallet/balance/${userId}`);
+      const res = await authFetch(`${API_URL}/api/wallet/balance/${uid}`);
       const data = await res.json();
       if (data.success) {
         setBalance(data.balance);
@@ -66,9 +92,10 @@ export default function VibeWallet() {
     }
   };
 
-  const fetchTransactions = async () => {
+  const fetchTransactions = async (uid = userId) => {
+    if (!uid) return;
     try {
-      const res = await fetch(`${API_URL}/api/wallet/transactions/${userId}?limit=10`);
+      const res = await authFetch(`${API_URL}/api/wallet/transactions/${uid}?limit=10`);
       const data = await res.json();
       if (data.success) {
         setTransactions(data.transactions);

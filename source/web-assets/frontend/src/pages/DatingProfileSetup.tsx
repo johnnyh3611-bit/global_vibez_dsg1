@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Heart, Camera, MapPin, Sparkles, Gamepad2, 
-  Target, Users, Check, Upload, X, Loader2 
+import {
+  Heart, Camera, MapPin, Sparkles, Gamepad2,
+  Target, Users, Check, Upload, X, Loader2,
 } from 'lucide-react';
+import { authFetch, getBearerToken } from '@/utils/secureAuth';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -83,7 +84,7 @@ export function DatingProfileSetup() {
 
   const loadExistingProfile = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/dating/profile/me`, {
+      const response = await authFetch(`${API_URL}/api/dating/profile/me`, {
       });
 
       if (response.ok) {
@@ -125,7 +126,7 @@ export function DatingProfileSetup() {
         const uploadBody = new FormData();
         uploadBody.append('file', file);
 
-        const response = await fetch(`${API_URL}/api/uploads/dating-photo`, {
+        const response = await authFetch(`${API_URL}/api/uploads/dating-photo`, {
           method: 'POST',
           
           headers: {
@@ -227,7 +228,7 @@ export function DatingProfileSetup() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/dating/profile/update`, {
+      const response = await authFetch(`${API_URL}/api/dating/profile/update`, {
         method: 'POST',
         
         headers: {

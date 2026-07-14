@@ -199,8 +199,8 @@ async def purchase_credits(purchase: CreditPurchase, request: Request) -> Dict[s
                 'quantity': 1,
             }],
             mode='payment',
-            success_url=f'{os.environ.get("REACT_APP_BACKEND_URL", "http://localhost:3000")}/payment/success?session_id={{CHECKOUT_SESSION_ID}}&type=credits&package={purchase.package}',
-            cancel_url=f'{os.environ.get("REACT_APP_BACKEND_URL", "http://localhost:3000")}/payment/cancel',
+            success_url=f'{os.environ.get("FRONTEND_URL") or os.environ.get("REACT_APP_FRONTEND_URL") or "https://www.globalvibezdsg.com"}/payment/success?session_id={{CHECKOUT_SESSION_ID}}&type=credits&package={purchase.package}',
+            cancel_url=f'{os.environ.get("FRONTEND_URL") or os.environ.get("REACT_APP_FRONTEND_URL") or "https://www.globalvibezdsg.com"}/payment/cancel',
             client_reference_id=current_user.user_id,
             metadata={
                 'type': 'credits',
@@ -251,8 +251,8 @@ async def subscribe(subscription: SubscriptionPurchase, request: Request) -> Dic
                 'quantity': 1,
             }],
             mode='subscription' if subscription.billing_period == 'monthly' else 'payment',
-            success_url=f'{os.environ.get("REACT_APP_BACKEND_URL", "http://localhost:3000")}/payment/success?session_id={{CHECKOUT_SESSION_ID}}&type=subscription&tier={subscription.tier}&period={subscription.billing_period}',
-            cancel_url=f'{os.environ.get("REACT_APP_BACKEND_URL", "http://localhost:3000")}/payment/cancel',
+            success_url=f'{os.environ.get("FRONTEND_URL") or os.environ.get("REACT_APP_FRONTEND_URL") or "https://www.globalvibezdsg.com"}/payment/success?session_id={{CHECKOUT_SESSION_ID}}&type=subscription&tier={subscription.tier}&period={subscription.billing_period}',
+            cancel_url=f'{os.environ.get("FRONTEND_URL") or os.environ.get("REACT_APP_FRONTEND_URL") or "https://www.globalvibezdsg.com"}/payment/cancel',
             client_reference_id=current_user.user_id,
             metadata={
                 'type': 'subscription',

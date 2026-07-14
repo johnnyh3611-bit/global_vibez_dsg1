@@ -101,7 +101,7 @@ export const SpadesPlayerProfile: React.FC<Props> = ({
     // in) otherwise fall back to the client-known username.
     if (isYou) {
       setLoading(true);
-      authFetch(`${API}/api/users/me`)
+      authFetch(`${API}/api/auth/me`)
         .then((r) => (r.ok ? r.json() : null))
         .then((me) => {
           if (me && (me.username || me.email)) {

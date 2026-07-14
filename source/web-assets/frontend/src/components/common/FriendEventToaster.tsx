@@ -1,21 +1,18 @@
 /**
  * <FriendEventToaster /> — listens to /ws/friend-events/{user_id} and
- * surfaces real-time pop-ups when a friend does something noteworthy:
- *
- *   • VIBEZ_654_SCORE  — friend posts a high 654 score
- *   • JOINED_ROOM      — friend enters a glasshouse
- *   • CALL_INITIATED   — friend started a call
+ * surfaces real-time pop-ups when a friend does something noteworthy.
  *
  * Mount once at app root next to <IncomingCallModal />.
  */
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, X, Trophy, DoorOpen, Phone } from "lucide-react";
-import { getUserId } from "@/utils/secureAuth";
+import { getUserId, getBearerToken } from "@/utils/secureAuth";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 const TOAST_TTL_MS = 5500;
 const MAX_VISIBLE = 3;
+const MAX_RECONNECT_ATTEMPTS = 8;
 
 type Toast = {
   id: string;
@@ -57,19 +54,32 @@ export default function FriendEventToaster() {
 
   useEffect(() => {
     const userId = getUserId();
-    if (!userId || !API) return;
-    const wsUrl = API.replace(/^http/, "ws") + `/api/ws/friend-events/${encodeURIComponent(userId)}`;
+    // Require API + auth session so anonymous/preview pages don't spam reconnects.
+    if (!userId || !API || !getBearerToken()) return;
+
+    const wsUrl =
+      API.replace(/^http/, "ws") +
+      `/api/ws/friend-events/${encodeURIComponent(userId)}`;
     let ws: WebSocket | null = null;
     let reconnect: number | null = null;
+    let attempts = 0;
+    let stopped = false;
 
     const connect = () => {
+      if (stopped) return;
+      if (attempts >= MAX_RECONNECT_ATTEMPTS) return;
       try {
         ws = new WebSocket(wsUrl);
       } catch {
-        reconnect = window.setTimeout(connect, 5000);
+        attempts += 1;
+        const delay = Math.min(30000, 2000 * 2 ** Math.min(attempts, 4));
+        reconnect = window.setTimeout(connect, delay);
         return;
       }
       wsRef.current = ws;
+      ws.onopen = () => {
+        attempts = 0;
+      };
       ws.onmessage = (e) => {
         try {
           const data = JSON.parse(e.data);
@@ -79,16 +89,23 @@ export default function FriendEventToaster() {
           window.setTimeout(() => {
             setToasts((p) => p.filter((t) => t.id !== id));
           }, TOAST_TTL_MS);
-        } catch { /* ignore */ }
+        } catch {
+          /* ignore */
+        }
       };
       ws.onclose = () => {
         wsRef.current = null;
-        reconnect = window.setTimeout(connect, 5000);
+        if (stopped) return;
+        attempts += 1;
+        if (attempts >= MAX_RECONNECT_ATTEMPTS) return;
+        const delay = Math.min(30000, 2000 * 2 ** Math.min(attempts, 4));
+        reconnect = window.setTimeout(connect, delay);
       };
       ws.onerror = () => ws?.close();
     };
     connect();
     return () => {
+      stopped = true;
       if (reconnect !== null) clearTimeout(reconnect);
       ws?.close();
       wsRef.current = null;
@@ -118,19 +135,15 @@ export default function FriendEventToaster() {
             >
               <div className="glass-panel max-w-xs px-3 py-2 flex items-center gap-2">
                 <div
-                  className={`w-9 h-9 rounded-2xl bg-gradient-to-br ${colors} flex items-center justify-center flex-shrink-0`}
+                  className={`w-8 h-8 rounded-full bg-gradient-to-br ${colors} flex items-center justify-center shrink-0`}
                 >
-                  <Icon className="w-4 h-4 text-black" />
+                  <Icon className="w-4 h-4 text-white" />
                 </div>
-                <p
-                  className="flex-1 text-xs text-cyan-100 truncate"
-                  data-testid={`friend-event-toast-${t.event}`}
-                >
-                  {labelFor(t)}
-                </p>
+                <p className="text-sm text-white/90 flex-1">{labelFor(t)}</p>
                 <button
+                  type="button"
                   onClick={() => dismiss(t.id)}
-                  className="text-cyan-400 hover:text-cyan-100"
+                  className="text-white/50 hover:text-white"
                   aria-label="Dismiss"
                 >
                   <X className="w-4 h-4" />

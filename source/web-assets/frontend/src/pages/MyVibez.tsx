@@ -6,6 +6,7 @@ import { VideoGrid } from '@/components/my-vibez/VideoGrid';
 import { VideoRecorder } from '@/components/my-vibez/VideoRecorder';
 import { useToast } from '@/hooks/useToast';
 import { ToastContainer } from '@/components/ToastNotification';
+import { authFetch } from '@/utils/secureAuth';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -25,7 +26,7 @@ export function MyVibez() {
     setLoading(true);
     try {
       const endpoint = activeTab === 'for-you' ? '/api/my-vibez/feed/for-you' : '/api/my-vibez/feed/following';
-      const response = await fetch(`${API}${endpoint}?limit=20`, {
+      const response = await authFetch(`${API}${endpoint}?limit=20`, {
       });
 
       if (!response.ok) throw new Error('Failed to fetch feed');

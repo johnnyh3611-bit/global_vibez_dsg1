@@ -19,12 +19,23 @@ DB_NAME = os.environ.get("DB_NAME") or "global_vibez"
 client = AsyncIOMotorClient(MONGO_URL)
 db = client[DB_NAME]
 
-# Socket.IO server with CORS
+# Socket.IO CORS — align with REST (CORS_ORIGINS). Avoid wildcard in prod.
+_cors_raw = os.environ.get(
+    "CORS_ORIGINS",
+    "https://www.globalvibezdsg.com,https://globalvibezdsg.com",
+)
+_cors_origins = (
+    "*"
+    if _cors_raw.strip() == "*"
+    else [o.strip() for o in _cors_raw.split(",") if o.strip()]
+)
+_is_prod = os.environ.get("RAILWAY_ENVIRONMENT") or os.environ.get("ENV") == "production"
+
 sio = socketio.AsyncServer(
     async_mode='asgi',
-    cors_allowed_origins='*',
-    logger=True,
-    engineio_logger=True
+    cors_allowed_origins=_cors_origins,
+    logger=not _is_prod,
+    engineio_logger=not _is_prod,
 )
 
 # Room management

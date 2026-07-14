@@ -6,10 +6,18 @@
 const API_BASE = (process.env.REACT_APP_BACKEND_URL || '').replace(/\/$/, '');
 
 export function getCurrentUser(): { userId: string; userName: string; token: string | null } {
-  const token = localStorage.getItem('token');
-  const userId = localStorage.getItem('userId') || 'demo_b88a4250';
+  const token =
+    localStorage.getItem('auth_token') ||
+    localStorage.getItem('token') ||
+    null;
+  const userId =
+    localStorage.getItem('user_id') ||
+    localStorage.getItem('userId') ||
+    'demo_b88a4250';
   const userEmail = localStorage.getItem('userEmail') || 'demo@globalvibez.com';
-  const storedName = localStorage.getItem('userName');
+  const storedName =
+    localStorage.getItem('username') ||
+    localStorage.getItem('userName');
   const userName = storedName || userEmail.split('@')[0] || 'Player';
   return { userId, userName, token };
 }

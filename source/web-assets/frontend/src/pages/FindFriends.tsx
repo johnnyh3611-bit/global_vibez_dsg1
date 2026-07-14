@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Heart, X, Sparkles, ArrowLeft, Award, Users, Crown, Coins } from 'lucide-react';
+import { authFetch, getUserId, getBearerToken } from '@/utils/secureAuth';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -25,7 +26,7 @@ export default function FindFriends() {
 
   const fetchPotentialFriends = async () => {
     try {
-      const response = await fetch(`${API}/api/matching/friends/discover?limit=20`, {
+      const response = await authFetch(`${API}/api/matching/friends/discover?limit=20`, {
       });
 
       if (!response.ok) {
@@ -52,7 +53,7 @@ export default function FindFriends() {
     const currentUser = users[currentIndex];
 
     try {
-      const response = await fetch(`${API}/api/matching/friends/swipe`, {
+      const response = await authFetch(`${API}/api/matching/friends/swipe`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         

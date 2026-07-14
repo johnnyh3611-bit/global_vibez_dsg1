@@ -48,23 +48,38 @@ async def get_current_user_from_token(
     Resolve the caller to a user record.
 
     Two accepted auth paths:
-      1. `Authorization: Bearer <token>` — looks up user in db.users.
+      1. `Authorization: Bearer <session_token>` — resolve via user_sessions
+         (same contract as demo-login / authFetch), then load the user.
       2. `admin_session` HttpOnly cookie minted by /api/admin/vault-auth —
          returns a synthetic God-Mode founder user.
-
-    TODO: Replace Bearer lookup with real JWT decoding when ready.
     """
     # Path 2 — vault cookie (accept first; founders bypass Bearer flow)
     if admin_session and verify_admin_session(admin_session):
         return dict(_VAULT_FOUNDER)
 
-    # Path 1 — Bearer token
+    # Path 1 — Bearer session token (never treat the raw token as a user id)
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Unauthorized: Missing token")
 
-    token = authorization.replace("Bearer ", "")
-    user = await db.users.find_one({"id": token}, {"_id": 0})
+    token = authorization.replace("Bearer ", "").strip()
+    if not token:
+        raise HTTPException(status_code=401, detail="Unauthorized: Missing token")
 
+    session = await db.user_sessions.find_one(
+        {"session_token": token}, {"_id": 0}
+    )
+    if not session:
+        session = await db.sessions.find_one(
+            {"session_token": token}, {"_id": 0}
+        )
+    if not session:
+        raise HTTPException(status_code=401, detail="Unauthorized: Invalid token")
+
+    user_id = session.get("user_id")
+    user = await db.users.find_one(
+        {"$or": [{"user_id": user_id}, {"id": user_id}]},
+        {"_id": 0, "password_hash": 0},
+    )
     if not user:
         raise HTTPException(status_code=401, detail="Unauthorized: Invalid token")
 

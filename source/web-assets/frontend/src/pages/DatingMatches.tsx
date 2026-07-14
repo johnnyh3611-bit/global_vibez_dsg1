@@ -6,6 +6,7 @@ import { MatchmakingModal } from '@/components/multiplayer/MatchmakingModal';
 import { TableForTwoModal } from '@/components/TableForTwoModal';
 import { DatePlanModal } from '@/components/DatePlanModal';
 import { VibeScoreCompact } from '@/components/VibeScoreBadge';
+import { authFetch, getUserId, getBearerToken } from '@/utils/secureAuth';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -36,7 +37,7 @@ export function DatingMatches() {
 
   const fetchMatches = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/dating/matches`, {
+      const response = await authFetch(`${API_URL}/api/dating/matches`, {
       });
 
       if (response.ok) {
@@ -52,7 +53,7 @@ export function DatingMatches() {
 
   const handleSendGameInvite = async (match, gameType) => {
     try {
-      const response = await fetch(`${API_URL}/api/dating/invite/game`, {
+      const response = await authFetch(`${API_URL}/api/dating/invite/game`, {
         method: 'POST',
         
         headers: {
@@ -80,7 +81,7 @@ export function DatingMatches() {
 
   const handleVideoCall = async (match) => {
     try {
-      const response = await fetch(`${API_URL}/api/video-call/initiate`, {
+      const response = await authFetch(`${API_URL}/api/video-call/initiate`, {
         method: 'POST',
         
         headers: { 'Content-Type': 'application/json' },
