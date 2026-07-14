@@ -40,7 +40,13 @@ load_dotenv()
 log = logging.getLogger(__name__)
 
 EMERGENT_LLM_KEY = os.environ.get("EMERGENT_LLM_KEY")
-UPLOADS_ROOT = Path("/home/johnnie/master-project/uploads/landing_video")
+_uploads_root = Path(
+    os.environ.get(
+        "UPLOADS_DIR",
+        str(Path(__file__).resolve().parent.parent / "data" / "uploads"),
+    )
+)
+UPLOADS_ROOT = _uploads_root / "landing_video"
 UPLOADS_ROOT.mkdir(parents=True, exist_ok=True)
 
 DEFAULT_PROMPT = (

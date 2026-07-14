@@ -2,13 +2,20 @@ from typing import Dict, Any
 from fastapi import APIRouter, HTTPException, Request, UploadFile, File
 from fastapi.responses import FileResponse
 from pathlib import Path
+import os
 import uuid
 from utils.database import get_database, get_current_user
 
 router = APIRouter(prefix="/profile", tags=["profile_videos"])
 
-# Video upload directory
-UPLOAD_DIR = Path("/home/johnnie/master-project/uploads/uploads/profile_videos")
+# Video upload directory (env override; never hardcode a home path)
+_uploads_root = Path(
+    os.environ.get(
+        "UPLOADS_DIR",
+        str(Path(__file__).resolve().parent.parent / "data" / "uploads"),
+    )
+)
+UPLOAD_DIR = _uploads_root / "profile_videos"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 # Allowed video formats

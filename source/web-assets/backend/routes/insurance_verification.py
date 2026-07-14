@@ -3,13 +3,18 @@ from typing import Optional, Dict, Any
 from pydantic import BaseModel
 from utils.database import get_database, get_current_user
 from datetime import datetime, timezone
+from pathlib import Path
 import uuid
 import os
 
 router = APIRouter(prefix="/insurance-verification", tags=["insurance_verification"])
 
-# Upload directory
-UPLOAD_DIR = "/home/johnnie/master-project/uploads/insurance"
+# Upload directory (env override; never hardcode a home path)
+UPLOAD_DIR = os.environ.get(
+    "UPLOADS_DIR",
+    str(Path(__file__).resolve().parent.parent / "data" / "uploads"),
+)
+UPLOAD_DIR = os.path.join(UPLOAD_DIR, "insurance")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 

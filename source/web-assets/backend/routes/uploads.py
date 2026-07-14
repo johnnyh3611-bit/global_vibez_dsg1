@@ -1,14 +1,20 @@
 from fastapi import APIRouter, HTTPException, Request, UploadFile, File
 from utils.database import get_current_user
 from typing import Optional
+import os
 import uuid
 from pathlib import Path
 
 router = APIRouter(prefix="/uploads", tags=["uploads"])
 
-# Directory for storing uploaded files
-UPLOAD_DIR = Path("/home/johnnie/master-project/uploads")
-UPLOAD_DIR.mkdir(exist_ok=True)
+# Directory for storing uploaded files (env override; never hardcode a home path)
+UPLOAD_DIR = Path(
+    os.environ.get(
+        "UPLOADS_DIR",
+        str(Path(__file__).resolve().parent.parent / "data" / "uploads"),
+    )
+)
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 # Subdirectories for different file types
 (UPLOAD_DIR / "verification_documents").mkdir(exist_ok=True)
