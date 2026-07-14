@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Trophy, Medal, ArrowLeft, Filter, Star } from 'lucide-react';
+import { authFetch } from '@/utils/secureAuth';
 
 const API = process.env.REACT_APP_BACKEND_URL;
+const TRIVIA_API = `${API}/api/games/trivia`;
 
 export default function TriviaLeaderboard() {
   const navigate = useNavigate();
@@ -24,7 +26,7 @@ export default function TriviaLeaderboard() {
   const fetchData = async () => {
     try {
       // Fetch categories
-      const catRes = await fetch(`${API}/api/trivia/categories`);
+      const catRes = await authFetch(`${TRIVIA_API}/categories`);
       if (catRes.ok) {
         const catData = await catRes.json();
         setCategories(catData.categories || []);
@@ -40,7 +42,7 @@ export default function TriviaLeaderboard() {
     setLoading(true);
     try {
       const categoryParam = selectedCategory === 'all' ? '' : `?category=${selectedCategory}`;
-      const response = await fetch(`${API}/api/trivia/leaderboard${categoryParam}`);
+      const response = await authFetch(`${TRIVIA_API}/leaderboard${categoryParam}`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch leaderboard');

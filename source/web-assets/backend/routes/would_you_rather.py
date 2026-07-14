@@ -33,6 +33,17 @@ async def get_random_question(request: Request) -> Dict[str, Any]:
         "game_type": "would_you_rather"
     }
 
+
+@router.get("/prompts")
+async def list_prompts(request: Request, limit: int = 20) -> Dict[str, Any]:
+    """Alias used by some clients/audits — returns a prompt batch."""
+    current_user = await get_current_user(request)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    limit = max(1, min(limit, len(WOULD_YOU_RATHER_QUESTIONS)))
+    prompts = secure_random.sample(WOULD_YOU_RATHER_QUESTIONS, limit)
+    return {"prompts": prompts, "count": len(prompts), "game_type": "would_you_rather"}
+
 @router.get("/question/{question_id}")
 async def get_question(question_id: str, request: Request) -> Dict[str, Any]:
     """Get a specific question"""

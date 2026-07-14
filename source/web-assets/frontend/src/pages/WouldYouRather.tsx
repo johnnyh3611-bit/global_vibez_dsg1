@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { io } from 'socket.io-client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ArrowLeft, Sparkles, TrendingUp, History, Users, CheckCircle } from 'lucide-react';
 import cardSoundManager from '@/utils/cardSoundManager';
 import ParticleEffectsOverlay, { ConfettiCelebration } from '@/components/ParticleEffectsOverlay';
+import { authFetch, getUserId, getUsername } from '@/utils/secureAuth';
 
 const API = process.env.REACT_APP_BACKEND_URL;
+const WYR_API = `${API}/api/games/would-you-rather`;
 
 export default function WouldYouRather() {
   const navigate = useNavigate();
@@ -22,17 +25,56 @@ export default function WouldYouRather() {
   const [myHistory, setMyHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
   const [animating, setAnimating] = useState(false);
+  const [roomCode, setRoomCode] = useState(null);
+  const socketRef = useRef(null);
 
   useEffect(() => {
-    fetchRandomQuestion();
+    // Socket: immediate room init via wyr_room_ready (falls back to HTTP if socket fails)
+    const socket = io(API, {
+      path: '/socket.io',
+      transports: ['websocket', 'polling'],
+      withCredentials: true,
+      reconnection: true,
+    });
+    socketRef.current = socket;
+
+    const onRoomReady = (payload) => {
+      if (payload?.question) {
+        setCurrentQuestion(payload.question);
+        setRoomCode(payload.room_code || null);
+        setSelectedOption(null);
+        setShowResults(false);
+        setVoteStats(null);
+        setLoading(false);
+      }
+    };
+    socket.on('wyr_room_ready', onRoomReady);
+    socket.on('connect', () => {
+      socket.emit('wyr_init_room', {
+        user_id: getUserId(),
+        username: getUsername() || 'Player',
+      });
+    });
+    // HTTP history + HTTP fallback if socket is slow
     fetchMyHistory();
+    const fallback = setTimeout(() => {
+      if (!currentQuestion) fetchRandomQuestion();
+    }, 2500);
+
+    return () => {
+      clearTimeout(fallback);
+      socket.off('wyr_room_ready', onRoomReady);
+      socket.emit('wyr_leave_room');
+      socket.disconnect();
+      socketRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchRandomQuestion = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API}/api/games/would-you-rather/random`, {
-      });
+      const response = await authFetch(`${WYR_API}/random`);
 
       if (!response.ok) throw new Error('Failed to fetch question');
 
@@ -50,8 +92,7 @@ export default function WouldYouRather() {
 
   const fetchMyHistory = async () => {
     try {
-      const response = await fetch(`${API}/api/games/would-you-rather/my-votes?limit=10`, {
-      });
+      const response = await authFetch(`${WYR_API}/my-votes?limit=10`);
 
       if (!response.ok) return;
 
@@ -77,10 +118,14 @@ export default function WouldYouRather() {
     });
     setTimeout(() => setParticleTrigger(null), 100);
 
+    // Live room tally (socket) + durable vote (HTTP)
+    if (socketRef.current?.connected) {
+      socketRef.current.emit('wyr_cast_vote', { choice });
+    }
+
     try {
-      const response = await fetch(`${API}/api/games/would-you-rather/vote`, {
+      const response = await authFetch(`${WYR_API}/vote`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           question_id: currentQuestion.id,
           choice: choice
@@ -107,6 +152,11 @@ export default function WouldYouRather() {
   };
 
   const handleNextQuestion = () => {
+    if (socketRef.current?.connected && roomCode) {
+      setLoading(true);
+      socketRef.current.emit('wyr_next_question', {});
+      return;
+    }
     fetchRandomQuestion();
   };
 

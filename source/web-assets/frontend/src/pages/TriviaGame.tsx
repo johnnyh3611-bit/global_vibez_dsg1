@@ -5,8 +5,10 @@ import { Card } from '@/components/ui/card';
 import { CheckCircle, XCircle, Loader, Award } from 'lucide-react';
 import cardSoundManager from '@/utils/cardSoundManager';
 import ParticleEffectsOverlay, { ConfettiCelebration } from '@/components/ParticleEffectsOverlay';
+import { authFetch } from '@/utils/secureAuth';
 
 const API = process.env.REACT_APP_BACKEND_URL;
+const TRIVIA_API = `${API}/api/games/trivia`;
 
 export default function TriviaGame() {
   const { gameId } = useParams();
@@ -29,8 +31,7 @@ export default function TriviaGame() {
 
   const fetchGameState = async () => {
     try {
-      const response = await fetch(`${API}/api/trivia/game/${gameId}`, {
-      });
+      const response = await authFetch(`${TRIVIA_API}/game/${gameId}`);
 
       if (!response.ok) {
         throw new Error('Failed to fetch game');
@@ -58,10 +59,8 @@ export default function TriviaGame() {
 
     setSubmitting(true);
     try {
-      const response = await fetch(`${API}/api/trivia/game/${gameId}/answer`, {
+      const response = await authFetch(`${TRIVIA_API}/game/${gameId}/answer`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        
         body: JSON.stringify({
           question_id: currentQuestion.id,
           user_answer: selectedAnswer,

@@ -34,6 +34,36 @@ def can_retake_quiz(last_taken_date) -> bool:
 
 # ==================== ENDPOINTS ====================
 
+@router.get("/questions")
+async def quiz_questions_alias(request: Request, quiz_type: str = "friends") -> Dict[str, Any]:
+    """Normalized entry: /api/quiz/questions?quiz_type=friends|dating → typed questions."""
+    quiz_type = (quiz_type or "friends").lower()
+    if quiz_type == "friends":
+        return await get_friends_quiz(request)
+    if quiz_type == "dating":
+        return await get_dating_quiz(request)
+    raise HTTPException(
+        status_code=400,
+        detail="Invalid quiz_type — use friends or dating (or /quiz/{type}/questions)",
+    )
+
+
+@router.post("/submit")
+async def quiz_submit_alias(
+    submission: QuizSubmission, request: Request, quiz_type: str = "friends"
+) -> Dict[str, Any]:
+    """Normalized entry: /api/quiz/submit?quiz_type=friends|dating → typed submit."""
+    quiz_type = (quiz_type or "friends").lower()
+    if quiz_type == "friends":
+        return await submit_friends_quiz(submission, request)
+    if quiz_type == "dating":
+        return await submit_dating_quiz(submission, request)
+    raise HTTPException(
+        status_code=400,
+        detail="Invalid quiz_type — use friends or dating (or /quiz/{type}/submit)",
+    )
+
+
 @router.get("/status")
 async def get_quiz_status(request: Request) -> Dict[str, Any]:
     """Get user's quiz completion status"""
