@@ -28,6 +28,7 @@ import LandingLanguageSwitcher from '../components/LandingLanguageSwitcher';
 import LandingHeaderEnhanced, { type RoomKey } from '../components/landing/LandingHeaderEnhanced';
 import LandingFeatureAccordions from '../components/landing/LandingFeatureAccordions';
 import LandingTourVideo from '../components/landing/LandingTourVideo';
+import LandingOrbitGlobe from '../components/landing/LandingOrbitGlobe';
 import PageActionStrip from '@/components/common/PageActionStrip';
 
 const API = process.env.REACT_APP_BACKEND_URL;
@@ -142,8 +143,12 @@ export default function LandingNeonGaming() {
                 <PublicHealthBadge />
               </div>
 
+              {/* Emergent-era motif: glowing orbit globe beside the brand lockup */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-8 mb-6">
+                <LandingOrbitGlobe />
+
               {/* GLOBAL VIBEZ DSG with Motion Graphics */}
-              <div className="relative mb-6">
+              <div className="relative flex-1 min-w-0">
                 {/* Glitch Background Layer */}
                 <motion.h2
                   animate={{
@@ -151,7 +156,7 @@ export default function LandingNeonGaming() {
                     opacity: [0.3, 0.5, 0.3],
                   }}
                   transition={{ duration: 0.2, repeat: Infinity, repeatDelay: 3 }}
-                  className="absolute text-7xl md:text-8xl font-black leading-none text-cyan-500"
+                  className="absolute text-6xl md:text-7xl lg:text-8xl font-black leading-none text-cyan-500"
                   style={{ filter: 'blur(2px)' }}
                 >
                   GLOBAL
@@ -160,7 +165,7 @@ export default function LandingNeonGaming() {
                 </motion.h2>
 
                 {/* Main Text with Animations */}
-                <h2 className="relative text-7xl md:text-8xl font-black leading-none">
+                <h2 className="relative text-6xl md:text-7xl lg:text-8xl font-black leading-none">
                   {/* GLOBAL - Letter by letter reveal */}
                   <span className="inline-block">
                     {'GLOBAL'.split('').map((letter, i) => (
@@ -318,6 +323,7 @@ export default function LandingNeonGaming() {
                     }}
                   />
                 ))}
+              </div>
               </div>
               
               <div className="space-y-3 mb-8">
