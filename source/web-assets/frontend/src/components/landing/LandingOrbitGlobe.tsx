@@ -3,8 +3,8 @@
  *
  * Glowing globe beside "GLOBAL VIBEZ DSG" with:
  *  - a DSG-labeled orb orbiting inside the globe
- *  - outer satellites for VibeRidez, Hungry Vibez, Vibe Venues,
- *    DSG TV, and DSG Music
+ *  - outer satellites for Dating, Streaming, VibeRidez, Hungry Vibez,
+ *    Vibe Venues, DSG TV, and DSG Music
  */
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -22,29 +22,29 @@ type Satellite = {
 
 const SATELLITES: Satellite[] = [
   {
-    label: "VibeRidez",
-    short: "Ridez",
-    to: "/viberidez",
-    left: "8%",
-    top: "18%",
-    color: "from-emerald-400 to-cyan-500",
-    testid: "landing-orbit-sat-ridez",
+    label: "Dating",
+    short: "Dating",
+    to: "/dating",
+    left: "50%",
+    top: "2%",
+    color: "from-pink-400 to-rose-500",
+    testid: "landing-orbit-sat-dating",
   },
   {
-    label: "Hungry Vibez",
-    short: "Hungry",
-    to: "/hungry-vibez",
-    left: "78%",
-    top: "12%",
-    color: "from-orange-400 to-rose-500",
-    testid: "landing-orbit-sat-hungry",
+    label: "Streaming",
+    short: "Stream",
+    to: "/streams/live",
+    left: "92%",
+    top: "28%",
+    color: "from-purple-400 to-violet-600",
+    testid: "landing-orbit-sat-streaming",
   },
   {
     label: "Vibe Venues",
     short: "Venues",
     to: "/vibe-venues",
     left: "88%",
-    top: "48%",
+    top: "68%",
     color: "from-fuchsia-400 to-purple-500",
     testid: "landing-orbit-sat-venues",
   },
@@ -52,8 +52,8 @@ const SATELLITES: Satellite[] = [
     label: "DSG TV",
     short: "TV",
     to: "/media-master",
-    left: "72%",
-    top: "82%",
+    left: "50%",
+    top: "96%",
     color: "from-violet-400 to-indigo-500",
     testid: "landing-orbit-sat-tv",
   },
@@ -61,10 +61,28 @@ const SATELLITES: Satellite[] = [
     label: "DSG Music",
     short: "Music",
     to: "/dsg/music-group",
-    left: "12%",
-    top: "78%",
+    left: "10%",
+    top: "72%",
     color: "from-pink-400 to-fuchsia-500",
     testid: "landing-orbit-sat-music",
+  },
+  {
+    label: "Hungry Vibez",
+    short: "Hungry",
+    to: "/hungry-vibez",
+    left: "6%",
+    top: "32%",
+    color: "from-orange-400 to-rose-500",
+    testid: "landing-orbit-sat-hungry",
+  },
+  {
+    label: "VibeRidez",
+    short: "Ridez",
+    to: "/viberidez",
+    left: "18%",
+    top: "8%",
+    color: "from-emerald-400 to-cyan-500",
+    testid: "landing-orbit-sat-ridez",
   },
 ];
 
