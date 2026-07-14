@@ -980,7 +980,7 @@ export default function LandingNeonGaming() {
             {/* Brand logo image — PNG is chroma-keyed transparent
                 (Feb 2026). No blend-mode / border / bg classes needed. */}
             <img
-              src="/global-vibez-logo.png?v=10"
+              src="/global-vibez-logo.png?v=11"
               alt="Global Vibez DSG Logo"
               className="h-12 w-auto object-contain drop-shadow-[0_0_14px_rgba(217,70,239,0.55)]"
             />
