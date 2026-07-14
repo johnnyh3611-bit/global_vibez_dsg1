@@ -31,7 +31,6 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 
 from services.ai_engine import LlmChat, UserMessage
-from emergentintegrations.llm.openai import OpenAISpeechToText
 
 load_dotenv()
 log = logging.getLogger(__name__)
@@ -39,6 +38,23 @@ log = logging.getLogger(__name__)
 EMERGENT_LLM_KEY = os.environ.get("EMERGENT_LLM_KEY")
 
 router = APIRouter(prefix="/voice-coach", tags=["voice-coach"])
+
+
+def _speech_to_text_cls():
+    """Lazy import so the router mounts even when the optional package is absent."""
+    try:
+        from emergentintegrations.llm.openai import OpenAISpeechToText
+    except ImportError:
+        try:
+            from emergentintegrations.llm.openai.speech_to_text import (
+                OpenAISpeechToText,
+            )
+        except ImportError as exc:
+            raise HTTPException(
+                503,
+                "Voice coach STT unavailable: install emergentintegrations",
+            ) from exc
+    return OpenAISpeechToText
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -114,7 +130,8 @@ async def voice_question(
         raise HTTPException(400, "Audio is empty")
 
     try:
-        # 1. Transcribe.
+        # 1. Transcribe (optional dep — lazy import).
+        OpenAISpeechToText = _speech_to_text_cls()
         stt = OpenAISpeechToText(api_key=EMERGENT_LLM_KEY)
         buf = io.BytesIO(raw)
         # Whisper expects a name on the file-like; emergentintegrations
