@@ -31,31 +31,31 @@ import { Play, Pause, Volume2, VolumeX, RotateCcw, Captions, Sparkles, Download,
 // dice intro and existing flow stay exactly as-is and the new clips
 // extend the loop for additional wow factor when the narration cycles
 // through B-roll a second time.
+//
+// Clips are first-party under /landing-tour/clips (no Emergent CDN).
 const CLIPS: string[] = [
   // 1 — dice intro (founder explicitly likes this first)
-  "https://customer-assets.emergentagent.com/job_social-connect-953/artifacts/aeaebfxp_e_c_a_d_d_db_c_e_videomp_.mp4",
+  "/landing-tour/clips/01-dice-intro.mp4",
   // 2 — original promo
-  "https://customer-assets.emergentagent.com/job_social-connect-953/artifacts/8s795ybg_mp_%20%281%29.mp4",
+  "/landing-tour/clips/02-game-on.mp4",
   // 3 — original promo
-  "https://customer-assets.emergentagent.com/job_social-connect-953/artifacts/n612sxdb__The_video_will_be_available_for_hours.mp4",
+  "/landing-tour/clips/03-just-for-the-night.mp4",
   // 4 — original promo
-  "https://customer-assets.emergentagent.com/job_social-connect-953/artifacts/p21nztqq_mp_.mp4",
-  // 5 — 2026-05-12 founder-added wow-factor clip ("Now_could_you_make_me_another")
-  "https://customer-assets.emergentagent.com/job_social-connect-953/artifacts/jhcw8qgh_Now_could_you_make_me_another.mp4",
-  // 6 — 2026-05-12 founder-added wow-factor clip ("mp_")
-  "https://customer-assets.emergentagent.com/job_social-connect-953/artifacts/4r7dg2zf_mp_.mp4",
+  "/landing-tour/clips/04-earn-hats.mp4",
+  // 5 — 2026-05-12 founder-added wow-factor clip
+  "/landing-tour/clips/05-wow-factor.mp4",
+  // 6 — 2026-05-12 founder-added wow-factor clip
+  "/landing-tour/clips/06-welcome-home.mp4",
   // 7 — 2026-05-13 founder-added talking-host clip
-  "https://customer-assets.emergentagent.com/job_social-connect-953/artifacts/p3dccmdd_Okay_make_me_one_more_talk_ab.mp4",
+  "/landing-tour/clips/07-meet-host.mp4",
   // 8 — 2026-05-13 founder-added closing wow clip
-  "https://customer-assets.emergentagent.com/job_social-connect-953/artifacts/fdv0cph9_bmp_.mp4",
-  // 9 — 2026-05-16 dating segment B-roll (reuses the cinematic clip-5
-  // asset; we don't have a dedicated dating-only MP4 yet, but the founder
-  // can drop one in later — just swap the URL on this line).
-  "https://customer-assets.emergentagent.com/job_social-connect-953/artifacts/jhcw8qgh_Now_could_you_make_me_another.mp4",
-  // 10 — 2026-05-16 founder-added commercial clip ("generated_video_content"), pairs with Commercial 1 voiceover
-  "https://customer-assets.emergentagent.com/job_social-connect-953/artifacts/ycmjkhqh__http_com_generated_video_content_.mp4",
-  // 11 — 2026-05-16 founder-added commercial clip ("mp4.mp4"), pairs with Commercial 2 voiceover
-  "https://customer-assets.emergentagent.com/job_social-connect-953/artifacts/a0uflv8a_mp4.mp4",
+  "/landing-tour/clips/08-sit-table.mp4",
+  // 9 — dating segment B-roll (reuses clip 5 until a dedicated dating MP4 lands)
+  "/landing-tour/clips/05-wow-factor.mp4",
+  // 10 — commercial 1
+  "/landing-tour/clips/10-commercial-1.mp4",
+  // 11 — commercial 2
+  "/landing-tour/clips/11-commercial-2.mp4",
 ];
 
 // Per-clip caption tags — 2026-05-12 founder enhancement: silent-autoplay

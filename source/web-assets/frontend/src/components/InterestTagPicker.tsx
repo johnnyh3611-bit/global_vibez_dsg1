@@ -6,8 +6,9 @@
  * → synergy flare).
  *
  * Persistence: localStorage `gv_user_interests` + (best-effort) PUT
- * /api/users/me. The Plex join flow reads localStorage on every join,
- * so the picker only ever shows once per device.
+ * /api/users/me/interests (Bearer via authFetch). The Plex join flow
+ * reads localStorage on every join, so the picker only ever shows
+ * once per device.
  */
 import { useEffect, useState } from 'react';
 import {
@@ -16,9 +17,11 @@ import {
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { authFetch, getBearerToken } from '@/utils/secureAuth';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 const STORAGE_KEY = 'gv_user_interests';
+const INTERESTS_API = `${API}/api/users/me/interests`;
 
 export const INTEREST_TAGS = [
   { key: 'music', label: 'Music', Icon: Music2 },
@@ -61,7 +64,20 @@ export default function InterestTagPicker({
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (open) setPicked(loadStoredInterests());
+    if (!open) return;
+    const local = loadStoredInterests();
+    setPicked(local);
+    // Hydrate from server when logged in (local wins if already picked).
+    if (local.length > 0 || !getBearerToken()) return;
+    authFetch(INTERESTS_API)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (Array.isArray(data?.interests) && data.interests.length) {
+          setPicked(data.interests);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data.interests));
+        }
+      })
+      .catch(() => undefined);
   }, [open]);
 
   if (!open) return null;
@@ -75,15 +91,10 @@ export default function InterestTagPicker({
     setBusy(true);
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(picked));
-      // Best-effort sync to profile — non-blocking if endpoint is missing.
-      const token = localStorage.getItem('auth_token');
-      if (token) {
-        fetch(`${API}/api/users/me/interests`, {
+      // Best-effort sync to profile — path is /api/users/me/interests (mounted).
+      if (getBearerToken()) {
+        authFetch(INTERESTS_API, {
           method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
           body: JSON.stringify({ interests: picked }),
         }).catch(() => undefined);
       }
