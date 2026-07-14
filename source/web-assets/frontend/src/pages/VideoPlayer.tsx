@@ -6,6 +6,7 @@ import { CommentsOverlay } from '@/components/my-vibez/CommentsOverlay';
 import { ShareModal } from '@/components/my-vibez/ShareModal';
 import { useToast } from '@/hooks/useToast';
 import { ToastContainer } from '@/components/ToastNotification';
+import { authFetch } from '@/utils/secureAuth';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -41,7 +42,7 @@ export function VideoPlayer() {
 
   const fetchVideo = async () => {
     try {
-      const response = await fetch(`${API}/api/my-vibez/video/${videoId}`, {
+      const response = await authFetch(`${API}/api/my-vibez/video/${videoId}`, {
       });
       if (!response.ok) throw new Error('Video not found');
       const data = await response.json();
@@ -57,7 +58,7 @@ export function VideoPlayer() {
 
   const fetchAllVideos = async () => {
     try {
-      const response = await fetch(`${API}/api/my-vibez/feed/for-you?limit=50`, {
+      const response = await authFetch(`${API}/api/my-vibez/feed/for-you?limit=50`, {
       });
       if (!response.ok) throw new Error('Failed to fetch feed');
       const data = await response.json();
@@ -73,7 +74,7 @@ export function VideoPlayer() {
 
   const checkLikedStatus = async () => {
     try {
-      const response = await fetch(`${API}/api/my-vibez/video/${video.video_id}/liked`, {
+      const response = await authFetch(`${API}/api/my-vibez/video/${video.video_id}/liked`, {
       });
       const data = await response.json();
       setLiked(data.liked);
@@ -84,7 +85,7 @@ export function VideoPlayer() {
 
   const checkFollowingStatus = async () => {
     try {
-      const response = await fetch(`${API}/api/my-vibez/following/${video.creator_id}`, {
+      const response = await authFetch(`${API}/api/my-vibez/following/${video.creator_id}`, {
       });
       const data = await response.json();
       setFollowing(data.following);
@@ -96,7 +97,7 @@ export function VideoPlayer() {
   const toggleLike = async () => {
     try {
       const method = liked ? 'DELETE' : 'POST';
-      const response = await fetch(`${API}/api/my-vibez/video/${video.video_id}/like`, {
+      const response = await authFetch(`${API}/api/my-vibez/video/${video.video_id}/like`, {
         method,
       });
 
@@ -120,7 +121,7 @@ export function VideoPlayer() {
   const toggleFollow = async () => {
     try {
       const method = following ? 'DELETE' : 'POST';
-      const response = await fetch(`${API}/api/my-vibez/follow/${video.creator_id}`, {
+      const response = await authFetch(`${API}/api/my-vibez/follow/${video.creator_id}`, {
         method,
       });
 
@@ -138,7 +139,7 @@ export function VideoPlayer() {
     setShowShare(true);
     
     try {
-      await fetch(`${API}/api/my-vibez/video/${video.video_id}/share`, {
+      await authFetch(`${API}/api/my-vibez/video/${video.video_id}/share`, {
         method: 'POST',
       });
       

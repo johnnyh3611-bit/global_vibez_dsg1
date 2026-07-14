@@ -330,7 +330,8 @@ export default function PracticeGamePlay() {
         <p className="text-white text-lg mb-4">
           Game type "{game.game_type}" UI not yet implemented
         </p>
-        <p className="text-white/60">Backend AI is ready, frontend coming soon!</p>
+        <p className="text-white/60">This practice game id is not supported yet.</p>
+        <a href="/games-menu" className="text-cyan-400 underline mt-2 inline-block">Back to Games Menu</a>
       </div>
     );
   };

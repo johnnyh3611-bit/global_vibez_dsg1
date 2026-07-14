@@ -19,7 +19,7 @@ export const DEFAULT_AVATARS = [
  */
 export async function fetchAvatarFromBackend() {
   try {
-    const token = localStorage.getItem('token');
+    const token = (localStorage.getItem('auth_token') || localStorage.getItem('token'));
     if (!token) return null;
 
     const response = await fetch(`${API_URL}/api/avatars/me`, {
@@ -41,7 +41,7 @@ export async function fetchAvatarFromBackend() {
  */
 export async function saveAvatarToBackend(avatarData) {
   try {
-    const token = localStorage.getItem('token');
+    const token = (localStorage.getItem('auth_token') || localStorage.getItem('token'));
     if (!token) {
       localStorage.setItem('userAvatar', JSON.stringify(avatarData));
       return false;
@@ -75,7 +75,7 @@ export async function saveAvatarToBackend(avatarData) {
  */
 export async function migrateAvatarToBackend() {
   try {
-    const token = localStorage.getItem('token');
+    const token = (localStorage.getItem('auth_token') || localStorage.getItem('token'));
     if (!token) return false;
 
     // Check if there's localStorage data
@@ -143,7 +143,7 @@ export async function updateUserAvatar(avatarData) {
  * Initialize avatar system (call on app load)
  */
 export async function initializeAvatarSystem() {
-  const token = localStorage.getItem('token');
+  const token = (localStorage.getItem('auth_token') || localStorage.getItem('token'));
   if (!token) return;
 
   // Attempt migration from localStorage to backend

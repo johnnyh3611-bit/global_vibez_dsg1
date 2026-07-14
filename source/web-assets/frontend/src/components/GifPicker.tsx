@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
 // Note: In production, get API key from env and use official Giphy SDK
-const GIPHY_API_KEY = process.env.REACT_APP_GIPHY_API_KEY || 'dc6zaTOxFJmzC'; // Fallback to public beta key
+const GIPHY_API_KEY = process.env.REACT_APP_GIPHY_API_KEY || '';
 
 export default function GifPicker({ onSelect, onCancel }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -18,6 +18,7 @@ export default function GifPicker({ onSelect, onCancel }) {
   }, []);
 
   const loadTrendingGifs = async () => {
+    if (!GIPHY_API_KEY) { setGifs([]); return; }
     setLoading(true);
     try {
       const response = await fetch(

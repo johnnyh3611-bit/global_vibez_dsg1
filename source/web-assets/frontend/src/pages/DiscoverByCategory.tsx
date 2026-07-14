@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { authFetch } from '@/utils/secureAuth';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -59,7 +60,7 @@ export default function DiscoverByCategory() {
     if (!currentUser) return;
 
     try {
-      const response = await fetch(`${API_URL}/api/swipe`, {
+      const response = await authFetch(`${API_URL}/api/swipe`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         

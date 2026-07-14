@@ -86,7 +86,7 @@ export default function VRDatingRoom() {
 
   const setupWebSocket = () => {
     const wsUrl = API.replace('https://', 'wss://').replace('http://', 'ws://');
-    const ws = new WebSocket(`${wsUrl}/ws/vr-dating/${roomId}`);
+    const ws = new WebSocket(`${wsUrl}/api/ws/vr_date/${roomId}`);
     
     ws.onopen = () => {
 

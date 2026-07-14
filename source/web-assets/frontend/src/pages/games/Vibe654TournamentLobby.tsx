@@ -24,7 +24,7 @@ const Vibe654TournamentLobby = () => {
 
   const fetchActiveTables = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = (localStorage.getItem('auth_token') || localStorage.getItem('token'));
       const response = await fetch(`${API}/api/vibe654/tournament/tables/active?limit=20`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -42,7 +42,7 @@ const Vibe654TournamentLobby = () => {
   const handleCreateTable = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('token');
+      const token = (localStorage.getItem('auth_token') || localStorage.getItem('token'));
       const userEmail = localStorage.getItem('userEmail') || 'demo@globalvibez.com';
       const userName = userEmail.split('@')[0];
       const userId = localStorage.getItem('userId') || 'demo_b88a4250';
@@ -77,7 +77,7 @@ const Vibe654TournamentLobby = () => {
 
   const handleJoinTable = async (tableId) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = (localStorage.getItem('auth_token') || localStorage.getItem('token'));
       const userEmail = localStorage.getItem('userEmail') || 'demo@globalvibez.com';
       const userName = userEmail.split('@')[0];
       const userId = localStorage.getItem('userId') || 'demo_b88a4250';

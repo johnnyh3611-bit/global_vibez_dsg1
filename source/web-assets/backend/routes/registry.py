@@ -17,6 +17,10 @@ from typing import Optional
 
 from fastapi import APIRouter, FastAPI
 
+# Boot-time mount ledger for GET /api/admin/route-registry
+_MOUNTED: list[str] = []
+_SKIPPED: list[dict] = []
+
 
 def _soft_mount(
     api_router: APIRouter,
@@ -32,9 +36,11 @@ def _soft_mount(
         router = getattr(module, attr)
         api_router.include_router(router, **include_kwargs)
         log.info("mounted %s", label)
+        _MOUNTED.append(label)
         return True
     except Exception as exc:  # noqa: BLE001 — boot must survive flaky routes
         log.warning("registry skip %s: %s", label, exc)
+        _SKIPPED.append({"label": label, "error": str(exc)})
         return False
 
 
@@ -44,6 +50,8 @@ def register_all_routes(
     logger: Optional[logging.Logger] = None,
 ) -> None:
     log = logger or logging.getLogger(__name__)
+    _MOUNTED.clear()
+    _SKIPPED.clear()
 
     # ── Always-on (existing production surface) ──────────────────────
     try:
@@ -692,3 +700,22 @@ def register_all_routes(
     _soft_mount(api_router, log, "vr_physical_bridge", "routes.vr_physical_bridge")
 
     log.info("Wave-5 remaining-surface registry registration complete")
+
+    # Ops visibility — what soft-mounted vs skipped at boot
+    status_router = APIRouter(prefix="/admin/route-registry", tags=["admin-route-registry"])
+
+    @status_router.get("")
+    async def route_registry_status():
+        return {
+            "mounted_count": len(_MOUNTED),
+            "skipped_count": len(_SKIPPED),
+            "mounted": list(_MOUNTED),
+            "skipped": list(_SKIPPED),
+        }
+
+    api_router.include_router(status_router)
+    log.info(
+        "route-registry status endpoint ready (mounted=%s skipped=%s)",
+        len(_MOUNTED),
+        len(_SKIPPED),
+    )

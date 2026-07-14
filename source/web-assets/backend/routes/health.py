@@ -4,6 +4,7 @@ Provides real-time status of all services in the Global Vibez DSG platform
 """
 from fastapi import APIRouter, HTTPException
 from datetime import datetime, timezone
+import os
 import time
 import asyncio
 from typing import Dict, Any
@@ -202,17 +203,24 @@ async def games_health() -> Dict[str, Any]:
 @router.get("/health/frontend")
 async def frontend_health() -> Dict[str, Any]:
     """Check if frontend is accessible"""
+    frontend_url = (
+        os.environ.get("FRONTEND_URL")
+        or os.environ.get("REACT_APP_FRONTEND_URL")
+        or "https://www.globalvibezdsg.com"
+    )
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.get("http://localhost:3000", timeout=5.0)
+            response = await client.get(frontend_url, timeout=5.0)
             return {
                 "status": "online" if response.status_code == 200 else "degraded",
                 "status_code": response.status_code,
+                "url": frontend_url,
                 "build": "react-18",
                 "webpack": "compiled"
             }
     except Exception as e:
         return {
             "status": "offline",
+            "url": frontend_url,
             "error": str(e)
         }

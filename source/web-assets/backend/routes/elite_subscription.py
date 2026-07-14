@@ -269,7 +269,7 @@ async def subscribe_to_elite(subscribe_data: SubscribeTier, request: Request) ->
     
     try:
         stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY)
-        frontend_url = os.environ.get("REACT_APP_BACKEND_URL", "http://localhost:3000")
+        frontend_url = os.environ.get("FRONTEND_URL") or os.environ.get("REACT_APP_FRONTEND_URL") or "https://www.globalvibezdsg.com"
         
         # emergentintegrations uses simple amount/currency format (amount in dollars)
         session_request = CheckoutSessionRequest(

@@ -252,10 +252,10 @@ export default function PracticeBlackjackNormal() {
     }
   };
 
-  // Split (basic - shows alert for now, can be expanded)
+  // Split is not wired to the practice blackjack backend yet — keep the
+  // helper but do not surface a "coming soon" alert in the live UI.
   const split = async () => {
-    alert('Split functionality coming soon! For now, use HIT or STAND.');
-    // TODO: Implement full split logic with backend support
+    return;
   };
 
   // Handle game end

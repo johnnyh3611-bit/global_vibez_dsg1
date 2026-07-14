@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, X, Gamepad2, Sparkles, MessageCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { authFetch, getUserId, getBearerToken } from '@/utils/secureAuth';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -21,7 +22,7 @@ export function DatingDiscovery() {
 
   const fetchContentMatches = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/ai-content-matching/find-matches`, {
+      const response = await authFetch(`${API_URL}/api/ai-content-matching/find-matches`, {
         method: 'POST',
         
         headers: { 'Content-Type': 'application/json' },
@@ -47,7 +48,7 @@ export function DatingDiscovery() {
 
   const fetchProfiles = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/dating/discover?limit=20`, {
+      const response = await authFetch(`${API_URL}/api/dating/discover?limit=20`, {
       });
 
       if (response.ok) {
@@ -67,7 +68,7 @@ export function DatingDiscovery() {
     const currentProfile = profiles[currentIndex];
 
     try {
-      const response = await fetch(`${API_URL}/api/dating/like/${currentProfile.user_id}`, {
+      const response = await authFetch(`${API_URL}/api/dating/like/${currentProfile.user_id}`, {
         method: 'POST',
         
         headers: {

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { authFetch } from '@/utils/secureAuth';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -12,6 +13,7 @@ type WalletOverview = {
 };
 
 function shortWallet(value: string): string {
+  if (!value || value.length < 8) return value || '—';
   return `${value.slice(0, 4)}...${value.slice(-4)}`;
 }
 
@@ -24,7 +26,7 @@ export function CelestialGlasshousePanel() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API}/api/wallet/overview`, { credentials: 'include' });
+      const res = await authFetch(`${API}/api/wallet/overview`);
       if (!res.ok) throw new Error('Unable to load wallet overview');
       const payload = await res.json() as WalletOverview;
       setData(payload);

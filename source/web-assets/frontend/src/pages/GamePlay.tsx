@@ -514,7 +514,11 @@ const GamePlayComplete = () => {
         const data = await response.json();
         setGameState(data);
         
-        const userRes = await fetch(`${API}/api/users/me`, { });
+        const userRes = await fetch(`${API}/api/auth/me`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('auth_token') || localStorage.getItem('token') || ''}`,
+          },
+        });
         if (userRes.ok) {
           const userData = await userRes.json();
           setCurrentUserId(userData.user_id);
