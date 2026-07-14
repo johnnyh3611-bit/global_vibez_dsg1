@@ -35,7 +35,6 @@ const API = process.env.REACT_APP_BACKEND_URL;
 
 export default function LandingNeonGaming() {
   const navigate = useNavigate();
-  const [hoveredGame, setHoveredGame] = useState(null);
   // PDF §2 "Room Transitions" — when a nav link is hovered, shift the
   // page's ambient background tint to evoke the target room.
   const [hoveredRoom, setHoveredRoom] = useState<RoomKey>(null);
@@ -45,13 +44,6 @@ export default function LandingNeonGaming() {
     tokenomics: "rgba(251, 191, 36, 0.18)",   // amber — vault
     lifestyle:  "rgba(232, 121, 249, 0.18)",  // fuchsia — lifestyle
   };
-
-  const games = [
-    { name: 'UNO', image: '/uno-card.png' },
-    { name: 'Poker', image: '/poker-card.png' },
-    { name: 'Chess', image: '/chess-card.png' },
-    { name: 'Blackjack', image: '/blackjack-card.png' },
-  ];
 
   return (
     <div className="min-h-screen bg-black relative">
@@ -143,12 +135,9 @@ export default function LandingNeonGaming() {
                 <PublicHealthBadge />
               </div>
 
-              {/* Emergent-era motif: glowing orbit globe beside the brand lockup */}
-              <div className="flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-8 mb-6">
-                <LandingOrbitGlobe />
-
-              {/* GLOBAL VIBEZ DSG with Motion Graphics */}
-              <div className="relative flex-1 min-w-0">
+              {/* GLOBAL VIBEZ DSG with Motion Graphics — left column.
+                  Planet + DSG orbit live on the opposite (right) side. */}
+              <div className="relative mb-6">
                 {/* Glitch Background Layer */}
                 <motion.h2
                   animate={{
@@ -324,7 +313,6 @@ export default function LandingNeonGaming() {
                   />
                 ))}
               </div>
-              </div>
               
               <div className="space-y-3 mb-8">
                 <p className="text-2xl text-purple-300 font-bold flex items-center gap-2">
@@ -455,68 +443,27 @@ export default function LandingNeonGaming() {
             </div>
           </motion.div>
 
-          {/* Right - Game Cards with Neon Borders */}
+          {/* Right — planet with rooms inside + DSG in orbit.
+              Fills the empty slot opposite GLOBAL VIBEZ DSG (game cards removed). */}
           <motion.div
             initial={{ x: 100, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.3 }}
-            className="relative"
+            className="relative flex items-center justify-center min-h-[320px] lg:min-h-[420px]"
           >
-            <div className="grid grid-cols-2 gap-6">
-              {games.map((game, i) => (
-                <motion.div
-                  key={`item-${i}`}
-                  initial={{ opacity: 0, y: 50 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 + i * 0.1 }}
-                  whileHover={{ scale: 1.05, y: -10 }}
-                  onHoverStart={() => setHoveredGame(i)}
-                  onHoverEnd={() => setHoveredGame(null)}
-                  className="relative group cursor-pointer"
-                >
-                  {/* Neon Glow Border */}
-                  <div 
-                    className="absolute inset-0 bg-gradient-to-br from-fuchsia-500 to-purple-600 rounded-2xl blur-xl opacity-50 group-hover:opacity-100 transition-opacity"
-                  />
-                  
-                  {/* Card */}
-                  <div className="relative bg-black/80 backdrop-blur-xl rounded-2xl border-2 border-purple-500 group-hover:border-fuchsia-500 transition-colors h-48 flex flex-col items-center justify-center overflow-hidden">
-                    {/* Card Image */}
-                    <motion.div
-                      animate={{
-                        scale: hoveredGame === i ? 1.1 : 1,
-                      }}
-                      transition={{ duration: 0.3 }}
-                      className="w-full h-full p-4 flex items-center justify-center"
-                    >
-                      <img 
-                        src={game.image} 
-                        alt={game.name}
-                        className="w-full h-full object-contain"
-                      />
-                    </motion.div>
-                    
-                    {/* Game Name Overlay */}
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/80 to-transparent p-3">
-                      <p className="text-xl font-black text-white group-hover:text-fuchsia-400 transition-colors text-center">
-                        {game.name}
-                      </p>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+            <LandingOrbitGlobe />
 
-            {/* Floating Controller Decoration */}
+            {/* Soft ambient controller watermark behind the planet */}
             <motion.div
               animate={{
                 y: [0, -20, 0],
                 rotate: [0, 5, -5, 0],
               }}
               transition={{ duration: 4, repeat: Infinity }}
-              className="absolute -top-10 -right-10 opacity-30"
+              className="absolute -top-6 -right-6 opacity-20 pointer-events-none"
+              aria-hidden
             >
-              <Gamepad2 className="w-32 h-32 text-fuchsia-500" />
+              <Gamepad2 className="w-28 h-28 text-fuchsia-500" />
             </motion.div>
           </motion.div>
         </div>
