@@ -28,6 +28,9 @@ export default function PracticeBlackjackNormal() {
   const [lastWin, setLastWin] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [sessionId, setSessionId] = useState(null);
+  const [activeHandIndex, setActiveHandIndex] = useState(0);
+  const [splitHands, setSplitHands] = useState(null); // string[][] | null after split
+  const [canSplit, setCanSplit] = useState(false);
 
   const chipValues = [25, 50, 100, 500];
 
@@ -107,6 +110,9 @@ export default function PracticeBlackjackNormal() {
 
       const data = await response.json();
       setSessionId(data.session_id);
+      setActiveHandIndex(0);
+      setSplitHands(null);
+      setCanSplit(Boolean(data.can_split));
 
       // Deal cards with faster animation
       setTimeout(() => {
@@ -163,7 +169,8 @@ export default function PracticeBlackjackNormal() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           session_id: sessionId,
-          action: 'hit'
+          action: 'hit',
+          hand_index: activeHandIndex,
         })
       });
 
@@ -171,7 +178,12 @@ export default function PracticeBlackjackNormal() {
       
       // Update player hand - new card will appear separately via animation
       setPlayerHand(data.player_cards);
-      setPlayerScore(calculateBlackjackValue(data.player_cards));
+      setPlayerScore(data.player_value ?? calculateBlackjackValue(data.player_cards));
+      setCanSplit(false);
+      if (Array.isArray(data.player_hands)) setSplitHands(data.player_hands);
+      if (typeof data.active_hand_index === 'number') {
+        setActiveHandIndex(data.active_hand_index);
+      }
 
       if (data.game_over) {
         setTimeout(() => handleGameEnd(data), 500);
@@ -183,8 +195,6 @@ export default function PracticeBlackjackNormal() {
 
   const stand = async () => {
     if (!sessionId || currentGameState !== 'PLAYER_TURN') return;
-    
-    setCurrentGameState('DEALER_TURN');
 
     try {
       const response = await fetch(`${API_URL}/api/blackjack/action`, {
@@ -192,12 +202,23 @@ export default function PracticeBlackjackNormal() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           session_id: sessionId,
-          action: 'stand'
+          action: 'stand',
+          hand_index: activeHandIndex,
         })
       });
 
       const data = await response.json();
-      
+
+      // Still playing another split hand — switch focus, don't settle yet
+      if (!data.game_over && typeof data.active_hand_index === 'number') {
+        setActiveHandIndex(data.active_hand_index);
+        setPlayerHand(data.player_cards);
+        setPlayerScore(data.player_value ?? calculateBlackjackValue(data.player_cards || []));
+        if (Array.isArray(data.player_hands)) setSplitHands(data.player_hands);
+        return;
+      }
+
+      setCurrentGameState('DEALER_TURN');
       // Immediately reveal dealer's full hand
       setDealerHand(data.dealer_cards);
       
@@ -229,13 +250,21 @@ export default function PracticeBlackjackNormal() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           session_id: sessionId,
-          action: 'double'
+          action: 'double',
+          hand_index: activeHandIndex,
         })
       });
 
       const data = await response.json();
       setPlayerHand(data.player_cards);
-      setPlayerScore(calculateBlackjackValue(data.player_cards));
+      setPlayerScore(data.player_value ?? calculateBlackjackValue(data.player_cards || []));
+      setCanSplit(false);
+
+      if (!data.game_over && typeof data.active_hand_index === 'number') {
+        setActiveHandIndex(data.active_hand_index);
+        if (Array.isArray(data.player_hands)) setSplitHands(data.player_hands);
+        return;
+      }
 
       setTimeout(() => {
         setCurrentGameState('DEALER_TURN');
@@ -252,10 +281,33 @@ export default function PracticeBlackjackNormal() {
     }
   };
 
-  // Split is not wired to the practice blackjack backend yet — keep the
-  // helper but do not surface a "coming soon" alert in the live UI.
   const split = async () => {
-    return;
+    if (!sessionId || currentGameState !== 'PLAYER_TURN' || !canSplit) return;
+    if (credits < currentBet) return;
+
+    try {
+      if (soundEnabled) cardSoundManager.playCardFlip();
+      const response = await fetch(`${API_URL}/api/blackjack/action`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: sessionId,
+          action: 'split',
+          hand_index: 0,
+        })
+      });
+      const data = await response.json();
+      if (!response.ok || !Array.isArray(data.player_hands)) return;
+
+      setCredits((c) => c - currentBet);
+      setSplitHands(data.player_hands);
+      setActiveHandIndex(data.active_hand_index ?? 0);
+      setPlayerHand(data.player_cards || data.player_hands[0]);
+      setPlayerScore(data.player_value ?? calculateBlackjackValue(data.player_cards || []));
+      setCanSplit(false);
+    } catch (error) {
+      // console.error('Split error:', error);
+    }
   };
 
   // Handle game end
@@ -598,6 +650,29 @@ export default function PracticeBlackjackNormal() {
                   }}
                 >
                   DOUBLE
+                </button>
+              )}
+
+              {canSplit && !splitHands && credits >= currentBet && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    split();
+                  }}
+                  style={{
+                    padding: '10px 24px',
+                    backgroundColor: '#39FF14',
+                    color: '#000',
+                    fontWeight: 'bold',
+                    fontSize: '14px',
+                    textTransform: 'uppercase',
+                    border: 'none',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
+                    pointerEvents: 'auto'
+                  }}
+                >
+                  SPLIT
                 </button>
               )}
             </div>

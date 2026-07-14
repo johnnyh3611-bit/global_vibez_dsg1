@@ -24,7 +24,7 @@ class BlackjackAction:
     HIT = "hit"
     STAND = "stand"
     DOUBLE = "double"
-    SPLIT = "split"  # Future enhancement
+    SPLIT = "split"
 
 # Blackjack tables storage (room_code -> table data)
 blackjack_tables: Dict[str, Dict] = {}
@@ -335,8 +335,75 @@ async def player_blackjack_action(room_code: str, session_id: str, action: str) 
         
         if is_bust(player['hand']):
             player['is_bust'] = True
+
+    elif action == BlackjackAction.SPLIT:
+        from services.blackjack_engine import split_dict_hand
+
+        if player.get('split_hands'):
+            return {'error': 'Already split'}
+        if len(player['hand']) != 2:
+            return {'error': 'Can only split a two-card hand'}
+        if player['current_bet'] > player['balance']:
+            return {'error': 'Insufficient balance to split'}
+
+        try:
+            hand_a, hand_b, new_deck = split_dict_hand(player['hand'], table['deck'])
+        except ValueError as exc:
+            return {'error': str(exc)}
+
+        table['deck'] = new_deck
+        player['balance'] -= player['current_bet']
+        player['split_hands'] = [
+            {
+                'hand': hand_a,
+                'bet': player['current_bet'],
+                'score': calculate_hand_value(hand_a),
+                'is_standing': False,
+                'is_bust': is_bust(hand_a),
+            },
+            {
+                'hand': hand_b,
+                'bet': player['current_bet'],
+                'score': calculate_hand_value(hand_b),
+                'is_standing': False,
+                'is_bust': is_bust(hand_b),
+            },
+        ]
+        player['active_hand_index'] = 0
+        player['hand'] = hand_a
+        player['score'] = calculate_hand_value(hand_a)
+        # Stay on this player until both split hands are resolved.
+        if player['split_hands'][0]['is_bust']:
+            player['split_hands'][0]['is_standing'] = True
+            player['active_hand_index'] = 1
+            player['hand'] = hand_b
+            player['score'] = calculate_hand_value(hand_b)
+        return table
     
     # Move to next player or dealer turn
+    # If player has unresolved split hands, keep turn on them.
+    if player.get('split_hands') and action in (
+        BlackjackAction.HIT, BlackjackAction.STAND, BlackjackAction.DOUBLE
+    ):
+        idx = int(player.get('active_hand_index', 0))
+        sh = player['split_hands'][idx]
+        sh['hand'] = player['hand']
+        sh['score'] = player['score']
+        sh['is_bust'] = player.get('is_bust', False)
+        if action in (BlackjackAction.STAND, BlackjackAction.DOUBLE) or sh['is_bust']:
+            sh['is_standing'] = True
+            nxt = idx + 1
+            if nxt < len(player['split_hands']):
+                player['active_hand_index'] = nxt
+                player['hand'] = player['split_hands'][nxt]['hand']
+                player['score'] = player['split_hands'][nxt]['score']
+                player['is_standing'] = False
+                player['is_bust'] = player['split_hands'][nxt]['is_bust']
+                player['current_bet'] = player['split_hands'][nxt]['bet']
+                return table
+            # Both hands done
+            player['is_standing'] = True
+
     await advance_to_next_player(table)
     
     return table

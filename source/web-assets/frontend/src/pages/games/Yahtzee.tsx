@@ -1,6 +1,6 @@
 /**
  * Yahtzee — single-player play table.
- * Wires to /api/games/yahtzee/* (roll, score-roll, fill, totals).
+ * Wires to /api/games/yahtzee/* (roll + fill return events; score-roll/totals still available).
  *
  * Game loop:
  *   1. Roll 5 dice (up to 3 rolls per turn — held dice persist between rolls)
@@ -88,20 +88,19 @@ export default function Yahtzee() {
     });
   }, []);
 
-  const refreshHints = useCallback(async (newDice: number[]) => {
-    const res = await fetch(`${API}/api/games/yahtzee/score-roll`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ dice: newDice, scorecard, yahtzee_bonus_count: yahtzeeBonusCount }),
-    }).then(r => r.json());
-    setScoreHints(res.scores || {});
-  }, [scorecard, yahtzeeBonusCount]);
-
-  const refreshTotals = useCallback(async (sc: Scorecard, bonus: number) => {
-    const res = await fetch(`${API}/api/games/yahtzee/totals`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ scorecard: sc, yahtzee_bonus_count: bonus }),
-    }).then(r => r.json());
-    setTotals(res);
+  /** Apply state-driven events from roll/fill (avoids /score-roll + /totals polls). */
+  const applyEvents = useCallback((events: any[] | undefined) => {
+    if (!Array.isArray(events)) return;
+    for (const ev of events) {
+      if (ev.type === "score_hints" && ev.scores) {
+        setScoreHints(ev.scores);
+      } else if (ev.type === "category_filled" && ev.scorecard?.categories) {
+        setScorecard(ev.scorecard.categories);
+        setYahtzeeBonusCount(ev.scorecard.yahtzee_bonus_count ?? 0);
+      } else if (ev.type === "totals_updated" && ev.totals) {
+        setTotals(ev.totals);
+      }
+    }
   }, []);
 
   const roll = useCallback(async () => {
@@ -109,17 +108,29 @@ export default function Yahtzee() {
     setBusy(true);
     setRolling(true);
     const heldIdx = Array.from(held);
+    const body = hasRolled
+      ? {
+          held: heldIdx,
+          current_dice: dice,
+          scorecard,
+          yahtzee_bonus_count: yahtzeeBonusCount,
+        }
+      : { scorecard, yahtzee_bonus_count: yahtzeeBonusCount };
     const res = await fetch(`${API}/api/games/yahtzee/roll`, {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(hasRolled ? { held: heldIdx, current_dice: dice } : {}),
+      body: JSON.stringify(body),
     }).then(r => r.json());
     setDice(res.dice);
     setRollsLeft(rollsLeft - 1);
     setHasRolled(true);
-    await refreshHints(res.dice);
+    if (res.events) {
+      applyEvents(res.events);
+    } else if (res.scores) {
+      setScoreHints(res.scores);
+    }
     setTimeout(() => setRolling(false), 600);
     setBusy(false);
-  }, [rollsLeft, busy, held, dice, hasRolled, refreshHints]);
+  }, [rollsLeft, busy, held, dice, hasRolled, scorecard, yahtzeeBonusCount, applyEvents]);
 
   const toggleHeld = (idx: number) => {
     if (!hasRolled || rolling) return;
@@ -135,16 +146,20 @@ export default function Yahtzee() {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ category, dice, scorecard, yahtzee_bonus_count: yahtzeeBonusCount }),
     }).then(r => r.json());
-    setScorecard(res.scorecard.categories);
-    setYahtzeeBonusCount(res.scorecard.yahtzee_bonus_count);
-    setTotals(res.totals);
+    if (res.events) {
+      applyEvents(res.events);
+    } else {
+      setScorecard(res.scorecard.categories);
+      setYahtzeeBonusCount(res.scorecard.yahtzee_bonus_count);
+      setTotals(res.totals);
+    }
     // Reset for next turn
     setHeld(new Set());
     setRollsLeft(3);
     setHasRolled(false);
     setScoreHints({});
     setBusy(false);
-  }, [busy, scorecard, dice, yahtzeeBonusCount, hasRolled]);
+  }, [busy, scorecard, dice, yahtzeeBonusCount, hasRolled, applyEvents]);
 
   const newGame = () => {
     if (!constants) return;

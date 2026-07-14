@@ -4,11 +4,15 @@ Real-time multiplayer for the exclusive Underground Club
 """
 
 import secrets
-from typing import Dict, List
+from typing import Any, Dict, List, Optional
 from datetime import datetime, timezone
+
+from services.reconnection_queue import spades_reconnect_queue
 
 # Global games storage
 underground_spades_games = {}
+# sid -> (room_code, player_id) for disconnect mark-offline
+_spades_sid_index: Dict[str, tuple] = {}
 
 
 def fisher_yates_shuffle(deck: List[Dict]) -> List[Dict]:
@@ -51,6 +55,9 @@ class UndergroundSpadesGame:
     
     def add_player(self, player_id: str, player_name: str, sid: str) -> Dict:
         """Add a player to the game"""
+        if player_id in self.players:
+            return self.reconnect_player(player_id, sid)
+
         if len(self.players) >= 4:
             return {'success': False, 'message': 'Game is full'}
         
@@ -72,7 +79,46 @@ class UndergroundSpadesGame:
             'sid': sid
         }
         
-        return {'success': True, 'position': position, 'team': team}
+        return {'success': True, 'position': position, 'team': team, 'reconnected': False}
+
+    def reconnect_player(self, player_id: str, sid: str) -> Dict:
+        """Refresh sid for an existing seat (Socket.IO reconnect / resume)."""
+        player = self.players.get(player_id)
+        if not player:
+            return {'success': False, 'message': 'Player not in game'}
+        player['sid'] = sid
+        return {
+            'success': True,
+            'position': player['position'],
+            'team': player['team'],
+            'reconnected': True,
+        }
+
+    def snapshot_for(self, player_id: str) -> Dict[str, Any]:
+        """Public + private state for a reconnecting player."""
+        player = self.players.get(player_id) or {}
+        return {
+            'room_code': self.room_code,
+            'game_state': self.game_state,
+            'current_player_position': self.current_player_position,
+            'spades_broken': self.spades_broken,
+            'tricks_played': self.tricks_played,
+            'scores': self.scores,
+            'current_trick': self.current_trick,
+            'players': {
+                pid: {
+                    'name': p['name'],
+                    'position': p['position'],
+                    'team': p['team'],
+                    'bid': p.get('bid'),
+                    'tricks': p.get('tricks', 0),
+                }
+                for pid, p in self.players.items()
+            },
+            'hand': list(player.get('hand') or []),
+            'your_position': player.get('position'),
+            'your_team': player.get('team'),
+        }
     
     def create_deck(self) -> List[Dict]:
         """Create and shuffle a standard 52-card deck"""
@@ -278,6 +324,35 @@ class UndergroundSpadesGame:
 
 def register_underground_spades_events(sio):
     """Register all Underground Spades Socket.IO events"""
+
+    async def _emit_room(room_code: str, event: str, payload: Dict[str, Any]) -> None:
+        """Broadcast to room; buffer per offline player so reconnect can catch up."""
+        game = underground_spades_games.get(room_code)
+        if not game:
+            await sio.emit(event, payload, room=room_code)
+            return
+        for pid, player in game.players.items():
+            qe = spades_reconnect_queue.enqueue(room_code, pid, event, payload)
+            if spades_reconnect_queue.is_offline(room_code, pid):
+                continue
+            target = player.get('sid')
+            if target:
+                await sio.emit(event, qe.payload, room=target)
+
+    async def _emit_player(
+        room_code: str, player_id: str, event: str, payload: Dict[str, Any], sid: Optional[str] = None
+    ) -> None:
+        qe = spades_reconnect_queue.enqueue(room_code, player_id, event, payload)
+        if spades_reconnect_queue.is_offline(room_code, player_id):
+            return
+        game = underground_spades_games.get(room_code)
+        target = sid or (game.players.get(player_id, {}) if game else {}).get('sid')
+        if target:
+            await sio.emit(event, qe.payload, room=target)
+
+    def _index_sid(sid: str, room_code: str, player_id: str) -> None:
+        _spades_sid_index[sid] = (room_code, player_id)
+        spades_reconnect_queue.mark_online(room_code, player_id, sid)
     
     @sio.event
     async def underground_spades_create_game(sid, data):
@@ -302,14 +377,15 @@ def register_underground_spades_events(sio):
             
             underground_spades_games[room_code] = game
             await sio.enter_room(sid, room_code)
+            _index_sid(sid, room_code, player_id)
             
-            await sio.emit('underground_spades_game_created', {
+            await _emit_room(room_code, 'underground_spades_game_created', {
                 'room_code': room_code,
                 'position': result['position'],
                 'team': result['team'],
                 'players': {pid: {'name': p['name'], 'position': p['position'], 'team': p['team']} 
                            for pid, p in game.players.items()}
-            }, room=room_code)
+            })
             
         except Exception as e:
             await sio.emit('underground_spades_error',
@@ -317,11 +393,12 @@ def register_underground_spades_events(sio):
     
     @sio.event
     async def underground_spades_join_game(sid, data):
-        """Join an existing Underground Spades game"""
+        """Join an existing Underground Spades game (or resume after disconnect)."""
         try:
             room_code = data.get('room_code')
             player_name = data.get('player_name', 'Player')
             player_id = data.get('player_id', sid)
+            last_seq = int(data.get('last_seq') or 0)
             
             game = underground_spades_games.get(room_code)
             if not game:
@@ -337,9 +414,23 @@ def register_underground_spades_events(sio):
                 return
             
             await sio.enter_room(sid, room_code)
+            _index_sid(sid, room_code, player_id)
+
+            # Reconnect path — snapshot + buffered event flush (kills jitter)
+            if result.get('reconnected'):
+                await sio.emit('underground_spades_resumed', {
+                    'snapshot': game.snapshot_for(player_id),
+                    'replay': [
+                        {'seq': e.seq, 'event': e.event, 'payload': e.payload}
+                        for e in spades_reconnect_queue.drain_since(
+                            room_code, player_id, last_seq
+                        )
+                    ],
+                }, room=sid)
+                return
             
             # Notify all players
-            await sio.emit('underground_spades_player_joined', {
+            await _emit_room(room_code, 'underground_spades_player_joined', {
                 'player_id': player_id,
                 'player_name': player_name,
                 'position': result['position'],
@@ -347,7 +438,7 @@ def register_underground_spades_events(sio):
                 'players': {pid: {'name': p['name'], 'position': p['position'], 'team': p['team']} 
                            for pid, p in game.players.items()},
                 'player_count': len(game.players)
-            }, room=room_code)
+            })
             
             # If 4 players, start game
             if len(game.players) == 4:
@@ -355,17 +446,17 @@ def register_underground_spades_events(sio):
                 
                 # Send hands to each player privately
                 for pid, player in game.players.items():
-                    await sio.emit('underground_spades_hand_dealt', {
+                    await _emit_player(room_code, pid, 'underground_spades_hand_dealt', {
                         'hand': player['hand'],
                         'game_state': game.game_state,
                         'current_player_position': game.current_player_position
-                    }, room=player['sid'])
+                    }, sid=player['sid'])
                 
                 # Notify all players game started
-                await sio.emit('underground_spades_game_started', {
+                await _emit_room(room_code, 'underground_spades_game_started', {
                     'game_state': game.game_state,
                     'current_player_position': game.current_player_position
-                }, room=room_code)
+                })
             
         except Exception as e:
             await sio.emit('underground_spades_error',
@@ -392,15 +483,15 @@ def register_underground_spades_events(sio):
                              {'message': result['message']}, room=sid)
                 return
             
-            # Notify all players
-            await sio.emit('underground_spades_bid_placed', {
+            # Notify all players (queued if offline)
+            await _emit_room(room_code, 'underground_spades_bid_placed', {
                 'player_id': player_id,
                 'position': game.players[player_id]['position'],
                 'bid': bid,
                 'game_state': game.game_state,
                 'current_player_position': game.current_player_position,
                 'all_bids': {p['position']: p['bid'] for p in game.players.values()}
-            }, room=room_code)
+            })
             
         except Exception as e:
             await sio.emit('underground_spades_error',
@@ -427,30 +518,30 @@ def register_underground_spades_events(sio):
                              {'message': result['message']}, room=sid)
                 return
             
-            # Notify all players
-            await sio.emit('underground_spades_card_played', {
+            # Notify all players (queued if offline)
+            await _emit_room(room_code, 'underground_spades_card_played', {
                 'player_id': player_id,
                 'position': game.players[player_id]['position'],
                 'card_id': card_id,
                 'current_trick': game.current_trick,
                 'current_player_position': game.current_player_position,
                 'spades_broken': game.spades_broken
-            }, room=room_code)
+            })
             
             # If trick complete
             if result.get('trick_complete'):
-                await sio.emit('underground_spades_trick_complete', {
+                await _emit_room(room_code, 'underground_spades_trick_complete', {
                     'winner_position': result['winner_position'],
                     'tricks_played': game.tricks_played,
                     'current_player_position': game.current_player_position
-                }, room=room_code)
+                })
             
             # If hand complete
             if result.get('hand_complete'):
-                await sio.emit('underground_spades_hand_complete', {
+                await _emit_room(room_code, 'underground_spades_hand_complete', {
                     'scores': game.scores,
                     'game_state': game.game_state
-                }, room=room_code)
+                })
             
         except Exception as e:
             await sio.emit('underground_spades_error',
@@ -472,17 +563,17 @@ def register_underground_spades_events(sio):
             
             # Send hands to each player
             for pid, player in game.players.items():
-                await sio.emit('underground_spades_hand_dealt', {
+                await _emit_player(room_code, pid, 'underground_spades_hand_dealt', {
                     'hand': player['hand'],
                     'game_state': game.game_state,
                     'current_player_position': game.current_player_position
-                }, room=player['sid'])
+                }, sid=player['sid'])
             
             # Notify all players
-            await sio.emit('underground_spades_new_hand_started', {
+            await _emit_room(room_code, 'underground_spades_new_hand_started', {
                 'game_state': game.game_state,
                 'current_player_position': game.current_player_position
-            }, room=room_code)
+            })
             
         except Exception as e:
             await sio.emit('underground_spades_error',
@@ -504,11 +595,66 @@ def register_underground_spades_events(sio):
             
             player = game.players.get(player_id)
             if player:
-                await sio.emit('underground_spades_trash_talk_received', {
+                await _emit_room(room_code, 'underground_spades_trash_talk_received', {
                     'player_name': player['name'],
                     'position': player['position'],
                     'message': message
-                }, room=room_code)
+                })
             
         except Exception as e:
             print(f"Error sending trash talk: {e}")
+
+    @sio.event
+    async def underground_spades_resume(sid, data):
+        """Explicit resume after Socket.IO reconnect — flush buffered events."""
+        try:
+            room_code = data.get('room_code')
+            player_id = data.get('player_id', sid)
+            last_seq = int(data.get('last_seq') or 0)
+            game = underground_spades_games.get(room_code)
+            if not game or player_id not in game.players:
+                await sio.emit(
+                    'underground_spades_error',
+                    {'message': 'Cannot resume — not seated'},
+                    room=sid,
+                )
+                return
+            game.reconnect_player(player_id, sid)
+            await sio.enter_room(sid, room_code)
+            _index_sid(sid, room_code, player_id)
+            await sio.emit(
+                'underground_spades_resumed',
+                {
+                    'snapshot': game.snapshot_for(player_id),
+                    'replay': [
+                        {'seq': e.seq, 'event': e.event, 'payload': e.payload}
+                        for e in spades_reconnect_queue.drain_since(
+                            room_code, player_id, last_seq
+                        )
+                    ],
+                },
+                room=sid,
+            )
+        except Exception as e:
+            await sio.emit(
+                'underground_spades_error',
+                {'message': f'Resume failed: {e}'},
+                room=sid,
+            )
+
+    @sio.event
+    async def disconnect(sid):
+        """Mark Spades seat offline so events buffer until resume."""
+        mapping = _spades_sid_index.pop(sid, None)
+        if not mapping:
+            return
+        room_code, player_id = mapping
+        spades_reconnect_queue.mark_offline(room_code, player_id)
+        game = underground_spades_games.get(room_code)
+        if game and player_id in game.players:
+            # Keep seat; just notify peers (do not remove player).
+            await sio.emit(
+                'underground_spades_player_offline',
+                {'player_id': player_id, 'position': game.players[player_id]['position']},
+                room=room_code,
+            )

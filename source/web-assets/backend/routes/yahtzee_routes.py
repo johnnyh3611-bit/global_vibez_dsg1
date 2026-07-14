@@ -31,6 +31,9 @@ class RollRequest(BaseModel):
     held: List[int] = Field(default_factory=list, description="0..4 indices of dice to keep")
     current_dice: Optional[List[int]] = Field(None, description="Current 5 dice (required if held provided)")
     seed: Optional[int] = None
+    # Optional scorecard → roll response includes score_hints event (no second poll)
+    scorecard: Optional[Dict[str, Optional[int]]] = None
+    yahtzee_bonus_count: int = 0
 
 
 class ScoreRollRequest(BaseModel):
@@ -87,7 +90,11 @@ def get_constants() -> Dict:
 
 @router.post("/roll")
 def roll_dice(req: RollRequest) -> Dict:
-    """Roll 5 dice. If `held` indices + `current_dice` provided, keep those, re-roll the rest."""
+    """Roll 5 dice. If `held` indices + `current_dice` provided, keep those, re-roll the rest.
+
+    When `scorecard` is supplied, response includes `events` with score hints so the
+    client does not need a separate /score-roll poll.
+    """
     rng = random.Random(req.seed) if req.seed is not None else random.Random()
 
     if req.current_dice is None:
@@ -104,9 +111,28 @@ def roll_dice(req: RollRequest) -> Dict:
             for i in range(NUM_DICE)
         ]
 
+    yahtzee = is_yahtzee(new)
+    events: List[Dict] = [
+        {"type": "dice_rolled", "dice": new, "is_yahtzee": yahtzee},
+    ]
+    scores = None
+    ranked = None
+    if req.scorecard is not None:
+        try:
+            scorecard = _sc_from_dict(req.scorecard, req.yahtzee_bonus_count)
+            suggestions = best_categories_for(new, scorecard)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        scores = {cat: score for cat, score in suggestions}
+        ranked = [{"category": c, "score": s} for c, s in suggestions]
+        events.append({"type": "score_hints", "scores": scores, "ranked": ranked})
+
     return {
         "dice": new,
-        "is_yahtzee": is_yahtzee(new),
+        "is_yahtzee": yahtzee,
+        "scores": scores,
+        "ranked": ranked,
+        "events": events,
     }
 
 
@@ -130,24 +156,40 @@ def score_roll(req: ScoreRollRequest) -> Dict:
 
 @router.post("/fill")
 def fill(req: FillRequest) -> Dict:
-    """Apply a roll to a category and return the updated scorecard + totals."""
+    """Apply a roll to a category and return the updated scorecard + totals.
+
+    Includes `events` so the client can apply category_filled / totals_updated
+    without a separate /totals poll.
+    """
     sc = _sc_from_dict(req.scorecard, req.yahtzee_bonus_count)
     try:
         svc_fill(sc, req.category, req.dice)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     totals = compute_totals(sc)
-    return {
-        "scorecard": _sc_to_dict(sc),
-        "totals": {
-            "upper_subtotal":  totals.upper_subtotal,
-            "upper_bonus":     totals.upper_bonus,
-            "upper_total":     totals.upper_total,
-            "lower_subtotal":  totals.lower_subtotal,
-            "yahtzee_bonus":   totals.yahtzee_bonus,
-            "grand_total":     totals.grand_total,
+    totals_payload = {
+        "upper_subtotal":  totals.upper_subtotal,
+        "upper_bonus":     totals.upper_bonus,
+        "upper_total":     totals.upper_total,
+        "lower_subtotal":  totals.lower_subtotal,
+        "yahtzee_bonus":   totals.yahtzee_bonus,
+        "grand_total":     totals.grand_total,
+        "is_complete":     sc.is_complete(),
+    }
+    scorecard_payload = _sc_to_dict(sc)
+    events = [
+        {
+            "type": "category_filled",
+            "category": req.category,
+            "scorecard": scorecard_payload,
         },
+        {"type": "totals_updated", "totals": totals_payload},
+    ]
+    return {
+        "scorecard": scorecard_payload,
+        "totals": totals_payload,
         "is_complete": sc.is_complete(),
+        "events": events,
     }
 
 
