@@ -41,7 +41,7 @@ class VRRoom(BaseModel):
     created_at: str
     
 
-@router.post("/api/vr_date/invite")
+@router.post("/vr_date/invite")
 async def send_vr_invite(invite: VRInvite) -> Dict[str, Any]:
     """Send VR date invitation to matched user"""
     try:
@@ -59,7 +59,7 @@ async def send_vr_invite(invite: VRInvite) -> Dict[str, Any]:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/api/vr_date/accept")
+@router.post("/vr_date/accept")
 async def accept_vr_invite(accept: VRAccept) -> Dict[str, Any]:
     """Accept VR date invitation and create room"""
     try:
@@ -88,7 +88,7 @@ async def accept_vr_invite(accept: VRAccept) -> Dict[str, Any]:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/api/vr_date/room/{room_id}")
+@router.get("/vr_date/room/{room_id}")
 async def get_vr_room(room_id: str) -> Dict[str, Any]:
     """Get VR room details"""
     try:
@@ -192,7 +192,7 @@ async def vr_date_websocket(websocket: WebSocket, room_id: str) -> Dict[str, Any
                 active_vr_rooms[room_id]["status"] = "ended"
 
 
-@router.post("/api/vr_date/end/{room_id}")
+@router.post("/vr_date/end/{room_id}")
 async def end_vr_date(room_id: str) -> Dict[str, Any]:
     """End VR date session AND fire bond/teleport milestone unlocks."""
     try:

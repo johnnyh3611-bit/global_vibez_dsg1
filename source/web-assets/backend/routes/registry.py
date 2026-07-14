@@ -1,9 +1,11 @@
 """
-Route registry — Waves 1–3.
+Route registry — Waves 1–4.
 
 Wave 1: games + tokenomics.
 Wave 2: Hunger Vibez / Vibez Spots / Vibe Venues / Vibe Ridez.
 Wave 3: DSG TV, media engine, streaming, social/community chat hooks.
+Wave 4: game lobby (tables/dealers/matchmaking/spectators) + dating games
+        + social party games (trivia/quiz/WYR) + remaining game rooms.
 
 Each mount is try/except so one bad import never takes the whole API down.
 """
@@ -31,7 +33,7 @@ def _soft_mount(
         log.info("mounted %s", label)
         return True
     except Exception as exc:  # noqa: BLE001 — boot must survive flaky routes
-        log.warning("Wave-1 skip %s: %s", label, exc)
+        log.warning("registry skip %s: %s", label, exc)
         return False
 
 
@@ -440,3 +442,78 @@ def register_all_routes(
     _soft_mount(api_router, log, "vibe_room_signaling", "routes.vibe_room_signaling")
 
     log.info("Wave-3 media-streaming registry registration complete")
+
+    # ── Wave 4A — Game lobby: tables / dealers / matchmaking / spectators ──
+    _soft_mount(api_router, log, "tables", "routes.tables")
+    _soft_mount(api_router, log, "smart_tables", "routes.smart_tables", tags=["smart-tables"])
+    _soft_mount(api_router, log, "dealer", "routes.dealer")
+    _soft_mount(
+        api_router,
+        log,
+        "dealer_integration",
+        "routes.dealer_integration",
+        tags=["dealer-integration"],
+    )
+    _soft_mount(api_router, log, "matchmaking", "routes.matchmaking", tags=["matchmaking"])
+    _soft_mount(
+        api_router,
+        log,
+        "spectator_features",
+        "routes.spectator_features",
+        tags=["spectator"],
+    )
+    _soft_mount(
+        api_router,
+        log,
+        "spectator_bet",
+        "routes.spectator_bet",
+        tags=["spectator-bet"],
+    )
+    _soft_mount(api_router, log, "unity_game_ws", "routes.unity_game_ws", tags=["Unity Game Rooms"])
+    _soft_mount(api_router, log, "tournament_ws", "routes.tournament")
+    _soft_mount(api_router, log, "tournament_winnings", "routes.tournament_winnings")
+    _soft_mount(api_router, log, "ai_practice", "routes.ai_practice")
+    _soft_mount(api_router, log, "watch_and_wager", "routes.watch_and_wager")
+
+    # ── Wave 4B — Party / dating games that the UI already routes to ──
+    _soft_mount(api_router, log, "quiz", "routes.quiz")
+    _soft_mount(api_router, log, "would_you_rather", "routes.would_you_rather")
+    _soft_mount(api_router, log, "trivia", "routes.trivia")
+    _soft_mount(api_router, log, "dating", "routes.dating")
+    _soft_mount(api_router, log, "enhanced_dating", "routes.enhanced_dating")
+    _soft_mount(api_router, log, "dating_games", "routes.dating_games")
+    _soft_mount(api_router, log, "matching", "routes.matching")
+    _soft_mount(api_router, log, "match_consensus", "routes.match_consensus")
+    _soft_mount(api_router, log, "vr_dating", "routes.vr_dating", tags=["vr_dating"])
+    _soft_mount(api_router, log, "bonds", "routes.bonds")
+    _soft_mount(api_router, log, "crews", "routes.crews")
+    _soft_mount(api_router, log, "invites", "routes.invites")
+    _soft_mount(api_router, log, "avatars", "routes.avatars")
+    _soft_mount(api_router, log, "speed_dating", "routes.speed_dating")
+    _soft_mount(api_router, log, "speed_dating_video", "routes.speed_dating_video")
+    _soft_mount(api_router, log, "table_for_two", "routes.table_for_two")
+    _soft_mount(api_router, log, "private_suites", "routes.private_suites")
+    _soft_mount(api_router, log, "just_for_the_night", "routes.just_for_the_night")
+
+    # ── Wave 4C — Specialty game rooms still linked from the catalog ──
+    _soft_mount(api_router, log, "prize_wheel", "routes.prize_wheel_routes")
+    _soft_mount(
+        api_router,
+        log,
+        "admin_prize_wheel",
+        "routes.prize_wheel_routes",
+        "admin_router",
+    )
+    _soft_mount(api_router, log, "sports_lounge", "routes.sports_lounge", tags=["sports-lounge"])
+    _soft_mount(api_router, log, "marathon", "routes.marathon")
+    _soft_mount(api_router, log, "dsg6_lottery", "routes.dsg6_lottery", tags=["dsg6-lottery"])
+    _soft_mount(api_router, log, "florida_flow", "routes.florida_flow", tags=["florida-flow"])
+    _soft_mount(api_router, log, "roguelite_chess", "routes.roguelite_chess")
+    _soft_mount(api_router, log, "recent_rooms", "routes.recent_rooms")
+    _soft_mount(api_router, log, "progression", "routes.progression")
+    _soft_mount(api_router, log, "safety_streaks_tourneys", "routes.safety_streaks_tourneys")
+
+    # Friends prefix fix lives in routes/friends.py (was /api/friends under
+    # api_router → /api/api/friends; frontend expects /api/friends).
+
+    log.info("Wave-4 games-lobby registry registration complete")

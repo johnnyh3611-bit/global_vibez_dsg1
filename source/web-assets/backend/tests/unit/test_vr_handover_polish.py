@@ -121,7 +121,7 @@ def test_end_vr_date_fires_bond_and_teleport_unlocks(client: TestClient) -> None
     vr_dating.active_connections[room_id] = []
 
     try:
-        res = client.post(f"/api/api/vr_date/end/{room_id}")
+        res = client.post(f"/api/vr_date/end/{room_id}")
         assert res.status_code == 200, res.text
         body = res.json()
         assert body["success"] is True
