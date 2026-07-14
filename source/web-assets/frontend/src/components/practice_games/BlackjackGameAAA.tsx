@@ -56,6 +56,8 @@ export default function BlackjackGameAAA() {
   
   // Split
   const [canSplit, setCanSplit] = useState(false);
+  const [activeHandIndex, setActiveHandIndex] = useState(0);
+  const [splitHands, setSplitHands] = useState<string[][] | null>(null);
   
   // Game Flow
   const [gamePhase, setGamePhase] = useState('betting'); // betting, playing, insurance, finished
@@ -156,6 +158,8 @@ export default function BlackjackGameAAA() {
       setDealerValue(data.dealer_showing);
       setDealerHoleCardHidden(true);
       setCanSplit(data.can_split || false);
+      setActiveHandIndex(0);
+      setSplitHands(null);
       
       // Handle side bet results
       if (data.side_bet_results) {
@@ -221,21 +225,39 @@ export default function BlackjackGameAAA() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           session_id: sessionId,
-          action: action
+          action: action,
+          hand_index: activeHandIndex,
         })
       });
       
       const data = await response.json();
       
       // Play sound for action
-      if (action === 'hit' || action === 'double') {
+      if (action === 'hit' || action === 'double' || action === 'split') {
         soundManager.playCardDeal();
       }
-      
-      // Update player cards if hit or double
-      if (data.player_cards) {
+
+      if (action === 'split' && Array.isArray(data.player_hands)) {
+        setSplitHands(data.player_hands);
+        setActiveHandIndex(data.active_hand_index ?? 0);
+        setPlayerCards(data.player_cards || data.player_hands[0]);
+        setPlayerValue(data.player_value ?? data.player_values?.[0]);
+        setCanSplit(false);
+        // Second hand costs another equal bet
+        setBalance((prev) => prev - currentBet);
+      } else if (data.player_cards) {
         setPlayerCards(data.player_cards);
         setPlayerValue(data.player_value);
+        if (typeof data.active_hand_index === 'number') {
+          setActiveHandIndex(data.active_hand_index);
+        }
+        if (Array.isArray(data.player_hands)) {
+          setSplitHands(data.player_hands);
+        }
+      }
+
+      if (action === 'split' || action === 'hit' || action === 'double') {
+        setCanSplit(false);
       }
       
       // If game over, reveal dealer cards
@@ -316,6 +338,8 @@ export default function BlackjackGameAAA() {
     setSideBetResults({});
     setCurrentMultiplier(1);
     setCanSplit(false);
+    setActiveHandIndex(0);
+    setSplitHands(null);
   };
 
   // Get hand value color
@@ -607,6 +631,9 @@ export default function BlackjackGameAAA() {
             <div className="flex items-center gap-3">
               <div className="text-sm font-semibold uppercase tracking-wider text-gray-400">
                 💎 Player
+                {splitHands && splitHands.length > 1
+                  ? ` · Hand ${activeHandIndex + 1}/${splitHands.length}`
+                  : ''}
               </div>
               <div className={`text-3xl font-black ${getValueColor(playerValue, playerValue > 21)}`}>
                 {playerValue}

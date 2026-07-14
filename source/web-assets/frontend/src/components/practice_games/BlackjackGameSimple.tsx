@@ -222,19 +222,33 @@ export default function BlackjackGameSimple() {
         `Drew ${data.player_cards[data.player_cards.length - 1]} (Total: ${newScores[currentHandIndex]})`
       );
 
+      if (Array.isArray(data.player_hands)) {
+        setPlayerHands(data.player_hands);
+      }
+      if (typeof data.active_hand_index === 'number') {
+        setCurrentHandIndex(data.active_hand_index);
+      }
+
       if (data.game_over) {
         addLog('BUST', `Hand ${currentHandIndex + 1} busted with ${newScores[currentHandIndex]}`);
         broadcastAction('hit', currentHandIndex, {
-          playerHands: newHands,
+          playerHands: data.player_hands || newHands,
           playerScores: newScores,
           busted: true,
         });
-        if (currentHandIndex < playerHands.length - 1) {
-          addLog('NEXT_HAND', `Moving to Hand ${currentHandIndex + 2}`);
-          setCurrentHandIndex(currentHandIndex + 1);
-        } else {
-          setTimeout(() => endGame(data), 500);
+        setTimeout(() => endGame(data), 500);
+      } else if (typeof data.active_hand_index === 'number' && data.active_hand_index !== currentHandIndex) {
+        addLog('NEXT_HAND', `Moving to Hand ${data.active_hand_index + 1}`);
+        if (data.player_cards) {
+          const hands = data.player_hands || newHands;
+          setPlayerHands(hands);
+          setPlayerScores(hands.map(calculateScore));
         }
+        broadcastAction('hit', currentHandIndex, {
+          playerHands: data.player_hands || newHands,
+          playerScores: newScores,
+          busted: true,
+        });
       } else {
         broadcastAction('hit', currentHandIndex, {
           playerHands: newHands,
@@ -249,15 +263,7 @@ export default function BlackjackGameSimple() {
   const stand = async () => {
     if (!sessionId || gameStatus !== 'PLAYER_TURN') return;
     addLog('STAND', `Hand ${currentHandIndex + 1} stands with ${playerScores[currentHandIndex]}`);
-    broadcastAction('stand', currentHandIndex, { playerHands, playerScores, currentHandIndex });
 
-    if (currentHandIndex < playerHands.length - 1) {
-      addLog('NEXT_HAND', `Moving to Hand ${currentHandIndex + 2}`);
-      setCurrentHandIndex(currentHandIndex + 1);
-      return;
-    }
-
-    setGameStatus('DEALER_TURN');
     try {
       const response = await fetch(`${API_URL}/api/blackjack/action`, {
         method: 'POST',
@@ -269,14 +275,32 @@ export default function BlackjackGameSimple() {
         }),
       });
       const data = await response.json();
+
+      if (!data.game_over && typeof data.active_hand_index === 'number') {
+        addLog('NEXT_HAND', `Moving to Hand ${data.active_hand_index + 1}`);
+        setCurrentHandIndex(data.active_hand_index);
+        if (Array.isArray(data.player_hands)) {
+          setPlayerHands(data.player_hands);
+          setPlayerScores(data.player_hands.map(calculateScore));
+        }
+        broadcastAction('stand', currentHandIndex, {
+          playerHands: data.player_hands || playerHands,
+          playerScores,
+          currentHandIndex: data.active_hand_index,
+        });
+        return;
+      }
+
       if (!Array.isArray(data.dealer_cards)) {
         addLog('ERROR', 'Invalid server response');
         return;
       }
+      setGameStatus('DEALER_TURN');
       setDealerHand(data.dealer_cards);
       const dScore = calculateScore(data.dealer_cards);
       setDealerScore(dScore);
       addLog('DEALER_REVEAL', `Dealer flips: ${data.dealer_cards?.join(', ') || 'N/A'} (${dScore})`);
+      broadcastAction('stand', currentHandIndex, { playerHands, playerScores, currentHandIndex });
       setTimeout(() => endGame(data), 1000);
     } catch (error) {
       addLog('ERROR', 'Failed to stand');
@@ -332,36 +356,46 @@ export default function BlackjackGameSimple() {
     }
   };
 
-  const split = () => {
+  const split = async () => {
+    if (!sessionId || gameStatus !== 'PLAYER_TURN') return;
     const currentHand = playerHands[currentHandIndex];
     if (!currentHand || currentHand.length !== 2) return;
-    const card1 = parseCard(currentHand[0]);
-    const card2 = parseCard(currentHand[1]);
-    if (card1?.val !== card2?.val) return;
     if (credits < betAmounts[currentHandIndex]) return;
 
-    setCredits((prev) => prev - betAmounts[currentHandIndex]);
-    const hand1 = [currentHand[0]];
-    const hand2 = [currentHand[1]];
-    const newHands = [...playerHands];
-    newHands[currentHandIndex] = hand1;
-    newHands.push(hand2);
-    setPlayerHands(newHands);
+    try {
+      const response = await fetch(`${API_URL}/api/blackjack/action`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: sessionId,
+          action: 'split',
+          hand_index: currentHandIndex,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok || !Array.isArray(data.player_hands)) {
+        addLog('ERROR', data.detail || 'Split rejected');
+        return;
+      }
 
-    const newBetAmounts = [...betAmounts];
-    newBetAmounts.push(betAmounts[currentHandIndex]);
-    setBetAmounts(newBetAmounts);
-
-    const newScores = [...playerScores];
-    newScores[currentHandIndex] = calculateScore(hand1);
-    newScores.push(calculateScore(hand2));
-    setPlayerScores(newScores);
-
-    const newResults = [...results];
-    newResults.push(null);
-    setResults(newResults);
-
-    addLog('SPLIT', `Split pair of ${card1.val}s. Bet: $${betAmounts[currentHandIndex]} per hand`);
+      setCredits((prev) => prev - betAmounts[currentHandIndex]);
+      setPlayerHands(data.player_hands);
+      setBetAmounts(data.bet_amounts || [betAmounts[currentHandIndex], betAmounts[currentHandIndex]]);
+      const scores = (data.player_values || data.player_hands.map(calculateScore));
+      setPlayerScores(scores);
+      setResults(data.player_hands.map(() => null));
+      setCurrentHandIndex(data.active_hand_index ?? 0);
+      addLog(
+        'SPLIT',
+        `Server split → 2 hands. Bet: $${betAmounts[currentHandIndex]} each`
+      );
+      broadcastAction('split', currentHandIndex, {
+        playerHands: data.player_hands,
+        playerScores: scores,
+      });
+    } catch (error) {
+      addLog('ERROR', 'Failed to split');
+    }
   };
 
   const newRound = () => {
