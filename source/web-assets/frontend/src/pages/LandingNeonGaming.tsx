@@ -115,15 +115,15 @@ export default function LandingNeonGaming() {
           top of this page (LandingPage_Enhancement.pdf §1+§2). */}
 
       {/* Hero Section */}
-      <section className="relative z-10 px-4 sm:px-6 py-12 sm:py-20 max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-          
+      <section className="relative z-10 px-4 sm:px-6 py-8 sm:py-12 lg:py-20 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12 items-center">
+
           {/* Left - Main Text */}
           <motion.div
             initial={{ x: -100, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             transition={{ duration: 0.8 }}
-            className="order-2 lg:order-1"
+            className="order-1 lg:order-1"
           >
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -138,7 +138,7 @@ export default function LandingNeonGaming() {
 
               {/* GLOBAL VIBEZ DSG with Motion Graphics — left column.
                   Planet + DSG orbit live on the opposite (right) side. */}
-              <div className="relative mb-6">
+              <div className="relative mb-4 sm:mb-6">
                 {/* Glitch Background Layer */}
                 <motion.span
                   animate={{
@@ -146,7 +146,7 @@ export default function LandingNeonGaming() {
                     opacity: [0.3, 0.5, 0.3],
                   }}
                   transition={{ duration: 0.2, repeat: Infinity, repeatDelay: 3 }}
-                  className="absolute top-0 left-0 w-full text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black leading-none text-cyan-500 pointer-events-none select-none text-left"
+                  className="absolute top-0 left-0 w-full text-3xl sm:text-5xl md:text-6xl lg:text-8xl font-black leading-none text-cyan-500 pointer-events-none select-none text-left"
                   style={{ filter: 'blur(2px)' }}
                   aria-hidden
                 >
@@ -156,7 +156,7 @@ export default function LandingNeonGaming() {
                 </motion.span>
 
                 {/* Main Text with Animations */}
-                <h2 className="relative text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black leading-none">
+                <h2 className="relative text-3xl sm:text-5xl md:text-6xl lg:text-8xl font-black leading-none">
                   {/* GLOBAL - Letter by letter reveal */}
                   <span className="inline-block">
                     {'GLOBAL'.split('').map((letter, i) => (
@@ -337,11 +337,11 @@ export default function LandingNeonGaming() {
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.4 }}
-              className="flex flex-col sm:flex-row flex-wrap gap-3 mb-10"
+              className="grid grid-cols-2 sm:flex sm:flex-row sm:flex-wrap gap-2 sm:gap-3 mb-6 sm:mb-10"
             >
               <button
                 onClick={() => navigate('/signup')}
-                className="group w-full sm:w-auto px-6 sm:px-10 py-3 sm:py-4 bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white text-base sm:text-lg font-black rounded-lg hover:scale-105 transition-transform shadow-2xl shadow-fuchsia-500/50 flex items-center justify-center gap-2 border-2 border-fuchsia-400"
+                className="group w-full sm:w-auto px-4 sm:px-10 py-2.5 sm:py-3.5 bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white text-sm sm:text-base font-black rounded-lg hover:scale-105 transition-transform shadow-2xl shadow-fuchsia-500/50 flex items-center justify-center gap-2 border-2 border-fuchsia-400"
               >
                 <Play className="w-5 h-5 sm:w-6 sm:h-6" />
                 Start Playing
@@ -349,7 +349,7 @@ export default function LandingNeonGaming() {
               </button>
               <button
                 onClick={() => navigate('/games-menu')}
-                className="w-full sm:w-auto px-6 sm:px-10 py-3 sm:py-4 bg-purple-900/50 backdrop-blur-xl text-purple-300 text-base sm:text-lg font-black rounded-lg hover:bg-purple-800/50 transition-all border-2 border-purple-500 hover:border-fuchsia-500 flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-4 sm:px-10 py-2.5 sm:py-3.5 bg-purple-900/50 backdrop-blur-xl text-purple-300 text-sm sm:text-base font-black rounded-lg hover:bg-purple-800/50 transition-all border-2 border-purple-500 hover:border-fuchsia-500 flex items-center justify-center gap-2"
               >
                 <Gamepad2 className="w-5 h-5 sm:w-6 sm:h-6" />
                 Browse Games
@@ -358,7 +358,7 @@ export default function LandingNeonGaming() {
               <button
                 onClick={() => navigate('/beta-tester')}
                 data-testid="landing-cta-join-beta"
-                className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-black text-base sm:text-lg font-black rounded-lg hover:scale-105 transition-transform shadow-2xl shadow-amber-500/40 border-2 border-amber-300 flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-4 sm:px-8 py-2.5 sm:py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 text-black text-sm sm:text-base font-black rounded-lg hover:scale-105 transition-transform shadow-2xl shadow-amber-500/40 border-2 border-amber-300 flex items-center justify-center gap-2"
               >
                 <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
                 Join Beta
@@ -373,7 +373,7 @@ export default function LandingNeonGaming() {
                   if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }}
                 data-testid="landing-cta-watch-tour"
-                className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-black/60 backdrop-blur-xl text-white text-base sm:text-lg font-black rounded-lg hover:bg-black/80 transition-all border-2 border-cyan-400 hover:border-fuchsia-400 flex items-center justify-center gap-2 shadow-[0_0_30px_-8px_rgba(34,211,238,0.5)]"
+                className="w-full sm:w-auto px-4 sm:px-8 py-2.5 sm:py-3.5 bg-black/60 backdrop-blur-xl text-white text-sm sm:text-base font-black rounded-lg hover:bg-black/80 transition-all border-2 border-cyan-400 hover:border-fuchsia-400 flex items-center justify-center gap-2 shadow-[0_0_30px_-8px_rgba(34,211,238,0.5)]"
               >
                 <Play className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" />
                 Watch 2-min Tour
@@ -451,7 +451,7 @@ export default function LandingNeonGaming() {
             initial={{ x: 100, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.3 }}
-            className="relative flex items-center justify-center min-h-[280px] sm:min-h-[320px] lg:min-h-[420px] order-1 lg:order-2"
+            className="relative flex items-center justify-center min-h-[180px] sm:min-h-[260px] lg:min-h-[420px] order-2 lg:order-2"
           >
             <LandingOrbitGlobe />
 

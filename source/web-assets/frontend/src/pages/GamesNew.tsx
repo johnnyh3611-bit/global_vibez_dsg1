@@ -602,22 +602,22 @@ export default function GamesNew() {
       <WinnerTicker className="sticky top-0 z-40" />
       {/* Header */}
       <header className="relative z-50 bg-black/20 backdrop-blur-lg border-b border-white/10">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+        <div className="container mx-auto px-4 py-4 flex flex-wrap justify-between items-center gap-y-2">
           <Button
             variant="ghost"
             onClick={() => navigate('/dashboard')}
-            className="text-white hover:bg-white/10"
+            className="text-white hover:bg-white/10 px-2 sm:px-4"
           >
-            <ArrowLeft className="mr-2 h-5 w-5" />
-            Back to Hub
+            <ArrowLeft className="mr-0 sm:mr-2 h-5 w-5" />
+            <span className="hidden sm:inline">Back to Hub</span>
           </Button>
-          
-          <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-            <Gamepad2 className="w-8 h-8 text-cyan-400" />
+
+          <h1 className="text-xl sm:text-3xl font-bold text-white flex items-center gap-2 order-first sm:order-none w-full sm:w-auto justify-center">
+            <Gamepad2 className="w-6 h-6 sm:w-8 sm:h-8 text-cyan-400" />
             Game Arena
           </h1>
-          
-          <div className="flex gap-2 items-center">
+
+          <div className="flex gap-1 sm:gap-2 items-center">
             <SoundControls />
             
             <Button
@@ -629,8 +629,8 @@ export default function GamesNew() {
               onMouseEnter={() => soundManager.buttonHover()}
               className="text-white hover:bg-white/10 bg-gradient-to-r from-pink-600/20 to-purple-600/20"
             >
-              <Sparkles className="mr-2 h-5 w-5 text-pink-400" />
-              My Vibez
+              <Sparkles className="mr-0 sm:mr-2 h-5 w-5 text-pink-400" />
+              <span className="hidden sm:inline">My Vibez</span>
             </Button>
             
             <Button
@@ -642,8 +642,8 @@ export default function GamesNew() {
               onMouseEnter={() => soundManager.buttonHover()}
               className="text-white hover:bg-white/10"
             >
-              <BarChart3 className="mr-2 h-5 w-5" />
-              Stats
+              <BarChart3 className="mr-0 sm:mr-2 h-5 w-5" />
+              <span className="hidden sm:inline">Stats</span>
             </Button>
             
             <Button
@@ -655,8 +655,8 @@ export default function GamesNew() {
               onMouseEnter={() => soundManager.buttonHover()}
               className="text-white hover:bg-white/10"
             >
-              <Trophy className="mr-2 h-5 w-5" />
-              Leaderboard
+              <Trophy className="mr-0 sm:mr-2 h-5 w-5" />
+              <span className="hidden sm:inline">Leaderboard</span>
             </Button>
             
             <Button
@@ -668,8 +668,8 @@ export default function GamesNew() {
               className="bg-gradient-to-r from-cyan-600 to-blue-700 hover:from-cyan-700 hover:to-blue-800 text-white font-bold relative overflow-hidden group"
             >
               <span className="absolute inset-0 bg-gradient-to-r from-yellow-400/20 to-pink-400/20 translate-x-full group-hover:translate-x-0 transition-transform duration-300" />
-              <Users className="mr-2 h-5 w-5 relative z-10" />
-              <span className="relative z-10">⚡ Quick Play</span>
+              <Users className="mr-0 sm:mr-2 h-5 w-5 relative z-10" />
+              <span className="relative z-10 hidden sm:inline">⚡ Quick Play</span>
             </Button>
           </div>
         </div>
@@ -722,7 +722,7 @@ export default function GamesNew() {
 
         {/* Enhanced Category Tabs with Animations */}
         {!searchQuery && (
-          <div className="flex gap-3 mb-10 overflow-x-auto pb-3 scrollbar-thin scrollbar-thumb-cyan-500 scrollbar-track-transparent">
+          <div className="flex gap-2 sm:gap-3 mb-6 sm:mb-10 overflow-x-auto pb-3 scrollbar-hide scrollbar-thumb-cyan-500 scrollbar-track-transparent">
             {Object.entries(GAME_CATEGORIES).map(([key, category]) => {
               const Icon = category.icon;
               const isSelected = selectedCategory === key;
@@ -736,7 +736,7 @@ export default function GamesNew() {
                   onMouseEnter={() => soundManager.buttonHover()}
                   whileHover={{ scale: 1.05, y: -2 }}
                   whileTap={{ scale: 0.95 }}
-                  className={`relative flex items-center gap-3 px-8 py-4 rounded-2xl font-bold transition-all whitespace-nowrap ${
+                  className={`relative flex items-center gap-2 sm:gap-3 px-4 sm:px-8 py-2 sm:py-4 rounded-xl sm:rounded-2xl font-bold transition-all whitespace-nowrap text-sm sm:text-base ${
                     isSelected
                       ? 'bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 text-white shadow-2xl shadow-cyan-500/60'
                       : 'bg-slate-800/70 text-slate-300 hover:bg-slate-700/70 border border-white/10'
@@ -760,11 +760,11 @@ export default function GamesNew() {
                   
                   {/* Icon with glow */}
                   <div className="relative z-10">
-                    <Icon className={`w-5 h-5 ${isSelected ? 'drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]' : ''}`} />
+                    <Icon className={`w-4 h-4 sm:w-5 sm:h-5 ${isSelected ? 'drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]' : ''}`} />
                   </div>
                   
                   {/* Category name */}
-                  <span className="relative z-10 text-base tracking-wide">
+                  <span className="relative z-10 text-sm sm:text-base tracking-wide">
                     {category.name}
                   </span>
                   

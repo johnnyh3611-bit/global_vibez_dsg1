@@ -183,14 +183,14 @@ function ProtectedRouteContent({ children }) {
     // higher up the tree. Inside ProtectedRoute we just render children
     // (the global mounter handles the pill for protected + unprotected
     // routes alike). No PageActionStrip in fullscreen rooms.
-    return <>{children}</>;
+    return <div className="gv-route-root">{children}</div>;
   }
   return (
     <>
       <div className="px-4 pt-3 max-w-7xl mx-auto" data-testid="protected-route-action-strip">
         <PageActionStrip align="end" />
       </div>
-      {children}
+      <div className="gv-route-root">{children}</div>
     </>
   );
 }
@@ -269,14 +269,15 @@ function AppRouter() {
           components stay mounted (they own their modals/panels) but
           their trigger buttons hide via `useCornerDockTrigger` once
           the strip dispatches `chromebar:active`. */}
-      <Routes>
-        {/* Public Routes */}
-        {authRoutes}
-        
-        {/* Dating & Social Routes */}
-        {datingRoutes(ProtectedRoute)}
-        
-        {/* Games Routes */}
+      <div className="gv-page-root">
+        <Routes>
+          {/* Public Routes */}
+          {authRoutes}
+          
+          {/* Dating & Social Routes */}
+          {datingRoutes(ProtectedRoute)}
+          
+          {/* Games Routes */}
         {gamesRoutes(ProtectedRoute)}
         
         {/* Vibe Ridez Routes */}
@@ -328,8 +329,9 @@ function AppRouter() {
         {/* Founder fix Feb 2026: replace the silent wildcard redirect with
             an honest 404 page so dead routes surface visibly instead of
             quietly bouncing to the landing. */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </div>
       {/* Global Cmd+K launcher + mobile bottom nav. Mounted once at
           the App shell so every route gets them for free. */}
       <CmdKLauncher />

@@ -103,3 +103,24 @@ p {
 /* ───── Safe-area handling for iOS notches / Android gestures ────── */
 .safe-pt { padding-top: max(env(safe-area-inset-top, 0px), 0.5rem); }
 .safe-pb { padding-bottom: max(env(safe-area-inset-bottom, 0px), 0.5rem); }
+
+/* ───── Mobile bottom nav spacing ──────
+   When the fixed MobileBottomNav is visible, route roots get bottom
+   padding so the last page content is never hidden under the nav.
+   The --gv-bottom-nav-height variable is toggled by the component.
+   Tailwind preflight already sets box-sizing: border-box, so this
+   padding reduces the content box rather than growing the element. */
+#root.gv-bottom-nav-visible {
+  --gv-bottom-nav-height: calc(4rem + env(safe-area-inset-bottom, 0px));
+}
+#root.gv-bottom-nav-visible .gv-route-root > *:not(.fixed):not(.absolute) {
+  padding-bottom: var(--gv-bottom-nav-height) !important;
+}
+
+/* Hide the builder badge on phones; it overlaps the bottom nav and
+   primary CTAs. It remains visible on tablets and desktop. */
+@media (max-width: 767px) {
+  #emergent-badge {
+    display: none !important;
+  }
+}

@@ -84,7 +84,7 @@ const MobileGalaxyTour: React.FC<Props> = ({ forceShow = false }) => {
       aria-labelledby="mobile-galaxy-tour-title"
     >
       <div
-        className="w-full max-w-md mx-4 mb-6 sm:mb-0 rounded-3xl bg-gradient-to-b from-zinc-900 to-black border border-fuchsia-500/40 shadow-[0_0_60px_rgba(217,70,239,0.35)] p-6"
+        className="w-full max-w-md mx-4 mb-20 sm:mb-0 rounded-3xl bg-gradient-to-b from-zinc-900 to-black border border-fuchsia-500/40 shadow-[0_0_60px_rgba(217,70,239,0.35)] p-6"
         data-testid={`mobile-galaxy-tour-step-${stepIdx}`}
       >
         <div className="flex items-center justify-between mb-4">

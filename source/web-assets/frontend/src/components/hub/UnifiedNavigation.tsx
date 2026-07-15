@@ -1,12 +1,29 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Gamepad2, Heart, Radio, User, Wallet, Crown } from 'lucide-react';
+import { formatCoins } from '@/utils/currency';
 
 const UnifiedNavigation = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [vibeCredits, setVibeCredits] = useState(1250);
+  const [vibeCredits, setVibeCredits] = useState<number | null>(null);
+
+  useEffect(() => {
+    const API = process.env.REACT_APP_BACKEND_URL;
+    const token = localStorage.getItem('auth_token');
+    if (!API || !token) return;
+    fetch(`${API}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.credits_balance != null) {
+          setVibeCredits(Number(data.credits_balance));
+        }
+      })
+      .catch(() => { /* leave fallback hidden */ });
+  }, []);
 
   const navItems = [
     { id: 'lounge', label: 'Lounge', icon: Gamepad2, path: '/lounge', color: 'from-purple-500 to-pink-500' },
@@ -89,7 +106,9 @@ const UnifiedNavigation = () => {
             >
               <div className="flex items-center gap-2">
                 <Wallet className="w-4 h-4 text-white" />
-                <span className="text-white font-black text-xs sm:text-sm">${vibeCredits}</span>
+                <span className="text-white font-black text-xs sm:text-sm">
+                  {vibeCredits != null ? formatCoins(vibeCredits, { compact: true }) : '₵—'}
+                </span>
               </div>
             </motion.div>
 
@@ -97,7 +116,7 @@ const UnifiedNavigation = () => {
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
-              onClick={() => navigate('/profile')}
+              onClick={() => navigate('/me')}
               className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center shadow-lg"
             >
               <User className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
