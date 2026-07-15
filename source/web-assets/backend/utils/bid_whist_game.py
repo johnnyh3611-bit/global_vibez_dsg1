@@ -28,10 +28,10 @@ class BidWhistGame:
         self.winning_score = winning_score
         self.deck = []
         self.players = {
-            'north': {'hand': [], 'team': 'team2'},  # Partner to South
-            'east': {'hand': [], 'team': 'team1'},   # Partner to West
-            'south': {'hand': [], 'team': 'team2'},
-            'west': {'hand': [], 'team': 'team1'}
+            'north': {'hand': [], 'team': 'team1'},  # Partner to South
+            'east': {'hand': [], 'team': 'team2'},   # Partner to West
+            'south': {'hand': [], 'team': 'team1'},
+            'west': {'hand': [], 'team': 'team2'}
         }
         self.player_mapping = {}  # position -> user_id
         self.scores = {'team1': 0, 'team2': 0}
@@ -128,15 +128,17 @@ class BidWhistGame:
         
         # Check if bidding is complete (all 4 players bid or 3 passes)
         if len(self.bids) >= 4:
-            # Find winning bid
-            winning = max(self.bids, key=lambda b: b['value'])
-            self.winning_bid = winning
-            self.bid_winner = winning['player']
-            self.bid_type = winning['type']
-            
-            # Set trump suit (will be chosen by bid winner in kitty_exchange phase)
-            self.game_phase = 'kitty_exchange'
-        
+            # Find winning bid, ignoring any pass records (value < 0).
+            real_bids = [b for b in self.bids if b['type'] != 'pass']
+            if real_bids:
+                winning = max(real_bids, key=lambda b: b['value'])
+                self.winning_bid = winning
+                self.bid_winner = winning['player']
+                self.bid_type = winning['type']
+
+                # Trump suit will be chosen by bid winner in kitty_exchange phase.
+                self.game_phase = 'kitty_exchange'
+
         return True
 
     def exchange_kitty(self, position: str, trump_suit: str, discards: List[Dict]) -> bool:
@@ -167,7 +169,9 @@ class BidWhistGame:
         
         # Update card values based on bid type
         self.update_card_values()
-        
+
+        # Bid winner leads the first trick.
+        self.trick_leader = position
         self.game_phase = 'playing'
         return True
 
@@ -237,9 +241,10 @@ class BidWhistGame:
             self.tricks_won[winner_team] += 1
             self.player_tricks[winner] += 1  # Track individual player tricks
             self.tricks_played += 1
+            self.trick_leader = winner  # Winner leads the next trick
             self.current_trick = []
             self.led_suit = None  # Reset for next trick
-            
+
             # If all 12 tricks played, score the hand
             if self.tricks_played == 12:
                 self.score_hand()
@@ -311,6 +316,7 @@ class BidWhistGame:
         self.trump_suit = None
         self.bid_type = 'uptown'
         self.led_suit = None
+        self.trick_leader = None
         self.game_phase = 'bidding'
         self.deal_cards()
 
@@ -337,6 +343,7 @@ class BidWhistGame:
         self.bid_winner = game_doc.get("bid_winner")
         self.winning_bid = game_doc.get("winning_bid")
         self.tricks_played = game_doc.get("tricks_played", 0)
+        self.trick_leader = game_doc.get("trick_leader")
         self.winning_score = game_doc.get("winning_score", 7)
         self.winner = game_doc.get("winner")
 
@@ -366,6 +373,7 @@ class BidWhistGame:
             "bid_winner": self.bid_winner,
             "winning_bid": self.winning_bid,
             "tricks_played": self.tricks_played,
+            "trick_leader": self.trick_leader,
             "winning_score": self.winning_score,
             "status": "completed" if self.game_phase == "finished" else "active",
             "winner": self.winner,

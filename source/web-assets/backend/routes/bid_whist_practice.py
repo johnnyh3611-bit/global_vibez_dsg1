@@ -351,10 +351,15 @@ async def process_ai_turns(
                 game.place_bid(position, bid_amount, bid_type)
 
         elif game.game_phase == "kitty_exchange":
-            # AI exchanges kitty
+            # AI exchanges kitty and picks a sensible trump suit.
             if game.bid_winner == position:
-                trump_suit = game.trump_suit or "spades"
-                discards = ai.choose_kitty_discards(game.players[position]["hand"], trump_suit)
+                bid_type = game.winning_bid.get("type", "uptown") if game.winning_bid else "uptown"
+                trump_suit = ai.choose_trump_suit(
+                    game.players[position]["hand"], bid_type
+                )
+                discards = ai.choose_kitty_discards(
+                    game.players[position]["hand"], trump_suit
+                )
                 game.exchange_kitty(position, trump_suit, discards)
 
         elif game.game_phase == "playing":
