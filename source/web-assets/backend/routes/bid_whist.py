@@ -408,12 +408,12 @@ async def exchange_kitty(exchange_data: BidWhistKittyExchange, request: Request)
     # Reconstruct game
     game = BidWhistGame()
     game.players = game_doc["players_data"]
-    game.kitty = game_doc["kitty"]
-    game.bid_winner = game_doc["bid_winner"]
-    game.bid_type = game_doc["bid_type"]
-    
+    game.kitty = game_doc.get("kitty", [])
+    game.bid_winner = game_doc.get("bid_winner")
+    game.bid_type = game_doc.get("bid_type", "uptown")
+
     user_position = [pos for pos, uid in game_doc["player_mapping"].items() if uid == current_user.user_id][0]
-    
+
     # Exchange kitty
     success = game.exchange_kitty(user_position, exchange_data.trump_suit, exchange_data.discards)
     if not success:

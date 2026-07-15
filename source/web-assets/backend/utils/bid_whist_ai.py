@@ -164,26 +164,49 @@ class BidWhistAI:
                 # Sometimes give up and play random card (moderate difficulty)
                 return secure_random.choice(playable_cards)
     
+    def choose_trump_suit(self, hand: List[Dict], bid_type: str) -> str:
+        """Pick the best trump suit after seeing the kitty (or no_trump)."""
+        if bid_type == 'no_trump':
+            return 'no_trump'
+
+        suit_counts = {}
+        for card in hand:
+            if card.get('type') == 'standard' and card.get('suit'):
+                suit_counts[card['suit']] = suit_counts.get(card['suit'], 0) + 1
+
+        if not suit_counts:
+            return 'spades'
+
+        # Longest suit wins; tie-break by high-card power (A/K/Q).
+        def _suit_power(suit: str) -> int:
+            return sum(
+                self._card_value(c, suit, None)
+                for c in hand
+                if c.get('suit') == suit
+            )
+
+        return max(suit_counts, key=lambda s: (suit_counts[s], _suit_power(s)))
+
     def choose_kitty_discards(self, hand: List[Dict], trump_suit: str) -> List[Dict]:
         """Bid Whist kitty = 6 cards. Discards 6 from hand after getting kitty.
-        
-        Moderate AI: Keeps high cards and trump, discards low off-suit cards
+
+        Moderate AI: Keeps high cards and trump, discards low off-suit cards.
         """
         if len(hand) < 6:
             return hand[:6]  # Shouldn't happen
-        
+
         # Score each card
         card_scores = []
         for card in hand:
             score = self._card_value(card, trump_suit, None)
             # Bonus for trump cards
-            if card.get('suit') == trump_suit:
+            if trump_suit != 'no_trump' and card.get('suit') == trump_suit:
                 score += 20
             card_scores.append((card, score))
-        
+
         # Sort by score (lowest first)
         card_scores.sort(key=lambda x: x[1])
-        
+
         # Take 6 lowest scoring cards, but with 20% chance to make a mistake
         discards = []
         for i in range(6):
@@ -192,7 +215,7 @@ class BidWhistAI:
                 discards.append(card_scores[i + 1][0])
             else:
                 discards.append(card_scores[i][0])
-        
+
         return discards[:6]
     
     def _is_currently_winning(self, current_trick: List[Dict], trump_suit: Optional[str], led_suit: Optional[str]) -> bool:
@@ -216,32 +239,31 @@ class BidWhistAI:
     
     def _card_value(self, card: Dict, trump_suit: Optional[str], led_suit: Optional[str]) -> int:
         """
-        Calculate card value for comparison
-        Higher = stronger
+        Calculate card value for comparison.
+
+        Uses the engine's bid-aware card value when available (so uptown/downtown
+        rankings are respected). Jokers are always highest.
         """
+        ctype = card.get('type', '')
         suit = card.get('suit', '')
-        rank = card.get('rank', '')
-        
-        rank_values = {
-            'A': 14, 'K': 13, 'Q': 12, 'J': 11,
-            '10': 10, '9': 9, '8': 8, '7': 7, '6': 6, '5': 5, '4': 4, '3': 3, '2': 2
-        }
-        
-        base_value = rank_values.get(rank, 0)
-        
-        # Jokers are highest
-        if rank == 'Big Joker':
+
+        # Jokers are the highest cards in Bid Whist.
+        if ctype == 'big_joker':
             return 100
-        elif rank == 'Little Joker':
+        if ctype == 'little_joker':
             return 99
-        
-        # Trump cards beat non-trump
+
+        # Standard cards have their value set by BidWhistGame.update_card_values
+        # based on the chosen bid_type (uptown/downtown/no-trump).
+        base_value = int(card.get('value', 0))
+
+        # Trump cards beat non-trump.
         if trump_suit and suit == trump_suit:
             return 50 + base_value
-        
-        # Led suit cards beat off-suit
+
+        # Led suit cards beat off-suit.
         if led_suit and suit == led_suit:
             return base_value
-        
-        # Off-suit cards are lowest
+
+        # Off-suit cards are lowest.
         return base_value - 20
