@@ -187,24 +187,24 @@ export default function PracticeMode() {
           </div>
 
           {/* Category Filter */}
-          <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-purple-500">
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3 pb-2">
             {categories.map((cat) => {
               const Icon = cat.icon;
               const isActive = selectedCategory === cat.id;
               return (
                 <motion.button
                   key={cat.id}
-                  whileHover={{ scale: 1.05, y: -2 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => setSelectedCategory(cat.id)}
-                  className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl font-semibold transition-all whitespace-nowrap ${
+                  className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 rounded-xl font-semibold transition-all w-full min-w-0 ${
                     isActive ? cat.activeButtonClass : cat.buttonClass
                   }`}
                 >
-                  <Icon className="w-5 h-5" />
-                  <span>{cat.name}</span>
+                  <Icon className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+                  <span className="text-[10px] sm:text-sm truncate min-w-0">{cat.name}</span>
                   <span
-                    className={`px-2 py-0.5 rounded-full text-xs ${
+                    className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs shrink-0 ${
                       isActive ? 'bg-white/20' : 'bg-white/10'
                     }`}
                   >
