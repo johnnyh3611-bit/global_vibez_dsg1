@@ -10,7 +10,7 @@ import { GlobalCard } from '@/components/ui/GlobalCard';
 import { getBackendUrl } from '@/config/backendUrl';
 
 const API_URL = getBackendUrl();
-const COINS_PER_USD = 2500;
+const COINS_PER_USD = 1000;
 
 interface UserProfile {
   user_id: string;
@@ -63,9 +63,13 @@ const Wallet = () => {
 
   const handlePayoutRequest = async (payoutData: { coin_amount: number }) => {
     try {
+      const token = localStorage.getItem('auth_token');
       const response = await fetch(`${API_URL}/api/v1/payout/request`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           user_id: userId,
           ...payoutData

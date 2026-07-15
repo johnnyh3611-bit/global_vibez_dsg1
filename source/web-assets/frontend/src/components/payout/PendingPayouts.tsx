@@ -18,7 +18,10 @@ const PendingPayouts = ({ userId, onCancel }) => {
 
   const fetchPayouts = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/v1/payout/my-payouts/${userId}`);
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_URL}/api/v1/payout/my-payouts/${userId}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
       // 2026-05-12 fix: guard against non-OK responses. Without this guard
       // a 404/500 would still hit response.json() (which throws "body stream
       // already read" when the response was wrapped/cached upstream),
@@ -43,8 +46,10 @@ const PendingPayouts = ({ userId, onCancel }) => {
 
     setCancellingId(payoutId);
     try {
+      const token = localStorage.getItem('auth_token');
       const response = await fetch(`${API_URL}/api/v1/payout/cancel/${payoutId}?user_id=${userId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
       
       if (response.ok) {

@@ -4,7 +4,7 @@ Vibez Coins Payout API Routes
 Handles user payout requests, 72-hour security holds, and cashout processing.
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import Dict, Any
@@ -15,6 +15,7 @@ from logic.treasury import (
     validate_minimum_payout
 )
 from config import db
+from utils.auth_dependencies import get_current_user_from_session, verify_user_id
 
 # api_router already prefixes "/api"
 router = APIRouter(prefix="/v1/payout", tags=["Payouts"])
@@ -41,56 +42,53 @@ class PayoutResponse(BaseModel):
 # === ENDPOINTS ===
 
 @router.post("/request", response_model=PayoutResponse)
-async def request_payout(request: PayoutRequest) -> Dict[str, Any]:
+async def request_payout(http_request: Request, payload: PayoutRequest) -> Dict[str, Any]:
     """
     Request a payout (72-hour security hold).
-    
-    Process:
-    1. Validate user has sufficient coins
-    2. Calculate USD value and fees
-    3. Deduct coins from user balance immediately (prevent double-spend)
-    4. Create payout entry with 72-hour hold
-    
-    Returns:
-        Payout details with release date
+    Authenticated via session cookie or Authorization: Bearer token.
+    The payload user_id must match the authenticated user.
     """
+    current_user = await get_current_user_from_session(http_request)
+    verify_user_id(payload.user_id, current_user)
+
+    user_id = current_user["user_id"]
     db_instance = db
     
     # === STEP 1: Validate User Balance ===
-    user = await db_instance.users.find_one({"id": request.user_id}, {"_id": 0})
+    user = await db_instance.users.find_one({"user_id": user_id}, {"_id": 0})
     
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
     user_balance = user.get("credits_balance", 0)
     
-    if user_balance < request.coin_amount:
+    if user_balance < payload.coin_amount:
         raise HTTPException(
             status_code=400,
-            detail=f"Insufficient Vibez Coins. You have ₵{user_balance}, requested ₵{request.coin_amount}"
+            detail=f"Insufficient Vibez Coins. You have ₵{user_balance}, requested ₵{payload.coin_amount}"
         )
     
     # === STEP 2: Validate Minimum Payout ===
-    if not validate_minimum_payout(request.coin_amount):
+    if not validate_minimum_payout(payload.coin_amount):
         raise HTTPException(
             status_code=400,
             detail="Minimum payout is ₵20,000 ($10.00)"
         )
     
     # === STEP 3: Calculate Payout ===
-    payout_calc = calculate_payout(request.coin_amount)
+    payout_calc = calculate_payout(payload.coin_amount)
     release_date = calculate_security_release_date()
     
     # === STEP 4: Create Payout Entry ===
     payout_entry = {
-        "payout_id": f"PO-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{request.user_id[:8]}",
-        "user_id": request.user_id,
+        "payout_id": f"PO-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{user_id[:8]}",
+        "user_id": user_id,
         "username": user.get("username", "Unknown"),
-        "coins_debited": request.coin_amount,
+        "coins_debited": payload.coin_amount,
         "gross_usd": payout_calc["gross"],
         "platform_fee": payout_calc["fee"],
         "net_usd": payout_calc["net"],
-        "payout_method": request.payout_method,
+        "payout_method": payload.payout_method,
         "status": "security_hold",
         "request_date": datetime.utcnow(),
         "release_date": release_date,
@@ -103,9 +101,9 @@ async def request_payout(request: PayoutRequest) -> Dict[str, Any]:
     
     # === STEP 5: Deduct Coins Immediately (Prevent Double-Spend) ===
     await db_instance.users.update_one(
-        {"id": request.user_id},
+        {"user_id": user_id},
         {
-            "$inc": {"credits_balance": -request.coin_amount},
+            "$inc": {"credits_balance": -payload.coin_amount},
             "$set": {"last_payout_request": datetime.utcnow()}
         }
     )
@@ -147,10 +145,14 @@ async def get_payout_status(payout_id: str) -> Dict[str, Any]:
 
 
 @router.get("/my-payouts/{user_id}")
-async def get_user_payouts(user_id: str, limit: int = 10) -> Dict[str, Any]:
+async def get_user_payouts(http_request: Request, user_id: str, limit: int = 10) -> Dict[str, Any]:
     """
     Get all payout requests for a user.
+    Authenticated; may only access the authenticated user's own payouts.
     """
+    current_user = await get_current_user_from_session(http_request)
+    verify_user_id(user_id, current_user)
+
     db_instance = db
     
     payouts = await db_instance.payouts.find(
@@ -166,11 +168,15 @@ async def get_user_payouts(user_id: str, limit: int = 10) -> Dict[str, Any]:
 
 
 @router.delete("/cancel/{payout_id}")
-async def cancel_payout(payout_id: str, user_id: str) -> Dict[str, Any]:
+async def cancel_payout(http_request: Request, payout_id: str, user_id: str) -> Dict[str, Any]:
     """
     Cancel a pending payout (only if still in security_hold).
+    Authenticated; may only cancel the authenticated user's own payout.
     Refunds coins back to user.
     """
+    current_user = await get_current_user_from_session(http_request)
+    verify_user_id(user_id, current_user)
+
     db_instance = db
     
     payout = await db_instance.payouts.find_one({"payout_id": payout_id}, {"_id": 0})
@@ -189,7 +195,7 @@ async def cancel_payout(payout_id: str, user_id: str) -> Dict[str, Any]:
     
     # Refund coins
     await db_instance.users.update_one(
-        {"id": user_id},
+        {"user_id": user_id},
         {"$inc": {"credits_balance": payout["coins_debited"]}}
     )
     
