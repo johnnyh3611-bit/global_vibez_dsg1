@@ -41,9 +41,9 @@ async def start_practice_game(game_data: StartPracticeGame, request: Request) ->
     # Validate game type
     valid_games = [
         "tictactoe", "connect4", "checkers", "reversi", "chess",
-        "ludo", "backgammon", "blackjack", "uno", "go_fish",
-        "crazy_eights", "hearts", "spades", "rummy", "poker",
-        "trivia", "truthordare"
+        "ludo", "backgammon", "blackjack", "blackjack_new", "uno",
+        "go_fish", "crazy_eights", "hearts", "spades", "rummy",
+        "poker", "trivia", "truthordare"
     ]
     
     if game_data.game_type not in valid_games:
@@ -275,7 +275,7 @@ def initialize_practice_game(game_type: str) -> Dict:
         board[4][3] = "player"
         board[4][4] = "ai"
         return {"board": board}
-    elif game_type == "blackjack":
+    elif game_type in ("blackjack", "blackjack_new"):
         suits = ['H', 'D', 'C', 'S']
         ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
         deck = [f"{rank}{suit}" for suit in suits for rank in ranks]
@@ -545,45 +545,72 @@ def apply_move(game_type: str, game_state: Dict, move: Dict, player: str) -> Dic
                     for flip_r, flip_c in pieces_to_flip:
                         board[flip_r][flip_c] = player
     
-    elif game_type == "blackjack":
+    elif game_type in ("blackjack", "blackjack_new"):
         action = move.get("action")
+        current_bet = game_state.get("current_bet", 10)
+        player_balance = game_state.get("player_balance", 1000)
+
+        def _dealer_play():
+            dealer_hand = game_state.get("dealer_hand", [])
+            deck = game_state.get("deck", [])
+            dealer_value = calculate_blackjack_value(dealer_hand)
+            while dealer_value < 17 and deck:
+                dealer_hand.append(deck.pop())
+                dealer_value = calculate_blackjack_value(dealer_hand)
+            game_state["dealer_hand"] = dealer_hand
+            game_state["dealer_score"] = dealer_value
+            game_state["player_score"] = calculate_blackjack_value(game_state["player_hand"])
+
+        def _settle(result: str):
+            if result == "player":
+                if game_state["player_score"] == 21 and len(game_state["player_hand"]) == 2:
+                    game_state["player_balance"] = player_balance + int(current_bet * 1.5)
+                else:
+                    game_state["player_balance"] = player_balance + current_bet
+            elif result == "dealer":
+                game_state["player_balance"] = player_balance - current_bet
+            # push leaves balance unchanged
+
         if action == "hit" and player == "player":
             deck = game_state.get("deck", [])
             if deck:
                 game_state["player_hand"].append(deck.pop())
-                # Update player score after hit
                 game_state["player_score"] = calculate_blackjack_value(game_state["player_hand"])
                 game_state["dealer_score"] = calculate_blackjack_value(game_state["dealer_hand"])
+                if game_state["player_score"] > 21:
+                    _settle("dealer")
         elif action == "stand" and player == "player":
-            # Player stands - dealer plays until 17 or higher
-            dealer_hand = game_state.get("dealer_hand", [])
-            deck = game_state.get("deck", [])
-            dealer_value = calculate_blackjack_value(dealer_hand)
-            
-            # Dealer hits on 16 or less
-            while dealer_value < 17 and deck:
-                dealer_hand.append(deck.pop())
-                dealer_value = calculate_blackjack_value(dealer_hand)
-            
-            game_state["dealer_hand"] = dealer_hand
-            # Update scores after stand
-            game_state["player_score"] = calculate_blackjack_value(game_state["player_hand"])
-            game_state["dealer_score"] = dealer_value
+            _dealer_play()
+            player_score = game_state["player_score"]
+            dealer_score = game_state["dealer_score"]
+            if dealer_score > 21 or player_score > dealer_score:
+                _settle("player")
+            elif player_score < dealer_score:
+                _settle("dealer")
+            # push leaves balance unchanged
         elif action == "double" and player == "player":
-            # Double down - hit once then stand
+            # Double the stake, draw one card, then dealer plays
+            game_state["current_bet"] = current_bet * 2
+            game_state["player_balance"] = player_balance - current_bet
             deck = game_state.get("deck", [])
             if deck:
                 game_state["player_hand"].append(deck.pop())
                 game_state["player_score"] = calculate_blackjack_value(game_state["player_hand"])
-                
-                # Dealer plays
-                dealer_hand = game_state.get("dealer_hand", [])
-                dealer_value = calculate_blackjack_value(dealer_hand)
-                while dealer_value < 17 and deck:
-                    dealer_hand.append(deck.pop())
-                    dealer_value = calculate_blackjack_value(dealer_hand)
-                game_state["dealer_hand"] = dealer_hand
-                game_state["dealer_score"] = dealer_value
+            _dealer_play()
+            player_score = game_state["player_score"]
+            dealer_score = game_state["dealer_score"]
+            doubled_bet = game_state["current_bet"]
+            if player_score > 21:
+                # already lost the doubled bet
+                pass
+            elif dealer_score > 21 or player_score > dealer_score:
+                game_state["player_balance"] = game_state["player_balance"] + doubled_bet
+            elif player_score < dealer_score:
+                # already deducted the extra current_bet above; no further change
+                pass
+            else:
+                # push: return the doubled stake
+                game_state["player_balance"] = game_state["player_balance"] + doubled_bet
         elif action == "hit" and player == "ai":
             # AI dealer hits (this shouldn't normally be called since dealer auto-plays)
             deck = game_state.get("deck", [])
@@ -1115,16 +1142,16 @@ def check_game_status(game_type: str, game_state: Dict) -> Dict:
         if all(board[0][col] != "" for col in range(7)):
             return {"ended": True, "winner": "draw", "message": "It's a draw!"}
     
-    elif game_type == "blackjack":
+    elif game_type in ("blackjack", "blackjack_new"):
         player_hand = game_state.get("player_hand", [])
         dealer_hand = game_state.get("dealer_hand", [])
         player_value = calculate_blackjack_value(player_hand)
         dealer_value = calculate_blackjack_value(dealer_hand)
-        
+
         # Player busted
         if player_value > 21:
-            return {"ended": True, "winner": "ai", "message": "Player busts! Dealer wins!"}
-        
+            return {"ended": True, "winner": "dealer", "message": "Player busts! Dealer wins!"}
+
         # Check if dealer has played (dealer_value >= 17 or dealer busted)
         # This happens after player stands
         if dealer_value >= 17 or len(dealer_hand) > 2:
@@ -1133,7 +1160,7 @@ def check_game_status(game_type: str, game_state: Dict) -> Dict:
             elif player_value > dealer_value:
                 return {"ended": True, "winner": "player", "message": "You win!"}
             elif player_value < dealer_value:
-                return {"ended": True, "winner": "ai", "message": "Dealer wins!"}
+                return {"ended": True, "winner": "dealer", "message": "Dealer wins!"}
             else:
                 return {"ended": True, "winner": "push", "message": "Push! It's a tie!"}
     
