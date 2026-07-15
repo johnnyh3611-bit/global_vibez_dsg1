@@ -237,17 +237,21 @@ class RummyGame:
         self.phase = "draw"
         return {"end": False}
 
-    def declare(self, pos: str, groups: List[List[Dict[str, Any]]]) -> Dict[str, Any]:
-        """Validate the proposed grouping and end the hand if valid."""
-        if pos != self.user_position:
-            raise ValueError("Bots auto-declare")
+    def declare(
+        self, pos: str, groups: List[List[Dict[str, Any]]]
+    ) -> Dict[str, Any]:
+        """Validate the proposed grouping and end the hand if valid.
+
+        May be called internally by bot AI as well as by the player.
+        """
         if self.phase != "discard":
             # Allow declare during own turn after a draw
             raise ValueError("Declare from your discard phase only")
         # Use the union of all groups vs. current hand (must be exact match)
         flat_groups = [c for g in groups for c in g]
-        if len(flat_groups) != len(self.hands[pos]):
-            raise ValueError(f"Groups must contain exactly {len(self.hands[pos])} cards")
+        hand_size = len(self.hands[pos])
+        if len(flat_groups) != hand_size:
+            raise ValueError(f"Groups must contain exactly {hand_size} cards")
         ok, reason = validate_declaration(groups)
         if not ok:
             raise ValueError(reason)
@@ -290,8 +294,22 @@ class RummyGame:
             res = self.draw_stock(actor)
             if res.get("stalemate"):
                 return {"player": actor, "stalemate": True}
-        # Choose discard that minimises post-discard deadwood
+        # If the bot can go out, declare instead of discarding.
         hand = self.hands[actor]
+        dead, melds = best_meld_partition(hand)
+        if dead == 0:
+            groups = [[hand[i] for i in m] for m in melds]
+            ok, reason = validate_declaration(groups)
+            if ok:
+                self.declare(actor, groups)
+                return {
+                    "player": actor,
+                    "drew_from": "discard" if took_discard else "stock",
+                    "declared": True,
+                    "groups": groups,
+                }
+
+        # Choose discard that minimises post-discard deadwood
         best_idx, best_dead = 0, hand_total(hand)
         for i in range(len(hand)):
             simulated = hand[:i] + hand[i + 1:]
