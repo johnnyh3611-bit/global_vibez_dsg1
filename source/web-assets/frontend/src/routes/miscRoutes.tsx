@@ -138,7 +138,7 @@ export const miscRoutes = (ProtectedRoute) => (
     {/* DSG Circulation Ledger — chair registry */}
     <Route path="/chair-ledger" element={<ProtectedRoute><ChairLedgerPage /></ProtectedRoute>} />
     <Route path="/chair-registry" element={<ProtectedRoute><ChairLedgerPage /></ProtectedRoute>} />
-    {/* Ops console — logistics audit / Azure data consistency */}
-    <Route path="/operations" element={<ProtectedRoute><OperationsConsolePage /></ProtectedRoute>} />
+    {/* Ops console — public platform health dashboard */}
+    <Route path="/operations" element={<OperationsConsolePage />} />
   </>
 );
