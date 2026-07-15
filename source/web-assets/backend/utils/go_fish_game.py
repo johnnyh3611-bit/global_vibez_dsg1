@@ -115,8 +115,6 @@ class GoFishGame:
             raise ValueError("Invalid target")
         if not self.has_rank(asker, rank):
             raise ValueError("You must hold at least one of that rank to ask")
-        self.public_asks.append({"asker": asker, "target": target, "rank": rank})
-
         result: Dict[str, Any] = {"asker": asker, "target": target, "rank": rank}
         if self.has_rank(target, rank):
             moved = self.transfer_rank(target, asker, rank)
@@ -143,6 +141,12 @@ class GoFishGame:
                 self.turn = _next(self.turn)
 
         self.last_action = result
+        self.public_asks.append({
+            "asker": asker,
+            "target": target,
+            "rank": rank,
+            "go_fish": result.get("go_fish", False),
+        })
         self._check_round_end()
         return result
 
@@ -156,22 +160,59 @@ class GoFishGame:
     # ----- bot ai --------------------------------------------------------
 
     def bot_choose(self, pos: str) -> tuple[str, str]:
-        """Return (target, rank) for a bot. Avoids targets that obviously
-        don't have what we want by tracking public asks."""
+        """Return (target, rank) for a bot.
+
+        Prefers ranks with multiple copies in hand, targets players with
+        more cards, and avoids asking a rank of a player who has already
+        gone fish for that rank in this hand.
+        """
         ranks_in_hand = [c["rank"] for c in self.hands[pos]]
         # Prefer ranks we have multiple copies of (closer to a book)
         rank_counts: Dict[str, int] = {}
         for r in ranks_in_hand:
             rank_counts[r] = rank_counts.get(r, 0) + 1
-        # Pick rank with most copies (that's still askable)
-        ranks_sorted = sorted(rank_counts.items(), key=lambda kv: -kv[1])
-        chosen_rank = ranks_sorted[0][0] if ranks_sorted else self.rng.choice(ranks_in_hand)
-        # Target preference: anyone who recently went-fish on this rank → likely doesn't have it; skip them
+        # Stable ordering with most-held ranks first
+        ranked = sorted(
+            rank_counts.items(),
+            key=lambda kv: (-kv[1], -RANK_VALUES[kv[0]]),
+        )
+
+        # Build a memory set of (target, rank) pairs known to be empty from
+        # previous go-fish answers.
+        known_missing: set[tuple[str, str]] = {
+            (entry["target"], entry["rank"])
+            for entry in self.public_asks
+            if entry.get("go_fish")
+        }
+
+        def _valid_target(target: str, rank: str) -> bool:
+            return target != pos and (target, rank) not in known_missing
+
+        # Score candidates by hand size (more cards → better odds) and
+        # by rank multiplicity.
+        candidates: list[tuple[int, str, str]] = []
+        for rank, count in ranked:
+            for target in POSITIONS:
+                if not _valid_target(target, rank):
+                    continue
+                hand_size = len(self.hands[target])
+                # Larger hands are better targets; prefer ranks we hold most.
+                score = hand_size + count * 5
+                candidates.append((score, target, rank))
+
+        if candidates:
+            candidates.sort(reverse=True)
+            _, target, chosen_rank = candidates[0]
+            return (target, chosen_rank)
+
+        # Fallback: random legal ask if the heuristic found nothing usable.
         targets = [p for p in POSITIONS if p != pos and self.hands[p]]
         if not targets:
             targets = [p for p in POSITIONS if p != pos]
-        target = self.rng.choice(targets)
-        return (target, chosen_rank)
+        chosen_rank = (
+            ranked[0][0] if ranked else self.rng.choice(ranks_in_hand)
+        )
+        return (self.rng.choice(targets), chosen_rank)
 
     def run_bots(self, max_steps: int = 24) -> List[Dict[str, Any]]:
         steps: List[Dict[str, Any]] = []
