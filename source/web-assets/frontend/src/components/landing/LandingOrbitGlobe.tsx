@@ -80,7 +80,7 @@ export default function LandingOrbitGlobe() {
 
   return (
     <div
-      className="relative mx-auto w-[260px] h-[260px] sm:w-[340px] sm:h-[340px] lg:w-[440px] lg:h-[440px] shrink-0"
+      className="relative mx-auto w-[180px] h-[180px] sm:w-[280px] sm:h-[280px] lg:w-[440px] lg:h-[440px] shrink-0"
       data-testid="landing-orbit-globe"
       aria-label="Global Vibez DSG planet with rooms inside and DSG in orbit"
     >

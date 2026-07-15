@@ -47,9 +47,21 @@ export default function MobileBottomNav() {
   const isMobile = useIsMobile();
   const isFullscreenGame = useIsFullscreenGameRoute();
 
-  if (!isMobile) return null;
-  if (HIDDEN_ROUTES.includes(location.pathname)) return null;
-  if (isFullscreenGame) return null;
+  const shouldShow = isMobile && !HIDDEN_ROUTES.includes(location.pathname) && !isFullscreenGame;
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const root = document.getElementById('root');
+    if (!root) return;
+    if (shouldShow) {
+      root.classList.add('gv-bottom-nav-visible');
+    } else {
+      root.classList.remove('gv-bottom-nav-visible');
+    }
+    return () => root.classList.remove('gv-bottom-nav-visible');
+  }, [shouldShow]);
+
+  if (!shouldShow) return null;
 
   const isActive = (route: string) => {
     if (route === '/dashboard') return location.pathname === '/dashboard';
@@ -90,9 +102,6 @@ export default function MobileBottomNav() {
           })}
         </div>
       </nav>
-      {/* Reserve space at the bottom of the document so fixed nav doesn't
-          overlap the last page content on scrollable pages. */}
-      <div className="h-16 md:hidden" aria-hidden />
     </>
   );
 }
