@@ -27,7 +27,12 @@ interface PhantomConnectButtonProps {
   label?: string;
 }
 
-export default function PhantomConnectButton({
+/**
+ * Inner component that actually calls the Phantom SDK hooks. It is only
+ * rendered when REACT_APP_PHANTOM_APP_ID is configured, so the hooks always
+ * have a PhantomProvider above them.
+ */
+function PhantomConnectButtonInner({
   className = "",
   label = "Connect Wallet",
 }: PhantomConnectButtonProps) {
@@ -100,4 +105,26 @@ export default function PhantomConnectButton({
       )}
     </div>
   );
+}
+
+/**
+ * Public wrapper. If Phantom has not been configured (no REACT_APP_PHANTOM_APP_ID),
+ * render an unobtrusive placeholder instead of crashing the tree because the
+ * PhantomProvider is missing.
+ */
+export default function PhantomConnectButton(props: PhantomConnectButtonProps) {
+  const isConfigured = Boolean(process.env.REACT_APP_PHANTOM_APP_ID);
+
+  if (!isConfigured) {
+    return (
+      <span
+        className={`text-xs text-neutral-500 ${props.className || ""}`}
+        data-testid="phantom-not-configured"
+      >
+        Wallet connect not configured
+      </span>
+    );
+  }
+
+  return <PhantomConnectButtonInner {...props} />;
 }
