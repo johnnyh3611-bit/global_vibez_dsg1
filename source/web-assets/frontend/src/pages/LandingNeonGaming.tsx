@@ -363,10 +363,9 @@ export default function LandingNeonGaming() {
                 <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
                 Join Beta
               </button>
-              {/* Founder fix May 2026 — surfaced the 79-sec narrated tour
-                  in the hero so visitors don't have to scroll deep into
-                  the page to find it. Smooth-scrolls to the video player
-                  section below. */}
+              {/* Founder fix May 2026 — surfaced the narrated tour in the
+                  hero so visitors don't have to scroll deep into the page to
+                  find it. Smooth-scrolls to the video player section below. */}
               <button
                 onClick={() => {
                   const target = document.querySelector('[data-testid="landing-tour-video"]');
@@ -376,7 +375,7 @@ export default function LandingNeonGaming() {
                 className="w-full sm:w-auto px-4 sm:px-8 py-2.5 sm:py-3.5 bg-black/60 backdrop-blur-xl text-white text-sm sm:text-base font-black rounded-lg hover:bg-black/80 transition-all border-2 border-cyan-400 hover:border-fuchsia-400 flex items-center justify-center gap-2 shadow-[0_0_30px_-8px_rgba(34,211,238,0.5)]"
               >
                 <Play className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" />
-                Watch 2-min Tour
+                Watch 6-min Tour
               </button>
             </motion.div>
 
@@ -631,7 +630,7 @@ export default function LandingNeonGaming() {
         </div>
       </section>
 
-      {/* 79-second narrated tour — sits below the 4-pillars grid (which
+      {/* ~6-minute narrated tour — sits below the 4-pillars grid (which
           contains the DSG VIBE TV pillar at position 02). Founder
           directive 2026-05-09: surplus video for visitors who don't
           scroll the full landing page. Onyx-narrated · 4 looped MP4

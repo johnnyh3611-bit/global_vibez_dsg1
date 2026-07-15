@@ -43,12 +43,17 @@ MANIFEST = PUBLIC_DIR / "landing-tour-i18n.json"
 LEGACY_MP4 = PUBLIC_DIR / "landing-tour-tiktok-9x16.mp4"
 
 CLIPS = [
-    PUBLIC_DIR / "landing-tour" / "clips" / "01-intro.mp4",
-    PUBLIC_DIR / "landing-tour" / "clips" / "02-casino.mp4",
-    PUBLIC_DIR / "landing-tour" / "clips" / "03-dating.mp4",
-    PUBLIC_DIR / "landing-tour" / "clips" / "04-hustle.mp4",
-    PUBLIC_DIR / "landing-tour" / "clips" / "05-stream.mp4",
-    PUBLIC_DIR / "landing-tour" / "clips" / "06-chair.mp4",
+    PUBLIC_DIR / "landing-tour" / "clips" / "01-dice-intro.mp4",
+    PUBLIC_DIR / "landing-tour" / "clips" / "02-game-on.mp4",
+    PUBLIC_DIR / "landing-tour" / "clips" / "03-just-for-the-night.mp4",
+    PUBLIC_DIR / "landing-tour" / "clips" / "04-earn-hats.mp4",
+    PUBLIC_DIR / "landing-tour" / "clips" / "05-wow-factor.mp4",
+    PUBLIC_DIR / "landing-tour" / "clips" / "06-welcome-home.mp4",
+    PUBLIC_DIR / "landing-tour" / "clips" / "07-meet-host.mp4",
+    PUBLIC_DIR / "landing-tour" / "clips" / "08-sit-table.mp4",
+    PUBLIC_DIR / "landing-tour" / "clips" / "05-wow-factor.mp4",
+    PUBLIC_DIR / "landing-tour" / "clips" / "10-commercial-1.mp4",
+    PUBLIC_DIR / "landing-tour" / "clips" / "11-commercial-2.mp4",
 ]
 
 
@@ -75,10 +80,10 @@ def download_clips(target_dir: Path) -> List[Path]:
 
 
 def reencode_vertical(src: Path, dst: Path) -> None:
-    vf = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920"
+    vf = "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280"
     run(
         f"ffmpeg -y -i {shlex.quote(str(src))} "
-        f'-vf "{vf}" -an -c:v libx264 -preset veryfast -crf 22 '
+        f'-vf "{vf}" -an -c:v libx264 -preset veryfast -crf 28 '
         f"-pix_fmt yuv420p -movflags +faststart {shlex.quote(str(dst))}"
     )
 
@@ -167,7 +172,7 @@ def render_language(lang: str, track: dict, sources: List[Path]) -> Path:
         run(
             "ffmpeg -y -stream_loop -1 -i "
             f"{shlex.quote(str(concatted))} -t {duration} "
-            "-c:v libx264 -preset veryfast -crf 22 -pix_fmt yuv420p "
+            "-c:v libx264 -preset veryfast -crf 28 -pix_fmt yuv420p "
             f"{shlex.quote(str(trimmed))}"
         )
         # Burn captions.
@@ -175,16 +180,16 @@ def render_language(lang: str, track: dict, sources: List[Path]) -> Path:
         build_srt(srt, cues, duration)
         burned = tmp / "burned.mp4"
         force_style = (
-            "FontName=Inter,FontSize=58,PrimaryColour=&HFFFFFFFF,"
+            "FontName=Inter,FontSize=42,PrimaryColour=&HFFFFFFFF,"
             "OutlineColour=&H80000000,BorderStyle=3,Outline=2,Shadow=0,"
-            "Alignment=2,MarginV=220,Bold=1"
+            "Alignment=2,MarginV=160,Bold=1"
         )
         run(
             "ffmpeg -y -i "
             f"{shlex.quote(str(trimmed))} "
             f'-vf "subtitles={shlex.quote(str(srt))}:'
             f"force_style='{force_style}'\" "
-            "-c:v libx264 -preset veryfast -crf 22 -pix_fmt yuv420p "
+            "-c:v libx264 -preset veryfast -crf 28 -pix_fmt yuv420p "
             f"{shlex.quote(str(burned))}"
         )
         # Mux audio + final compress.
@@ -194,10 +199,10 @@ def render_language(lang: str, track: dict, sources: List[Path]) -> Path:
             f"{shlex.quote(str(burned))} -i "
             f"{shlex.quote(str(audio_path))} "
             "-map 0:v:0 -map 1:a:0 "
-            "-c:v libx264 -preset slow -crf 28 "
-            "-maxrate 2500k -bufsize 5000k "
+            "-c:v libx264 -preset slow -crf 30 "
+            "-maxrate 1200k -bufsize 2400k "
             "-pix_fmt yuv420p -movflags +faststart "
-            "-c:a aac -b:a 128k -shortest "
+            "-c:a aac -b:a 96k -shortest "
             f"{shlex.quote(str(muxed))}"
         )
         output.parent.mkdir(parents=True, exist_ok=True)
