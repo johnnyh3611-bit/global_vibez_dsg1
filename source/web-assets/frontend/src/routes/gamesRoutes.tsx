@@ -368,8 +368,8 @@ export const gamesRoutes = (ProtectedRoute) => (
     {/* AR/VR */}
     <Route path="/ar-cards" element={<ProtectedRoute><ARCardPreview /></ProtectedRoute>} />
     
-    {/* Practice Mode - REDIRECTED TO NEW UNIFIED GAMES PAGE */}
-    <Route path="/practice" element={<ProtectedRoute><Games /></ProtectedRoute>} />
+    {/* Practice Mode - dedicated AI/solo practice lobby */}
+    <Route path="/practice" element={<ProtectedRoute><PracticeMode /></ProtectedRoute>} />
     <Route path="/practice/play/:gameId" element={<ProtectedRoute><PracticeGamePlay /></ProtectedRoute>} />
     <Route path="/practice/stats" element={<ProtectedRoute><PracticeStats /></ProtectedRoute>} />
     {/* Defensive redirect — beta-blocker fix (2026-02-09): older

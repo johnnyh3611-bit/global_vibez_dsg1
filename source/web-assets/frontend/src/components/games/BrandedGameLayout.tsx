@@ -59,14 +59,14 @@ export const BrandedGameLayout = ({
       {showWatermark && <GameWatermark position="bottom-right" />}
 
       {/* Main Content */}
-      <div className="relative z-10 max-w-7xl mx-auto p-6">
+      <div className="relative z-10 max-w-7xl mx-auto p-4 sm:p-6">
         {/* Header */}
         <motion.div
           initial={{ y: -50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           className="mb-8"
         >
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
             <Button
               onClick={onBack}
               variant="ghost"
@@ -108,13 +108,13 @@ export const BrandedGameLayout = ({
                   {gameIcon || <Trophy className="w-8 h-8 text-white" />}
                 </div>
                 <div>
-                  <h1 className="text-4xl font-black text-white">{gameName}</h1>
+                  <h1 className="text-2xl sm:text-4xl font-black text-white">{gameName}</h1>
                   <p className="text-white/60 text-sm mt-1">Global Vibez DSG™ Gaming Experience</p>
                 </div>
               </div>
 
               {/* Game Stats */}
-              <div className="flex gap-6">
+              <div className="flex flex-wrap gap-4 sm:gap-6">
                 {difficulty && (
                   <div className="text-center">
                     <p className="text-white/40 text-xs mb-1">Difficulty</p>
@@ -161,7 +161,7 @@ export const BrandedGameLayout = ({
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-2xl min-h-[500px]"
+          className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4 sm:p-8 shadow-2xl min-h-[300px] sm:min-h-[500px]"
         >
           {children}
         </motion.div>

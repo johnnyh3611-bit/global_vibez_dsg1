@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { RotateCcw, Zap, Trophy } from 'lucide-react';
 import cardSoundManager from '@/utils/cardSoundManager';
+import GameShell from '@/components/games/GameShell';
 
 const PIN_COUNT = 10;
 const PIN_ROWS = 4;
@@ -86,7 +87,6 @@ export default function PracticeBowling({ gameState, onMove }: { gameState?: any
         nextRollInFrame = 1;
       }
     } else {
-      // 10th frame
       const previousRoll = currentRollInFrame >= 1 ? newRolls[newRolls.length - 2] ?? 0 : null;
       if (currentRollInFrame === 0) {
         if (down === 10) {
@@ -234,93 +234,104 @@ export default function PracticeBowling({ gameState, onMove }: { gameState?: any
     );
   };
 
+  const status = gameOver ? 'Game Over' : rolling ? 'Rolling...' : 'Frame ' + (frame + 1);
+
   return (
-    <div className="w-full max-w-4xl mx-auto p-2 sm:p-4">
-      <div className="text-center mb-4">
-        <h2 className="text-2xl sm:text-3xl font-black text-white flex items-center justify-center gap-2">
-          <span className="text-3xl">🎳</span> 10-Pin Bowling
-        </h2>
-        <p className="text-cyan-300 text-sm mt-1">{message}</p>
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-4 mb-4">
-        <div className="flex-1 bg-gradient-to-br from-slate-800 to-black rounded-2xl p-4 border border-white/10 flex items-center justify-center min-h-[260px] relative overflow-hidden">
-          <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-amber-900/30 to-transparent" />
-
-          <div className="relative z-10 flex flex-col items-center gap-2">
-            {Array.from({ length: PIN_ROWS }).map((_, row) => (
-              <div key={row} className="flex gap-2 justify-center">
-                {Array.from({ length: row + 1 }).map((_, idx) => {
-                  const pinIdx = pinIndexInRow(row, idx);
-                  const up = pins[pinIdx];
-                  return (
-                    <div
-                      key={pinIdx}
-                      className={`w-7 h-7 sm:w-9 sm:h-9 rounded-full shadow-lg transition-all duration-300 ${
-                        up
-                          ? 'bg-gradient-to-br from-white to-gray-300 border-2 border-gray-400'
-                          : 'bg-transparent border-2 border-transparent'
-                      }`}
-                    />
-                  );
-                })}
-              </div>
-            ))}
+    <GameShell
+      title="10-Pin Bowling"
+      emoji="🎳"
+      subtitle={message}
+      bgGradient="from-amber-900 via-orange-900 to-black"
+      onBack={() => window.history.back()}
+      onRestart={resetGame}
+      status={status}
+      stats={[
+        { label: 'Score', value: score, color: 'cyan' },
+        { label: 'Frame', value: Math.min(frame + 1, 10), color: 'purple' },
+        { label: 'Pins Left', value: remainingPins, color: 'yellow' },
+      ]}
+      controls={
+        <div className="flex gap-3">
+          <button
+            onClick={rollBall}
+            disabled={rolling || gameOver}
+            className="flex-1 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-black text-base rounded-xl border-2 border-cyan-400 hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            <Zap className="w-5 h-5" />
+            {rolling ? 'Rolling...' : 'ROLL'}
+          </button>
+          <button
+            onClick={resetGame}
+            className="px-5 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl border-2 border-purple-400 hover:scale-[1.02] transition-transform flex items-center gap-2"
+          >
+            <RotateCcw className="w-5 h-5" />
+            New Game
+          </button>
+        </div>
+      }
+      modal={
+        gameOver && (
+          <div className="bg-gradient-to-br from-amber-900 to-orange-900 rounded-3xl p-6 sm:p-8 border-4 border-yellow-400 text-center max-w-sm mx-auto">
+            <Trophy className="w-12 h-12 text-yellow-400 mx-auto mb-4" />
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Game Over</h2>
+            <p className="text-2xl text-yellow-400 mb-6">Final Score: {score}</p>
+            <button
+              onClick={resetGame}
+              className="px-8 py-4 bg-gradient-to-r from-green-600 to-cyan-600 text-white font-bold text-xl rounded-xl hover:scale-105 transition-transform"
+            >
+              Play Again
+            </button>
           </div>
+        )
+      }
+    >
+      <div className="w-full max-w-3xl mx-auto space-y-4">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1 bg-gradient-to-br from-slate-800 to-black rounded-2xl p-4 border border-white/10 flex items-center justify-center min-h-[240px] sm:min-h-[320px] relative overflow-hidden">
+            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-amber-900/30 to-transparent" />
 
-          {rolling && (
-            <div
-              className="absolute left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-gradient-to-br from-cyan-400 to-blue-600 shadow-[0_0_15px_rgba(34,211,238,0.6)] z-20 transition-all"
-              style={{ top: `${ballLaneProgress}%` }}
-            />
-          )}
-
-          {celebrate && (
-            <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
-              <Trophy className="w-16 h-16 text-yellow-400 drop-shadow-lg animate-bounce" />
+            <div className="relative z-10 flex flex-col items-center gap-2">
+              {Array.from({ length: PIN_ROWS }).map((_, row) => (
+                <div key={row} className="flex gap-2 justify-center">
+                  {Array.from({ length: row + 1 }).map((_, idx) => {
+                    const pinIdx = pinIndexInRow(row, idx);
+                    const up = pins[pinIdx];
+                    return (
+                      <div
+                        key={pinIdx}
+                        className={`w-6 h-6 sm:w-9 sm:h-9 rounded-full shadow-lg transition-all duration-300 ${
+                          up
+                            ? 'bg-gradient-to-br from-white to-gray-300 border-2 border-gray-400'
+                            : 'bg-transparent border-2 border-transparent'
+                        }`}
+                      />
+                    );
+                  })}
+                </div>
+              ))}
             </div>
-          )}
-        </div>
 
-        <div className="w-full sm:w-48 space-y-3">
-          <div className="bg-gradient-to-br from-cyan-600 to-blue-600 rounded-2xl p-4 border-2 border-cyan-400 text-center">
-            <p className="text-cyan-100 text-xs uppercase">Score</p>
-            <p className="text-4xl font-black text-white">{score}</p>
-          </div>
-          <div className="bg-white/5 border border-white/20 rounded-2xl p-4 text-center">
-            <p className="text-white/60 text-xs uppercase">Frame</p>
-            <p className="text-2xl font-black text-white">{Math.min(frame + 1, 10)}</p>
-          </div>
-          <div className="bg-white/5 border border-white/20 rounded-2xl p-4 text-center">
-            <p className="text-white/60 text-xs uppercase">Pins Left</p>
-            <p className="text-2xl font-black text-white">{remainingPins}</p>
+            {rolling && (
+              <div
+                className="absolute left-1/2 -translate-x-1/2 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gradient-to-br from-cyan-400 to-blue-600 shadow-[0_0_15px_rgba(34,211,238,0.6)] z-20 transition-all"
+                style={{ top: `${ballLaneProgress}%` }}
+              />
+            )}
+
+            {celebrate && (
+              <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
+                <Trophy className="w-14 h-14 text-yellow-400 drop-shadow-lg animate-bounce" />
+              </div>
+            )}
           </div>
         </div>
-      </div>
 
-      <div className="flex gap-3 mb-6">
-        <button
-          onClick={rollBall}
-          disabled={rolling || gameOver}
-          className="flex-1 py-4 bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-black text-lg rounded-xl border-2 border-cyan-400 hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-        >
-          <Zap className="w-6 h-6" />
-          {rolling ? 'Rolling...' : 'ROLL'}
-        </button>
-        <button
-          onClick={resetGame}
-          className="px-6 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl border-2 border-purple-400 hover:scale-[1.02] transition-transform flex items-center gap-2"
-        >
-          <RotateCcw className="w-5 h-5" />
-          New Game
-        </button>
-      </div>
-
-      <div className="bg-white/5 border border-white/20 rounded-2xl p-4">
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          {Array.from({ length: FRAMES }).map((_, i) => renderFrameBox(i))}
+        <div className="bg-white/5 border border-white/20 rounded-2xl p-4">
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            {Array.from({ length: FRAMES }).map((_, i) => renderFrameBox(i))}
+          </div>
         </div>
       </div>
-    </div>
+    </GameShell>
   );
 }
