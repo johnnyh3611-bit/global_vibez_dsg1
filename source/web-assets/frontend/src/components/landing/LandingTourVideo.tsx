@@ -66,8 +66,7 @@ const pickInitialLang = (manifest: I18nManifest): string => {
 };
 
 // Cache-buster version tag — bump this whenever the MP3 is regenerated
-// so production browsers + CDN edge nodes don't keep serving the stale
-// male-voice (Onyx) file from before the Nova re-record.
+// so production browsers + CDN edge nodes don't keep serving the stale file.
 const NARRATION_SRC = "/landing-tour-narration.mp3?v=2026-07-15-overhaul";
 
 // Static fallback caption track — used until the i18n manifest loads
@@ -550,7 +549,7 @@ const LandingTourVideo: React.FC<Props> = ({ onJoinBeta }) => {
         </motion.div>
 
         <p className="text-center text-[11px] text-white/30 mt-4 font-mono uppercase tracking-widest">
-          Voiceover: AI-narrated · Nova · {captions.length} cues · {CLIPS.length} clip loop · {manifest ? Object.keys(manifest.languages).length : 1} language{manifest && Object.keys(manifest.languages).length > 1 ? "s" : ""}
+          Voiceover: AI-narrated · JennyNeural · {captions.length} cues · {CLIPS.length} clips · {manifest ? Object.keys(manifest.languages).length : 1} language{manifest && Object.keys(manifest.languages).length > 1 ? "s" : ""}
         </p>
 
         {/* Social-export row — direct download of the pre-rendered 9:16
@@ -568,11 +567,11 @@ const LandingTourVideo: React.FC<Props> = ({ onJoinBeta }) => {
               Want to share this?
             </h3>
             <p className="text-xs md:text-sm text-white/60">
-              Same script, same Nova narration, vertical 9:16 with burned-in captions — ready for TikTok, Reels &amp; Shorts.
+              Same script, same excited Edge TTS voice, vertical 9:16 with burned-in captions — ready for TikTok, Reels &amp; Shorts.
             </p>
           </div>
           <a
-            href="/landing-tour-tiktok-9x16.mp4?v=recirc-2026-02-15"
+            href="/landing-tour-tiktok-9x16.mp4?v=2026-07-15-overhaul"
             download="GlobalVibezDSG-Tour-9x16.mp4"
             data-testid="landing-tour-download-9x16-btn"
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white text-black text-sm font-black uppercase tracking-wider hover:bg-fuchsia-200 transition-colors shrink-0"
