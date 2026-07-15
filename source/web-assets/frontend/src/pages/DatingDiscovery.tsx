@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, X, Gamepad2, Sparkles, MessageCircle } from 'lucide-react';
+import { Heart, X, Gamepad2, Sparkles, MessageCircle, HeartCrack, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { authFetch, getUserId, getBearerToken } from '@/utils/secureAuth';
 
@@ -118,17 +118,28 @@ export function DatingDiscovery() {
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="text-center max-w-md"
+          className="text-center max-w-md bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8"
         >
-          <div className="text-6xl mb-4">😢</div>
-          <h2 className="text-3xl font-black text-white mb-4">No More Profiles</h2>
-          <p className="text-white/60 mb-6">Check back later for more matches!</p>
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="px-8 py-3 bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white font-bold rounded-xl"
-          >
-            Back to Dashboard
-          </button>
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-fuchsia-500/10 flex items-center justify-center">
+            <HeartCrack className="w-10 h-10 text-fuchsia-400" />
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-black text-white mb-3">No More Profiles</h2>
+          <p className="text-white/70 mb-6">You've seen everyone for now. Come back later for new matches, or explore other ways to connect.</p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              onClick={() => navigate('/find-player-2')}
+              className="px-6 py-3 bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white font-bold rounded-xl flex items-center justify-center gap-2"
+            >
+              <Search className="w-4 h-4" />
+              Find Your Player 2
+            </button>
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="px-6 py-3 bg-white/10 hover:bg-white/15 text-white font-bold rounded-xl"
+            >
+              Back to Dashboard
+            </button>
+          </div>
         </motion.div>
       </div>
     );

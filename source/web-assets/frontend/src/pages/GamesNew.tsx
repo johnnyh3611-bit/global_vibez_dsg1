@@ -605,6 +605,7 @@ export default function GamesNew() {
         <div className="container mx-auto px-4 py-4 flex flex-wrap justify-between items-center gap-y-2">
           <Button
             variant="ghost"
+            title="Back to Hub"
             onClick={() => navigate('/dashboard')}
             className="text-white hover:bg-white/10 px-2 sm:px-4"
           >
@@ -622,6 +623,7 @@ export default function GamesNew() {
             
             <Button
               variant="ghost"
+              title="My Vibez"
               onClick={() => {
                 soundManager.buttonClick();
                 navigate('/vibez');
@@ -635,6 +637,7 @@ export default function GamesNew() {
             
             <Button
               variant="ghost"
+              title="Player Stats"
               onClick={() => {
                 soundManager.buttonClick();
                 navigate('/player-stats');
@@ -648,6 +651,7 @@ export default function GamesNew() {
             
             <Button
               variant="ghost"
+              title="Leaderboard"
               onClick={() => {
                 soundManager.buttonClick();
                 navigate('/leaderboard');
@@ -660,6 +664,7 @@ export default function GamesNew() {
             </Button>
             
             <Button
+              title="Quick Play"
               onClick={() => {
                 soundManager.buttonClick();
                 navigate('/http-multiplayer');

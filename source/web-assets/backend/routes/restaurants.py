@@ -486,6 +486,39 @@ async def approve_restaurant(approval: RestaurantApproval, request: Request) -> 
     }
 
 
+@router.get("/admin/list")
+async def list_restaurants_admin(
+    request: Request,
+    status: Optional[str] = None,
+    limit: int = 50
+) -> Dict[str, Any]:
+    """List restaurant submissions, optionally filtered by status (ADMIN ONLY)"""
+    current_user = await get_current_user(request)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    from utils.admin_guard import is_admin
+    if not is_admin(current_user):
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    db = get_database()
+    query = {}
+    if status:
+        query["listing_status"] = status
+
+    restaurants = await db.restaurants.find(query, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
+
+    for restaurant in restaurants:
+        user = await db.users.find_one(
+            {"user_id": restaurant["submitted_by"]},
+            {"_id": 0, "name": 1, "email": 1}
+        )
+        if user:
+            restaurant["submitter_info"] = user
+
+    return {"restaurants": restaurants, "count": len(restaurants)}
+
+
 @router.get("/admin/stats")
 async def get_restaurant_stats(request: Request) -> Dict[str, Any]:
     """Get restaurant platform statistics (ADMIN ONLY)"""

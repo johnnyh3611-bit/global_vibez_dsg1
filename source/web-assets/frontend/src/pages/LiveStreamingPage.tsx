@@ -395,10 +395,18 @@ const LiveStreamingPage = () => {
 
           {/* Empty State */}
           {filteredStreams.length === 0 && (
-            <div className="text-center py-20">
-              <Radio className="w-16 h-16 text-white/20 mx-auto mb-4" />
-              <h3 className="text-white/60 text-lg font-bold mb-2">No live streams in this category</h3>
-              <p className="text-white/40 text-sm">Check back later or try another category!</p>
+            <div className="text-center py-12 max-w-md mx-auto bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8">
+              <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-cyan-500/10 flex items-center justify-center">
+                <Radio className="w-10 h-10 text-cyan-400" />
+              </div>
+              <h3 className="text-2xl font-black text-white mb-2">No Live Streams</h3>
+              <p className="text-white/70 mb-6">No one is broadcasting in this category right now. Try another category or start your own.</p>
+              <button
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                className="px-6 py-3 bg-white/10 hover:bg-white/15 text-white font-bold rounded-xl"
+              >
+                Try Another Category
+              </button>
             </div>
           )}
         </div>
