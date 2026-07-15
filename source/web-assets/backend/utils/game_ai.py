@@ -838,11 +838,13 @@ class GameAI:
     
     def ludo_move(self, game_state: Dict) -> Dict:
         """Simplified Ludo AI"""
-        return {"piece": 0, "spaces": 1}
+        from utils.ludo_game import get_ai_move
+        return get_ai_move(game_state, player="ai")
     
     def backgammon_move(self, game_state: Dict) -> Dict:
         """Simplified Backgammon AI"""
-        return {"from": 0, "to": 1}
+        from utils.backgammon_game import get_ai_move
+        return get_ai_move(game_state, player="ai")
     
     def hearts_move(self, game_state: Dict) -> Dict:
         """Enhanced Hearts AI - avoid hearts and Queen of Spades"""
