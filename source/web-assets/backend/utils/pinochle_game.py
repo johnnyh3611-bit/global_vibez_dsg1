@@ -428,14 +428,17 @@ class PinochleGame:
 
     def bot_bid(self) -> Dict[str, Any]:
         actor = self.bid_turn
-        # Estimate hand strength: best meld + 60% of A/10 trick potential
+        # Estimate hand strength: best meld + A/10 trick potential
         meld = self._bot_estimate_meld(actor)
         a_count = sum(1 for c in self.hands[actor] if c["rank"] == "A")
         ten_count = sum(1 for c in self.hands[actor] if c["rank"] == "10")
         trick_est = a_count * 9 + ten_count * 6  # rough
         hand_value = meld + trick_est
         threshold = max(self.bid_min, self.high_bid + BID_INCREMENT)
-        if hand_value >= threshold + 30:
+        # Bid if the estimate clears the table, or if everyone before us
+        # has already passed (common "must-bid" situation to avoid redeals).
+        must_bid = len(self.passed) == 3 and actor not in self.passed
+        if hand_value >= threshold + 20 or must_bid:
             self.place_bid(actor, threshold)
             return {"player": actor, "action": "bid", "amount": threshold}
         self.pass_bid(actor)
