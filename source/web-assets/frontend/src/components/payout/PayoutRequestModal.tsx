@@ -9,7 +9,7 @@ const PayoutRequestModal = ({ isOpen, onClose, userBalance, onSubmit }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const CONVERSION_RATE = 1000; // 1,000 coins = $1 USD (updated 2026-05-18)
-  const MIN_PAYOUT_COINS = 20000; // Minimum $10 USD
+  const MIN_PAYOUT_COINS = 20000; // Minimum $20 USD at current rate
   const PLATFORM_FEE_PERCENT = 5; // 5% fee
 
   const calculateUSD = (coins) => {
@@ -21,6 +21,7 @@ const PayoutRequestModal = ({ isOpen, onClose, userBalance, onSubmit }) => {
 
   const coinAmountNum = Number(coinAmount) || 0;
   const usdPreview = coinAmount ? calculateUSD(parseInt(coinAmount as any)) : { gross: 0, fee: 0, net: 0 };
+  const minPayoutUsd = (MIN_PAYOUT_COINS / CONVERSION_RATE).toFixed(2);
   const isValid = coinAmountNum >= MIN_PAYOUT_COINS && coinAmountNum <= userBalance;
 
   const handleSubmit = async () => {
@@ -93,7 +94,7 @@ const PayoutRequestModal = ({ isOpen, onClose, userBalance, onSubmit }) => {
                     type="number"
                     value={coinAmount}
                     onChange={(e) => setCoinAmount(e.target.value)}
-                    placeholder="20,000 minimum"
+                    placeholder={`${MIN_PAYOUT_COINS.toLocaleString()} minimum`}
                     className="w-full bg-white/5 border border-white/20 rounded-xl pl-10 pr-20 py-3 text-white text-lg font-semibold focus:outline-none focus:border-cyan-400 transition"
                   />
                   <button
@@ -158,7 +159,7 @@ const PayoutRequestModal = ({ isOpen, onClose, userBalance, onSubmit }) => {
                   <div className="text-sm">
                     <p className="text-red-400 font-semibold">Invalid Amount</p>
                     {coinAmountNum < MIN_PAYOUT_COINS && (
-                      <p className="text-red-300 text-xs mt-1">Minimum cashout: ₵20,000 ($10.00)</p>
+                      <p className="text-red-300 text-xs mt-1">Minimum cashout: ₵{MIN_PAYOUT_COINS.toLocaleString()} (${minPayoutUsd})</p>
                     )}
                     {coinAmountNum > userBalance && (
                       <p className="text-red-300 text-xs mt-1">Amount exceeds your balance</p>

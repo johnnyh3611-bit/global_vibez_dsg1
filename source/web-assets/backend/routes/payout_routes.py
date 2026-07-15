@@ -12,6 +12,7 @@ from typing import Dict, Any
 from logic.treasury import (
     calculate_payout,
     calculate_security_release_date,
+    convert_coins_to_dollars,
     validate_minimum_payout
 )
 from config import db
@@ -69,10 +70,12 @@ async def request_payout(http_request: Request, payload: PayoutRequest) -> Dict[
         )
     
     # === STEP 2: Validate Minimum Payout ===
-    if not validate_minimum_payout(payload.coin_amount):
+    MIN_PAYOUT_COINS = 20000
+    if not validate_minimum_payout(payload.coin_amount, MIN_PAYOUT_COINS):
+        min_usd = convert_coins_to_dollars(MIN_PAYOUT_COINS)
         raise HTTPException(
             status_code=400,
-            detail="Minimum payout is ₵20,000 ($10.00)"
+            detail=f"Minimum payout is ₵{MIN_PAYOUT_COINS:,} (${min_usd:.2f})"
         )
     
     # === STEP 3: Calculate Payout ===
@@ -120,27 +123,35 @@ async def request_payout(http_request: Request, payload: PayoutRequest) -> Dict[
 
 
 @router.get("/status/{payout_id}")
-async def get_payout_status(payout_id: str) -> Dict[str, Any]:
+async def get_payout_status(http_request: Request, payout_id: str) -> Dict[str, Any]:
     """
     Check status of a payout request.
+    Authenticated; may only access the authenticated user's own payout.
     """
+    current_user = await get_current_user_from_session(http_request)
+
     db_instance = db
-    
+
     payout = await db_instance.payouts.find_one({"payout_id": payout_id}, {"_id": 0})
-    
+
     if not payout:
         raise HTTPException(status_code=404, detail="Payout not found")
-    
+
+    # Only the owner or an admin may view payout details.
+    is_admin = current_user.get("role") in ("admin", "staff")
+    if payout.get("user_id") != current_user.get("user_id") and not is_admin:
+        raise HTTPException(status_code=403, detail="Forbidden: You can only access your own data")
+
     # Calculate time remaining
     now = datetime.utcnow()
     release_date = payout.get("release_date")
-    
+
     if release_date and now < release_date:
         hours_remaining = (release_date - now).total_seconds() / 3600
         payout["hours_remaining"] = round(hours_remaining, 1)
     else:
         payout["hours_remaining"] = 0
-    
+
     return payout
 
 
