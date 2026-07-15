@@ -1,79 +1,39 @@
 /**
- * LandingTourVideo — 79-second cinematic tour of GLOBAL VIBEZ DSG that
- * sits on the public landing page directly below the DSG VIBE TV pillar.
+ * LandingTourVideo — 74-second cinematic tour of GLOBAL VIBEZ DSG.
  *
- * Founder directive 2026-05-09:
- *   "Just your voice talking, showing different pictures. People who
- *    don't scroll need a surplus they can hit and learn everything."
- *
- * Implementation
- *   • Founder-uploaded MP4 clips loop in the background (muted).
- *   • An OpenAI-TTS Nova-voiced narration MP3 plays as the master
- *     soundtrack — pre-rendered to /landing-tour-narration.mp3 by
+ * Refreshed 2026-07-15:
+ *   • Six new AI-generated 9:16 B-roll clips (intro, casino, dating,
+ *     hustle, stream, chair) — no Emergent CDN, no repeated loops.
+ *   • Energetic Microsoft Edge TTS (JennyNeural) narration mixed and
+ *     rendered to /landing-tour-narration.mp3 by
  *     `backend/scripts/generate_landing_tour_narration.py`.
- *   • Browsers block autoplay-with-sound, so we render a big PLAY
- *     CTA overlay until the user clicks. The narration becomes the
- *     authoritative timeline; clip cycles independently.
- *   • Controls: play/pause · mute · restart · captions toggle.
- *   • Captions are synchronised with the narration timeline so
- *     scroll-shy visitors who skim can still read the pitch.
+ *   • Browsers block autoplay-with-sound, so a big PLAY CTA overlay
+ *     is shown until the user clicks.
+ *   • Captions stay locked to the narration timeline for scroll-shy visitors.
  */
 import React, { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Play, Pause, Volume2, VolumeX, RotateCcw, Captions, Sparkles, Download, Globe } from "lucide-react";
 
-// Founder-uploaded promo clips, looped in this order.
-//
-// 2026-05-12 founder ask: "I want the tour video to stay the same. I want
-// the dice to just be the first thing you see in the front 'cause I like
-// that, but I want you to add this so we don't have... so it add more
-// wow factor to the video." Adding clips #5 and #6 AT THE END so the
-// dice intro and existing flow stay exactly as-is and the new clips
-// extend the loop for additional wow factor when the narration cycles
-// through B-roll a second time.
-//
-// Clips are first-party under /landing-tour/clips (no Emergent CDN).
+// Six new AI-generated 9:16 B-roll clips, all first-party under
+// /landing-tour/clips (no Emergent CDN, no repeated loops).
 const CLIPS: string[] = [
-  // 1 — dice intro (founder explicitly likes this first)
-  "/landing-tour/clips/01-dice-intro.mp4",
-  // 2 — original promo
-  "/landing-tour/clips/02-game-on.mp4",
-  // 3 — original promo
-  "/landing-tour/clips/03-just-for-the-night.mp4",
-  // 4 — original promo
-  "/landing-tour/clips/04-earn-hats.mp4",
-  // 5 — 2026-05-12 founder-added wow-factor clip
-  "/landing-tour/clips/05-wow-factor.mp4",
-  // 6 — 2026-05-12 founder-added wow-factor clip
-  "/landing-tour/clips/06-welcome-home.mp4",
-  // 7 — 2026-05-13 founder-added talking-host clip
-  "/landing-tour/clips/07-meet-host.mp4",
-  // 8 — 2026-05-13 founder-added closing wow clip
-  "/landing-tour/clips/08-sit-table.mp4",
-  // 9 — dating segment B-roll (reuses clip 5 until a dedicated dating MP4 lands)
-  "/landing-tour/clips/05-wow-factor.mp4",
-  // 10 — commercial 1
-  "/landing-tour/clips/10-commercial-1.mp4",
-  // 11 — commercial 2
-  "/landing-tour/clips/11-commercial-2.mp4",
+  "/landing-tour/clips/01-intro.mp4",
+  "/landing-tour/clips/02-casino.mp4",
+  "/landing-tour/clips/03-dating.mp4",
+  "/landing-tour/clips/04-hustle.mp4",
+  "/landing-tour/clips/05-stream.mp4",
+  "/landing-tour/clips/06-chair.mp4",
 ];
 
-// Per-clip caption tags — 2026-05-12 founder enhancement: silent-autoplay
-// scrollers (the majority of social-feed traffic) get a 2-3 word "what
-// you're seeing" overlay so they understand each scene without sound.
-// Order MUST match CLIPS[].
+// Per-clip caption tags for silent autoplay scrollers. Order MUST match CLIPS[].
 const CLIP_TAGS: Array<{ kicker: string; line: string; tint: string }> = [
-  { kicker: "Roll the dice", line: "Vibez 654 · live tables", tint: "from-fuchsia-400 to-violet-500" },
-  { kicker: "Game on", line: "30+ casino rooms · social play", tint: "from-amber-400 to-rose-500" },
-  { kicker: "Just for the Night", line: "Season pass · creator rooms", tint: "from-cyan-400 to-fuchsia-500" },
-  { kicker: "Earn on every hat", line: "Drive · host · stream · sell", tint: "from-emerald-400 to-cyan-500" },
-  { kicker: "All-new wow", line: "More rooms · more vibes", tint: "from-pink-400 to-fuchsia-500" },
-  { kicker: "Welcome home", line: "Your Vibez universe awaits", tint: "from-violet-400 to-indigo-500" },
-  { kicker: "Meet your host", line: "Founder talks the vision", tint: "from-orange-400 to-amber-500" },
-  { kicker: "Sit at the table", line: "Apex · Genesis · Genius chairs", tint: "from-yellow-400 to-emerald-500" },
-  { kicker: "Find your match", line: "Vigilant Matchmaker · Cinema Dates · Memory Bank", tint: "from-rose-400 to-pink-500" },
-  { kicker: "Commercial · 15s", line: "Coins that pay the rent", tint: "from-cyan-400 to-fuchsia-500" },
-  { kicker: "Commercial · 15s", line: "From streamer to seat-holder", tint: "from-amber-400 to-rose-500" },
+  { kicker: "GLOBAL VIBEZ DSG", line: "Own the network", tint: "from-cyan-400 to-fuchsia-500" },
+  { kicker: "Cyber Casino", line: "30+ AAA card rooms", tint: "from-amber-400 to-rose-500" },
+  { kicker: "Find your Player 2", line: "AI matchmaker · Cinema Dates", tint: "from-rose-400 to-pink-500" },
+  { kicker: "Hustle hats", line: "Ride · deliver · cook · host", tint: "from-emerald-400 to-cyan-500" },
+  { kicker: "Go live", line: "DSG TV · Music · Broadcast", tint: "from-violet-400 to-indigo-500" },
+  { kicker: "Take your seat", line: "1M chairs · real ownership", tint: "from-yellow-400 to-amber-500" },
 ];
 
 const MANIFEST_URL = "/landing-tour-i18n.json";
@@ -108,50 +68,18 @@ const pickInitialLang = (manifest: I18nManifest): string => {
 // Cache-buster version tag — bump this whenever the MP3 is regenerated
 // so production browsers + CDN edge nodes don't keep serving the stale
 // male-voice (Onyx) file from before the Nova re-record.
-const NARRATION_SRC = "/landing-tour-narration.mp3?v=recirc-2026-02-15";
+const NARRATION_SRC = "/landing-tour-narration.mp3?v=2026-07-15-overhaul";
 
 // Static fallback caption track — used until the i18n manifest loads
-// (or if it fails to fetch). Mirrors the v3 (Feb-2026) narration script
-// in `backend/scripts/generate_landing_tour_narration.py`. Updated for
-// the energetic "nova" voice, Ambassador Care Package, Equity Master v2,
-// High Roller VIP, Media Master, and Regional TV Hubs.
+// (or if it fails to fetch). Mirrors the 2026-07-15 overhaul narration.
 const FALLBACK_CAPTIONS: Cue[] = [
-  { t:   0.0, text: "YO! Welcome to GLOBAL VIBEZ DSG — your seat at a brand-new economy that pays you back." },
-  { t:   8.0, text: "Every game, every ride, every meal, every stream, every chair — ALL of it earns." },
-  { t:  18.0, text: "Cyber Casino: 30+ AAA card rooms · Spades · Bid Whist · UNO · Pinochle · Euchre · Gin Rummy." },
-  { t:  30.0, text: "Vibez 6-5-4: chess · baccarat · blackjack · three-card poker · slots that pay real $VIBEZ." },
-  { t:  42.0, text: "HIGH ROLLER VIP — 10,000-coin minimums · Diamond blackjack, roulette, baccarat. VIP-gated." },
-  { t:  54.0, text: "Go LIVE on DSG TV in 30 seconds. Keep 70% of every tip, gift, and Featured unlock." },
-  { t:  64.0, text: "Media Master Hub: DSG TV · Vibe Radio · Music Group · AI Scout — your broadcast empire." },
-  { t:  74.0, text: "Regional Hubs: Chicago · Atlanta · NYC · LA · Miami · Houston feed the House Revenue Pool." },
-  // ── DATING segment (2026-05-16 founder ask — was missing from the tour) ──
-  { t:  86.0, text: "DATING · real connections, no swipe-fatigue. AI-powered Vigilant Matchmaker scores every spark." },
-  { t:  94.0, text: "Gamer Dating · match through Spades, UNO, Chess. Date by playing together." },
-  { t: 100.0, text: "Cultural Onboarding · Blind Auction · Voice Mirror · Memory Bank vault for shared video memories." },
-  { t: 108.0, text: "Cinema Dates · sync-watch a movie with your match. Just For The Night · verified, opt-in, age-gated." },
-  { t: 116.0, text: "VibeRidez gets you there safely · every driver background-checked. Your date, your pace, your earn." },
-  { t: 124.0, text: "VibeRidez · Hungry VIBEZ · Vibe Artisan · Vibe Venue — every hustle hat pays 70%." },
-  { t: 132.0, text: "Cinema creators? 80% on every ticket sold!" },
-  { t: 138.0, text: "AMBASSADOR Care Package — you're a Walking Advertisement. Founder's Circle status." },
-  { t: 148.0, text: "Scan a vendor with your Master QR · Restaurants → Hungry Vibez · Businesses → Yellow Pages · Sponsors → DSG TV." },
-  { t: 160.0, text: "Chair Dividends · Referral Bounties · Override Commissions · forever." },
-  { t: 172.0, text: "3-Month Diamond Challenge: 3 vendors · 1,000 $VIBEZ · 50k vote → Tier-2 Equity + Pit Boss rights!" },
-  { t: 186.0, text: "EQUITY MASTER v2 — 4-tier Value Matrix." },
-  { t: 192.0, text: "Floor: $500K gross → $18/chair · Genesis: $2.75M → $99/chair." },
-  { t: 202.0, text: "Diamond: $10M → $360/chair · Platinum: $50M → $1,800/chair!" },
-  { t: 212.0, text: "Block-Release Governance: 50K-unit blocks · >51% majority vote · 12-month lock-up · $20 buy-back floor." },
-  { t: 224.0, text: "Two economies, one network. 3B VIBEZ recirculate forever (40% tournament pools · 30% treasury · 30% 72h vault). DSG token burns 750M → 350M floor on Solana." },
-  { t: 234.0, text: "5× mining multiplier for chair holders · $VIBEZ bridges to Solana 4:1 · 1 Coin = 10 Credits." },
-  { t: 242.0, text: "ONE MILLION CHAIRS. Globally. Forever. The first cohort to sit at the table OWNS the network." },
-  { t: 254.0, text: "Take your seat. RIGHT NOW." },
-  { t: 259.0, text: "GLOBAL VIBEZ DSG. Own the network. Feel the VIBEZ. LET'S GOOO!" },
-  // ── Two new founder commercials (2026-05-16, dsg_commercial_scripts.pdf) ──
-  { t: 266.0, text: "— And one more thing. Two new spots. Fifteen seconds each. Listen close." },
-  { t: 272.0, text: "Commercial One · The Sovereign Casino — neon card rooms, Diamond-tier blackjack." },
-  { t: 280.0, text: "Every chip you win is REAL $VIBEZ. Coins that pay your rent. Take your seat." },
-  { t: 288.0, text: "Commercial Two · From streamer to seat-holder." },
-  { t: 292.0, text: "Go live · keep 70% of every tip · onboard 3 vendors → Tier-2 Equity FOREVER." },
-  { t: 300.0, text: "GLOBAL VIBEZ DSG — own the network." },
+  { t: 0.0, text: "YO! Welcome to GLOBAL VIBEZ DSG! The only platform that pays you back for everything you already love." },
+  { t: 18.288, text: "Step into the Cyber Casino. 30+ AAA card rooms. Spades, Bid Whist, Hearts, UNO, Vibez 654, blackjack, roulette, slots." },
+  { t: 32.184, text: "Find your Player 2. AI matchmaker, Cinema Dates, Voice Mirror, Just For The Night." },
+  { t: 40.464, text: "Drive a VibeRidez, deliver Hungry Vibez, cook as a Vibe Artisan, host a Vibe Venue — keep 70%." },
+  { t: 47.592, text: "Go live on DSG TV, drop a track, build your broadcast empire — keep 70% of tips, gifts, and ticket sales." },
+  { t: 54.864, text: "The chair is the crown. One million chairs. 13.5% Sovereign Tax recirculates. 5x mining. Ambassador dividends." },
+  { t: 66.312, text: "Take your seat NOW. Own the network. Feel the VIBEZ. LET'S GOOO!" },
 ];
 
 interface Props {
@@ -259,6 +187,9 @@ const LandingTourVideo: React.FC<Props> = ({ onJoinBeta }) => {
       setCaptionIdx(i);
     };
     const onEnded = () => {
+      const v = videoRef.current;
+      if (v) { v.pause(); v.currentTime = 0; }
+      setClipIdx(0);
       setPlaying(false);
     };
     a.addEventListener("timeupdate", onTime);
