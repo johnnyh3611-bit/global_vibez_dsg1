@@ -167,14 +167,6 @@ export default function PracticeGamePlay() {
     navigate('/practice');
   };
 
-  // Backgammon has no practice component but IS in the multiplayer lobby.
-  // Auto-redirect rather than show the error card.
-  useEffect(() => {
-    if (gameId === 'backgammon') {
-      navigate(`/multiplayer?preselect=backgammon`, { replace: true });
-    }
-  }, [gameId, navigate]);
-
   // COMING SOON gate — render the polished overlay instead of trying
   // to fetch / mount the game. Placed AFTER all hooks so React's
   // rules of hooks remain satisfied across gameId changes. Source
@@ -232,7 +224,8 @@ export default function PracticeGamePlay() {
       'truthordare': <PracticeGames.PracticeTruthOrDare game={game} onMove={makeMove} makingMove={makingMove} aiThinking={aiThinking} />,
       'rummy': <PracticeGames.PracticeRummy game={game} onMove={makeMove} makingMove={makingMove} aiThinking={aiThinking} />,
       'ludo': <LudoBoard gameState={game.game_state} onMove={makeMove} disabled={makingMove || aiThinking} />,
-      
+      'backgammon': <PracticeGames.PracticeBackgammon game={game} onMove={makeMove} makingMove={makingMove} aiThinking={aiThinking} />,
+
       // Arcade Games
       'snake': <PracticeGames.PracticeSnake gameState={game.game_state} onMove={makeMove} />,
       'memory_match': <PracticeGames.PracticeMemoryMatch gameState={game.game_state} onMove={makeMove} />,
@@ -359,7 +352,7 @@ export default function PracticeGamePlay() {
       )}
 
       {/* Victory Animation - Only for games NOT using CinematicCelebration or their own modal */}
-      {!['tictactoe', 'connect4', 'chess', 'checkers', 'reversi', 'trivia', ...SHELL_GAMES].includes(game?.game_type) && (
+      {!['tictactoe', 'connect4', 'chess', 'checkers', 'reversi', 'trivia', 'backgammon', ...SHELL_GAMES].includes(game?.game_type) && (
         <VictoryAnimation
           show={showVictory}
           winner={getWinner()}

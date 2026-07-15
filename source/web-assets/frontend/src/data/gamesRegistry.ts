@@ -111,6 +111,16 @@ export const GAMES: GameRegistryEntry[] = [
     listed: false,
   },
   {
+    id: 'backgammon',
+    name: 'Backgammon',
+    emoji: '🟫',
+    description: 'Race and bear off',
+    category: 'board',
+    gradient: 'from-amber-700 to-yellow-900',
+    mode: 'server',
+    listed: true,
+  },
+  {
     id: 'dominoes',
     name: 'Dominoes',
     emoji: '🀰',
