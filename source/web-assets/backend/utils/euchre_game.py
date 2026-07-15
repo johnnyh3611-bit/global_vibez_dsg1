@@ -308,25 +308,45 @@ class EuchreGame:
     def _hand_strength(self, pos: str, trump: str) -> float:
         return sum(card_strength(c, trump, None) for c in self.hands[pos]) / 100.0
 
+    def _trump_count(self, pos: str, trump: str) -> int:
+        return sum(1 for c in self.hands[pos] if effective_suit(c, trump) == trump)
+
+    def _off_ace_count(self, pos: str) -> int:
+        """Count off-suit aces (useful side winners)."""
+        return sum(1 for c in self.hands[pos] if c["rank"] == "A")
+
     def bot_bid(self) -> Dict[str, Any]:
         actor = self.bid_turn
         if self.bid_round == 1:
-            # Order up if hand is strong in upcard's suit (3+ trump including bowers)
-            trump_count = sum(1 for c in self.hands[actor] if effective_suit(c, self.upcard["suit"]) == self.upcard["suit"])
-            if trump_count >= 3:
+            trump = self.upcard["suit"]
+            trump_count = self._trump_count(actor, trump)
+            off_aces = self._off_ace_count(actor)
+            # Standard order-up thresholds: 3+ trump, or 2 trump with an
+            # off-suit ace, or 2 trump as the dealer (upcard gives 3rd).
+            dealer_bonus = 1 if actor == self.dealer else 0
+            strong = trump_count + dealer_bonus >= 3
+            supported = trump_count >= 2 and off_aces >= 1
+            if strong or supported:
                 return self.order_up(actor)
             return self.pass_bid(actor)
         else:
-            # Round 2 — name our strongest non-upcard suit if 3+ trump card potential
+            # Round 2 — pick the strongest non-up suit.
             best_suit, best_count = None, 0
+            best_score = 0
             for s in SUITS:
                 if s == self.upcard["suit"]:
                     continue
-                cnt = sum(1 for c in self.hands[actor] if effective_suit(c, s) == s)
-                if cnt > best_count:
+                cnt = self._trump_count(actor, s)
+                # Off aces are always valuable, regardless of trump.
+                support = self._off_ace_count(actor)
+                score = cnt * 3 + support
+                if score > best_score:
+                    best_score = score
                     best_count = cnt
                     best_suit = s
-            if best_suit and best_count >= 3:
+            # Call if 3+ trump in that suit, or 2+ trump with off-ace help.
+            has_support = best_count >= 2 and self._off_ace_count(actor) >= 1
+            if best_suit and (best_count >= 3 or has_support):
                 return self.name_trump(actor, best_suit)
             return self.pass_bid(actor)
 
