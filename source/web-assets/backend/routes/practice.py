@@ -401,25 +401,25 @@ def initialize_practice_game(game_type: str) -> Dict:
         # Create full deck for spades
         suits = ['spades', 'hearts', 'diamonds', 'clubs']
         ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
-        rank_values = {'2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, 
+        rank_values = {'2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8,
                       '9': 9, '10': 10, 'J': 11, 'Q': 12, 'K': 13, 'A': 14}
-        
+
         deck = []
         for suit in suits:
             for rank in ranks:
                 deck.append({'suit': suit, 'rank': rank, 'value': rank_values[rank]})
         secure_random.shuffle(deck)
-        
+
         # Deal 13 cards to player (practice mode - 4 players simulated)
         player_hand = [deck.pop() for _ in range(13)]
         partner_hand = [deck.pop() for _ in range(13)]
         opp1_hand = [deck.pop() for _ in range(13)]
         opp2_hand = [deck.pop() for _ in range(13)]
-        
+
         # Sort hands by suit and rank
         for hand in [player_hand, partner_hand, opp1_hand, opp2_hand]:
             hand.sort(key=lambda c: (suits.index(c['suit']), c['value']))
-        
+
         return {
             "player_hand": player_hand,
             "partner_hand": partner_hand,
@@ -434,6 +434,12 @@ def initialize_practice_game(game_type: str) -> Dict:
             "spades_broken": False,
             "bids": {"player": None, "partner": None, "opp1": None, "opp2": None}
         }
+    elif game_type == "ludo":
+        from utils.ludo_game import initialize_game
+        return initialize_game()
+    elif game_type == "backgammon":
+        from utils.backgammon_game import initialize_game
+        return initialize_game()
     else:
         return {}
 
@@ -1039,6 +1045,13 @@ def apply_move(game_type: str, game_state: Dict, move: Dict, player: str) -> Dic
             if player == "player":
                 game_state["winner"] = "player"
 
+    elif game_type == "ludo":
+        from utils.ludo_game import apply_move as apply_ludo_move
+        apply_ludo_move(game_state, player, move)
+    elif game_type == "backgammon":
+        from utils.backgammon_game import apply_move as apply_backgammon_move
+        apply_backgammon_move(game_state, player, move)
+
     return game_state
 
 def check_game_status(game_type: str, game_state: Dict) -> Dict:
@@ -1217,15 +1230,27 @@ def check_game_status(game_type: str, game_state: Dict) -> Dict:
         if game_state.get("winner"):
             winner = game_state["winner"]
             return {"ended": True, "winner": winner, "message": f"{'You' if winner == 'player' else 'AI'} win! All cards melded!"}
-        
+
         # Check if someone has 0 cards (declared and melded)
         if len(game_state.get("player_hand", [])) == 0:
             return {"ended": True, "winner": "player", "message": "You win! All cards melded!"}
 
-    
+    elif game_type == "ludo":
+        from utils.ludo_game import check_winner
+        winner = check_winner(game_state)
+        if winner:
+            return {"ended": True, "winner": winner,
+                    "message": f"{'You' if winner == 'player' else 'AI'} win! All pieces home!"}
+
+    elif game_type == "backgammon":
+        from utils.backgammon_game import check_winner
+        winner = check_winner(game_state)
+        if winner:
+            return {"ended": True, "winner": winner,
+                    "message": f"{'You' if winner == 'player' else 'AI'} win! All checkers borne off!"}
 
     # ==================== NEW GAMES ====================
-    
+
     elif game_type == "trivia":
         # Initialize trivia game - fetch 10 questions from OpenTriviaDB
         return {
@@ -1235,7 +1260,7 @@ def check_game_status(game_type: str, game_state: Dict) -> Dict:
             "ai_score": 0,
             "answered_questions": []
         }
-    
+
     elif game_type == "truthordare":
         # Initialize Truth or Dare game
         return {
@@ -1247,16 +1272,16 @@ def check_game_status(game_type: str, game_state: Dict) -> Dict:
             "current_challenge": None,
             "challenge_type": None  # 'truth' or 'dare'
         }
-    
+
     elif game_type == "rummy":
         # Initialize Rummy game (Indian Rummy - 13 cards)
         deck = create_deck()
         secure_random.shuffle(deck)
-        
+
         player_hand = deck[:13]
         discard_pile = [deck[26]]
         draw_pile = deck[27:]
-        
+
         return {
             "player_hand": player_hand,
             "ai_hand_count": 13,
@@ -1266,7 +1291,7 @@ def check_game_status(game_type: str, game_state: Dict) -> Dict:
             "ai_score": 0,
             "current_action": "draw"  # 'draw' or 'discard'
         }
-    
+
     return {}
 
 def create_deck():
