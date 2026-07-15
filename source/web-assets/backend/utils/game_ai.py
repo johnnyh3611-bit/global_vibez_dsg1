@@ -531,48 +531,116 @@ class GameAI:
     # ==================== ENHANCED AI FOR COMPLEX GAMES ====================
     
     def checkers_move(self, game_state: Dict) -> Dict:
-        """Enhanced Checkers AI with capture priority and multi-jump support"""
+        """Checkers AI: forced jumps, then safest advancing move."""
         board = game_state.get("board", [])
-        ai_pieces = []
-        
-        # Find all AI pieces
-        for i in range(8):
-            for j in range(8):
-                if isinstance(board[i][j], dict) and board[i][j].get("player") == "ai":
-                    ai_pieces.append((i, j, board[i][j].get("king", False)))
-        
+        ai_pieces = [
+            (i, j, board[i][j].get("king", False))
+            for i in range(8) for j in range(8)
+            if isinstance(board[i][j], dict) and board[i][j].get("player") == "ai"
+        ]
         if not ai_pieces:
             return {"action": "move", "from": [0, 0], "to": [1, 1]}
-        
-        # PRIORITY 1: Forced jumps (captures)
-        best_jump = None
-        max_captures = 0
-        
+
+        # Forced jumps: pick the capture that leaves the best position.
+        jump_options = []
         for row, col, is_king in ai_pieces:
-            jumps = self._get_all_checker_jumps(board, (row, col), is_king)
-            if jumps and len(jumps) > max_captures:
-                max_captures = len(jumps)
-                best_jump = {"from": [row, col], "to": jumps[0]}
-        
-        if best_jump:
-            return {"action": "move", **best_jump}
-        
-        # PRIORITY 2: Advance pieces toward promotion
-        for row, col, is_king in sorted(ai_pieces, key=lambda x: x[0], reverse=True):
-            moves = self._get_checker_regular_moves(board, (row, col), is_king, "ai")
-            if moves:
-                # Prefer moves that advance (increase row for AI)
-                if moves:
-                    best_move = max(moves, key=lambda m: m[0])
-                    return {"action": "move", "from": [row, col], "to": best_move}
-        
-        # FALLBACK: Any valid move
+            for jump in self._get_all_checker_jumps(board, (row, col), is_king):
+                score = self._score_checkers_position(
+                    board, row, col, jump[0], jump[1], "ai", is_capture=True
+                )
+                jump_options.append((score, row, col, jump))
+
+        if jump_options:
+            jump_options.sort(reverse=True)
+            _, row, col, jump = jump_options[0]
+            return {"action": "move", "from": [row, col], "to": jump}
+
+        # Regular moves: evaluate each candidate.
+        best = None
+        best_score = float('-inf')
         for row, col, is_king in ai_pieces:
-            moves = self._get_checker_regular_moves(board, (row, col), is_king, "ai")
-            if moves:
-                return {"action": "move", "from": [row, col], "to": list(moves[0])}
-        
+            for move in self._get_checker_regular_moves(
+                board, (row, col), is_king, "ai"
+            ):
+                score = self._score_checkers_position(
+                    board, row, col, move[0], move[1], "ai", is_capture=False
+                )
+                if score > best_score:
+                    best_score = score
+                    best = (row, col, move)
+
+        if best:
+            row, col, move = best
+            return {"action": "move", "from": [row, col], "to": move}
+
         return {"action": "move", "from": [0, 0], "to": [1, 1]}
+
+    def _score_checkers_position(
+        self, board: List, from_row: int, from_col: int,
+        to_row: int, to_col: int, player: str, is_capture: bool = False
+    ) -> float:
+        """Score a candidate checkers move. Higher is better for `player`."""
+        score = 0.0
+
+        # Promotion value.
+        if player == "ai" and to_row == 7:
+            score += 50.0
+        if player == "player" and to_row == 0:
+            score += 50.0
+
+        # Advancement (AI moves toward row 7; player toward row 0).
+        if player == "ai":
+            score += to_row * 2.0
+        else:
+            score += (7 - to_row) * 2.0
+
+        # Edge safety: pieces on the left/right edges cannot be jumped from
+        # that side and are harder to capture.
+        if to_col in (0, 7):
+            score += 3.0
+
+        # Capture bonus.
+        if is_capture:
+            score += 15.0
+
+        # Simulate the move and check if the opponent can immediately jump
+        # the moved piece on the next turn.
+        temp_board = [row[:] for row in board]
+        piece = temp_board[from_row][from_col]
+        becomes_king = piece.get("king", False) or (
+            player == "ai" and to_row == 7
+        ) or (player == "player" and to_row == 0)
+        temp_board[to_row][to_col] = {
+            "player": player,
+            "king": becomes_king
+        }
+        temp_board[from_row][from_col] = None
+
+        # Remove captured piece if applicable.
+        if is_capture:
+            mid_row = (from_row + to_row) // 2
+            mid_col = (from_col + to_col) // 2
+            temp_board[mid_row][mid_col] = None
+
+        opponent = "player" if player == "ai" else "ai"
+        vulnerable = False
+        for r in range(8):
+            for c in range(8):
+                opp = temp_board[r][c]
+                if isinstance(opp, dict) and opp.get("player") == opponent:
+                    jumps = self._get_all_checker_jumps(
+                        temp_board, (r, c), opp.get("king", False)
+                    )
+                    if [to_row, to_col] in jumps:
+                        vulnerable = True
+                        break
+            if vulnerable:
+                break
+
+        if vulnerable:
+            score -= 20.0
+
+        return score
     
     def _get_checker_jumps(self, board: List, pos: Tuple) -> List:
         """Get possible jump moves for a checker piece"""
