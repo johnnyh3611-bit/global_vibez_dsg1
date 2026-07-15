@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { FuturisticTabs } from '@/components/ui/futuristic-tabs';
 import { Brain, Trophy, Play, ArrowLeft, Star, Target } from 'lucide-react';
 import { authFetch } from '@/utils/secureAuth';
 
@@ -125,58 +126,36 @@ export default function TriviaLobby() {
             {/* Category Selection */}
             <div className="mb-6">
               <label className="text-white font-semibold mb-3 block">Select Category:</label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => setSelectedCategory('mixed')}
-                  className={`p-3 rounded-lg border-2 transition-all ${
-                    selectedCategory === 'mixed'
-                      ? 'border-blue-400 bg-blue-500/30'
-                      : 'border-white/20 bg-white/5 hover:bg-white/10'
-                  }`}
-                >
-                  <p className="text-2xl mb-1">🎯</p>
-                  <p className="text-white font-semibold text-sm">Mixed</p>
-                </button>
-                {categories.map((cat) => (
-                  <button
-                    key={cat.id}
-                    onClick={() => setSelectedCategory(cat.id)}
-                    className={`p-3 rounded-lg border-2 transition-all ${
-                      selectedCategory === cat.id
-                        ? 'border-blue-400 bg-blue-500/30'
-                        : 'border-white/20 bg-white/5 hover:bg-white/10'
-                    }`}
-                  >
-                    <p className="text-2xl mb-1">{cat.emoji}</p>
-                    <p className="text-white font-semibold text-xs">{cat.name}</p>
-                  </button>
-                ))}
-              </div>
+              <FuturisticTabs
+                ariaLabel="Trivia category"
+                variant="pills"
+                value={selectedCategory}
+                onChange={setSelectedCategory}
+                options={[
+                  { value: 'mixed', label: '🎯 Mixed' },
+                  ...categories.map((cat) => ({
+                    value: cat.id,
+                    label: `${cat.emoji} ${cat.name}`,
+                  })),
+                ]}
+              />
             </div>
 
             {/* Difficulty Selection */}
             <div className="mb-6">
               <label className="text-white font-semibold mb-3 block">Difficulty:</label>
-              <div className="grid grid-cols-4 gap-3">
-                {[
-                  { value: 'mixed', label: 'Mixed', color: 'blue' },
-                  { value: 'easy', label: 'Easy', color: 'green' },
-                  { value: 'medium', label: 'Medium', color: 'yellow' },
-                  { value: 'hard', label: 'Hard', color: 'red' }
-                ].map((diff) => (
-                  <button
-                    key={diff.value}
-                    onClick={() => setSelectedDifficulty(diff.value)}
-                    className={`p-3 rounded-lg border-2 transition-all ${
-                      selectedDifficulty === diff.value
-                        ? `border-${diff.color}-400 bg-${diff.color}-500/30`
-                        : 'border-white/20 bg-white/5 hover:bg-white/10'
-                    }`}
-                  >
-                    <p className="text-white font-semibold text-sm">{diff.label}</p>
-                  </button>
-                ))}
-              </div>
+              <FuturisticTabs
+                ariaLabel="Trivia difficulty"
+                variant="segmented"
+                value={selectedDifficulty}
+                onChange={setSelectedDifficulty}
+                options={[
+                  { value: 'mixed', label: 'Mixed' },
+                  { value: 'easy', label: 'Easy' },
+                  { value: 'medium', label: 'Medium' },
+                  { value: 'hard', label: 'Hard' },
+                ]}
+              />
             </div>
 
             {/* Number of Questions */}

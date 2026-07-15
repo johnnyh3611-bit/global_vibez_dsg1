@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { FuturisticTabs } from '@/components/ui/futuristic-tabs';
 import { SoundSettings } from '@/components/SoundSettings';
 import {
   isAIDealerVoiceMuted, setAIDealerVoiceMuted,
@@ -121,31 +122,25 @@ export default function SettingsPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Sidebar Tabs */}
-          <div className="space-y-2">
-            {tabs.map((tab) => {
-              // Founder requested explicit testids on the AI Dealer + Language
-              // nav buttons so they're queryable regardless of which tab is active.
-              const navTestid =
+          <FuturisticTabs
+            ariaLabel="Settings sections"
+            orientation="vertical"
+            variant="sidebar"
+            value={activeTab}
+            onChange={setActiveTab}
+            options={tabs.map((tab) => {
+              const testId =
                 tab.id === 'ai-dealer' ? 'settings-ai-dealer-tab'
                 : tab.id === 'language' ? 'settings-language-tab'
                 : `settings-tab-nav-${tab.id}`;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  data-testid={navTestid}
-                  className={`w-full flex items-center gap-3 px-6 py-4 rounded-xl transition-all ${
-                    activeTab === tab.id
-                      ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg'
-                      : 'bg-slate-800 text-gray-400 hover:bg-slate-700'
-                  }`}
-                >
-                  <tab.icon className="w-5 h-5" />
-                  <span className="font-medium">{tab.label}</span>
-                </button>
-              );
+              return {
+                value: tab.id,
+                label: tab.label,
+                icon: tab.icon,
+                testId,
+              };
             })}
-          </div>
+          />
 
           {/* Content Area */}
           <div className="lg:col-span-3">

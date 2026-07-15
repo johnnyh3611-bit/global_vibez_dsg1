@@ -9,7 +9,7 @@ const TabsList = React.forwardRef<any, any>(({ className, ...props }, ref) => (
   <TabsPrimitive.List
     ref={ref}
     className={cn(
-      "flex h-9 w-full items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground",
+      "flex h-10 w-full items-center justify-center rounded-2xl bg-slate-950/60 p-1 text-white/60 border border-white/10 backdrop-blur-md shadow-inner shadow-black/30",
       className
     )}
     {...props} />
@@ -20,7 +20,7 @@ const TabsTrigger = React.forwardRef<any, React.ComponentPropsWithoutRef<typeof 
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
-      "flex flex-1 items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow",
+      "flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-3 py-1.5 text-xs sm:text-sm font-black uppercase tracking-wider ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-300 data-[state=active]:to-blue-400 data-[state=active]:text-cyan-950 data-[state=active]:shadow-[0_0_20px_rgba(34,211,238,0.35)] data-[state=active]:font-black hover:text-white hover:bg-white/5",
       className
     )}
     {...props} />
@@ -31,7 +31,7 @@ const TabsContent = React.forwardRef<any, React.ComponentPropsWithoutRef<typeof 
   <TabsPrimitive.Content
     ref={ref}
     className={cn(
-      "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+      "mt-4 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60 focus-visible:ring-offset-2",
       className
     )}
     {...props} />

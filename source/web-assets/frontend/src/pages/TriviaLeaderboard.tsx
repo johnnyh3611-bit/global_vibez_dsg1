@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { FuturisticTabs } from '@/components/ui/futuristic-tabs';
 import { Trophy, Medal, ArrowLeft, Filter, Star } from 'lucide-react';
 import { authFetch } from '@/utils/secureAuth';
 
@@ -92,32 +93,19 @@ export default function TriviaLeaderboard() {
             <Filter className="w-5 h-5 text-white" />
             <h3 className="text-white font-semibold">Filter by Category:</h3>
           </div>
-          <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
-            <button
-              onClick={() => setSelectedCategory('all')}
-              className={`p-3 rounded-lg border-2 transition-all ${
-                selectedCategory === 'all'
-                  ? 'border-blue-400 bg-blue-500/30'
-                  : 'border-white/20 bg-white/5 hover:bg-white/10'
-              }`}
-            >
-              <p className="text-white font-semibold text-sm">All</p>
-            </button>
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
-                className={`p-3 rounded-lg border-2 transition-all ${
-                  selectedCategory === cat.id
-                    ? 'border-blue-400 bg-blue-500/30'
-                    : 'border-white/20 bg-white/5 hover:bg-white/10'
-                }`}
-              >
-                <p className="text-xl mb-1">{cat.emoji}</p>
-                <p className="text-white font-semibold text-xs">{cat.name.split(' ')[0]}</p>
-              </button>
-            ))}
-          </div>
+          <FuturisticTabs
+            ariaLabel="Trivia category"
+            variant="pills"
+            value={selectedCategory}
+            onChange={setSelectedCategory}
+            options={[
+              { value: 'all', label: 'All' },
+              ...categories.map((cat) => ({
+                value: cat.id,
+                label: `${cat.emoji} ${cat.name.split(' ')[0]}`,
+              })),
+            ]}
+          />
         </Card>
 
         {/* Leaderboard List */}
