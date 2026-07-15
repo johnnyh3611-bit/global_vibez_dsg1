@@ -32,6 +32,10 @@ export default function RouletteGameAAA() {
   const [lastWinAmount, setLastWinAmount] = useState(0);
   const [showWinAnimation, setShowWinAnimation] = useState(false);
   const [clientSeed] = useState(generateClientSeed());
+  const [serverHash, setServerHash] = useState<string | null>(null);
+  const [nextServerHash, setNextServerHash] = useState<string | null>(null);
+  const [lastProof, setLastProof] = useState<{ serverSeed: string; clientSeed: string; nonce: number; hash: string } | null>(null);
+  const [verified, setVerified] = useState<boolean | null>(null);
 
   // Social overlay state
   const [showSocialOverlay, setShowSocialOverlay] = useState(false);
@@ -41,6 +45,14 @@ export default function RouletteGameAAA() {
   
   // Social WebSocket
   const { isConnected, joinGameRoom, leaveGameRoom } = useSocialSocket('current_user', 'Roulette Player');
+
+  // Fetch committed server seed hash on load so the player can verify fairness later
+  useEffect(() => {
+    fetch(`${API_URL}/api/roulette/practice-server-hash`, { method: 'POST' })
+      .then(r => r.json())
+      .then(data => setServerHash(data.serverSeedHash || null))
+      .catch(() => setServerHash(null));
+  }, [API_URL]);
 
   // Join social game room
   useEffect(() => {
@@ -125,13 +137,20 @@ export default function RouletteGameAAA() {
     setLastRoundBets([...currentBets]);
 
     try {
-      const response = await fetch(`${API_URL}/api/roulette/spin`, {
+      const response = await fetch(`${API_URL}/api/roulette/practice-spin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ clientSeed })
       });
+      if (!response.ok) throw new Error('spin failed');
       const data = await response.json();
-      
+
+      // Store proof and the next committed hash for verifiability
+      setLastProof(data.proof);
+      setServerHash(data.nextServerHash || null);
+      setNextServerHash(data.nextServerHash || null);
+      setVerified(null);
+
       const winningIndex = WHEEL_NUMBERS.indexOf(data.winningNumber);
       const pocketAngle = 360 / 37;
       const numberCurrentAngle = winningIndex * pocketAngle;
@@ -202,6 +221,27 @@ export default function RouletteGameAAA() {
 
   const getBetAmount = (type, val) => {
     return currentBets.filter(b => b.type === type && b.value === val).reduce((s, b) => s + b.amount, 0);
+  };
+
+  const verifySpin = async () => {
+    if (!lastProof) return;
+    setVerified(null);
+    try {
+      const response = await fetch(`${API_URL}/api/roulette/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          serverSeed: lastProof.serverSeed,
+          clientSeed: lastProof.clientSeed,
+          nonce: lastProof.nonce,
+          claimedNumber: winningNumber,
+        })
+      });
+      const data = await response.json();
+      setVerified(data.isValid);
+    } catch (error) {
+      setVerified(false);
+    }
   };
 
   return (
@@ -415,10 +455,38 @@ export default function RouletteGameAAA() {
 
             {/* Ball - fixed indicator at top */}
             <div className="absolute top-[70px] left-1/2 transform -translate-x-1/2 z-10">
-              <div className="w-5 h-5 rounded-full" style={{ 
+              <div className="w-5 h-5 rounded-full" style={{
                 background: 'radial-gradient(circle at 30% 30%, #fff 0%, #e0e0e0 100%)',
                 boxShadow: '0 0 20px rgba(255,255,255,1), 0 3px 6px rgba(0,0,0,0.5)'
               }} />
+            </div>
+          </div>
+
+          {/* Provably Fair Panel */}
+          <div className="mt-4 max-w-2xl mx-auto w-full px-4">
+            <div className="bg-black/50 backdrop-blur-md border border-yellow-500/30 rounded-xl p-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="text-[10px] uppercase tracking-widest text-yellow-400 font-black mb-1">Provably Fair</div>
+                <div className="text-[10px] text-white/60 truncate">
+                  Next hash: <span className="font-mono text-emerald-400">{serverHash ? `${serverHash.slice(0, 16)}…` : 'loading…'}</span>
+                </div>
+                {lastProof && (
+                  <div className="text-[10px] text-white/60 truncate mt-0.5">
+                    Revealed seed: <span className="font-mono text-emerald-400">{`${lastProof.serverSeed.slice(0, 16)}…`}</span>
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={verifySpin}
+                disabled={!lastProof || winningNumber === null}
+                className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
+                  verified === true ? 'bg-emerald-600 text-white' :
+                  verified === false ? 'bg-red-600 text-white' :
+                  'bg-gradient-to-r from-yellow-500 to-orange-500 text-black hover:scale-105'
+                } disabled:opacity-40 disabled:hover:scale-100`}
+              >
+                {verified === true ? 'Verified' : verified === false ? 'Invalid' : 'Verify Spin'}
+              </button>
             </div>
           </div>
 

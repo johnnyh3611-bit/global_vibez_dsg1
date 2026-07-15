@@ -28,6 +28,14 @@ game_state = {
 current_server_seed = secrets.token_hex(32)
 game_state["serverSeedHash"] = hashlib.sha256(current_server_seed.encode()).hexdigest()
 
+# Separate practice state so practice spins never advance live multiplayer nonces
+practice_state = {
+    "nonce": 0,
+    "serverSeedHash": None,
+}
+practice_server_seed = secrets.token_hex(32)
+practice_state["serverSeedHash"] = hashlib.sha256(practice_server_seed.encode()).hexdigest()
+
 
 class BetData(BaseModel):
     amount: int
@@ -38,6 +46,10 @@ class BetData(BaseModel):
 
 class SpinRequest(BaseModel):
     clientSeed: str
+
+
+class PracticeSpinRequest(BaseModel):
+    clientSeed: str = ""
 
 
 def generate_provably_fair_result(server_seed: str, client_seed: str, nonce: int) -> Dict:
@@ -118,6 +130,48 @@ async def spin_roulette(request: SpinRequest) -> Dict[str, Any]:
             pass
     
     return spin_data
+
+
+@router.post("/roulette/practice-spin")
+async def practice_spin_roulette(
+    request: PracticeSpinRequest,
+) -> Dict[str, Any]:
+    """Provably fair spin for /practice/play/roulette."""
+    global practice_server_seed
+
+    client_seed = request.clientSeed or "default"
+    result = generate_provably_fair_result(
+        practice_server_seed,
+        client_seed,
+        practice_state["nonce"],
+    )
+
+    practice_state["nonce"] += 1
+    old_server_seed = practice_server_seed
+    practice_server_seed = secrets.token_hex(32)
+    practice_state["serverSeedHash"] = hashlib.sha256(
+        practice_server_seed.encode()
+    ).hexdigest()
+
+    return {
+        "winningNumber": result["winningNumber"],
+        "proof": {
+            "serverSeed": old_server_seed,
+            "clientSeed": client_seed,
+            "nonce": result["nonce"],
+            "hash": result["hash"],
+        },
+        "nextServerHash": practice_state["serverSeedHash"],
+    }
+
+
+@router.post("/roulette/practice-server-hash")
+async def practice_server_hash() -> Dict[str, Any]:
+    """Return the next practice server seed hash."""
+    return {
+        "serverSeedHash": practice_state["serverSeedHash"],
+        "nonce": practice_state["nonce"],
+    }
 
 
 @router.websocket("/ws/roulette")
