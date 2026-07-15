@@ -1,15 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { RotateCcw, Play } from 'lucide-react';
 
 import cardSoundManager from '@/utils/cardSoundManager';
 import ParticleEffectsOverlay from '@/components/ParticleEffectsOverlay';
 import GameShell from '@/components/games/GameShell';
 
+const FIELD_WIDTH = 100;
+const FIELD_HEIGHT = 100;
+const PADDLE_WIDTH = 2;
+const PADDLE_HEIGHT = 20;
+const BALL_SIZE = 3;
+const WIN_SCORE = 11;
+
 export default function PracticePingPong({ onMove, gameState }: { onMove?: any, gameState?: any }) {
-  const [ballY, setBallY] = useState(50);
-  const [ballX, setBallX] = useState(50);
-  const [ballDirX, setBallDirX] = useState(1);
-  const [ballDirY, setBallDirY] = useState(1);
+  const [ball, setBall] = useState({ x: 50, y: 50, dx: 1, dy: 0.5, speed: 1.2 });
   const [playerY, setPlayerY] = useState(40);
   const [aiY, setAiY] = useState(40);
   const [playerScore, setPlayerScore] = useState(0);
@@ -17,110 +21,137 @@ export default function PracticePingPong({ onMove, gameState }: { onMove?: any, 
   const [gameActive, setGameActive] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [particleTrigger, setParticleTrigger] = useState(0);
+  const [message, setMessage] = useState('Press start');
+
+  const fieldRef = useRef<HTMLDivElement>(null);
+
+  const resetBall = useCallback((toward: 'player' | 'ai') => {
+    const dx = toward === 'player' ? -1 : 1;
+    const dy = (Math.random() * 1.4 - 0.7);
+    setBall({ x: 50, y: 50, dx, dy, speed: 1.2 });
+  }, []);
+
+  const startGame = () => {
+    setPlayerScore(0);
+    setAiScore(0);
+    setPlayerY(40);
+    setAiY(40);
+    setGameOver(false);
+    setGameActive(true);
+    setMessage('First to 11 wins');
+    resetBall(Math.random() > 0.5 ? 'player' : 'ai');
+  };
 
   useEffect(() => {
     if (!gameActive || gameOver) return;
 
     const interval = setInterval(() => {
-      setBallX((prev) => {
-        let newX = prev + ballDirX * 2;
+      setBall((prev) => {
+        let { x, y, dx, dy, speed } = prev;
+        x += dx * speed;
+        y += dy * speed;
+
+        // Wall bounces (top/bottom)
+        if (y <= 0) {
+          y = 0;
+          dy = Math.abs(dy);
+        } else if (y >= FIELD_HEIGHT - BALL_SIZE) {
+          y = FIELD_HEIGHT - BALL_SIZE;
+          dy = -Math.abs(dy);
+        }
 
         // Player paddle collision
-        if (newX <= 5 && ballY >= playerY && ballY <= playerY + 20) {
+        if (x <= PADDLE_WIDTH + 1 && y + BALL_SIZE >= playerY && y <= playerY + PADDLE_HEIGHT && dx < 0) {
+          const hitPos = (y + BALL_SIZE / 2 - playerY) / PADDLE_HEIGHT; // 0..1
+          dy = (hitPos - 0.5) * 2.2;
+          dx = Math.abs(dx);
+          speed = Math.min(speed + 0.08, 2.4);
+          x = PADDLE_WIDTH + 1;
           cardSoundManager.playCardSlam();
-          setBallDirX(1);
-          return 5;
         }
 
         // AI paddle collision
-        if (newX >= 95 && ballY >= aiY && ballY <= aiY + 20) {
+        if (x >= FIELD_WIDTH - PADDLE_WIDTH - 1 - BALL_SIZE && y + BALL_SIZE >= aiY && y <= aiY + PADDLE_HEIGHT && dx > 0) {
+          const hitPos = (y + BALL_SIZE / 2 - aiY) / PADDLE_HEIGHT;
+          dy = (hitPos - 0.5) * 2.2;
+          dx = -Math.abs(dx);
+          speed = Math.min(speed + 0.08, 2.4);
+          x = FIELD_WIDTH - PADDLE_WIDTH - 1 - BALL_SIZE;
           cardSoundManager.playCardSlam();
-          setBallDirX(-1);
-          return 95;
         }
 
         // Player scores
-        if (newX >= 100) {
+        if (x >= FIELD_WIDTH) {
           setPlayerScore((s) => {
             const newScore = s + 1;
-            if (newScore >= 11) {
+            if (newScore >= WIN_SCORE) {
               cardSoundManager.playWinSound();
               setParticleTrigger((p) => p + 1);
               setGameOver(true);
+              setMessage('You win!');
             }
             return newScore;
           });
-          resetBall();
-          return 50;
+          resetBall('ai');
+          return { ...prev, x: 50, y: 50, dx: -1, dy: (Math.random() * 1.4 - 0.7), speed: 1.2 };
         }
 
         // AI scores
-        if (newX <= 0) {
+        if (x <= 0) {
           setAiScore((s) => {
             const newScore = s + 1;
-            if (newScore >= 11) {
+            if (newScore >= WIN_SCORE) {
               cardSoundManager.playLoseSound();
               setGameOver(true);
+              setMessage('AI wins!');
             }
             return newScore;
           });
-          resetBall();
-          return 50;
+          resetBall('player');
+          return { ...prev, x: 50, y: 50, dx: 1, dy: (Math.random() * 1.4 - 0.7), speed: 1.2 };
         }
 
-        return newX;
+        return { x, y, dx, dy, speed };
       });
 
-      setBallY((prev) => {
-        let newY = prev + ballDirY * 2;
-        if (newY <= 0 || newY >= 100) {
-          setBallDirY((d) => -d);
-        }
-        return Math.max(0, Math.min(100, newY));
-      });
-
-      // AI follows ball
+      // AI follows ball with imperfect, clamped speed.
       setAiY((prev) => {
-        const target = ballY - 10;
-        if (Math.abs(prev - target) < 3) return prev;
-        return prev + (target > prev ? 2 : -2);
+        const target = ball.y + BALL_SIZE / 2 - PADDLE_HEIGHT / 2;
+        const diff = target - prev;
+        const aiSpeed = 1.4;
+        if (Math.abs(diff) < aiSpeed) return target;
+        return Math.max(0, Math.min(FIELD_HEIGHT - PADDLE_HEIGHT, prev + (diff > 0 ? aiSpeed : -aiSpeed)));
       });
-    }, 50);
+    }, 16);
 
     return () => clearInterval(interval);
-  }, [gameActive, ballY, ballDirX, ballDirY, playerY, aiY, gameOver]);
+  }, [gameActive, gameOver, playerY, aiY, ball.y, resetBall]);
 
-  const resetBall = () => {
-    setBallX(50);
-    setBallY(50);
-  };
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (!gameActive || gameOver) return;
+      if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+        setPlayerY((y) => Math.max(0, y - 8));
+      } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+        setPlayerY((y) => Math.min(FIELD_HEIGHT - PADDLE_HEIGHT, y + 8));
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [gameActive, gameOver]);
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!gameActive) return;
-    const rect = e.currentTarget.getBoundingClientRect();
+    if (!gameActive || !fieldRef.current) return;
+    const rect = fieldRef.current.getBoundingClientRect();
     const y = ((e.clientY - rect.top) / rect.height) * 100;
-    setPlayerY(Math.max(0, Math.min(80, y)));
-  };
-
-  const startGame = () => {
-    resetBall();
-    setBallDirX(Math.random() > 0.5 ? 1 : -1);
-    setBallDirY(Math.random() > 0.5 ? 1 : -1);
-    setPlayerY(40);
-    setAiY(40);
-    setPlayerScore(0);
-    setAiScore(0);
-    setGameActive(true);
-    setGameOver(false);
+    setPlayerY(Math.max(0, Math.min(FIELD_HEIGHT - PADDLE_HEIGHT, y - PADDLE_HEIGHT / 2)));
   };
 
   const status = gameOver
-    ? playerScore > aiScore
-      ? 'You win!'
-      : 'AI wins!'
+    ? message
     : !gameActive
     ? 'Press start, then move your paddle'
-    : 'First to 11 wins';
+    : `${playerScore} — ${aiScore}`;
 
   return (
     <GameShell
@@ -176,31 +207,41 @@ export default function PracticePingPong({ onMove, gameState }: { onMove?: any, 
           </div>
         ) : (
           <div
+            ref={fieldRef}
             onPointerMove={handlePointerMove}
-            className="relative bg-gradient-to-br from-green-800 to-green-900 rounded-2xl border-4 border-white overflow-hidden cursor-none h-[50vh] sm:h-[500px] max-h-[600px]"
+            onTouchMove={(e) => {
+              const touch = e.touches[0];
+              if (!fieldRef.current) return;
+              const rect = fieldRef.current.getBoundingClientRect();
+              const y = ((touch.clientY - rect.top) / rect.height) * 100;
+              setPlayerY(Math.max(0, Math.min(FIELD_HEIGHT - PADDLE_HEIGHT, y - PADDLE_HEIGHT / 2)));
+            }}
+            className="relative bg-gradient-to-br from-green-800 to-green-900 rounded-2xl border-4 border-white overflow-hidden h-[50vh] sm:h-[500px] max-h-[600px] touch-none"
           >
-            {/* Center line */}
             <div
               className="absolute left-1/2 top-0 bottom-0 w-1 bg-white/30"
               style={{ transform: 'translateX(-50%)' }}
             />
 
-            {/* Player paddle */}
             <div
               className="absolute left-2 w-2 sm:w-3 bg-blue-500 rounded"
-              style={{ top: `${playerY}%`, height: '20%' }}
+              style={{ top: `${playerY}%`, height: `${PADDLE_HEIGHT}%` }}
             />
 
-            {/* AI paddle */}
             <div
               className="absolute right-2 w-2 sm:w-3 bg-red-500 rounded"
-              style={{ top: `${aiY}%`, height: '20%' }}
+              style={{ top: `${aiY}%`, height: `${PADDLE_HEIGHT}%` }}
             />
 
-            {/* Ball */}
             <div
-              className="absolute w-3 h-3 sm:w-4 sm:h-4 bg-white rounded-full"
-              style={{ left: `${ballX}%`, top: `${ballY}%`, transform: 'translate(-50%, -50%)' }}
+              className="absolute bg-white rounded-full"
+              style={{
+                left: `${ball.x}%`,
+                top: `${ball.y}%`,
+                width: `${BALL_SIZE}%`,
+                height: `${BALL_SIZE}%`,
+                transform: 'translate(-50%, -50%)',
+              }}
             />
           </div>
         )}
