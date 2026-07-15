@@ -115,14 +115,15 @@ export default function LandingNeonGaming() {
           top of this page (LandingPage_Enhancement.pdf §1+§2). */}
 
       {/* Hero Section */}
-      <section className="relative z-10 px-6 py-20 max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+      <section className="relative z-10 px-4 sm:px-6 py-12 sm:py-20 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           
           {/* Left - Main Text */}
           <motion.div
             initial={{ x: -100, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             transition={{ duration: 0.8 }}
+            className="order-2 lg:order-1"
           >
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -139,22 +140,23 @@ export default function LandingNeonGaming() {
                   Planet + DSG orbit live on the opposite (right) side. */}
               <div className="relative mb-6">
                 {/* Glitch Background Layer */}
-                <motion.h2
+                <motion.span
                   animate={{
                     x: [0, -2, 2, 0],
                     opacity: [0.3, 0.5, 0.3],
                   }}
                   transition={{ duration: 0.2, repeat: Infinity, repeatDelay: 3 }}
-                  className="absolute text-6xl md:text-7xl lg:text-8xl font-black leading-none text-cyan-500"
+                  className="absolute top-0 left-0 w-full text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black leading-none text-cyan-500 pointer-events-none select-none text-left"
                   style={{ filter: 'blur(2px)' }}
+                  aria-hidden
                 >
                   GLOBAL
                   <br />
                   VIBEZ <span className="text-fuchsia-500">DSG</span>
-                </motion.h2>
+                </motion.span>
 
                 {/* Main Text with Animations */}
-                <h2 className="relative text-6xl md:text-7xl lg:text-8xl font-black leading-none">
+                <h2 className="relative text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black leading-none">
                   {/* GLOBAL - Letter by letter reveal */}
                   <span className="inline-block">
                     {'GLOBAL'.split('').map((letter, i) => (
@@ -315,14 +317,14 @@ export default function LandingNeonGaming() {
               </div>
               
               <div className="space-y-3 mb-8">
-                <p className="text-2xl text-purple-300 font-bold flex items-center gap-2">
-                  <Zap className="w-6 h-6 text-fuchsia-500" />
+                <p className="text-lg sm:text-xl lg:text-2xl text-purple-300 font-bold flex items-center gap-2">
+                  <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-fuchsia-500" />
                   Six Utility Rooms · One Token · Real Rewards
                 </p>
-                <p className="text-xl text-gray-400">
+                <p className="text-base sm:text-xl text-gray-400">
                   Games · Dating · Rides · Food · Venues · Streaming
                 </p>
-                <p className="text-base text-gray-500 max-w-xl pt-2">
+                <p className="text-sm sm:text-base text-gray-500 max-w-xl pt-2">
                   Drive a VibeRidez · deliver Hungry Vibez · host a Vibe Venue ·
                   cook as a Vibe Artisan · game · stream · own a Chair.
                   Five real ways to earn $DSG on Solana.
@@ -335,30 +337,30 @@ export default function LandingNeonGaming() {
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.4 }}
-              className="flex flex-wrap gap-4 mb-12"
+              className="flex flex-col sm:flex-row flex-wrap gap-3 mb-10"
             >
               <button
                 onClick={() => navigate('/signup')}
-                className="group px-10 py-4 bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white text-lg font-black rounded-lg hover:scale-105 transition-transform shadow-2xl shadow-fuchsia-500/50 flex items-center gap-2 border-2 border-fuchsia-400"
+                className="group w-full sm:w-auto px-6 sm:px-10 py-3 sm:py-4 bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white text-base sm:text-lg font-black rounded-lg hover:scale-105 transition-transform shadow-2xl shadow-fuchsia-500/50 flex items-center justify-center gap-2 border-2 border-fuchsia-400"
               >
-                <Play className="w-6 h-6" />
+                <Play className="w-5 h-5 sm:w-6 sm:h-6" />
                 Start Playing
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" />
               </button>
               <button
                 onClick={() => navigate('/games-menu')}
-                className="px-10 py-4 bg-purple-900/50 backdrop-blur-xl text-purple-300 text-lg font-black rounded-lg hover:bg-purple-800/50 transition-all border-2 border-purple-500 hover:border-fuchsia-500 flex items-center gap-2"
+                className="w-full sm:w-auto px-6 sm:px-10 py-3 sm:py-4 bg-purple-900/50 backdrop-blur-xl text-purple-300 text-base sm:text-lg font-black rounded-lg hover:bg-purple-800/50 transition-all border-2 border-purple-500 hover:border-fuchsia-500 flex items-center justify-center gap-2"
               >
-                <Gamepad2 className="w-6 h-6" />
+                <Gamepad2 className="w-5 h-5 sm:w-6 sm:h-6" />
                 Browse Games
               </button>
               {/* Public Beta CTA — Feb 2026 redeploy. Routes to public waitlist page. */}
               <button
                 onClick={() => navigate('/beta-tester')}
                 data-testid="landing-cta-join-beta"
-                className="px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-black text-lg font-black rounded-lg hover:scale-105 transition-transform shadow-2xl shadow-amber-500/40 border-2 border-amber-300 flex items-center gap-2"
+                className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-black text-base sm:text-lg font-black rounded-lg hover:scale-105 transition-transform shadow-2xl shadow-amber-500/40 border-2 border-amber-300 flex items-center justify-center gap-2"
               >
-                <Sparkles className="w-5 h-5" />
+                <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
                 Join Beta
               </button>
               {/* Founder fix May 2026 — surfaced the 79-sec narrated tour
@@ -371,9 +373,9 @@ export default function LandingNeonGaming() {
                   if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }}
                 data-testid="landing-cta-watch-tour"
-                className="px-8 py-4 bg-black/60 backdrop-blur-xl text-white text-lg font-black rounded-lg hover:bg-black/80 transition-all border-2 border-cyan-400 hover:border-fuchsia-400 flex items-center gap-2 shadow-[0_0_30px_-8px_rgba(34,211,238,0.5)]"
+                className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-black/60 backdrop-blur-xl text-white text-base sm:text-lg font-black rounded-lg hover:bg-black/80 transition-all border-2 border-cyan-400 hover:border-fuchsia-400 flex items-center justify-center gap-2 shadow-[0_0_30px_-8px_rgba(34,211,238,0.5)]"
               >
-                <Play className="w-5 h-5" fill="currentColor" />
+                <Play className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" />
                 Watch 2-min Tour
               </button>
             </motion.div>
@@ -449,7 +451,7 @@ export default function LandingNeonGaming() {
             initial={{ x: 100, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.3 }}
-            className="relative flex items-center justify-center min-h-[320px] lg:min-h-[420px]"
+            className="relative flex items-center justify-center min-h-[280px] sm:min-h-[320px] lg:min-h-[420px] order-1 lg:order-2"
           >
             <LandingOrbitGlobe />
 

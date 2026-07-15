@@ -150,6 +150,8 @@ code {
         --chart-4: 43 74% 66%;
         --chart-5: 27 87% 67%;
         --radius: 0.5rem;
+        --surface-glass: 270 45% 12%;
+        --surface-glass-border: 292 85% 45%;
     }
     .dark {
         --background: 0 0% 3.9%;
@@ -176,6 +178,8 @@ code {
         --chart-3: 30 80% 55%;
         --chart-4: 280 65% 60%;
         --chart-5: 340 75% 55%;
+        --surface-glass: 270 45% 8%;
+        --surface-glass-border: 292 70% 45%;
     }
 }
 
@@ -539,9 +543,23 @@ body.gv-force-landscape {
   }
 }
 
-/* Prevent horizontal scroll on ALL devices */
-* {
+/* Prevent horizontal scroll on ALL devices without breaking flex/grid
+   intrinsic sizing. Keep explicit widths (e.g. w-72, w-96) usable. */
+img,
+video,
+svg,
+canvas,
+iframe,
+embed,
+object {
   max-width: 100%;
+  height: auto;
+}
+
+/* Global max-width safety net for extremely wide replaced media */
+img,
+video {
+  display: block;
 }
 
 html, body {

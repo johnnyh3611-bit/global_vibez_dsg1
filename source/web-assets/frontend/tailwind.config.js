@@ -20,6 +20,10 @@ module.exports = {
                 colors: {
                         background: 'hsl(var(--background))',
                         foreground: 'hsl(var(--foreground))',
+                        surface: {
+                                glass: 'hsl(var(--surface-glass))',
+                                'glass-border': 'hsl(var(--surface-glass-border))',
+                        },
                         card: {
                                 DEFAULT: 'hsl(var(--card))',
                                 foreground: 'hsl(var(--card-foreground))'

@@ -14,7 +14,7 @@
  * (Welcome Letter / Economic Engine page). This widget is in-app ₵ only.
  */
 import React, { useEffect, useState } from 'react';
-import { Card } from '@/components/ui/card';
+import { GlobalCard } from '@/components/ui/GlobalCard';
 import { Badge } from '@/components/ui/badge';
 import { Recycle, Trophy, Vault, Timer } from 'lucide-react';
 
@@ -59,8 +59,8 @@ const RecirculationVelocityWidget: React.FC = () => {
   }, []);
 
   return (
-    <Card
-      className="p-6 bg-gradient-to-br from-fuchsia-950/40 via-black/60 to-cyan-950/40 border border-fuchsia-500/30 backdrop-blur-md"
+    <GlobalCard
+      className="p-4 sm:p-6"
       data-testid="recirculation-velocity-widget"
     >
       <div className="flex items-center justify-between mb-4">
@@ -85,7 +85,7 @@ const RecirculationVelocityWidget: React.FC = () => {
         </span>
       </p>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div
           className="p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/20"
           data-testid="velocity-widget-tournament-pool"
@@ -146,7 +146,7 @@ const RecirculationVelocityWidget: React.FC = () => {
         <span className="text-zinc-300">3 billion ₵ fixed.</span> Velocity
         drives in-app value — no burns, no rugs.
       </p>
-    </Card>
+    </GlobalCard>
   );
 };
 

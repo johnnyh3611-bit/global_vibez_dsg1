@@ -115,23 +115,23 @@ export default function UtilityRoomsDock() {
             </p>
           </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 auto-rows-fr items-stretch">
           {ROOMS.map((r) => {
             const Icon = r.Icon;
             return (
               <button
                 key={r.to}
                 onClick={() => navigate(r.to)}
-                className="group relative overflow-hidden text-left p-4 rounded-2xl bg-[#0F0720] border border-fuchsia-500/15 hover:border-fuchsia-400/50 transition-all hover:-translate-y-0.5"
+                className="group relative overflow-hidden text-left h-full flex flex-col p-4 rounded-2xl border border-surface-glass-border/40 bg-surface-glass/50 backdrop-blur-xl hover:border-surface-glass-border/70 hover:bg-surface-glass/60 hover:-translate-y-0.5 transition-all shadow-[0_8px_32px_-8px_rgba(0,0,0,0.5)]"
                 data-testid={r.testid}
               >
                 <div
-                  className={`w-11 h-11 rounded-xl bg-gradient-to-br ${r.gradient} flex items-center justify-center mb-3 shadow-[0_0_18px_rgba(217,70,239,0.35)]`}
+                  className={`w-11 h-11 shrink-0 rounded-xl bg-gradient-to-br ${r.gradient} flex items-center justify-center mb-3 shadow-[0_0_18px_rgba(217,70,239,0.35)]`}
                 >
                   <Icon className="w-6 h-6 text-white" />
                 </div>
                 <p className="text-base font-black text-white">{r.label}</p>
-                <p className="text-xs text-purple-300/70 mt-1 leading-snug">
+                <p className="text-xs text-purple-300/70 mt-1 leading-snug line-clamp-2 flex-1">
                   {r.blurb}
                 </p>
                 <span className="absolute inset-0 bg-gradient-to-br from-fuchsia-500/0 to-fuchsia-500/0 group-hover:from-fuchsia-500/5 transition-all rounded-2xl pointer-events-none" />
