@@ -138,7 +138,7 @@ export const miscRoutes = (ProtectedRoute) => (
     {/* DSG Circulation Ledger — chair registry */}
     <Route path="/chair-ledger" element={<ProtectedRoute><ChairLedgerPage /></ProtectedRoute>} />
     <Route path="/chair-registry" element={<ProtectedRoute><ChairLedgerPage /></ProtectedRoute>} />
-    {/* Ops console — public platform health dashboard */}
-    <Route path="/operations" element={<OperationsConsolePage />} />
+    {/* Ops console — authenticated platform health dashboard */}
+    <Route path="/operations" element={<ProtectedRoute><OperationsConsolePage /></ProtectedRoute>} />
   </>
 );

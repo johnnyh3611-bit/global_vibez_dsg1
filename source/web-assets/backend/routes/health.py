@@ -2,7 +2,8 @@
 System Health Check & Monitoring Endpoint
 Provides real-time status of all services in the Global Vibez DSG platform
 """
-from fastapi import APIRouter, HTTPException
+import logging
+from fastapi import APIRouter, HTTPException, Depends
 from datetime import datetime, timezone
 import os
 import time
@@ -10,8 +11,10 @@ import asyncio
 from typing import Dict, Any
 from config import db, STRIPE_API_KEY, EMERGENT_LLM_KEY
 import httpx
+from utils.auth_dependencies import get_current_user_from_session
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 async def check_mongodb() -> Dict[str, Any]:
     """Check MongoDB connection and latency"""
@@ -30,9 +33,10 @@ async def check_mongodb() -> Dict[str, Any]:
             "data_size_mb": round(stats.get('dataSize', 0) / (1024 * 1024), 2)
         }
     except Exception as e:
+        logger.exception("MongoDB health check failed")
         return {
             "status": "offline",
-            "error": str(e)
+            "error": "Database check failed. See server logs for details."
         }
 
 async def check_wallet_api() -> Dict[str, Any]:
@@ -53,9 +57,10 @@ async def check_wallet_api() -> Dict[str, Any]:
             "latency_ms": latency_ms
         }
     except Exception as e:
+        logger.exception("Wallet/Stripe health check failed")
         return {
             "status": "degraded",
-            "error": str(e)
+            "error": "Wallet check failed. See server logs for details."
         }
 
 async def check_auth_service() -> Dict[str, Any]:
@@ -74,9 +79,10 @@ async def check_auth_service() -> Dict[str, Any]:
             "latency_ms": latency_ms
         }
     except Exception as e:
+        logger.exception("Auth service health check failed")
         return {
             "status": "offline",
-            "error": str(e)
+            "error": "Auth service check failed. See server logs for details."
         }
 
 async def check_game_services() -> Dict[str, Any]:
@@ -104,9 +110,10 @@ async def check_game_services() -> Dict[str, Any]:
             "roulette": {"status": "active"}
         }
     except Exception as e:
+        logger.exception("Game services health check failed")
         return {
             "status": "degraded",
-            "error": str(e)
+            "error": "Game services check failed. See server logs for details."
         }
 
 async def check_ai_services() -> Dict[str, Any]:
@@ -121,9 +128,10 @@ async def check_ai_services() -> Dict[str, Any]:
             "metahuman_dealers": "active"
         }
     except Exception as e:
+        logger.exception("AI services health check failed")
         return {
             "status": "offline",
-            "error": str(e)
+            "error": "AI services check failed. See server logs for details."
         }
 
 @router.get("/health/live")
@@ -136,10 +144,11 @@ async def health_check_basic() -> Dict[str, Any]:
         raise HTTPException(status_code=503, detail="Service Unavailable")
 
 @router.get("/system-status")
-async def get_system_report() -> Dict[str, Any]:
+async def get_system_report(current_user: dict = Depends(get_current_user_from_session)) -> Dict[str, Any]:
     """
     Comprehensive system status report
-    Checks all critical components and returns detailed health metrics
+    Checks all critical components and returns detailed health metrics.
+    Requires authentication to prevent reconnaissance of platform internals.
     """
     start_time = time.time()
     
@@ -219,8 +228,9 @@ async def frontend_health() -> Dict[str, Any]:
                 "webpack": "compiled"
             }
     except Exception as e:
+        logger.exception("Frontend health check failed")
         return {
             "status": "offline",
             "url": frontend_url,
-            "error": str(e)
+            "error": "Frontend check failed. See server logs for details."
         }
