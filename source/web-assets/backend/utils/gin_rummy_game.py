@@ -15,12 +15,12 @@ Standard ruleset:
   • First player to reach 100 points wins the match.
 """
 from __future__ import annotations
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 import secrets
 
 from utils.meld_detection import (
-    SUITS, RANKS, RANK_INDEX, make_card, hand_total, best_meld_partition,
-    best_deadwood, is_gin, can_knock,
+    SUITS, RANKS, RANK_INDEX, make_card, hand_total, card_value,
+    best_meld_partition, best_deadwood, is_gin, can_knock,
 )
 
 POSITIONS = ["north", "south"]
@@ -176,29 +176,41 @@ class GinRummyGame:
     def bot_act(self) -> Dict[str, Any]:
         """Drive a full bot turn (draw + discard) and return a step record."""
         actor = self.turn
-        # Draw decision: prefer top-discard if it slots into a meld + reduces deadwood
-        before_dead = best_deadwood(self.hands[actor])
+        # Draw decision: prefer top-discard if it reduces deadwood OR
+        # keeps deadwood the same while increasing the number of melds.
+        before_dead, before_melds = best_meld_partition(self.hands[actor])
         top = self.discard[-1] if self.discard else None
         took_discard = False
         if top is not None:
-            simulated = self.hands[actor] + [top]
-            after_dead = best_deadwood(simulated)
-            if after_dead < before_dead:
+            after_dead, after_melds = best_meld_partition(self.hands[actor] + [top])
+            improves = (
+                after_dead < before_dead
+                or (after_dead == before_dead and len(after_melds) > len(before_melds))
+            )
+            if improves:
                 self.take_discard(actor)
                 took_discard = True
         if not took_discard:
             self.draw_stock(actor)
-        # Discard the card that maximises post-discard deadwood reduction
+
+        # Discard: minimise deadwood, then maximise meld count, then dump
+        # the highest-value loose card.
         hand = self.hands[actor]
-        best_idx = 0
-        best_dead_after = best_deadwood(hand[1:])
-        for i in range(1, len(hand)):
-            simulated = hand[:i] + hand[i + 1:]
-            d = best_deadwood(simulated)
-            if d < best_dead_after:
-                best_dead_after = d
-                best_idx = i
+
+        def _discard_score(idx: int) -> Tuple[int, int, int]:
+            simulated = hand[:idx] + hand[idx + 1:]
+            dead, melds = best_meld_partition(simulated)
+            card = hand[idx]
+            # Determine if this card is currently "loose" (not in any meld).
+            in_meld = any(idx in m for m in before_melds)
+            loose_value = 0 if in_meld else card_value(card)
+            return (dead, -len(melds), -loose_value)
+
+        best_idx = min(range(len(hand)), key=_discard_score)
         choose = hand[best_idx]
+        best_dead_after, _ = best_meld_partition(
+            hand[:best_idx] + hand[best_idx + 1:]
+        )
         # Knock if possible and prudent (deadwood ≤ 10 OR Gin)
         will_knock = best_dead_after <= KNOCK_THRESHOLD
         result = self.discard_card(actor, choose, knock=will_knock)
