@@ -61,6 +61,7 @@ greenlet==3.4.0
 grpcio==1.78.0
 grpcio-status==1.71.2
 gTTS>=2.4.0
+edge-tts==7.2.8
 gunicorn==26.0.0
 h11==0.16.0
 h2==4.3.0

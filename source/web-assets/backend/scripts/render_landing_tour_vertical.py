@@ -25,6 +25,7 @@ Pipeline (per language):
 Requires: ffmpeg (apt-get install -y ffmpeg) + the i18n manifest +
 the per-language MP3s (run generate_landing_tour_i18n.py first).
 """
+
 import json
 import os
 import shlex
@@ -37,15 +38,17 @@ from pathlib import Path
 from typing import List
 
 # Brand-locked: VIBEZ (with Z), DSG, $VIBEZ.
-PUBLIC_DIR  = Path("/app/frontend/public")
-MANIFEST    = PUBLIC_DIR / "landing-tour-i18n.json"
-LEGACY_MP4  = PUBLIC_DIR / "landing-tour-tiktok-9x16.mp4"
+PUBLIC_DIR = Path(__file__).resolve().parents[2] / "frontend" / "public"
+MANIFEST = PUBLIC_DIR / "landing-tour-i18n.json"
+LEGACY_MP4 = PUBLIC_DIR / "landing-tour-tiktok-9x16.mp4"
 
 CLIPS = [
-    "https://customer-assets.emergentagent.com/job_social-connect-953/artifacts/aeaebfxp_e_c_a_d_d_db_c_e_videomp_.mp4",
-    "https://customer-assets.emergentagent.com/job_social-connect-953/artifacts/8s795ybg_mp_%20%281%29.mp4",
-    "https://customer-assets.emergentagent.com/job_social-connect-953/artifacts/n612sxdb__The_video_will_be_available_for_hours.mp4",
-    "https://customer-assets.emergentagent.com/job_social-connect-953/artifacts/p21nztqq_mp_.mp4",
+    PUBLIC_DIR / "landing-tour" / "clips" / "01-intro.mp4",
+    PUBLIC_DIR / "landing-tour" / "clips" / "02-casino.mp4",
+    PUBLIC_DIR / "landing-tour" / "clips" / "03-dating.mp4",
+    PUBLIC_DIR / "landing-tour" / "clips" / "04-hustle.mp4",
+    PUBLIC_DIR / "landing-tour" / "clips" / "05-stream.mp4",
+    PUBLIC_DIR / "landing-tour" / "clips" / "06-chair.mp4",
 ]
 
 
@@ -57,11 +60,16 @@ def run(cmd: str, *, check: bool = True) -> None:
 def download_clips(target_dir: Path) -> List[Path]:
     target_dir.mkdir(parents=True, exist_ok=True)
     out: List[Path] = []
-    for i, url in enumerate(CLIPS):
+    for i, src in enumerate(CLIPS):
         local = target_dir / f"clip_{i}.mp4"
         if not local.exists():
-            print(f"[download] {url} → {local}")
-            urllib.request.urlretrieve(url, local)
+            if isinstance(src, str) and src.startswith("http"):
+                print(f"[download] {src} → {local}")
+                urllib.request.urlretrieve(src, local)
+            else:
+                src_path = Path(src)
+                print(f"[copy] {src_path} → {local}")
+                shutil.copy2(src_path, local)
         out.append(local)
     return out
 
@@ -69,9 +77,9 @@ def download_clips(target_dir: Path) -> List[Path]:
 def reencode_vertical(src: Path, dst: Path) -> None:
     vf = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920"
     run(
-        f'ffmpeg -y -i {shlex.quote(str(src))} '
+        f"ffmpeg -y -i {shlex.quote(str(src))} "
         f'-vf "{vf}" -an -c:v libx264 -preset veryfast -crf 22 '
-        f'-pix_fmt yuv420p -movflags +faststart {shlex.quote(str(dst))}'
+        f"-pix_fmt yuv420p -movflags +faststart {shlex.quote(str(dst))}"
     )
 
 
@@ -81,6 +89,7 @@ def write_concat_list(paths: List[Path], target: Path) -> None:
 
 def build_srt(target: Path, cues: list, total_duration: float) -> None:
     """SRT subtitle track from the language's caption cues."""
+
     def fmt(t: float) -> str:
         h = int(t // 3600)
         m = int((t % 3600) // 60)
@@ -122,7 +131,10 @@ def render_language(lang: str, track: dict, sources: List[Path]) -> Path:
     cues = track["cues"]
     output = PUBLIC_DIR / f"landing-tour-tiktok-{lang}-9x16.mp4"
 
-    print(f"\n══ Rendering {lang} ({track.get('native', lang)}) → {output.name} ══")
+    print(
+        f"\n══ Rendering {lang} "
+        f"({track.get('native', lang)}) → {output.name} ══"
+    )
 
     with tempfile.TemporaryDirectory(prefix=f"vtour_{lang}_") as tmp_str:
         tmp = Path(tmp_str)
@@ -140,7 +152,11 @@ def render_language(lang: str, track: dict, sources: List[Path]) -> Path:
         concat_list = tmp / "concat.txt"
         write_concat_list(verticals, concat_list)
         concatted = tmp / "concat.mp4"
-        run(f'ffmpeg -y -f concat -safe 0 -i {shlex.quote(str(concat_list))} -c copy {shlex.quote(str(concatted))}')
+        run(
+            "ffmpeg -y -f concat -safe 0 -i "
+            f"{shlex.quote(str(concat_list))} -c copy "
+            f"{shlex.quote(str(concatted))}"
+        )
         # Loop the concat stack to cover the full narration runtime.
         # `-stream_loop -1` repeats the input infinitely; `-t {duration}`
         # caps at exactly the audio length. This single ffmpeg invocation
@@ -149,9 +165,10 @@ def render_language(lang: str, track: dict, sources: List[Path]) -> Path:
         # was shorter than the narration.
         trimmed = tmp / "video_only.mp4"
         run(
-            f'ffmpeg -y -stream_loop -1 -i {shlex.quote(str(concatted))} -t {duration} '
-            f'-c:v libx264 -preset veryfast -crf 22 -pix_fmt yuv420p '
-            f'{shlex.quote(str(trimmed))}'
+            "ffmpeg -y -stream_loop -1 -i "
+            f"{shlex.quote(str(concatted))} -t {duration} "
+            "-c:v libx264 -preset veryfast -crf 22 -pix_fmt yuv420p "
+            f"{shlex.quote(str(trimmed))}"
         )
         # Burn captions.
         srt = tmp / "captions.srt"
@@ -163,20 +180,25 @@ def render_language(lang: str, track: dict, sources: List[Path]) -> Path:
             "Alignment=2,MarginV=220,Bold=1"
         )
         run(
-            f'ffmpeg -y -i {shlex.quote(str(trimmed))} '
-            f'-vf "subtitles={shlex.quote(str(srt))}:force_style=\'{force_style}\'" '
-            f'-c:v libx264 -preset veryfast -crf 22 -pix_fmt yuv420p '
-            f'{shlex.quote(str(burned))}'
+            "ffmpeg -y -i "
+            f"{shlex.quote(str(trimmed))} "
+            f'-vf "subtitles={shlex.quote(str(srt))}:'
+            f"force_style='{force_style}'\" "
+            "-c:v libx264 -preset veryfast -crf 22 -pix_fmt yuv420p "
+            f"{shlex.quote(str(burned))}"
         )
         # Mux audio + final compress.
         muxed = tmp / "muxed.mp4"
         run(
-            f'ffmpeg -y -i {shlex.quote(str(burned))} -i {shlex.quote(str(audio_path))} '
-            f'-map 0:v:0 -map 1:a:0 '
-            f'-c:v libx264 -preset slow -crf 28 -maxrate 2500k -bufsize 5000k '
-            f'-pix_fmt yuv420p -movflags +faststart '
-            f'-c:a aac -b:a 128k -shortest '
-            f'{shlex.quote(str(muxed))}'
+            "ffmpeg -y -i "
+            f"{shlex.quote(str(burned))} -i "
+            f"{shlex.quote(str(audio_path))} "
+            "-map 0:v:0 -map 1:a:0 "
+            "-c:v libx264 -preset slow -crf 28 "
+            "-maxrate 2500k -bufsize 5000k "
+            "-pix_fmt yuv420p -movflags +faststart "
+            "-c:a aac -b:a 128k -shortest "
+            f"{shlex.quote(str(muxed))}"
         )
         output.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(muxed, output)
@@ -187,7 +209,9 @@ def render_language(lang: str, track: dict, sources: List[Path]) -> Path:
 
 def main() -> None:
     if shutil.which("ffmpeg") is None:
-        sys.exit("ffmpeg not installed. Install with: apt-get install -y ffmpeg")
+        sys.exit(
+            "ffmpeg not installed. Install with: apt-get install -y ffmpeg"
+        )
     if not MANIFEST.exists():
         sys.exit(
             f"Manifest missing: {MANIFEST}\n"
@@ -197,13 +221,18 @@ def main() -> None:
     manifest = json.loads(MANIFEST.read_text())
     requested = os.getenv("RENDER_LANGS")
     if requested:
-        wanted = [l.strip() for l in requested.split(",") if l.strip()]
+        wanted = [
+            lang.strip() for lang in requested.split(",") if lang.strip()
+        ]
     else:
         # Default: render English + the three top global non-English markets.
         wanted = ["en", "es", "pt", "zh"]
-    wanted = [l for l in wanted if l in manifest["languages"]]
+    wanted = [lang for lang in wanted if lang in manifest["languages"]]
     if not wanted:
-        sys.exit(f"None of the requested languages exist in the manifest. Available: {list(manifest['languages'])}")
+        sys.exit(
+            "None of the requested languages exist in the manifest. "
+            f"Available: {list(manifest['languages'])}"
+        )
 
     print(f"Rendering 9:16 vertical exports for: {', '.join(wanted)}")
 
@@ -212,7 +241,9 @@ def main() -> None:
         sources = download_clips(Path(src_str) / "src")
         last_path = None
         for lang in wanted:
-            last_path = render_language(lang, manifest["languages"][lang], sources)
+            last_path = render_language(
+                lang, manifest["languages"][lang], sources
+            )
             # Update legacy filename with the EN render for backwards-compat.
             if lang == "en":
                 shutil.copy2(last_path, LEGACY_MP4)
