@@ -14,6 +14,7 @@ import * as PracticeGames from '@/components/practice_games';
 import PracticeBowling from '@/components/practice_games/PracticeBowling';
 import ComingSoonOverlay from '@/components/games/ComingSoonOverlay';
 import { isComingSoon } from '@/data/comingSoonGames';
+import { getGameById, getGameName as getRegisteredGameName } from '@/data/gamesRegistry';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -34,46 +35,10 @@ export default function PracticeGamePlay() {
   // mount and stash its id here for all subsequent move calls.
   const [activeGameId, setActiveGameId] = useState<string | null>(null);
 
-  // Every game component in the gameComponents map (below, ~line 174+) is
-  // self-contained — it receives game.game_state and an onMove callback and
-  // manages its own logic. So the allow-list is really "whatever the map has".
-  //
-  // Rather than maintaining a parallel hard-coded list that silently drifts
-  // (which was the bug that broke tictactoe, chess, checkers, etc.), derive
-  // it from the single source of truth: the gameComponents map itself.
-  //
-  // Build a minimal stub of the map's keys here — if a key is listed in
-  // SUPPORTED_CLIENT_GAMES, the page skips the backend fetch entirely.
-  const SUPPORTED_CLIENT_GAMES = new Set<string>([
-    // Card Games
-    // NOTE: `chess` removed 2026-05-16 — it was wrongly listed here,
-    // which created a stub game with no `current_turn` field. That
-    // froze the board (PracticeChess `isDraggable` requires
-    // `current_turn === 'player'`). Chess now bootstraps a real
-    // backend practice game via POST /practice/start so the AI can
-    // reply after each player move.
-    'tictactoe', 'connect4', 'uno', 'checkers', 'reversi', 'go_fish',
-    'crazy_eights', 'hearts', 'poker', 'spades', 'rummy', 'trivia', 'truthordare',
-    'truth_or_dare', 'two_truths_lie', 'war', 'solitaire', 'gin_rummy', 'ludo',
-    // Arcade
-    'snake', 'memory_match', 'pool_8ball', 'bowling', 'ping_pong',
-    // Casino Table
-    'blackjack', 'roulette', 'baccarat', 'baccarat_premium', 'caribbean_stud',
-    'three_card_poker', 'pai_gow', 'chemin_de_fer', 'casino_war', 'european_roulette',
-    // Casino Dice
-    'craps', 'sic_bo', 'hazard', 'chuck_a_luck',
-    // Casino Wheel
-    'big_six_wheel', 'vibes_wheel',
-    // Video/Electronic
-    'jacks_or_better', 'vibes_slots', 'keno', 'bingo',
-    // Classic
-    'fan_tan', 'faro', 'vibes_darts',
-    // Board/Strategy
-    'battleship', 'yahtzee', 'mancala', 'dominoes', 'mahjong', 'klondike',
-    // Premium / Alternate (3D Poker variants deleted 2026-02-16)
-    'blackjack_new',
-  ]);
-  const isClientSide = SUPPORTED_CLIENT_GAMES.has(gameId);
+  // Single source of truth for whether a game runs entirely in the browser
+  // or needs a backend practice session. Derived from src/data/gamesRegistry.
+  const gameMeta = getGameById(gameId);
+  const isClientSide = gameMeta?.mode === 'client';
   const gameComingSoon = isComingSoon(gameId);
 
   useEffect(() => {
@@ -340,89 +305,22 @@ export default function PracticeGamePlay() {
   };
 
 
-  const getGameName = () => {
-    const names = {
-      // Card Games
-      'poker': 'Poker',
-      'blackjack': 'Blackjack',
-      'uno': 'UNO',
-      'go_fish': 'Go Fish',
-      'crazy_eights': 'Crazy Eights',
-      'hearts': 'Hearts',
-      'spades': 'Spades',
-      'rummy': 'Rummy',
-      'gin_rummy': 'Gin Rummy',
-      'war': 'War',
-      'solitaire': 'Solitaire',
-      'klondike': 'Klondike',
-      
-      // Casino Table Games
-      'roulette': 'Roulette',
-      'baccarat': 'Baccarat',
-      'baccarat_premium': 'Baccarat 3D Premium',
-      'caribbean_stud': 'Caribbean Stud Poker',
-      'three_card_poker': 'Three Card Poker',
-      'pai_gow': 'Pai Gow',
-      'chemin_de_fer': 'Chemin de Fer',
-      'casino_war': 'Casino War',
-      'european_roulette': 'European Roulette',
-      
-      // Casino Dice Games
-      'craps': 'Craps',
-      'sic_bo': 'Sic Bo',
-      'hazard': 'Hazard',
-      'chuck_a_luck': 'Chuck-A-Luck',
-      
-      // Casino Wheel Games
-      'big_six_wheel': 'Big Six Wheel',
-      'vibes_wheel': 'Vibes Wheel',
-      
-      // Video/Electronic Casino
-      'jacks_or_better': 'Jacks or Better',
-      'vibes_slots': 'Vibes Slots',
-      'keno': 'Keno',
-      'bingo': 'Bingo',
-      
-      // Classic Casino
-      'fan_tan': 'Fan-Tan',
-      'faro': 'Faro',
-      'vibes_darts': 'Vibes Darts',
-      
-      // Board Games
-      'chess': 'Chess',
-      'checkers': 'Checkers',
-      'connect4': 'Connect 4',
-      'tictactoe': 'Tic-Tac-Toe',
-      'reversi': 'Reversi',
-      'mancala': 'Mancala',
-      'dominoes': 'Dominoes',
-      'battleship': 'Battleship',
-      'mahjong': 'Mahjong',
-      'yahtzee': 'Yahtzee',
-      'ludo': 'Ludo',
-      
-      // Arcade
-      'snake': 'Snake',
-      'memory_match': 'Memory Match',
-      'ping_pong': 'Ping Pong',
-      'pool_8ball': '8-Ball Pool',
-      'bowling': '10-Pin Bowling',
-      
-      // Party
-      'trivia': 'Trivia',
-      'truth_or_dare': 'Truth or Dare',
-      'two_truths_lie': 'Two Truths & A Lie',
-      
-      // Premium
-      'blackjack_new': 'Blackjack Premium'
-      // poker_3d / poker_css3d removed 2026-02-16 (founder directive).
-    };
-    return names[game.game_type] || game.game_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-  };
+  const gameName = getRegisteredGameName(game.game_type);
 
   const getGameIcon = () => {
     return <Gamepad2 className="w-8 h-8 text-white" />;
   };
+
+  // Games that ship with their own full-screen GameShell wrapper. Wrapping
+  // them again in BrandedGameLayout produces duplicate headers and broken
+  // mobile scroll areas.
+  const SHELL_GAMES = new Set<string>([
+    'snake',
+    'memory_match',
+    'ping_pong',
+    'pool_8ball',
+    'bowling',
+  ]);
 
   const getWinner = () => {
     if (game.winner === 'player') return 'player';
@@ -432,16 +330,19 @@ export default function PracticeGamePlay() {
 
   return (
     <>
-      {/* For Poker/UNO/Spades - Render WITHOUT BrandedGameLayout wrapper (full screen 3D) */}
-      {(game.game_type === 'poker' || game.game_type === 'uno' || game.game_type === 'spades') ? (
+      {/* Some games render their own full-screen shell and should not be
+          wrapped in a second layout. */}
+      {(game.game_type === 'poker' || game.game_type === 'uno' || game.game_type === 'spades' || SHELL_GAMES.has(game.game_type)) ? (
         <>
-          <BackButton to="/games" label="Back to Games" variant="casino" />
+          {!SHELL_GAMES.has(game.game_type) && (
+            <BackButton to="/games" label="Back to Games" variant="casino" />
+          )}
           {renderGameBoard()}
         </>
       ) : (
         /* Other games use branded layout */
         <BrandedGameLayout
-          gameName={getGameName()}
+          gameName={gameName}
           gameType={game.game_type}
           gameIcon={getGameIcon()}
           onBack={() => navigate('/practice')}
@@ -458,8 +359,8 @@ export default function PracticeGamePlay() {
         </BrandedGameLayout>
       )}
 
-      {/* Victory Animation - Only for games NOT using CinematicCelebration */}
-      {!['tictactoe', 'connect4', 'chess', 'checkers', 'reversi'].includes(game?.game_type) && (
+      {/* Victory Animation - Only for games NOT using CinematicCelebration or their own modal */}
+      {!['tictactoe', 'connect4', 'chess', 'checkers', 'reversi', ...SHELL_GAMES].includes(game?.game_type) && (
         <VictoryAnimation
           show={showVictory}
           winner={getWinner()}

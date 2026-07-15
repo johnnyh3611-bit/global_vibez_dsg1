@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { RotateCcw, Target, Crown } from 'lucide-react';
 import cardSoundManager from '@/utils/cardSoundManager';
 import ParticleEffectsOverlay from '@/components/ParticleEffectsOverlay';
+import GameShell from '@/components/games/GameShell';
 
 const BALLS = [
   { num: 1, type: 'solid', color: '#facc15' },
@@ -126,107 +127,102 @@ export default function PracticePool8Ball({ onMove, gameState }: { onMove?: any;
   const ballPosition = (index: number) => rackPositions[index];
 
   return (
-    <div className="w-full max-w-5xl mx-auto p-2 sm:p-4">
-      <ParticleEffectsOverlay triggerSparkle={particleTrigger > 0 ? { x: 0, y: 0 } : null} />
-
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mb-4">
-        <div className="text-center sm:text-left">
-          <h2 className="text-2xl sm:text-3xl font-black text-white flex items-center justify-center sm:justify-start gap-2">
-            <span className="text-3xl">🎱</span> 8-Ball Pool
-          </h2>
-          <p className="text-green-300 text-sm mt-1">{message}</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-center min-w-[80px]">
-            <p className="text-white/60 text-xs">You</p>
-            <p className="text-white font-black text-xl">{playerScore}</p>
-          </div>
-          <div className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-center min-w-[80px]">
-            <p className="text-white/60 text-xs">AI</p>
-            <p className="text-white font-black text-xl">{aiScore}</p>
-          </div>
+    <GameShell
+      title="8-Ball Pool"
+      emoji="🎱"
+      subtitle={message}
+      bgGradient="from-gray-900 via-blue-800 to-gray-900"
+      onBack={() => window.history.back()}
+      onRestart={resetGame}
+      status={gameOver ? message : `Player ${currentPlayer === 1 ? 'You' : 'AI'}${playerType ? ` • ${playerType === 'solid' ? 'Solids' : 'Stripes'}` : ''}`}
+      stats={[
+        { label: 'You', value: playerScore, color: 'cyan' },
+        { label: 'AI', value: aiScore, color: 'red' },
+      ]}
+      controls={
+        <div className="flex gap-3">
+          <button
+            onClick={() => shoot(false)}
+            disabled={currentPlayer !== 1 || gameOver || shooting || aiTurn}
+            className="flex-1 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-black text-base rounded-xl border-2 border-cyan-400 hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            <Target className="w-5 h-5" />
+            {shooting ? 'Shooting...' : 'SHOOT'}
+          </button>
           <button
             onClick={resetGame}
-            className="p-3 bg-white/10 hover:bg-white/20 text-white rounded-xl border border-white/20 transition-colors"
-            title="New Rack"
+            className="px-5 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl border-2 border-purple-400 hover:scale-[1.02] transition-transform flex items-center gap-2"
           >
             <RotateCcw className="w-5 h-5" />
+            New Rack
           </button>
         </div>
-      </div>
-
-      <div className="relative bg-gradient-to-br from-green-800 to-green-950 rounded-3xl border-[10px] border-yellow-900/80 shadow-2xl overflow-hidden min-h-[360px] sm:min-h-[420px] flex items-center justify-center mb-4">
-        {/* Felt texture / markings */}
-        <div className="absolute inset-4 border border-white/10 rounded-2xl" />
-        <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-24 h-24 rounded-full border-2 border-white/10" />
-
-        {/* Pockets */}
-        <div className="absolute top-2 left-2 w-6 h-6 rounded-full bg-black border-2 border-gray-700" />
-        <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black border-2 border-gray-700" />
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-black border-2 border-gray-700" />
-        <div className="absolute bottom-2 left-2 w-6 h-6 rounded-full bg-black border-2 border-gray-700" />
-        <div className="absolute bottom-2 right-2 w-6 h-6 rounded-full bg-black border-2 border-gray-700" />
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-black border-2 border-gray-700" />
-
-        {/* Rack */}
-        {balls.length > 0 && (
-          <div className="relative w-64 h-64 sm:w-80 sm:h-80">
-            {balls.map((ball, i) => {
-              const pos = ballPosition(i);
-              const isStripe = ball.type === 'stripe';
-              return (
-                <div
-                  key={ball.num}
-                  className="absolute w-8 h-8 sm:w-10 sm:h-10 rounded-full shadow-lg transition-all duration-300"
-                  style={{
-                    left: `calc(50% + ${pos.x}px - 1rem)`,
-                    top: `calc(45% + ${pos.y}px - 1rem)`,
-                    background: isStripe
-                      ? `linear-gradient(to bottom, white 50%, ${ball.color} 50%)`
-                      : ball.color,
-                    border: isStripe ? `2px solid ${ball.color}` : '2px solid rgba(255,255,255,0.4)',
-                  }}
-                >
-                  <span className="absolute inset-0 flex items-center justify-center text-white font-black text-xs drop-shadow-md">
-                    {ball.num}
-                  </span>
-                </div>
-              );
-            })}
+      }
+      modal={
+        gameOver && (
+          <div className="bg-gradient-to-br from-gray-900 to-blue-900 rounded-3xl p-6 sm:p-8 border-4 border-yellow-400 text-center max-w-sm mx-auto">
+            <Crown className="w-12 h-12 text-yellow-400 mx-auto mb-4" />
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">{message}</h2>
+            <p className="text-2xl text-yellow-400 mb-6">{playerScore} - {aiScore}</p>
+            <button
+              onClick={resetGame}
+              className="px-8 py-4 bg-gradient-to-r from-green-600 to-cyan-600 text-white font-bold text-xl rounded-xl hover:scale-105 transition-transform"
+            >
+              Play Again
+            </button>
           </div>
-        )}
+        )
+      }
+    >
+      <ParticleEffectsOverlay triggerSparkle={particleTrigger > 0 ? { x: 0, y: 0 } : null} />
 
-        {balls.length === 0 && !gameOver && (
-          <div className="text-green-300 text-2xl font-bold">Table cleared!</div>
-        )}
+      <div className="w-full max-w-4xl mx-auto">
+        <div className="relative bg-gradient-to-br from-green-800 to-green-950 rounded-3xl border-[8px] sm:border-[10px] border-yellow-900/80 shadow-2xl overflow-hidden min-h-[320px] sm:min-h-[420px] flex items-center justify-center">
+          {/* Felt texture / markings */}
+          <div className="absolute inset-4 border border-white/10 rounded-2xl" />
+          <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-24 h-24 rounded-full border-2 border-white/10" />
 
-        {gameOver && (
-          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-            <div className="bg-white/10 backdrop-blur border border-white/20 rounded-2xl p-6 text-center">
-              <Crown className="w-10 h-10 text-yellow-400 mx-auto mb-2" />
-              <p className="text-white text-2xl font-black">{message}</p>
+          {/* Pockets */}
+          <div className="absolute top-2 left-2 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-black border-2 border-gray-700" />
+          <div className="absolute top-2 right-2 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-black border-2 border-gray-700" />
+          <div className="absolute top-2 left-1/2 -translate-x-1/2 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-black border-2 border-gray-700" />
+          <div className="absolute bottom-2 left-2 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-black border-2 border-gray-700" />
+          <div className="absolute bottom-2 right-2 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-black border-2 border-gray-700" />
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-black border-2 border-gray-700" />
+
+          {/* Rack */}
+          {balls.length > 0 && (
+            <div className="relative w-56 h-56 sm:w-80 sm:h-80">
+              {balls.map((ball, i) => {
+                const pos = ballPosition(i);
+                const isStripe = ball.type === 'stripe';
+                return (
+                  <div
+                    key={ball.num}
+                    className="absolute w-7 h-7 sm:w-10 sm:h-10 rounded-full shadow-lg transition-all duration-300"
+                    style={{
+                      left: `calc(50% + ${pos.x}px - 0.875rem)`,
+                      top: `calc(45% + ${pos.y}px - 0.875rem)`,
+                      background: isStripe
+                        ? `linear-gradient(to bottom, white 50%, ${ball.color} 50%)`
+                        : ball.color,
+                      border: isStripe ? `2px solid ${ball.color}` : '2px solid rgba(255,255,255,0.4)',
+                    }}
+                  >
+                    <span className="absolute inset-0 flex items-center justify-center text-white font-black text-[10px] sm:text-xs drop-shadow-md">
+                      {ball.num}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
-          </div>
-        )}
-      </div>
+          )}
 
-      <div className="flex gap-3">
-        <button
-          onClick={() => shoot(false)}
-          disabled={currentPlayer !== 1 || gameOver || shooting || aiTurn}
-          className="flex-1 py-4 bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-black text-lg rounded-xl border-2 border-cyan-400 hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-        >
-          <Target className="w-6 h-6" />
-          {shooting ? 'Shooting...' : 'SHOOT'}
-        </button>
-        <button
-          onClick={resetGame}
-          className="px-6 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl border-2 border-purple-400 hover:scale-[1.02] transition-transform flex items-center gap-2"
-        >
-          <RotateCcw className="w-5 h-5" />
-          New Rack
-        </button>
+          {balls.length === 0 && !gameOver && (
+            <div className="text-green-300 text-2xl font-bold">Table cleared!</div>
+          )}
+        </div>
       </div>
-    </div>
+    </GameShell>
   );
 }
