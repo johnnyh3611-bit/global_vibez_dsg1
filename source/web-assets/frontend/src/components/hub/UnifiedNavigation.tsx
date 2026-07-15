@@ -65,6 +65,7 @@ const UnifiedNavigation = () => {
               return (
                 <motion.button
                   key={item.id}
+                  title={item.label}
                   onClick={() => navigate(item.path)}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -101,6 +102,7 @@ const UnifiedNavigation = () => {
             {/* Vibe Credits */}
             <motion.div
               whileHover={{ scale: 1.05 }}
+              title="Wallet"
               className="bg-gradient-to-r from-amber-500 to-yellow-500 px-3 sm:px-4 py-2 rounded-full cursor-pointer shadow-lg"
               onClick={() => navigate('/wallet')}
             >
@@ -114,6 +116,7 @@ const UnifiedNavigation = () => {
 
             {/* Profile */}
             <motion.button
+              title="Profile"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               onClick={() => navigate('/me')}

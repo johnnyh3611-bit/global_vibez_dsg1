@@ -82,6 +82,8 @@ export default function MobileBottomNav() {
               <button
                 key={key}
                 type="button"
+                title={label}
+                aria-label={label}
                 onClick={() => navigate(route)}
                 data-testid={`mobile-nav-${key}`}
                 className={`relative flex flex-col items-center justify-center py-2 transition-colors ${

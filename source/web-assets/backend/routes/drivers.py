@@ -38,6 +38,11 @@ class RateDriver(BaseModel):
     comment: Optional[str] = None
 
 
+class DriverAdminAction(BaseModel):
+    driver_id: str
+    rejection_reason: Optional[str] = None
+
+
 # ==================== ENDPOINTS ====================
 
 @router.post("/register")
@@ -280,4 +285,163 @@ async def get_driver_profile(driver_id: str) -> Dict[str, Any]:
         "total_rides": driver.get("total_rides", 0),
         "vehicle": driver.get("vehicle"),
         "status": driver.get("status")
+    }
+
+
+# ==================== ADMIN ENDPOINTS ====================
+
+
+@router.get("/admin/pending")
+async def get_pending_drivers(request: Request, limit: int = 50) -> Dict[str, Any]:
+    """Get pending driver applications (ADMIN ONLY)"""
+    current_user = await get_current_user(request)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    from utils.admin_guard import is_admin
+    if not is_admin(current_user):
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    db = get_database()
+    pending = await db.drivers.find(
+        {"status": "pending"},
+        {"_id": 0}
+    ).sort("created_at", 1).limit(limit).to_list(limit)
+
+    # Enrich with submitter info
+    for driver in pending:
+        user = await db.users.find_one(
+            {"user_id": driver["user_id"]},
+            {"_id": 0, "name": 1, "email": 1, "picture": 1}
+        )
+        if user:
+            driver["user_info"] = user
+
+    return {"pending_drivers": pending, "count": len(pending)}
+
+
+@router.get("/admin/list")
+async def list_drivers(
+    request: Request,
+    status: Optional[str] = None,
+    limit: int = 50
+) -> Dict[str, Any]:
+    """List driver profiles, optionally filtered by status (ADMIN ONLY)"""
+    current_user = await get_current_user(request)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    from utils.admin_guard import is_admin
+    if not is_admin(current_user):
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    db = get_database()
+    query = {}
+    if status:
+        query["status"] = status
+
+    drivers = await db.drivers.find(
+        query, {"_id": 0}
+    ).sort("created_at", -1).limit(limit).to_list(limit)
+
+    for driver in drivers:
+        user = await db.users.find_one(
+            {"user_id": driver["user_id"]},
+            {"_id": 0, "name": 1, "email": 1, "picture": 1}
+        )
+        if user:
+            driver["user_info"] = user
+
+    return {"drivers": drivers, "count": len(drivers)}
+
+
+@router.post("/admin/approve")
+async def approve_driver(action: DriverAdminAction, request: Request) -> Dict[str, Any]:
+    """Approve a driver application (ADMIN ONLY)"""
+    current_user = await get_current_user(request)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    from utils.admin_guard import is_admin
+    if not is_admin(current_user):
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    db = get_database()
+    driver = await db.drivers.find_one(
+        {"driver_id": action.driver_id}, {"_id": 0}
+    )
+    if not driver:
+        raise HTTPException(status_code=404, detail="Driver not found")
+
+    now = datetime.now(timezone.utc).isoformat()
+    await db.drivers.update_one(
+        {"driver_id": action.driver_id},
+        {
+            "$set": {
+                "status": "approved",
+                "available": False,
+                "approved_at": now,
+                "approved_by": current_user.user_id,
+                "updated_at": now,
+            }
+        }
+    )
+
+    return {"message": "Driver approved", "driver_id": action.driver_id}
+
+
+@router.post("/admin/reject")
+async def reject_driver(action: DriverAdminAction, request: Request) -> Dict[str, Any]:
+    """Reject a driver application (ADMIN ONLY)"""
+    current_user = await get_current_user(request)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    from utils.admin_guard import is_admin
+    if not is_admin(current_user):
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    db = get_database()
+    driver = await db.drivers.find_one(
+        {"driver_id": action.driver_id}, {"_id": 0}
+    )
+    if not driver:
+        raise HTTPException(status_code=404, detail="Driver not found")
+
+    now = datetime.now(timezone.utc).isoformat()
+    await db.drivers.update_one(
+        {"driver_id": action.driver_id},
+        {
+            "$set": {
+                "status": "rejected",
+                "rejection_reason": action.rejection_reason,
+                "rejected_at": now,
+                "rejected_by": current_user.user_id,
+                "updated_at": now,
+            }
+        }
+    )
+
+    return {"message": "Driver rejected", "driver_id": action.driver_id}
+
+
+@router.get("/admin/stats")
+async def get_driver_admin_stats(request: Request) -> Dict[str, Any]:
+    """Get driver platform statistics (ADMIN ONLY)"""
+    current_user = await get_current_user(request)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    from utils.admin_guard import is_admin
+    if not is_admin(current_user):
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    db = get_database()
+    total = await db.drivers.count_documents({})
+    pending = await db.drivers.count_documents({"status": "pending"})
+    approved = await db.drivers.count_documents({"status": "approved"})
+    rejected = await db.drivers.count_documents({"status": "rejected"})
+    active = await db.drivers.count_documents({"status": "approved", "available": True})
+
+    return {
+        "total_drivers": total,
+        "pending_drivers": pending,
+        "approved_drivers": approved,
+        "rejected_drivers": rejected,
+        "active_drivers": active,
     }

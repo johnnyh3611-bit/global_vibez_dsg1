@@ -9,7 +9,7 @@ module.exports = {
         extend: {
                 fontFamily: {
                         serif: ['Playfair Display', 'serif'],
-                        sans: ['Rajdhani', 'sans-serif']
+                        sans: ['Rajdhani', '"Plus Jakarta Sans"', 'system-ui', 'sans-serif']
                 },
 
                 borderRadius: {
