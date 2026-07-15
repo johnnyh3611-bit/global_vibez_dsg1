@@ -68,14 +68,44 @@ def hand_pip_total(hand: List[Dict[str, Any]]) -> int:
     return score
 
 
-def ai_pick_play(hand: List[Dict[str, Any]], top: Dict[str, Any], declared_suit: str) -> Optional[Dict[str, Any]]:
+def ai_pick_play(
+    hand: List[Dict[str, Any]],
+    top: Dict[str, Any],
+    declared_suit: str,
+) -> Optional[Dict[str, Any]]:
+    """Pick the best legal play for the bot.
+
+    Priorities:
+    - Avoid playing an 8 unless no other legal move exists.
+    - Dump high-pip cards first.
+    - Prefer a card whose suit matches the suit the bot has the most of
+      in its remaining hand, keeping future options open.
+    """
     legal = legal_plays(hand, top, declared_suit)
     if not legal:
         return None
-    # Prefer to dump high-pip cards. Save 8s unless we have nothing else useful.
+
     non_eights = [c for c in legal if c["rank"] != "8"]
     pool = non_eights if non_eights else legal
-    return max(pool, key=lambda c: hand_pip_total([c]))
+
+    # Count remaining suits after each candidate is removed.
+    suit_counts: Dict[str, int] = {}
+    for c in hand:
+        if c["rank"] == "8":
+            continue
+        suit_counts[c["suit"]] = suit_counts.get(c["suit"], 0) + 1
+
+    def _score(card: Dict[str, Any]) -> float:
+        base = float(hand_pip_total([card]))
+        if card["rank"] == "8":
+            # 8s are powerful — only play them when no better option.
+            return base - 100.0
+        # Bonus if the suit we will leave on the board is one we still hold.
+        left_suit = card["suit"]
+        remaining = suit_counts.get(left_suit, 0) - 1
+        return base + remaining * 2.0
+
+    return max(pool, key=_score)
 
 
 def ai_pick_suit(hand: List[Dict[str, Any]]) -> str:
