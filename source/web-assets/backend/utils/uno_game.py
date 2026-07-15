@@ -422,18 +422,49 @@ class UnoGame:
             return {"player": actor, "drew": res.get("drew"), "passed": res.get("pass", False)}
         # Bots respect the official Wild4 rule: only play wild4 if they
         # have NO card matching pending_color.
-        non_wild4_legal = [c for c in legal if not (c["kind"] == "wild" and c["value"] == "wild4")]
-        has_color_card = any(c["color"] == self.pending_color for c in self.hands[actor])
+        non_wild4_legal = [
+            c for c in legal
+            if not (c["kind"] == "wild" and c["value"] == "wild4")
+        ]
+        has_color_card = any(
+            c["color"] == self.pending_color for c in self.hands[actor]
+        )
         # If a non-wild4 alternative exists, prefer it.
         pool_options = non_wild4_legal if non_wild4_legal else legal
-        # Among the pool, prefer non-wild plays first; among non-wild, dump high-value action cards
-        non_wild = [c for c in pool_options if c["kind"] != "wild"]
-        candidate_pool = non_wild if non_wild else pool_options
-        choice = max(candidate_pool, key=card_value)
+
+        # Tactical awareness: be mean to the next player when they are low.
+        next_pos = _step(actor, self.direction)
+        next_low = len(self.hands.get(next_pos, [])) <= 2
+
+        def _bot_score(card: Dict[str, Any]) -> float:
+            score = float(card_value(card))
+            # Wild4 should only be played when no other option or when
+            # it is a clear defensive play against a player about to win.
+            if card["kind"] == "wild" and card["value"] == "wild4":
+                score -= 60.0 if not next_low else 0.0
+            # Action cards are great for stopping a low-card opponent.
+            if card["kind"] == "action":
+                if next_low:
+                    score += 25.0
+                if card["value"] in ("draw2", "skip", "reverse"):
+                    score += 5.0
+            # Prefer non-wild cards when possible (keep wilds as insurance).
+            if card["kind"] == "wild":
+                score -= 15.0
+            return score
+
+        choice = max(pool_options, key=_bot_score)
         # If the chosen card is a wild4 but the bot still holds the
         # pending color, swap to a plain wild if available.
-        if choice["kind"] == "wild" and choice["value"] == "wild4" and has_color_card:
-            plain_wild = next((c for c in legal if c["kind"] == "wild" and c["value"] == "wild"), None)
+        if (
+            choice["kind"] == "wild"
+            and choice["value"] == "wild4"
+            and has_color_card
+        ):
+            plain_wild = next(
+                (c for c in legal if c["kind"] == "wild" and c["value"] == "wild"),
+                None,
+            )
             if plain_wild is not None:
                 choice = plain_wild
         declared: Optional[str] = None
