@@ -5,7 +5,7 @@ Provides AI opponents for solo/practice mode across all game types
 
 import secrets
 secure_random = secrets.SystemRandom()
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Optional, Tuple, Any
 
 # ==================== BASE AI CLASS ====================
 
@@ -754,84 +754,108 @@ class GameAI:
         return 1
     
     def chess_move(self, game_state: Dict) -> Dict:
-        """Chess AI using python-chess library with FEN notation"""
+        """Chess AI using python-chess with negamax alpha-beta search."""
         import chess
-        
-        fen = game_state.get("fen", "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
-        
+
+        fen = game_state.get(
+            "fen",
+            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+        )
+
         try:
             board = chess.Board(fen)
-            
-            # Get all legal moves
             legal_moves = list(board.legal_moves)
-            
             if not legal_moves:
-                return {"from": "e7", "to": "e5", "fen": fen}  # Fallback
-            
-            # Easy: Random move
+                return {"from": "e7", "to": "e5", "fen": fen}
+
             if self.difficulty == "easy":
                 move = secure_random.choice(legal_moves)
                 board.push(move)
                 return {
                     "from": move.uci()[:2],
                     "to": move.uci()[2:4],
-                    "fen": board.fen()
+                    "fen": board.fen(),
                 }
-            
-            # Medium/Hard: Basic evaluation
-            best_move = None
+
+            depth = {"medium": 2, "hard": 3}.get(self.difficulty, 2)
             best_score = float('-inf')
-            
-            piece_values = {
-                chess.PAWN: 1, chess.KNIGHT: 3, chess.BISHOP: 3,
-                chess.ROOK: 5, chess.QUEEN: 9, chess.KING: 0
-            }
-            
+            best_move = legal_moves[0]
+            alpha = float('-inf')
+            beta = float('inf')
+
             for move in legal_moves:
-                score = 0
-                
-                # Capture bonus
-                if board.is_capture(move):
-                    captured_piece = board.piece_at(move.to_square)
-                    if captured_piece:
-                        score += piece_values.get(captured_piece.piece_type, 0) * 10
-                
-                # Check bonus
                 board.push(move)
-                if board.is_check():
-                    score += 5
-                if board.is_checkmate():
-                    score += 10000
+                score = -self._negamax_chess(
+                    board, depth - 1, -beta, -alpha,
+                )
                 board.pop()
-                
-                # Center control
-                to_square = move.to_square
-                if to_square in [27, 28, 35, 36]:  # e4, d4, e5, d5
-                    score += 2
-                
-                # Add some randomness for medium difficulty
-                if self.difficulty == "medium":
-                    # secure_random.uniform doesn't exist — SystemRandom inherits
-                    # from Random, so .uniform IS available. Use it for fairness.
-                    score += secure_random.uniform(-1, 1)
-                
                 if score > best_score:
                     best_score = score
                     best_move = move
-            
-            if best_move:
-                board.push(best_move)
-                return {
-                    "from": best_move.uci()[:2],
-                    "to": best_move.uci()[2:4],
-                    "fen": board.fen()
-                }
-            
+                alpha = max(alpha, score)
+
+            board.push(best_move)
+            return {
+                "from": best_move.uci()[:2],
+                "to": best_move.uci()[2:4],
+                "fen": board.fen(),
+            }
+
         except Exception as e:
             print(f"Chess AI error: {e}")
-        
-        # Fallback
+
         return {"from": "e7", "to": "e5", "fen": fen}
+
+    def _negamax_chess(
+        self, board: Any, depth: int, alpha: float, beta: float
+    ) -> float:
+        """Negamax alpha-beta search for the chess AI."""
+        import chess
+
+        if depth == 0 or board.is_game_over():
+            return self._evaluate_chess(board)
+
+        best = float('-inf')
+        for move in board.legal_moves:
+            board.push(move)
+            score = -self._negamax_chess(board, depth - 1, -beta, -alpha)
+            board.pop()
+            best = max(best, score)
+            alpha = max(alpha, best)
+            if alpha >= beta:
+                break
+        return best
+
+    def _evaluate_chess(self, board: Any) -> float:
+        """Material-based evaluation from the side to move."""
+        import chess
+
+        if board.is_checkmate():
+            return -1_000_000
+        if board.is_game_over():
+            return 0
+
+        piece_values = {
+            chess.PAWN: 100,
+            chess.KNIGHT: 320,
+            chess.BISHOP: 330,
+            chess.ROOK: 500,
+            chess.QUEEN: 900,
+            chess.KING: 0,
+        }
+
+        score = 0
+        for square in chess.SQUARES:
+            piece = board.piece_at(square)
+            if piece is None:
+                continue
+            value = piece_values.get(piece.piece_type, 0)
+            if piece.color == chess.WHITE:
+                score += value
+            else:
+                score -= value
+
+        return score if board.turn == chess.WHITE else -score
     
     def _get_chess_moves_array(self, board: List, row: int, col: int, piece: str) -> List:
         """Get possible chess moves for a piece using array board format"""
