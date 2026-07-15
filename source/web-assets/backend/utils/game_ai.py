@@ -128,53 +128,48 @@ class GameAI:
     # ==================== CONNECT 4 AI ====================
     
     def connect4_move(self, game_state: Dict) -> Dict:
-        """AI for Connect 4"""
+        """AI for Connect 4 using minimax with alpha-beta pruning."""
         board = game_state["board"]
-        
+        valid_cols = [col for col in range(7) if board[0][col] == ""]
+        if not valid_cols:
+            return {"column": 3}
+
         if self.difficulty == "easy":
-            # Random valid column
-            valid_cols = [col for col in range(7) if board[0][col] == ""]
-            if valid_cols:
-                return {"column": secure_random.choice(valid_cols)}  # Use 'column' to match frontend
-        
-        # Medium/Hard: Check winning moves and blocks
-        for col in range(7):
-            if self._is_valid_connect4_move(board, col):
-                # Try winning move
-                temp_board = [row[:] for row in board]
-                row = self._get_connect4_row(temp_board, col)
-                temp_board[row][col] = "yellow"  # AI is Yellow
-                if self._check_connect4_winner(temp_board, row, col, "yellow"):
-                    return {"column": col}  # Use 'column' to match frontend
-        
-        # Block opponent winning move
-        for col in range(7):
-            if self._is_valid_connect4_move(board, col):
-                temp_board = [row[:] for row in board]
-                row = self._get_connect4_row(temp_board, col)
-                temp_board[row][col] = "red"  # Opponent is Red
-                if self._check_connect4_winner(temp_board, row, col, "red"):
-                    return {"column": col}  # Use 'column' to match frontend
-        
-        # Prefer center columns
-        center_cols = [3, 2, 4, 1, 5, 0, 6]
-        for col in center_cols:
-            if self._is_valid_connect4_move(board, col):
-                return {"column": col}  # Use 'column' to match frontend
-        
-        return {"column": 3}  # Use 'column' to match frontend
-    
-    def _is_valid_connect4_move(self, board: List, col: int) -> bool:
-        """Check if column has space"""
-        return board[0][col] == ""
-    
+            return {"column": secure_random.choice(valid_cols)}
+
+        depth = {"medium": 3, "hard": 5}.get(self.difficulty, 3)
+        ai_piece = "yellow"
+        player_piece = "red"
+
+        best_col = valid_cols[0]
+        best_score = float('-inf')
+        alpha = float('-inf')
+        beta = float('inf')
+
+        for col in valid_cols:
+            temp_board = [row[:] for row in board]
+            row = self._get_connect4_row(temp_board, col)
+            temp_board[row][col] = ai_piece
+            if self._check_connect4_winner(temp_board, row, col, ai_piece):
+                return {"column": col}
+            score = self._minimax_connect4(
+                temp_board, depth - 1, False, alpha, beta,
+                ai_piece, player_piece
+            )
+            if score > best_score:
+                best_score = score
+                best_col = col
+            alpha = max(alpha, score)
+
+        return {"column": best_col}
+
     def _get_connect4_row(self, board: List, col: int) -> int:
         """Get row where piece will land"""
         for row in range(5, -1, -1):
             if board[row][col] == "":
                 return row
-        return 0
-    
+        return -1
+
     def _check_connect4_winner(self, board: List, row: int, col: int, player: str) -> bool:
         """Check if move creates 4 in a row"""
         directions = [(0, 1), (1, 0), (1, 1), (1, -1)]
@@ -189,6 +184,109 @@ class GameAI:
             if count >= 4:
                 return True
         return False
+
+    def _minimax_connect4(
+        self, board: List, depth: int, is_maximizing: bool,
+        alpha: float, beta: float, ai_piece: str, player_piece: str
+    ) -> float:
+        """Minimax with alpha-beta pruning for Connect 4."""
+        valid_cols = [col for col in range(7) if board[0][col] == ""]
+        if not valid_cols:
+            return 0
+
+        for col in valid_cols:
+            temp = [row[:] for row in board]
+            row = self._get_connect4_row(temp, col)
+            temp[row][col] = ai_piece if is_maximizing else player_piece
+            if self._check_connect4_winner(temp, row, col, ai_piece if is_maximizing else player_piece):
+                return 1_000_000 if is_maximizing else -1_000_000
+
+        if depth == 0:
+            return self._evaluate_connect4(board, ai_piece, player_piece)
+
+        if is_maximizing:
+            best = float('-inf')
+            for col in valid_cols:
+                temp = [row[:] for row in board]
+                row = self._get_connect4_row(temp, col)
+                temp[row][col] = ai_piece
+                score = self._minimax_connect4(
+                    temp, depth - 1, False, alpha, beta,
+                    ai_piece, player_piece
+                )
+                best = max(best, score)
+                alpha = max(alpha, best)
+                if beta <= alpha:
+                    break
+            return best
+        else:
+            best = float('inf')
+            for col in valid_cols:
+                temp = [row[:] for row in board]
+                row = self._get_connect4_row(temp, col)
+                temp[row][col] = player_piece
+                score = self._minimax_connect4(
+                    temp, depth - 1, True, alpha, beta,
+                    ai_piece, player_piece
+                )
+                best = min(best, score)
+                beta = min(beta, best)
+                if beta <= alpha:
+                    break
+            return best
+
+    def _evaluate_connect4(self, board: List, ai_piece: str, player_piece: str) -> float:
+        """Heuristic board evaluation for Connect 4."""
+        score = 0
+        # Favor center column occupancy.
+        for row in range(6):
+            if board[row][3] == ai_piece:
+                score += 6 - row
+            elif board[row][3] == player_piece:
+                score -= 6 - row
+
+        # Evaluate every window of length 4.
+        windows = []
+        # Horizontal
+        for r in range(6):
+            for c in range(4):
+                windows.append([board[r][c + i] for i in range(4)])
+        # Vertical
+        for r in range(3):
+            for c in range(7):
+                windows.append([board[r + i][c] for i in range(4)])
+        # Diagonal /
+        for r in range(3):
+            for c in range(4):
+                windows.append([board[r + i][c + i] for i in range(4)])
+        # Diagonal \
+        for r in range(3):
+            for c in range(3, 7):
+                windows.append([board[r + i][c - i] for i in range(4)])
+
+        for window in windows:
+            score += self._score_connect4_window(window, ai_piece, player_piece)
+        return score
+
+    def _score_connect4_window(self, window: List, ai_piece: str, player_piece: str) -> float:
+        """Score a single 4-cell window."""
+        ai_count = window.count(ai_piece)
+        player_count = window.count(player_piece)
+        empty_count = window.count("")
+
+        if ai_count == 4:
+            return 1000
+        if player_count == 4:
+            return -1000
+        if ai_count == 3 and empty_count == 1:
+            return 50
+        if player_count == 3 and empty_count == 1:
+            return -50
+        if ai_count == 2 and empty_count == 2:
+            return 10
+        if player_count == 2 and empty_count == 2:
+            return -10
+        return 0
     
     # ==================== BLACKJACK AI ====================
     
