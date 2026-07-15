@@ -14,6 +14,7 @@ export { PracticePoker } from './PracticePoker';
 export { PracticeSpades } from './PracticeSpades';
 export { default as PracticeTrivia } from './PracticeTrivia';
 export { default as PracticeTruthOrDare } from './PracticeTruthOrDare';
+export { default as PracticeBackgammon } from './PracticeBackgammon';
 export { PracticeRummy } from './PracticeRummy';
 
 // NEW Arcade Games

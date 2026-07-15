@@ -18,6 +18,60 @@ from services.ai_engine import LlmChat, UserMessage
 load_dotenv()
 
 
+SOLO_GAMES = {"trivia", "truthordare"}
+
+# Fallback trivia question bank (10 are sampled per game)
+_TRIVIA_QUESTIONS = [
+    {"q": "What is the capital of France?", "a": ["Paris", "London", "Berlin", "Madrid"], "correct": 0, "category": "Geography"},
+    {"q": "Who painted the Mona Lisa?", "a": ["Van Gogh", "Da Vinci", "Picasso", "Monet"], "correct": 1, "category": "Art"},
+    {"q": "What is 2 + 2?", "a": ["3", "4", "5", "6"], "correct": 1, "category": "Math"},
+    {"q": "What year did WW2 end?", "a": ["1943", "1944", "1945", "1946"], "correct": 2, "category": "History"},
+    {"q": "What is the largest planet?", "a": ["Earth", "Mars", "Jupiter", "Saturn"], "correct": 2, "category": "Science"},
+    {"q": "Who wrote Romeo and Juliet?", "a": ["Dickens", "Shakespeare", "Austen", "Hemingway"], "correct": 1, "category": "Literature"},
+    {"q": "What is H2O?", "a": ["Oxygen", "Hydrogen", "Water", "Carbon"], "correct": 2, "category": "Science"},
+    {"q": "How many continents are there?", "a": ["5", "6", "7", "8"], "correct": 2, "category": "Geography"},
+    {"q": "What is the speed of light?", "a": ["200k km/s", "300k km/s", "400k km/s", "500k km/s"], "correct": 1, "category": "Science"},
+    {"q": "Who invented the telephone?", "a": ["Edison", "Bell", "Tesla", "Franklin"], "correct": 1, "category": "History"},
+    {"q": "What is the powerhouse of the animal cell?", "a": ["Nucleus", "Mitochondria", "Ribosome", "Cytoplasm"], "correct": 1, "category": "Science"},
+    {"q": "Which element has the chemical symbol O?", "a": ["Osmium", "Oxygen", "Ozone", "Oganesson"], "correct": 1, "category": "Science"},
+    {"q": "What is the tallest mountain on Earth?", "a": ["K2", "Mount Everest", "Kilimanjaro", "Denali"], "correct": 1, "category": "Geography"},
+    {"q": "Who was the first president of the United States?", "a": ["Lincoln", "Washington", "Jefferson", "Adams"], "correct": 1, "category": "History"},
+    {"q": "How many sides does a hexagon have?", "a": ["5", "6", "7", "8"], "correct": 1, "category": "Math"},
+    {"q": "What planet is known as the Red Planet?", "a": ["Venus", "Mars", "Jupiter", "Mercury"], "correct": 1, "category": "Science"},
+    {"q": "Which organ pumps blood through the body?", "a": ["Lung", "Brain", "Heart", "Liver"], "correct": 2, "category": "Science"},
+    {"q": "What is the chemical formula for water?", "a": ["CO2", "H2O", "NaCl", "O2"], "correct": 1, "category": "Science"},
+    {"q": "Which country is home to the Great Wall?", "a": ["Japan", "India", "China", "Korea"], "correct": 2, "category": "Geography"},
+    {"q": "Who developed the theory of relativity?", "a": ["Newton", "Einstein", "Tesla", "Galileo"], "correct": 1, "category": "Science"},
+]
+
+# Truth or Dare fallback banks
+_TRUTHS = [
+    "What's your idea of a perfect first date?",
+    "What's the most spontaneous thing you've ever done?",
+    "If you could have dinner with anyone, who would it be?",
+    "What's your guilty pleasure TV show?",
+    "What's one thing on your bucket list?",
+    "What's the best advice you've ever received?",
+    "If you could switch lives with someone for a day, who would it be?",
+    "What's your biggest pet peeve?",
+    "What is something you're proud of but rarely talk about?",
+    "What's a skill you wish you had?"
+]
+
+_DARES = [
+    "Send a voice message singing your favorite song for 10 seconds",
+    "Share the last photo you took",
+    "Tell a joke out loud",
+    "Do your best impression of a celebrity",
+    "Post a fun fact about yourself",
+    "Take a selfie with a funny face",
+    "Share your most-used emoji",
+    "Describe yourself in three words",
+    "Tell everyone your favorite childhood memory",
+    "Do 10 jumping jacks right now"
+]
+
+
 # ==================== MODELS ====================
 
 class StartPracticeGame(BaseModel):
@@ -140,7 +194,29 @@ async def make_practice_move(game_id: str, move: PracticeMove, request: Request)
             "winner": game_status.get("winner"),
             "message": game_status.get("message", "Game over")
         }
-    
+
+    # Solo party games don't need an AI opponent
+    if game["game_type"] in SOLO_GAMES:
+        await db.practice_games.update_one(
+            {"game_id": game_id},
+            {"$set": {
+                "game_state": game_state,
+                "current_turn": "player",
+                "completed_at": datetime.now(timezone.utc).isoformat()
+            }, "$push": {
+                "moves_history": {
+                    "player_move": move.move_data,
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                }
+            }}
+        )
+        return {
+            "game_state": game_state,
+            "status": "in_progress",
+            "current_turn": "player",
+            "message": game_status.get("message", "Your turn")
+        }
+
     # AI's turn - simulate thinking delay
     await asyncio.sleep(0.5)  # AI "thinking" time
     
@@ -440,6 +516,35 @@ def initialize_practice_game(game_type: str) -> Dict:
     elif game_type == "backgammon":
         from utils.backgammon_game import initialize_game
         return initialize_game()
+    elif game_type == "trivia":
+        # Sample 10 questions from the fallback bank
+        questions = secure_random.sample(_TRIVIA_QUESTIONS, 10)
+        return {
+            "questions": questions,
+            "current_question_index": 0,
+            "player_score": 0,
+            "ai_score": 0,
+            "streak": 0,
+            "answered_questions": []
+        }
+    elif game_type == "truthordare":
+        # Initialize Truth or Dare game with shuffled fallback challenge pools
+        truth_pool = _TRUTHS[:]
+        dare_pool = _DARES[:]
+        secure_random.shuffle(truth_pool)
+        secure_random.shuffle(dare_pool)
+        return {
+            "current_round": 1,
+            "max_rounds": 10,
+            "player_score": 0,
+            "ai_score": 0,
+            "skips_remaining": 3,
+            "completed_challenges": [],
+            "current_challenge": None,
+            "challenge_type": None,
+            "truth_pool": truth_pool,
+            "dare_pool": dare_pool
+        }
     else:
         return {}
 
@@ -986,64 +1091,78 @@ def apply_move(game_type: str, game_state: Dict, move: Dict, player: str) -> Dic
         # Handle trivia answer
         answer = move.get("answer")
         question_index = move.get("question_index", game_state["current_question_index"])
-        
-        if answer and question_index < len(game_state["questions"]):
-            correct = move.get("is_correct", False)
-            time_taken = move.get("time_taken", 15)
-            
-            # Calculate points (faster = more points)
-            points = 100 if correct else 0
-            if correct and time_taken < 10:
-                points += 50  # Speed bonus
-            
+        questions = game_state.get("questions", [])
+
+        if answer is not None and 0 <= question_index < len(questions):
+            correct_index = questions[question_index].get("correct")
+            correct = answer == correct_index
+            streak = game_state.get("streak", 0)
+
+            if correct:
+                points = 10 + streak * 5
+                game_state["streak"] = streak + 1
+            else:
+                points = 0
+                game_state["streak"] = 0
+
             if player == "player":
                 game_state["player_score"] += points
             else:
                 game_state["ai_score"] += points
-            
+
             game_state["answered_questions"].append({
                 "question_index": question_index,
                 "player_answer": answer,
                 "correct": correct,
                 "points": points
             })
-            
+
             game_state["current_question_index"] += 1
     
     elif game_type == "truthordare":
         # Handle truth or dare response
         action = move.get("action")
-        
+
+        def _draw_truth_or_dare(choice: str) -> str:
+            pool_key = "truth_pool" if choice == "truth" else "dare_pool"
+            pool = game_state.get(pool_key, [])
+            if not pool:
+                # Reshuffle the fallback bank when the pool is exhausted
+                pool = (_TRUTHS[:] if choice == "truth" else _DARES[:])
+                secure_random.shuffle(pool)
+                game_state[pool_key] = pool
+            return pool.pop()
+
         if action == "choose":
-            # Player chooses truth or dare
             choice = move.get("choice")  # 'truth' or 'dare'
-            game_state["challenge_type"] = choice
-            
+            if choice in ("truth", "dare"):
+                game_state["challenge_type"] = choice
+                game_state["current_challenge"] = _draw_truth_or_dare(choice)
+
         elif action == "complete":
-            # Player completed the challenge
             completed = move.get("completed", False)
-            
+
             if completed:
                 if player == "player":
                     game_state["player_score"] += 100
                 else:
                     game_state["ai_score"] += 100
-                
+
                 game_state["completed_challenges"].append({
                     "round": game_state["current_round"],
                     "type": game_state["challenge_type"],
                     "challenge": game_state["current_challenge"],
                     "completed": True
                 })
-            
+
             game_state["current_round"] += 1
             game_state["current_challenge"] = None
             game_state["challenge_type"] = None
-            
+
         elif action == "skip":
-            # Player skips
             if game_state["skips_remaining"] > 0:
                 game_state["skips_remaining"] -= 1
+                game_state["current_round"] += 1
                 game_state["current_challenge"] = None
                 game_state["challenge_type"] = None
     
@@ -1245,29 +1364,17 @@ def check_game_status(game_type: str, game_state: Dict) -> Dict:
     
     elif game_type == "trivia":
         # Check if all questions answered
-        if game_state["current_question_index"] >= 10:
+        questions = game_state.get("questions", [])
+        if game_state["current_question_index"] >= len(questions):
             player_score = game_state["player_score"]
-            ai_score = game_state["ai_score"]
-            
-            if player_score > ai_score:
-                return {"ended": True, "winner": "player", "message": f"You win! Score: {player_score} vs {ai_score}"}
-            elif ai_score > player_score:
-                return {"ended": True, "winner": "ai", "message": f"AI wins! Score: {ai_score} vs {player_score}"}
-            else:
-                return {"ended": True, "winner": "draw", "message": f"It's a tie! Both scored {player_score}"}
+            return {"ended": True, "winner": "player", "message": f"Quiz complete! Score: {player_score}"}
     
     elif game_type == "truthordare":
-        # Check if game reached max rounds (10 rounds)
-        if game_state["current_round"] > 10:
+        # Check if game reached max rounds
+        max_rounds = game_state.get("max_rounds", 10)
+        if game_state["current_round"] > max_rounds:
             player_score = game_state["player_score"]
-            ai_score = game_state["ai_score"]
-            
-            if player_score > ai_score:
-                return {"ended": True, "winner": "player", "message": f"You completed more challenges! {player_score} points"}
-            elif ai_score > player_score:
-                return {"ended": True, "winner": "ai", "message": f"AI completed more! {ai_score} points"}
-            else:
-                return {"ended": True, "winner": "draw", "message": "Equal effort! It's a tie!"}
+            return {"ended": True, "winner": "player", "message": f"Game complete! {player_score} points"}
     
     elif game_type == "rummy":
         # Check if someone won
@@ -1292,49 +1399,6 @@ def check_game_status(game_type: str, game_state: Dict) -> Dict:
         if winner:
             return {"ended": True, "winner": winner,
                     "message": f"{'You' if winner == 'player' else 'AI'} win! All checkers borne off!"}
-
-    # ==================== NEW GAMES ====================
-
-    elif game_type == "trivia":
-        # Initialize trivia game - fetch 10 questions from OpenTriviaDB
-        return {
-            "questions": [],  # Will be fetched on first load
-            "current_question_index": 0,
-            "player_score": 0,
-            "ai_score": 0,
-            "answered_questions": []
-        }
-
-    elif game_type == "truthordare":
-        # Initialize Truth or Dare game
-        return {
-            "current_round": 1,
-            "player_score": 0,
-            "ai_score": 0,
-            "skips_remaining": 3,
-            "completed_challenges": [],
-            "current_challenge": None,
-            "challenge_type": None  # 'truth' or 'dare'
-        }
-
-    elif game_type == "rummy":
-        # Initialize Rummy game (Indian Rummy - 13 cards)
-        deck = create_deck()
-        secure_random.shuffle(deck)
-
-        player_hand = deck[:13]
-        discard_pile = [deck[26]]
-        draw_pile = deck[27:]
-
-        return {
-            "player_hand": player_hand,
-            "ai_hand_count": 13,
-            "discard_pile": discard_pile,
-            "draw_pile_count": len(draw_pile),
-            "player_score": 0,
-            "ai_score": 0,
-            "current_action": "draw"  # 'draw' or 'discard'
-        }
 
     return {}
 
