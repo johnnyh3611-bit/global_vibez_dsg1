@@ -565,14 +565,14 @@ export const GAMES: GameRegistryEntry[] = [
     listed: true,
   },
   {
-    id: 'truth_or_dare',
+    id: 'truthordare',
     name: 'Truth or Dare',
     emoji: '💘',
     description: 'Dating icebreaker',
     category: 'social',
     gradient: 'from-pink-500 to-red-500',
     badge: 'HOT',
-    mode: 'client',
+    mode: 'server',
     listed: true,
   },
   {

@@ -286,7 +286,6 @@ export default function PracticeGamePlay() {
       
       // Party/Social Games
       'two_truths_lie': <PracticeGames.PracticeTwoTruthsLie gameState={game.game_state} onMove={makeMove} />,
-      'truth_or_dare': <PracticeGames.PracticeTruthOrDare gameState={game.game_state} onMove={makeMove} />,
       
       // Premium Casino (3D/Enhanced)
       'blackjack_new': <PracticeGames.PracticeBlackjackNew game={game} onMove={makeMove} makingMove={makingMove} aiThinking={aiThinking} />

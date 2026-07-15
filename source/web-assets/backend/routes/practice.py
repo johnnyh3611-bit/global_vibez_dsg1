@@ -44,6 +44,33 @@ _TRIVIA_QUESTIONS = [
     {"q": "Who developed the theory of relativity?", "a": ["Newton", "Einstein", "Tesla", "Galileo"], "correct": 1, "category": "Science"},
 ]
 
+# Truth or Dare fallback banks
+_TRUTHS = [
+    "What's your idea of a perfect first date?",
+    "What's the most spontaneous thing you've ever done?",
+    "If you could have dinner with anyone, who would it be?",
+    "What's your guilty pleasure TV show?",
+    "What's one thing on your bucket list?",
+    "What's the best advice you've ever received?",
+    "If you could switch lives with someone for a day, who would it be?",
+    "What's your biggest pet peeve?",
+    "What is something you're proud of but rarely talk about?",
+    "What's a skill you wish you had?"
+]
+
+_DARES = [
+    "Send a voice message singing your favorite song for 10 seconds",
+    "Share the last photo you took",
+    "Tell a joke out loud",
+    "Do your best impression of a celebrity",
+    "Post a fun fact about yourself",
+    "Take a selfie with a funny face",
+    "Share your most-used emoji",
+    "Describe yourself in three words",
+    "Tell everyone your favorite childhood memory",
+    "Do 10 jumping jacks right now"
+]
+
 
 # ==================== MODELS ====================
 
@@ -501,15 +528,22 @@ def initialize_practice_game(game_type: str) -> Dict:
             "answered_questions": []
         }
     elif game_type == "truthordare":
-        # Initialize Truth or Dare game
+        # Initialize Truth or Dare game with shuffled fallback challenge pools
+        truth_pool = _TRUTHS[:]
+        dare_pool = _DARES[:]
+        secure_random.shuffle(truth_pool)
+        secure_random.shuffle(dare_pool)
         return {
             "current_round": 1,
+            "max_rounds": 10,
             "player_score": 0,
             "ai_score": 0,
             "skips_remaining": 3,
             "completed_challenges": [],
             "current_challenge": None,
-            "challenge_type": None
+            "challenge_type": None,
+            "truth_pool": truth_pool,
+            "dare_pool": dare_pool
         }
     else:
         return {}
@@ -1088,37 +1122,47 @@ def apply_move(game_type: str, game_state: Dict, move: Dict, player: str) -> Dic
     elif game_type == "truthordare":
         # Handle truth or dare response
         action = move.get("action")
-        
+
+        def _draw_truth_or_dare(choice: str) -> str:
+            pool_key = "truth_pool" if choice == "truth" else "dare_pool"
+            pool = game_state.get(pool_key, [])
+            if not pool:
+                # Reshuffle the fallback bank when the pool is exhausted
+                pool = (_TRUTHS[:] if choice == "truth" else _DARES[:])
+                secure_random.shuffle(pool)
+                game_state[pool_key] = pool
+            return pool.pop()
+
         if action == "choose":
-            # Player chooses truth or dare
             choice = move.get("choice")  # 'truth' or 'dare'
-            game_state["challenge_type"] = choice
-            
+            if choice in ("truth", "dare"):
+                game_state["challenge_type"] = choice
+                game_state["current_challenge"] = _draw_truth_or_dare(choice)
+
         elif action == "complete":
-            # Player completed the challenge
             completed = move.get("completed", False)
-            
+
             if completed:
                 if player == "player":
                     game_state["player_score"] += 100
                 else:
                     game_state["ai_score"] += 100
-                
+
                 game_state["completed_challenges"].append({
                     "round": game_state["current_round"],
                     "type": game_state["challenge_type"],
                     "challenge": game_state["current_challenge"],
                     "completed": True
                 })
-            
+
             game_state["current_round"] += 1
             game_state["current_challenge"] = None
             game_state["challenge_type"] = None
-            
+
         elif action == "skip":
-            # Player skips
             if game_state["skips_remaining"] > 0:
                 game_state["skips_remaining"] -= 1
+                game_state["current_round"] += 1
                 game_state["current_challenge"] = None
                 game_state["challenge_type"] = None
     
@@ -1326,17 +1370,11 @@ def check_game_status(game_type: str, game_state: Dict) -> Dict:
             return {"ended": True, "winner": "player", "message": f"Quiz complete! Score: {player_score}"}
     
     elif game_type == "truthordare":
-        # Check if game reached max rounds (10 rounds)
-        if game_state["current_round"] > 10:
+        # Check if game reached max rounds
+        max_rounds = game_state.get("max_rounds", 10)
+        if game_state["current_round"] > max_rounds:
             player_score = game_state["player_score"]
-            ai_score = game_state["ai_score"]
-            
-            if player_score > ai_score:
-                return {"ended": True, "winner": "player", "message": f"You completed more challenges! {player_score} points"}
-            elif ai_score > player_score:
-                return {"ended": True, "winner": "ai", "message": f"AI completed more! {ai_score} points"}
-            else:
-                return {"ended": True, "winner": "draw", "message": "Equal effort! It's a tie!"}
+            return {"ended": True, "winner": "player", "message": f"Game complete! {player_score} points"}
     
     elif game_type == "rummy":
         # Check if someone won
