@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { FuturisticTabs } from '@/components/ui/futuristic-tabs';
 import { Users, Video, Play, Radio } from 'lucide-react';
 
 const API = process.env.REACT_APP_BACKEND_URL;
@@ -55,22 +56,17 @@ export default function BrowseStreamsPage() {
           <p className="text-gray-400">Watch live streams from the community</p>
         </div>
 
-        <div className="mb-8 flex gap-3 overflow-x-auto pb-2">
-          {categories.map((cat) => (
-            <motion.button
-              key={cat.id || 'all'}
-              onClick={() => setSelectedCategory(cat.id)}
-              className={`px-6 py-3 rounded-xl font-semibold whitespace-nowrap transition-all ${
-                selectedCategory === cat.id
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
-                  : 'bg-black/40 border border-cyan-500/50 text-gray-300 hover:border-cyan-400'
-              }`}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              {cat.icon} {cat.label}
-            </motion.button>
-          ))}
+        <div className="mb-8">
+          <FuturisticTabs
+            ariaLabel="Stream category"
+            variant="pills"
+            value={selectedCategory ?? 'all'}
+            onChange={(v) => setSelectedCategory(v === 'all' ? null : v)}
+            options={categories.map((cat) => ({
+              value: cat.id ?? 'all',
+              label: `${cat.icon} ${cat.label}`,
+            }))}
+          />
         </div>
 
         <div className="mb-8">

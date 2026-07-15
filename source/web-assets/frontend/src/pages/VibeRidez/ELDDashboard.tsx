@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { authFetch } from '@/utils/secureAuth';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { FuturisticTabs } from '@/components/ui/futuristic-tabs';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -420,23 +421,16 @@ export default function ELDDashboard() {
               </div>
 
               {isDriver && (
-                <div className="flex gap-2 mb-4">
-                  <button
-                    onClick={() => setActiveTab('loads')}
-                    className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
-                      activeTab === 'loads' ? 'bg-cyan-600 text-white' : 'bg-white/5 text-white/70 hover:bg-white/10'
-                    }`}
-                  >
-                    My Trips
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('available')}
-                    className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
-                      activeTab === 'available' ? 'bg-cyan-600 text-white' : 'bg-white/5 text-white/70 hover:bg-white/10'
-                    }`}
-                  >
-                    Available Loads
-                  </button>
+                <div className="mb-4">
+                  <FuturisticTabs
+                    ariaLabel="Driver loads"
+                    value={activeTab}
+                    onChange={(v) => setActiveTab(v as typeof activeTab)}
+                    options={[
+                      { value: 'loads', label: 'My Trips' },
+                      { value: 'available', label: 'Available Loads' },
+                    ]}
+                  />
                 </div>
               )}
 

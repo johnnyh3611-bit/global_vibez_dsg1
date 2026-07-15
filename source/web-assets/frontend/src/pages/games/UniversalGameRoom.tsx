@@ -26,6 +26,7 @@ import {
   triggerVictoryFireworks 
 } from '../../utils/universalGameAnimations';
 import './UniversalGameRoom.css';
+import { FuturisticTabs } from '@/components/ui/futuristic-tabs';
 
 const UniversalGameRoom = () => {
   const { gameType, roomCode } = useParams();
@@ -1220,20 +1221,16 @@ const Sidebar = ({ isOpen, chatMessages, gameLogs, onSendMessage }) => {
   return (
     <div className={`sidebar-sci-fi ${isOpen ? 'open' : 'closed'}`}>
       {/* Tabs */}
-      <div className="sidebar-tabs">
-        <button 
-          onClick={() => setActiveTab('chat')} 
-          className={`tab-btn ${activeTab === 'chat' ? 'active' : ''}`}
-        >
-          Chat
-        </button>
-        <button 
-          onClick={() => setActiveTab('log')} 
-          className={`tab-btn ${activeTab === 'log' ? 'active' : ''}`}
-        >
-          Game Log
-        </button>
-      </div>
+      <FuturisticTabs
+        ariaLabel="Sidebar panel"
+        value={activeTab}
+        onChange={setActiveTab}
+        options={[
+          { value: 'chat', label: 'Chat' },
+          { value: 'log', label: 'Game Log' },
+        ]}
+        className="m-2"
+      />
       
       {/* Messages Area */}
       <div className="messages-area">

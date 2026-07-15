@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { FuturisticTabs } from '@/components/ui/futuristic-tabs';
 import { Trophy, Users, Calendar, Coins, Play, ChevronRight } from 'lucide-react';
 
 export default function TournamentHub() {
@@ -120,20 +121,17 @@ export default function TournamentHub() {
         </motion.div>
 
         {/* Tabs */}
-        <div className="flex justify-center gap-4 mb-8">
-          {['active', 'upcoming', 'completed'].map((tab) => (
-            <Button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-6 py-3 font-bold uppercase tracking-wider transition-all ${
-                activeTab === tab
-                  ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white'
-                  : 'bg-slate-800 text-gray-400 hover:bg-slate-700'
-              }`}
-            >
-              {tab}
-            </Button>
-          ))}
+        <div className="max-w-md mx-auto mb-8">
+          <FuturisticTabs
+            ariaLabel="Tournament status"
+            value={activeTab}
+            onChange={setActiveTab}
+            options={[
+              { value: 'active', label: 'Active' },
+              { value: 'upcoming', label: 'Upcoming' },
+              { value: 'completed', label: 'Completed' },
+            ]}
+          />
         </div>
 
         {/* Create Tournament Button */}
