@@ -15,6 +15,7 @@ import PracticeBowling from '@/components/practice_games/PracticeBowling';
 import ComingSoonOverlay from '@/components/games/ComingSoonOverlay';
 import { isComingSoon } from '@/data/comingSoonGames';
 import { getGameById, getGameName as getRegisteredGameName } from '@/data/gamesRegistry';
+import { authFetch } from '@/utils/secureAuth';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -69,10 +70,9 @@ export default function PracticeGamePlay() {
       // because there was no real game record to fetch from.
       const looksLikeGameId = typeof gameId === 'string' && gameId.startsWith('practice_');
       if (!looksLikeGameId) {
-        const startRes = await fetch(`${API}/api/practice/start`, {
+        const startRes = await authFetch(`${API}/api/practice/start`, {
           method: 'POST',
           credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ game_type: gameId, difficulty: 'medium' }),
         });
         if (!startRes.ok) {
@@ -87,7 +87,7 @@ export default function PracticeGamePlay() {
       }
 
       // Existing fetch path for resume-by-id (rare).
-      const response = await fetch(`${API}/api/practice/game/${gameId}`, {
+      const response = await authFetch(`${API}/api/practice/game/${gameId}`, {
         credentials: 'include',
       });
 
@@ -124,11 +124,9 @@ export default function PracticeGamePlay() {
     setAiThinking(true);
 
     try {
-      const response = await fetch(`${API}/api/practice/game/${activeGameId || gameId}/move`, {
+      const response = await authFetch(`${API}/api/practice/game/${activeGameId || gameId}/move`, {
         method: 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-
         body: JSON.stringify({ move_data: moveData })
       });
 
