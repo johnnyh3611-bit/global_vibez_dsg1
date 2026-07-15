@@ -153,12 +153,12 @@ const NewThisDrop: React.FC = () => {
         </div>
 
         {/* Feature grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="features-grid">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr items-stretch" data-testid="features-grid">
           {FEATURES.map((f) => (
             <button
               key={f.id}
               onClick={() => navigate(f.route)}
-              className="group relative text-left p-6 rounded-2xl bg-neutral-950 border border-white/10 hover:border-fuchsia-500/50 transition-all hover:-translate-y-0.5"
+              className="group relative text-left h-full flex flex-col p-6 rounded-2xl bg-neutral-950 border border-white/10 hover:border-fuchsia-500/50 transition-all hover:-translate-y-0.5"
               data-testid={`feature-card-${f.id}`}
             >
               {f.badge && (
@@ -166,11 +166,11 @@ const NewThisDrop: React.FC = () => {
                   {f.badge}
                 </span>
               )}
-              <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br ${f.accent} mb-4 shadow-lg`}>
+              <div className={`inline-flex items-center justify-center w-12 h-12 shrink-0 rounded-xl bg-gradient-to-br ${f.accent} mb-4 shadow-lg`}>
                 {f.icon}
               </div>
               <div className="text-xl font-black tracking-tight mb-1">{f.title}</div>
-              <div className="text-sm text-neutral-400 leading-relaxed">{f.tagline}</div>
+              <div className="text-sm text-neutral-400 leading-relaxed line-clamp-3 flex-1">{f.tagline}</div>
               <div className="mt-4 inline-flex items-center gap-1 text-xs font-mono uppercase tracking-widest text-fuchsia-300 group-hover:text-cyan-300 transition-colors">
                 Enter <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
               </div>

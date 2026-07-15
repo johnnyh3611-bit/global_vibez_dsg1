@@ -12,8 +12,8 @@ export const GlobalCard = React.forwardRef<HTMLDivElement, GlobalCardProps>(
     <div
       ref={ref}
       className={cn(
-        "rounded-glass border border-surface-glass-border bg-surface-glass/40 p-6 backdrop-blur",
-        interactive && "cursor-pointer transition-all hover:border-brand-accent/50",
+        "rounded-2xl border border-surface-glass-border/40 bg-surface-glass/50 p-6 backdrop-blur-xl shadow-[0_8px_32px_-8px_rgba(0,0,0,0.5)]",
+        interactive && "cursor-pointer transition-all duration-200 hover:border-surface-glass-border/70 hover:bg-surface-glass/60 hover:-translate-y-0.5 hover:shadow-[0_12px_40px_-8px_rgba(217,70,239,0.15)]",
         className
       )}
       {...props}

@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
+import useIsFullscreenGameRoute from "@/hooks/useIsFullscreenGameRoute";
 import { useState, useEffect, useRef, Suspense } from "react";
 import { clearLegacyTokenDupes } from "@/utils/secureAuth";
 import "@/App.css";
@@ -74,34 +75,6 @@ import RoleSwitcher from "@/components/common/RoleSwitcher";
 import LandscapeRotateHint from "@/components/common/LandscapeRotateHint";
 import CmdKLauncher from "@/components/CmdKLauncher";
 import MobileBottomNav from "@/components/MobileBottomNav";
-
-// Routes that own the entire viewport (h-[100dvh] + overflow-hidden) —
-// e.g. card rooms, dice games, casino tables, full-screen tools. The
-// inline PageActionStrip MUST NOT mount on these because it eats vertical
-// space and pushes the game's bottom CTAs (Ante In / Roll / Bid Now) off
-// the visible viewport. Founder bug report 2026-02-09: "Vibe Dice 654
-// solo I can't make a bet, can't push a button, room is too compressed."
-const FULLSCREEN_GAME_ROUTES = [
-  "/spades", "/bid-whist", "/hearts", "/uno", "/euchre", "/pinochle",
-  "/gin-rummy", "/rummy", "/war", "/crazy-eights", "/go-fish", "/baccarat",
-  "/baccarat-aaa", "/blackjack", "/poker", "/three-card-poker",
-  "/vibe-654", "/vibez-654",
-  "/games/vibez-654",
-  "/chess", "/checkers", "/connect4", "/practice/play",
-  "/chess-hall", "/chess/blitz", "/chess/puzzle", "/chess/tournament", "/chess/multiplayer",
-  "/sports-lounge", "/sportsbook",
-  "/card-mp",  // multiplayer card rooms
-  "/cinema-room",  // The Cinema Room — sync-watch viewer
-  "/cyber-casino", "/games/cyber-casino", "/casino-war",
-  "/lottery", "/dsg6",  // DSG 6 Quantum Vault (May 2026)
-  "/underground-casino", "/underground",  // Private high-limit lounge
-];
-
-function useIsFullscreenGameRoute() {
-  const location = useLocation();
-  const p = location.pathname;
-  return FULLSCREEN_GAME_ROUTES.some((r) => p === r || p.startsWith(r + "/"));
-}
 
 // Import version manager for cache busting
 import { startVersionMonitoring } from "@/utils/versionManager";

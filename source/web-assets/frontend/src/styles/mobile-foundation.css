@@ -15,6 +15,16 @@ body {
   overscroll-behavior-x: none;
 }
 
+/* Improve mobile typography: balance headings and wrap long words */
+h1, h2, h3, h4, h5, h6 {
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+
+p {
+  text-wrap: pretty;
+}
+
 #root {
   min-height: 100vh;
   width: 100%;
