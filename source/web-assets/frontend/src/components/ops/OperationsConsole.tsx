@@ -1,111 +1,226 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import {
+  Activity,
+  Database,
+  Users,
+  Wallet,
+  Gamepad2,
+  Brain,
+  RefreshCw,
+  Clock,
+  AlertCircle,
+  CheckCircle2,
+  MinusCircle,
+} from 'lucide-react';
+import { getBackendUrl } from '@/config/backendUrl';
+import { GlobalCard } from '@/components/ui/GlobalCard';
 
-const API = process.env.REACT_APP_BACKEND_URL;
+const API = getBackendUrl();
 
-type LogisticsEvent = {
-  id: string;
-  service: 'hunger-vibez' | 'viberidez';
-  status: 'queued' | 'persisted';
-  startedAt: string;
-  completedAt: string;
-  latencyMs: number;
-  azureTraceId: string;
-  note: string;
+interface SystemStatusReport {
+  timestamp: string;
+  response_time_ms: number;
+  environment: string;
+  services: Record<string, Record<string, unknown>>;
+  integrity_check: Record<string, string>;
+  overall_health: 'GOOD' | 'DEGRADED' | 'CRITICAL' | string;
+}
+
+const SERVICE_META: Record<
+  string,
+  { label: string; icon: React.ReactNode; color: string }
+> = {
+  database: {
+    label: 'Database',
+    icon: <Database className="w-5 h-5" />,
+    color: 'text-cyan-400',
+  },
+  auth_service: {
+    label: 'Authentication',
+    icon: <Users className="w-5 h-5" />,
+    color: 'text-emerald-400',
+  },
+  wallet_stripe: {
+    label: 'Wallet & Stripe',
+    icon: <Wallet className="w-5 h-5" />,
+    color: 'text-amber-400',
+  },
+  game_services: {
+    label: 'Game Services',
+    icon: <Gamepad2 className="w-5 h-5" />,
+    color: 'text-fuchsia-400',
+  },
+  ai_services: {
+    label: 'AI / LLM',
+    icon: <Brain className="w-5 h-5" />,
+    color: 'text-violet-400',
+  },
 };
 
+function statusColor(status: string): string {
+  const s = (status || '').toLowerCase();
+  if (s === 'online' || s === 'healthy' || s === 'good' || s === 'active' || s === 'verified' || s === 'configured') {
+    return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30';
+  }
+  if (s === 'degraded' || s === 'not_configured' || s === 'missing') {
+    return 'text-amber-400 bg-amber-500/10 border-amber-500/30';
+  }
+  if (s === 'offline' || s === 'critical' || s === 'error' || s === 'failed') {
+    return 'text-rose-400 bg-rose-500/10 border-rose-500/30';
+  }
+  return 'text-white/60 bg-white/5 border-white/10';
+}
+
+function overallIcon(health: string) {
+  const h = (health || '').toLowerCase();
+  if (h === 'good') return <CheckCircle2 className="w-6 h-6 text-emerald-400" />;
+  if (h === 'degraded') return <AlertCircle className="w-6 h-6 text-amber-400" />;
+  if (h === 'critical') return <AlertCircle className="w-6 h-6 text-rose-400" />;
+  return <MinusCircle className="w-6 h-6 text-white/60" />;
+}
+
 export function OperationsConsole() {
-  const [events, setEvents] = useState<LogisticsEvent[]>([]);
+  const [report, setReport] = useState<SystemStatusReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  const loadEvents = async () => {
-    try {
-      const res = await fetch(`${API}/api/logistics/audit?limit=20`, { credentials: 'include' });
-      if (!res.ok) throw new Error('Failed to load audit trail');
-      const payload = await res.json();
-      setEvents(payload.events ?? []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load');
-    }
-  };
-
-  useEffect(() => {
-    loadEvents();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const simulate = async (service: 'hunger-vibez' | 'viberidez') => {
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API}/api/logistics/simulate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ service }),
-      });
-      if (!res.ok) throw new Error('Simulation failed');
-      await loadEvents();
+      const res = await fetch(`${API}/api/system-status`, { credentials: 'include' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data: SystemStatusReport = await res.json();
+      setReport(data);
+      setLastUpdated(new Date());
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Simulation failed');
+      setError(err instanceof Error ? err.message : 'Failed to load system status');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    load();
+    const id = setInterval(load, 10000);
+    return () => clearInterval(id);
+  }, [load]);
 
   return (
-    <section className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl shadow-black/20 backdrop-blur">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-2xl font-semibold text-white">Whole Unit Test Console</h2>
-        <div className="flex gap-2 text-sm">
-          <button
-            type="button"
-            disabled={loading}
-            onClick={() => simulate('hunger-vibez')}
-            className="rounded-full border border-white/15 px-4 py-2 text-white hover:bg-white/10 disabled:opacity-50"
-          >
-            Trigger Hunger Vibez
-          </button>
-          <button
-            type="button"
-            disabled={loading}
-            onClick={() => simulate('viberidez')}
-            className="rounded-full border border-white/15 px-4 py-2 text-white hover:bg-white/10 disabled:opacity-50"
-          >
-            Trigger VibeRidez
-          </button>
+    <div className="flex flex-col gap-6">
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-semibold text-white">Platform Health</h2>
+          <p className="text-sm text-white/60">
+            Live view of backend services, refreshed every 10 seconds.
+          </p>
         </div>
+        <button
+          type="button"
+          disabled={loading}
+          onClick={load}
+          className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-sm text-white hover:bg-white/10 disabled:opacity-50"
+        >
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          Refresh
+        </button>
       </div>
 
-      {error && <p className="mt-4 text-sm text-rose-300">{error}</p>}
+      {error && (
+        <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-200">
+          {error}
+        </div>
+      )}
 
-      <div className="mt-6 overflow-x-auto">
-        <table className="min-w-full text-left text-sm text-white">
-          <thead className="text-white/60">
-            <tr>
-              <th className="px-2 py-2">Service</th>
-              <th className="px-2 py-2">Latency</th>
-              <th className="px-2 py-2">Azure Trace</th>
-              <th className="px-2 py-2">Completed</th>
-            </tr>
-          </thead>
-          <tbody>
-            {events.map((event) => (
-              <tr key={event.id} className="border-t border-white/10">
-                <td className="px-2 py-2 uppercase">{event.service}</td>
-                <td className="px-2 py-2">{event.latencyMs}ms</td>
-                <td className="px-2 py-2 font-mono text-xs">{event.azureTraceId}</td>
-                <td className="px-2 py-2">{new Date(event.completedAt).toLocaleString()}</td>
-              </tr>
-            ))}
-            {events.length === 0 && !loading && (
-              <tr>
-                <td colSpan={4} className="px-2 py-4 text-center text-white/40">No audit events yet. Trigger a simulation above.</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </section>
+      {report && (
+        <>
+          {/* Overall status */}
+          <GlobalCard className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="rounded-full bg-white/5 p-3">{overallIcon(report.overall_health)}</div>
+              <div>
+                <p className="text-xs uppercase tracking-wider text-white/60">Overall Health</p>
+                <p className="text-2xl font-black text-white">{report.overall_health}</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-6 text-sm">
+              <div>
+                <p className="text-white/60">Response Time</p>
+                <p className="font-mono font-semibold text-white">{report.response_time_ms} ms</p>
+              </div>
+              <div>
+                <p className="text-white/60">Environment</p>
+                <p className="font-semibold text-white">{report.environment}</p>
+              </div>
+              <div>
+                <p className="text-white/60">Last Check</p>
+                <p className="font-semibold text-white flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  {lastUpdated ? lastUpdated.toLocaleTimeString() : '—'}
+                </p>
+              </div>
+            </div>
+          </GlobalCard>
+
+          {/* Service cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Object.entries(report.services).map(([key, service]) => {
+              const meta = SERVICE_META[key] || {
+                label: key.replace(/_/g, ' '),
+                icon: <Activity className="w-5 h-5" />,
+                color: 'text-white',
+              };
+              const status = String(service.status || 'unknown');
+              return (
+                <GlobalCard key={key} className="flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                    <div className={`flex items-center gap-2 ${meta.color}`}>
+                      {meta.icon}
+                      <span className="font-semibold text-white">{meta.label}</span>
+                    </div>
+                    <span
+                      className={`rounded-full border px-2 py-0.5 text-xs font-medium capitalize ${statusColor(status)}`}
+                    >
+                      {status}
+                    </span>
+                  </div>
+                  <div className="space-y-1 text-sm">
+                    {Object.entries(service).map(([k, v]) => {
+                      if (k === 'status' || typeof v === 'object') return null;
+                      return (
+                        <div key={k} className="flex justify-between">
+                          <span className="text-white/60 capitalize">{k.replace(/_/g, ' ')}</span>
+                          <span className="font-mono text-white/90">{String(v)}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </GlobalCard>
+              );
+            })}
+          </div>
+
+          {/* Integrity checks */}
+          <GlobalCard>
+            <h3 className="text-lg font-semibold text-white mb-4">Integrity Checks</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {Object.entries(report.integrity_check).map(([key, value]) => (
+                <div key={key} className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3">
+                  <span className="text-sm text-white/70 capitalize">{key.replace(/_/g, ' ')}</span>
+                  <span className={`text-xs font-semibold rounded-full px-2 py-0.5 border ${statusColor(String(value))}`}>
+                    {String(value)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </GlobalCard>
+
+          {/* Raw timestamp */}
+          <p className="text-xs text-white/40 text-right">Reported at {report.timestamp}</p>
+        </>
+      )}
+    </div>
   );
 }

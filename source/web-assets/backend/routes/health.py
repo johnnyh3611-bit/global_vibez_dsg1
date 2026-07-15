@@ -158,7 +158,7 @@ async def get_system_report() -> Dict[str, Any]:
     report = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "response_time_ms": round((time.time() - start_time) * 1000, 2),
-        "environment": "production",  # Can be set via env var
+        "environment": os.environ.get("ENVIRONMENT", "production"),
         "services": {
             "database": mongodb_health,
             "auth_service": auth_health,
