@@ -1,96 +1,116 @@
-
-import React, { useState } from 'react';
-import { RotateCcw, Target } from 'lucide-react';
-
+import React, { useState, useEffect } from 'react';
+import { RotateCcw, Target, Crown } from 'lucide-react';
 import cardSoundManager from '@/utils/cardSoundManager';
 import ParticleEffectsOverlay from '@/components/ParticleEffectsOverlay';
+
 const BALLS = [
-  { num: 1, type: 'solid', color: 'bg-yellow-400' },
-  { num: 2, type: 'solid', color: 'bg-blue-600' },
-  { num: 3, type: 'solid', color: 'bg-red-600' },
-  { num: 4, type: 'solid', color: 'bg-purple-600' },
-  { num: 5, type: 'solid', color: 'bg-orange-600' },
-  { num: 6, type: 'solid', color: 'bg-green-600' },
-  { num: 7, type: 'solid', color: 'bg-red-800' },
-  { num: 9, type: 'stripe', color: 'bg-yellow-400' },
-  { num: 10, type: 'stripe', color: 'bg-blue-600' },
-  { num: 11, type: 'stripe', color: 'bg-red-600' },
-  { num: 12, type: 'stripe', color: 'bg-purple-600' },
-  { num: 13, type: 'stripe', color: 'bg-orange-600' },
-  { num: 14, type: 'stripe', color: 'bg-green-600' },
-  { num: 15, type: 'stripe', color: 'bg-red-800' },
-  { num: 8, type: '8ball', color: 'bg-black' }
+  { num: 1, type: 'solid', color: '#facc15' },
+  { num: 2, type: 'solid', color: '#2563eb' },
+  { num: 3, type: 'solid', color: '#dc2626' },
+  { num: 4, type: 'solid', color: '#9333ea' },
+  { num: 5, type: 'solid', color: '#ea580c' },
+  { num: 6, type: 'solid', color: '#16a34a' },
+  { num: 7, type: 'solid', color: '#991b1b' },
+  { num: 9, type: 'stripe', color: '#facc15' },
+  { num: 10, type: 'stripe', color: '#2563eb' },
+  { num: 11, type: 'stripe', color: '#dc2626' },
+  { num: 12, type: 'stripe', color: '#9333ea' },
+  { num: 13, type: 'stripe', color: '#ea580c' },
+  { num: 14, type: 'stripe', color: '#16a34a' },
+  { num: 15, type: 'stripe', color: '#991b1b' },
+  { num: 8, type: '8ball', color: '#111827' },
 ];
 
-export default function PracticePool8Ball({ onMove, gameState }: { onMove?: any, gameState?: any }) {
+const rackPositions: { x: number; y: number }[] = [
+  { x: 0, y: 0 },
+  { x: -18, y: 16 }, { x: 18, y: 16 },
+  { x: -36, y: 32 }, { x: 0, y: 32 }, { x: 36, y: 32 },
+  { x: -54, y: 48 }, { x: -18, y: 48 }, { x: 18, y: 48 }, { x: 54, y: 48 },
+  { x: -72, y: 64 }, { x: -36, y: 64 }, { x: 0, y: 64 }, { x: 36, y: 64 }, { x: 72, y: 64 },
+];
+
+export default function PracticePool8Ball({ onMove, gameState }: { onMove?: any; gameState?: any }) {
   const [balls, setBalls] = useState(BALLS);
-  const [playerType, setPlayerType] = useState(null);
+  const [playerType, setPlayerType] = useState<string | null>(null);
   const [currentPlayer, setCurrentPlayer] = useState(1);
   const [message, setMessage] = useState('Break to start!');
   const [gameOver, setGameOver] = useState(false);
   const [playerScore, setPlayerScore] = useState(0);
   const [aiScore, setAiScore] = useState(0);
   const [particleTrigger, setParticleTrigger] = useState(0);
+  const [shooting, setShooting] = useState(false);
+  const [aiTurn, setAiTurn] = useState(false);
 
-  const shoot = () => {
-    if (gameOver || balls.length === 0) return;
+  useEffect(() => {
+    if (aiTurn && !gameOver) {
+      const timer = setTimeout(() => shoot(true), 1200);
+      return () => clearTimeout(timer);
+    }
+  }, [aiTurn, gameOver]);
 
+  const shoot = (isAi = false) => {
+    if (gameOver || balls.length === 0 || shooting) return;
+    setShooting(true);
     cardSoundManager.playCardSlam();
-    // Simulate shot
+
     const hitBall = balls[Math.floor(Math.random() * balls.length)];
-    const pocketed = Math.random() > 0.4; // 60% success rate
+    const pocketed = Math.random() > 0.45;
 
-    if (!pocketed) {
-      setMessage(currentPlayer === 1 ? 'Missed! AI\'s turn' : 'AI missed! Your turn');
-      setCurrentPlayer(currentPlayer === 1 ? 2 : 1);
-      if (currentPlayer === 1) {
-        setTimeout(() => aiShoot(), 1500);
+    setTimeout(() => {
+      if (!pocketed) {
+        setMessage(currentPlayer === 1 ? 'Missed! AI is up' : 'AI missed! Your turn');
+        setCurrentPlayer(currentPlayer === 1 ? 2 : 1);
+        setAiTurn(currentPlayer === 1);
+        setShooting(false);
+        return;
       }
-      return;
-    }
 
-    // Ball pocketed
-    if (!playerType && hitBall.type !== '8ball') {
-      setPlayerType(currentPlayer === 1 ? hitBall.type : (hitBall.type === 'solid' ? 'stripe' : 'solid'));
-      setMessage(`Player ${currentPlayer === 1 ? '1 is ' + hitBall.type + 's' : '2 is ' + (hitBall.type === 'solid' ? 'stripes' : 'solids')}!`);
-    }
+      if (!playerType && hitBall.type !== '8ball') {
+        const assigned = currentPlayer === 1 ? hitBall.type : (hitBall.type === 'solid' ? 'stripe' : 'solid');
+        setPlayerType(assigned);
+        setMessage(`Player ${currentPlayer === 1 ? '1' : '2'} is ${assigned === 'solid' ? 'solids' : 'stripes'}!`);
+      }
 
-    if (hitBall.num === 8) {
-      const myBallsCleared = currentPlayer === 1
-        ? !balls.some(b => b.type === playerType && b.num !== 8)
-        : !balls.some(b => b.type !== playerType && b.type !== '8ball' && b.num !== 8);
-      
-      if (myBallsCleared) {
-        setGameOver(true);
-        setMessage(currentPlayer === 1 ? 'You Win! 🏆' : 'AI Wins!');
-        if (currentPlayer === 1) {
-          setPlayerScore(prev => prev + 1);
-          cardSoundManager.playWinSound();
-          setParticleTrigger(prev => prev + 1);
+      if (hitBall.num === 8) {
+        const myGroup = currentPlayer === 1 ? playerType : (playerType ? (playerType === 'solid' ? 'stripe' : 'solid') : null);
+        const myBallsCleared = !balls.some(
+          (b) => b.type === myGroup && b.num !== 8,
+        );
+
+        if (myBallsCleared) {
+          setGameOver(true);
+          setMessage(currentPlayer === 1 ? 'You Win!' : 'AI Wins!');
+          if (currentPlayer === 1) {
+            setPlayerScore((s) => s + 1);
+            cardSoundManager.playWinSound();
+            setParticleTrigger((p) => p + 1);
+          } else {
+            setAiScore((s) => s + 1);
+            cardSoundManager.playLoseSound();
+          }
         } else {
-          setAiScore(prev => prev + 1);
-          cardSoundManager.playLoseSound();
+          setGameOver(true);
+          setMessage(currentPlayer === 1 ? 'Early 8-ball! AI Wins' : 'AI scratched the 8-ball! You Win');
+          if (currentPlayer === 2) {
+            setPlayerScore((s) => s + 1);
+            cardSoundManager.playWinSound();
+            setParticleTrigger((p) => p + 1);
+          } else {
+            setAiScore((s) => s + 1);
+          }
         }
-      } else {
-        setGameOver(true);
-        setMessage(currentPlayer === 1 ? 'Early 8-ball! AI Wins!' : 'AI sank 8-ball early! You Win!');
-        if (currentPlayer === 2) setPlayerScore(prev => prev + 1);
-        else setAiScore(prev => prev + 1);
+        setBalls([]);
+        setShooting(false);
+        return;
       }
-      setBalls([]);
-      return;
-    }
 
-    setBalls(balls.filter(b => b.num !== hitBall.num));
-    setMessage(`${currentPlayer === 1 ? 'You' : 'AI'} pocketed ${hitBall.num}! Go again`);
-    
-    if (currentPlayer === 2) {
-      setTimeout(() => aiShoot(), 1500);
-    }
-  };
-
-  const aiShoot = () => {
-    shoot();
+      setBalls((prev) => prev.filter((b) => b.num !== hitBall.num));
+      setMessage(`${currentPlayer === 1 ? 'You' : 'AI'} pocketed ${hitBall.num}! Go again`);
+      if (currentPlayer === 2) {
+        setAiTurn(true);
+      }
+      setShooting(false);
+    }, isAi ? 0 : 300);
   };
 
   const resetGame = () => {
@@ -99,76 +119,113 @@ export default function PracticePool8Ball({ onMove, gameState }: { onMove?: any,
     setCurrentPlayer(1);
     setMessage('Break to start!');
     setGameOver(false);
+    setAiTurn(false);
+    setShooting(false);
   };
 
+  const ballPosition = (index: number) => rackPositions[index];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-900 via-emerald-900 to-black p-4">
-      {/* Particle Effects */}
+    <div className="w-full max-w-5xl mx-auto p-2 sm:p-4">
       <ParticleEffectsOverlay triggerSparkle={particleTrigger > 0 ? { x: 0, y: 0 } : null} />
-      
-      <div className="max-w-5xl mx-auto">
-        <div className="text-center mb-6">
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-green-400 to-cyan-400 bg-clip-text text-transparent mb-2">
-            🎱 8-BALL POOL
-          </h1>
-          <p className="text-green-300 text-xl">{message}</p>
-        </div>
 
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="bg-gradient-to-br from-blue-600 to-cyan-600 rounded-xl p-4 border-2 border-blue-400">
-            <div className="text-blue-100 text-sm">Your Wins</div>
-            <div className="text-3xl font-bold text-white">{playerScore}</div>
-          </div>
-          <div className="bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl p-4 border-2 border-purple-400">
-            <div className="text-purple-100 text-sm">Your Type</div>
-            <div className="text-lg font-bold text-white">{playerType || '-'}</div>
-          </div>
-          <div className="bg-gradient-to-br from-red-600 to-orange-600 rounded-xl p-4 border-2 border-red-400">
-            <div className="text-red-100 text-sm">AI Wins</div>
-            <div className="text-3xl font-bold text-white">{aiScore}</div>
-          </div>
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mb-4">
+        <div className="text-center sm:text-left">
+          <h2 className="text-2xl sm:text-3xl font-black text-white flex items-center justify-center sm:justify-start gap-2">
+            <span className="text-3xl">🎱</span> 8-Ball Pool
+          </h2>
+          <p className="text-green-300 text-sm mt-1">{message}</p>
         </div>
-
-        {/* Pool Table */}
-        <div className="bg-gradient-to-br from-green-700 to-green-900 rounded-3xl p-8 border-4 border-yellow-600 mb-6" style={{ minHeight: '400px' }}>
-          <div className="grid grid-cols-5 gap-4">
-            {balls.map(ball => (
-              <div
-                key={ball.num}
-                className={`w-16 h-16 rounded-full ${
-                  ball.type === 'stripe' 
-                    ? `border-8 ${ball.color} bg-white` 
-                    : ball.color
-                } border-4 border-gray-300 flex items-center justify-center text-white font-bold text-xl shadow-xl`}
-              >
-                {ball.num}
-              </div>
-            ))}
+        <div className="flex items-center gap-3">
+          <div className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-center min-w-[80px]">
+            <p className="text-white/60 text-xs">You</p>
+            <p className="text-white font-black text-xl">{playerScore}</p>
           </div>
-          
-          {balls.length === 0 && !gameOver && (
-            <div className="text-center text-green-300 text-2xl mt-20">Table cleared!</div>
-          )}
-        </div>
-
-        {/* Controls */}
-        <div className="flex gap-4">
-          <button
-            onClick={shoot}
-            disabled={currentPlayer !== 1 || gameOver}
-            className="flex-1 py-4 bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-bold text-xl rounded-xl border-2 border-cyan-400 hover:scale-105 transition-transform disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            <Target className="w-6 h-6" />
-            SHOOT
-          </button>
+          <div className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-center min-w-[80px]">
+            <p className="text-white/60 text-xs">AI</p>
+            <p className="text-white font-black text-xl">{aiScore}</p>
+          </div>
           <button
             onClick={resetGame}
-            className="flex-1 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-xl rounded-xl border-2 border-purple-400 hover:scale-105 transition-transform flex items-center justify-center gap-2"
+            className="p-3 bg-white/10 hover:bg-white/20 text-white rounded-xl border border-white/20 transition-colors"
+            title="New Rack"
           >
-            <RotateCcw className="w-6 h-6" />
-            New Rack
+            <RotateCcw className="w-5 h-5" />
           </button>
         </div>
+      </div>
+
+      <div className="relative bg-gradient-to-br from-green-800 to-green-950 rounded-3xl border-[10px] border-yellow-900/80 shadow-2xl overflow-hidden min-h-[360px] sm:min-h-[420px] flex items-center justify-center mb-4">
+        {/* Felt texture / markings */}
+        <div className="absolute inset-4 border border-white/10 rounded-2xl" />
+        <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-24 h-24 rounded-full border-2 border-white/10" />
+
+        {/* Pockets */}
+        <div className="absolute top-2 left-2 w-6 h-6 rounded-full bg-black border-2 border-gray-700" />
+        <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black border-2 border-gray-700" />
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-black border-2 border-gray-700" />
+        <div className="absolute bottom-2 left-2 w-6 h-6 rounded-full bg-black border-2 border-gray-700" />
+        <div className="absolute bottom-2 right-2 w-6 h-6 rounded-full bg-black border-2 border-gray-700" />
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-black border-2 border-gray-700" />
+
+        {/* Rack */}
+        {balls.length > 0 && (
+          <div className="relative w-64 h-64 sm:w-80 sm:h-80">
+            {balls.map((ball, i) => {
+              const pos = ballPosition(i);
+              const isStripe = ball.type === 'stripe';
+              return (
+                <div
+                  key={ball.num}
+                  className="absolute w-8 h-8 sm:w-10 sm:h-10 rounded-full shadow-lg transition-all duration-300"
+                  style={{
+                    left: `calc(50% + ${pos.x}px - 1rem)`,
+                    top: `calc(45% + ${pos.y}px - 1rem)`,
+                    background: isStripe
+                      ? `linear-gradient(to bottom, white 50%, ${ball.color} 50%)`
+                      : ball.color,
+                    border: isStripe ? `2px solid ${ball.color}` : '2px solid rgba(255,255,255,0.4)',
+                  }}
+                >
+                  <span className="absolute inset-0 flex items-center justify-center text-white font-black text-xs drop-shadow-md">
+                    {ball.num}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {balls.length === 0 && !gameOver && (
+          <div className="text-green-300 text-2xl font-bold">Table cleared!</div>
+        )}
+
+        {gameOver && (
+          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+            <div className="bg-white/10 backdrop-blur border border-white/20 rounded-2xl p-6 text-center">
+              <Crown className="w-10 h-10 text-yellow-400 mx-auto mb-2" />
+              <p className="text-white text-2xl font-black">{message}</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="flex gap-3">
+        <button
+          onClick={() => shoot(false)}
+          disabled={currentPlayer !== 1 || gameOver || shooting || aiTurn}
+          className="flex-1 py-4 bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-black text-lg rounded-xl border-2 border-cyan-400 hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        >
+          <Target className="w-6 h-6" />
+          {shooting ? 'Shooting...' : 'SHOOT'}
+        </button>
+        <button
+          onClick={resetGame}
+          className="px-6 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl border-2 border-purple-400 hover:scale-[1.02] transition-transform flex items-center gap-2"
+        >
+          <RotateCcw className="w-5 h-5" />
+          New Rack
+        </button>
       </div>
     </div>
   );

@@ -11,13 +11,15 @@ import { LudoBoard } from '@/components/games/LudoBoard';
 import { motion } from 'framer-motion';
 import BackButton from '@/components/BackButton';
 import * as PracticeGames from '@/components/practice_games';
+import PracticeBowling from '@/components/practice_games/PracticeBowling';
 import ComingSoonOverlay from '@/components/games/ComingSoonOverlay';
 import { isComingSoon } from '@/data/comingSoonGames';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
 export default function PracticeGamePlay() {
-  const { gameId } = useParams();
+  const { gameId: rawGameId } = useParams();
+  const gameId = (rawGameId ?? '').toLowerCase();
   const navigate = useNavigate();
   const [game, setGame] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -54,7 +56,7 @@ export default function PracticeGamePlay() {
     'crazy_eights', 'hearts', 'poker', 'spades', 'rummy', 'trivia', 'truthordare',
     'truth_or_dare', 'two_truths_lie', 'war', 'solitaire', 'gin_rummy', 'ludo',
     // Arcade
-    'snake', 'memory_match', 'pool_8ball', 'ping_pong',
+    'snake', 'memory_match', 'pool_8ball', 'bowling', 'ping_pong',
     // Casino Table
     'blackjack', 'roulette', 'baccarat', 'baccarat_premium', 'caribbean_stud',
     'three_card_poker', 'pai_gow', 'chemin_de_fer', 'casino_war', 'european_roulette',
@@ -270,6 +272,7 @@ export default function PracticeGamePlay() {
       'snake': <PracticeGames.PracticeSnake gameState={game.game_state} onMove={makeMove} />,
       'memory_match': <PracticeGames.PracticeMemoryMatch gameState={game.game_state} onMove={makeMove} />,
       'pool_8ball': <PracticeGames.PracticePool8Ball gameState={game.game_state} onMove={makeMove} />,
+      'bowling': <PracticeBowling gameState={game.game_state} onMove={makeMove} />,
       'ping_pong': <PracticeGames.PracticePingPong gameState={game.game_state} onMove={makeMove} />,
       
       // Card Games - Advanced
@@ -403,6 +406,7 @@ export default function PracticeGamePlay() {
       'memory_match': 'Memory Match',
       'ping_pong': 'Ping Pong',
       'pool_8ball': '8-Ball Pool',
+      'bowling': '10-Pin Bowling',
       
       // Party
       'trivia': 'Trivia',

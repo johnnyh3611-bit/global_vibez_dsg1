@@ -21,6 +21,7 @@ export { default as PracticeSnake } from './PracticeSnake';
 export { default as PracticeMemoryMatch } from './PracticeMemoryMatch';
 export { default as PracticePool8Ball } from './PracticePool8Ball';
 export { default as PracticePingPong } from './PracticePingPong';
+export { default as PracticeBowling } from './PracticeBowling';
 
 // NEW Card Games
 export { default as PracticeWar } from './PracticeWar';

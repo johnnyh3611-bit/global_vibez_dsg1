@@ -25,6 +25,8 @@ import DriverEarnings from "@/pages/VibeRidez/DriverEarnings";
 import DriverDashcam from "@/pages/VibeRidez/DriverDashcam";
 import LivePOVViewer from "@/pages/VibeRidez/LivePOVViewer";
 import DriverWalletSetup from "@/pages/VibeRidez/DriverWalletSetup";
+import ELDDashboard from "@/pages/VibeRidez/ELDDashboard";
+import TripTracking from "@/pages/VibeRidez/TripTracking";
 
 export const ridesRoutes = (ProtectedRoute) => (
   <>
@@ -67,5 +69,9 @@ export const ridesRoutes = (ProtectedRoute) => (
     <Route path="/driver/wallet" element={<ProtectedRoute><DriverWalletSetup /></ProtectedRoute>} />
     <Route path="/driver/dashcam/:rideId" element={<ProtectedRoute><DriverDashcam /></ProtectedRoute>} />
     <Route path="/live-pov/:rideId" element={<ProtectedRoute><LivePOVViewer /></ProtectedRoute>} />
+
+    {/* ELD / Fleet Tracking */}
+    <Route path="/vibe-ridez/eld" element={<ProtectedRoute><ELDDashboard /></ProtectedRoute>} />
+    <Route path="/vibe-ridez/eld/track/:tripId" element={<ProtectedRoute><TripTracking /></ProtectedRoute>} />
   </>
 );
