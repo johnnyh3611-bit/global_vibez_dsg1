@@ -561,7 +561,7 @@ export const GAMES: GameRegistryEntry[] = [
     category: 'social',
     gradient: 'from-indigo-500 to-purple-600',
     badge: 'NEW',
-    mode: 'client',
+    mode: 'server',
     listed: true,
   },
   {

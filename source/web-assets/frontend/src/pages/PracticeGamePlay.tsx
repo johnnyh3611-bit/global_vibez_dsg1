@@ -360,7 +360,7 @@ export default function PracticeGamePlay() {
       )}
 
       {/* Victory Animation - Only for games NOT using CinematicCelebration or their own modal */}
-      {!['tictactoe', 'connect4', 'chess', 'checkers', 'reversi', ...SHELL_GAMES].includes(game?.game_type) && (
+      {!['tictactoe', 'connect4', 'chess', 'checkers', 'reversi', 'trivia', ...SHELL_GAMES].includes(game?.game_type) && (
         <VictoryAnimation
           show={showVictory}
           winner={getWinner()}
