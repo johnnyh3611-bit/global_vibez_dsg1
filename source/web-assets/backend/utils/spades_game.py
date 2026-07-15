@@ -2,7 +2,7 @@
 
 import secrets
 secure_random = secrets.SystemRandom()
-from typing import List, Dict
+from typing import List, Dict, Optional, Tuple
 
 
 # ────────────────────────────────────────────── Rulesets
@@ -115,6 +115,9 @@ class SpadesGame:
         self.current_trick = []
         self.tricks_played = 0
         self.spades_broken = False
+        self.bids_placed: List[str] = []
+        self.led_suit: Optional[str] = None
+        self.winner: Optional[str] = None
         self.game_phase = 'bidding'  # bidding, playing, scoring, finished
         self.winning_score = 200
 
@@ -183,15 +186,19 @@ class SpadesGame:
             )
     
     def set_bid(self, position: str, bid: int) -> bool:
-        """Set a player's bid (0-13)"""
+        """Set a player's bid (0-13). Re-bids are rejected; phase advances
+        once all four seats have bid."""
         if bid < 0 or bid > 13:
             return False
+        if position in self.bids_placed:
+            return False
         self.players[position]['bid'] = bid
-        
-        # Check if all bids are in
-        if all(p['bid'] > 0 or p['bid'] == 0 for p in self.players.values()):
+        self.bids_placed.append(position)
+
+        # Advance to play once every seat has bid.
+        if len(self.bids_placed) == 4:
             self.game_phase = 'playing'
-        
+
         return True
     
     def get_team_bid(self, team: str) -> int:
@@ -214,9 +221,10 @@ class SpadesGame:
         # If first card of trick, set led suit
         if len(self.current_trick) == 1:
             self.led_suit = card['suit']
-        
-        # Check if spades broken (a promoted trump also breaks spades)
-        if (card['suit'] == 'spades' or _is_promoted_trump(card)) and len(self.current_trick) > 1:
+
+        # Any spade or promoted trump played (lead or follow) marks spades
+        # as broken for the rest of the hand.
+        if card['suit'] == 'spades' or _is_promoted_trump(card):
             self.spades_broken = True
         
         # If trick is complete (4 cards), determine winner
@@ -307,10 +315,12 @@ class SpadesGame:
             player['hand'] = []
             player['bid'] = 0
             player['tricks'] = 0
-        
+
         self.current_trick = []
         self.tricks_played = 0
         self.spades_broken = False
+        self.bids_placed = []
+        self.led_suit = None
         self.game_phase = 'bidding'
         self.deal_cards()
     
@@ -353,59 +363,217 @@ class SpadesGame:
             'current_trick': self.current_trick,
             'tricks_played': self.tricks_played,
             'spades_broken': self.spades_broken,
+            'bids_placed': getattr(self, 'bids_placed', []),
+            'led_suit': getattr(self, 'led_suit', None),
             'winner': getattr(self, 'winner', None)
         }
 
 
+PARTNERS = {
+    'north': 'south',
+    'south': 'north',
+    'east': 'west',
+    'west': 'east',
+}
+
+
+def _card_power(card: Dict, led_suit: Optional[str]) -> Tuple[int, int]:
+    """Return a (tier, value) tuple for comparing cards within a trick.
+    Tiers: 3 = promoted trump, 2 = standard spade,
+    1 = led suit, 0 = other."""
+    if _is_promoted_trump(card):
+        return (3, card['value'])
+    if card['suit'] == 'spades':
+        return (2, card['value'])
+    if led_suit and card['suit'] == led_suit:
+        return (1, card['value'])
+    return (0, card['value'])
+
+
+def _current_trick_leader(
+    current_trick: List,
+    led_suit: Optional[str],
+) -> Dict:
+    """Return the currently-winning play in a (possibly incomplete) trick."""
+    best = current_trick[0]
+    best_power = _card_power(best['card'], led_suit)
+    for play in current_trick[1:]:
+        power = _card_power(play['card'], led_suit)
+        if power > best_power:
+            best = play
+            best_power = power
+    return best
+
+
 # AI for Spades
 def get_spades_ai_bid(hand: List[Dict]) -> int:
-    """Calculate AI bid based on hand strength"""
-    bid = 0
-    
-    # Count sure tricks (A, K of each suit, high spades)
-    spades = [c for c in hand if c['suit'] == 'spades']
-    
-    # High spades (A, K, Q) are usually tricks
-    high_spades = [c for c in spades if c['rank'] in ['A', 'K', 'Q']]
-    bid += len(high_spades)
-    
-    # Aces in other suits
-    for suit in ['hearts', 'diamonds', 'clubs']:
+    """Calculate AI bid based on hand strength.
+    Counts high spades, promoted trumps, side aces, spade length and voids.
+    A weak hand can now bid nil (0).
+    """
+    spades = [
+        c for c in hand
+        if c['suit'] == 'spades' and not _is_promoted_trump(c)
+    ]
+    promoted = [c for c in hand if _is_promoted_trump(c)]
+    bid = 0.0
+
+    # High spades are likely tricks
+    for c in spades:
+        if c['rank'] in ('A', 'K'):
+            bid += 1.0
+        elif c['rank'] == 'Q':
+            bid += 0.75
+        elif c['rank'] == 'J':
+            bid += 0.5
+
+    # Promoted trumps are almost certain winners
+    bid += len(promoted) * 0.9
+
+    # Side aces / kings; extra cards make kings more likely to be good
+    for suit in ('hearts', 'diamonds', 'clubs'):
         suit_cards = [c for c in hand if c['suit'] == suit]
-        if suit_cards:
-            highest = max(suit_cards, key=lambda c: c['value'])
-            if highest['rank'] == 'A':
-                bid += 1
-            elif highest['rank'] == 'K' and len(suit_cards) >= 3:
-                bid += 0.5  # Maybe a trick
-    
-    # Long spade suit adds tricks
-    if len(spades) >= 5:
-        bid += 1
-    
-    return max(1, min(int(bid), 13))
+        if not suit_cards:
+            continue
+        highest = max(suit_cards, key=lambda c: c['value'])
+        if highest['rank'] == 'A':
+            bid += 1.0
+        elif highest['rank'] == 'K' and len(suit_cards) >= 2:
+            bid += 0.5
+        elif highest['rank'] == 'Q' and len(suit_cards) >= 3:
+            bid += 0.25
+
+    # Long spade suit adds tricks, especially if already short on side winners
+    spade_count = len(spades) + len(promoted)
+    if spade_count >= 6:
+        bid += 1.5
+    elif spade_count >= 4:
+        bid += 0.5
+
+    # Voids in side suits make it easier to trump
+    for suit in ('hearts', 'diamonds', 'clubs'):
+        if not any(c['suit'] == suit for c in hand):
+            bid += 0.5
+
+    return max(0, min(int(round(bid)), 13))
 
 
-def get_spades_ai_play(hand: List[Dict], current_trick: List, led_suit: str, spades_broken: bool) -> Dict:
-    """AI card selection for Spades"""
+def get_spades_ai_play(
+    hand: List[Dict],
+    current_trick: List,
+    led_suit: Optional[str],
+    spades_broken: bool,
+    position: Optional[str] = None,
+    players: Optional[Dict] = None,
+    scores: Optional[Dict] = None,
+) -> Dict:
+    """AI card selection for Spades with partner awareness and bag control.
+    `hand` is expected to be the player's valid legal plays for the current
+    trick (i.e. the result of `get_valid_plays`)."""
+    if not hand:
+        raise ValueError("No legal plays available")
+
+    smart = bool(position and players)
+    team = players[position]['team'] if smart else None
+    partner = PARTNERS.get(position) if smart else None
+
+    team_bid = 0
+    team_tricks = 0
+    team_bags = 0
+    if smart:
+        for pos, p in players.items():
+            if p['team'] == team:
+                team_bid += p['bid']
+                team_tricks += p['tricks']
+        if scores:
+            team_bags = scores.get(team, {}).get('bags', 0)
+
+    need_tricks = not smart or team_tricks < team_bid
+    bag_risk = smart and team_bags >= 4
+
+    # Leading a trick
     if not current_trick:
-        # Leading - play lowest non-spade if possible
-        non_spades = [c for c in hand if c['suit'] != 'spades']
-        if non_spades and not spades_broken:
+        # If we are short on tricks and have a singleton/high side ace, lead it
+        if need_tricks and not bag_risk:
+            for c in sorted(hand, key=lambda c: c['value']):
+                if c['suit'] != 'spades' and not _is_promoted_trump(c):
+                    if c['rank'] == 'A':
+                        return c
+                    if c['rank'] == 'K':
+                        # Only lead K if we don't also have the A in that suit
+                        suit_cards = [
+                            x for x in hand
+                            if x['suit'] == c['suit']
+                        ]
+                        if all(x['rank'] != 'A' for x in suit_cards):
+                            return c
+        # Spades broken -> lead a low spade/promoted to try to win cheaply
+        if spades_broken:
+            trumps = [
+                c for c in hand
+                if c['suit'] == 'spades' or _is_promoted_trump(c)
+            ]
+            if trumps:
+                return min(trumps, key=lambda c: c['value'])
+        # Otherwise lead a low non-spade
+        non_spades = [
+            c for c in hand
+            if c['suit'] != 'spades' and not _is_promoted_trump(c)
+        ]
+        if non_spades:
             return min(non_spades, key=lambda c: c['value'])
         return min(hand, key=lambda c: c['value'])
-    
-    # Following - try to win or dump
-    my_suit_cards = [c for c in hand if c['suit'] == led_suit]
-    
-    if my_suit_cards:
-        # Play high to win or low to dump
-        highest_so_far = max(current_trick, key=lambda p: p['card']['value'])['card']['value']
-        my_higher = [c for c in my_suit_cards if c['value'] > highest_so_far]
-        
-        if my_higher:
-            return min(my_higher, key=lambda c: c['value'])  # Lowest winning card
-        return min(my_suit_cards, key=lambda c: c['value'])  # Dump lowest
-    
-    # Can't follow suit - dump lowest or play spade
+
+    # Following
+    leader = _current_trick_leader(current_trick, led_suit)
+    leader_pos = leader['position']
+    leader_power = _card_power(leader['card'], led_suit)
+    partner_winning = smart and leader_pos == partner
+
+    same_suit = [c for c in hand if c['suit'] == led_suit]
+    if same_suit:
+        if partner_winning:
+            # Don't steal partner's trick; play low
+            return min(same_suit, key=lambda c: c['value'])
+        if need_tricks and not bag_risk:
+            winners = [
+                c for c in same_suit
+                if _card_power(c, led_suit) > leader_power
+            ]
+            if winners:
+                return min(winners, key=lambda c: c['value'])
+        # Defensive dump
+        return min(same_suit, key=lambda c: c['value'])
+
+    # Off-suit: can trump or dump
+    if partner_winning:
+        # Avoid trumping partner; dump non-trump low
+        non_trump = [
+            c for c in hand
+            if c['suit'] != 'spades' and not _is_promoted_trump(c)
+        ]
+        if non_trump:
+            return min(non_trump, key=lambda c: c['value'])
+        return min(hand, key=lambda c: c['value'])
+
+    if need_tricks and not bag_risk:
+        trumps = [
+            c for c in hand
+            if c['suit'] == 'spades' or _is_promoted_trump(c)
+        ]
+        if trumps:
+            winners = [
+                c for c in trumps
+                if _card_power(c, led_suit) > leader_power
+            ]
+            if winners:
+                return min(winners, key=lambda c: c['value'])
+
+    # Dump lowest non-spade if possible, preserving trumps
+    non_trump = [
+        c for c in hand
+        if c['suit'] != 'spades' and not _is_promoted_trump(c)
+    ]
+    if non_trump:
+        return min(non_trump, key=lambda c: c['value'])
     return min(hand, key=lambda c: c['value'])

@@ -72,30 +72,90 @@ def _hand_value(cards: List[Dict[str, str]]) -> int:
     return total
 
 
+def _is_soft(hand: List[Dict[str, str]]) -> bool:
+    """True if the hand contains at least one ace currently counted as 11."""
+    total = 0
+    aces = 0
+    for c in hand:
+        if c["rank"] == "A":
+            aces += 1
+            total += 11
+        else:
+            total += _card_value(c["rank"])
+    while total > 21 and aces:
+        total -= 10
+        aces -= 1
+    return aces > 0
+
+
 def _is_blackjack(cards: List[Dict[str, str]]) -> bool:
     return len(cards) == 2 and _hand_value(cards) == 21
 
 
-def _basic_strategy(hand: List[Dict[str, str]], dealer_up: Dict[str, str]) -> str:
-    """Simplified basic strategy for bots."""
+def _basic_strategy(
+    hand: List[Dict[str, str]],
+    dealer_up: Dict[str, str],
+    can_double: bool = True,
+) -> str:
+    """Canonical multi-deck basic strategy.
+    S17, double on any first two cards, no surrender."""
     total = _hand_value(hand)
     dealer_val = _card_value(dealer_up["rank"])
-    has_ace = any(c["rank"] == "A" for c in hand)
-    # Soft hand
-    is_soft = has_ace and _hand_value(hand) != sum(_card_value(c["rank"]) for c in hand)
+    soft = _is_soft(hand)
 
+    # Bust / strong made hands
+    if total > 21:
+        return "stand"  # bust already handled by caller, but safe
     if total >= 17:
         return "stand"
-    if total <= 11:
+    if total <= 8:
         return "hit"
-    if is_soft:
-        if total <= 17:
+
+    # Soft totals
+    if soft:
+        if total <= 14:
+            if can_double and dealer_val in (5, 6):
+                return "double"
             return "hit"
+        if total in (15, 16):
+            if can_double and dealer_val in (4, 5, 6):
+                return "double"
+            return "hit"
+        if total == 17:
+            if can_double and dealer_val in (3, 4, 5, 6):
+                return "double"
+            return "hit"
+        if total == 18:
+            if can_double and dealer_val in (3, 4, 5, 6):
+                return "double"
+            if dealer_val in (2, 7, 8):
+                return "stand"
+            return "hit"
+        if total == 19:
+            if can_double and dealer_val == 6:
+                return "double"
+            return "stand"
         return "stand"
-    # Hard 12-16
-    if 4 <= dealer_val <= 6:
-        return "stand"
-    return "hit"
+
+    # Hard totals
+    if total == 9:
+        if can_double and dealer_val in (3, 4, 5, 6):
+            return "double"
+        return "hit"
+    if total == 10:
+        if can_double and 2 <= dealer_val <= 9:
+            return "double"
+        return "hit"
+    if total == 11:
+        if can_double and 2 <= dealer_val <= 10:
+            return "double"
+        return "hit"
+    if total == 12:
+        return "stand" if dealer_val in (4, 5, 6) else "hit"
+    if 13 <= total <= 16:
+        return "stand" if 2 <= dealer_val <= 6 else "hit"
+
+    return "stand"
 
 
 def _seat_state(seat: Dict[str, Any]) -> Dict[str, Any]:
@@ -182,7 +242,7 @@ async def _auto_play_bots(doc: Dict[str, Any]) -> None:
             # Stop for user input
             seat["status"] = "playing"
             return
-        # Bot: apply basic strategy until stand/bust
+        # Bot: apply basic strategy until stand/bust/double
         safety = 0
         while seat["status"] == "playing" or seat["status"] == "waiting":
             safety += 1
@@ -190,9 +250,19 @@ async def _auto_play_bots(doc: Dict[str, Any]) -> None:
                 seat["status"] = "stand"
                 break
             seat["status"] = "playing"
-            move = _basic_strategy(seat["hand"], dealer_up)
+            can_double = len(seat["hand"]) == 2
+            move = _basic_strategy(
+                seat["hand"], dealer_up, can_double=can_double,
+            )
             if move == "stand":
                 seat["status"] = "stand"
+                break
+            if move == "double":
+                seat["bet"] *= 2
+                seat["hand"].append(doc["shoe"].pop())
+                seat["status"] = (
+                    "bust" if _hand_value(seat["hand"]) > 21 else "stand"
+                )
                 break
             # hit
             seat["hand"].append(doc["shoe"].pop())

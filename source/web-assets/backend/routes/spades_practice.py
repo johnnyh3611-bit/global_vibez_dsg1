@@ -70,6 +70,7 @@ def _game_to_doc(game: SpadesGame, game_id: str, user_id: str) -> Dict[str, Any]
         "turn_position": getattr(game, "turn_position", USER_POS),
         "led_suit": getattr(game, "led_suit", None),
         "winner": getattr(game, "winner", None),
+        "bids_placed": getattr(game, "bids_placed", []),
         "hand_history": getattr(game, "hand_history", []),
         "updated_at": datetime.now(timezone.utc).isoformat(),
     }
@@ -88,6 +89,7 @@ def _doc_to_game(doc: Dict[str, Any]) -> SpadesGame:
     game.game_phase = doc.get("phase", "bidding")
     game.led_suit = doc.get("led_suit")
     game.turn_position = doc.get("turn_position", USER_POS)
+    game.bids_placed = doc.get("bids_placed", [])
     if doc.get("winner"):
         game.winner = doc["winner"]
     return game
@@ -140,22 +142,13 @@ def _advance_bot_bids(game: SpadesGame) -> None:
     if game.game_phase != "bidding":
         return
     bid_order = ["south", "west", "north", "east"]
-    for pos in bid_order:
-        if game.players[pos]["bid"] == 0 and pos != USER_POS:
-            # Still 0 means "not yet bid" unless user bid 0 exactly
-            # Track bids_placed separately via a list
-            pass
-    # Track bids via 'bids_placed' attr
-    if not hasattr(game, "bids_placed"):
-        game.bids_placed = []
     # Auto-bid for bots in order until human's turn
     while len(game.bids_placed) < 4:
         pos = bid_order[len(game.bids_placed)]
         if pos == USER_POS:
             break
         bid = get_spades_ai_bid(game.players[pos]["hand"])
-        game.players[pos]["bid"] = bid
-        game.bids_placed.append(pos)
+        game.set_bid(pos, bid)
 
     # If all 4 bids placed, enter playing phase
     if len(game.bids_placed) == 4:
@@ -178,6 +171,9 @@ def _advance_bot_plays(game: SpadesGame) -> Dict[str, Any]:
             game.current_trick,
             led_suit,
             game.spades_broken,
+            pos,
+            game.players,
+            game.scores,
         )
         res = game.play_card(pos, card)
         events.append({"player": pos, "card": card, "trick_winner": res.get("trick_winner")})
