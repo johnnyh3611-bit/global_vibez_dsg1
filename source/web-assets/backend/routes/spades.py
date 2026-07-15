@@ -20,6 +20,12 @@ import uuid
 router = APIRouter(prefix="/spades", tags=["spades"])
 
 
+def _next_position(pos: str) -> str:
+    """Clockwise order for a standard Spades table."""
+    order = ["north", "east", "south", "west"]
+    return order[(order.index(pos) + 1) % 4]
+
+
 # ==================== MODELS ====================
 
 class StartSpadesGame(BaseModel):
@@ -111,6 +117,8 @@ async def start_spades_game(game_data: StartSpadesGame, request: Request) -> Dic
         },
         "scores": game.scores,
         "current_trick": game.current_trick,
+        "bids_placed": game.bids_placed,
+        "led_suit": game.led_suit,
         "phase": game.game_phase,
         "wager": game_data.wager,
         "pot": game_data.wager * 4,  # 4 players total
@@ -157,13 +165,20 @@ async def place_bid(bid_data: SpadesBid, request: Request) -> Dict[str, Any]:
     game.players = game_doc["players_data"]
     game.scores = game_doc["scores"]
     game.game_phase = game_doc["phase"]
-    
+    game.bids_placed = game_doc.get("bids_placed", [])
+    game.led_suit = game_doc.get("led_suit")
+    game.turn_position = game_doc.get("turn_position", "north")
+
     # Find user's position
     user_position = [pos for pos, uid in game_doc["player_mapping"].items() if uid == current_user.user_id][0]
-    
+
     # Set bid
     game.set_bid(user_position, bid_data.bid)
-    
+
+    # Host (north) leads the first trick once all bids are in.
+    if game.game_phase == "playing" and len(game.bids_placed) == 4:
+        game.turn_position = "north"
+
     # Update game
     await db.spades_games.update_one(
         {"game_id": bid_data.game_id},
@@ -176,13 +191,17 @@ async def place_bid(bid_data: SpadesBid, request: Request) -> Dict[str, Any]:
                     'team': p['team']
                 } for pos, p in game.players.items()
             },
+            "bids_placed": game.bids_placed,
+            "led_suit": game.led_suit,
+            "turn_position": game.turn_position,
             "phase": game.game_phase
         }}
     )
-    
+
     return {
         "message": f"Bid placed: {bid_data.bid} tricks",
         "phase": game.game_phase,
+        "turn_position": getattr(game, "turn_position", None),
         "team_bids": {
             "team1": game.get_team_bid('team1'),
             "team2": game.get_team_bid('team2')
@@ -213,13 +232,26 @@ async def play_card(play_data: SpadesPlay, request: Request) -> Dict[str, Any]:
     game.game_phase = game_doc["phase"]
     game.tricks_played = game_doc.get("tricks_played", 0)
     game.spades_broken = game_doc.get("spades_broken", False)
-    
+    game.bids_placed = game_doc.get("bids_placed", [])
+    game.led_suit = game_doc.get("led_suit")
+    game.turn_position = game_doc.get("turn_position", "north")
+
     # Find user's position
     user_position = [pos for pos, uid in game_doc["player_mapping"].items() if uid == current_user.user_id][0]
-    
+
     # Play card
     result = game.play_card(user_position, play_data.card)
-    
+
+    # Advance turn to next player or trick winner.
+    if result.get("trick_winner"):
+        if game.game_phase == "bidding":
+            # A new hand was just started; host (north) will lead.
+            game.turn_position = "north"
+        else:
+            game.turn_position = result["trick_winner"]
+    else:
+        game.turn_position = _next_position(user_position)
+
     # Update game
     update_data = {
         "players_data": {
@@ -233,6 +265,9 @@ async def play_card(play_data: SpadesPlay, request: Request) -> Dict[str, Any]:
         "current_trick": game.current_trick,
         "tricks_played": game.tricks_played,
         "spades_broken": game.spades_broken,
+        "bids_placed": game.bids_placed,
+        "led_suit": game.led_suit,
+        "turn_position": game.turn_position,
         "phase": game.game_phase,
         "scores": game.scores
     }
@@ -318,6 +353,7 @@ async def get_spades_game(game_id: str, request: Request) -> Dict[str, Any]:
         "scores": game_doc["scores"],
         "current_trick": game_doc["current_trick"],
         "tricks_played": game_doc.get("tricks_played", 0),
+        "turn_position": game_doc.get("turn_position", "north"),
         "players": game_doc["players_data"],
         "status": game_doc["status"]
     }

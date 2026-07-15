@@ -16,7 +16,7 @@ Standard ruleset:
   • First player to ≥100 points loses; lowest score at that moment wins.
 """
 from __future__ import annotations
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Optional
 import secrets
 
 POSITIONS = ["north", "east", "south", "west"]
@@ -162,16 +162,34 @@ def loser_of_match(scores: Dict[str, int]) -> Optional[str]:
 # ── AI helpers ──────────────────────────────────────────────────────────
 
 def ai_select_pass(hand: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """Pick 3 cards to pass: dump high spades + Q♠ first, then high hearts."""
-    candidates = sorted(
-        hand,
-        key=lambda c: (
-            0 if c["suit"] == "spades" and c["value"] >= 12 else 1,  # Q/K/A♠ first
-            0 if c["suit"] == "hearts" and c["value"] >= 11 else 1,  # then high hearts
-            -c["value"],                                              # otherwise high cards
-            SUITS.index(c["suit"]),
-        ),
-    )
+    """Pick 3 cards to pass.
+
+    Priority:
+      1. Q♠, K♠, A♠ (dangerous high spades)
+      2. High hearts (J/Q/K/A)
+      3. Other high face/ace cards that may take tricks
+      4. Avoid passing low spades (2-5) that can duck the Q♠.
+    """
+
+    def pass_priority(c):
+        spade = c["suit"] == "spades"
+        heart = c["suit"] == "hearts"
+        # DANGEROUS: Q♠, K♠, A♠
+        if spade and c["value"] >= 12:
+            return (0, -c["value"])
+        # High hearts are poison
+        if heart and c["value"] >= 11:
+            return (1, -c["value"])
+        # Other high cards likely to win tricks
+        if c["value"] >= 12:
+            return (2, -c["value"])
+        # Medium hearts
+        if heart and c["value"] >= 7:
+            return (3, -c["value"])
+        # Keep low spades and low cards
+        return (4, c["value"], SUITS.index(c["suit"]))
+
+    candidates = sorted(hand, key=pass_priority)
     return candidates[:3]
 
 
@@ -181,42 +199,89 @@ def ai_select_play(
     led_suit: Optional[str],
     trick_so_far: List[Dict[str, Any]],
     hearts_broken: bool,
+    scores: Optional[Dict[str, int]] = None,
+    round_points: Optional[Dict[str, int]] = None,
+    player: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Light-touch heuristic: dump high penalty cards when safe, else slough low."""
+    """Improved heuristic: avoid taking penalty cards, dump danger safely."""
     if not legal:
         raise ValueError("No legal play")
 
-    # If led: try to win the trick with the lowest-still-winning card if no
-    # penalties on the table yet, else lose with the highest-value-without-winning.
+    # Shooting-the-moon detection: if this player already has many points
+    # and the remaining penalties are within reach, switch to aggro mode.
+    shooting = False
+    if player and round_points:
+        pts = round_points.get(player, 0)
+        remaining = 26 - pts
+        # Aggressively go for the moon if already took > 18 points.
+        if remaining <= 8 and pts > 0:
+            shooting = True
+
     if led_suit is not None:
-        on_table_pts = sum(card_points(t["card"]) for t in trick_so_far)
+        on_table_pts = trick_points(trick_so_far)
         same_suit = [c for c in legal if c["suit"] == led_suit]
         if same_suit:
-            highest_on_table = max(
-                (t["card"]["value"] for t in trick_so_far if t["card"]["suit"] == led_suit),
-                default=0,
-            )
-            losers = [c for c in same_suit if c["value"] < highest_on_table]
-            if on_table_pts > 0 and losers:
-                return max(losers, key=lambda c: c["value"])
-            if on_table_pts == 0:
-                # Try to take but cheaply
-                return min(same_suit, key=lambda c: c["value"])
+            led_plays = [
+                t["card"]["value"]
+                for t in trick_so_far
+                if t["card"]["suit"] == led_suit
+            ]
+            highest_table = max(led_plays, default=0)
+            winners = [c for c in same_suit if c["value"] > highest_table]
+            losers = [c for c in same_suit if c["value"] < highest_table]
+            if shooting and winners:
+                return min(winners, key=lambda c: c["value"])
+            if losers:
+                if on_table_pts > 0:
+                    # Throw the highest card that still loses -> avoid taking
+                    return max(losers, key=lambda c: c["value"])
+                return min(losers, key=lambda c: c["value"])
+            # Must win: play the cheapest winner
             return min(same_suit, key=lambda c: c["value"])
 
-        # Off-suit dump — Q♠ first if safe to do so, else high hearts
-        qspade = [c for c in legal if c["suit"] == "spades" and c["rank"] == "Q"]
-        if qspade:
-            return qspade[0]
+        # Off-suit: dump Q♠ if we cannot follow (we cannot win without suit)
+        q_spades = [
+            c for c in legal
+            if c["suit"] == "spades" and c["rank"] == "Q"
+        ]
+        if q_spades:
+            return q_spades[0]
+
+        # Dump high hearts first, then other high cards
         hearts = [c for c in legal if c["suit"] == "hearts"]
         if hearts:
             return max(hearts, key=lambda c: c["value"])
-        return max(legal, key=lambda c: c["value"])
+        if shooting:
+            return max(
+                legal,
+                key=lambda c: (c["value"], -SUITS.index(c["suit"])),
+            )
+        return min(legal, key=lambda c: (c["value"], SUITS.index(c["suit"])))
 
-    # We're leading — play low non-heart if possible
+    # Leading
     non_hearts = [c for c in legal if c["suit"] != "hearts"]
-    pool = non_hearts if non_hearts else legal
-    return min(pool, key=lambda c: c["value"])
+    if non_hearts:
+        # With Q♠, avoid leading spades
+        has_qs = any(c["suit"] == "spades" and c["rank"] == "Q" for c in hand)
+        if has_qs:
+            spade_leads = [c for c in non_hearts if c["suit"] == "spades"]
+            if len(spade_leads) < len(non_hearts):
+                non_hearts = [c for c in non_hearts if c["suit"] != "spades"]
+        if shooting:
+            # Moon shooter leads high hearts to capture points
+            hearts = [c for c in legal if c["suit"] == "hearts"]
+            if hearts:
+                return max(hearts, key=lambda c: c["value"])
+            return max(non_hearts, key=lambda c: c["value"])
+        return min(
+            non_hearts,
+            key=lambda c: (c["value"], SUITS.index(c["suit"])),
+        )
+
+    # Only hearts left
+    if shooting:
+        return max(legal, key=lambda c: c["value"])
+    return min(legal, key=lambda c: c["value"])
 
 
 # ── HeartsGame primary state holder ─────────────────────────────────────
@@ -390,6 +455,9 @@ class HeartsGame:
                 self.led_suit,
                 self.current_trick,
                 self.hearts_broken,
+                scores=self.scores,
+                round_points=self.round_points,
+                player=self.turn,
             )
             position = self.turn
             res = self.play_card(self.turn, choice)
