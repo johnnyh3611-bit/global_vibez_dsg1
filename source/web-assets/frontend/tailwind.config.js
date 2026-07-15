@@ -21,8 +21,8 @@ module.exports = {
                         background: 'hsl(var(--background))',
                         foreground: 'hsl(var(--foreground))',
                         surface: {
-                                glass: 'hsl(var(--surface-glass))',
-                                'glass-border': 'hsl(var(--surface-glass-border))',
+                                glass: 'hsl(var(--surface-glass) / <alpha-value>)',
+                                'glass-border': 'hsl(var(--surface-glass-border) / <alpha-value>)',
                         },
                         card: {
                                 DEFAULT: 'hsl(var(--card))',
