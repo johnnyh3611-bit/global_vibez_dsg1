@@ -49,11 +49,12 @@ export default function PracticeMode() {
     { id: 'vibes_slots', name: 'Vibes Slots', emoji: '🎰', description: 'Spin the reels', category: 'casino', gradient: 'from-yellow-500 via-pink-500 to-purple-600', badge: 'NEW' },
     { id: 'vibes_wheel', name: 'Vibes Wheel', emoji: '🎡', description: 'Spin for prizes', category: 'casino', gradient: 'from-pink-500 via-purple-500 to-blue-500', badge: 'NEW' },
     { id: 'vibes_darts', name: 'Vibes Darts', emoji: '🎯', description: '501 Darts', category: 'casino', gradient: 'from-orange-600 to-red-700', badge: 'NEW' },
-    { id: 'pool_8ball', name: '8-Ball Pool', emoji: '🎱', description: 'Sink the 8-ball', category: 'casino', gradient: 'from-gray-900 via-blue-700 to-gray-900' },
 
     // ARCADE GAMES
     { id: 'snake', name: 'Snake', emoji: '🐍', description: 'Eat & grow', category: 'arcade', gradient: 'from-green-500 to-lime-600' },
     { id: 'memory_match', name: 'Memory Match', emoji: '🧠', description: 'Find matching pairs', category: 'arcade', gradient: 'from-purple-500 to-pink-500' },
+    { id: 'pool_8ball', name: '8-Ball Pool', emoji: '🎱', description: 'Sink the 8-ball', category: 'arcade', gradient: 'from-gray-900 via-blue-700 to-gray-900' },
+    { id: 'bowling', name: '10-Pin Bowling', emoji: '🎳', description: 'Roll for strikes', category: 'arcade', gradient: 'from-amber-600 to-orange-700' },
     { id: 'ping_pong', name: 'Ping Pong', emoji: '🏓', description: 'Classic paddle game', category: 'arcade', gradient: 'from-orange-500 to-red-500' },
 
     // SOCIAL GAMES
@@ -94,7 +95,7 @@ export default function PracticeMode() {
     }
 
     // Client-side games that don't need backend API
-    const clientSideGames = ['war', 'gin_rummy', 'solitaire', 'roulette', 'vibes_slots', 'vibes_wheel', 'vibes_darts'];
+    const clientSideGames = ['war', 'gin_rummy', 'solitaire', 'roulette', 'vibes_slots', 'vibes_wheel', 'vibes_darts', 'pool_8ball', 'bowling'];
     
     if (clientSideGames.includes(selectedGame)) {
       // Navigate directly to client-side game without API call

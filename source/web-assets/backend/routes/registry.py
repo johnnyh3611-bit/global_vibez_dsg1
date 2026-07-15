@@ -304,6 +304,7 @@ def register_all_routes(
     )
     _soft_mount(api_router, log, "drivers", "routes.drivers")
     _soft_mount(api_router, log, "driver_verification", "routes.driver_verification")
+    _soft_mount(api_router, log, "eld", "routes.eld")
     _soft_mount(api_router, log, "rides", "routes.rides")
     _soft_mount(api_router, log, "rides_safety", "routes.rides_safety")
     _soft_mount(api_router, log, "vibe_drive", "routes.vibe_drive")
