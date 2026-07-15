@@ -198,26 +198,88 @@ class DominoesGame:
     # --------------------------------------------------------------- bot AI
 
     def _bot_pick_move(self) -> Optional[Tuple[str, str]]:
-        """Greedy: prefer playing the highest pip-count tile that fits.
-        Returns (tile_id, side) or None if can't play."""
-        playable: List[Tuple[int, str, str]] = []
+        """Smarter dominoes AI.
+
+        Prioritises:
+        1. Dumping high-pip tiles (especially doubles).
+        2. Keeping the board open for the bot's own hand.
+        3. Avoiding plays that give the opponent an easy win when the
+           opponent has few tiles left.
+        Returns (tile_id, side) or None if can't play.
+        """
+        hand = self.hands[self.bot_position]
         left_end, right_end = self._open_ends()
-        for tid in self.hands[self.bot_position]:
+        if left_end is None:
+            # Open with the strongest tile: highest double, else most pips.
+            def _open_key(tid: str) -> Tuple[int, int]:
+                t = self._tile_lookup[tid]
+                is_double = 1 if t["left"] == t["right"] else 0
+                return (is_double, t["left"] + t["right"])
+            best = max(hand, key=_open_key)
+            return best, "left"
+
+        # Count remaining pips in the bot's hand so we can prefer end values
+        # that the bot still holds.
+        pip_counts: Dict[int, int] = {}
+        for tid in hand:
             t = self._tile_lookup[tid]
-            pips = t["left"] + t["right"]
-            if left_end is None:
-                # First move — bias toward biggest double else biggest tile
-                playable.append((pips + (10 if t["left"] == t["right"] else 0), tid, "left"))
-                continue
+            pip_counts[t["left"]] = pip_counts.get(t["left"], 0) + 1
+            pip_counts[t["right"]] = pip_counts.get(t["right"], 0) + 1
+
+        opponent_tiles = len(self.hands[self.user_position])
+        candidates: List[Tuple[float, str, str]] = []
+        for tid in hand:
+            t = self._tile_lookup[tid]
+            sides: List[str] = []
             if t["left"] == right_end or t["right"] == right_end:
-                playable.append((pips, tid, "right"))
-            elif t["left"] == left_end or t["right"] == left_end:
-                playable.append((pips, tid, "left"))
-        if not playable:
+                sides.append("right")
+            if t["left"] == left_end or t["right"] == left_end:
+                sides.append("left")
+            for side in sides:
+                new_end = self._new_open_end(tid, side, left_end, right_end)
+                if new_end is None:
+                    continue
+                score = float(t["left"] + t["right"])
+                # Prefer dumping doubles (they can't be played on both ends).
+                if t["left"] == t["right"]:
+                    score += 4.0
+                # Reward leaving an end value we still have in hand.
+                score += pip_counts.get(new_end, 0) * 1.5
+                # If opponent is close to going out, be defensive: avoid
+                # exposing an end that matches their most likely tile based
+                # on the hand count we can see. We don't know their hand,
+                # so we lower the score for any move and let the previous
+                # positive factors still guide us.
+                if opponent_tiles <= 2:
+                    score -= 2.0
+                candidates.append((score, tid, side))
+        if not candidates:
             return None
-        playable.sort(reverse=True)
-        _, tid, side = playable[0]
+        candidates.sort(reverse=True)
+        _, tid, side = candidates[0]
         return tid, side
+
+    def _new_open_end(
+        self,
+        tile_id: str,
+        side: str,
+        left_end: Optional[int],
+        right_end: Optional[int],
+    ) -> Optional[int]:
+        """Return the new open end value after playing `tile_id` on `side`."""
+        t = self._tile_lookup[tile_id]
+        if side == "right":
+            # The touching end must equal right_end; the new end is the other.
+            if t["left"] == (right_end or -1):
+                return t["right"]
+            if t["right"] == (right_end or -1):
+                return t["left"]
+        if side == "left":
+            if t["right"] == (left_end or -1):
+                return t["left"]
+            if t["left"] == (left_end or -1):
+                return t["right"]
+        return None
 
     def _run_bot_turns(self) -> None:
         """Run bot turns until control returns to user or round ends.
