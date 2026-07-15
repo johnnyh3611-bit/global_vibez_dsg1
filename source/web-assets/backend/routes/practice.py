@@ -519,25 +519,28 @@ def apply_move(game_type: str, game_state: Dict, move: Dict, player: str) -> Dic
                 piece["king"] = True
     
     elif game_type == "reversi":
-        # Handle reversi moves - format: {row, col}
+        # Handle reversi moves - format: {row, col} or {action: "pass"}
+        if move.get("action") == "pass":
+            return game_state
+
         row, col = move.get("row"), move.get("col")
         if row is not None and col is not None:
             board = game_state["board"]
             board[row][col] = player
-            
+
             # Flip opponent pieces
             opponent = "ai" if player == "player" else "player"
             directions = [(-1,-1), (-1,0), (-1,1), (0,-1), (0,1), (1,-1), (1,0), (1,1)]
-            
+
             for dr, dc in directions:
                 pieces_to_flip = []
                 r, c = row + dr, col + dc
-                
+
                 while 0 <= r < 8 and 0 <= c < 8 and board[r][c] == opponent:
                     pieces_to_flip.append((r, c))
                     r += dr
                     c += dc
-                
+
                 if pieces_to_flip and 0 <= r < 8 and 0 <= c < 8 and board[r][c] == player:
                     for flip_r, flip_c in pieces_to_flip:
                         board[flip_r][flip_c] = player
@@ -1174,19 +1177,33 @@ def check_game_status(game_type: str, game_state: Dict) -> Dict:
     
     elif game_type == "reversi":
         board = game_state.get("board", [])
-        
-        # Check if board is full or no valid moves for either player
+        ai = GameAI("hard")
+
+        player_can_move = any(
+            ai._is_valid_reversi_move(board, r, c, "player")
+            for r in range(8) for c in range(8)
+        )
+        ai_can_move = any(
+            ai._is_valid_reversi_move(board, r, c, "ai")
+            for r in range(8) for c in range(8)
+        )
+
+        # End when the board is full or neither side can move.
         empty_cells = sum(1 for row in board for cell in row if cell == "")
-        
-        if empty_cells == 0:
-            # Count pieces
+        if empty_cells == 0 or (not player_can_move and not ai_can_move):
             player_count = sum(1 for row in board for cell in row if cell == "player")
             ai_count = sum(1 for row in board for cell in row if cell == "ai")
-            
+
             if player_count > ai_count:
-                return {"ended": True, "winner": "player", "message": f"You win! {player_count} to {ai_count}"}
+                return {
+                    "ended": True, "winner": "player",
+                    "message": f"You win! {player_count} to {ai_count}"
+                }
             elif ai_count > player_count:
-                return {"ended": True, "winner": "ai", "message": f"AI wins! {ai_count} to {player_count}"}
+                return {
+                    "ended": True, "winner": "ai",
+                    "message": f"AI wins! {ai_count} to {player_count}"
+                }
             else:
                 return {"ended": True, "winner": "draw", "message": "It's a tie!"}
     

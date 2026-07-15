@@ -736,28 +736,70 @@ class GameAI:
         return jumps
     
     def reversi_move(self, game_state: Dict) -> Dict:
-        """Enhanced Reversi AI with corner/edge strategy and pass detection"""
+        """Reversi AI using a standard positional matrix and mobility."""
         board = game_state.get("board", [[]])
         size = len(board) if board else 8
-        
-        # Get all valid moves
-        valid_moves = []
+
+        # Standard 8x8 Othello positional weights.
+        position_weights = [
+            [100, -10, 11, 8, 8, 11, -10, 100],
+            [-10, -25, 4, 1, 1, 4, -25, -10],
+            [11, 4, 2, 2, 2, 2, 4, 11],
+            [8, 1, 2, 0, 0, 2, 1, 8],
+            [8, 1, 2, 0, 0, 2, 1, 8],
+            [11, 4, 2, 2, 2, 2, 4, 11],
+            [-10, -25, 4, 1, 1, 4, -25, -10],
+            [100, -10, 11, 8, 8, 11, -10, 100],
+        ]
+
+        best_score = float('-inf')
+        best_move = None
+
         for i in range(size):
             for j in range(size):
-                if self._is_valid_reversi_move(board, i, j, "ai"):
-                    score = self._evaluate_reversi_position(i, j, size)
-                    flip_count = self._count_reversi_flips(board, i, j, "ai")
-                    # Prioritize corners, then edges, then flip count
-                    total_score = score + flip_count
-                    valid_moves.append((total_score, i, j))
-        
-        if valid_moves:
-            # Sort by score (corners and edges are valuable)
-            valid_moves.sort(reverse=True)
-            _, row, col = valid_moves[0]
-            return {"row": row, "col": col}
-        
-        # No valid moves - must pass
+                if not self._is_valid_reversi_move(board, i, j, "ai"):
+                    continue
+                flips = self._count_reversi_flips(board, i, j, "ai")
+                # Simulate the move.
+                temp_board = [row[:] for row in board]
+                temp_board[i][j] = "ai"
+                opponent = "player"
+                directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1),
+                              (0, 1), (1, -1), (1, 0), (1, 1)]
+                for dr, dc in directions:
+                    r, c = i + dr, j + dc
+                    flips_dir = []
+                    while 0 <= r < size and 0 <= c < size and temp_board[r][c] == opponent:
+                        flips_dir.append((r, c))
+                        r += dr
+                        c += dc
+                    ends_ours = flips_dir and 0 <= r < size
+                    ends_ours = ends_ours and 0 <= c < size
+                    ends_ours = ends_ours and temp_board[r][c] == "ai"
+                    if ends_ours:
+                        for fr, fc in flips_dir:
+                            temp_board[fr][fc] = "ai"
+
+                # Compute positional + flip score.
+                pos_score = sum(
+                    position_weights[r][c] if temp_board[r][c] == "ai" else 0
+                    for r in range(size) for c in range(size)
+                )
+                # Mobility: fewer valid moves for the opponent is better.
+                opp_moves = sum(
+                    1
+                    for r in range(size) for c in range(size)
+                    if self._is_valid_reversi_move(temp_board, r, c, opponent)
+                )
+                # A small penalty for empty squares near unreached corners.
+                score = pos_score + flips - (opp_moves * 2)
+                if score > best_score:
+                    best_score = score
+                    best_move = (i, j)
+
+        if best_move:
+            return {"row": best_move[0], "col": best_move[1]}
+
         return {"action": "pass", "row": 0, "col": 0}
     
     def _count_reversi_flips(self, board: List, row: int, col: int, player: str) -> int:
@@ -806,20 +848,6 @@ class GameAI:
                 return True
         
         return False
-    
-    def _evaluate_reversi_position(self, row: int, col: int, size: int) -> int:
-        """Evaluate Reversi position (corners are best, edges are good)"""
-        # Corners are most valuable
-        if (row == 0 or row == size-1) and (col == 0 or col == size-1):
-            return 100
-        # Edges are good
-        if row == 0 or row == size-1 or col == 0 or col == size-1:
-            return 10
-        # Avoid positions next to corners
-        if (row in [1, size-2]) and (col in [1, size-2]):
-            return -10
-        # Center is okay
-        return 1
     
     def chess_move(self, game_state: Dict) -> Dict:
         """Chess AI using python-chess with negamax alpha-beta search."""
