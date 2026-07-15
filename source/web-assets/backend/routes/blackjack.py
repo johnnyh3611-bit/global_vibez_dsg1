@@ -6,6 +6,8 @@ import secrets
 from services.game_economy_constants import PLATFORM_MIN_BET, format_coins
 from services.blackjack_engine import Card, BlackjackEngine
 
+secure_random = secrets.SystemRandom()
+
 router = APIRouter()
 
 class DealRequest(BaseModel):
