@@ -3,6 +3,7 @@ Authentication dependencies for FastAPI
 Middleware to verify user sessions and extract current user
 """
 from fastapi import HTTPException, Request, Depends, Cookie
+from fastapi.params import Cookie as CookieParam
 from typing import Optional
 from datetime import datetime, timezone
 
@@ -30,6 +31,12 @@ async def get_current_user_from_session(
     Raises:
         HTTPException 401 if not authenticated
     """
+    # When called directly (not through FastAPI dependency injection) the
+    # default `Cookie(None)` object is passed instead of the resolved value.
+    # In that case, fall back to reading the cookie from the request manually.
+    if session_token is None or isinstance(session_token, CookieParam):
+        session_token = request.cookies.get("session_token")
+
     # Fall back to the Authorization: Bearer header if no cookie was set.
     # This unblocks the demo-login flow (Bearer token returned to client)
     # for routes that previously only accepted the cookie path.
