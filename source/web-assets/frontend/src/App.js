@@ -61,14 +61,13 @@ import NetworkPulseMiniWidget from "@/components/media/NetworkPulseMiniWidget";
 import { LogDesignLesson } from "@/components/vibez/LogDesignLesson";
 // v8 — International Globalization Protocol v2.0 (Globe FAB / Cultural Hub)
 import GlobeFAB from "@/components/GlobeFAB";
-// v8 — universal voice/video chat dock auto-mounted on every multiplayer URL
-import GameVoiceDockMounter from "@/components/games/GameVoiceDockMounter";
+// v8 — universal owned room video/voice dock auto-mounted on every room URL
+import RoomCommsMounter from "@/components/room/RoomCommsMounter";
 import FloatingFoodMenu from "@/components/common/FloatingFoodMenu";
 import CoWatchLauncher from "@/components/common/CoWatchLauncher";
 import PageActionStrip from "@/components/common/PageActionStrip";
 import NotFound from "@/pages/NotFound";
 import CinemaRoom from "@/pages/CinemaRoom";
-import InRoomCommsLauncher from "@/components/common/InRoomCommsLauncher";
 import RoomInfoCube from "@/components/common/RoomInfoCube";
 import RoomVisitLogger from "@/components/common/RoomVisitLogger";
 import RoleSwitcher from "@/components/common/RoleSwitcher";
@@ -213,20 +212,12 @@ function ChromebarActiveDispatcher() {
   return null;
 }
 
-// Global comms launcher mount — top-right Chat & Video pill appears on
-// EVERY fullscreen game route, including unprotected ones like
-// /games/cyber-casino. Replaces the previous ProtectedRouteContent-only
-// mount that left the cyber-casino tree without comms (flagged by the
-// 2026-05 launch-readiness sweep).
+// Landscape rotation hint for fullscreen game rooms. Video/voice comms are
+// now handled by the owned <RoomCommsMounter> component.
 function GlobalCommsMounter() {
   const isFullscreenGame = useIsFullscreenGameRoute();
   if (!isFullscreenGame) return null;
-  return (
-    <>
-      <InRoomCommsLauncher />
-      <LandscapeRotateHint />
-    </>
-  );
+  return <LandscapeRotateHint />;
 }
 
 // Main App Router
@@ -255,7 +246,7 @@ function AppRouter() {
       <BreakInBanner />
       <NetworkPulseMiniWidget />
       <GlobeFAB />
-      <GameVoiceDockMounter />
+      <RoomCommsMounter />
       <FloatingFoodMenu />
       <CoWatchLauncher />
       {/* Founder directive 2026-02-09 — chrome menu MUST be inline
