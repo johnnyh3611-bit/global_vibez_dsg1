@@ -727,7 +727,7 @@ export default function GamesNew() {
 
         {/* Enhanced Category Tabs with Animations */}
         {!searchQuery && (
-          <div className="flex gap-2 sm:gap-3 mb-6 sm:mb-10 overflow-x-auto pb-3 scrollbar-hide scrollbar-thumb-cyan-500 scrollbar-track-transparent">
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3 mb-4 sm:mb-6 pb-2">
             {Object.entries(GAME_CATEGORIES).map(([key, category]) => {
               const Icon = category.icon;
               const isSelected = selectedCategory === key;
@@ -739,9 +739,9 @@ export default function GamesNew() {
                     soundManager.buttonClick();
                   }}
                   onMouseEnter={() => soundManager.buttonHover()}
-                  whileHover={{ scale: 1.05, y: -2 }}
-                  whileTap={{ scale: 0.95 }}
-                  className={`relative flex items-center gap-2 sm:gap-3 px-4 sm:px-8 py-2 sm:py-4 rounded-xl sm:rounded-2xl font-bold transition-all whitespace-nowrap text-sm sm:text-base ${
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className={`relative flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-bold transition-all w-full min-w-0 ${
                     isSelected
                       ? 'bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 text-white shadow-2xl shadow-cyan-500/60'
                       : 'bg-slate-800/70 text-slate-300 hover:bg-slate-700/70 border border-white/10'
@@ -769,7 +769,7 @@ export default function GamesNew() {
                   </div>
                   
                   {/* Category name */}
-                  <span className="relative z-10 text-sm sm:text-base tracking-wide">
+                  <span className="relative z-10 text-[10px] sm:text-sm tracking-wide truncate min-w-0">
                     {category.name}
                   </span>
                   

@@ -168,18 +168,18 @@ export default function Explore() {
         </div>
 
         {/* Category chips */}
-        <div className="flex flex-wrap gap-2" data-testid="explore-category-chips">
+        <div className="flex flex-nowrap overflow-x-auto gap-2 pb-1 scrollbar-hide snap-x snap-mandatory" data-testid="explore-category-chips">
           <button
             type="button"
             onClick={() => setActiveCat('all')}
             data-testid="explore-chip-all"
-            className={`px-3 py-1.5 rounded-full text-[10px] uppercase tracking-widest font-bold border transition-colors flex items-center gap-1.5 ${
+            className={`flex-1 min-w-[120px] snap-start px-3 py-1.5 rounded-full text-[10px] uppercase tracking-widest font-bold border transition-colors flex items-center justify-center gap-1.5 ${
               activeCat === 'all'
                 ? 'bg-fuchsia-500/30 border-fuchsia-400/60 text-fuchsia-100'
                 : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'
             }`}
           >
-            <Sparkles className="w-3 h-3" /> All ({counts.all})
+            <Sparkles className="w-3 h-3 shrink-0" /> <span className="truncate">All ({counts.all})</span>
           </button>
           {(Object.keys(CATEGORY_META) as Cat[]).map((c) => {
             const meta = CATEGORY_META[c];
@@ -191,11 +191,11 @@ export default function Explore() {
                 type="button"
                 onClick={() => setActiveCat(c)}
                 data-testid={`explore-chip-${c}`}
-                className={`px-3 py-1.5 rounded-full text-[10px] uppercase tracking-widest font-bold border transition-colors flex items-center gap-1.5 ${
+                className={`flex-1 min-w-[120px] snap-start px-3 py-1.5 rounded-full text-[10px] uppercase tracking-widest font-bold border transition-colors flex items-center justify-center gap-1.5 ${
                   isActive ? `${meta.tint} scale-105` : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'
                 }`}
               >
-                <Icon className="w-3 h-3" /> {meta.label} ({counts[c]})
+                <Icon className="w-3 h-3 shrink-0" /> <span className="truncate">{meta.label} ({counts[c]})</span>
               </button>
             );
           })}

@@ -125,7 +125,7 @@ export default function SovereignTiers() {
 
       <main className="max-w-7xl mx-auto px-4 pb-16">
         {/* Hero */}
-        <section className="text-center py-8 md:py-12">
+        <section className="text-center py-6 md:py-8">
           <p className="text-[11px] uppercase tracking-[0.4em] text-fuchsia-300/70 mb-3">
             One floor · five tiers · zero compromise
           </p>
@@ -138,13 +138,15 @@ export default function SovereignTiers() {
           </p>
 
           {/* Annual / monthly toggle */}
-          <div className="mt-6 inline-flex items-center gap-2 bg-white/5 backdrop-blur-lg p-1.5 rounded-full border border-white/10">
+          <div className="mt-5 grid grid-cols-2 max-w-[320px] mx-auto gap-1 bg-white/5 backdrop-blur-lg p-1.5 rounded-full border border-white/10">
             <button
               type="button"
               data-testid="tiers-interval-month"
               onClick={() => setInterval("month")}
-              className={`px-5 py-1.5 rounded-full text-xs uppercase tracking-widest font-bold transition ${
-                interval === "month" ? "bg-white text-black" : "text-white/70"
+              className={`w-full py-1.5 rounded-full text-xs uppercase tracking-widest font-bold transition flex items-center justify-center gap-2 ${
+                interval === "month"
+                  ? "bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white shadow-lg shadow-fuchsia-500/30"
+                  : "text-white/70 hover:text-white"
               }`}
             >
               Monthly
@@ -153,8 +155,10 @@ export default function SovereignTiers() {
               type="button"
               data-testid="tiers-interval-year"
               onClick={() => setInterval("year")}
-              className={`px-5 py-1.5 rounded-full text-xs uppercase tracking-widest font-bold transition flex items-center gap-2 ${
-                interval === "year" ? "bg-white text-black" : "text-white/70"
+              className={`w-full py-1.5 rounded-full text-xs uppercase tracking-widest font-bold transition flex items-center justify-center gap-2 ${
+                interval === "year"
+                  ? "bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white shadow-lg shadow-fuchsia-500/30"
+                  : "text-white/70 hover:text-white"
               }`}
             >
               Annual
@@ -171,7 +175,7 @@ export default function SovereignTiers() {
           </p>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4" data-testid="tiers-grid">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4" data-testid="tiers-grid">
               {monthlyVisible.map((t) => {
                 const Icon = ICONS[t.id] || Sparkles;
                 const gradient = GRADIENTS[t.id] || "from-slate-600 to-slate-700";
