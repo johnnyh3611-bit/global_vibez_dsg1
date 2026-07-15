@@ -89,7 +89,14 @@ export function OperationsConsole() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API}/api/system-status`, { credentials: 'include' });
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`${API}/api/system-status`, {
+        credentials: 'include',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
+      if (res.status === 401) {
+        throw new Error('Please sign in to view the operations dashboard.');
+      }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data: SystemStatusReport = await res.json();
       setReport(data);
