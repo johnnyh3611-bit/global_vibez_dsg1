@@ -200,18 +200,18 @@ async def get_system_report(current_user: dict = Depends(get_current_user_from_s
     return report
 
 @router.get("/health/database")
-async def database_health() -> Dict[str, Any]:
-    """Detailed database health metrics"""
+async def database_health(current_user: dict = Depends(get_current_user_from_session)) -> Dict[str, Any]:
+    """Detailed database health metrics. Requires authentication."""
     return await check_mongodb()
 
 @router.get("/health/games")
-async def games_health() -> Dict[str, Any]:
-    """Detailed game services health"""
+async def games_health(current_user: dict = Depends(get_current_user_from_session)) -> Dict[str, Any]:
+    """Detailed game services health. Requires authentication."""
     return await check_game_services()
 
 @router.get("/health/frontend")
-async def frontend_health() -> Dict[str, Any]:
-    """Check if frontend is accessible"""
+async def frontend_health(current_user: dict = Depends(get_current_user_from_session)) -> Dict[str, Any]:
+    """Check if frontend is accessible. Requires authentication."""
     frontend_url = (
         os.environ.get("FRONTEND_URL")
         or os.environ.get("REACT_APP_FRONTEND_URL")

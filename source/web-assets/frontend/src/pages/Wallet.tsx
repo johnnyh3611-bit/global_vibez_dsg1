@@ -11,6 +11,7 @@ import { getBackendUrl } from '@/config/backendUrl';
 
 const API_URL = getBackendUrl();
 const COINS_PER_USD = 1000;
+const MIN_PAYOUT_COINS = 20000;
 
 interface UserProfile {
   user_id: string;
@@ -97,6 +98,7 @@ const Wallet = () => {
   };
 
   const usdEquivalent = (userBalance / COINS_PER_USD).toFixed(2);
+  const minCashoutUsd = (MIN_PAYOUT_COINS / COINS_PER_USD).toFixed(2);
 
   return (
     <div className="min-h-screen bg-[#0A0A0A]">
@@ -166,9 +168,9 @@ const Wallet = () => {
                 </button>
                 <button
                   onClick={() => setShowPayoutModal(true)}
-                  disabled={userBalance < 20000}
+                  disabled={userBalance < MIN_PAYOUT_COINS}
                   className={`font-bold py-4 rounded-2xl transition flex items-center justify-center gap-2 ${
-                    userBalance >= 20000
+                    userBalance >= MIN_PAYOUT_COINS
                       ? 'bg-white text-purple-600 hover:bg-white/90'
                       : 'bg-white/10 text-white/40 cursor-not-allowed'
                   }`}
@@ -178,9 +180,9 @@ const Wallet = () => {
                 </button>
               </div>
 
-              {userBalance < 20000 && (
+              {userBalance < MIN_PAYOUT_COINS && (
                 <p className="text-white/60 text-xs text-center mt-3">
-                  Minimum cashout: ₵20,000 ($10.00)
+                  Minimum cashout: ₵{MIN_PAYOUT_COINS.toLocaleString()} (${minCashoutUsd})
                 </p>
               )}
             </motion.div>

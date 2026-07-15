@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import {
   Activity,
   Database,
@@ -84,8 +84,11 @@ export function OperationsConsole() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const authFailedRef = useRef(false);
 
   const load = useCallback(async () => {
+    if (authFailedRef.current) return;
     setLoading(true);
     setError(null);
     try {
@@ -95,6 +98,8 @@ export function OperationsConsole() {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
       if (res.status === 401) {
+        authFailedRef.current = true;
+        if (intervalRef.current) clearInterval(intervalRef.current);
         throw new Error('Please sign in to view the operations dashboard.');
       }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -110,8 +115,10 @@ export function OperationsConsole() {
 
   useEffect(() => {
     load();
-    const id = setInterval(load, 10000);
-    return () => clearInterval(id);
+    intervalRef.current = setInterval(load, 10000);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
   }, [load]);
 
   return (
