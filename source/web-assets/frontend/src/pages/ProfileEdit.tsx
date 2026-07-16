@@ -8,9 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Globe, ArrowLeft, Save } from 'lucide-react';
 import VideoUpload from '@/components/VideoUpload';
 import { VibeScoreBadge } from '@/components/VibeScoreBadge';
+import { authFetch } from '@/utils/secureAuth';
+import { getBackendUrl } from '@/config/backendUrl';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+const API = `${getBackendUrl()}/api`;
 
 export default function ProfileEdit() {
   const navigate = useNavigate();
@@ -31,11 +32,9 @@ export default function ProfileEdit() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await fetch(`${API}/auth/me`, {
-        });
-        
+        const response = await authFetch(`${API}/auth/me`);
         if (!response.ok) throw new Error('Not authenticated');
-        
+
         const userData = await response.json();
         setUser(userData);
         setFormData({
@@ -48,33 +47,33 @@ export default function ProfileEdit() {
           interest_categories: userData.interest_categories || []
         });
       } catch (error) {
-        navigate('/');
+        navigate('/login');
       }
     };
-    
+
     const fetchCategories = async () => {
       try {
-        const response = await fetch(`${API}/categories/all`);
+        const response = await authFetch(`${API}/categories/all`);
+        if (!response.ok) return;
         const data = await response.json();
         setCategories(data);
       } catch (error) {
-        // console.error('Failed to fetch categories:', error);
+        // ignore — categories are optional for edit
       }
     };
-    
+
     const fetchVibeScores = async () => {
       try {
-        const response = await fetch(`${API}/vibe-score/me`, {
-        });
+        const response = await authFetch(`${API}/vibe-score/me`);
         if (response.ok) {
           const data = await response.json();
           setVibeScores(data);
         }
       } catch (error) {
-        // console.error('Failed to fetch Vibe Scores:', error);
+        // ignore
       }
     };
-    
+
     fetchUser();
     fetchCategories();
     fetchVibeScores();
@@ -95,12 +94,8 @@ export default function ProfileEdit() {
         interest_categories: formData.interest_categories
       };
 
-      const response = await fetch(`${API}/profile`, {
+      const response = await authFetch(`${API}/profile`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        
         body: JSON.stringify(updateData)
       });
 
@@ -108,7 +103,6 @@ export default function ProfileEdit() {
 
       navigate('/dashboard');
     } catch (error) {
-      // console.error('Profile update error:', error);
       alert('Failed to update profile. Please try again.');
     } finally {
       setLoading(false);

@@ -6,13 +6,34 @@
  * on read — that previously logged users out mid-game (Spades chat).
  */
 
-/** Non-destructive token reader (checks auth_token, then legacy token). */
+/** Non-destructive token reader (auth_token, then legacy keys). */
 export const getBearerToken = () => {
   return (
     localStorage.getItem('auth_token') ||
     localStorage.getItem('token') ||
+    localStorage.getItem('gv_auth_token') ||
     null
   );
+};
+
+/** Persist the canonical Bearer key and drop obsolete aliases. */
+export const setBearerToken = (token) => {
+  if (!token) return;
+  localStorage.setItem('auth_token', token);
+  localStorage.removeItem('token');
+  localStorage.removeItem('gv_auth_token');
+};
+
+/** Clear every known auth key used across the app. */
+export const clearAuthStorage = () => {
+  localStorage.removeItem('auth_token');
+  localStorage.removeItem('token');
+  localStorage.removeItem('gv_auth_token');
+  localStorage.removeItem('username');
+  localStorage.removeItem('user_id');
+  localStorage.removeItem('userId');
+  localStorage.removeItem('user_data');
+  localStorage.removeItem('user_email');
 };
 
 /**
@@ -72,11 +93,7 @@ export const authFetch = async (url, options = {}) => {
 
   if (response.status === 401 && token) {
     console.warn('authFetch: token rejected by server, clearing local credentials');
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('token');
-    localStorage.removeItem('username');
-    localStorage.removeItem('user_id');
-    localStorage.removeItem('userId');
+    clearAuthStorage();
   }
 
   return response;
@@ -85,6 +102,8 @@ export const authFetch = async (url, options = {}) => {
 export default {
   getAuthToken,
   getBearerToken,
+  setBearerToken,
+  clearAuthStorage,
   clearLegacyTokenDupes,
   getUsername,
   getUserId,

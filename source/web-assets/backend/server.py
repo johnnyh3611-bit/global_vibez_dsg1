@@ -245,18 +245,8 @@ async def get_current_user(request: Request) -> Optional[User]:
     """Extract user from session token (Authorization header or cookie).
 
     Order of preference: ``Authorization: Bearer …`` first, then the
-    ``session_token`` cookie. The Bearer-first ordering is critical —
-    otherwise a stale cookie left over from a previous Google sign-in
-    (or a logged-out flow that didn't clear cookies) will short-circuit
-    the lookup, fail the DB check, and return None even though the
-    user's freshly-minted Bearer token is perfectly valid. Symptom:
-    user clicks "Demo Login", gets a 200 from /api/auth/demo-login,
-    redirects to /dashboard, but /api/auth/me 401s and bounces them
-    straight back to /login.
-
-    If the Bearer doesn't resolve to a valid session, we still try the
-    cookie below — so users who *only* have a cookie (Emergent Auth
-    flow that didn't write to localStorage) still authenticate.
+    ``session_token`` cookie. Bearer-first is critical — a stale cookie
+    must not mask a valid localStorage Bearer from email/demo login.
     """
     candidates: list[str] = []
 
@@ -499,115 +489,18 @@ async def create_test_user(response: Response):
 
 @api_router.post("/auth/session")
 async def create_session(session_data: SessionData, response: Response):
-    """Exchange session_id for session_token and user data"""
-    
-    # Call Emergent Auth API to get session data
-    async with httpx.AsyncClient() as client:
-        auth_response = await client.get(
-            "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data",
-            headers={"X-Session-ID": session_data.session_id}
-        )
-        
-        if auth_response.status_code != 200:
-            raise HTTPException(status_code=401, detail="Invalid session ID")
-        
-        auth_data = auth_response.json()
+    """Retired Emergent OAuth exchange.
 
-    # Normalize email (match email_auth.py convention — prevents dup accounts
-    # if the Google profile's email casing ever differs from an existing row).
-    google_email_norm = (auth_data.get("email") or "").strip().lower()
-
-    # Check if user exists (case-insensitive fallback for legacy rows)
-    existing_user = await db.users.find_one(
-        {"email": google_email_norm},
-        {"_id": 0}
+    Emergent no longer has access to this platform. Clients should use
+    ``/api/auth/signup``, ``/api/auth/login``, or ``/api/auth/demo-login``.
+    """
+    raise HTTPException(
+        status_code=410,
+        detail=(
+            "Emergent Google sign-in has been retired. "
+            "Use email login or Demo Login instead."
+        ),
     )
-    if not existing_user and google_email_norm:
-        import re as _re
-        escaped = _re.escape(google_email_norm)
-        existing_user = await db.users.find_one(
-            {"email": {"$regex": f"^{escaped}$", "$options": "i"}},
-            {"_id": 0}
-        )
-        if existing_user and existing_user.get("email") != google_email_norm:
-            # Self-heal: lowercase the stored email for future O(1) lookups
-            await db.users.update_one(
-                {"user_id": existing_user["user_id"]},
-                {"$set": {"email": google_email_norm}}
-            )
-            existing_user["email"] = google_email_norm
-
-    if existing_user:
-        user_id = existing_user["user_id"]
-        # Update user data if needed
-        await db.users.update_one(
-            {"user_id": user_id},
-            {"$set": {
-                "name": auth_data["name"],
-                "picture": auth_data["picture"]
-            }}
-        )
-    else:
-        # Create new user
-        user_id = f"user_{uuid.uuid4().hex[:12]}"
-        referral_code = generate_referral_code(user_id)
-        new_user = {
-            "user_id": user_id,
-            "email": google_email_norm,
-            "name": auth_data["name"],
-            "picture": auth_data["picture"],
-            "bio": None,
-            "age": None,
-            "gender": None,
-            "location": None,
-            "interests": [],
-            "photos": [auth_data["picture"]] if auth_data["picture"] else [],
-            "preferences": UserPreferences().model_dump(),
-            "membership_type": "free",
-            "swipes_today": 0,
-            "swipes_limit": 20,
-            "last_swipe_reset": datetime.now(timezone.utc).isoformat(),
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "profile_completed": False,
-            "referral_code": referral_code,
-            "referred_by": None,
-            "referral_count": 0,
-            "premium_expires_at": None
-        }
-        await db.users.insert_one(new_user)
-    
-    # Create session
-    session_token = auth_data["session_token"]
-    expires_at = datetime.now(timezone.utc) + timedelta(days=7)
-    
-    session = {
-        "user_id": user_id,
-        "session_token": session_token,
-        "expires_at": expires_at.isoformat(),
-        "created_at": datetime.now(timezone.utc).isoformat()
-    }
-    
-    # Delete old sessions for this user
-    await db.user_sessions.delete_many({"user_id": user_id})
-    
-    # Insert new session
-    await db.user_sessions.insert_one(session)
-    
-    # Set httpOnly cookie
-    response.set_cookie(
-        key="session_token",
-        value=session_token,
-        httponly=True,
-        secure=True,
-        samesite="none",
-        path="/",
-        max_age=7 * 24 * 60 * 60  # 7 days
-    )
-    
-    # Get full user data
-    user_doc = await db.users.find_one({"user_id": user_id}, {"_id": 0})
-    
-    return {"user": user_doc, "session_token": session_token}
 
 
 @api_router.get("/auth/me")
@@ -653,19 +546,29 @@ async def get_current_user_data(request: Request):
 
 @api_router.post("/auth/logout")
 async def logout(request: Request, response: Response):
-    """Logout user and clear session"""
-    session_token = request.cookies.get("session_token")
-    
-    if session_token:
+    """Logout user and clear session (Bearer and/or cookie)."""
+    tokens: list[str] = []
+
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        bearer = auth_header.removeprefix("Bearer ").strip()
+        if bearer:
+            tokens.append(bearer)
+
+    cookie_token = request.cookies.get("session_token")
+    if cookie_token:
+        tokens.append(cookie_token)
+
+    for session_token in set(tokens):
         await db.user_sessions.delete_one({"session_token": session_token})
-    
+
     response.delete_cookie(
         key="session_token",
         path="/",
         secure=True,
-        samesite="none"
+        samesite="none",
     )
-    
+
     return {"message": "Logged out successfully"}
 
 
@@ -713,16 +616,27 @@ async def update_profile(user_update: UserUpdate, request: Request):
     if update_data:
         user_doc = await db.users.find_one({"user_id": current_user.user_id}, {"_id": 0})
         if user_doc:
-            # Profile is considered complete if has: bio, age, gender, location, at least 1 photo
+            # Seed a default avatar when email signup has no photo yet so
+            # users aren't stuck in a profile_completed=false loop.
+            photos = update_data.get("photos", user_doc.get("photos", [])) or []
+            if not photos:
+                seed = current_user.user_id or "user"
+                default_avatar = (
+                    f"https://api.dicebear.com/7.x/avataaars/svg?seed={seed}"
+                )
+                photos = [default_avatar]
+                update_data["photos"] = photos
+                update_data.setdefault("picture", default_avatar)
+
+            # Complete when bio/age/gender/location are set (photo optional).
             profile_completed = all([
                 update_data.get("bio") or user_doc.get("bio"),
                 update_data.get("age") or user_doc.get("age"),
                 update_data.get("gender") or user_doc.get("gender"),
                 update_data.get("location") or user_doc.get("location"),
-                len(update_data.get("photos", user_doc.get("photos", []))) > 0
             ])
             update_data["profile_completed"] = profile_completed
-    
+
     await db.users.update_one(
         {"user_id": current_user.user_id},
         {"$set": update_data}

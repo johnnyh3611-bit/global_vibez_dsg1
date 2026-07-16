@@ -37,6 +37,7 @@ import Vibez654ReachabilityChip from '@/components/Vibez654ReachabilityChip';
 import SessionHubCard from '@/components/SessionHubCard';
 import { JobBoard } from '@/components/dashboard/JobBoard';
 import { EarningsBanner } from '@/components/dashboard/EarningsBanner';
+import { authFetch, clearAuthStorage } from '@/utils/secureAuth';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -431,21 +432,12 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        // Use Bearer token from localStorage (the auth flow stores it on
-        // login/demo-login). Sending credentials:'include' would be blocked
-        // by the edge gateway's Allow-Origin:* CORS header.
-        const token = localStorage.getItem('auth_token');
-        if (!token) throw new Error('No auth token');
-        const response = await fetch(`${API}/auth/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
+        const response = await authFetch(`${API}/auth/me`);
         if (!response.ok) throw new Error('Not authenticated');
-
         const userData = await response.json();
         setUser(userData);
       } catch (error) {
-        navigate('/');
+        navigate('/login');
       } finally {
         setLoading(false);
       }
@@ -456,18 +448,13 @@ export default function Dashboard() {
 
   const handleLogout = async () => {
     try {
-      const token = localStorage.getItem('auth_token');
-      await fetch(`${API}/api/auth/logout`, {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      // Clear local Bearer fallback so we don't re-auth with a stale token
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('user_id');
-      localStorage.removeItem('username');
-      navigate('/');
+      // API already includes `/api` — do not prefix again.
+      await authFetch(`${API}/auth/logout`, { method: 'POST' });
     } catch (error) {
-      // console.error('Logout error:', error);
+      // still clear local session
+    } finally {
+      clearAuthStorage();
+      navigate('/login');
     }
   };
 

@@ -106,12 +106,12 @@ export default function Demo() {
           </div>
           <Button
             onClick={() => {
-              const redirectUrl = `${window.location.origin}/dashboard`;
-              window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+              window.location.href = '/login';
             }}
             className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-6 text-lg"
+            data-testid="demo-goto-login-btn"
           >
-            Sign in with Google to Access All Features
+            Sign in to Access All Features
           </Button>
         </Card>
 

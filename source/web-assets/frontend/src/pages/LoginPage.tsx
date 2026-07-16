@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { RoomLayout } from '@/components/RoomLayout';
 import { GlassCard } from '@/components/GlassCard';
@@ -11,13 +11,14 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff, Mail, Lock, ArrowLeft, AlertCircle } from 'lucide-react';
 import { getBackendUrl } from '@/config/backendUrl';
-// 2026-05-12: Privy wallet login removed from login page per founder ask.
-// Wallet linking now happens AFTER login at /wallet (Connect Phantom flow).
+import { setBearerToken } from '@/utils/secureAuth';
+// Wallet linking happens AFTER login at /wallet (Connect Phantom flow).
 
 const API = getBackendUrl();
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -25,6 +26,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [notice] = useState(() => location.state?.notice || '');
   const [needsAgeVerification, setNeedsAgeVerification] = useState(false);
   const [userId, setUserId] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
@@ -78,10 +80,8 @@ export default function LoginPage() {
         return;
       }
 
-      // Clear any stale token first, then store the fresh Bearer fallback.
-      localStorage.removeItem('auth_token');
       if (data.token) {
-        localStorage.setItem('auth_token', data.token);
+        setBearerToken(data.token);
       }
       const userObj = data.user || data;
       if (userObj) {
@@ -178,6 +178,13 @@ export default function LoginPage() {
                   <p className="text-slate-300">Sign in to your Global Vibez DSG account</p>
                 </div>
 
+                {notice && !error && (
+                  <Alert className="mb-6 bg-amber-500/20 border-amber-500/50 text-white">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{notice}</AlertDescription>
+                  </Alert>
+                )}
+
                 {error && (
                   <Alert className="mb-6 bg-red-500/20 border-red-500/50 text-white">
                     <AlertCircle className="h-4 w-4" />
@@ -270,32 +277,8 @@ export default function LoginPage() {
                 </div>
 
                 <div className="mt-6">
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-white/10" />
-                    </div>
-                    <div className="relative flex justify-center text-sm">
-                      <span className="px-2 bg-slate-900/40 text-slate-400">Or continue with</span>
-                    </div>
-                  </div>
-
-                  <NeonButton
-                    variant="ghost"
-                    onClick={() => {
-                      const redirectUrl = `${window.location.origin}/auth-callback`;
-                      window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
-                    }}
-                    className="w-full mt-4 hover:shadow-[0_0_24px_rgba(34,211,238,0.55)] hover:scale-[1.02] transition-all duration-200"
-                    data-testid="login-google-btn"
-                  >
-                    <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5 mr-2" />
-                    Sign in with Google
-                  </NeonButton>
-
-                  {/* Privy hybrid auth removed 2026-05-12 — wallet linking
-                      moved to /wallet → "Connect Phantom" (post-login). */}
-                  
-                  {/* Demo Login Button */}
+                  {/* Emergent Google OAuth removed — platform no longer uses Emergent.
+                      Auth is email/password + Demo Login. Wallet linking is post-login. */}
                   <Button
                     variant="outline"
                     type="button"
@@ -321,9 +304,7 @@ export default function LoginPage() {
                         });
                         const data = await response.json().catch(() => ({}));
                         if (response.ok && data.token && data.user_id) {
-                          // Clear stale state, then store fresh credentials.
-                          localStorage.removeItem('auth_token');
-                          localStorage.setItem('auth_token', data.token);
+                          setBearerToken(data.token);
                           localStorage.setItem('user_id', data.user_id);
                           if (data.name) localStorage.setItem('username', data.name);
                           // Hard-redirect (not navigate) so any half-mounted
