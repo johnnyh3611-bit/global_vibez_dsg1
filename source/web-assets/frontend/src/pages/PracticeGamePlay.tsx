@@ -26,6 +26,11 @@ export default function PracticeGamePlay() {
     truth_or_dare: 'truthordare',
     baccarat_premium: 'baccarat',
     spades_universal: 'spades',
+    // Lobby board aliases → practice components
+    connect_4: 'connect4',
+    tic_tac_toe: 'tictactoe',
+    memory: 'memory_match',
+    pool: 'pool_8ball',
   };
   const rawNormalized = (rawGameId ?? '').toLowerCase();
   const gameId = GAME_ID_ALIASES[rawNormalized] ?? rawNormalized;

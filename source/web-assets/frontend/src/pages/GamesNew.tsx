@@ -16,10 +16,63 @@ import SoundControls from '@/components/SoundControls';
 import soundManager from '@/utils/soundManager';
 import WinnerTicker from '@/components/common/WinnerTicker';
 import { isComingSoon } from '@/data/comingSoonGames';
+import { getGameById } from '@/data/gamesRegistry';
 import { EarningsBanner } from '@/components/dashboard/EarningsBanner';
 import { triggerHaptic } from '@/hooks/useGestures';
 import { recordRecentGame } from '@/hooks/useRecommendedGames';
 import { RecommendedGames } from '@/components/games/RecommendedGames';
+import { authFetch } from '@/utils/secureAuth';
+
+/**
+ * Lobby tile → playable solo room. Prefer dedicated AAA / casino pages;
+ * everything else lands on /practice/play/:id (client or server bootstrap).
+ */
+const DEDICATED_PRACTICE_ROUTES: Record<string, string> = {
+  bid_whist: '/bid-whist',
+  bid_whist_premium: '/bid-whist',
+  bid_whist_platinum: '/bid-whist',
+  hearts: '/hearts',
+  crazy_eights: '/crazy-eights',
+  go_fish: '/go-fish',
+  gin_rummy: '/gin-rummy',
+  rummy: '/rummy',
+  rummy_universal: '/rummy',
+  war: '/war',
+  euchre: '/euchre',
+  uno: '/uno',
+  dominoes: '/dominoes',
+  pinochle: '/pinochle',
+  spades: '/spades',
+  spades_universal: '/spades',
+  underground_spades: '/spades',
+  blackjack_universal: '/blackjack-universal',
+  poker_universal: '/poker-practice',
+  vibez_654: '/vibe-654-hall',
+  vibe_654_dice: '/dice',
+  vibe_654_tournament: '/games/vibe654/tournament',
+  thirty_one: '/thirty-one',
+  yahtzee: '/yahtzee',
+  vibes_slots: '/vibes-slots',
+  bingo: '/bingo',
+  caribbean_stud: '/caribbean-stud',
+  sic_bo: '/sic-bo',
+  craps: '/craps',
+  vibes_wheel: '/vibes-wheel',
+  keno: '/keno',
+  three_card_poker: '/three-card-poker',
+  pai_gow: '/pai-gow',
+  casino_war: '/casino-war',
+  chemin_de_fer: '/chemin-de-fer',
+  european_roulette: '/european-roulette',
+  hazard: '/hazard',
+  chuck_a_luck: '/chuck-a-luck',
+  big_six_wheel: '/big-six-wheel',
+  jacks_or_better: '/jacks-or-better',
+  fan_tan: '/fan-tan',
+  faro: '/faro',
+  vibes_darts: '/vibes-darts',
+  trivia: '/trivia',
+};
 
 // Game gradient themes - custom color schemes for each game
 const GAME_GRADIENTS = {
@@ -321,198 +374,58 @@ export default function GamesNew() {
 
   const API = process.env.REACT_APP_BACKEND_URL;
 
-  // Client-side games that don't need backend.
-  // 3D Poker variants ('poker_3d', 'poker_css3d') deleted 2026-02-16 (founder directive).
-  const clientSideGames = [
-    'war', 'gin_rummy', 'solitaire', 'roulette', 'baccarat', 'baccarat_premium', 'vibes_slots', 'vibes_wheel', 'vibes_darts',
-    'mancala', 'dominoes', 'battleship', 'snake', 'memory_match', 'ping_pong', 'pool_8ball',
-    'truth_or_dare', 'two_truths_lie', 'blackjack_new'
-  ];
-
+  /** Solo practice entry — must work for physical testing of every lobby tile. */
   const startPracticeGame = async (game) => {
     if (startingGame) return;
     triggerHaptic('medium');
     recordRecentGame({ id: game.id, name: game.name });
+    soundManager.buttonClick();
 
-    // COMING SOON gate — short-circuit before any routing logic so
-    // tiles for unfinished games can't be entered. Source of truth:
-    // src/data/comingSoonGames.ts
     if (isComingSoon(game.id)) {
-      soundManager.buttonClick();
-      navigate(`/practice/play/${game.id}`); // page-level overlay handles it
-      return;
-    }
-
-    // Bid Whist — every tile now routes to the universal BidWhistAAA
-    // room (Spades AAA prototype, cobalt variant). No more lobby in the
-    // middle, matches the Spades AAA navigation pattern.
-    if (game.id === 'bid_whist_premium' || game.id === 'bid_whist_platinum' || game.id === 'bid_whist') {
-      soundManager.buttonClick();
-      navigate('/bid-whist');
-      return;
-    }
-
-    // Special routes for specific games
-    if (game.id === 'vibe_654_dice') {
-      soundManager.buttonClick();
-      navigate('/dice');
-      return;
-    }
-    if (game.id === 'vibez_654') {
-      // Route to the new Hub so users discover all 7 variants
-      soundManager.buttonClick();
-      navigate('/vibe-654-hall');
-      return;
-    }
-    
-    if (game.id === 'vibe_654_tournament') {
-      soundManager.buttonClick();
-      navigate('/games/vibe654/tournament');
-      return;
-    }
-    
-    // Universal Card Game Engine - Generate room code and navigate
-    if (game.id === 'blackjack_universal') {
-      soundManager.buttonClick();
-      navigate('/blackjack-universal');
-      return;
-    }
-    
-    if (game.id === 'poker_universal') {
-      soundManager.buttonClick();
-      navigate('/poker-practice');
-      return;
-    }
-    
-    if (game.id === 'spades_universal') {
-      soundManager.buttonClick();
-      navigate('/spades');
-      return;
-    }
-    
-    if (game.id === 'rummy_universal') {
-      soundManager.buttonClick();
-      navigate('/rummy-practice');
-      return;
-    }
-    if (game.id === 'underground_spades') {
-      // Legacy tile — forward to the new canonical Spades room until the
-      // arena list is pruned in the follow-up cleanup pass.
-      soundManager.buttonClick();
-      navigate('/spades');
-      return;
-    }
-
-    // Hearts → universal AAA crimson room (4P prototype)
-    if (game.id === 'hearts') {
-      soundManager.buttonClick();
-      navigate('/hearts');
-      return;
-    }
-
-    // Crazy Eights → universal AAA onyx room
-    if (game.id === 'crazy_eights') {
-      soundManager.buttonClick();
-      navigate('/crazy-eights');
-      return;
-    }
-
-    // Go Fish → universal AAA ocean room
-    if (game.id === 'go_fish') {
-      soundManager.buttonClick();
-      navigate('/go-fish');
-      return;
-    }
-
-    // Gin Rummy → universal AAA gold room (2P)
-    if (game.id === 'gin_rummy') {
-      soundManager.buttonClick();
-      navigate('/gin-rummy');
-      return;
-    }
-
-    // Rummy (13-card) → universal AAA jade room (2-4P)
-    if (game.id === 'rummy') {
-      soundManager.buttonClick();
-      navigate('/rummy');
-      return;
-    }
-
-    // War → universal AAA ruby room (2P)
-    if (game.id === 'war') {
-      soundManager.buttonClick();
-      navigate('/war');
-      return;
-    }
-
-    // Euchre → universal AAA gold room (4P partnership)
-    if (game.id === 'euchre') {
-      soundManager.buttonClick();
-      navigate('/euchre');
-      return;
-    }
-
-    // UNO → universal AAA neon room (4P prototype)
-    if (game.id === 'uno') {
-      soundManager.buttonClick();
-      navigate('/uno');
-      return;
-    }
-
-    // Dominoes → universal AAA onyx "Arena" room (2P, replaces legacy
-    // PracticeDominoes + HttpMultiplayerDominoes per Vibe Dominoes
-    // Superior Build PDF, Feb 2026).
-    if (game.id === 'dominoes') {
-      soundManager.buttonClick();
-      navigate('/dominoes');
-      return;
-    }
-
-    // Pinochle → universal AAA pearl room (4P partnership, 48-card
-    // single-deck, Feb 2026).
-    if (game.id === 'pinochle') {
-      soundManager.buttonClick();
-      navigate('/pinochle');
-      return;
-    }
-
-    // Multiplayer-only games — route straight to the HTTP MP lobby/room.
-    if ((game as any).multiplayerOnly) {
-      soundManager.buttonClick();
-      navigate('/multiplayer');
-      return;
-    }
-
-    // Client-side games - navigate directly
-    if (clientSideGames.includes(game.id)) {
-      soundManager.buttonClick();
       navigate(`/practice/play/${game.id}`);
       return;
     }
 
-    // Backend games - start game first
+    const dedicated = DEDICATED_PRACTICE_ROUTES[game.id];
+    if (dedicated) {
+      navigate(dedicated);
+      return;
+    }
+
+    // Registry client games (and lobby aliases) — no auth'd start call.
+    const meta = getGameById(game.id);
+    const practiceType =
+      game.id === 'truth_or_dare' ? 'truthordare' : game.id;
+    if (meta?.mode === 'client' || meta === undefined) {
+      // Unknown lobby ids still open practice play so the UI can show
+      // Coming Soon / client shell instead of a dead alert.
+      navigate(`/practice/play/${practiceType}`);
+      return;
+    }
+
+    // Server practice session (chess, checkers, reversi, ludo, trivia, …)
     setStartingGame(true);
     try {
-      const response = await fetch(`${API}/api/practice/start`, {
+      const response = await authFetch(`${API}/api/practice/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        
         body: JSON.stringify({
-          game_type: game.id,
-          difficulty: 'medium'
-        })
+          game_type: practiceType,
+          difficulty: 'medium',
+        }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to start practice game');
+        // Fallback: open practice shell so physical testing isn't blocked
+        // when a type isn't registered on the API yet.
+        navigate(`/practice/play/${practiceType}`);
+        return;
       }
 
       const data = await response.json();
-      soundManager.buttonClick();
       navigate(`/practice/play/${data.game_id}`);
-    } catch (err) {
-      // console.error('Error starting practice game:', err);
-      alert('Failed to start game. Please try again.');
+    } catch {
+      navigate(`/practice/play/${practiceType}`);
     } finally {
       setStartingGame(false);
     }
@@ -856,70 +769,19 @@ export default function GamesNew() {
               transition={{ delay: index * 0.1 }}
               data-testid={`game-tile-${game.id}`}
               onClick={(e) => {
-                // Make the whole AAA-canonical-room tile clickable. We
-                // route directly to the canonical room so the Practice
-                // and Multiplayer buttons inside still work without
-                // double-firing (they call e.stopPropagation()).
-                const aaaRoutes: Record<string, string> = {
-                  spades: "/spades",
-                  bid_whist: "/bid-whist",
-                  bid_whist_premium: "/bid-whist",
-                  bid_whist_platinum: "/bid-whist",
-                  hearts: "/hearts",
-                  crazy_eights: "/crazy-eights",
-                  thirty_one: "/thirty-one",
-                  yahtzee: "/yahtzee",
-                  vibes_slots: "/vibes-slots",
-                  bingo: "/bingo",
-                  caribbean_stud: "/caribbean-stud",
-                  sic_bo: "/sic-bo",
-                  craps: "/craps",
-                  vibes_wheel: "/vibes-wheel",
-                  keno: "/keno",
-                  three_card_poker: "/three-card-poker",
-                  pai_gow: "/pai-gow",
-                  casino_war: "/casino-war",
-                  chemin_de_fer: "/chemin-de-fer",
-                  european_roulette: "/european-roulette",
-                  hazard: "/hazard",
-                  chuck_a_luck: "/chuck-a-luck",
-                  big_six_wheel: "/big-six-wheel",
-                  jacks_or_better: "/jacks-or-better",
-                  fan_tan: "/fan-tan",
-                  faro: "/faro",
-                  vibes_darts: "/vibes-darts",
-                  go_fish: "/go-fish",
-                  gin_rummy: "/gin-rummy",
-                  rummy: "/rummy",
-                  war: "/war",
-                  uno: "/uno",
-                  euchre: "/euchre",
-                  reversi: "/practice/play/reversi",
-                  klondike: "/practice/play/klondike",
-                  solitaire: "/practice/play/solitaire",
-                };
-                const target = aaaRoutes[game.id];
-                if (target) {
-                  e.stopPropagation();
-                  soundManager.buttonClick();
-                  navigate(target);
+                // Whole tile opens solo practice (buttons stopPropagation).
+                e.stopPropagation();
+                startPracticeGame(game);
+              }}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  startPracticeGame(game);
                 }
               }}
-              role={
-                ["spades","bid_whist","bid_whist_premium","bid_whist_platinum","hearts","crazy_eights","thirty_one","yahtzee","vibes_slots","bingo","caribbean_stud","go_fish","gin_rummy","rummy","war","uno","euchre"].includes(game.id)
-                  ? "button"
-                  : undefined
-              }
-              tabIndex={
-                ["spades","bid_whist","bid_whist_premium","bid_whist_platinum","hearts","crazy_eights","thirty_one","yahtzee","vibes_slots","bingo","caribbean_stud","go_fish","gin_rummy","rummy","war","uno","euchre"].includes(game.id)
-                  ? 0
-                  : undefined
-              }
-              className={
-                ["spades","bid_whist","bid_whist_premium","bid_whist_platinum","hearts","crazy_eights","go_fish","gin_rummy","rummy","war","uno","euchre"].includes(game.id)
-                  ? "cursor-pointer"
-                  : undefined
-              }
+              className="cursor-pointer"
             >
               <GlassCard
                 hoverable={true}

@@ -16,8 +16,13 @@
  * already exists.
  */
 export const COMING_SOON_GAME_IDS: ReadonlySet<string> = new Set<string>([
-  // Practice UI key mismatch was fixed (truth_or_dare → truthordare).
-  // Keep empty unless a lobby tile truly has no playable room.
+  // Lobby tiles that only advertise multiplayer and have no solo practice
+  // component yet — Practice vs AI shows Coming Soon instead of a blank board.
+  'carrom',
+  'parcheesi',
+  'shogi',
+  'xiangqi',
+  'chinesecheckers',
 ]);
 
 export const isComingSoon = (gameId: string | undefined | null): boolean => {
