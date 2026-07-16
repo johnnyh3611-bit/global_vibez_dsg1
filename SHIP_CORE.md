@@ -33,16 +33,18 @@ Anything outside this loop is **optional** until the loop is solid.
 
 ## Next fine-tune slices (ranked)
 
-1. Smoke the core loop on demo login (manual or Playwright).
-2. Trim classic dashboard tile sprawl below the Job Board (secondary).
-3. Mark more lobby games Coming Soon when practice/AAA rooms are missing.
+1. ~~Trim classic dashboard tile sprawl below the Job Board~~ (done — collapsed under More)
+2. ~~Default dashboard to classic hub so Job Board is visible~~ (done)
+3. Smoke the core loop on demo login (manual or Playwright).
 4. Collapse stale markdown under `source/web-assets/*.md` into this file + README.
 5. Native mobile gestures (DESIGN_STRATEGY Phase 2) only after loop QA.
 
 ## Done when
 
-- [ ] Demo login → dashboard Job Board → one game completes
-- [ ] `/earn` and mobile **Earn** tab both land on live CTAs
-- [ ] No Job Board / EarningsBanner link 404s
-- [ ] `yarn typecheck` clean
+- [x] Classic dashboard leads with Job Board + earnings (beta/galaxy collapsed)
+- [x] `/earn` and mobile **Earn** tab both land on live CTAs
+- [x] Job Board / EarningsBanner links redirect to mounted routes
+- [x] `yarn typecheck` clean
+- [x] Demo login → dashboard Job Board → `/earn` + `/games` + `/spades` (local smoke)
+- [x] Local CORS includes `http://localhost:3000` by default
 - [ ] Production smoke (`npm run smoke`) green against live API

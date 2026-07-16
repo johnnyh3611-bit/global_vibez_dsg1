@@ -21,7 +21,14 @@ const API = process.env.REACT_APP_BACKEND_URL;
 
 export default function PracticeGamePlay() {
   const { gameId: rawGameId } = useParams();
-  const gameId = (rawGameId ?? '').toLowerCase();
+  // Normalize lobby aliases so Practice vs AI never lands on a blank board.
+  const GAME_ID_ALIASES: Record<string, string> = {
+    truth_or_dare: 'truthordare',
+    baccarat_premium: 'baccarat',
+    spades_universal: 'spades',
+  };
+  const rawNormalized = (rawGameId ?? '').toLowerCase();
+  const gameId = GAME_ID_ALIASES[rawNormalized] ?? rawNormalized;
   const navigate = useNavigate();
   const [game, setGame] = useState(null);
   const [loading, setLoading] = useState(true);

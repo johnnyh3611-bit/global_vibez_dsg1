@@ -43,11 +43,11 @@ export const CATEGORIES = [
     id: "games", label: "Games", color: "#22d3ee", aura: "#22d3ee",
     rooms: [
       { id: "spades", label: "Spades", emoji: "♠️", path: "/spades" },
-      { id: "vibez-654", label: "Vibez 654", emoji: "🎲", path: "/vibez-654" },
+      { id: "bid-whist", label: "Bid Whist", emoji: "♥️", path: "/bid-whist" },
+      { id: "vibez-654", label: "Dice Games", emoji: "🎲", path: "/vibe-654-hall" },
+      { id: "games-lobby", label: "All Games", emoji: "🎮", path: "/games" },
       { id: "chess-hall", label: "Chess Hall", emoji: "♟️", path: "/chess-hall" },
-      { id: "underground", label: "Underground", emoji: "🃏", path: "/underground-casino" },
       { id: "cyber", label: "Cyber Casino", emoji: "🎰", path: "/cyber-casino" },
-      { id: "high-roller", label: "High Roller VIP", emoji: "💎", path: "/casino/high-roller" },
     ],
   },
   {
@@ -55,9 +55,9 @@ export const CATEGORIES = [
     pulsing: true,  // PDF spec: "Pulsing_Pink_Aura"
     rooms: [
       { id: "dating", label: "Universe", emoji: "💞", path: "/dating" },
-      { id: "matchmaking", label: "Matchmaking", emoji: "✨", path: "/matchmaking" },
+      { id: "discover", label: "Discover", emoji: "💕", path: "/dating/discover" },
+      { id: "speed", label: "Speed Dating", emoji: "⚡", path: "/speed-dating" },
       { id: "cinema", label: "Cinema Date", emoji: "🎬", path: "/cinema-room" },
-      { id: "spots", label: "Vibez Spots", emoji: "📍", path: "/vibe-spots" },
     ],
   },
   {
@@ -94,16 +94,14 @@ export const CATEGORIES = [
   {
     id: "vault", label: "Vault", color: "#fde047", aura: "#facc15",
     rooms: [
+      { id: "earn", label: "Earn Hub", emoji: "💸", path: "/earn" },
+      { id: "wallet", label: "Vibez Wallet", emoji: "💰", path: "/wallet" },
+      { id: "chair", label: "Chair Vault", emoji: "🪑", path: "/chair-vault" },
+      { id: "referral", label: "Referrals", emoji: "🎯", path: "/referral" },
       { id: "lottery", label: "DSG 6 Lottery", emoji: "🎰", path: "/lottery" },
       { id: "tiers", label: "Vibez Tiers", emoji: "👑", path: "/tiers" },
-      { id: "wallet", label: "Vibez Wallet", emoji: "💰", path: "/wallet" },
-      { id: "chair", label: "Chair Hall", emoji: "🪑", path: "/chair-hall" },
-      { id: "voice", label: "Voice Mirror", emoji: "🎙️", path: "/voice-mirror" },
       { id: "myvibez", label: "My Vibez", emoji: "🌟", path: "/my-vibez" },
-      { id: "myvibez-themed", label: "My Vibez Themed", emoji: "🎨", path: "/my-vibez/themed" },
       { id: "roadmap", label: "Roadmap Hub", emoji: "🛰️", path: "/roadmap" },
-      { id: "equity", label: "Equity & Governance", emoji: "💎", path: "/equity" },
-      { id: "ambassador", label: "Ambassador Care", emoji: "🏅", path: "/ambassador" },
     ],
   },
 ];
