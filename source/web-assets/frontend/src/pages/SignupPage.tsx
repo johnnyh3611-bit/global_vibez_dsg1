@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff, Mail, Lock, User, Calendar, ArrowLeft, AlertCircle, CheckCircle, Crown } from 'lucide-react';
 import { getBackendUrl } from '@/config/backendUrl';
+import { setBearerToken } from '@/utils/secureAuth';
 
 const API = getBackendUrl();
 
@@ -171,7 +172,7 @@ export default function SignupPage() {
       // Store Bearer token + user info so ProtectedRoute can authorize
       // /profile/setup even when the SameSite=None cookie is blocked.
       if (data.token) {
-        localStorage.setItem('auth_token', data.token);
+        setBearerToken(data.token);
       }
       const userObj = data.user || data;
       if (userObj?.user_id || userObj?.id) {
@@ -474,28 +475,7 @@ export default function SignupPage() {
               </p>
             </div>
 
-            <div className="mt-6">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-white/10" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-slate-900/40 text-slate-400">Or continue with</span>
-                </div>
-              </div>
-
-              <NeonButton
-                variant="ghost"
-                onClick={() => {
-                  const redirectUrl = `${window.location.origin}/auth-callback`;
-                  window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
-                }}
-                className="w-full mt-4"
-              >
-                <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5 mr-2" />
-                Sign up with Google
-              </NeonButton>
-            </div>
+            {/* Emergent Google signup removed — use email/password above. */}
           </GlassCard>
         </motion.div>
       </div>

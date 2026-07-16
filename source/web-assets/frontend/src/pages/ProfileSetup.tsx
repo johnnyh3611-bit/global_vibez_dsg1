@@ -12,9 +12,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Globe, ArrowRight } from 'lucide-react';
+import { authFetch, getUserId } from '@/utils/secureAuth';
+import { getBackendUrl } from '@/config/backendUrl';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+const API = `${getBackendUrl()}/api`;
 
 /**
  * Profile Setup — post-signup onboarding.
@@ -47,7 +48,8 @@ export default function ProfileSetup() {
     setError(null);
 
     try {
-      const token = localStorage.getItem('gv_auth_token') || '';
+      const userId = getUserId() || 'user';
+      const defaultAvatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(userId)}`;
       const updateData = {
         bio: formData.bio,
         age: parseInt(formData.age, 10),
@@ -57,20 +59,19 @@ export default function ProfileSetup() {
           .split(',')
           .map((i) => i.trim())
           .filter((i) => i),
+        // Email signup has no photo upload yet — seed a default avatar so
+        // profile_completed can flip true without a photo loop.
+        photos: [defaultAvatar],
       };
 
-      const response = await fetch(`${API}/profile`, {
+      const response = await authFetch(`${API}/profile`, {
         method: 'PUT',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
         body: JSON.stringify(updateData),
       });
 
       if (!response.ok) {
-        throw new Error(`Profile update failed (${response.status})`);
+        const detail = await response.json().catch(() => ({}));
+        throw new Error(detail.detail || `Profile update failed (${response.status})`);
       }
       navigate('/dashboard');
     } catch (err: any) {

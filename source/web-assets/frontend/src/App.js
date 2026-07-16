@@ -113,9 +113,12 @@ function ProtectedRoute({ children }) {
         if (cancelled) return;
         setIsAuthenticated(res.ok);
         if (!res.ok && location.pathname !== "/") {
-          // Clear invalid token
           localStorage.removeItem('auth_token');
+          localStorage.removeItem('token');
+          localStorage.removeItem('gv_auth_token');
           localStorage.removeItem('user_data');
+          localStorage.removeItem('user_id');
+          localStorage.removeItem('username');
           navigate("/login", { replace: true });
         }
       } catch (error) {

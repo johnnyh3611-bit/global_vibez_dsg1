@@ -285,8 +285,7 @@ export default function Landing() {
                 </p>
                 <Button
                   onClick={() => {
-                    const redirectUrl = `${window.location.origin}/dashboard`;
-                    window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+                    window.location.href = '/signup';
                   }}
                   className="bg-white text-purple-900 hover:bg-gray-100 px-6 py-3 font-bold rounded-full"
                 >
@@ -662,8 +661,7 @@ export default function Landing() {
           </p>
           <Button
             onClick={() => {
-              const redirectUrl = `${window.location.origin}/dashboard`;
-              window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+              window.location.href = '/signup';
             }}
             data-testid="landing-final-cta-button"
             className="bg-[#FF8A1F] hover:bg-[#FFA040] text-black px-12 py-8 text-xl md:text-2xl font-black rounded-full shadow-2xl shadow-[#FF8A1F]/30 transform hover:scale-105 transition-all uppercase tracking-wider"
