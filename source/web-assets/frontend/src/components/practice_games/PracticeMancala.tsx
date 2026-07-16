@@ -153,6 +153,8 @@ export default function PracticeMancala({ onMove, gameState }: { onMove?: any, g
             {[0, 1, 2, 3, 4, 5].map(i => (
               <button
                 key={`p1-pit-${i}`}
+                type="button"
+                data-testid={`mancala-pit-${i}`}
                 onClick={() => move(i)}
                 disabled={currentPlayer !== 1 || pits[i] === 0 || gameOver}
                 className={`aspect-square rounded-xl text-2xl font-bold border-4 transition-all ${
