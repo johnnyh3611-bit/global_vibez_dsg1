@@ -154,7 +154,7 @@ export default function TokenRoadmap() {
       status: "shipped",
       date: "Live now",
       title: "Phantom Connect — in-app wallet",
-      desc: "Users can sign in with Google or Apple and get a non-custodial Solana wallet inside the app. No browser extensions required.",
+      desc: "After email or Demo Login, link a Phantom wallet from /wallet for on-chain features. Sign-in itself is email/password or Demo — not Google/Apple OAuth.",
       Icon: Wallet,
     },
     {

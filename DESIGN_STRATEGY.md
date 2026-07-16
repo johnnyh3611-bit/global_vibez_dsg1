@@ -10,58 +10,39 @@ Every user should feel like they're in one coherent ecosystem, not teleporting b
 ## Top 3 Design Priorities
 
 ### 1. **Consolidate Information Architecture (IA)**
-**Status**: ✅ COMPLETE
+**Status**: ✅ COMPLETE (#100–#106)
 
-Kill alias routes and fragmented entry points:
-- ~~`/glasshouse`~~ → Replaced with `/dashboard`
-- ~~`/dashboard-classic` + `/dashboard-volumetric`~~ → Unified `/dashboard`
-- ~~`/my-vibez` + `/my-vibez-themed`~~ → Consolidated view
-- ~~`/vibe-tv` (DSG) + `/tv` (standalone)~~ → Single `/tv` namespace
+Canonical hubs:
+- `/dashboard` — Job Board (4 jobs)
+- `/games` — Gaming
+- `/dating/discover` — Dating
+- `/streams` — Streaming (watch / go live)
+- `/earn` — Monetization hub
 
-**Implementation**:
-- New **Job Board** component: 12 entry points across 4 job categories
-  - 🎮 Gaming (Dice 654, Spade Plus, Bid Whist)
-  - 💕 Dating (Discover, Speed-Dating, My Profile)
-  - 📺 Streaming (Watch, Go Live, Analytics)
-  - 💸 Earning (Chair, Referral, Games, Streamer)
-- **Dashboard** now central hub — shows earnings stats + unified job board
-- **Navigation**: Dashboard as primary entry point (moved before dating/games)
+Alias redirects for legacy `/tv*`, dashboard view URLs, earn deep-links, and games shortcuts are mounted. Product surfaces that are **not** aliases: `/glasshouse` (ownership), `/my-vibez*` (streaming), `/vibe-tv` (DSG TV).
 
 **Metric**: Reduced cognitive load from 100+ routes to 4 clear jobs.
 
 ---
 
-### 2. **"Play to Earn" UX** (In Progress)
-**Status**: 🟢 IN PROGRESS
+### 2. **"Play to Earn" UX**
+**Status**: ✅ COMPLETE
 
-Make monetization *visible on every screen*, not hidden in `/earn`.
+- `/earn` hub with four paths + live chair ROI calculator
+- EarningsBanner on Games / Dating surfaces
+- Inline GlobalNavbar + mobile Earn tab (emerald highlight)
+- UnifiedEarningsWidget on dashboard
 
-**Implementation**:
-- New `/earn` page: Full monetization hub with 4 earning paths
-  - 💺 Chair Holder ($50-500/month passive)
-  - 🎯 Referral Bounty ($5-50/invite)
-  - 🏆 Game Winnings ($1-500/game)
-  - 💰 Streamer Revenue ($50-5000/month)
-- **EarningsBanner** component: Compact & full variants
-  - Surfaces "Play to Earn" callout on Games, Dating, TV pages
-  - Quick-start CTA buttons (Play Game, Share Code, Go Live, Buy Chair)
-- **GlobalNavbar**: Highlighted "Earn 💸" link (green gradient)
-- **EarningsWidget**: Dashboard shows balance, weekly earnings, earning breakdown
-
-**Metric**: Users see 4+ earning reminders before entering any game/date.
+**Metric**: Users see earn reminders before entering any game/date.
 
 ---
 
-### 3. **Native Mobile Feel** (Next Priority)
-**Status**: 🟢 IN PROGRESS (Phase 2 wired on core loop)
+### 3. **Native Mobile Feel**
+**Status**: ✅ COMPLETE (#104)
 
-Gesture-based interactions + haptics:
-- ✅ Swipe left/right on `/dating/discover` (like / pass)
-- ✅ Pull-to-refresh on discover + classic dashboard
-- ✅ Long-press quick actions (save / share / report) on discover
-- ✅ Haptic feedback on Job Board, Earn hub, game start, match
-- ✅ Skeleton loaders on discover + dashboard bootstrap
-- ✅ Smooth card / path transitions (Framer Motion)
+- Gesture library (`useGestures.ts`) — swipe, pull, long-press, haptics
+- Discover: swipe like/pass, long-press sheet, pull-to-refresh, skeletons
+- Dashboard / Earn / Games: haptics on primary CTAs
 
 **Why**: Dating + gaming apps feel native. Web wrappers feel slow.
 
@@ -72,165 +53,95 @@ Gesture-based interactions + haptics:
 ### Primary Routes by Job
 | Job | Primary Route | Sub-Routes | Status |
 |-----|---------------|-----------|--------|
-| Gaming | `/games` | `/games/654`, `/games/tournaments`, `/dealer` | ✅ Ready |
-| Dating | `/dating` | `/dating/discover`, `/dating/speed-dating` | ✅ Ready |
-| Streaming | `/tv` | `/tv/discover`, `/tv/broadcast`, `/tv/analytics` | ✅ Ready |
-| Earning | `/earn` | `/earn/chair`, `/earn/referral` | ✅ New |
-| Hub | `/dashboard` | (curated job board + stats) | ✅ New |
+| Gaming | `/games` | `/spades`, `/bid-whist`, `/vibe-654-hall` | ✅ Ready |
+| Dating | `/dating/discover` | `/speed-dating`, `/profile/edit` | ✅ Ready |
+| Streaming | `/streams` | `/streamer/studio`, `/streamer/analytics` | ✅ Ready |
+| Earning | `/earn` | `/chair-vault`, `/referral` | ✅ Ready |
+| Hub | `/dashboard` | classic Job Board default | ✅ Ready |
 
-### Alias Routes (Redirect) — status
-- ✅ `/dashboard-classic` / `/dashboard-volumetric` → `/dashboard` (view preference)
-- ✅ `/lounge` → `/dashboard`
-- ✅ `/tv` + `/tv/*` discover/broadcast/analytics → streams / studio
-- ✅ `/earn/chair` → `/chair-vault`, `/earn/referral` → `/referral`
-- ✅ `/games/654`, `/games/vibez-654`, card-game aliases → canonical halls
-- ✅ `/chair-registry` → `/chair-ledger`, `/dealer-lounge` → `/dealers`
-- `/glasshouse` — **kept** as Celestial Glasshouse ownership (not an alias)
-- `/my-vibez*` — **kept** as MY VIBEZ streaming product (not dating)
-- `/vibe-tv` — **kept** as DSG Vibe TV hub; streaming Job Board uses `/streams`
+### Alias Routes (Redirect)
+- `/dashboard-classic` / `/dashboard-volumetric` → `/dashboard`
+- `/lounge` → `/dashboard`
+- `/tv` + `/tv/discover|broadcast|analytics` → streams / studio
+- `/earn/chair` → `/chair-vault`, `/earn/referral` → `/referral`
+- `/games/654`, `/games/vibez-654`, card aliases → canonical halls
+- `/chair-registry` → `/chair-ledger`, `/dealer-lounge` → `/dealers`
 
-### Navigation Labels to Rename (Clarity)
-- ~~`654`~~ → `Dice Games` (mobile tab + Explore)
-- ~~`Plex`~~ → `Music Studio` (Explore + mobile Music tab)
-- ~~`Dealer Lounge`~~ → `/dealers` redirect
-- ~~`Chair Registry`~~ → `/chair-ledger` redirect
+### Navigation Labels
+- Dice Games (not “654”) · Music Studio (route may still be `/plex`) · Dealers · Chair Ledger
 
 ---
 
 ## User Flow: First-Time User (FTU)
 
 ```
-Landing (/) 
-  ↓ Wallet Login
+Landing (/)
+  ↓ Demo Login  OR  email Sign Up / Sign In
 Dashboard (/dashboard)
-  ↓ See earnings widget + job board
+  ↓ Job Board + earnings + social proof
 Pick first action:
   - Play Game → /games
-  - Start Dating → /dating
-  - Go Live → /tv
+  - Start Dating → /dating/discover
+  - Watch / Go Live → /streams
   - Earn More → /earn
+  - Wallet (optional) → /wallet  (Phantom after login)
 ```
 
-**Key Insight**: No role selection survey. Let *actions* define role.
+**Key Insight**: No role selection survey. Let *actions* define role. Persona reorder (Phase 3) follows role + history.
 
 ---
 
 ## Visual Hierarchy: Action Tiers
 
-Consistency across all CTAs:
-
 ```
-Tier 1 (Primary): Purple glow, solid bg
-  - "Enter Game", "Start Dating", "Go Live"
-  
-Tier 2 (Secondary): Glass border, no fill
+Tier 1 (Primary): solid / high-contrast CTA
+  - "Demo Login", "Enter Game", "Start Dating", "Go Live"
+
+Tier 2 (Secondary): glass border, no fill
   - "Learn More", "View Profile", "Watch Stream"
-  
-Tier 3 (Tertiary): Text link only
+
+Tier 3 (Tertiary): text link only
   - "See All", "Skip", "Back"
-  
-Tier 4 (Destructive): Red glow, solid bg
+
+Tier 4 (Destructive): red solid
   - "Report", "Leave Room", "Cancel"
 ```
 
 ---
 
-## Monetization Visibility: Campaign
+## Monetization Visibility
 
-Where earnings reminders appear:
+1. Dashboard → Earnings widget + banner + Job Board Earn section  
+2. Games lobby → compact earnings banner + recommendations  
+3. Dating → earn reminders without blocking swipe  
+4. Streams → Go Live CTA  
+5. Navigation → Earn highlighted (emerald)  
+6. `/earn` → ROI calculator + four paths + social proof  
 
-1. **Dashboard** → Top section: Earnings widget + earnings banner
-2. **Games Lobby** (`/games`) → Compact earnings banner above game cards
-3. **Dating** (`/dating`) → "See who earns" side panel (referral leaderboard)
-4. **Streaming** (`/tv`) → "Go Live" CTA prominently featured
-5. **Navigation** → "Earn 💸" link highlighted in green
-6. **Every 3rd screen** → "Did you know?" earning tip modal (opt-out)
-
-**Goal**: Whisper "you can earn here" without being pushy.
-
----
-
-## Metrics to Track
-
-1. **Navigation**: % users who click Dashboard first
-2. **Discoverability**: % users who visit `/earn` per week
-3. **Clarity**: % users who can name 3+ earning paths (survey)
-4. **Engagement**: Avg time spent on earning flows vs gaming flows
-5. **Monetization**: % of active users earning (any path)
+**Money story (public):** Vibez Coins (₵) are in-app credits today. At $DSG TGE, verified balances are **planned to convert 1:1**. Do not claim “100% on-chain” for the FTU loop.
 
 ---
 
 ## Roadmap: Phases
 
-**Phase 1 (This week)**: Consolidate IA + Play to Earn UX
-- ✅ Dashboard + Job Board
-- ✅ Earn hub + Earnings Banner
-- ✅ Global job nav (inline, not sticky) + mobile Earn tab + Quick Access Earn (emerald)
-- ✅ Alias routes redirect (`/tv`→`/streams`, dashboard aliases, earn deep-links, games aliases)
+**Phase 1**: ✅ IA + Play to Earn + Earn nav + aliases  
+**Phase 2**: ✅ Native mobile feel  
+**Phase 3**: ✅ Personalization (persona, ROI, recs, social proof)  
 
-**Phase 2 (Next week)**: Native Mobile Feel
-- ✅ Gesture library (`src/hooks/useGestures.ts` — swipe, pull, long-press, haptics)
-- ✅ Haptics on core-loop CTAs (Job Board, Earn, Games enter, Discover)
-- ✅ Skeleton loaders on Discover + Dashboard
-- ✅ Smooth transitions on Discover / Earn paths (Framer Motion)
-
-**Phase 3 (Personalization)**: ✅ COMPLETE (#105)
-- ✅ Role-based landing (`lib/persona.ts` reorders Job Board + Earn paths)
-- ✅ Earnings calculator (`ChairRoiCalculator` on `/earn` via `/api/chairs/economics`)
-- ✅ Recommendation engine (`useRecommendedGames` + Games hub strip + Job Board CTA)
-- ✅ Social proof strip (live streams + top earner + WinnerTicker on dashboard/`/earn`)
-
----
-
-## Design System: Tokens (Reminder)
-
-### Colors
-- Primary: `#7c3aed` (brand-primary, purple)
-- Accent: `#ec4899` (brand-accent, pink)
-- Success: `#10b981` (emerald-500, earning highlight)
-- Destructive: `#ef4444` (red-500, warning/delete)
-- Glass: `rgba(255,255,255,0.05)` (surface-glass)
-
-### Typography
-- Display: Geist Sans Bold, 5xl (landing)
-- Heading: Geist Sans Bold, 2xl-3xl (section titles)
-- Body: Geist Sans Regular, sm-base
-- Mono: Geist Mono, xs-sm (codes, stats)
-
-### Spacing Grid
-- 4px / 8px / 16px (xs-md-lg)
-- Container max-width: 1152px (max-w-6xl)
-
-### Borders & Shadows
-- Glass radius: 16px
-- Glass border: `rgba(255,255,255,0.1)` with 1px
-- Glow shadow: `0 0 20px rgba(124,58,237,0.4)` (brand-primary)
+**Landing honesty (follow-up):** Hero / FTU / money copy aligned to ship-core (Demo Login, four jobs, 1:1 TGE planned).
 
 ---
 
 ## Success Criteria
 
-✅ **By end of Phase 1:**
-- Dashboard is primary entry point (>60% of users land here first)
-- Earnings banner visible on 5+ core screens
-- `/earn` page gets 20+ unique visitors per day
-- No ambiguous navigation labels
-- Build time <30s, 0 type errors
-
-✅ **By end of Phase 2:**
-- Mobile swipe/haptic interactions feel native
-- Mobile users spend 30% longer on app (retained by feel)
-- Gestures reduce nav clicks by 20%
-
-✅ **By end of Phase 3:**
-- Users can complete a "first earning" flow in <3 minutes
-- 30%+ of active users earn in any path per week
-- Churn rate drops (monetization increases stickiness)
+✅ **Phase 1–3:** Core loop solid; Earn visible; gestures + personalization live.  
+✅ **Landing:** First viewport sells Demo Login + four jobs (not six utility rooms / wallet-first).
 
 ---
 
 ## Notes
 
 - Do NOT sacrifice accessibility for aesthetics. Glass + glow must maintain WCAG AA contrast.
-- Mobile-first always. Desktop is secondary layout (not feature parity).
+- Mobile-first always. Desktop is secondary layout.
 - Every screen should answer: "What can I do right now?" and "What do I earn?"
+- Chrome menu is **inline** (PageActionStrip / GlobalNavbar) — never sticky top bars.

@@ -73,9 +73,9 @@ const CARDS: Card[] = [
   },
   {
     Icon: Crown,
-    headline: "4:1 Bridge + 1.5× Genius",
-    rate: "₵ → DSG on Solana",
-    body: "Convert ₵ to DSG at 4:1. Genius-phase holders get an additional 1.5× bonus during the Genius window.",
+    headline: "TGE Conversion (planned)",
+    rate: "₵ → $DSG 1:1",
+    body: "Vibez Coins (₵) are in-app credits today. At the $DSG Token Generation Event, verified balances are planned to convert 1:1 — see Token Roadmap.",
     tone: "border-indigo-500/40 bg-indigo-950/20 text-indigo-200",
     testId: "earnings-bridge",
   },
@@ -133,11 +133,14 @@ export default function EarningsSnapshot() {
             every way you earn
           </p>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black italic text-white uppercase tracking-tighter mt-1">
-            12 Earn Paths. One Platform.
+            Earn Paths. One Hub.
           </h2>
           <p className="text-sm text-neutral-400 mt-3 max-w-2xl mx-auto">
-            Every mechanic below is live in the backend right now. No waitlist.
-            No "coming soon." Own a chair → earn from all of them.
+            Start with the four paths on{' '}
+            <span className="text-emerald-400 font-semibold">/earn</span> —
+            chairs, referrals, game winnings, and streaming. Some deeper
+            mechanics below are roadmap or beta; the live calculator on /earn
+            uses real chair economics.
           </p>
         </div>
 
