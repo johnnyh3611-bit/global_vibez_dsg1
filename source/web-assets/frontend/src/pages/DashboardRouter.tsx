@@ -1,12 +1,9 @@
 /**
  * DashboardRouter — chooses which dashboard the user lands on at /dashboard.
  *
- * 2026-05-12 founder ask: "I would like the volumetric galaxy view to be
- * the view that people come into the page and get, where they have an
- * option at the top to change it to the classic view."
- *
- * Default: Volumetric Galaxy. Users can switch from either view; their
- * preference persists via localStorage.
+ * Ship-core default is Classic (Job Board + earnings hub). Volumetric
+ * Galaxy remains available via the "More destinations" banner / toggle.
+ * Preference persists via localStorage.
  *
  * Storage key: `gv_dashboard_view` = "volumetric" | "classic"
  *
@@ -55,10 +52,11 @@ export const DASHBOARD_VIEW_EVENT = "gv-dashboard-view";
 export type DashboardView = "volumetric" | "classic";
 
 export function getDashboardView(): DashboardView {
-  if (typeof window === "undefined") return "volumetric";
+  if (typeof window === "undefined") return "classic";
   const v = localStorage.getItem(DASHBOARD_VIEW_KEY);
-  // Default to volumetric (founder ask) when no preference is recorded.
-  return v === "classic" ? "classic" : "volumetric";
+  // Ship-core default: classic hub (Job Board + earnings). Volumetric
+  // remains opt-in via the dashboard banner / Classic↔Galaxy toggle.
+  return v === "volumetric" ? "volumetric" : "classic";
 }
 
 /**
