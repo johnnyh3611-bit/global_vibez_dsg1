@@ -190,8 +190,14 @@ export function usePullToRefresh({
   const onTouchStart = useCallback(
     (e: React.TouchEvent) => {
       if (disabled || refreshing) return;
-      const scrollTop =
-        (e.currentTarget as HTMLElement).scrollTop ?? window.scrollY;
+      const el = e.currentTarget as HTMLElement;
+      const elTop = el.scrollTop || 0;
+      const winTop =
+        typeof window !== "undefined"
+          ? window.scrollY || document.documentElement.scrollTop || 0
+          : 0;
+      // Prefer element scrollport when it actually scrolls; else window.
+      const scrollTop = el.scrollHeight > el.clientHeight + 2 ? elTop : winTop;
       if (scrollTop > 2) return;
       startY.current = e.targetTouches[0].clientY;
       pulling.current = true;

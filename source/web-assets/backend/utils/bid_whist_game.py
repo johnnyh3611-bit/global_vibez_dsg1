@@ -50,6 +50,8 @@ class BidWhistGame:
         self.tricks_played = 0
         self.led_suit = None
         self.winner = None
+        # Required before first trick — save_state() / practice start read this
+        self.trick_leader = None
 
     def create_deck(self):
         """Create 54-card deck (52 + 2 jokers)"""

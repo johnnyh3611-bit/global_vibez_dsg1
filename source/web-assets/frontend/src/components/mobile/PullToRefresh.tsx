@@ -24,9 +24,11 @@ export function PullToRefresh({
 
   const indicatorOffset = refreshing ? 48 : pullDistance;
 
+  // No overflow-y / overflow-x utilities — any non-visible overflow-x forces
+  // overflow-y:auto (CSS), which traps document scroll on the dashboard.
   return (
     <div
-      className={`relative overflow-y-auto overscroll-contain ${className}`}
+      className={`relative ${className}`}
       data-testid="pull-to-refresh"
       {...handlers}
     >
