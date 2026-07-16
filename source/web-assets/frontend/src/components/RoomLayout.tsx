@@ -44,13 +44,15 @@ const roomThemes = {
 export const RoomLayout = ({ theme = 'games', children, showStars = true, heroImage = null }) => {
   const themeConfig = roomThemes[theme] || roomThemes.games;
 
-  // overflow-x-hidden only — overflow-hidden trapped dashboard scroll after Demo Login
+  // No overflow-* here: overflow-x-hidden makes overflow-y compute to auto
+  // (CSS Overflow), which traps wheel/touch and freezes dashboard scroll.
+  // Horizontal clip already lives on html/body in index.css.
   return (
-    <div className="relative min-h-screen overflow-x-hidden" style={{ backgroundColor: themeConfig.bgColor }}>
-      {/* 3D Background */}
+    <div className="relative min-h-screen" style={{ backgroundColor: themeConfig.bgColor }}>
+      {/* 3D Background — never capture wheel/touch (document scroll owns that) */}
       {showStars && (
-        <div className="absolute inset-0 z-0">
-          <Canvas camera={{ position: [0, 0, 5] }}>
+        <div className="pointer-events-none absolute inset-0 z-0" aria-hidden>
+          <Canvas camera={{ position: [0, 0, 5] }} style={{ pointerEvents: 'none' }}>
             <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
           </Canvas>
         </div>
