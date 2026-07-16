@@ -1,12 +1,12 @@
 /**
- * LandingTourVideo — ~6-minute founder tour of GLOBAL VIBEZ DSG.
+ * LandingTourVideo — ~3-minute founder tour of GLOBAL VIBEZ DSG.
  *
  * Refreshed 2026-07-15-v2:
  *   • Restored the original founder-uploaded B-roll clips (dice intro,
  *     game-on, just-for-the-night, earn-hats, wow-factor, welcome-home,
  *     meet-host, sit-table, two founder commercials).
- *   • Slower, clearer Microsoft Edge TTS (AndrewNeural) narration so
- *     "Global Vibez D S G" and every feature/payout lands.
+ *   • Natural Microsoft Edge TTS (AndrewNeural) — no letter-by-letter
+ *     "D S G" spelling; conversational pacing (Jul 2026 polish).
  *   • Browsers block autoplay-with-sound, so a big PLAY CTA overlay
  *     is shown until the user clicks.
  *   • Captions stay locked to the narration timeline for scroll-shy visitors.
@@ -79,30 +79,29 @@ const pickInitialLang = (manifest: I18nManifest): string => {
 
 // Cache-buster version tag — bump this whenever the MP3 is regenerated
 // so production browsers + CDN edge nodes don't keep serving the stale file.
-const NARRATION_SRC = "/landing-tour-narration.mp3?v=2026-07-15-v2";
+const NARRATION_SRC = "/landing-tour-narration.mp3?v=2026-07-16-natural";
 
 // Static fallback caption track — used until the i18n manifest loads
-// (or if it fails to fetch). Mirrors the v3 (Feb-2026) narration script
-// in `backend/scripts/generate_landing_tour_narration.py`, re-spoken with
-// slower/clearer AndrewNeural delivery.
+// (or if it fails to fetch). Mirrors the narration script in
+// `backend/scripts/generate_landing_tour_narration.py`.
 const FALLBACK_CAPTIONS: Cue[] = [
   { t: 0.0, text: "Welcome to GLOBAL VIBEZ DSG — your seat at a brand-new economy!" },
-  { t: 10.32, text: "Every game · every ride · every meal · every stream · every chair · every business = you EARN." },
-  { t: 28.032, text: "Cyber Casino — 30+ AAA card rooms, neon-drenched, live multiplayer." },
-  { t: 57.864, text: "HIGH ROLLER VIP — 10,000-coin minimums · Diamond blackjack, roulette, baccarat · VIP-gated." },
-  { t: 71.28, text: "Go LIVE on DSG TV in 30 seconds. Keep 70% of tips, gifts, and Featured unlocks." },
-  { t: 109.32, text: "DATING — AI matchmaking, Gamer Dating, Cinema Dates, Just For The Night. Real connections, zero swipe-fatigue." },
-  { t: 163.872, text: "Drive, deliver, cook, host — keep 70%. Cinema creators keep 80%." },
-  { t: 181.152, text: "AMBASSADOR Care Package — scan vendors, earn forever. Chair Dividends, Referral Bounties, Override Commissions." },
-  { t: 222.384, text: "EQUITY MASTER v2 — Floor, Genesis, Diamond, Platinum chair values + Block-Release Governance." },
-  { t: 261.864, text: "Two economies, one network. 3B VIBEZ recirculate. DSG token burns on Solana. 5× mining for chair holders." },
-  { t: 309.672, text: "ONE MILLION CHAIRS. The first cohort OWNS the network." },
-  { t: 317.04, text: "Sovereign Casino · Social Network · Walking Advertisement Economy. YOU OWN IT." },
-  { t: 325.344, text: "Take your seat. RIGHT NOW." },
-  { t: 327.336, text: "GLOBAL VIBEZ DSG. Own the network. Feel the VIBEZ." },
-  { t: 333.264, text: "— And one more thing. Two new spots. Listen close." },
-  { t: 338.472, text: "Commercial One — The Sovereign Casino. Every chip is REAL VIBEZ." },
-  { t: 356.832, text: "Commercial Two — streamer to seat-holder. TIER-TWO EQUITY, forever dividends." },
+  { t: 9.216, text: "Every game · every ride · every meal · every stream · every chair · every business = you EARN." },
+  { t: 19.944, text: "Cyber Casino — 30+ AAA card rooms, neon-drenched, live multiplayer." },
+  { t: 37.56, text: "HIGH ROLLER VIP — 10,000-coin minimums · Diamond blackjack, roulette, baccarat · VIP-gated." },
+  { t: 45.672, text: "Go LIVE on DSG TV in 30 seconds. Keep 70% of tips, gifts, and Featured unlocks." },
+  { t: 61.416, text: "DATING — AI matchmaking, Gamer Dating, Cinema Dates, Just For The Night. Real connections, zero swipe-fatigue." },
+  { t: 71.952, text: "Drive, deliver, cook, host — keep 70%. Cinema creators keep 80%." },
+  { t: 80.496, text: "AMBASSADOR Care Package — scan vendors, earn forever. Chair Dividends, Referral Bounties, Override Commissions." },
+  { t: 93.312, text: "EQUITY MASTER v2 — Floor, Genesis, Diamond, Platinum chair values + Block-Release Governance." },
+  { t: 103.272, text: "Two economies, one network. 3B VIBEZ recirculate. DSG token burns on Solana. 5× mining for chair holders." },
+  { t: 119.136, text: "ONE MILLION CHAIRS. The first cohort OWNS the network." },
+  { t: 125.952, text: "Sovereign Casino · Social Network · Walking Advertisement Economy. YOU OWN IT." },
+  { t: 132.888, text: "Take your seat. RIGHT NOW." },
+  { t: 134.736, text: "GLOBAL VIBEZ DSG. Own the network. Feel the VIBEZ." },
+  { t: 139.536, text: "— And one more thing. Two new spots. Listen close." },
+  { t: 142.824, text: "Commercial One — The Sovereign Casino. Every chip is REAL VIBEZ." },
+  { t: 152.52, text: "Commercial Two — streamer to seat-holder. TIER-TWO EQUITY, forever dividends." },
 ];
 
 interface Props {
@@ -273,7 +272,7 @@ const LandingTourVideo: React.FC<Props> = ({ onJoinBeta }) => {
     setHasStarted(true);
   };
 
-  const duration = audioRef.current?.duration || track?.duration || 377;
+  const duration = audioRef.current?.duration || track?.duration || 163;
   const pct = Math.min(100, (progress / duration) * 100);
   const currentCaption = captions[captionIdx]?.text || "";
   const langs: [string, LangTrack][] = manifest?.languages ? Object.entries(manifest.languages) : [["en", { native: "English" } as LangTrack]];
@@ -292,13 +291,13 @@ const LandingTourVideo: React.FC<Props> = ({ onJoinBeta }) => {
         >
           <p className="text-xs uppercase tracking-[0.4em] text-fuchsia-300 font-black mb-2">
             <Sparkles className="inline w-3 h-3 mr-1.5 -mt-0.5" />
-            Watch · ~6-min Founder's Tour
+            Watch · ~3-min Founder's Tour
           </p>
           <h2 className="text-3xl md:text-5xl font-black text-white mb-2">
-            The Whole Vibe in <span className="bg-gradient-to-r from-fuchsia-400 to-cyan-400 bg-clip-text text-transparent">6 Minutes</span>
+            The Whole Vibe in <span className="bg-gradient-to-r from-fuchsia-400 to-cyan-400 bg-clip-text text-transparent">3 Minutes</span>
           </h2>
           <p className="text-sm md:text-base text-white/60 max-w-2xl mx-auto">
-            Don't feel like scrolling? Hit play. We'll walk you through every room, every payout, every reason to lock in your seat — Equity Matrix, Ambassador Care, and all.
+            Don't feel like scrolling? Hit play — a tight walkthrough of the rooms, payouts, and why to lock in your seat.
           </p>
         </motion.div>
 
@@ -432,7 +431,7 @@ const LandingTourVideo: React.FC<Props> = ({ onJoinBeta }) => {
               <span className="mt-4 text-white font-black text-sm md:text-base uppercase tracking-[0.3em]">
                 Play the Tour
               </span>
-              <span className="text-white/60 text-xs mt-1">~6 min · narrated</span>
+              <span className="text-white/60 text-xs mt-1">~3 min · narrated</span>
             </button>
           )}
 
@@ -591,7 +590,7 @@ const LandingTourVideo: React.FC<Props> = ({ onJoinBeta }) => {
               Want to share this?
             </h3>
             <p className="text-xs md:text-sm text-white/60">
-              Original B-roll, slower/clearer AndrewNeural voice, vertical 9:16 with burned-in captions — ready for TikTok, Reels &amp; Shorts.
+              Original B-roll, natural AndrewNeural voice (no letter-spelling), vertical 9:16 with burned-in captions — ready for TikTok, Reels &amp; Shorts.
             </p>
           </div>
           <a

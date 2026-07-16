@@ -1,10 +1,12 @@
 /**
- * LandingOrbitGlobe — polished hero planet, styled to echo the Global Vibez
- * DSG logo: a metallic grid sphere with a bright cyan core, glowing gold/purple
- * orbital rings, and active satellites.  Ecosystem rooms sit on the surface as
- * clickable markers.
+ * LandingOrbitGlobe — hero planet in a small galaxy stage.
+ *
+ * Visual intent: a metallic grid sphere (echoing the brand mark) floating
+ * in deep space — stars, nebula haze, orbital rings, DSG satellite —
+ * with ecosystem rooms as clickable surface markers.
  */
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 
 type Country = {
@@ -74,20 +76,136 @@ const COUNTRIES: Country[] = [
   },
 ];
 
+/** Deterministic star field so SSR/hydration stay stable. */
+function buildStars(count: number) {
+  const stars: { x: number; y: number; r: number; o: number; d: number }[] = [];
+  let seed = 42;
+  const next = () => {
+    seed = (seed * 16807) % 2147483647;
+    return (seed - 1) / 2147483646;
+  };
+  for (let i = 0; i < count; i++) {
+    stars.push({
+      x: next() * 100,
+      y: next() * 100,
+      r: 0.35 + next() * 1.1,
+      o: 0.25 + next() * 0.7,
+      d: 2.5 + next() * 4.5,
+    });
+  }
+  return stars;
+}
+
 export default function LandingOrbitGlobe() {
   const navigate = useNavigate();
+  const reduceMotion = useReducedMotion();
+  const stars = useMemo(() => buildStars(48), []);
 
   return (
     <div
-      className="relative mx-auto w-[180px] h-[180px] sm:w-[280px] sm:h-[280px] lg:w-[440px] lg:h-[440px] shrink-0"
+      className="relative mx-auto w-[220px] h-[220px] sm:w-[320px] sm:h-[320px] lg:w-[480px] lg:h-[480px] shrink-0"
       data-testid="landing-orbit-globe"
       aria-label="Global Vibez DSG planet with rooms inside and DSG in orbit"
     >
+      {/* Galaxy stage — extends past the planet so stars read as background */}
+      <div
+        className="absolute -inset-[18%] sm:-inset-[22%] rounded-full overflow-hidden pointer-events-none"
+        data-testid="landing-orbit-galaxy"
+        aria-hidden
+      >
+        {/* Deep space + nebula */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(ellipse 70% 60% at 50% 45%, rgba(88,28,135,0.45) 0%, rgba(15,23,42,0.2) 42%, transparent 70%)," +
+              "radial-gradient(ellipse 55% 45% at 30% 65%, rgba(14,116,144,0.35) 0%, transparent 55%)," +
+              "radial-gradient(ellipse 50% 40% at 72% 30%, rgba(190,24,93,0.28) 0%, transparent 50%)," +
+              "radial-gradient(circle at 50% 50%, #020617 0%, #000 100%)",
+          }}
+        />
+
+        {/* Soft nebula drift */}
+        {!reduceMotion && (
+          <>
+            <motion.div
+              className="absolute -left-[10%] top-[20%] h-[55%] w-[55%] rounded-full blur-3xl"
+              style={{
+                background:
+                  "radial-gradient(circle, rgba(34,211,238,0.22) 0%, transparent 70%)",
+              }}
+              animate={{ x: [0, 18, 0], y: [0, -12, 0], opacity: [0.45, 0.8, 0.45] }}
+              transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
+            />
+            <motion.div
+              className="absolute right-[0%] bottom-[15%] h-[50%] w-[50%] rounded-full blur-3xl"
+              style={{
+                background:
+                  "radial-gradient(circle, rgba(217,70,239,0.2) 0%, transparent 70%)",
+              }}
+              animate={{ x: [0, -14, 0], y: [0, 10, 0], opacity: [0.35, 0.7, 0.35] }}
+              transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+            />
+          </>
+        )}
+
+        {/* Stars */}
+        <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+          {stars.map((s, i) => (
+            <motion.circle
+              key={`star-${i}`}
+              cx={s.x}
+              cy={s.y}
+              r={s.r * 0.35}
+              fill="white"
+              initial={false}
+              animate={
+                reduceMotion
+                  ? { opacity: s.o }
+                  : { opacity: [s.o * 0.35, s.o, s.o * 0.35] }
+              }
+              transition={
+                reduceMotion
+                  ? undefined
+                  : { duration: s.d, repeat: Infinity, ease: "easeInOut", delay: i * 0.07 }
+              }
+            />
+          ))}
+        </svg>
+
+        {/* Occasional shooting star */}
+        {!reduceMotion && (
+          <motion.span
+            className="absolute h-px w-16 bg-gradient-to-r from-transparent via-white to-transparent"
+            style={{ top: "22%", left: "10%", rotate: "-28deg" }}
+            animate={{
+              opacity: [0, 0, 1, 0],
+              x: ["0%", "140%"],
+              y: ["0%", "70%"],
+            }}
+            transition={{ duration: 2.2, repeat: Infinity, repeatDelay: 7, ease: "easeOut" }}
+          />
+        )}
+
+        {/* Soft vignette so the stage doesn't clash with hero copy */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(circle at 50% 50%, transparent 40%, rgba(0,0,0,0.55) 78%, rgba(0,0,0,0.85) 100%)",
+          }}
+        />
+      </div>
+
       {/* Deep outer bloom */}
       <motion.div
-        className="absolute -inset-[10%] rounded-full bg-gradient-to-br from-cyan-500/25 via-blue-500/15 to-fuchsia-500/25 blur-3xl"
-        animate={{ scale: [1, 1.12, 1], opacity: [0.35, 0.75, 0.35] }}
-        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute -inset-[8%] rounded-full bg-gradient-to-br from-cyan-500/25 via-blue-500/15 to-fuchsia-500/25 blur-3xl"
+        animate={
+          reduceMotion
+            ? undefined
+            : { scale: [1, 1.1, 1], opacity: [0.35, 0.7, 0.35] }
+        }
+        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
         aria-hidden
       />
 
@@ -129,7 +247,7 @@ export default function LandingOrbitGlobe() {
           strokeWidth="0.7"
           strokeDasharray="110 36"
           initial={{ rotate: 0 }}
-          animate={{ rotate: 360 }}
+          animate={reduceMotion ? undefined : { rotate: 360 }}
           transition={{ duration: 26, repeat: Infinity, ease: "linear" }}
           style={{ transformOrigin: "50% 50%", filter: "drop-shadow(0 0 3px rgba(251,191,36,0.7))" }}
         />
@@ -144,7 +262,7 @@ export default function LandingOrbitGlobe() {
           strokeWidth="0.6"
           strokeDasharray="52 72"
           initial={{ rotate: 180 }}
-          animate={{ rotate: -180 }}
+          animate={reduceMotion ? undefined : { rotate: -180 }}
           transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
           style={{ transformOrigin: "50% 50%", filter: "drop-shadow(0 0 3px rgba(217,70,239,0.7))" }}
         />
@@ -159,48 +277,51 @@ export default function LandingOrbitGlobe() {
           strokeWidth="0.5"
           strokeDasharray="34 48"
           initial={{ rotate: 90 }}
-          animate={{ rotate: -270 }}
+          animate={reduceMotion ? undefined : { rotate: -270 }}
           transition={{ duration: 14, repeat: Infinity, ease: "linear" }}
           style={{ transformOrigin: "50% 50%", filter: "drop-shadow(0 0 3px rgba(34,211,238,0.6))" }}
         />
-        {/* Moving spheres on the rings */}
-        <circle r="1.6" fill="#22d3ee" style={{ filter: "drop-shadow(0 0 3px #22d3ee)" }}>
-          <animateMotion dur="14s" repeatCount="indefinite">
-            <mpath href="#orbit-gold" />
-          </animateMotion>
-        </circle>
-        <circle r="1.2" fill="#fbbf24" style={{ filter: "drop-shadow(0 0 3px #fbbf24)" }}>
-          <animateMotion dur="10s" repeatCount="indefinite" begin="2s">
-            <mpath href="#orbit-purple" />
-          </animateMotion>
-        </circle>
-        <circle r="1" fill="#d946ef" style={{ filter: "drop-shadow(0 0 3px #d946ef)" }}>
-          <animateMotion dur="18s" repeatCount="indefinite" begin="5s">
-            <mpath href="#orbit-cyan" />
-          </animateMotion>
-        </circle>
-        <circle r="0.8" fill="#22d3ee" style={{ filter: "drop-shadow(0 0 2px #22d3ee)" }}>
-          <animateMotion dur="22s" repeatCount="indefinite" begin="8s">
-            <mpath href="#orbit-gold" />
-          </animateMotion>
-        </circle>
+        {!reduceMotion && (
+          <>
+            <circle r="1.6" fill="#22d3ee" style={{ filter: "drop-shadow(0 0 3px #22d3ee)" }}>
+              <animateMotion dur="14s" repeatCount="indefinite">
+                <mpath href="#orbit-gold" />
+              </animateMotion>
+            </circle>
+            <circle r="1.2" fill="#fbbf24" style={{ filter: "drop-shadow(0 0 3px #fbbf24)" }}>
+              <animateMotion dur="10s" repeatCount="indefinite" begin="2s">
+                <mpath href="#orbit-purple" />
+              </animateMotion>
+            </circle>
+            <circle r="1" fill="#d946ef" style={{ filter: "drop-shadow(0 0 3px #d946ef)" }}>
+              <animateMotion dur="18s" repeatCount="indefinite" begin="5s">
+                <mpath href="#orbit-cyan" />
+              </animateMotion>
+            </circle>
+            <circle r="0.8" fill="#22d3ee" style={{ filter: "drop-shadow(0 0 2px #22d3ee)" }}>
+              <animateMotion dur="22s" repeatCount="indefinite" begin="8s">
+                <mpath href="#orbit-gold" />
+              </animateMotion>
+            </circle>
+          </>
+        )}
       </svg>
 
       {/* DSG circular track + orbiting satellite */}
       <div
-        className="absolute inset-[6%] rounded-full border border-cyan-300/20 pointer-events-none"
+        className="absolute inset-[8%] rounded-full border border-cyan-300/20 pointer-events-none"
         data-testid="landing-orbit-dsg-track"
         aria-hidden
       />
       <div
-        className="absolute inset-[6%] rounded-full border border-dashed border-amber-300/15 pointer-events-none"
+        className="absolute inset-[8%] rounded-full border border-dashed border-amber-300/15 pointer-events-none"
         aria-hidden
       />
 
       <motion.div
-        className="absolute inset-[6%]"
-        animate={{ rotate: 360 }}
-        transition={{ duration: 14, repeat: Infinity, ease: "linear" }}
+        className="absolute inset-[8%]"
+        animate={reduceMotion ? undefined : { rotate: 360 }}
+        transition={{ duration: 16, repeat: Infinity, ease: "linear" }}
         data-testid="landing-orbit-dsg-orb"
         aria-hidden
       >
@@ -217,9 +338,17 @@ export default function LandingOrbitGlobe() {
       </motion.div>
 
       {/* Planet body with metallic grid */}
-      <div className="absolute inset-[14%]" aria-hidden>
-        {/* Atmosphere shell */}
-        <div className="absolute -inset-[3%] rounded-full border border-cyan-300/30 bg-cyan-400/10 blur-md" />
+      <div className="absolute inset-[16%]" aria-hidden>
+        {/* Atmosphere shell / aurora rim */}
+        <div className="absolute -inset-[4%] rounded-full border border-cyan-300/35 bg-cyan-400/10 blur-md" />
+        <div
+          className="absolute -inset-[7%] rounded-full opacity-70"
+          style={{
+            background:
+              "conic-gradient(from 200deg, transparent, rgba(34,211,238,0.25), transparent 30%, rgba(217,70,239,0.2), transparent 55%, rgba(251,191,36,0.15), transparent 80%)",
+            filter: "blur(6px)",
+          }}
+        />
 
         <motion.div
           className="absolute inset-0 rounded-full border border-cyan-300/40 overflow-hidden"
@@ -229,14 +358,18 @@ export default function LandingOrbitGlobe() {
             boxShadow:
               "inset -22px -22px 50px rgba(0,0,0,0.95), inset 16px 16px 40px rgba(34,211,238,0.45), 0 0 60px rgba(34,211,238,0.4), 0 0 140px rgba(14,165,233,0.18)",
           }}
-          animate={{
-            boxShadow: [
-              "inset -22px -22px 50px rgba(0,0,0,0.95), inset 16px 16px 40px rgba(34,211,238,0.45), 0 0 60px rgba(34,211,238,0.4), 0 0 140px rgba(14,165,233,0.18)",
-              "inset -22px -22px 50px rgba(0,0,0,0.95), inset 16px 16px 50px rgba(217,70,239,0.5), 0 0 90px rgba(217,70,239,0.5), 0 0 160px rgba(217,70,239,0.25)",
-              "inset -22px -22px 50px rgba(0,0,0,0.95), inset 16px 16px 40px rgba(251,191,36,0.45), 0 0 70px rgba(251,191,36,0.45), 0 0 140px rgba(251,191,36,0.2)",
-              "inset -22px -22px 50px rgba(0,0,0,0.95), inset 16px 16px 40px rgba(34,211,238,0.45), 0 0 60px rgba(34,211,238,0.4), 0 0 140px rgba(14,165,233,0.18)",
-            ],
-          }}
+          animate={
+            reduceMotion
+              ? undefined
+              : {
+                  boxShadow: [
+                    "inset -22px -22px 50px rgba(0,0,0,0.95), inset 16px 16px 40px rgba(34,211,238,0.45), 0 0 60px rgba(34,211,238,0.4), 0 0 140px rgba(14,165,233,0.18)",
+                    "inset -22px -22px 50px rgba(0,0,0,0.95), inset 16px 16px 50px rgba(217,70,239,0.5), 0 0 90px rgba(217,70,239,0.5), 0 0 160px rgba(217,70,239,0.25)",
+                    "inset -22px -22px 50px rgba(0,0,0,0.95), inset 16px 16px 40px rgba(251,191,36,0.45), 0 0 70px rgba(251,191,36,0.45), 0 0 140px rgba(251,191,36,0.2)",
+                    "inset -22px -22px 50px rgba(0,0,0,0.95), inset 16px 16px 40px rgba(34,211,238,0.45), 0 0 60px rgba(34,211,238,0.4), 0 0 140px rgba(14,165,233,0.18)",
+                  ],
+                }
+          }
           transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
         >
           {/* Bright cyan core glow */}
@@ -248,13 +381,15 @@ export default function LandingOrbitGlobe() {
             }}
           />
 
-          {/* Metallic grid overlay */}
-          <svg
+          {/* Slowly rotating metallic grid */}
+          <motion.svg
             className="absolute inset-0 w-full h-full opacity-90"
             viewBox="0 0 100 100"
             preserveAspectRatio="xMidYMid meet"
+            animate={reduceMotion ? undefined : { rotate: 360 }}
+            transition={{ duration: 80, repeat: Infinity, ease: "linear" }}
+            style={{ transformOrigin: "50% 50%" }}
           >
-            {/* Latitudes */}
             {[12, 20, 30, 40, 50, 60, 70].map((r) => (
               <circle
                 key={`lat-${r}`}
@@ -268,7 +403,6 @@ export default function LandingOrbitGlobe() {
                 style={{ filter: "drop-shadow(0 0 2px rgba(34,211,238,0.7))" }}
               />
             ))}
-            {/* Longitudes as ellipses */}
             {[8, 14, 22, 30, 38, 46].map((ry, i) => (
               <ellipse
                 key={`lon-${ry}`}
@@ -283,7 +417,6 @@ export default function LandingOrbitGlobe() {
                 style={{ filter: "drop-shadow(0 0 2px rgba(34,211,238,0.5))" }}
               />
             ))}
-            {/* Central meridian */}
             <line
               x1="50"
               y1="2"
@@ -293,7 +426,7 @@ export default function LandingOrbitGlobe() {
               strokeWidth="0.55"
               style={{ filter: "drop-shadow(0 0 3px rgba(34,211,238,0.8))" }}
             />
-          </svg>
+          </motion.svg>
 
           {/* Chrome-like horizon sheen */}
           <div
