@@ -7,6 +7,7 @@ import AuthCallback from "@/pages/AuthCallback";
 import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import TermsOfService from "@/pages/TermsOfService";
 import VibeStakesPortal from "@/pages/VibeStakesPortal";
 import BetaTester from "@/pages/BetaTester";
 
@@ -18,9 +19,11 @@ export const authRoutes = (
     <Route path="/auth-callback" element={<AuthCallback />} />
     <Route path="/forgot-password" element={<ForgotPasswordPage />} />
     <Route path="/reset-password" element={<ResetPasswordPage />} />
-    {/* Public privacy policy — used for Uber, Privy and Google API consent screens */}
+    {/* Public legal pages — Stripe / app-store / OAuth consent screens */}
     <Route path="/privacy" element={<PrivacyPolicy />} />
     <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+    <Route path="/terms" element={<TermsOfService />} />
+    <Route path="/terms-of-service" element={<TermsOfService />} />
     {/* Vibe Stakes — profit-sharing program (NOT a security). */}
     <Route path="/vibe-stakes" element={<VibeStakesPortal />} />
     <Route path="/profit-share" element={<VibeStakesPortal />} />

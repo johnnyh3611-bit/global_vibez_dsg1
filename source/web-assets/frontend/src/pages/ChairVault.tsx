@@ -3,7 +3,7 @@
  *
  * Replacement landing for the loyalty buy-in system. Per user's Master
  * Deployment Plan:
- *   • Phase pricing (Genius $10 → Phase V $30)
+ *   • Phase pricing (Genius $20 → Genesis $100 → Apex $250)
  *   • Invite-only purchase
  *   • Premium gate to qualify for distributions
  *   • 3D rotating chair carousel for owned chairs
@@ -82,6 +82,8 @@ export default function ChairVault() {
   const [qty, setQty] = useState(1);
   const [inviteCode, setInviteCode] = useState("");
   const [busy, setBusy] = useState(false);
+  /** null = unknown; false = Stripe missing (payments paused) */
+  const [stripeConfigured, setStripeConfigured] = useState<boolean | null>(null);
 
   useEffect(() => {
     fetch(`${API}/api/chairs/phase`).then(r => r.ok && r.json()).then(setPhase);
@@ -90,6 +92,23 @@ export default function ChairVault() {
       .then(d => setLeaders(d?.leaders || []));
     if (getUserId()) {
       authFetch(`${API}/api/chairs/me`).then(r => r.ok && r.json()).then(setMe);
+      // Probe checkout (quantity 1). Stripe key is checked after auth/invite;
+      // 503 "Stripe not configured" → honest banner. Other 4xx ⇒ key present.
+      authFetch(`${API}/api/chairs/checkout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quantity: 1 }),
+      })
+        .then(async (r) => {
+          if (r.status === 503) {
+            const err = await r.json().catch(() => ({}));
+            const detail = String(err?.detail || "").toLowerCase();
+            setStripeConfigured(!detail.includes("stripe not configured"));
+            return;
+          }
+          setStripeConfigured(true);
+        })
+        .catch(() => setStripeConfigured(null));
     }
   }, []);
 
@@ -222,7 +241,10 @@ export default function ChairVault() {
   }
 
   const lineTotal = (phase.price_usd ?? 0) * qty;
-  const canBuy = phase.price_usd !== null && phase.remaining_in_phase! > 0;
+  const canBuy =
+    phase.price_usd !== null &&
+    phase.remaining_in_phase! > 0 &&
+    stripeConfigured !== false;
 
   return (
     <div className="min-h-screen bg-[#050507] text-cyan-100 relative overflow-hidden font-sans">
@@ -263,6 +285,19 @@ export default function ChairVault() {
             we automatically pay out every quarter from the platform's
             community reward pool, weighted by chairs parked.
           </p>
+          {stripeConfigured === false && (
+            <div
+              data-testid="chair-vault-stripe-paused"
+              className="mt-5 mx-auto max-w-xl rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100 flex items-start gap-2 text-left"
+            >
+              <AlertTriangle className="w-4 h-4 text-amber-300 mt-0.5 shrink-0" />
+              <p>
+                Card checkout is paused — Stripe is not configured on this
+                environment. You can still browse phase pricing and invite
+                friends; purchases will unlock once payments go live.
+              </p>
+            </div>
+          )}
         </motion.section>
 
         {/* My vault — only renders for chair holders */}
@@ -397,7 +432,10 @@ export default function ChairVault() {
               </div>
               <div>
                 <label className="text-[11px] uppercase tracking-widest text-cyan-500">
-                  Invite code {me?.locked_chairs ? "(optional)" : "(required)"}
+                  Invite code{" "}
+                  {me?.locked_chairs || (phase?.total_sold ?? 0) === 0
+                    ? "(optional — first wave open)"
+                    : "(required)"}
                 </label>
                 <input
                   type="text"
@@ -432,6 +470,8 @@ export default function ChairVault() {
             >
               {busy
                 ? "Loading…"
+                : stripeConfigured === false
+                ? "Checkout paused"
                 : !canBuy
                 ? "Sold out"
                 : `Park ${qty} chair${qty > 1 ? "s" : ""} · ${fmtUsd(lineTotal)}`}
@@ -458,7 +498,7 @@ export default function ChairVault() {
               {
                 title: "Step 1 — Park your chair",
                 body:
-                  "Pay once at the current phase price. Genius ($10) → Genesis ($15) → Phase III ($20) → Phase IV ($25) → Phase V ($30). Locked in your Vault.",
+                  "Pay once at the current phase price. Genius ($20, 3×) → Genesis ($100, 2×) → Apex ($250, 1×). Locked in your Vault.",
                 icon: Crown,
               },
               {

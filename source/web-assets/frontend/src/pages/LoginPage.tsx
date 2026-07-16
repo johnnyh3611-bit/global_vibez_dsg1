@@ -330,6 +330,16 @@ export default function LoginPage() {
                   >
                     🎮 Demo Login (Quick Access)
                   </Button>
+                  <p className="mt-4 text-center text-[11px] text-slate-500 leading-relaxed">
+                    Adults 18+ only.{' '}
+                    <Link to="/terms" className="text-slate-400 hover:text-cyan-300 underline">
+                      Terms
+                    </Link>
+                    {' · '}
+                    <Link to="/privacy" className="text-slate-400 hover:text-cyan-300 underline">
+                      Privacy
+                    </Link>
+                  </p>
                 </div>
               </>
             ) : (

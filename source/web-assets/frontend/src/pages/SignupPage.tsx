@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { RoomLayout } from '@/components/RoomLayout';
 import { GlassCard } from '@/components/GlassCard';
@@ -473,9 +473,18 @@ export default function SignupPage() {
                   Sign In
                 </button>
               </p>
+              <p className="mt-3 text-[11px] text-slate-500 leading-relaxed">
+                By signing up you confirm you are 18+ and agree to our{' '}
+                <Link to="/terms" className="text-slate-400 hover:text-cyan-300 underline">
+                  Terms
+                </Link>
+                {' '}and{' '}
+                <Link to="/privacy" className="text-slate-400 hover:text-cyan-300 underline">
+                  Privacy Policy
+                </Link>
+                .
+              </p>
             </div>
-
-            {/* Emergent Google signup removed — use email/password above. */}
           </GlassCard>
         </motion.div>
       </div>

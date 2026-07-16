@@ -1,44 +1,39 @@
 /**
  * AgeVerificationGate — page-level wrapper that blocks access to any
- * 18+ surface (casino tables, dating, vault) until the user finishes
+ * 18+ surface (dating, vault, restricted goods) until the user finishes
  * the /age-verification flow.
  *
- * Rebuilt May 13 2026 (founder compliance ask). Replaces the version
- * that was deleted in the May-2026 dead-file sweep because nothing was
- * importing it. New strategy: any page that wants gating wraps its
- * content with `<AgeVerificationGate>` and the gate calls
- * `GET /api/age-verification/eligibility/{user_id}` to decide whether
- * to render the children, show a "verify your age" CTA, or kick the
- * user to /age-verification.
+ * Soft-launch note (July 2026): uses GET /api/age-verification/status
+ * (Bearer auth). Dating stays ungated by default so Demo Login → discover
+ * still works; wrap high-risk surfaces when KYC review is staffed.
  *
- * Three states surfaced:
- *  • LOADING      — eligibility request in flight
+ * Three states:
+ *  • LOADING      — status request in flight
  *  • VERIFIED     — children render
- *  • NOT_VERIFIED — CTA card with a "Verify Now" button → /age-verification
- *
- * This keeps the actual age-gating logic centralized; legal compliance
- * for state-by-state casino rules + app-store review.
+ *  • NOT_VERIFIED — CTA card → /age-verification
  */
 import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ShieldCheck, Loader2, AlertTriangle } from "lucide-react";
-import { getUserId } from "@/utils/secureAuth";
+import { authFetch, getUserId } from "@/utils/secureAuth";
 
 const API = process.env.REACT_APP_BACKEND_URL ?? "";
 
-type Eligibility = {
-  verified: boolean;
-  status?: "approved" | "pending" | "rejected" | "not_started";
-  age?: number;
-  jurisdiction_ok?: boolean;
+type StatusBody = {
+  status?: "verified" | "pending" | "rejected" | "not_submitted" | "appeal" | string;
+  eligible_for_restricted?: boolean;
+  age?: number | null;
 };
 
 export const AgeVerificationGate = ({
   children,
   surfaceName = "this area",
+  /** When true, treat network/API errors as verified (soft-launch fail-open). */
+  failOpen = false,
 }: {
   children: ReactNode;
   surfaceName?: string;
+  failOpen?: boolean;
 }) => {
   const userId = getUserId();
   const [state, setState] = useState<"loading" | "verified" | "blocked">("loading");
@@ -50,15 +45,21 @@ export const AgeVerificationGate = ({
       setReason("Please sign in first.");
       return;
     }
-    fetch(`${API}/api/age-verification/eligibility/${userId}`)
+    let cancelled = false;
+    authFetch(`${API}/api/age-verification/status`)
       .then(async (r) => {
+        if (cancelled) return;
         if (!r.ok) {
+          if (failOpen) {
+            setState("verified");
+            return;
+          }
           setState("blocked");
           setReason(`Eligibility check failed (${r.status})`);
           return;
         }
-        const body: Eligibility = await r.json();
-        if (body.verified) {
+        const body: StatusBody = await r.json();
+        if (body.status === "verified" || body.eligible_for_restricted) {
           setState("verified");
         } else {
           setState("blocked");
@@ -72,10 +73,18 @@ export const AgeVerificationGate = ({
         }
       })
       .catch(() => {
+        if (cancelled) return;
+        if (failOpen) {
+          setState("verified");
+          return;
+        }
         setState("blocked");
         setReason("Network error — please retry in a moment.");
       });
-  }, [userId]);
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, failOpen]);
 
   if (state === "loading") {
     return (

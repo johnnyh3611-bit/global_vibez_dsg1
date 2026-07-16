@@ -117,10 +117,13 @@ p {
   padding-bottom: var(--gv-bottom-nav-height) !important;
 }
 
-/* Hide the builder badge on phones; it overlaps the bottom nav and
-   primary CTAs. It remains visible on tablets and desktop. */
-@media (max-width: 767px) {
-  #emergent-badge {
-    display: none !important;
-  }
+/* Emergent builder badge removed from index.html for public launch.
+   Keep a hard hide in case a cached HTML shell still injects it. */
+#emergent-badge,
+[data-emergent-badge="true"],
+a[href*="emergent.sh"],
+a[href*="app.emergent.sh"] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
