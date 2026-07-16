@@ -31,6 +31,9 @@ if [[ -z "$js_path" ]]; then
 else
   js="$(mktemp)"
   curl -sS -L -o "$js" --max-time 60 "${BASE_URL}/${js_path}" || fail "Download ${js_path}"
+  if head -c 64 "$js" | grep -qiE '<!doctype|<html'; then
+    fail "main.js returned HTML (deploy in progress or bad rewrite)"
+  fi
   size="$(wc -c < "$js" | tr -d ' ')"
   if [[ "${size:-0}" -gt 100000 ]]; then
     pass "main.js size ${size}"
@@ -45,10 +48,23 @@ else
   if grep -q 'REACT_APP_BACKEND_URL' "$js"; then
     pass "REACT_APP_BACKEND_URL referenced in bundle"
   fi
+  # Ship-core FTU: landing must expose Demo Login (CRA embeds the string in main.js).
+  if grep -q 'Demo Login' "$js"; then
+    pass "Bundle contains Demo Login"
+  else
+    fail "Bundle missing Demo Login (landing FTU)"
+  fi
+  # Prefer four-job / lifestyle-extras copy over legacy "Six Utility Rooms".
+  if grep -q 'Six Utility Rooms' "$js"; then
+    echo "WARN: Bundle still mentions Six Utility Rooms (redeploy after UtilityRoomsDock trim)"
+  fi
+  if grep -qE 'Four jobs|Lifestyle extras|Explore · beta' "$js"; then
+    pass "Bundle has four-job / lifestyle-extras landing copy"
+  fi
   rm -f "$js"
 fi
 
-for path in /login /games; do
+for path in /login /games /earn /dashboard; do
   c="$(curl -sS -L -o /dev/null -w '%{http_code}' --max-time 20 "${BASE_URL}${path}")"
   [[ "$c" == "200" ]] && pass "GET ${path} → 200" || fail "GET ${path} → $c"
 done

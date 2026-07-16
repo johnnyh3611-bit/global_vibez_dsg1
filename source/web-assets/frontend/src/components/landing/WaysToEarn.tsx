@@ -18,14 +18,11 @@ import {
   Gamepad2,
   Car,
   Bike,
-  Repeat,
   Coins,
   Mic2,
   Users,
   Gift,
-  TrendingUp,
   Calculator,
-  Sparkles,
 } from "lucide-react";
 
 const API = process.env.REACT_APP_BACKEND_URL;
@@ -38,119 +35,97 @@ type Economics = {
   total_weighted: number;
 };
 
-// 7 earning paths sourced from production (profit_share.py + apex_evolution
-// + chair_expansion + VibeRidez VibeXP). Each PathCard is independently
-// testable + skimmable on mobile.
-const EARNING_PATHS = [
+type EarnPath = {
+  id: string;
+  Icon: React.ComponentType<{ className?: string }>;
+  eyebrow: string;
+  title: string;
+  body: string;
+  rate: string;
+  tone: string;
+};
+
+/** Ship-core four paths — shown first. */
+const CORE_PATHS: EarnPath[] = [
   {
     id: "chair-rewards",
     Icon: Crown,
-    eyebrow: "Chairs",
-    title: "Quarterly Profit Share",
+    eyebrow: "Start here",
+    title: "Own a Chair",
     body:
-      "Park a Founder Chair. Every game pot, tip, and ride throws 13.5% into the Sovereign Treasury, which recirculates to chair holders weighted by tier — Genius 3× / Genesis 2× / post-Genesis 1×. Stacks with 5× chair mining on the daily ₵ pool. Weight locked at purchase, distributed in ₵ Vibez Coins. When chair #50,000 sells, the 200M DSG Founder Vault starts a 12-month drip (25% immediate, balance monthly) on top.",
-    rate: "Up to 30% of platform profit, by weight",
+      "Genius chairs start at $20. Platform fees recirculate to holders by tier weight. Use the live calculator on /earn — same economics as /api/chairs/economics.",
+    rate: "Passive share of platform fees",
     tone: "border-amber-500/40 bg-amber-950/20 text-amber-300",
-  },
-  {
-    id: "loyalty-stakes",
-    Icon: Sparkles,
-    eyebrow: "Engagement Mining",
-    title: "Loyalty Stakes (the daily earn)",
-    body:
-      "Use the platform → earn loyalty stakes that convert to ₵ Vibez Coins each quarter. Real production rates: +200 stakes per Premium renewal, +30 per $1 of creator revenue, +10 per $1 deposited, +3 per Spades/BidWhist hand, +2 per VibeRidez ride completed, +1 per JFTN visit / Vibe Call minute / Vibez 654 round. Active drivers + daily players easily clear 1,000+ stakes/month.",
-    rate: "Variable — accrued automatically",
-    tone: "border-cyan-500/40 bg-cyan-950/20 text-cyan-300",
-  },
-  {
-    id: "vibe-ridez",
-    Icon: Car,
-    eyebrow: "VibeRidez",
-    title: "Triple-Stream Driver Pay",
-    body:
-      "Drive a VibeRidez ride and earn from THREE streams on a single trip: (1) 70% of the fare via the Solana on-chain split, (2) virtual gifts from livestream viewers, (3) 100 VibeXP per safe ride + 10 VibeXP per streamed mile. VibeXP converts 1:1 to $DSG at TGE. The other 20% / 10% of fare goes to platform / community liquidity.",
-    rate: "70% of fare + tips + 100 XP/ride",
-    tone: "border-emerald-500/40 bg-emerald-950/20 text-emerald-300",
-  },
-  {
-    id: "hungry-vibez",
-    Icon: Bike,
-    eyebrow: "Hungry Vibez",
-    title: "Food Delivery on the Same Fleet",
-    body:
-      "Same driver network as VibeRidez, second task type. Pick up from Mom & Pop partner kitchens, drop off to customers, keep 70% of the delivery fee via the same on-chain split — plus restaurant tips and the $DSG reward token. Flat-fee partner restaurants pay no predatory per-order rake, so drivers see more per drop. Live dispatch, no idle rides.",
-    rate: "70% of delivery fee + tips + $DSG",
-    tone: "border-orange-500/40 bg-orange-950/20 text-orange-300",
-  },
-  {
-    id: "vibe-venues-host",
-    Icon: Crown,
-    eyebrow: "Vibe Venues",
-    title: "Host a House — Hourly Rental",
-    body:
-      "List your loft, rooftop, kitchen, or pop-up space. Pick from 3 / 6 / 9 / 12 / 24 hr blocks. Customer pays full rent + (optional) chef fee up front into $DSG smart escrow. After their Vibe-Check, you get 80% of the house rental as on-chain reward — platform keeps 20% to fund the chair pool. Zero per-event hassle, no security-deposit fights.",
-    rate: "80% of house rental per booking",
-    tone: "border-fuchsia-500/40 bg-fuchsia-950/20 text-fuchsia-300",
-  },
-  {
-    id: "vibe-artisan",
-    Icon: Mic2,
-    eyebrow: "Vibe Artisan",
-    title: "Chef · Decorator · Setter Membership",
-    body:
-      "Flat $20/month membership unlocks Signature Commercials inside venue 360° walkthroughs, AI-driven 'Perfect Mate' auto-matching with bookings, and a 1-2hr early-access prep window for every event. 30% prep-fee releases on confirmation, 70% balance on Vibe-Check — so you cover groceries the moment a customer locks the booking.",
-    rate: "$20/mo flat · 30% prep upfront, 70% on Vibe-Check",
-    tone: "border-orange-500/40 bg-orange-950/20 text-orange-300",
-  },
-  {
-    id: "premium-multiplier",
-    Icon: TrendingUp,
-    eyebrow: "Premium Tier",
-    title: "1.5× Stake Multiplier",
-    body:
-      "Active Premium subscription (Diamond / Gold / Premium tier) puts a permanent 1.5× boost on every loyalty stake you accrue AND keeps your chair rewards active each quarter. Without active premium, your chair holds its weight but skips that quarter's distribution. $9.99/mo recovers fast at 200+ stakes/renewal alone.",
-    rate: "+50% on every stake while active",
-    tone: "border-rose-500/40 bg-rose-950/20 text-rose-300",
-  },
-  {
-    id: "vibe-credits",
-    Icon: Coins,
-    eyebrow: "$DSG Token",
-    title: "Vibe Credits → $DSG at TGE",
-    body:
-      "Every Vibez Coin (₵) you hold today converts 1:1 to the public $DSG SPL token at the Token Generation Event. Verified accounts only. Park-it-now mechanic: chair rewards, loyalty redemptions, driver fares, even gameplay rewards are all denominated in ₵ — and ₵ becomes $DSG on TGE day. Earn now, redeem on day 1.",
-    rate: "1 ₵ = 1 $DSG at TGE",
-    tone: "border-violet-500/40 bg-violet-950/20 text-violet-300",
-  },
-  {
-    id: "creator-revenue",
-    Icon: Mic2,
-    eyebrow: "Creators",
-    title: "Stream + Tip Pool",
-    body:
-      "Stream from your VibeRidez vehicle, host a Glasshouse session, run a 3D Glass Emoji event, or build an audience on the Bilingual Chat. Every $1 you earn pays back 30 loyalty stakes (3× the deposit rate). Highest accrual multiplier in the platform — creators who pull $500/mo earn ~15K stakes/mo on top of their cash earnings.",
-    rate: "30 stakes per $1 earned",
-    tone: "border-fuchsia-500/40 bg-fuchsia-950/20 text-fuchsia-300",
   },
   {
     id: "referrals",
     Icon: Users,
     eyebrow: "Referrals",
-    title: "Genius Kit Invites",
+    title: "Invite & earn",
     body:
-      "Open your Genius Kit (chair holders only) → unique invite QR + link. Every friend who scans your code AND parks their first chair earns YOU +10 loyalty stakes — discretionary loyalty bonus, not investment yield. Compound it: 50 referred buyers = 500 stakes/year of pure pass-through earn.",
-    rate: "+10 stakes per converted referral",
-    tone: "border-amber-500/40 bg-amber-950/15 text-amber-300",
+      "Share your code from /referral. Earn when friends join and play — the fastest grow-with-friends path alongside chairs.",
+    rate: "Bounty when invites convert",
+    tone: "border-emerald-500/40 bg-emerald-950/20 text-emerald-300",
   },
   {
     id: "games",
     Icon: Gamepad2,
     eyebrow: "Games",
-    title: "Big Wheel + JFTN Rooms",
+    title: "Win at the tables",
     body:
-      "Spin the Big Wheel Lounge, walk into JFTN-gated rooms, host bilingual chat sessions — every interaction generates Vibe Credits AND hands you stakes. JFTN rooms reward token-gated entry; stakes accrue silently in the background. Casual play earns a few hundred stakes/month; competitive players clear 5K+.",
-    rate: "1–3 stakes per round / visit",
-    tone: "border-emerald-500/40 bg-emerald-950/15 text-emerald-300",
+      "Spades, Bid Whist, Dice Hall, and more. Winnings land as Vibez Coins (₵) you can track in your wallet.",
+    rate: "Skill-based ₵ winnings",
+    tone: "border-yellow-500/40 bg-yellow-950/20 text-yellow-200",
+  },
+  {
+    id: "creator-revenue",
+    Icon: Mic2,
+    eyebrow: "Streams",
+    title: "Go live",
+    body:
+      "Broadcast from /streamer/studio, tip and chat on /streams. Creator revenue is a core earn path — not buried under lifestyle betas.",
+    rate: "Tips + engagement",
+    tone: "border-cyan-500/40 bg-cyan-950/20 text-cyan-300",
+  },
+];
+
+/** Optional / beta — collapsed by default. */
+const BETA_PATHS: EarnPath[] = [
+  {
+    id: "vibe-ridez",
+    Icon: Car,
+    eyebrow: "Beta",
+    title: "VibeRidez driver pay",
+    body: "Drive, stream, and tip-split on the rides fleet. Explore after the four core paths.",
+    rate: "Fare split + tips",
+    tone: "border-white/15 bg-white/[0.03] text-white/70",
+  },
+  {
+    id: "hungry-vibez",
+    Icon: Bike,
+    eyebrow: "Beta",
+    title: "Hungry Vibez delivery",
+    body: "Same fleet, food drops. Lifestyle pillar — not required for your first earn.",
+    rate: "Delivery fee share",
+    tone: "border-white/15 bg-white/[0.03] text-white/70",
+  },
+  {
+    id: "vibe-venues-host",
+    Icon: Crown,
+    eyebrow: "Beta",
+    title: "Host a Vibe Venue",
+    body: "List hourly spaces. Explore after chairs / games / streams.",
+    rate: "Host rental share",
+    tone: "border-white/15 bg-white/[0.03] text-white/70",
+  },
+  {
+    id: "vibe-credits",
+    Icon: Coins,
+    eyebrow: "TGE",
+    title: "₵ → $DSG (planned)",
+    body: "In-app Vibez Coins today. Verified balances planned to convert 1:1 at Token Generation Event.",
+    rate: "1:1 at TGE (planned)",
+    tone: "border-white/15 bg-white/[0.03] text-white/70",
   },
 ];
 
@@ -210,22 +185,19 @@ export default function WaysToEarn() {
   return (
     <div className="p-6 space-y-6" data-testid="ways-to-earn-body">
       {/* Lede */}
-      <div className="rounded-2xl border border-fuchsia-500/30 bg-gradient-to-br from-fuchsia-950/40 via-black to-amber-950/30 p-5">
-        <p className="text-[10px] font-mono uppercase tracking-[0.3em] text-fuchsia-300 mb-2">
-          Eight ways to put money in your pocket
+      <div className="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950/40 via-black to-amber-950/30 p-5">
+        <p className="mb-2 text-[10px] font-mono uppercase tracking-[0.3em] text-emerald-300">
+          Four ways to earn today
         </p>
-        <p className="text-sm text-neutral-200 leading-relaxed">
-          Chairs are one earn path — not the only one. Below: every legitimate
-          way to make money on Global Vibez, the real per-event accrual rates
-          straight from production, and a calculator showing what holders
-          earn at different platform-revenue levels. No hype, no projections
-          — just the math.
+        <p className="text-sm leading-relaxed text-neutral-200">
+          Start with chairs (passive), referrals, game winnings, or streaming.
+          Lifestyle betas (rides, food, venues) stay collapsed below. Live
+          chair math is on <strong className="text-amber-300">/earn</strong>.
         </p>
       </div>
 
-      {/* 8 paths */}
-      <div className="grid sm:grid-cols-2 gap-3" data-testid="earning-paths-grid">
-        {EARNING_PATHS.map((p, i) => (
+      <div className="grid gap-3 sm:grid-cols-2" data-testid="earning-paths-grid">
+        {CORE_PATHS.map((p, i) => (
           <motion.div
             key={p.id}
             initial={{ opacity: 0, y: 8 }}
@@ -235,24 +207,49 @@ export default function WaysToEarn() {
             className={`rounded-2xl border p-4 ${p.tone}`}
             data-testid={`earning-path-${p.id}`}
           >
-            <div className="flex items-center justify-between mb-2">
+            <div className="mb-2 flex items-center justify-between">
               <p className="text-[9px] font-mono uppercase tracking-widest opacity-70">
                 {p.eyebrow}
               </p>
-              <p.Icon className="w-4 h-4 opacity-90" />
+              <p.Icon className="h-4 w-4 opacity-90" />
             </div>
-            <h3 className="text-base font-black text-white mb-1.5 leading-tight">
+            <h3 className="mb-1.5 text-base font-black leading-tight text-white">
               {p.title}
             </h3>
-            <p className="text-xs text-neutral-300 leading-relaxed">
-              {p.body}
-            </p>
-            <p className="text-[10px] font-mono uppercase tracking-widest mt-2 opacity-90">
+            <p className="text-xs leading-relaxed text-neutral-300">{p.body}</p>
+            <p className="mt-2 text-[10px] font-mono uppercase tracking-widest opacity-90">
               {p.rate}
             </p>
           </motion.div>
         ))}
       </div>
+
+      <details
+        className="rounded-2xl border border-white/10 bg-white/[0.02] p-4"
+        data-testid="earning-paths-beta"
+      >
+        <summary className="cursor-pointer text-xs font-bold uppercase tracking-widest text-white/50">
+          More paths · beta &amp; TGE
+        </summary>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          {BETA_PATHS.map((p) => (
+            <div
+              key={p.id}
+              className={`rounded-xl border p-3 ${p.tone}`}
+              data-testid={`earning-path-${p.id}`}
+            >
+              <div className="mb-1 flex items-center justify-between">
+                <p className="text-[9px] font-mono uppercase tracking-widest opacity-70">
+                  {p.eyebrow}
+                </p>
+                <p.Icon className="h-3.5 w-3.5 opacity-80" />
+              </div>
+              <h3 className="text-sm font-bold text-white">{p.title}</h3>
+              <p className="mt-1 text-xs text-white/55">{p.body}</p>
+            </div>
+          ))}
+        </div>
+      </details>
 
       {/* Monthly platform-profit scenarios */}
       <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/10 p-5">

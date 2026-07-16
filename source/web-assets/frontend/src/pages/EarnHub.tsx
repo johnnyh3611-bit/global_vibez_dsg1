@@ -90,14 +90,50 @@ export default function EarnHub() {
             Earn on Global Vibez
           </h1>
           <p className="mt-3 max-w-2xl text-sm text-white/65 sm:text-base">
-            Four direct paths — chairs, referrals, games, and streaming. Sorted
-            for a{" "}
+            Start with a chair — then stack referrals, games, and streams.
+            Paths below are sorted for a{" "}
             <span className="font-semibold text-white/85">
               {PERSONA_LABEL[persona]}
             </span>
             .
           </p>
         </header>
+
+        {/* Conversion focus: one clear primary path */}
+        <section
+          className="mb-8 overflow-hidden rounded-2xl border border-amber-400/40 bg-gradient-to-br from-amber-950/50 via-black to-emerald-950/30 p-5 sm:p-6"
+          data-testid="earn-chair-start-here"
+          aria-label="Start here — own a chair"
+        >
+          <p className="text-[10px] font-mono uppercase tracking-[0.3em] text-amber-300">
+            Start here
+          </p>
+          <h2 className="mt-2 text-xl font-black text-white sm:text-2xl">
+            Own a Chair
+          </h2>
+          <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/70">
+            Genius chairs start at $20. Platform fees recirculate to holders.
+            Run the live calculator, then open the vault to claim your seat.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Link
+              to="/chair-vault"
+              data-testid="earn-cta-chair-vault"
+              onClick={() => triggerHaptic("medium")}
+              className="inline-flex items-center gap-2 rounded-xl bg-amber-400 px-4 py-2.5 text-sm font-bold text-black transition hover:bg-amber-300 active:scale-[0.98]"
+            >
+              <Armchair className="h-4 w-4" />
+              Browse chairs · from $20
+            </Link>
+            <Link
+              to="/how-chairs-work"
+              data-testid="earn-cta-how-chairs"
+              className="inline-flex items-center rounded-xl border border-white/20 px-4 py-2.5 text-sm font-semibold text-white/85 hover:bg-white/5"
+            >
+              How chairs work
+            </Link>
+          </div>
+        </section>
 
         <SocialProofStrip className="mb-8" />
 
