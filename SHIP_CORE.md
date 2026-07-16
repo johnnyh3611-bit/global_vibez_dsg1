@@ -49,7 +49,7 @@ Anything outside this loop is **optional** until the loop is solid.
 3. ~~Archive stale session markdown~~ (#102)
 4. ~~Production smoke green with live FastAPI~~ (`npm run smoke:full` → Railway API)
 5. ~~Bearer session fixes + Emergent login removed~~ (#103)
-6. Native mobile gestures (DESIGN_STRATEGY Phase 2) only after more loop QA
+6. Native mobile gestures (DESIGN_STRATEGY Phase 2) — in flight / PR
 
 ## Done when
 
@@ -61,3 +61,5 @@ Anything outside this loop is **optional** until the loop is solid.
 - [x] Demo login → dashboard Job Board → `/earn` + `/games` + `/spades` (local smoke)
 - [x] Local CORS includes `http://localhost:3000` by default
 - [x] Production smoke (`npm run smoke` + `smoke:full`) green against Railway API
+- [ ] Mobile discover: swipe like/pass + long-press sheet + pull-to-refresh
+- [ ] Dashboard / Earn / Games: haptics on primary CTAs; dashboard pull-to-refresh

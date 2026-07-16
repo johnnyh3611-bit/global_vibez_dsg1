@@ -1,10 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, X, Gamepad2, Sparkles, MessageCircle, HeartCrack, Search } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { authFetch, getUserId, getBearerToken } from '@/utils/secureAuth';
+import React, { useCallback, useEffect, useState } from "react";
+import { motion, AnimatePresence, type PanInfo } from "framer-motion";
+import {
+  Heart,
+  X,
+  Gamepad2,
+  Sparkles,
+  HeartCrack,
+  Search,
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { authFetch } from "@/utils/secureAuth";
+import { triggerHaptic, useLongPress } from "@/hooks/useGestures";
+import { PullToRefresh } from "@/components/mobile/PullToRefresh";
+import { DiscoverCardSkeleton } from "@/components/mobile/DiscoverCardSkeleton";
+import { LongPressSheet } from "@/components/mobile/LongPressSheet";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
+const SWIPE_THRESHOLD = 110;
 
 export function DatingDiscovery() {
   const navigate = useNavigate();
@@ -14,130 +26,180 @@ export function DatingDiscovery() {
   const [showMatch, setShowMatch] = useState(false);
   const [matchedUser, setMatchedUser] = useState(null);
   const [contentMatches, setContentMatches] = useState({});
+  const [exitDir, setExitDir] = useState<"left" | "right" | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchProfiles();
-    fetchContentMatches();
-  }, []);
-
-  const fetchContentMatches = async () => {
+  const fetchContentMatches = useCallback(async () => {
     try {
-      const response = await authFetch(`${API_URL}/api/ai-content-matching/find-matches`, {
-        method: 'POST',
-        
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          limit: 20  // Backend will get user from session
-        })
-      });
+      const response = await authFetch(
+        `${API_URL}/api/ai-content-matching/find-matches`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ limit: 20 }),
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
           const matchMap = {};
-          data.matches.forEach(match => {
+          data.matches.forEach((match) => {
             matchMap[match.user_id] = match;
           });
           setContentMatches(matchMap);
         }
       }
-    } catch (error) {
-      // console.error('Failed to fetch content matches:', error);
+    } catch {
+      // non-blocking
     }
-  };
+  }, []);
 
-  const fetchProfiles = async () => {
+  const fetchProfiles = useCallback(async () => {
     try {
-      const response = await authFetch(`${API_URL}/api/dating/discover?limit=20`, {
-      });
+      const response = await authFetch(
+        `${API_URL}/api/dating/discover?limit=20`,
+        {}
+      );
 
       if (response.ok) {
         const data = await response.json();
-        setProfiles(data.profiles);
+        setProfiles(data.profiles || []);
+        setCurrentIndex(0);
       }
-    } catch (error) {
-      // console.error('Failed to fetch profiles:', error);
+    } catch {
+      // non-blocking
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const handleLike = async () => {
+  useEffect(() => {
+    fetchProfiles();
+    fetchContentMatches();
+  }, [fetchProfiles, fetchContentMatches]);
+
+  const advance = useCallback(() => {
+    setExitDir(null);
+    setCurrentIndex((i) => i + 1);
+  }, []);
+
+  const handleLike = useCallback(async () => {
     if (currentIndex >= profiles.length) return;
-
     const currentProfile = profiles[currentIndex];
+    triggerHaptic("medium");
+    setExitDir("right");
 
     try {
-      const response = await authFetch(`${API_URL}/api/dating/like/${currentProfile.user_id}`, {
-        method: 'POST',
-        
-        headers: {
-          'Content-Type': 'application/json'
+      const response = await authFetch(
+        `${API_URL}/api/dating/like/${currentProfile.user_id}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
         }
-      });
+      );
 
       if (response.ok) {
         const data = await response.json();
-        
         if (data.is_match) {
+          triggerHaptic("success");
           setMatchedUser(currentProfile);
           setShowMatch(true);
-        } else {
-          setCurrentIndex(currentIndex + 1);
+          setExitDir(null);
+          return;
         }
       }
-    } catch (error) {
-      // console.error('Failed to like profile:', error);
+    } catch {
+      // still advance
+    }
+
+    window.setTimeout(advance, 220);
+  }, [advance, currentIndex, profiles]);
+
+  const handlePass = useCallback(() => {
+    triggerHaptic("light");
+    setExitDir("left");
+    window.setTimeout(advance, 220);
+  }, [advance]);
+
+  const handlePlayGame = () => {
+    triggerHaptic("success");
+    navigate(`/dating/matches`);
+  };
+
+  const onDragEnd = (_: unknown, info: PanInfo) => {
+    if (info.offset.x > SWIPE_THRESHOLD || info.velocity.x > 700) {
+      handleLike();
+    } else if (info.offset.x < -SWIPE_THRESHOLD || info.velocity.x < -700) {
+      handlePass();
     }
   };
 
-  const handlePass = () => {
-    setCurrentIndex(currentIndex + 1);
-  };
+  const {
+    onPointerDown,
+    onPointerMove,
+    onPointerUp,
+    onPointerCancel,
+  } = useLongPress({
+    onLongPress: () => setSheetOpen(true),
+  });
 
-  const handlePlayGame = () => {
-    navigate(`/dating/matches`);
+  const showToast = (msg: string) => {
+    setToast(msg);
+    window.setTimeout(() => setToast(null), 2200);
   };
 
   const currentProfile = profiles[currentIndex];
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#080C16] via-[#0F1628] to-[#080C16] flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-fuchsia-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-white/60">Loading profiles...</p>
-        </div>
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#080C16] via-[#0F1628] to-[#080C16] p-4">
+        <DiscoverCardSkeleton />
       </div>
     );
   }
 
   if (!currentProfile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#080C16] via-[#0F1628] to-[#080C16] flex items-center justify-center p-4">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#080C16] via-[#0F1628] to-[#080C16] p-4">
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="text-center max-w-md bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8"
+          className="max-w-md rounded-3xl border border-white/10 bg-white/5 p-8 text-center backdrop-blur-xl"
         >
-          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-fuchsia-500/10 flex items-center justify-center">
-            <HeartCrack className="w-10 h-10 text-fuchsia-400" />
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-fuchsia-500/10">
+            <HeartCrack className="h-10 w-10 text-fuchsia-400" />
           </div>
-          <h2 className="text-2xl sm:text-3xl font-black text-white mb-3">No More Profiles</h2>
-          <p className="text-white/70 mb-6">You've seen everyone for now. Come back later for new matches, or explore other ways to connect.</p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <h2 className="mb-3 text-2xl font-black text-white sm:text-3xl">
+            No More Profiles
+          </h2>
+          <p className="mb-6 text-white/70">
+            You&apos;ve seen everyone for now. Pull to refresh later, or explore
+            other ways to connect.
+          </p>
+          <div className="flex flex-col justify-center gap-3 sm:flex-row">
             <button
-              onClick={() => navigate('/find-player-2')}
-              className="px-6 py-3 bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white font-bold rounded-xl flex items-center justify-center gap-2"
+              type="button"
+              onClick={() => {
+                triggerHaptic("light");
+                navigate("/find-player-2");
+              }}
+              className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-fuchsia-600 to-purple-600 px-6 py-3 font-bold text-white"
             >
-              <Search className="w-4 h-4" />
+              <Search className="h-4 w-4" />
               Find Your Player 2
             </button>
             <button
-              onClick={() => navigate('/dashboard')}
-              className="px-6 py-3 bg-white/10 hover:bg-white/15 text-white font-bold rounded-xl"
+              type="button"
+              onClick={() => {
+                triggerHaptic("light");
+                setLoading(true);
+                fetchProfiles();
+              }}
+              className="rounded-xl bg-white/10 px-6 py-3 font-bold text-white hover:bg-white/15"
             >
-              Back to Dashboard
+              Refresh
             </button>
           </div>
         </motion.div>
@@ -149,252 +211,340 @@ export function DatingDiscovery() {
   const avatar = currentProfile.avatar || {};
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#080C16] via-[#0F1628] to-[#080C16] p-4 flex items-center justify-center">
-      {/* Header */}
-      <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 flex items-center gap-4">
-        <motion.div
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="bg-black/70 backdrop-blur-xl px-6 py-3 rounded-2xl border-2 border-fuchsia-500/50"
-        >
-          <h1 className="text-2xl font-black text-transparent bg-gradient-to-r from-fuchsia-400 to-pink-400 bg-clip-text">
-            💕 Discover & Play
-          </h1>
-        </motion.div>
+    <PullToRefresh
+      className="min-h-screen bg-gradient-to-br from-[#080C16] via-[#0F1628] to-[#080C16]"
+      onRefresh={async () => {
+        setLoading(true);
+        await Promise.all([fetchProfiles(), fetchContentMatches()]);
+      }}
+    >
+      <div className="flex min-h-screen items-center justify-center p-4 pb-24 pt-24">
+        <div className="fixed left-1/2 top-4 z-50 flex -translate-x-1/2 items-center gap-4">
+          <motion.div
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="rounded-2xl border-2 border-fuchsia-500/50 bg-black/70 px-6 py-3 backdrop-blur-xl"
+          >
+            <h1 className="bg-gradient-to-r from-fuchsia-400 to-pink-400 bg-clip-text text-2xl font-black text-transparent">
+              Discover & Play
+            </h1>
+          </motion.div>
 
-        <motion.button
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          onClick={() => navigate('/dating/profile/setup')}
-          className="bg-black/70 backdrop-blur-xl px-4 py-2 rounded-xl border-2 border-purple-500/50 text-purple-400 font-bold text-sm hover:border-purple-500 transition-all"
-        >
-          Edit Profile
-        </motion.button>
-      </div>
+          <motion.button
+            type="button"
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            onClick={() => {
+              triggerHaptic("light");
+              navigate("/dating/profile/setup");
+            }}
+            className="rounded-xl border-2 border-purple-500/50 bg-black/70 px-4 py-2 text-sm font-bold text-purple-400 transition-all hover:border-purple-500"
+          >
+            Edit Profile
+          </motion.button>
+        </div>
 
-      {/* Profile Card */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={currentIndex}
-          initial={{ scale: 0.8, opacity: 0, rotateY: -90 }}
-          animate={{ scale: 1, opacity: 1, rotateY: 0 }}
-          exit={{ scale: 0.8, opacity: 0, rotateY: 90 }}
-          transition={{ type: 'spring', stiffness: 200 }}
-          className="relative w-full max-w-md"
-        >
-          {/* Card */}
-          <div className="relative bg-gradient-to-br from-black/80 to-black/60 backdrop-blur-2xl rounded-3xl border-2 border-fuchsia-500 overflow-hidden shadow-2xl shadow-fuchsia-500/30">
-            {/* Avatar/Photo Section */}
-            <div className="relative h-96 bg-gradient-to-br from-fuchsia-900/30 to-purple-900/30 flex items-center justify-center">
-              {profile.photos && profile.photos[0] ? (
-                <img src={profile.photos[0]} alt={currentProfile.name} className="w-full h-full object-cover" />
-              ) : (
-                <div className="text-9xl">
-                  {avatar.emoji || '🎮'}
-                </div>
-              )}
-              
-              {/* Content Match Badge */}
-              {contentMatches[currentProfile.user_id] && (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="absolute top-4 left-4 bg-gradient-to-r from-cyan-600 to-blue-600 backdrop-blur-sm px-4 py-2 rounded-full border-2 border-cyan-400/50 shadow-lg"
-                >
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-yellow-300" />
-                    <span className="text-white font-bold text-sm">
-                      {contentMatches[currentProfile.user_id].compatibility_score}% Content Match
-                    </span>
-                  </div>
-                </motion.div>
-              )}
-              
-              {/* Online Indicator */}
-              <div className="absolute top-4 right-4 bg-green-600/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-white flex items-center gap-2">
-                <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
-                Online
-              </div>
-            </div>
+        <p className="fixed bottom-4 left-1/2 z-40 -translate-x-1/2 text-center text-[11px] text-white/35">
+          Swipe right to like · left to pass · long-press for actions
+        </p>
 
-            {/* Profile Info */}
-            <div className="p-6">
-              <div className="mb-4">
-                <h2 className="text-3xl font-black text-white mb-1">
-                  {currentProfile.name}{profile.age && `, ${profile.age}`}
-                </h2>
-                {profile.location && (
-                  <p className="text-white/60">📍 {profile.location}</p>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentIndex}
+            drag="x"
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={0.9}
+            onDragEnd={onDragEnd}
+            initial={{ scale: 0.92, opacity: 0, x: 40 }}
+            animate={{
+              scale: 1,
+              opacity: 1,
+              x:
+                exitDir === "left" ? -420 : exitDir === "right" ? 420 : 0,
+              rotate:
+                exitDir === "left" ? -12 : exitDir === "right" ? 12 : 0,
+            }}
+            exit={{
+              opacity: 0,
+              scale: 0.9,
+              x: exitDir === "left" ? -420 : 420,
+            }}
+            transition={{ type: "spring", stiffness: 260, damping: 26 }}
+            className="relative w-full max-w-md touch-pan-y"
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerCancel}
+            style={{ touchAction: "pan-y" }}
+          >
+            <div className="relative overflow-hidden rounded-3xl border-2 border-fuchsia-500 bg-gradient-to-br from-black/80 to-black/60 shadow-2xl shadow-fuchsia-500/30 backdrop-blur-2xl">
+              <div className="relative flex h-96 items-center justify-center bg-gradient-to-br from-fuchsia-900/30 to-purple-900/30">
+                {profile.photos && profile.photos[0] ? (
+                  <img
+                    src={profile.photos[0]}
+                    alt={currentProfile.name}
+                    className="h-full w-full object-cover"
+                    draggable={false}
+                  />
+                ) : (
+                  <div className="text-9xl">{avatar.emoji || "🎮"}</div>
                 )}
+
+                {contentMatches[currentProfile.user_id] && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute left-4 top-4 rounded-full border-2 border-cyan-400/50 bg-gradient-to-r from-cyan-600 to-blue-600 px-4 py-2 shadow-lg backdrop-blur-sm"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-yellow-300" />
+                      <span className="text-sm font-bold text-white">
+                        {
+                          contentMatches[currentProfile.user_id]
+                            .compatibility_score
+                        }
+                        % Content Match
+                      </span>
+                    </div>
+                  </motion.div>
+                )}
+
+                <div className="absolute right-4 top-4 flex items-center gap-2 rounded-full bg-green-600/90 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm">
+                  <div className="h-2 w-2 animate-pulse rounded-full bg-white" />
+                  Online
+                </div>
               </div>
 
-              {/* Bio */}
-              {profile.bio && (
-                <p className="text-white/80 mb-4 leading-relaxed">
-                  {profile.bio}
-                </p>
-              )}
+              <div className="p-6">
+                <div className="mb-4">
+                  <h2 className="mb-1 text-3xl font-black text-white">
+                    {currentProfile.name}
+                    {profile.age && `, ${profile.age}`}
+                  </h2>
+                  {profile.location && (
+                    <p className="text-white/60">📍 {profile.location}</p>
+                  )}
+                </div>
 
-              {/* AI Match Insight */}
-              {contentMatches[currentProfile.user_id]?.match_insight && (
-                <div className="mb-4 p-4 bg-gradient-to-r from-cyan-900/30 to-blue-900/30 backdrop-blur-sm border border-cyan-500/30 rounded-xl">
-                  <p className="text-sm font-bold text-cyan-300 mb-2">✨ AI Match Insight</p>
-                  <p className="text-white/90 text-sm leading-relaxed">
-                    {contentMatches[currentProfile.user_id].match_insight}
+                {profile.bio && (
+                  <p className="mb-4 leading-relaxed text-white/80">
+                    {profile.bio}
                   </p>
-                  {contentMatches[currentProfile.user_id].shared_interests?.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {contentMatches[currentProfile.user_id].shared_interests.map((interest, idx) => (
-                        <span key={`shared_interests-${idx}`} className="text-xs px-2 py-1 bg-cyan-500/20 text-cyan-300 rounded-full">
+                )}
+
+                {contentMatches[currentProfile.user_id]?.match_insight && (
+                  <div className="mb-4 rounded-xl border border-cyan-500/30 bg-gradient-to-r from-cyan-900/30 to-blue-900/30 p-4 backdrop-blur-sm">
+                    <p className="mb-2 text-sm font-bold text-cyan-300">
+                      ✨ AI Match Insight
+                    </p>
+                    <p className="text-sm leading-relaxed text-white/90">
+                      {contentMatches[currentProfile.user_id].match_insight}
+                    </p>
+                  </div>
+                )}
+
+                {profile.interests && profile.interests.length > 0 && (
+                  <div className="mb-4">
+                    <p className="mb-2 text-sm font-bold text-fuchsia-400">
+                      💫 Interests
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {profile.interests.map((interest, idx) => (
+                        <span
+                          key={`interests-${idx}`}
+                          className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs text-white backdrop-blur-sm"
+                        >
                           {interest}
                         </span>
                       ))}
                     </div>
+                  </div>
+                )}
+
+                {profile.favorite_games &&
+                  profile.favorite_games.length > 0 && (
+                    <div>
+                      <p className="mb-2 flex items-center gap-2 text-sm font-bold text-cyan-400">
+                        <Gamepad2 className="h-4 w-4" />
+                        Favorite Games
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {profile.favorite_games.map((game, idx) => (
+                          <span
+                            key={game.id || `favorite_games-${idx}`}
+                            className="rounded-full border border-cyan-500/30 bg-gradient-to-r from-cyan-600/20 to-blue-600/20 px-3 py-1 text-xs text-cyan-300 backdrop-blur-sm"
+                          >
+                            {game}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
                   )}
-                </div>
-              )}
-
-              {/* Interests */}
-              {profile.interests && profile.interests.length > 0 && (
-                <div className="mb-4">
-                  <p className="text-sm font-bold text-fuchsia-400 mb-2">💫 Interests</p>
-                  <div className="flex flex-wrap gap-2">
-                    {profile.interests.map((interest, idx) => (
-                      <span
-                        key={`interests-${idx}`}
-                        className="px-3 py-1 bg-white/10 backdrop-blur-sm rounded-full text-xs text-white border border-white/20"
-                      >
-                        {interest}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Favorite Games */}
-              {profile.favorite_games && profile.favorite_games.length > 0 && (
-                <div>
-                  <p className="text-sm font-bold text-cyan-400 mb-2 flex items-center gap-2">
-                    <Gamepad2 className="w-4 h-4" />
-                    Favorite Games
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {profile.favorite_games.map((game, idx) => (
-                      <span
-                        key={game.id || `favorite_games-${idx}`}
-                        className="px-3 py-1 bg-gradient-to-r from-cyan-600/20 to-blue-600/20 backdrop-blur-sm rounded-full text-xs text-cyan-300 border border-cyan-500/30"
-                      >
-                        {game}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex items-center justify-center gap-6 mt-8">
-            {/* Pass Button */}
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={handlePass}
-              className="w-16 h-16 rounded-full bg-gradient-to-br from-red-600 to-rose-600 flex items-center justify-center shadow-xl shadow-red-500/50 border-2 border-white/20"
-            >
-              <X className="w-8 h-8 text-white" />
-            </motion.button>
-
-            {/* Super Like (Play Game) */}
-            <motion.button
-              whileHover={{ scale: 1.15, rotate: 5 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => {
-                handleLike();
-                // Could also immediately launch game invite
-              }}
-              className="w-20 h-20 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-2xl shadow-cyan-500/50 border-4 border-white/30"
-            >
-              <Gamepad2 className="w-10 h-10 text-white" />
-            </motion.button>
-
-            {/* Like Button */}
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={handleLike}
-              className="w-16 h-16 rounded-full bg-gradient-to-br from-fuchsia-600 to-pink-600 flex items-center justify-center shadow-xl shadow-fuchsia-500/50 border-2 border-white/20"
-            >
-              <Heart className="w-8 h-8 text-white fill-white" />
-            </motion.button>
-          </div>
-
-          {/* Button Labels */}
-          <div className="flex items-center justify-center gap-6 mt-4">
-            <p className="text-xs text-white/40 w-16 text-center">Pass</p>
-            <p className="text-xs text-white/60 w-20 text-center font-bold">Play Game!</p>
-            <p className="text-xs text-white/40 w-16 text-center">Like</p>
-          </div>
-        </motion.div>
-      </AnimatePresence>
-
-      {/* Match Modal */}
-      <AnimatePresence>
-        {showMatch && matchedUser && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-xl">
-            <motion.div
-              initial={{ scale: 0, rotate: -180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              exit={{ scale: 0, rotate: 180 }}
-              transition={{ type: 'spring', stiffness: 200 }}
-              className="relative max-w-md w-full p-8 text-center"
-            >
-              {/* Celebration Effect */}
-              <motion.div
-                animate={{
-                  scale: [1, 1.2, 1],
-                  rotate: [0, 5, -5, 0]
-                }}
-                transition={{ duration: 0.5, repeat: Infinity }}
-                className="text-9xl mb-6"
-              >
-                🎉
-              </motion.div>
-
-              <h2 className="text-5xl font-black text-transparent bg-gradient-to-r from-fuchsia-400 via-pink-400 to-cyan-400 bg-clip-text mb-4">
-                It's a Match!
-              </h2>
-              <p className="text-2xl text-white mb-8">
-                You and {matchedUser.name} liked each other!
-              </p>
-
-              <div className="space-y-3">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handlePlayGame}
-                  className="w-full px-8 py-4 bg-gradient-to-r from-cyan-600 to-blue-600 text-white text-lg font-black rounded-xl flex items-center justify-center gap-3 shadow-2xl shadow-cyan-500/50"
-                >
-                  <Gamepad2 className="w-6 h-6" />
-                  Play Game Together
-                </motion.button>
-
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => {
-                    setShowMatch(false);
-                    setCurrentIndex(currentIndex + 1);
-                  }}
-                  className="w-full px-8 py-3 bg-white/10 backdrop-blur-sm text-white font-bold rounded-xl border-2 border-white/20"
-                >
-                  Keep Swiping
-                </motion.button>
               </div>
+            </div>
+
+            <div className="mt-8 flex items-center justify-center gap-6">
+              <motion.button
+                type="button"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={handlePass}
+                className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-white/20 bg-gradient-to-br from-red-600 to-rose-600 shadow-xl shadow-red-500/50"
+                aria-label="Pass"
+              >
+                <X className="h-8 w-8 text-white" />
+              </motion.button>
+
+              <motion.button
+                type="button"
+                whileHover={{ scale: 1.15, rotate: 5 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleLike}
+                className="flex h-20 w-20 items-center justify-center rounded-full border-4 border-white/30 bg-gradient-to-br from-cyan-500 to-blue-600 shadow-2xl shadow-cyan-500/50"
+                aria-label="Like and play"
+              >
+                <Gamepad2 className="h-10 w-10 text-white" />
+              </motion.button>
+
+              <motion.button
+                type="button"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={handleLike}
+                className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-white/20 bg-gradient-to-br from-fuchsia-600 to-pink-600 shadow-xl shadow-fuchsia-500/50"
+                aria-label="Like"
+              >
+                <Heart className="h-8 w-8 fill-white text-white" />
+              </motion.button>
+            </div>
+
+            <div className="mt-4 flex items-center justify-center gap-6">
+              <p className="w-16 text-center text-xs text-white/40">Pass</p>
+              <p className="w-20 text-center text-xs font-bold text-white/60">
+                Play Game!
+              </p>
+              <p className="w-16 text-center text-xs text-white/40">Like</p>
+            </div>
+          </motion.div>
+        </AnimatePresence>
+
+        <LongPressSheet
+          open={sheetOpen}
+          title={currentProfile.name}
+          onClose={() => setSheetOpen(false)}
+          actions={[
+            {
+              id: "favorite",
+              label: "Save for later",
+              icon: "favorite",
+              onSelect: () => showToast("Saved — find them in Matches soon"),
+            },
+            {
+              id: "share",
+              label: "Share profile link",
+              icon: "share",
+              onSelect: async () => {
+                const url = `${window.location.origin}/dating/discover`;
+                try {
+                  if (navigator.share) {
+                    await navigator.share({
+                      title: "Global Vibez Dating",
+                      url,
+                    });
+                  } else if (navigator.clipboard) {
+                    await navigator.clipboard.writeText(url);
+                    showToast("Link copied");
+                  }
+                } catch {
+                  showToast("Could not share");
+                }
+              },
+            },
+            {
+              id: "report",
+              label: "Report profile",
+              icon: "report",
+              danger: true,
+              onSelect: () => {
+                showToast("Thanks — we’ll review this profile");
+                handlePass();
+              },
+            },
+          ]}
+        />
+
+        <AnimatePresence>
+          {toast && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              className="fixed bottom-16 left-1/2 z-[130] -translate-x-1/2 rounded-full border border-white/15 bg-black/80 px-4 py-2 text-xs font-semibold text-white backdrop-blur"
+            >
+              {toast}
             </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-    </div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {showMatch && matchedUser && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-xl">
+              <motion.div
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                exit={{ scale: 0, rotate: 180 }}
+                transition={{ type: "spring", stiffness: 200 }}
+                className="relative w-full max-w-md p-8 text-center"
+              >
+                <motion.div
+                  animate={{
+                    scale: [1, 1.2, 1],
+                    rotate: [0, 5, -5, 0],
+                  }}
+                  transition={{ duration: 0.5, repeat: Infinity }}
+                  className="mb-6 text-9xl"
+                >
+                  🎉
+                </motion.div>
+
+                <h2 className="mb-4 bg-gradient-to-r from-fuchsia-400 via-pink-400 to-cyan-400 bg-clip-text text-5xl font-black text-transparent">
+                  It&apos;s a Match!
+                </h2>
+                <p className="mb-8 text-2xl text-white">
+                  You and {matchedUser.name} liked each other!
+                </p>
+
+                <div className="space-y-3">
+                  <motion.button
+                    type="button"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handlePlayGame}
+                    className="flex w-full items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 px-8 py-4 text-lg font-black text-white shadow-2xl shadow-cyan-500/50"
+                  >
+                    <Gamepad2 className="h-6 w-6" />
+                    Play Game Together
+                  </motion.button>
+
+                  <motion.button
+                    type="button"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => {
+                      triggerHaptic("light");
+                      setShowMatch(false);
+                      setCurrentIndex(currentIndex + 1);
+                    }}
+                    className="w-full rounded-xl border-2 border-white/20 bg-white/10 px-8 py-3 font-bold text-white backdrop-blur-sm"
+                  >
+                    Keep Swiping
+                  </motion.button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+      </div>
+    </PullToRefresh>
   );
 }

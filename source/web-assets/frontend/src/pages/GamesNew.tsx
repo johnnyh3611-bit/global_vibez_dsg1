@@ -17,6 +17,7 @@ import soundManager from '@/utils/soundManager';
 import WinnerTicker from '@/components/common/WinnerTicker';
 import { isComingSoon } from '@/data/comingSoonGames';
 import { EarningsBanner } from '@/components/dashboard/EarningsBanner';
+import { triggerHaptic } from '@/hooks/useGestures';
 
 // Game gradient themes - custom color schemes for each game
 const GAME_GRADIENTS = {
@@ -328,6 +329,7 @@ export default function GamesNew() {
 
   const startPracticeGame = async (game) => {
     if (startingGame) return;
+    triggerHaptic('medium');
 
     // COMING SOON gate — short-circuit before any routing logic so
     // tiles for unfinished games can't be entered. Source of truth:
@@ -515,6 +517,7 @@ export default function GamesNew() {
 
   const startMultiplayerGame = (game) => {
     soundManager.buttonClick();
+    triggerHaptic('medium');
 
     // COMING SOON gate — apply same gate to multiplayer button.
     if (isComingSoon(game.id)) {
