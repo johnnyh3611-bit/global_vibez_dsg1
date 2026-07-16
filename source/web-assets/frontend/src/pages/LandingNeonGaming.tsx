@@ -1046,8 +1046,22 @@ export default function LandingNeonGaming() {
           <p className="text-purple-400 font-medium mb-2">
             Gaming · Dating · Streams · Earn
           </p>
+          <nav
+            className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 mb-4 text-sm"
+            aria-label="Legal"
+          >
+            <a href="/privacy" className="text-gray-400 hover:text-fuchsia-300 transition-colors">
+              Privacy
+            </a>
+            <a href="/terms" className="text-gray-400 hover:text-fuchsia-300 transition-colors">
+              Terms
+            </a>
+            <a href="/age-verification" className="text-gray-400 hover:text-fuchsia-300 transition-colors">
+              18+ Age verification
+            </a>
+          </nav>
           <p className="text-sm text-gray-600">
-            © 2026 Global Vibez DSG
+            © 2026 Global Vibez DSG · Adults 18+ only
           </p>
         </div>
       </footer>

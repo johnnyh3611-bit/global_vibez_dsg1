@@ -7,8 +7,9 @@ import {
   Sparkles,
   HeartCrack,
   Search,
+  ShieldCheck,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { authFetch } from "@/utils/secureAuth";
 import { triggerHaptic, useLongPress } from "@/hooks/useGestures";
 import { PullToRefresh } from "@/components/mobile/PullToRefresh";
@@ -244,8 +245,22 @@ export function DatingDiscovery() {
           </motion.button>
         </div>
 
-        <p className="fixed bottom-4 left-1/2 z-40 -translate-x-1/2 text-center text-[11px] text-white/35">
+        <p className="fixed bottom-14 left-1/2 z-40 -translate-x-1/2 text-center text-[11px] text-white/35">
           Swipe right to like · left to pass · long-press for actions
+        </p>
+        <p
+          data-testid="dating-age-notice"
+          className="fixed bottom-4 left-1/2 z-40 flex -translate-x-1/2 items-center gap-1.5 text-center text-[10px] text-amber-200/70"
+        >
+          <ShieldCheck className="h-3 w-3 shrink-0" />
+          Adults 18+ only ·{" "}
+          <Link to="/age-verification" className="underline hover:text-amber-100">
+            verify age
+          </Link>
+          {" · "}
+          <Link to="/terms" className="underline hover:text-amber-100">
+            Terms
+          </Link>
         </p>
 
         <AnimatePresence mode="wait">

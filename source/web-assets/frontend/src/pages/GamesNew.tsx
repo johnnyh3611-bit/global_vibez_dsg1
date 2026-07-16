@@ -161,77 +161,24 @@ const GAME_GRADIENTS = {
   rummy_universal: 'from-amber-900 via-orange-800 to-red-900'
 };
 
-// Game categories with multiplayer availability mapping
-const MULTIPLAYER_AVAILABLE = {
-  // Card Games with multiplayer
-  'poker': true,
-  'poker_universal': true,
-  'blackjack': true,
-  'blackjack_universal': true,
-  'uno': true,
-  'go_fish': true,
-  'hearts': true,
-  'spades': true,
-  'spades_universal': true,
-  'bid_whist': true,
-  'rummy': true,
-  'rummy_universal': true,
-  'crazy_eights': true,
-  'thirty_one': true,
-  'yahtzee': true,
-  'war': true,
-  'gin_rummy': true,
-  
-  // Casino - most are single-player only
-  'roulette': false,
-  'baccarat': false,
-  'baccarat_premium': false,
-  'caribbean_stud': false,
-  'three_card_poker': false,
-  'pai_gow': false,
-  'chemin_de_fer': false,
-  'casino_war': false,
-  'european_roulette': false,
-  'craps': false,
-  'sic_bo': false,
-  'hazard': false,
-  'chuck_a_luck': false,
-  'big_six_wheel': false,
-  'vibes_wheel': false,
-  'jacks_or_better': false,
-  'vibes_slots': true,
-  'bingo': true,
-  'keno': false,
-  'fan_tan': false,
-  'faro': false,
-  'vibes_darts': false,
-  
-  // Board Games with multiplayer
-  'chess': true,
-  'checkers': true,
-  'connect4': true,
-  'tictactoe': true,
-  'reversi': false,
-  'mancala': true,
-  'dominoes': true,
-  'battleship': false,
-  'mahjong': true,
-  'klondike': false,
-  
-  // Arcade - mostly single-player
-  'snake': false,
-  'memory_match': false,
-  'ping_pong': false,
-  'pool_8ball': false,
-  
-  // Party Games
-  'trivia': true,
-  'truth_or_dare': true,
-  'two_truths_lie': false,
-  
-  // Premium
-  'blackjack_new': false
-  // poker_3d / poker_css3d removed 2026-02-16 (founder directive — 3D Poker rooms deleted).
+// Soft-launch: only advertise multiplayer for titles with a dedicated
+// room route in startMultiplayerGame. Everything else → Practice vs AI
+// (generic /multiplayer lobby CTAs were dead ends for most tiles).
+const MULTIPLAYER_AVAILABLE: Record<string, boolean> = {
+  bid_whist: true,
+  bid_whist_premium: true,
+  bid_whist_platinum: true,
+  hearts: true,
+  crazy_eights: true,
+  go_fish: true,
+  gin_rummy: true,
+  rummy: true,
+  war: true,
+  euchre: true,
+  poker: true,
+  blackjack: true,
+  spades: true,
+  spades_universal: true,
 };
 
 const GAME_CATEGORIES = {

@@ -53,7 +53,10 @@ Anything outside this loop is **optional** until the loop is solid.
 7. ~~Phase 3 personalization~~ (#105)
 8. ~~Phase 1 leftovers: Earn nav highlight + alias redirects~~ (#106)
 9. ~~Landing honesty — Demo Login FTU + four jobs + 1:1 TGE money story~~ (#107)
-10. Landing trim + chair conversion focus — lifestyle dock / WaysToEarn beta collapse + `/earn` Start-here chairs CTA
+10. ~~Landing trim + chair conversion focus~~ (#108)
+11. ~~Dashboard scroll + Bid Whist practice start~~ (#109)
+12. ~~Practice vs AI lobby routing (Bearer + dedicated routes)~~ (#110)
+13. Public launch readiness — Emergent purge, Terms/Privacy, chair success + pricing honesty, wallet Buy Coins, featured MP trim
 
 ## Done when
 
@@ -74,5 +77,8 @@ Anything outside this loop is **optional** until the loop is solid.
 - [x] Desktop GlobalNavbar + dashboard Earn CTA (emerald highlight)
 - [x] Canonical alias redirects for `/tv`, games, earn deep-links, dealer/chair labels
 - [x] Production API: demo-login → `/api/auth/me` + `/api/chairs/economics`; www shells for `/dashboard` `/earn` `/games`
-- [ ] Lifestyle dock = four beta pillars only (no “Six Utility Rooms”); WaysToEarn core-first + collapsed beta (merge + redeploy)
-- [ ] `/earn` “Start here · Own a Chair” conversion band → `/chair-vault` (merge + redeploy)
+- [x] Lifestyle dock = four beta pillars only; WaysToEarn core-first (#108)
+- [x] `/earn` “Start here · Own a Chair” → `/chair-vault` (#108)
+- [ ] Public launch: no Emergent badge/script on www; `/terms` + footer legal links live
+- [ ] Chair vault success polls chairs checkout-status; Genius pricing copy $20/$100/$250
+- [ ] Wallet Buy Coins CTA; lobby multiplayer only on dedicated rooms

@@ -916,8 +916,12 @@ async def chair_checkout(payload: ChairCheckoutPayload, http_request: Request) -
     db = get_database()
 
     # Invite gate — chair holders skip this so they can re-up.
+    # Soft-launch bootstrap: while zero chairs are sold platform-wide,
+    # allow the first buyers without an invite so the network can start.
     existing_chairs = await _user_chair_record(db, user.user_id)
-    if existing_chairs["locked_chairs"] == 0:
+    phase_preview = await _current_phase(db)
+    bootstrap_open = int(phase_preview.get("total_sold") or 0) == 0
+    if existing_chairs["locked_chairs"] == 0 and not bootstrap_open:
         u = await db.users.find_one({"user_id": user.user_id}, {"_id": 0, "invite_accepted": 1}) or {}
         accepted = bool(u.get("invite_accepted"))
         if payload.invite_code:
@@ -935,8 +939,8 @@ async def chair_checkout(payload: ChairCheckoutPayload, http_request: Request) -
                 "Get an invite code from an existing chair holder.",
             )
 
-    # Phase + capacity
-    phase = await _current_phase(db)
+    # Phase + capacity (reuse preview from invite gate when available)
+    phase = phase_preview
     if phase["phase"] == "Sold Out" or phase["price_usd"] is None:
         raise HTTPException(410, "All Founder Chairs have been claimed.")
     if payload.quantity > phase["remaining_in_phase"]:

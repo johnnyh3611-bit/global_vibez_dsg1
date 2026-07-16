@@ -33,6 +33,7 @@ import AffiliateProgram from '@/pages/AffiliateProgram';
 import FoundersPass from '@/pages/FoundersPass';
 import FoundersPassSuccess from '@/pages/FoundersPassSuccess';
 import ChairVault from '@/pages/ChairVault';
+import ChairVaultSuccess from '@/pages/ChairVaultSuccess';
 import ChairWall from '@/pages/ChairWall';
 import ChairHall from '@/pages/ChairHall';
 import HowChairsWork from '@/pages/HowChairsWork';
@@ -298,7 +299,7 @@ export const monetizationRoutes = (ProtectedRoute) => (
     <Route path="/chair-vault" element={<ChairVault />} />
     <Route path="/chair-wall" element={<ChairWall />} />
     <Route path="/chair-hall" element={<ChairHall />} />
-    <Route path="/chair-vault/success" element={<FoundersPassSuccess />} />
+    <Route path="/chair-vault/success" element={<ChairVaultSuccess />} />
     <Route path="/how-chairs-work" element={<HowChairsWork />} />
     <Route path="/join/:code" element={<JoinByInvite />} />
     <Route 
