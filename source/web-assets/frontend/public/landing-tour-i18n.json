@@ -5,36 +5,76 @@
       "label": "English",
       "native": "English",
       "rtl": false,
-      "audio": "/landing-tour-narration-en.mp3?v=2026-07-15-overhaul",
-      "duration": 73.848,
+      "audio": "/landing-tour-narration-en.mp3?v=2026-07-15-v2",
+      "duration": 377.496,
       "cues": [
         {
           "t": 0.0,
-          "text": "YO! Welcome to GLOBAL VIBEZ DSG! The only platform that pays you back for everything you already love. Games. Dating. Rides. Food. Venues. Streaming. ONE token. ONE wallet. Real rewards."
+          "text": "Welcome to GLOBAL VIBEZ DSG \u2014 your seat at a brand-new economy!"
         },
         {
-          "t": 18.288,
-          "text": "Step into the Cyber Casino. 30 plus AAA card rooms. Spades, Bid Whist, Hearts, UNO, Vibez 654, blackjack, roulette, slots. Every hand, every spin, every trick, pays VIBEZ coins."
+          "t": 10.32,
+          "text": "Every game \u00b7 every ride \u00b7 every meal \u00b7 every stream \u00b7 every chair \u00b7 every business = you EARN."
         },
         {
-          "t": 32.184,
-          "text": "Find your Player 2. AI matchmaker, Cinema Dates, Voice Mirror, Just For The Night. Real connections, zero swipe fatigue."
+          "t": 28.032,
+          "text": "Cyber Casino \u2014 30+ AAA card rooms, neon-drenched, live multiplayer."
         },
         {
-          "t": 40.464,
-          "text": "Drive a VibeRidez, deliver Hungry Vibez, cook as a Vibe Artisan, host a Vibe Venue, keep 70 percent of every transaction."
+          "t": 57.864,
+          "text": "HIGH ROLLER VIP \u2014 10,000-coin minimums \u00b7 Diamond blackjack, roulette, baccarat \u00b7 VIP-gated."
         },
         {
-          "t": 47.592,
-          "text": "Go live on DSG TV, drop a track, build your broadcast empire, keep 70 percent of tips, gifts, and ticket sales."
+          "t": 71.28,
+          "text": "Go LIVE on DSG TV in 30 seconds. Keep 70% of tips, gifts, and Featured unlocks."
         },
         {
-          "t": 54.864,
-          "text": "The chair is the crown. One million chairs. 13.5 percent Sovereign Tax recirculates. 5x mining. Ambassador dividends. This is ownership."
+          "t": 109.32,
+          "text": "DATING \u2014 AI matchmaking, Gamer Dating, Cinema Dates, Just For The Night. Real connections, zero swipe-fatigue."
         },
         {
-          "t": 66.312,
-          "text": "Take your seat NOW at Global Vibez DSG. Own the network. Feel the VIBEZ. LET'S GOOO!"
+          "t": 163.872,
+          "text": "Drive, deliver, cook, host \u2014 keep 70%. Cinema creators keep 80%."
+        },
+        {
+          "t": 181.152,
+          "text": "AMBASSADOR Care Package \u2014 scan vendors, earn forever. Chair Dividends, Referral Bounties, Override Commissions."
+        },
+        {
+          "t": 222.384,
+          "text": "EQUITY MASTER v2 \u2014 Floor, Genesis, Diamond, Platinum chair values + Block-Release Governance."
+        },
+        {
+          "t": 261.864,
+          "text": "Two economies, one network. 3B VIBEZ recirculate. DSG token burns on Solana. 5\u00d7 mining for chair holders."
+        },
+        {
+          "t": 309.672,
+          "text": "ONE MILLION CHAIRS. The first cohort OWNS the network."
+        },
+        {
+          "t": 317.04,
+          "text": "Sovereign Casino \u00b7 Social Network \u00b7 Walking Advertisement Economy. YOU OWN IT."
+        },
+        {
+          "t": 325.344,
+          "text": "Take your seat. RIGHT NOW."
+        },
+        {
+          "t": 327.336,
+          "text": "GLOBAL VIBEZ DSG. Own the network. Feel the VIBEZ."
+        },
+        {
+          "t": 333.264,
+          "text": "\u2014 And one more thing. Two new spots. Listen close."
+        },
+        {
+          "t": 338.472,
+          "text": "Commercial One \u2014 The Sovereign Casino. Every chip is REAL VIBEZ."
+        },
+        {
+          "t": 356.832,
+          "text": "Commercial Two \u2014 streamer to seat-holder. TIER-TWO EQUITY, forever dividends."
         }
       ]
     }
