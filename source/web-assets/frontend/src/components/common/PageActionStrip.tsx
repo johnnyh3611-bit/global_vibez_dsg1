@@ -19,7 +19,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   MoreHorizontal, MessageSquare, Mic, RotateCcw, Globe, Utensils, Sparkles,
-  Headphones, X, ZapOff,
+  Headphones, X, ZapOff, DollarSign,
 } from "lucide-react";
 
 const fire = (id: string) => () => {
@@ -82,6 +82,7 @@ const SECTIONS: { title: string; items: SubItem[] }[] = [
   {
     title: "More",
     items: [
+      { id: "earn",         label: "Earn Hub",     hint: "Chairs · referrals · games · streams", Icon: DollarSign, color: "text-emerald-300", href: "/earn" },
       { id: "cultural_hub", label: "Cultural Hub", hint: "Country, language, units",     Icon: Globe,    color: "text-cyan-300",    onClick: fire("cultural_hub") },
       { id: "fresh_drops",  label: "Fresh Drops",  hint: "What's new on the platform",   Icon: Sparkles, color: "text-fuchsia-300", onClick: fire("fresh_drops") },
       { id: "food",         label: "Hungry Vibez", hint: "Order food without leaving",   Icon: Utensils, color: "text-orange-300",  onClick: fire("food") },

@@ -58,16 +58,20 @@ export const miscRoutes = (ProtectedRoute) => (
     <Route path="/earn" element={<ProtectedRoute><EarnHub /></ProtectedRoute>} />
     <Route path="/earn/chair" element={<Navigate to="/chair-vault" replace />} />
     <Route path="/earn/referral" element={<Navigate to="/referral" replace />} />
+    {/* Streaming IA: /tv* aliases → live streams / studio (Job Board canonical). */}
+    <Route path="/tv" element={<Navigate to="/streams" replace />} />
     <Route path="/tv/discover" element={<Navigate to="/streams" replace />} />
     <Route path="/tv/broadcast" element={<Navigate to="/streamer/studio" replace />} />
     <Route path="/tv/analytics" element={<Navigate to="/streamer/analytics" replace />} />
     <Route path="/games/654" element={<Navigate to="/vibe-654-hall" replace />} />
+    <Route path="/games/vibez-654" element={<Navigate to="/vibe-654-hall" replace />} />
     <Route path="/games/spade-plus" element={<Navigate to="/spades" replace />} />
     <Route path="/games/bid-whist" element={<Navigate to="/bid-whist" replace />} />
     <Route path="/games/tournaments" element={<Navigate to="/tournaments" replace />} />
     <Route path="/dating/speed-dating" element={<Navigate to="/speed-dating" replace />} />
     <Route path="/dating/profile" element={<Navigate to="/profile/edit" replace />} />
     <Route path="/chair-registry" element={<Navigate to="/chair-ledger" replace />} />
+    <Route path="/dealer-lounge" element={<Navigate to="/dealers" replace />} />
     <Route path="/discover" element={<ProtectedRoute><DiscoverPage /></ProtectedRoute>} />
     <Route path="/live" element={<ProtectedRoute><LiveStreamingPage /></ProtectedRoute>} />
 

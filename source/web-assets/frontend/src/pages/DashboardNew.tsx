@@ -948,6 +948,20 @@ export default function Dashboard() {
             
             <Button
               variant="ghost"
+              className="flex items-center gap-2 border border-emerald-400/50 bg-emerald-500/15 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-emerald-200 hover:bg-emerald-500/25 hover:text-white md:px-4 md:text-xs"
+              onClick={() => {
+                triggerHaptic('medium');
+                navigate('/earn');
+              }}
+              aria-label="Open Earn hub"
+              data-testid="dashboard-earn-nav"
+            >
+              <Gem className="w-3 h-3" />
+              <span>Earn</span>
+            </Button>
+
+            <Button
+              variant="ghost"
               className="flex items-center gap-2 text-fuchsia-200 hover:text-white hover:bg-fuchsia-500/20 border border-fuchsia-400/40 rounded-full px-3 md:px-4 py-1.5 text-[10px] md:text-xs uppercase tracking-widest animate-pulse"
               onClick={() => {
                 // 2026-05-12 (fix v2 + backlog #8): write localStorage AND

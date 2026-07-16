@@ -50,7 +50,8 @@ Anything outside this loop is **optional** until the loop is solid.
 4. ~~Production smoke green with live FastAPI~~ (`npm run smoke:full` → Railway API)
 5. ~~Bearer session fixes + Emergent login removed~~ (#103)
 6. ~~Native mobile gestures (DESIGN_STRATEGY Phase 2)~~ (#104)
-7. Phase 3 personalization — role landing, chair ROI, recommendations, social proof
+7. ~~Phase 3 personalization~~ (#105)
+8. ~~Phase 1 leftovers: Earn nav highlight + alias redirects~~ 
 
 ## Done when
 
@@ -64,7 +65,9 @@ Anything outside this loop is **optional** until the loop is solid.
 - [x] Production smoke (`npm run smoke` + `smoke:full`) green against Railway API
 - [x] Mobile discover: swipe like/pass + long-press sheet + pull-to-refresh (#104)
 - [x] Dashboard / Earn / Games: haptics on primary CTAs; dashboard pull-to-refresh (#104)
-- [ ] Persona-ordered Job Board + Earn paths
-- [ ] Chair ROI calculator on `/earn`
-- [ ] Recommended games on `/games` + next-game CTA on dashboard
-- [ ] Social proof strip (wins / live / top earner) on dashboard + `/earn`
+- [x] Persona-ordered Job Board + Earn paths (#105)
+- [x] Chair ROI calculator on `/earn` (#105)
+- [x] Recommended games on `/games` + next-game CTA on dashboard (#105)
+- [x] Social proof strip (wins / live / top earner) on dashboard + `/earn` (#105)
+- [x] Desktop GlobalNavbar + dashboard Earn CTA (emerald highlight)
+- [x] Canonical alias redirects for `/tv`, games, earn deep-links, dealer/chair labels
