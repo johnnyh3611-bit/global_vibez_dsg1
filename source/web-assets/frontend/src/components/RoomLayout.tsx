@@ -44,8 +44,9 @@ const roomThemes = {
 export const RoomLayout = ({ theme = 'games', children, showStars = true, heroImage = null }) => {
   const themeConfig = roomThemes[theme] || roomThemes.games;
 
+  // overflow-x-hidden only — overflow-hidden trapped dashboard scroll after Demo Login
   return (
-    <div className="relative min-h-screen overflow-hidden" style={{ backgroundColor: themeConfig.bgColor }}>
+    <div className="relative min-h-screen overflow-x-hidden" style={{ backgroundColor: themeConfig.bgColor }}>
       {/* 3D Background */}
       {showStars && (
         <div className="absolute inset-0 z-0">

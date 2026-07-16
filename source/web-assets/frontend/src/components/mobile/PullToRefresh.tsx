@@ -24,9 +24,12 @@ export function PullToRefresh({
 
   const indicatorOffset = refreshing ? 48 : pullDistance;
 
+  // Do not force overflow-y-auto / overscroll-contain here — that traps
+  // document scroll when wrapped in RoomLayout (dashboard after Demo Login).
+  // Pull gesture uses window.scrollY when this node is not a scrollport.
   return (
     <div
-      className={`relative overflow-y-auto overscroll-contain ${className}`}
+      className={`relative overflow-x-hidden ${className}`}
       data-testid="pull-to-refresh"
       {...handlers}
     >
