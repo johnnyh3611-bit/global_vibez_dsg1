@@ -9,7 +9,7 @@
  *   /dsg/matchmaking        — Alias for /dsg/vigilant-room (dashboard CTA target)
  *   /dsg/beat-vault         — Beat Vault marketplace + auctions
  *   /dsg/memory-bank        — Memory Bank cinema marketplace
- *   /vibe-tv                — Top-level Vibe TV redirect → /dsg/vibe-tv
+ *   /vibe-tv                — DSG Vibe TV hub (product surface; /tv → /streams)
  */
 import { Route, Navigate } from "react-router-dom";
 import VigilantMatchmakingRoom from "@/pages/dsg/VigilantMatchmakingRoom";

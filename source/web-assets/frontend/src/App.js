@@ -74,6 +74,7 @@ import RoleSwitcher from "@/components/common/RoleSwitcher";
 import LandscapeRotateHint from "@/components/common/LandscapeRotateHint";
 import CmdKLauncher from "@/components/CmdKLauncher";
 import MobileBottomNav from "@/components/MobileBottomNav";
+import GlobalNavbar from "@/components/GlobalNavbar";
 
 // Import version manager for cache busting
 import { startVersionMonitoring } from "@/utils/versionManager";
@@ -189,7 +190,11 @@ function ProtectedRouteContent({ children }) {
   }
   return (
     <>
-      <div className="px-4 pt-3 max-w-7xl mx-auto" data-testid="protected-route-action-strip">
+      <div
+        className="mx-auto flex max-w-7xl flex-col gap-2 px-4 pt-3 sm:flex-row sm:items-center sm:justify-between"
+        data-testid="protected-route-action-strip"
+      >
+        <GlobalNavbar />
         <PageActionStrip align="end" />
       </div>
       <div className="gv-route-root">{children}</div>
@@ -326,8 +331,8 @@ function AppRouter() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
-      {/* Global Cmd+K launcher + mobile bottom nav. Mounted once at
-          the App shell so every route gets them for free. */}
+      {/* Global Cmd+K launcher + mobile bottom nav. Desktop primary
+          job nav (GlobalNavbar) mounts inline inside ProtectedRoute. */}
       <CmdKLauncher />
       <MobileBottomNav />
     </>

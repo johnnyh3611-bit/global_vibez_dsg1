@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Gamepad2, Heart, Radio, User, Wallet, Crown } from 'lucide-react';
+import { Gamepad2, Heart, Radio, User, Wallet, Crown, DollarSign } from 'lucide-react';
 import { formatCoins } from '@/utils/currency';
+import { triggerHaptic } from '@/hooks/useGestures';
 
 const UnifiedNavigation = () => {
   const navigate = useNavigate();
@@ -32,6 +33,14 @@ const UnifiedNavigation = () => {
     { id: 'suites', label: 'Private Suites', icon: Heart, path: '/private-suites', color: 'from-pink-500 to-rose-500', badge: 'HOT' },
     { id: 'discover', label: 'Discover', icon: Heart, path: '/discover', color: 'from-pink-500 to-rose-500' },
     { id: 'live', label: 'Live', icon: Radio, path: '/live', color: 'from-cyan-500 to-blue-500' },
+    {
+      id: 'earn',
+      label: 'Earn',
+      icon: DollarSign,
+      path: '/earn',
+      color: 'from-emerald-500 to-green-500',
+      highlight: true,
+    },
   ];
 
   const isActive = (path) => location.pathname.startsWith(path);
@@ -66,13 +75,19 @@ const UnifiedNavigation = () => {
                 <motion.button
                   key={item.id}
                   title={item.label}
-                  onClick={() => navigate(item.path)}
+                  data-testid={`unified-nav-${item.id}`}
+                  onClick={() => {
+                    triggerHaptic(item.highlight ? 'medium' : 'light');
+                    navigate(item.path);
+                  }}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className={`relative px-3 sm:px-6 py-2 sm:py-3 rounded-full font-bold text-xs sm:text-sm transition-all ${
-                    active 
-                      ? `bg-gradient-to-r ${item.color} text-white shadow-lg` 
-                      : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
+                    active
+                      ? `bg-gradient-to-r ${item.color} ${item.highlight ? 'text-black' : 'text-white'} shadow-lg`
+                      : item.highlight
+                        ? 'border border-emerald-400/50 bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25'
+                        : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
                   }`}
                 >
                   <div className="flex items-center gap-2">

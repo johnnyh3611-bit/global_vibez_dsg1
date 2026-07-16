@@ -43,7 +43,7 @@ export const EXPLORE_REGISTRY: Entry[] = [
   { route: '/vibe-654/prescription', title: 'Prescription Room', subtitle: 'Sovereign tier · 6→5→4 with re-rolls', cat: 'casino', tags: ['dice', 'sovereign', '654'] },
   { route: '/games/vibe654/tournament', title: 'Tournament Lobby', subtitle: '20-player tables · create your own', cat: 'casino', tags: ['dice', 'tournament', 'lobby'] },
   { route: '/chess-hall', title: 'Chess Hall', subtitle: 'Daily puzzles · ranked play', cat: 'casino', tags: ['chess'] },
-  { route: '/earn', title: 'Earn Hub', subtitle: 'Chairs · referrals · games · streaming', cat: 'casino', tags: ['earn', 'monetization', 'chairs'] },
+  { route: '/earn', title: 'Earn 💸', subtitle: 'Chairs · referrals · games · streaming', cat: 'wallet', tags: ['earn', 'monetization', 'chairs', 'featured'] },
   { route: '/chess/blitz', title: 'Chess Blitz', subtitle: 'Fast time-control matches', cat: 'casino', tags: ['chess', 'blitz'] },
   { route: '/chess/puzzle', title: 'Chess Daily Puzzle', subtitle: 'One curated FEN per day', cat: 'casino', tags: ['chess', 'puzzle'] },
   { route: '/chess/tournament', title: 'Chess Tournament', subtitle: '4-player single-elim bracket', cat: 'casino', tags: ['chess', 'tournament'] },

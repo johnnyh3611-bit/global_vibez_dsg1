@@ -78,17 +78,22 @@ Gesture-based interactions + haptics:
 | Earning | `/earn` | `/earn/chair`, `/earn/referral` | ✅ New |
 | Hub | `/dashboard` | (curated job board + stats) | ✅ New |
 
-### Alias Routes to Kill (Redirect)
-- `/glasshouse` → `/dashboard`
-- `/dashboard-classic` → `/dashboard`
-- `/my-vibez*` → `/dating/profile`
-- `/vibe-tv` → `/tv`
+### Alias Routes (Redirect) — status
+- ✅ `/dashboard-classic` / `/dashboard-volumetric` → `/dashboard` (view preference)
+- ✅ `/lounge` → `/dashboard`
+- ✅ `/tv` + `/tv/*` discover/broadcast/analytics → streams / studio
+- ✅ `/earn/chair` → `/chair-vault`, `/earn/referral` → `/referral`
+- ✅ `/games/654`, `/games/vibez-654`, card-game aliases → canonical halls
+- ✅ `/chair-registry` → `/chair-ledger`, `/dealer-lounge` → `/dealers`
+- `/glasshouse` — **kept** as Celestial Glasshouse ownership (not an alias)
+- `/my-vibez*` — **kept** as MY VIBEZ streaming product (not dating)
+- `/vibe-tv` — **kept** as DSG Vibe TV hub; streaming Job Board uses `/streams`
 
 ### Navigation Labels to Rename (Clarity)
-- ~~`654`~~ → `Dice Games` (what new users think)
-- ~~`Plex`~~ → `Music Studio` (easier to grok)
-- ~~`Dealer Lounge`~~ → `Dealer` (already good)
-- ~~`Chair Registry`~~ → `Chair Holders` (shows social proof)
+- ~~`654`~~ → `Dice Games` (mobile tab + Explore)
+- ~~`Plex`~~ → `Music Studio` (Explore + mobile Music tab)
+- ~~`Dealer Lounge`~~ → `/dealers` redirect
+- ~~`Chair Registry`~~ → `/chair-ledger` redirect
 
 ---
 
@@ -159,9 +164,9 @@ Where earnings reminders appear:
 
 **Phase 1 (This week)**: Consolidate IA + Play to Earn UX
 - ✅ Dashboard + Job Board
-- 🟢 Earn hub + Earnings Banner
-- 🔄 Update Global Navbar (highlight Earn)
-- 🔄 Kill alias routes (redirects)
+- ✅ Earn hub + Earnings Banner
+- ✅ Global job nav (inline, not sticky) + mobile Earn tab + Quick Access Earn (emerald)
+- ✅ Alias routes redirect (`/tv`→`/streams`, dashboard aliases, earn deep-links, games aliases)
 
 **Phase 2 (Next week)**: Native Mobile Feel
 - ✅ Gesture library (`src/hooks/useGestures.ts` — swipe, pull, long-press, haptics)
@@ -169,7 +174,7 @@ Where earnings reminders appear:
 - ✅ Skeleton loaders on Discover + Dashboard
 - ✅ Smooth transitions on Discover / Earn paths (Framer Motion)
 
-**Phase 3 (Personalization)**: 🟢 IN PROGRESS
+**Phase 3 (Personalization)**: ✅ COMPLETE (#105)
 - ✅ Role-based landing (`lib/persona.ts` reorders Job Board + Earn paths)
 - ✅ Earnings calculator (`ChairRoiCalculator` on `/earn` via `/api/chairs/economics`)
 - ✅ Recommendation engine (`useRecommendedGames` + Games hub strip + Job Board CTA)
