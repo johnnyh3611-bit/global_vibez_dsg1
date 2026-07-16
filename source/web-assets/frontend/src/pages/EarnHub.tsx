@@ -5,8 +5,10 @@
  * new backend surface. Every CTA points at a route that already mounts.
  */
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import { DollarSign, Users, Trophy, Radio, Armchair } from "lucide-react";
 import AppFooter from "@/components/AppFooter";
+import { triggerHaptic } from "@/hooks/useGestures";
 
 const PATHS = [
   {
@@ -69,22 +71,29 @@ export default function EarnHub() {
         </header>
 
         <section className="grid gap-4 sm:grid-cols-2" aria-label="Earning paths">
-          {PATHS.map(({ id, title, blurb, cta, href, Icon, accent }) => (
-            <Link
+          {PATHS.map(({ id, title, blurb, cta, href, Icon, accent }, index) => (
+            <motion.div
               key={id}
-              to={href}
-              data-testid={`earn-path-${id}`}
-              className={`rounded-2xl border p-5 transition hover:scale-[1.01] hover:bg-white/5 ${accent}`}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.06, type: "spring", stiffness: 260, damping: 24 }}
             >
-              <div className="mb-3 flex items-center gap-3">
-                <Icon className="h-5 w-5" />
-                <h2 className="text-lg font-bold text-white">{title}</h2>
-              </div>
-              <p className="mb-4 text-sm text-white/70">{blurb}</p>
-              <span className="text-sm font-semibold text-white">
-                {cta} →
-              </span>
-            </Link>
+              <Link
+                to={href}
+                data-testid={`earn-path-${id}`}
+                onClick={() => triggerHaptic("medium")}
+                className={`block rounded-2xl border p-5 transition hover:scale-[1.01] hover:bg-white/5 active:scale-[0.99] ${accent}`}
+              >
+                <div className="mb-3 flex items-center gap-3">
+                  <Icon className="h-5 w-5" />
+                  <h2 className="text-lg font-bold text-white">{title}</h2>
+                </div>
+                <p className="mb-4 text-sm text-white/70">{blurb}</p>
+                <span className="text-sm font-semibold text-white">
+                  {cta} →
+                </span>
+              </Link>
+            </motion.div>
           ))}
         </section>
 

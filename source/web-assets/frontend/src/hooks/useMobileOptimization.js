@@ -29,61 +29,8 @@ export function useMobileDetection() {
   return { isMobile, isTablet, orientation, isDesktop: !isMobile && !isTablet };
 }
 
-// Touch gestures hook for mobile games
-export function useTouchGestures(callbacks = {}) {
-  const [touchStart, setTouchStart] = useState(null);
-  const [touchEnd, setTouchEnd] = useState(null);
-
-  const minSwipeDistance = 50;
-
-  const onTouchStart = (e) => {
-    setTouchEnd(null);
-    setTouchStart({
-      x: e.targetTouches[0].clientX,
-      y: e.targetTouches[0].clientY,
-      time: Date.now()
-    });
-  };
-
-  const onTouchMove = (e) => {
-    setTouchEnd({
-      x: e.targetTouches[0].clientX,
-      y: e.targetTouches[0].clientY
-    });
-  };
-
-  const onTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
-
-    const distanceX = touchStart.x - touchEnd.x;
-    const distanceY = touchStart.y - touchEnd.y;
-    const isLeftSwipe = distanceX > minSwipeDistance;
-    const isRightSwipe = distanceX < -minSwipeDistance;
-    const isUpSwipe = distanceY > minSwipeDistance;
-    const isDownSwipe = distanceY < -minSwipeDistance;
-
-    const duration = Date.now() - touchStart.time;
-    const isTap = duration < 200 && Math.abs(distanceX) < 10 && Math.abs(distanceY) < 10;
-
-    if (isTap && callbacks.onTap) {
-      callbacks.onTap({ x: touchStart.x, y: touchStart.y });
-    } else if (isLeftSwipe && callbacks.onSwipeLeft) {
-      callbacks.onSwipeLeft();
-    } else if (isRightSwipe && callbacks.onSwipeRight) {
-      callbacks.onSwipeRight();
-    } else if (isUpSwipe && callbacks.onSwipeUp) {
-      callbacks.onSwipeUp();
-    } else if (isDownSwipe && callbacks.onSwipeDown) {
-      callbacks.onSwipeDown();
-    }
-  };
-
-  return {
-    onTouchStart,
-    onTouchMove,
-    onTouchEnd
-  };
-}
+// Prefer `@/hooks/useGestures` for new code. Kept for existing imports.
+export { useSwipeGestures as useTouchGestures, useHapticFeedback } from './useGestures';
 
 // Responsive board size calculator
 export function useResponsiveBoardSize(baseSize = 600) {
@@ -142,20 +89,3 @@ export function usePreventMobileZoom() {
   }, []);
 }
 
-// Haptic feedback for mobile
-export function useHapticFeedback() {
-  const vibrate = (pattern = 50) => {
-    if ('vibrate' in navigator) {
-      navigator.vibrate(pattern);
-    }
-  };
-
-  return {
-    light: () => vibrate(10),
-    medium: () => vibrate(20),
-    heavy: () => vibrate(50),
-    success: () => vibrate([50, 100, 50]),
-    error: () => vibrate([100, 50, 100]),
-    pattern: (pattern) => vibrate(pattern)
-  };
-}

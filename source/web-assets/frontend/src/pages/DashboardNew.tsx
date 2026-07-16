@@ -38,6 +38,9 @@ import SessionHubCard from '@/components/SessionHubCard';
 import { JobBoard } from '@/components/dashboard/JobBoard';
 import { EarningsBanner } from '@/components/dashboard/EarningsBanner';
 import { authFetch, clearAuthStorage } from '@/utils/secureAuth';
+import { PullToRefresh } from '@/components/mobile/PullToRefresh';
+import { triggerHaptic } from '@/hooks/useGestures';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -429,24 +432,27 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string>('watch');
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await authFetch(`${API}/auth/me`);
-        if (!response.ok) throw new Error('Not authenticated');
-        const userData = await response.json();
-        setUser(userData);
-      } catch (error) {
-        navigate('/login');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchUser = async (opts?: { redirectOnFail?: boolean }) => {
+    const redirectOnFail = opts?.redirectOnFail !== false;
+    try {
+      const response = await authFetch(`${API}/auth/me`);
+      if (!response.ok) throw new Error('Not authenticated');
+      const userData = await response.json();
+      setUser(userData);
+    } catch (error) {
+      if (redirectOnFail) navigate('/login');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only session bootstrap
   }, [navigate]);
 
   const handleLogout = async () => {
+    triggerHaptic('light');
     try {
       // API already includes `/api` — do not prefix again.
       await authFetch(`${API}/auth/logout`, { method: 'POST' });
@@ -899,20 +905,26 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-950">
-        <motion.div 
-          className="text-white text-xl"
-          animate={{ opacity: [0.5, 1, 0.5] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
-        >
-          Loading your universe...
-        </motion.div>
+      <div className="min-h-screen bg-slate-950 px-4 py-16" data-testid="dashboard-skeleton">
+        <div className="mx-auto max-w-5xl space-y-6">
+          <Skeleton className="mx-auto h-12 w-2/3 bg-white/10" />
+          <Skeleton className="mx-auto h-6 w-1/2 bg-white/5" />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-36 rounded-2xl bg-white/10" />
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
     <RoomLayout theme="games" showStars={true}>
+      <PullToRefresh
+        className="min-h-screen"
+        onRefresh={() => fetchUser({ redirectOnFail: false })}
+      >
       {/* Notification Banner - Only shows after login */}
       <NotificationBanner />
       
@@ -1348,6 +1360,7 @@ export default function Dashboard() {
       </div>
 
       <AppFooter />
+      </PullToRefresh>
     </RoomLayout>
   );
 }

@@ -2,6 +2,7 @@
 
 import { Link } from "react-router-dom";
 import { GlobalCard } from "@/components/ui/GlobalCard";
+import { triggerHaptic } from "@/hooks/useGestures";
 
 interface JobBoardItem {
   id: string;
@@ -189,6 +190,7 @@ export function JobBoard() {
                   key={item.id}
                   to={item.href}
                   data-testid={`job-board-${item.id}`}
+                  onClick={() => triggerHaptic("light")}
                 >
                   <GlobalCard
                     interactive

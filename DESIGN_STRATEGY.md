@@ -53,15 +53,15 @@ Make monetization *visible on every screen*, not hidden in `/earn`.
 ---
 
 ### 3. **Native Mobile Feel** (Next Priority)
-**Status**: 🔄 PENDING
+**Status**: 🟢 IN PROGRESS (Phase 2 wired on core loop)
 
 Gesture-based interactions + haptics:
-- Swipe left/right: Next match, next game, next room
-- Pull-to-refresh: Update feed, refresh player list
-- Long-press: Quick actions (report, share, favorite)
-- Haptic feedback: On join, match, win, notification
-- Skeleton loaders: While images/data load
-- Smooth transitions: Scale/fade/slide animations
+- ✅ Swipe left/right on `/dating/discover` (like / pass)
+- ✅ Pull-to-refresh on discover + classic dashboard
+- ✅ Long-press quick actions (save / share / report) on discover
+- ✅ Haptic feedback on Job Board, Earn hub, game start, match
+- ✅ Skeleton loaders on discover + dashboard bootstrap
+- ✅ Smooth card / path transitions (Framer Motion)
 
 **Why**: Dating + gaming apps feel native. Web wrappers feel slow.
 
@@ -164,10 +164,10 @@ Where earnings reminders appear:
 - 🔄 Kill alias routes (redirects)
 
 **Phase 2 (Next week)**: Native Mobile Feel
-- Gesture library (swipe, pull, long-press)
-- Haptic feedback on all CTAs
-- Skeleton loaders for images/data
-- Smooth transitions (Framer Motion)
+- ✅ Gesture library (`src/hooks/useGestures.ts` — swipe, pull, long-press, haptics)
+- ✅ Haptics on core-loop CTAs (Job Board, Earn, Games enter, Discover)
+- ✅ Skeleton loaders on Discover + Dashboard
+- ✅ Smooth transitions on Discover / Earn paths (Framer Motion)
 
 **Phase 3 (Future)**: Personalization
 - Role-based landing page (Gamer → Game cards first)
