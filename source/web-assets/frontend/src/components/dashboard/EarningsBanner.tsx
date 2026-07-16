@@ -96,19 +96,19 @@ export function EarningsBanner({
                 🎲 Play First Game
               </Link>
               <Link
-                to="/earn/referral"
+                to="/referral"
                 className="block rounded-glass border border-surface-glass-border px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-surface-glass"
               >
                 🎯 Share & Earn $5+
               </Link>
               <Link
-                to="/tv/broadcast"
+                to="/streamer/studio"
                 className="block rounded-glass border border-surface-glass-border px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-surface-glass"
               >
                 📺 Go Live
               </Link>
               <Link
-                to="/earn/chair"
+                to="/chair-vault"
                 className="block rounded-glass border border-surface-glass-border px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-surface-glass"
               >
                 💺 Buy Chair

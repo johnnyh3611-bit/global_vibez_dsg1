@@ -16,6 +16,7 @@ import SoundControls from '@/components/SoundControls';
 import soundManager from '@/utils/soundManager';
 import WinnerTicker from '@/components/common/WinnerTicker';
 import { isComingSoon } from '@/data/comingSoonGames';
+import { EarningsBanner } from '@/components/dashboard/EarningsBanner';
 
 // Game gradient themes - custom color schemes for each game
 const GAME_GRADIENTS = {
@@ -725,6 +726,10 @@ export default function GamesNew() {
           </div>
         </motion.div>
 
+        <div className="mb-6">
+          <EarningsBanner variant="compact" />
+        </div>
+
         {/* Enhanced Category Tabs with Animations */}
         {!searchQuery && (
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3 mb-4 sm:mb-6 pb-2">
@@ -872,8 +877,6 @@ export default function GamesNew() {
                   fan_tan: "/fan-tan",
                   faro: "/faro",
                   vibes_darts: "/vibes-darts",
-                  reversi: "/reversi-aaa",
-                  klondike: "/klondike",
                   go_fish: "/go-fish",
                   gin_rummy: "/gin-rummy",
                   rummy: "/rummy",
