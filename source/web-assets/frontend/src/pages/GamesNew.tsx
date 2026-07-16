@@ -18,6 +18,8 @@ import WinnerTicker from '@/components/common/WinnerTicker';
 import { isComingSoon } from '@/data/comingSoonGames';
 import { EarningsBanner } from '@/components/dashboard/EarningsBanner';
 import { triggerHaptic } from '@/hooks/useGestures';
+import { recordRecentGame } from '@/hooks/useRecommendedGames';
+import { RecommendedGames } from '@/components/games/RecommendedGames';
 
 // Game gradient themes - custom color schemes for each game
 const GAME_GRADIENTS = {
@@ -330,6 +332,7 @@ export default function GamesNew() {
   const startPracticeGame = async (game) => {
     if (startingGame) return;
     triggerHaptic('medium');
+    recordRecentGame({ id: game.id, name: game.name });
 
     // COMING SOON gate — short-circuit before any routing logic so
     // tiles for unfinished games can't be entered. Source of truth:
@@ -518,6 +521,7 @@ export default function GamesNew() {
   const startMultiplayerGame = (game) => {
     soundManager.buttonClick();
     triggerHaptic('medium');
+    recordRecentGame({ id: game.id, name: game.name });
 
     // COMING SOON gate — apply same gate to multiplayer button.
     if (isComingSoon(game.id)) {
@@ -731,6 +735,10 @@ export default function GamesNew() {
 
         <div className="mb-6">
           <EarningsBanner variant="compact" />
+        </div>
+
+        <div className="mb-6">
+          <RecommendedGames />
         </div>
 
         {/* Enhanced Category Tabs with Animations */}
