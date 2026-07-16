@@ -12,7 +12,7 @@
     "typecheck": "cd source/web-assets/frontend && yarn typecheck",
     "lint": "npm run typecheck",
     "smoke": "bash ./scripts/smoke-test.sh https://www.globalvibezdsg.com",
-    "smoke:full": "SMOKE_REQUIRE_API=1 bash ./scripts/smoke-test.sh https://www.globalvibezdsg.com \"${REACT_APP_BACKEND_URL}\"",
+    "smoke:full": "SMOKE_REQUIRE_API=1 bash ./scripts/smoke-test.sh https://www.globalvibezdsg.com \"${REACT_APP_BACKEND_URL:-https://globalvibezdsg1-production.up.railway.app}\"",
     "sync:workspace": "bash ./scripts/sync-workspace.sh main",
     "sync:verify": "git fetch origin --prune && test \"$(git rev-parse HEAD)\" = \"$(git rev-parse origin/main)\" && echo 'Workspace matches origin/main'",
     "sync:guards:install": "bash ./scripts/setup-sync-guards.sh"

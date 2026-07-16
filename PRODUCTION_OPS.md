@@ -3,14 +3,21 @@
 Canonical app: `source/web-assets` (CRA frontend + FastAPI + Mongo).
 Production frontend DNS: **Vercel** → `www.globalvibezdsg.com`.
 
-## Current status (2026-07-13)
+## Current status (2026-07-16)
 
 | Layer | Status |
 |-------|--------|
-| Frontend UI on www | ✅ Renders (blank-screen crash fixed) |
-| Backend API behind www | ❌ `/api/*` returns HTML (no FastAPI attached) |
-| Azure VM nginx mirror | ❌ `20.84.123.232:22` SSH timeout (NSG/VM) |
-| Email signup/login | Fixed in code (`/api/auth/*`); needs live backend |
+| Frontend UI on www | ✅ Renders (`npm run smoke` green) |
+| FastAPI on Railway | ✅ `https://globalvibezdsg1-production.up.railway.app` — `/health` + demo-login 200 |
+| Same-origin `/api` on www | ⚠️ Still HTML (Vercel has no FastAPI proxy; app uses baked `REACT_APP_BACKEND_URL`) |
+| Azure VM nginx mirror | ❌ `20.84.123.232:22` SSH timeout (NSG/VM) — optional |
+| Email / demo login | ✅ Against Railway API (`npm run smoke:full` green) |
+
+Canonical API URL (also in `vercel.json` + `frontend/.env.production`):
+
+```text
+https://globalvibezdsg1-production.up.railway.app
+```
 
 ---
 
