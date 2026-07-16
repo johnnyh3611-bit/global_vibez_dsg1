@@ -11,14 +11,13 @@
  * demote, ADD its id. That's the only edit required — every other
  * surface picks it up automatically.
  *
- * EMPTY SET: As of 2026-02-15, every game listed in the casino lobby has
- * been wired end-to-end. The set is intentionally kept (not deleted) so
- * future games can be gated by adding their id back here.
+ * Gate only titles with no dedicated AAA room AND no practice UI map
+ * entry. Prefer routing fixes over permanent Coming Soon when a room
+ * already exists.
  */
 export const COMING_SOON_GAME_IDS: ReadonlySet<string> = new Set<string>([
-  // No dedicated playable room route yet — keep visible but gated.
-  "reversi",
-  "klondike",
+  // Practice UI key mismatch was fixed (truth_or_dare → truthordare).
+  // Keep empty unless a lobby tile truly has no playable room.
 ]);
 
 export const isComingSoon = (gameId: string | undefined | null): boolean => {

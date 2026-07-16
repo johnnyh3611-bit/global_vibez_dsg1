@@ -8,9 +8,11 @@ import os
 def setup_middleware(app) -> None:
     """Configure all middleware for the FastAPI app"""
     
-    # Read CORS origins from environment variable
+    # Read CORS origins from environment variable. Default includes local
+    # CRA (:3000) so demo-login / ship-core smoke works without a custom .env.
     cors_origins = os.environ.get(
         'CORS_ORIGINS',
+        'http://localhost:3000,http://127.0.0.1:3000,'
         'https://www.globalvibezdsg.com,https://globalvibezdsg.com',
     )
     

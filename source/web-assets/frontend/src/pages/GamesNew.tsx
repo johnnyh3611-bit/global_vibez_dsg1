@@ -883,6 +883,9 @@ export default function GamesNew() {
                   war: "/war",
                   uno: "/uno",
                   euchre: "/euchre",
+                  reversi: "/practice/play/reversi",
+                  klondike: "/practice/play/klondike",
+                  solitaire: "/practice/play/solitaire",
                 };
                 const target = aaaRoutes[game.id];
                 if (target) {

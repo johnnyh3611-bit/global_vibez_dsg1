@@ -1043,133 +1043,89 @@ export default function Dashboard() {
           <JobBoard />
         </div>
 
-        {/* Feb 2026 sprint surfaces — Plex / Vibez 654 Hall / Daily
-            Spin / Artist Studio / Onboarding / Roadmap. Without this
-            card the new destinations live behind URL guesses. */}
-        <div className="max-w-5xl mx-auto mb-8">
-          <SessionHubCard />
-        </div>
-
-        {/* 🚀 Beta Hub — 2026-05-22 build. Single pane of glass listing
-            every feature shipped this session (DSG TV Expansion, DSG
-            Logistics, Music Group, License Marketplace, License Inbox,
-            VibeRidez Cargo, and more) with per-feature health pings.
-            Founder ask: "make sure I can view and test everything". */}
-        <motion.button
-          type="button"
-          onClick={() => navigate('/beta-hub')}
-          data-testid="dashboard-beta-hub-banner"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="group relative w-full max-w-5xl mx-auto mb-8 overflow-hidden rounded-2xl border-2 border-fuchsia-400/40 bg-gradient-to-r from-fuchsia-600/25 via-purple-600/15 to-cyan-600/20 backdrop-blur-md px-5 py-4 text-left hover:scale-[1.005] transition-transform shadow-[0_0_30px_-10px_rgba(217,70,239,0.4)]"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-fuchsia-500 to-violet-600 flex items-center justify-center shrink-0">
-              <span className="text-xl">🚀</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[10px] uppercase tracking-[0.3em] font-black text-fuchsia-200">
-                New · 2026-05-22 Build
-              </p>
-              <h3 className="text-lg sm:text-xl font-black text-white mt-0.5">
-                Beta Features Hub
-              </h3>
-              <p className="text-xs text-white/70 mt-0.5">
-                View + test every feature shipped this session — DSG TV, Music Group,
-                License Marketplace, VibeRidez Cargo, Logistics Ops, and 4 more — with live
-                health pings on each.
-              </p>
-            </div>
-            <span className="hidden sm:flex items-center gap-1 text-fuchsia-200 text-xs font-black uppercase tracking-widest">
-              Open <span aria-hidden>→</span>
-            </span>
-          </div>
-        </motion.button>
-
-        {/* 🌌 Volumetric preview banner — founder ask 2026-05-12 ("build it
-            first to see what it looks like; if I don't like it, take it
-            off"). Big, can't-miss A/B toggle into the new Three.js dashboard. */}
-        <motion.button
-          type="button"
-          onClick={() => {
-            switchDashboardView("volumetric");
-            navigate("/dashboard");
-          }}
-          data-testid="dashboard-volumetric-banner"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="group relative w-full mb-8 overflow-hidden rounded-2xl border-2 border-fuchsia-400/50 bg-gradient-to-r from-violet-600/30 via-fuchsia-600/30 to-cyan-600/30 backdrop-blur-md px-5 py-5 text-left hover:scale-[1.005] active:scale-[0.995] transition-transform shadow-[0_0_40px_-10px_rgba(217,70,239,0.6)]"
-        >
-          <div className="absolute -inset-px bg-gradient-to-r from-fuchsia-500/0 via-fuchsia-500/30 to-cyan-500/0 opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
-          <div className="relative flex items-center gap-4">
-            <div className="text-4xl md:text-5xl animate-pulse">🌌</div>
-            <div className="flex-1 min-w-0">
-              <div className="text-[10px] uppercase tracking-[0.4em] text-fuchsia-300 font-bold flex items-center gap-2">
-                NEW · Founder Preview
-                <span className="bg-amber-400 text-amber-950 text-[8px] px-2 py-0.5 rounded-full font-black">A/B</span>
-              </div>
-              <div className="text-lg sm:text-2xl font-black text-white mt-1">
-                Try the Volumetric Galaxy Dashboard
-              </div>
-              <div className="text-xs sm:text-sm text-fuchsia-100/80 mt-1">
-                6 emissive planets · drag to spin · tap to dive in. Don't like it? One tap brings you back to Classic.
-              </div>
-            </div>
-            <div className="hidden sm:flex items-center gap-1 text-fuchsia-200 text-xs uppercase tracking-widest font-black">
-              Open 3D →
-            </div>
-          </div>
-        </motion.button>
-
         {/* Chair-holder vote banner — chair holders only, auto-hides if no open polls */}
         <ChairHolderVoteBanner />
 
-        {/* What's New — May 2026 PDF batch (Streamer Revenue / Master
-            Tech / Party Hub blueprints). Surfaces the seven new rooms
-            shipped this week so the founder/users can find them. */}
-        <motion.div
-          data-testid="whats-new-banner"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="relative mb-10 rounded-2xl border border-fuchsia-400/30 bg-gradient-to-r from-fuchsia-500/10 via-cyan-500/5 to-amber-500/10 backdrop-blur-md px-5 py-4"
+        {/* Secondary destinations stay available but off the first viewport. */}
+        <details
+          className="max-w-5xl mx-auto mb-10 rounded-2xl border border-white/10 bg-white/[0.03] open:bg-white/[0.04]"
+          data-testid="dashboard-more-destinations"
         >
-          <div className="flex items-start gap-3">
-            <Sparkles className="w-6 h-6 text-amber-300 mt-0.5 shrink-0" />
-            <div className="flex-1 min-w-0">
-              <div className="text-[10px] uppercase tracking-[0.4em] text-fuchsia-300 font-bold">
-                What's New · May 2026
+          <summary className="cursor-pointer list-none px-5 py-4 text-sm font-semibold text-white/80 marker:content-none [&::-webkit-details-marker]:hidden">
+            <span className="flex items-center justify-between gap-3">
+              <span>More destinations · Beta, Galaxy view, Ride Home</span>
+              <span className="text-xs uppercase tracking-[0.2em] text-white/40">Expand</span>
+            </span>
+          </summary>
+          <div className="space-y-6 border-t border-white/10 px-4 pb-6 pt-5 sm:px-5">
+            <div className="max-w-5xl mx-auto">
+              <SessionHubCard />
+            </div>
+
+            <motion.button
+              type="button"
+              onClick={() => navigate('/beta-hub')}
+              data-testid="dashboard-beta-hub-banner"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="group relative w-full overflow-hidden rounded-2xl border border-fuchsia-400/40 bg-gradient-to-r from-fuchsia-600/25 via-purple-600/15 to-cyan-600/20 backdrop-blur-md px-5 py-4 text-left hover:scale-[1.005] transition-transform"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-fuchsia-500 to-violet-600 flex items-center justify-center shrink-0">
+                  <span className="text-xl">🚀</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] uppercase tracking-[0.3em] font-black text-fuchsia-200">
+                    Beta
+                  </p>
+                  <h3 className="text-lg font-black text-white mt-0.5">
+                    Beta Features Hub
+                  </h3>
+                  <p className="text-xs text-white/70 mt-0.5">
+                    Experimental surfaces with live health pings.
+                  </p>
+                </div>
               </div>
-              <div className="text-base sm:text-lg font-black text-white">
-                15 new rooms live — Vibe-tionary, Meme Matchmaker, Hide & Seek (now with Mapbox),
-                Blind Auction, VibeShopper Hunt, Beat Vault DLC, Streamer Overlay,
-                Sound-Check Gauntlet, Collab Matchmaker, Totem Pole Battles, Vibe TV Totem Pole,
-                Vibe Suite (Agora RTC), Lyric Glasshouse (3D), Cyber Casino (Unity WebGL)
+            </motion.button>
+
+            <motion.button
+              type="button"
+              onClick={() => {
+                switchDashboardView("volumetric");
+                navigate("/dashboard");
+              }}
+              data-testid="dashboard-volumetric-banner"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="group relative w-full overflow-hidden rounded-2xl border border-fuchsia-400/50 bg-gradient-to-r from-violet-600/30 via-fuchsia-600/30 to-cyan-600/30 backdrop-blur-md px-5 py-4 text-left hover:scale-[1.005] transition-transform"
+            >
+              <div className="relative flex items-center gap-4">
+                <div className="text-3xl">🌌</div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[10px] uppercase tracking-[0.4em] text-fuchsia-300 font-bold">
+                    Optional · Galaxy view
+                  </div>
+                  <div className="text-lg font-black text-white mt-1">
+                    Try the Volumetric Galaxy Dashboard
+                  </div>
+                </div>
               </div>
-              <div className="text-xs text-white/70 mt-1">
-                Powered by the <span className="text-cyan-300 font-bold">Streamer Action Hub</span>, <span className="text-amber-300 font-bold">DSG Guard</span>, and <span className="text-fuchsia-300 font-bold">Totem Pole rails</span> ·
-                70/13.5/10 split locked · Power Hour ×1.5 · 98% Synergy · Tip-to-Shield $2/5min ·
-                {' '}
-                <a href="/streamer/setup-guide" className="underline text-emerald-300">Streamer Setup Guide →</a>
+            </motion.button>
+
+            <div
+              data-testid="dashboard-ride-home-row"
+              className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-2xl border border-blue-400/30 bg-gradient-to-r from-blue-950/60 via-slate-950/40 to-cyan-950/40 backdrop-blur p-4"
+            >
+              <div className="text-white/90">
+                <p className="text-[10px] uppercase tracking-[0.4em] font-bold text-cyan-300">Need a lift?</p>
+                <p className="text-base font-black">One-tap Ride Home.</p>
               </div>
+              <RideHomeButton />
             </div>
           </div>
-        </motion.div>
-
-        {/* Ride Home — Roadmap PDF §3. One-tap geo-locked ride from
-            the lobby. Hands off to /rides with lat/lng pre-filled. */}
-        <div
-          data-testid="dashboard-ride-home-row"
-          className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-2xl border border-blue-400/30 bg-gradient-to-r from-blue-950/60 via-slate-950/40 to-cyan-950/40 backdrop-blur p-4"
-        >
-          <div className="text-white/90">
-            <p className="text-[10px] uppercase tracking-[0.4em] font-bold text-cyan-300">Need a lift?</p>
-            <p className="text-base sm:text-lg font-black">One-tap Ride Home from anywhere on the platform.</p>
-          </div>
-          <RideHomeButton />
-        </div>
+        </details>
 
         {/* ─────── Live Right Now pill — surfaces momentum so users
               drop into the busiest category at a glance. Hidden when
