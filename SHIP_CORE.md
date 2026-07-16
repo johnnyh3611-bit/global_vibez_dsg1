@@ -49,7 +49,8 @@ Anything outside this loop is **optional** until the loop is solid.
 3. ~~Archive stale session markdown~~ (#102)
 4. ~~Production smoke green with live FastAPI~~ (`npm run smoke:full` → Railway API)
 5. ~~Bearer session fixes + Emergent login removed~~ (#103)
-6. Native mobile gestures (DESIGN_STRATEGY Phase 2) — in flight / PR
+6. ~~Native mobile gestures (DESIGN_STRATEGY Phase 2)~~ (#104)
+7. Phase 3 personalization — role landing, chair ROI, recommendations, social proof
 
 ## Done when
 
@@ -61,5 +62,9 @@ Anything outside this loop is **optional** until the loop is solid.
 - [x] Demo login → dashboard Job Board → `/earn` + `/games` + `/spades` (local smoke)
 - [x] Local CORS includes `http://localhost:3000` by default
 - [x] Production smoke (`npm run smoke` + `smoke:full`) green against Railway API
-- [ ] Mobile discover: swipe like/pass + long-press sheet + pull-to-refresh
-- [ ] Dashboard / Earn / Games: haptics on primary CTAs; dashboard pull-to-refresh
+- [x] Mobile discover: swipe like/pass + long-press sheet + pull-to-refresh (#104)
+- [x] Dashboard / Earn / Games: haptics on primary CTAs; dashboard pull-to-refresh (#104)
+- [ ] Persona-ordered Job Board + Earn paths
+- [ ] Chair ROI calculator on `/earn`
+- [ ] Recommended games on `/games` + next-game CTA on dashboard
+- [ ] Social proof strip (wins / live / top earner) on dashboard + `/earn`

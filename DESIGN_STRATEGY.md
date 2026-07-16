@@ -169,11 +169,11 @@ Where earnings reminders appear:
 - ✅ Skeleton loaders on Discover + Dashboard
 - ✅ Smooth transitions on Discover / Earn paths (Framer Motion)
 
-**Phase 3 (Future)**: Personalization
-- Role-based landing page (Gamer → Game cards first)
-- Earnings calculator (if I buy chair, I earn $X/month)
-- Recommendation engine (next game based on history)
-- Social proof (who's winning, who's streaming, who's earning)
+**Phase 3 (Personalization)**: 🟢 IN PROGRESS
+- ✅ Role-based landing (`lib/persona.ts` reorders Job Board + Earn paths)
+- ✅ Earnings calculator (`ChairRoiCalculator` on `/earn` via `/api/chairs/economics`)
+- ✅ Recommendation engine (`useRecommendedGames` + Games hub strip + Job Board CTA)
+- ✅ Social proof strip (live streams + top earner + WinnerTicker on dashboard/`/earn`)
 
 ---
 

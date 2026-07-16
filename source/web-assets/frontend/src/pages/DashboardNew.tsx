@@ -41,6 +41,7 @@ import { authFetch, clearAuthStorage } from '@/utils/secureAuth';
 import { PullToRefresh } from '@/components/mobile/PullToRefresh';
 import { triggerHaptic } from '@/hooks/useGestures';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SocialProofStrip } from '@/components/common/SocialProofStrip';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -1037,9 +1038,13 @@ export default function Dashboard() {
           <EarningsBanner variant="compact" />
         </div>
 
-        {/* Four jobs: Gaming · Dating · Streaming · Earning — primary IA hub. */}
+        <div className="max-w-5xl mx-auto mb-8">
+          <SocialProofStrip />
+        </div>
+
+        {/* Four jobs: Gaming · Dating · Streaming · Earning — persona-ordered. */}
         <div className="max-w-5xl mx-auto mb-12">
-          <JobBoard />
+          <JobBoard interestCategories={user?.interest_categories || []} />
         </div>
 
         {/* Chair-holder vote banner — chair holders only, auto-hides if no open polls */}

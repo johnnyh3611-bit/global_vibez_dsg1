@@ -1,12 +1,21 @@
 "use client";
 
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { GlobalCard } from "@/components/ui/GlobalCard";
 import { triggerHaptic } from "@/hooks/useGestures";
+import {
+  categoryOrderForPersona,
+  PERSONA_LABEL,
+  resolvePersona,
+  type JobCategory,
+  type Persona,
+} from "@/lib/persona";
+import { useRecommendedGames } from "@/hooks/useRecommendedGames";
 
 interface JobBoardItem {
   id: string;
-  category: "gaming" | "dating" | "streaming" | "earning";
+  category: JobCategory;
   title: string;
   description: string;
   icon: string;
@@ -21,7 +30,6 @@ interface JobBoardItem {
  * frontend/src/routes/*. Prefer canonical hubs over aspirational paths.
  */
 const JOB_BOARD: JobBoardItem[] = [
-  // Gaming
   {
     id: "dice-654",
     category: "gaming",
@@ -53,8 +61,6 @@ const JOB_BOARD: JobBoardItem[] = [
     href: "/bid-whist",
     gradient: "from-rose-500/40 to-brand-primary/20",
   },
-
-  // Dating
   {
     id: "discover-matches",
     category: "dating",
@@ -85,8 +91,6 @@ const JOB_BOARD: JobBoardItem[] = [
     href: "/profile/edit",
     gradient: "from-purple-500/40 to-brand-primary/20",
   },
-
-  // Streaming
   {
     id: "watch-streams",
     category: "streaming",
@@ -117,8 +121,6 @@ const JOB_BOARD: JobBoardItem[] = [
     href: "/streamer/analytics",
     gradient: "from-blue-500/40 to-indigo-500/20",
   },
-
-  // Earning
   {
     id: "chair-holder",
     category: "earning",
@@ -162,25 +164,73 @@ const JOB_BOARD: JobBoardItem[] = [
   },
 ];
 
-const CATEGORIES = [
-  { id: "gaming", label: "Gaming", color: "text-blue-400" },
-  { id: "dating", label: "Dating", color: "text-pink-400" },
-  { id: "streaming", label: "Streaming", color: "text-red-400" },
-  { id: "earning", label: "Earning", color: "text-green-400" },
-] as const;
+const CATEGORY_META: Record<
+  JobCategory,
+  { label: string; color: string }
+> = {
+  gaming: { label: "Gaming", color: "text-blue-400" },
+  dating: { label: "Dating", color: "text-pink-400" },
+  streaming: { label: "Streaming", color: "text-red-400" },
+  earning: { label: "Earning", color: "text-green-400" },
+};
 
-export function JobBoard() {
+type Props = {
+  interestCategories?: string[];
+  personaOverride?: Persona;
+};
+
+export function JobBoard({ interestCategories, personaOverride }: Props) {
+  const { recommendations, recent } = useRecommendedGames(1);
+
+  const persona = useMemo(
+    () =>
+      personaOverride ||
+      resolvePersona({
+        interestCategories,
+        recentGameCount: recent.length,
+      }),
+    [interestCategories, personaOverride, recent.length]
+  );
+
+  const categories = useMemo(
+    () => categoryOrderForPersona(persona),
+    [persona]
+  );
+
+  const topRec = recommendations[0];
+
   return (
     <div className="w-full space-y-12" data-testid="dashboard-job-board">
-      {CATEGORIES.map((category) => {
-        const items = JOB_BOARD.filter((item) => item.category === category.id);
+      <div
+        className="flex flex-wrap items-center justify-between gap-2"
+        data-testid="job-board-persona"
+      >
+        <p className="text-xs text-white/45">
+          Sorted for you ·{" "}
+          <span className="font-semibold text-white/80">
+            {PERSONA_LABEL[persona]}
+          </span>
+        </p>
+        {topRec && (
+          <Link
+            to={topRec.href}
+            onClick={() => triggerHaptic("medium")}
+            data-testid="job-board-next-game"
+            className="rounded-full border border-fuchsia-400/40 bg-fuchsia-500/15 px-3 py-1 text-xs font-semibold text-fuchsia-100 hover:bg-fuchsia-500/25"
+          >
+            Next game: {topRec.name} →
+          </Link>
+        )}
+      </div>
+
+      {categories.map((categoryId) => {
+        const meta = CATEGORY_META[categoryId];
+        const items = JOB_BOARD.filter((item) => item.category === categoryId);
 
         return (
-          <section key={category.id}>
+          <section key={categoryId}>
             <div className="mb-6">
-              <h2 className={`text-xl font-bold ${category.color}`}>
-                {category.label}
-              </h2>
+              <h2 className={`text-xl font-bold ${meta.color}`}>{meta.label}</h2>
               <div className="mt-1 h-0.5 w-12 bg-gradient-to-r from-brand-primary to-brand-accent" />
             </div>
 
