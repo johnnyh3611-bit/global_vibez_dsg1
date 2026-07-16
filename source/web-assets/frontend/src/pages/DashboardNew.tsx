@@ -35,6 +35,8 @@ import UnifiedEarningsWidget from '@/components/common/UnifiedEarningsWidget';
 import DashboardSpinBadge from '@/components/DashboardSpinBadge';
 import Vibez654ReachabilityChip from '@/components/Vibez654ReachabilityChip';
 import SessionHubCard from '@/components/SessionHubCard';
+import { JobBoard } from '@/components/dashboard/JobBoard';
+import { EarningsBanner } from '@/components/dashboard/EarningsBanner';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -1030,6 +1032,15 @@ export default function Dashboard() {
             see one number instead of hunting between dashboards. */}
         <div className="max-w-3xl mx-auto mb-8">
           <UnifiedEarningsWidget />
+        </div>
+
+        <div className="max-w-5xl mx-auto mb-8">
+          <EarningsBanner variant="compact" />
+        </div>
+
+        {/* Four jobs: Gaming · Dating · Streaming · Earning — primary IA hub. */}
+        <div className="max-w-5xl mx-auto mb-12">
+          <JobBoard />
         </div>
 
         {/* Feb 2026 sprint surfaces — Plex / Vibez 654 Hall / Daily

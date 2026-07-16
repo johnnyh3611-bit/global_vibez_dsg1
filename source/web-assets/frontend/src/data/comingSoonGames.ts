@@ -16,7 +16,9 @@
  * future games can be gated by adding their id back here.
  */
 export const COMING_SOON_GAME_IDS: ReadonlySet<string> = new Set<string>([
-  // (every game shipped — set is intentionally empty)
+  // No dedicated playable room route yet — keep visible but gated.
+  "reversi",
+  "klondike",
 ]);
 
 export const isComingSoon = (gameId: string | undefined | null): boolean => {

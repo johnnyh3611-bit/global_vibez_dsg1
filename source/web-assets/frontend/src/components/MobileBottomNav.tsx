@@ -4,9 +4,9 @@
  * breakpoint). Lives at the App shell layer so every protected
  * route gets it for free.
  *
- * Six tabs: Home · Vibez 654 · Plex · Studio · Explore · Profile
- * Active tab highlighted in fuchsia. Active route detected from
- * useLocation, so deep-linking + browser back keep state aligned.
+ * Six tabs: Home · Dice · Music · Earn · Explore · Profile
+ * Active tab highlighted in fuchsia (Earn uses emerald). Active route
+ * detected from useLocation, so deep-linking + browser back stay aligned.
  *
  * Hides on fullscreen game routes so the bottom nav never covers
  * in-game CTAs like Ante In / Roll / Bid Now.
@@ -14,15 +14,15 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
-  Home, Dice6, Sparkles, Mic2, Compass, User,
+  Home, Dice6, Sparkles, DollarSign, Compass, User,
 } from 'lucide-react';
 import useIsFullscreenGameRoute from '@/hooks/useIsFullscreenGameRoute';
 
 const TABS = [
   { key: 'home', route: '/dashboard', label: 'Home', Icon: Home },
-  { key: 'vibe-654', route: '/vibe-654-hall', label: '654', Icon: Dice6 },
-  { key: 'plex', route: '/plex', label: 'Plex', Icon: Sparkles },
-  { key: 'studio', route: '/artist/dashboard', label: 'Studio', Icon: Mic2 },
+  { key: 'dice', route: '/vibe-654-hall', label: 'Dice', Icon: Dice6 },
+  { key: 'music', route: '/plex', label: 'Music', Icon: Sparkles },
+  { key: 'earn', route: '/earn', label: 'Earn', Icon: DollarSign, accent: 'earn' as const },
   { key: 'explore', route: '/explore', label: 'Explore', Icon: Compass },
   { key: 'profile', route: '/profile/edit', label: 'Me', Icon: User },
 ];
@@ -76,8 +76,14 @@ export default function MobileBottomNav() {
         data-testid="mobile-bottom-nav"
       >
         <div className="grid grid-cols-6">
-          {TABS.map(({ key, route, label, Icon }) => {
+          {TABS.map(({ key, route, label, Icon, accent }) => {
             const active = isActive(route);
+            const isEarn = accent === 'earn';
+            const activeColor = isEarn ? 'text-emerald-300' : 'text-fuchsia-300';
+            const activeBar = isEarn ? 'bg-emerald-400' : 'bg-fuchsia-400';
+            const activeGlow = isEarn
+              ? 'drop-shadow-[0_0_8px_rgba(52,211,153,0.65)]'
+              : 'drop-shadow-[0_0_8px_rgba(232,121,249,0.6)]';
             return (
               <button
                 key={key}
@@ -88,16 +94,18 @@ export default function MobileBottomNav() {
                 data-testid={`mobile-nav-${key}`}
                 className={`relative flex flex-col items-center justify-center py-2 transition-colors ${
                   active
-                    ? 'text-fuchsia-300'
-                    : 'text-white/50 hover:text-white/80'
+                    ? activeColor
+                    : isEarn
+                      ? 'text-emerald-400/70 hover:text-emerald-300'
+                      : 'text-white/50 hover:text-white/80'
                 }`}
               >
-                <Icon className={`w-5 h-5 ${active ? 'drop-shadow-[0_0_8px_rgba(232,121,249,0.6)]' : ''}`} />
+                <Icon className={`w-5 h-5 ${active ? activeGlow : ''}`} />
                 <span className="text-[9px] uppercase tracking-widest font-bold mt-0.5">
                   {label}
                 </span>
                 {active && (
-                  <span className="absolute top-0 w-8 h-0.5 bg-fuchsia-400 rounded-full" />
+                  <span className={`absolute top-0 w-8 h-0.5 rounded-full ${activeBar}`} />
                 )}
               </button>
             );

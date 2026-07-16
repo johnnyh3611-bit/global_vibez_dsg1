@@ -1,5 +1,4 @@
-import { Route } from "react-router-dom";
-import { lazy, Suspense } from "react";
+import { Route, Navigate } from "react-router-dom";
 import SweepstakesPage from "@/pages/SweepstakesPage";
 import GlasshouseOwnershipPage from "@/pages/GlasshouseOwnershipPage";
 import ChairLedgerPage from "@/pages/ChairLedgerPage";
@@ -27,14 +26,12 @@ import ContentRightsPage from "@/pages/ContentRightsPage";
 import CinemaRoom from "@/pages/CinemaRoom";
 import FreeTVCinemaRoom from "@/pages/FreeTVCinemaRoom";
 import VibeSpotsPage from "@/pages/VibeSpotsPage";
-// Lazy-load Volumetric Galaxy bundle (Three.js ~500KB) — only loaded when user
-// actually visits the volumetric route or has it as their dashboard view.
-const VolumetricDashboard = lazy(() => import("@/pages/VolumetricDashboard"));
 import DashboardRouter from "@/pages/DashboardRouter";
+import { DashboardViewRedirect } from "@/pages/DashboardViewRedirect";
+import EarnHub from "@/pages/EarnHub";
 import PaymentSuccess from "@/pages/PaymentSuccess";
 import PaymentCancel from "@/pages/PaymentCancel";
 import CelebrationDemo from "@/pages/CelebrationDemo";
-import Dashboard from "@/pages/DashboardNew";
 import DiscoverPage from "@/pages/DiscoverPage";
 import LiveStreamingPage from "@/pages/LiveStreamingPage";
 import TournamentDemo from "@/pages/TournamentDemo";
@@ -52,12 +49,25 @@ import LegacyVaultPage from "@/pages/LegacyVaultPage";
 
 export const miscRoutes = (ProtectedRoute) => (
   <>
-    {/* Hub & Main Pages — /dashboard now resolves to either the Volumetric
-        Galaxy (default per founder ask 2026-05-12) or the classic grid
-        based on the user's stored preference. */}
+    {/* Hub & Main Pages — /dashboard resolves to Volumetric (default) or
+        classic via DashboardRouter preference. Alias URLs redirect. */}
     <Route path="/dashboard" element={<ProtectedRoute><DashboardRouter /></ProtectedRoute>} />
-    <Route path="/dashboard-classic" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-    <Route path="/lounge" element={<ProtectedRoute><DashboardRouter /></ProtectedRoute>} />
+    <Route path="/dashboard-classic" element={<ProtectedRoute><DashboardViewRedirect view="classic" /></ProtectedRoute>} />
+    <Route path="/dashboard-volumetric" element={<ProtectedRoute><DashboardViewRedirect view="volumetric" /></ProtectedRoute>} />
+    <Route path="/lounge" element={<Navigate to="/dashboard" replace />} />
+    <Route path="/earn" element={<ProtectedRoute><EarnHub /></ProtectedRoute>} />
+    <Route path="/earn/chair" element={<Navigate to="/chair-vault" replace />} />
+    <Route path="/earn/referral" element={<Navigate to="/referral" replace />} />
+    <Route path="/tv/discover" element={<Navigate to="/streams" replace />} />
+    <Route path="/tv/broadcast" element={<Navigate to="/streamer/studio" replace />} />
+    <Route path="/tv/analytics" element={<Navigate to="/streamer/analytics" replace />} />
+    <Route path="/games/654" element={<Navigate to="/vibe-654-hall" replace />} />
+    <Route path="/games/spade-plus" element={<Navigate to="/spades" replace />} />
+    <Route path="/games/bid-whist" element={<Navigate to="/bid-whist" replace />} />
+    <Route path="/games/tournaments" element={<Navigate to="/tournaments" replace />} />
+    <Route path="/dating/speed-dating" element={<Navigate to="/speed-dating" replace />} />
+    <Route path="/dating/profile" element={<Navigate to="/profile/edit" replace />} />
+    <Route path="/chair-registry" element={<Navigate to="/chair-ledger" replace />} />
     <Route path="/discover" element={<ProtectedRoute><DiscoverPage /></ProtectedRoute>} />
     <Route path="/live" element={<ProtectedRoute><LiveStreamingPage /></ProtectedRoute>} />
 
@@ -121,7 +131,6 @@ export const miscRoutes = (ProtectedRoute) => (
     <Route path="/free-tv/:roomId" element={<ProtectedRoute><FreeTVCinemaRoom /></ProtectedRoute>} />
     {/* Volumetric Dashboard "Vibez Spots" tile lands here. */}
     <Route path="/vibe-spots" element={<ProtectedRoute><VibeSpotsPage /></ProtectedRoute>} />
-    <Route path="/dashboard-volumetric" element={<ProtectedRoute><Suspense fallback={<div data-testid="volumetric-route-loading" className="fixed inset-0 z-[1000] flex items-center justify-center bg-[#0d1117] text-fuchsia-300 text-sm uppercase tracking-[0.3em]">Loading Galaxy…</div>}><VolumetricDashboard /></Suspense></ProtectedRoute>} />
     <Route path="/payment/success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
     <Route path="/payment/cancel" element={<ProtectedRoute><PaymentCancel /></ProtectedRoute>} />
 
@@ -137,7 +146,6 @@ export const miscRoutes = (ProtectedRoute) => (
     <Route path="/glasshouse" element={<ProtectedRoute><GlasshouseOwnershipPage /></ProtectedRoute>} />
     {/* DSG Circulation Ledger — chair registry */}
     <Route path="/chair-ledger" element={<ProtectedRoute><ChairLedgerPage /></ProtectedRoute>} />
-    <Route path="/chair-registry" element={<ProtectedRoute><ChairLedgerPage /></ProtectedRoute>} />
     {/* Ops console — authenticated platform health dashboard */}
     <Route path="/operations" element={<ProtectedRoute><OperationsConsolePage /></ProtectedRoute>} />
   </>

@@ -36,13 +36,14 @@ type Entry = { route: string; title: string; subtitle: string; cat: Cat; tags: s
 // minimum entry count.
 export const EXPLORE_REGISTRY: Entry[] = [
   // Casino & Cards
-  { route: '/vibe-654-hall', title: 'Vibez 654 Hall', subtitle: 'Master hub · all 7 dice variants', cat: 'casino', tags: ['dice', '654', 'hub', 'parlour'] },
-  { route: '/vibez-654', title: 'Vibez 654 Classic', subtitle: "Nova's parlour · single-player dice", cat: 'casino', tags: ['dice', '654', 'classic'] },
-  { route: '/dice', title: 'VibeDice 654 Premium', subtitle: 'Marble floor · gold orbit ring', cat: 'casino', tags: ['dice', 'premium'] },
+  { route: '/vibe-654-hall', title: 'Dice Games Hall', subtitle: 'Master hub · all 7 dice variants', cat: 'casino', tags: ['dice', '654', 'hub', 'parlour'] },
+  { route: '/vibez-654', title: 'Dice Classic', subtitle: "Nova's parlour · single-player dice", cat: 'casino', tags: ['dice', '654', 'classic'] },
+  { route: '/dice', title: 'Dice Premium', subtitle: 'Marble floor · gold orbit ring', cat: 'casino', tags: ['dice', 'premium'] },
   { route: '/vibe-654/solo', title: 'Solo High-Roller Vault', subtitle: '1-vs-AI underground · ≥ 50K ₵', cat: 'casino', tags: ['dice', 'solo', 'highroller'] },
   { route: '/vibe-654/prescription', title: 'Prescription Room', subtitle: 'Sovereign tier · 6→5→4 with re-rolls', cat: 'casino', tags: ['dice', 'sovereign', '654'] },
   { route: '/games/vibe654/tournament', title: 'Tournament Lobby', subtitle: '20-player tables · create your own', cat: 'casino', tags: ['dice', 'tournament', 'lobby'] },
   { route: '/chess-hall', title: 'Chess Hall', subtitle: 'Daily puzzles · ranked play', cat: 'casino', tags: ['chess'] },
+  { route: '/earn', title: 'Earn Hub', subtitle: 'Chairs · referrals · games · streaming', cat: 'casino', tags: ['earn', 'monetization', 'chairs'] },
   { route: '/chess/blitz', title: 'Chess Blitz', subtitle: 'Fast time-control matches', cat: 'casino', tags: ['chess', 'blitz'] },
   { route: '/chess/puzzle', title: 'Chess Daily Puzzle', subtitle: 'One curated FEN per day', cat: 'casino', tags: ['chess', 'puzzle'] },
   { route: '/chess/tournament', title: 'Chess Tournament', subtitle: '4-player single-elim bracket', cat: 'casino', tags: ['chess', 'tournament'] },
@@ -59,7 +60,7 @@ export const EXPLORE_REGISTRY: Entry[] = [
   { route: '/spades', title: 'Card Royale', subtitle: 'Modern remix of classics', cat: 'casino', tags: ['cards', 'royale'] },
 
   // Music & Media
-  { route: '/plex', title: 'Plex Rooms', subtitle: 'Living rooms · Gaming · Dating · Showcase', cat: 'music', tags: ['plex', 'living-room', 'affinity'] },
+  { route: '/plex', title: 'Music Studio Rooms', subtitle: 'Living rooms · Gaming · Dating · Showcase', cat: 'music', tags: ['plex', 'living-room', 'affinity', 'music'] },
   { route: '/artist/onboarding', title: 'Drop a Track', subtitle: '60-second creator funnel', cat: 'music', tags: ['artist', 'onboarding', 'music'] },
   { route: '/artist/dashboard', title: 'Creator Studio', subtitle: '80% take · ledger · Gas-Out', cat: 'music', tags: ['artist', 'creator', 'gas-out'] },
   { route: '/artist/music-group', title: 'DSG Music Group', subtitle: 'Rights ledger · collaborator splits · royalty audit', cat: 'music', tags: ['artist', 'music-group', 'splits', 'royalty', 'rights'] },
