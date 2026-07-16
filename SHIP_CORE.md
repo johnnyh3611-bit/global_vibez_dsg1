@@ -51,7 +51,8 @@ Anything outside this loop is **optional** until the loop is solid.
 5. ~~Bearer session fixes + Emergent login removed~~ (#103)
 6. ~~Native mobile gestures (DESIGN_STRATEGY Phase 2)~~ (#104)
 7. ~~Phase 3 personalization~~ (#105)
-8. ~~Phase 1 leftovers: Earn nav highlight + alias redirects~~ 
+8. ~~Phase 1 leftovers: Earn nav highlight + alias redirects~~ (#106)
+9. Landing honesty — Demo Login FTU + four jobs + 1:1 TGE money story 
 
 ## Done when
 

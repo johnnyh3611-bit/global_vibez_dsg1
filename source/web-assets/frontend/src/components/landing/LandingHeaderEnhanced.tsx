@@ -9,15 +9,14 @@
  * fixed; top: 0` requirement — the header now scrolls away with the
  * rest of the page like a normal block.
  *
- * Brand block, language switcher, Phantom Connect, Sign-In, Join-Now
- * CTAs all preserved.
+ * Brand block, language switcher, Sign-In, Join-Now CTAs.
+ * Phantom Connect lives on /wallet after login (not on the landing).
  */
 import React, { useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Spade, Coins, Sparkles } from "lucide-react";
 import LandingLanguageSwitcher from "@/components/LandingLanguageSwitcher";
-import PhantomConnectButton from "@/components/web3/PhantomConnectButton"; // eslint-disable-line @typescript-eslint/no-unused-vars
 
 export type RoomKey =
   | "game_logic"
@@ -182,6 +181,15 @@ const LandingHeaderEnhanced: React.FC<Props> = ({ onRoomHover }) => {
             Sign In
           </button>
           <button
+            type="button"
+            onClick={() => navigate("/login")}
+            data-testid="landing-header-demo-hint"
+            className="hidden sm:inline-flex px-4 py-2 text-emerald-300 font-bold hover:text-emerald-200 transition-colors border border-emerald-500/40 rounded-lg hover:border-emerald-400"
+          >
+            Demo
+          </button>
+          <button
+            type="button"
             onClick={() => navigate("/signup")}
             data-testid="landing-signup-btn"
             className="px-5 py-2 bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white font-bold rounded-lg hover:scale-105 transition-transform shadow-lg shadow-fuchsia-500/50"

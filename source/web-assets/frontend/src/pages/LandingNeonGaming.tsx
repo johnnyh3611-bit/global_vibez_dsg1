@@ -14,8 +14,8 @@ import RecirculationVelocityWidget from '@/components/RecirculationVelocityWidge
 import PublicHealthBadge from '../components/landing/PublicHealthBadge';
 import EvolutionCountdown from '../components/landing/EvolutionCountdown';
 import WinnerTicker from '../components/common/WinnerTicker';
-import PhantomConnectButton from '@/components/web3/PhantomConnectButton';
 import LandingAccordion from '../components/landing/LandingAccordion';
+import { setBearerToken } from '@/utils/secureAuth';
 import EcosystemMechanics from '../components/landing/EcosystemMechanics';
 import PricingMasterVault from '../components/landing/PricingMasterVault';
 import WhatsNext from '../components/landing/WhatsNext';
@@ -35,9 +35,39 @@ const API = process.env.REACT_APP_BACKEND_URL;
 
 export default function LandingNeonGaming() {
   const navigate = useNavigate();
+  const [demoLoading, setDemoLoading] = useState(false);
   // PDF §2 "Room Transitions" — when a nav link is hovered, shift the
   // page's ambient background tint to evoke the target room.
   const [hoveredRoom, setHoveredRoom] = useState<RoomKey>(null);
+
+  const runDemoLogin = async () => {
+    if (demoLoading) return;
+    setDemoLoading(true);
+    localStorage.setItem('auth_in_progress', '1');
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    try {
+      const response = await fetch(`${API}/api/auth/demo-login`, {
+        method: 'POST',
+        signal: controller.signal,
+      });
+      const data = await response.json().catch(() => ({}));
+      if (response.ok && data.token && data.user_id) {
+        setBearerToken(data.token);
+        localStorage.setItem('user_id', data.user_id);
+        if (data.name) localStorage.setItem('username', data.name);
+        window.location.href = '/dashboard';
+        return;
+      }
+    } catch {
+      // fall through to login page
+    } finally {
+      clearTimeout(timeoutId);
+      localStorage.removeItem('auth_in_progress');
+      setDemoLoading(false);
+    }
+    navigate('/login');
+  };
 
   const ROOM_TINT: Record<Exclude<RoomKey, null>, string> = {
     game_logic: "rgba(34, 211, 238, 0.18)",   // cyan — Cyber-Casino
@@ -319,20 +349,20 @@ export default function LandingNeonGaming() {
               <div className="space-y-3 mb-8">
                 <p className="text-lg sm:text-xl lg:text-2xl text-purple-300 font-bold flex items-center gap-2">
                   <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-fuchsia-500" />
-                  Six Utility Rooms · One Token · Real Rewards
+                  Four jobs. One hub. Start in under a minute.
                 </p>
                 <p className="text-base sm:text-xl text-gray-400">
-                  Games · Dating · Rides · Food · Venues · Streaming
+                  Gaming · Dating · Streams · Earn
                 </p>
                 <p className="text-sm sm:text-base text-gray-500 max-w-xl pt-2">
-                  Drive a VibeRidez · deliver Hungry Vibez · host a Vibe Venue ·
-                  cook as a Vibe Artisan · game · stream · own a Chair.
-                  Five real ways to earn $DSG on Solana.
+                  Demo Login or email signup → dashboard Job Board → play,
+                  match, watch, or earn. Wallet linking is optional after
+                  you&apos;re in. Explore rides, venues, and music further down.
                 </p>
               </div>
             </motion.div>
 
-            {/* CTA Buttons */}
+            {/* CTA Buttons — ship-core FTU */}
             <motion.div
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -340,33 +370,34 @@ export default function LandingNeonGaming() {
               className="grid grid-cols-2 sm:flex sm:flex-row sm:flex-wrap gap-2 sm:gap-3 mb-6 sm:mb-10"
             >
               <button
-                onClick={() => navigate('/signup')}
-                className="group w-full sm:w-auto px-4 sm:px-10 py-2.5 sm:py-3.5 bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white text-sm sm:text-base font-black rounded-lg hover:scale-105 transition-transform shadow-2xl shadow-fuchsia-500/50 flex items-center justify-center gap-2 border-2 border-fuchsia-400"
+                type="button"
+                onClick={runDemoLogin}
+                disabled={demoLoading}
+                data-testid="landing-cta-demo-login"
+                className="group col-span-2 w-full sm:w-auto px-4 sm:px-10 py-2.5 sm:py-3.5 bg-gradient-to-r from-emerald-500 to-cyan-500 text-black text-sm sm:text-base font-black rounded-lg hover:scale-105 transition-transform shadow-2xl shadow-emerald-500/40 flex items-center justify-center gap-2 border-2 border-emerald-300 disabled:opacity-60"
               >
                 <Play className="w-5 h-5 sm:w-6 sm:h-6" />
-                Start Playing
+                {demoLoading ? 'Starting demo…' : 'Demo Login'}
                 <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" />
               </button>
               <button
-                onClick={() => navigate('/games-menu')}
+                type="button"
+                onClick={() => navigate('/login')}
+                data-testid="landing-cta-sign-in"
                 className="w-full sm:w-auto px-4 sm:px-10 py-2.5 sm:py-3.5 bg-purple-900/50 backdrop-blur-xl text-purple-300 text-sm sm:text-base font-black rounded-lg hover:bg-purple-800/50 transition-all border-2 border-purple-500 hover:border-fuchsia-500 flex items-center justify-center gap-2"
               >
-                <Gamepad2 className="w-5 h-5 sm:w-6 sm:h-6" />
-                Browse Games
+                Sign In
               </button>
-              {/* Public Beta CTA — Feb 2026 redeploy. Routes to public waitlist page. */}
               <button
-                onClick={() => navigate('/beta-tester')}
-                data-testid="landing-cta-join-beta"
-                className="w-full sm:w-auto px-4 sm:px-8 py-2.5 sm:py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 text-black text-sm sm:text-base font-black rounded-lg hover:scale-105 transition-transform shadow-2xl shadow-amber-500/40 border-2 border-amber-300 flex items-center justify-center gap-2"
+                type="button"
+                onClick={() => navigate('/signup')}
+                data-testid="landing-cta-sign-up"
+                className="w-full sm:w-auto px-4 sm:px-10 py-2.5 sm:py-3.5 bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white text-sm sm:text-base font-black rounded-lg hover:scale-105 transition-transform shadow-2xl shadow-fuchsia-500/50 flex items-center justify-center gap-2 border-2 border-fuchsia-400"
               >
-                <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
-                Join Beta
+                Sign Up Free
               </button>
-              {/* Founder fix May 2026 — surfaced the narrated tour in the
-                  hero so visitors don't have to scroll deep into the page to
-                  find it. Smooth-scrolls to the video player section below. */}
               <button
+                type="button"
                 onClick={() => {
                   const target = document.querySelector('[data-testid="landing-tour-video"]');
                   if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -375,67 +406,68 @@ export default function LandingNeonGaming() {
                 className="w-full sm:w-auto px-4 sm:px-8 py-2.5 sm:py-3.5 bg-black/60 backdrop-blur-xl text-white text-sm sm:text-base font-black rounded-lg hover:bg-black/80 transition-all border-2 border-cyan-400 hover:border-fuchsia-400 flex items-center justify-center gap-2 shadow-[0_0_30px_-8px_rgba(34,211,238,0.5)]"
               >
                 <Play className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" />
-                Watch 6-min Tour
+                Watch Tour
               </button>
             </motion.div>
 
-            {/* (Removed May 2026 — these 5 pill tags duplicated content
-                already shown by the Utility Rooms Dock + DSG TV / Music
-                shortcut buttons further down. Kept the categories,
-                trimmed the wall of text per founder request.) */}
-
-            {/* Public room shortcuts (Feb 2026 founder fix) — beta testers
-                were asking how to find DSG TV and DSG Music Group. Now they
-                can preview both before login. */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6" data-testid="landing-room-shortcuts">
-              <motion.button
-                onClick={() => navigate('/vibe-tv')}
-                data-testid="landing-cta-vibe-tv"
-                whileHover={{ scale: 1.02 }}
-                className="group flex items-center gap-3 p-4 rounded-xl border-2 border-cyan-500/40 bg-gradient-to-br from-cyan-500/10 to-blue-500/5 hover:border-cyan-400 hover:from-cyan-500/20 transition-all text-left"
-              >
-                <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center shrink-0">
-                  <Tv className="w-6 h-6 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[10px] uppercase tracking-[0.3em] text-cyan-300 font-black mb-0.5">LIVE NOW</div>
-                  <div className="font-black text-white text-sm">Global Vibez DSG TV</div>
-                  <div className="text-xs text-cyan-300/70 truncate">24/7 streaming · sync-watch · live channels</div>
-                </div>
-                <ArrowRight className="w-4 h-4 text-cyan-400 group-hover:translate-x-1 transition-transform shrink-0" />
-              </motion.button>
-              <motion.button
-                onClick={() => navigate('/dsg/music-group')}
-                data-testid="landing-cta-dsg-music"
-                whileHover={{ scale: 1.02 }}
-                className="group flex items-center gap-3 p-4 rounded-xl border-2 border-amber-500/40 bg-gradient-to-br from-amber-500/10 to-orange-500/5 hover:border-amber-400 hover:from-amber-500/20 transition-all text-left"
-              >
-                <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shrink-0">
-                  <Music className="w-6 h-6 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[10px] uppercase tracking-[0.3em] text-amber-300 font-black mb-0.5">70/30 REVOLUTION</div>
-                  <div className="font-black text-white text-sm">Global Vibez DSG Music</div>
-                  <div className="text-xs text-amber-300/70 truncate">Beat vault · battles · collab matchmaker</div>
-                </div>
-                <ArrowRight className="w-4 h-4 text-amber-400 group-hover:translate-x-1 transition-transform shrink-0" />
-              </motion.button>
-              <motion.button
-                onClick={() => navigate('/yellow-pages')}
-                data-testid="landing-cta-yellow-pages"
-                whileHover={{ scale: 1.02 }}
-                className="group flex items-center gap-3 p-4 rounded-xl border-2 border-yellow-500/40 bg-gradient-to-br from-yellow-500/10 to-orange-500/5 hover:border-yellow-400 hover:from-yellow-500/20 transition-all text-left sm:col-span-2"
-              >
-                <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shrink-0">
-                  <BookMarked className="w-6 h-6 text-slate-950" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[10px] uppercase tracking-[0.3em] text-yellow-300 font-black mb-0.5">DSG GUARD · 4TH PILLAR</div>
-                  <div className="font-black text-white text-sm">Vibe Yellow Pages</div>
-                  <div className="text-xs text-yellow-300/70 truncate">Mom &amp; Pop directory · verified businesses · hyper-local</div>
-                </div>
-                <ArrowRight className="w-4 h-4 text-yellow-400 group-hover:translate-x-1 transition-transform shrink-0" />
-              </motion.button>
+            {/* Core loop shortcuts — what you can do today */}
+            <div
+              className="grid grid-cols-2 gap-3 mt-6"
+              data-testid="landing-core-loop"
+              aria-label="What you can do today"
+            >
+              {[
+                {
+                  id: 'games',
+                  path: '/games',
+                  label: 'Gaming',
+                  hint: 'Spades · Bid Whist · Dice',
+                  Icon: Gamepad2,
+                  tone: 'border-cyan-500/40 from-cyan-500/10 to-blue-500/5 text-cyan-300',
+                },
+                {
+                  id: 'dating',
+                  path: '/dating/discover',
+                  label: 'Dating',
+                  hint: 'Discover · match · play',
+                  Icon: Heart,
+                  tone: 'border-pink-500/40 from-pink-500/10 to-rose-500/5 text-pink-300',
+                },
+                {
+                  id: 'streams',
+                  path: '/streams',
+                  label: 'Streams',
+                  hint: 'Watch live · go live',
+                  Icon: Tv,
+                  tone: 'border-red-500/40 from-red-500/10 to-orange-500/5 text-red-300',
+                },
+                {
+                  id: 'earn',
+                  path: '/earn',
+                  label: 'Earn',
+                  hint: 'Chairs · referrals · wins',
+                  Icon: DollarSign,
+                  tone: 'border-emerald-500/40 from-emerald-500/10 to-green-500/5 text-emerald-300',
+                },
+              ].map(({ id, path, label, hint, Icon, tone }) => (
+                <motion.button
+                  key={id}
+                  type="button"
+                  onClick={() => navigate(path)}
+                  data-testid={`landing-cta-${id}`}
+                  whileHover={{ scale: 1.02 }}
+                  className={`group flex items-center gap-3 rounded-xl border-2 bg-gradient-to-br p-4 text-left transition-all hover:brightness-110 ${tone}`}
+                >
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-black/40">
+                    <Icon className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-black text-white">{label}</div>
+                    <div className="truncate text-xs opacity-70">{hint}</div>
+                  </div>
+                  <ArrowRight className="h-4 w-4 shrink-0 opacity-70 transition-transform group-hover:translate-x-1" />
+                </motion.button>
+              ))}
             </div>
 
             {/* Live Coin Velocity — recirculation readout (replaces burn counter) */}
@@ -475,8 +507,16 @@ export default function LandingNeonGaming() {
            in the Utility Rooms Dock + Hero pills below. Removing it
            lightens the page without losing any category.) */}
 
-      {/* Utility Rooms Dock — one-click hub for every room. Replaces the
-           cluttered top-nav strip the user explicitly asked us to remove. */}
+      {/* Explore / beta pillars — below the core Job Board loop. */}
+      <div className="relative z-10 mx-auto max-w-5xl px-6 pt-10 pb-2 text-center">
+        <p className="text-[10px] font-mono uppercase tracking-[0.35em] text-white/40">
+          Explore more · beta &amp; lifestyle pillars
+        </p>
+        <p className="mt-2 text-sm text-white/50">
+          Rides, food, venues, music, and Yellow Pages sit under Explore —
+          the four jobs above are what to do first.
+        </p>
+      </div>
       <UtilityRoomsDock />
 
       {/* PDF §3 — Progressive Information Compression accordions
@@ -755,10 +795,10 @@ export default function LandingNeonGaming() {
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {[
-              { number: '6', label: 'Utility Rooms' },
+              { number: '4', label: 'Core Jobs' },
               { number: '27+', label: 'Games' },
-              { number: '5', label: 'Earn Paths' },
-              { number: '100%', label: 'On-Chain' },
+              { number: '4', label: 'Earn Paths' },
+              { number: '₵', label: 'In-App Credits' },
             ].map((stat, i) => (
               <motion.div
                 key={`item-${i}`}
@@ -802,20 +842,31 @@ export default function LandingNeonGaming() {
               <span className="text-white">OWN THE NETWORK.</span>
             </h3>
             <p className="text-xl text-purple-300 mb-8 font-medium">
-              Join the Genius Phase. Get started in 60 seconds — free.
+              Demo Login or email signup — dashboard Job Board in under a minute.
             </p>
 
             <div className="flex flex-wrap items-center justify-center gap-4">
               <button
+                type="button"
+                onClick={runDemoLogin}
+                disabled={demoLoading}
+                data-testid="landing-final-cta-demo"
+                className="group px-12 py-5 bg-gradient-to-r from-emerald-500 to-cyan-500 text-black text-xl font-black rounded-xl hover:scale-105 transition-transform shadow-2xl shadow-emerald-500/40 flex items-center gap-3 uppercase tracking-wider disabled:opacity-60"
+              >
+                <Play className="w-6 h-6" />
+                {demoLoading ? 'Starting…' : 'Demo Login'}
+                <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+              </button>
+              <button
+                type="button"
                 onClick={() => navigate('/signup')}
                 data-testid="landing-final-cta-button"
                 className="group px-12 py-5 bg-[#FF8A1F] hover:bg-[#FFA040] text-black text-xl font-black rounded-xl hover:scale-105 transition-transform shadow-2xl shadow-[#FF8A1F]/40 flex items-center gap-3 uppercase tracking-wider"
               >
-                <Play className="w-6 h-6" />
                 Sign Up Free
-                <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
               </button>
               <button
+                type="button"
                 onClick={() => navigate('/login')}
                 className="px-12 py-5 bg-purple-900/50 backdrop-blur-xl text-purple-300 text-xl font-black rounded-xl hover:bg-purple-800/50 transition-all border-2 border-purple-500 hover:border-fuchsia-500"
               >
@@ -993,10 +1044,10 @@ export default function LandingNeonGaming() {
             </h2>
           </div>
           <p className="text-purple-400 font-medium mb-2">
-            Gaming · Dating · Rides · Food · Venues · Streaming
+            Gaming · Dating · Streams · Earn
           </p>
           <p className="text-sm text-gray-600">
-            © 2026 Global Vibez DSG. Made with 💜 by Emergent
+            © 2026 Global Vibez DSG
           </p>
         </div>
       </footer>

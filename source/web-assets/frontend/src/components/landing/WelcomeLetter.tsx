@@ -98,7 +98,7 @@ export default function WelcomeLetter() {
                 <li><strong>30% VibeRidez Tax + 70/30 split</strong> — drive or tip-to-skip inside Vibe Ridez; 70% of every ride after tax pays the driver.</li>
                 <li><strong>Tip-to-Skip / Tip-to-Add</strong> — 100 ₵ instantly skips the track; 50 ₵ queues a passenger pick. Driver gets 70% post-tax.</li>
                 <li><strong>Spotify Auto-DJ royalties</strong> — Auto-DJ seeds from your last-5-played plus the driver's vibe genre; engagement cycles back to the treasury.</li>
-                <li><strong>4:1 Solana Bridge with 1.5× Genius Bonus</strong> — convert ₵ to DSG at 4:1 ratio; Genius holders get 1.5× during the Genius Phase window.</li>
+                <li><strong>$DSG TGE conversion (planned)</strong> — Vibez Coins (₵) earned today are in-app credits; verified balances are planned to convert 1:1 to $DSG at Token Generation Event.</li>
                 <li><strong>Power Hour</strong> — scheduled event windows where all earn rates multiply. Chair weights stack.</li>
                 <li><strong>Game wins</strong> — Spades, Bid Whist, Vibez 654, Blackjack payouts hit your wallet post-tax (tax pre-animates so the number you see is the number you get).</li>
                 <li><strong>Founder Vault drip</strong> — when chair #50,000 sells, the 200M Founder Vault begins a 12-month release; chair holders receive weighted distributions.</li>

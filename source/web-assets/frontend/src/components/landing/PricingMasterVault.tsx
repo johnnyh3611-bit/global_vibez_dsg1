@@ -51,7 +51,7 @@ export default function PricingMasterVault() {
           </span>
           <span className="text-neutral-600">·</span>
           <span className="text-neutral-400">
-            <span className="text-emerald-300 font-bold">4:1</span> DSG bridge
+            TGE: <span className="text-emerald-300 font-bold">1:1</span> ₵→$DSG planned
           </span>
           <span className="text-neutral-600">·</span>
           <span className="text-neutral-400">
