@@ -482,22 +482,9 @@ export default function LandingNeonGaming() {
             initial={{ x: 100, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.3 }}
-            className="relative flex items-center justify-center min-h-[180px] sm:min-h-[260px] lg:min-h-[420px] order-2 lg:order-2"
+            className="relative flex items-center justify-center min-h-[220px] sm:min-h-[300px] lg:min-h-[480px] order-2 lg:order-2 overflow-visible"
           >
             <LandingOrbitGlobe />
-
-            {/* Soft ambient controller watermark behind the planet */}
-            <motion.div
-              animate={{
-                y: [0, -20, 0],
-                rotate: [0, 5, -5, 0],
-              }}
-              transition={{ duration: 4, repeat: Infinity }}
-              className="absolute -top-6 -right-6 opacity-20 pointer-events-none"
-              aria-hidden
-            >
-              <Gamepad2 className="w-28 h-28 text-fuchsia-500" />
-            </motion.div>
           </motion.div>
         </div>
       </section>
@@ -670,7 +657,7 @@ export default function LandingNeonGaming() {
         </div>
       </section>
 
-      {/* ~6-minute narrated tour — sits below the 4-pillars grid (which
+      {/* ~3-minute narrated tour — sits below the 4-pillars grid (which
           contains the DSG VIBE TV pillar at position 02). Founder
           directive 2026-05-09: surplus video for visitors who don't
           scroll the full landing page. Onyx-narrated · 4 looped MP4
