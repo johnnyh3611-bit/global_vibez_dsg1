@@ -1,15 +1,21 @@
 /**
  * TopUpVibezCoinsModal — buy ₵ packs.
  *
- * Primary path: Solana / crypto deposit (QR + memo) via SolanaDepositPanel.
- * Card checkout (Stripe) is kept as a secondary / legacy option only.
+ * Preferred order:
+ *   1. Solana deposit (QR + memo)
+ *   2. Helio card (MoonPay Commerce) — Stripe alternative
+ *   3. Legacy Stripe card (if Helio not configured)
  *
- * Backend: GET /api/coins/packs · POST /api/coins/topup/checkout (card)
- *          POST /api/crypto-payments/create-deposit (Solana)
+ * Backend:
+ *   GET  /api/coins/packs
+ *   GET  /api/coins/topup/providers
+ *   POST /api/coins/topup/helio
+ *   POST /api/coins/topup/checkout
+ *   POST /api/crypto-payments/create-deposit
  */
 import React, { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Coins, Sparkles, Star, Zap, Loader2, Wallet } from "lucide-react";
+import { X, Coins, Sparkles, Star, Zap, Loader2, Wallet, CreditCard } from "lucide-react";
 import SolanaDepositPanel from "@/components/wallet/SolanaDepositPanel";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -23,13 +29,18 @@ interface Pack {
   popular: boolean;
 }
 
+interface Provider {
+  id: string;
+  label: string;
+  ready: boolean;
+  primary?: boolean;
+  kind?: string;
+}
+
 interface Props {
   open: boolean;
   onClose: () => void;
-  /** Optional starter pack to highlight (e.g., the smallest pack that
-   *  would clear the user's current shortfall). */
   recommendedPackId?: string;
-  /** Optional explanatory message ("You need ₵100, you have ₵50"). */
   contextMessage?: string;
 }
 
@@ -49,6 +60,7 @@ export default function TopUpVibezCoinsModal({
   contextMessage,
 }: Props) {
   const [packs, setPacks] = useState<Pack[]>([]);
+  const [providers, setProviders] = useState<Provider[]>([]);
   const [selected, setSelected] = useState<string>("popular");
   const [method, setMethod] = useState<PayMethod>("solana");
   const [submitting, setSubmitting] = useState(false);
@@ -58,10 +70,13 @@ export default function TopUpVibezCoinsModal({
     if (!open) return;
     setMethod("solana");
     setError("");
-    fetch(`${API}/coins/packs`)
-      .then((r) => r.json())
-      .then((d) => {
-        setPacks(d.packs || []);
+    Promise.all([
+      fetch(`${API}/coins/packs`).then((r) => r.json()),
+      fetch(`${API}/coins/topup/providers`).then((r) => (r.ok ? r.json() : { providers: [] })),
+    ])
+      .then(([packData, providerData]) => {
+        setPacks(packData.packs || []);
+        setProviders(providerData.providers || []);
         if (recommendedPackId) setSelected(recommendedPackId);
       })
       .catch(() => setError("Couldn't load coin packs"));
@@ -72,7 +87,11 @@ export default function TopUpVibezCoinsModal({
     [packs, selected],
   );
 
-  const handleCheckout = async () => {
+  const helioReady = providers.some((p) => p.id === "helio" && p.ready);
+  const stripeReady = providers.some((p) => p.id === "stripe" && p.ready);
+  const cardLabel = helioReady ? "Card (Helio)" : "Card";
+
+  const handleCardCheckout = async () => {
     setError("");
     setSubmitting(true);
     try {
@@ -81,7 +100,9 @@ export default function TopUpVibezCoinsModal({
         window.location.href = "/login";
         return;
       }
-      const res = await fetch(`${API}/coins/topup/checkout`, {
+      // Prefer Helio when configured; fall back to legacy Stripe.
+      const endpoint = helioReady ? `${API}/coins/topup/helio` : `${API}/coins/topup/checkout`;
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -94,7 +115,15 @@ export default function TopUpVibezCoinsModal({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.detail || "Couldn't start checkout");
+        const detail =
+          typeof data.detail === "string"
+            ? data.detail
+            : data.detail?.msg || "Couldn't start checkout";
+        setError(detail);
+        return;
+      }
+      if (!data.checkout_url) {
+        setError("Checkout URL missing from server");
         return;
       }
       window.location.href = data.checkout_url;
@@ -140,7 +169,7 @@ export default function TopUpVibezCoinsModal({
             </div>
             <p className="text-sm text-white/60 mb-4">
               {contextMessage ||
-                "Buy ₵ with Solana — play games, unlock rooms, and tip creators."}
+                "Buy ₵ with Solana — or card via Helio when you need fiat."}
             </p>
 
             <div
@@ -175,7 +204,8 @@ export default function TopUpVibezCoinsModal({
                     : "text-white/40 hover:text-white/70"
                 }`}
               >
-                Card
+                <CreditCard className="w-4 h-4" />
+                {cardLabel}
               </button>
             </div>
 
@@ -241,10 +271,17 @@ export default function TopUpVibezCoinsModal({
               </div>
             ) : (
               <>
+                {!helioReady && !stripeReady && (
+                  <p className="text-xs text-amber-200/80 mb-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-2">
+                    Card checkout is not configured yet. Use Solana, or ask an
+                    admin to set HELIO_API_KEY / HELIO_SECRET_KEY / HELIO_PAYLINK_ID
+                    on Railway.
+                  </p>
+                )}
                 <button
-                  onClick={handleCheckout}
-                  disabled={submitting || !selected}
-                  className="w-full bg-white/10 hover:bg-white/15 border border-white/20 disabled:opacity-60 px-4 py-3 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all"
+                  onClick={handleCardCheckout}
+                  disabled={submitting || !selected || (!helioReady && !stripeReady)}
+                  className="w-full bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 disabled:opacity-60 px-4 py-3 rounded-xl font-bold text-slate-950 flex items-center justify-center gap-2 transition-all"
                   data-testid="topup-checkout-btn"
                 >
                   {submitting ? (
@@ -253,12 +290,15 @@ export default function TopUpVibezCoinsModal({
                     </>
                   ) : (
                     <>
-                      <Coins className="w-4 h-4" /> Pay with card
+                      <CreditCard className="w-4 h-4" />
+                      {helioReady ? "Pay with card (Helio)" : "Pay with card"}
                     </>
                   )}
                 </button>
                 <p className="text-[10px] text-white/40 mt-3 text-center">
-                  Legacy card checkout · Prefer Solana when you can.
+                  {helioReady
+                    ? "Helio / MoonPay Commerce · card → crypto · credits after webhook."
+                    : "Legacy Stripe path · prefer Solana or Helio when available."}
                 </p>
               </>
             )}

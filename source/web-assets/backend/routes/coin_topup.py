@@ -1,9 +1,12 @@
 """
 Vibez Coin Top-Up (May 2026)
 ─────────────────────────────────────────────────────────────────
-Stripe checkout flow that lets users buy Vibez Coins (₵) — the
-canonical platform credit used by JFTN, Yellow Pages, ambassador
-commissions, casino games, etc.
+Buy Vibez Coins (₵) — canonical platform credit for JFTN, games, tips.
+
+Preferred providers (in order):
+  1. Solana deposit (frontend SolanaDepositPanel + indexer) — no card
+  2. Helio / MoonPay Commerce — fiat card → crypto checkout
+  3. Stripe — legacy card path (payment_hub stub may 503)
 
 Coin packs (LOCKED — bigger packs reward bigger commitment):
   • ₵5,000   →  $5    starter   (1,000 ₵ / $1)
@@ -12,9 +15,7 @@ Coin packs (LOCKED — bigger packs reward bigger commitment):
   • ₵50,000  →  $35   vip       (~43% bonus)
 
 On successful payment, ``users.credits_balance`` is incremented and
-a row is written to ``coin_topup_payments`` for audit. The Stripe
-session metadata locks the pack at server-side so the client cannot
-manipulate the price.
+a row is written to ``coin_topup_payments`` for audit.
 """
 from __future__ import annotations
 
@@ -90,6 +91,195 @@ async def list_packs() -> Dict[str, Any]:
             "value_per_coin_cents": round(p["usd"] * 100 / p["coins"], 3),
         })
     return {"packs": packs}
+
+
+@router.get("/topup/providers")
+async def list_topup_providers() -> Dict[str, Any]:
+    """Which checkout rails are ready (no secrets)."""
+    from services.helio_client import helio_configured
+
+    stripe_ready = bool(
+        os.environ.get("STRIPE_API_KEY") or os.environ.get("STRIPE_SECRET_KEY")
+    )
+    solana_ready = bool(
+        os.environ.get("GLOBAL_VIBEZ_SOLANA_RECEIVE_WALLET")
+        or os.environ.get("SOLANA_RECEIVE_WALLET")
+    )
+    return {
+        "providers": [
+            {
+                "id": "solana",
+                "label": "Solana",
+                "ready": solana_ready,
+                "primary": True,
+                "kind": "crypto_deposit",
+            },
+            {
+                "id": "helio",
+                "label": "Card via Helio",
+                "ready": helio_configured(),
+                "primary": False,
+                "kind": "fiat_onramp",
+            },
+            {
+                "id": "stripe",
+                "label": "Card (legacy)",
+                "ready": stripe_ready,
+                "primary": False,
+                "kind": "card_legacy",
+            },
+        ]
+    }
+
+
+@router.post("/topup/helio")
+async def create_helio_topup(
+    payload: CheckoutRequest,
+    authorization: Optional[str] = Header(default=None),
+) -> Dict[str, Any]:
+    """Create a Helio (MoonPay Commerce) charge for a coin pack — Stripe alternative."""
+    from services.helio_client import create_charge, helio_configured
+
+    user = await _resolve_user(authorization)
+    if not user:
+        raise HTTPException(401, "Sign in to top up")
+
+    pack = COIN_PACKS.get(payload.pack_id)
+    if not pack:
+        raise HTTPException(400, f"Invalid pack_id. Choose from {list(COIN_PACKS)}")
+
+    if not helio_configured():
+        raise HTTPException(
+            503,
+            "Helio is not configured yet. Set HELIO_API_KEY, HELIO_SECRET_KEY, "
+            "and HELIO_PAYLINK_ID — or pay with Solana from the wallet.",
+        )
+
+    payment_id = f"coin_pay_{uuid.uuid4().hex[:12]}"
+    metadata = {
+        "kind": "coin_topup",
+        "payment_id": payment_id,
+        "pack_id": payload.pack_id,
+        "user_id": user["user_id"],
+        "coins": pack["coins"],
+        "usd": pack["usd"],
+    }
+
+    try:
+        charge_id, checkout_url = await create_charge(
+            amount_usd=float(pack["usd"]),
+            metadata=metadata,
+            card_only=True,
+        )
+    except RuntimeError as exc:
+        raise HTTPException(502, str(exc)) from exc
+
+    await PAYMENTS.insert_one({
+        "id": payment_id,
+        "user_id": user["user_id"],
+        "pack_id": payload.pack_id,
+        "coins": pack["coins"],
+        "amount_usd": pack["usd"],
+        "provider": "helio",
+        "helio_charge_id": charge_id,
+        "status": "pending",
+        "credited": False,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "origin_url": payload.origin_url,
+    })
+
+    try:
+        from services.payments_audit import record_payment_event  # noqa: PLC0415
+        await record_payment_event(
+            _db,
+            kind="coin_topup",
+            source="helio_checkout",
+            status="created",
+            user_id=user["user_id"],
+            amount_usd=pack["usd"],
+            coins=pack["coins"],
+            metadata={"pack_id": payload.pack_id, "payment_id": payment_id, "helio_charge_id": charge_id},
+        )
+    except Exception:
+        pass
+
+    return {
+        "success": True,
+        "provider": "helio",
+        "checkout_url": checkout_url,
+        "charge_id": charge_id,
+        "payment_id": payment_id,
+        "pack": {**pack, "id": payload.pack_id},
+    }
+
+
+@router.post("/webhook/helio")
+async def helio_webhook(request: Request) -> Dict[str, Any]:
+    """Helio / MoonPay Commerce payment webhook → credit coin pack."""
+    from services.helio_client import extract_payment_meta, verify_webhook_signature
+
+    raw = await request.body()
+    sig = request.headers.get("X-Signature") or request.headers.get("x-signature")
+    auth = request.headers.get("Authorization") or ""
+    token = os.environ.get("HELIO_WEBHOOK_TOKEN") or ""
+
+    if token:
+        bearer_ok = auth.lower().startswith("bearer ") and auth.split(" ", 1)[1].strip() == token
+        if not bearer_ok and not verify_webhook_signature(raw, sig):
+            raise HTTPException(401, "invalid helio webhook auth")
+    elif sig and not verify_webhook_signature(raw, sig):
+        raise HTTPException(401, "invalid helio webhook signature")
+
+    try:
+        import json as _json
+        payload = _json.loads(raw.decode("utf-8") or "{}")
+    except Exception:
+        raise HTTPException(400, "invalid json")
+
+    # Helio fires on several event names; credit on SUCCESS / COMPLETED styles.
+    event = str(
+        payload.get("event")
+        or payload.get("eventType")
+        or payload.get("status")
+        or payload.get("transactionStatus")
+        or ""
+    ).upper()
+    success_markers = ("SUCCESS", "COMPLETED", "PAID", "SETTLED", "CONFIRMED")
+    if event and not any(m in event for m in success_markers):
+        # Still try to credit if metadata is present and transaction looks paid
+        tx_status = str(payload.get("transaction", {}).get("status", "")).upper() if isinstance(payload.get("transaction"), dict) else ""
+        if not any(m in tx_status for m in success_markers):
+            return {"received": True, "credited": False, "reason": f"ignored_event:{event or 'unknown'}"}
+
+    meta = extract_payment_meta(payload if isinstance(payload, dict) else {})
+    payment_id = meta.get("payment_id")
+    data_obj = payload.get("data") if isinstance(payload.get("data"), dict) else {}
+    charge_id = (
+        payload.get("id")
+        or payload.get("chargeId")
+        or data_obj.get("id")
+        or meta.get("helio_charge_id")
+    )
+
+    pay = None
+    if payment_id:
+        pay = await PAYMENTS.find_one({"id": payment_id}, {"_id": 0})
+    if not pay and charge_id:
+        pay = await PAYMENTS.find_one({"helio_charge_id": str(charge_id)}, {"_id": 0})
+
+    if not pay:
+        log.warning("helio webhook: no matching payment meta=%s charge=%s", meta, charge_id)
+        return {"received": True, "credited": False, "reason": "unknown_payment"}
+
+    if pay.get("credited"):
+        return {"received": True, "credited": True, "already": True}
+
+    await PAYMENTS.update_one(
+        {"id": pay["id"]},
+        {"$set": {"helio_webhook_event": event or "SUCCESS", "provider": "helio"}},
+    )
+    await _credit_user(pay, source="helio_webhook")
+    return {"received": True, "credited": True, "payment_id": pay["id"]}
 
 
 @router.post("/topup/checkout")
@@ -224,7 +414,7 @@ async def stripe_webhook(request: Request) -> Dict[str, Any]:
     return {"received": True}
 
 
-async def _credit_user(pay: Dict[str, Any]) -> None:
+async def _credit_user(pay: Dict[str, Any], source: str = "stripe_webhook") -> None:
     """Atomically credit coins to the user and mark the payment paid."""
     now = datetime.now(timezone.utc).isoformat()
     # Atomic compare-and-set on the credited flag prevents double-crediting
@@ -240,8 +430,8 @@ async def _credit_user(pay: Dict[str, Any]) -> None:
         {"$inc": {"credits_balance": int(pay["coins"])}},
     )
     log.info(
-        "coin_topup credited user_id=%s coins=%d pack=%s",
-        pay["user_id"], pay["coins"], pay["pack_id"],
+        "coin_topup credited user_id=%s coins=%d pack=%s source=%s",
+        pay["user_id"], pay["coins"], pay["pack_id"], source,
     )
     # Unified payments audit — paid + credited event.
     try:
@@ -249,13 +439,18 @@ async def _credit_user(pay: Dict[str, Any]) -> None:
         await record_payment_event(
             _db,
             kind="coin_topup",
-            source="stripe_webhook",
+            source=source,
             status="credited",
             user_id=pay["user_id"],
             amount_usd=pay.get("amount_usd"),
             coins=int(pay["coins"]),
             stripe_session_id=pay.get("stripe_session_id"),
-            metadata={"pack_id": pay.get("pack_id"), "payment_id": pay.get("id")},
+            metadata={
+                "pack_id": pay.get("pack_id"),
+                "payment_id": pay.get("id"),
+                "helio_charge_id": pay.get("helio_charge_id"),
+                "provider": pay.get("provider") or ("helio" if "helio" in source else "stripe"),
+            },
         )
     except Exception:
         pass

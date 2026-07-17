@@ -213,6 +213,7 @@ def register_all_routes(
     # ── Wave 1C — Tokenomics / economy ───────────────────────────────
     _soft_mount(api_router, log, "coins", "routes.coins")
     _soft_mount(api_router, log, "coin_topup", "routes.coin_topup")
+    _soft_mount(api_router, log, "integrations_health", "routes.integrations_health")
     _soft_mount(api_router, log, "coin_stats", "routes.coin_stats")
     _soft_mount(api_router, log, "currency", "routes.currency")
     _soft_mount(api_router, log, "vibe_wallet", "routes.vibe_wallet", prefix="/wallet", tags=["wallet"])
