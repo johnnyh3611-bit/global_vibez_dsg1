@@ -11,6 +11,7 @@ import {
   ArrowLeft, Film, Library, Plus, RefreshCcw, Tag, Clock,
   ShoppingCart, PlayCircle, Lock,
 } from "lucide-react";
+import { FuturisticTabs } from "@/components/ui/futuristic-tabs";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -119,14 +120,18 @@ export default function MemoryBankMarketplace() {
           <button onClick={load} disabled={loading} data-testid="mb-refresh" className="p-2 rounded-lg hover:bg-white/10"><RefreshCcw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} /></button>
         </div>
 
-        {/* TAB BAR */}
         <div className="max-w-6xl mx-auto px-5 pb-3 flex gap-2 items-center flex-wrap">
-          <button onClick={() => setTab("browse")} data-testid="mb-tab-browse" className={`px-4 py-1.5 rounded-full text-xs uppercase tracking-widest font-bold flex items-center gap-1.5 ${tab === "browse" ? "bg-rose-500 text-white" : "bg-white/5 hover:bg-white/10"}`}>
-            <ShoppingCart className="w-3 h-3" /> Browse ({content.length})
-          </button>
-          <button onClick={() => setTab("library")} data-testid="mb-tab-library" className={`px-4 py-1.5 rounded-full text-xs uppercase tracking-widest font-bold flex items-center gap-1.5 ${tab === "library" ? "bg-rose-500 text-white" : "bg-white/5 hover:bg-white/10"}`}>
-            <Library className="w-3 h-3" /> My Library ({library.length})
-          </button>
+          <FuturisticTabs
+            ariaLabel="Memory Bank sections"
+            variant="pills"
+            value={tab}
+            onChange={(v) => setTab(v as typeof tab)}
+            className="flex-1 min-w-0"
+            options={[
+              { value: "browse", label: `Browse (${content.length})`, icon: ShoppingCart, testId: "mb-tab-browse" },
+              { value: "library", label: `My Library (${library.length})`, icon: Library, testId: "mb-tab-library" },
+            ]}
+          />
           <div className="flex items-center gap-2 ml-auto text-xs">
             <span className="text-neutral-500 uppercase tracking-widest">As</span>
             <input

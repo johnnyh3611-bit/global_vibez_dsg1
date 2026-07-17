@@ -16,6 +16,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { FuturisticTabs } from '@/components/ui/futuristic-tabs';
 import { toast } from 'sonner';
 
 const API = process.env.REACT_APP_BACKEND_URL;
@@ -173,26 +174,18 @@ export default function DSGTVExpansion() {
           </Badge>
         </div>
 
-        {/* Tab bar */}
-        <div className="max-w-5xl mx-auto mt-3 flex gap-2 overflow-x-auto" data-testid="dsg-tv-tabs">
-          {([
-            ['prestige', Crown, 'Prestige'],
-            ['stools', Trophy, 'Stools'],
-            ['predict', Sparkles, 'Predict-to-Win'],
-          ] as const).map(([k, Icon, label]) => (
-            <button
-              key={k}
-              onClick={() => setTab(k)}
-              data-testid={`dsg-tv-tab-${k}`}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] uppercase tracking-widest font-bold border transition-colors ${
-                tab === k
-                  ? 'bg-rose-500/30 border-rose-400/60 text-rose-100'
-                  : 'bg-white/5 border-white/10 text-white/60'
-              }`}
-            >
-              <Icon className="w-3 h-3" /> {label}
-            </button>
-          ))}
+        <div className="max-w-5xl mx-auto mt-3" data-testid="dsg-tv-tabs">
+          <FuturisticTabs
+            ariaLabel="DSG TV sections"
+            variant="pills"
+            value={tab}
+            onChange={(v) => setTab(v as Tab)}
+            options={[
+              { value: 'prestige', label: 'Prestige', icon: Crown, testId: 'dsg-tv-tab-prestige' },
+              { value: 'stools', label: 'Stools', icon: Trophy, testId: 'dsg-tv-tab-stools' },
+              { value: 'predict', label: 'Predict-to-Win', icon: Sparkles, testId: 'dsg-tv-tab-predict' },
+            ]}
+          />
         </div>
       </header>
 

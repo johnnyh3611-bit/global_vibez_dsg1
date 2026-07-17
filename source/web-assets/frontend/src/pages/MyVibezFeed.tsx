@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, MessageCircle, Share2, Play, Pause, Volume2, VolumeX, User, Plus, ArrowLeft } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Play, Pause, Volume2, VolumeX, User, Plus, ArrowLeft, Sparkles, TrendingUp, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import VibezComments from '@/components/VibezComments';
+import { FuturisticTabs } from '@/components/ui/futuristic-tabs';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -110,22 +111,18 @@ export default function MyVibezFeed() {
           <ArrowLeft className="w-5 h-5" />
         </button>
         
-        {/* Feed Type Selector */}
-        <div className="flex gap-2">
-          {['trending', 'for-you', 'following'].map(type => (
-            <button
-              key={type}
-              onClick={() => setFeedType(type)}
-              className={`px-4 py-2 rounded-full font-semibold text-sm transition-all ${
-                feedType === type
-                  ? 'bg-white text-black'
-                  : 'bg-black/30 backdrop-blur-sm text-white hover:bg-black/50'
-              }`}
-            >
-              {type === 'for-you' ? 'For You' : type.charAt(0).toUpperCase() + type.slice(1)}
-            </button>
-          ))}
-        </div>
+        <FuturisticTabs
+          ariaLabel="Feed type"
+          variant="segmented"
+          value={feedType}
+          onChange={setFeedType}
+          className="max-w-md"
+          options={[
+            { value: 'trending', label: 'Trending', icon: TrendingUp, testId: 'vibez-feed-tab-trending' },
+            { value: 'for-you', label: 'For You', icon: Sparkles, testId: 'vibez-feed-tab-for-you' },
+            { value: 'following', label: 'Following', icon: Users, testId: 'vibez-feed-tab-following' },
+          ]}
+        />
 
         <button
           onClick={() => navigate('/vibez/upload')}

@@ -42,14 +42,14 @@ import { PullToRefresh } from '@/components/mobile/PullToRefresh';
 import { triggerHaptic } from '@/hooks/useGestures';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SocialProofStrip } from '@/components/common/SocialProofStrip';
+import { FuturisticTabs } from '@/components/ui/futuristic-tabs';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 // ────────────────────────────────────────────── Category Tabs ──
-// Founder ask 2026-05-16: less scroll, sectioned by category. The active
-// tab borrows the MY VIBEZ holographic treatment (conic-gradient + glow)
-// so the choice feels alive without overwhelming the page.
+// Founder ask 2026-05-16: less scroll, sectioned by category.
+// Active style matches My Vibez (fuchsia→pink glass tray).
 
 type CategoryId =
   | 'watch'
@@ -128,44 +128,18 @@ const ROOM_CATEGORY: Record<string, CategoryId> = {
 function CategoryTabs({ active, onChange }: { active: string; onChange: (id: string) => void }) {
   return (
     <div data-testid="dashboard-category-tabs" className="mb-6">
-      <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-thin">
-        {CATEGORIES.map((cat) => {
-          const Icon = cat.icon;
-          const isActive = cat.id === active;
-          return (
-            <button
-              key={cat.id}
-              data-testid={`dashboard-category-tab-${cat.id}`}
-              onClick={() => onChange(cat.id)}
-              className={`relative shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold uppercase tracking-[0.18em] transition-all
-                ${isActive
-                  ? 'text-black ring-1 ring-amber-200/50 shadow-[0_0_30px_-8px_rgba(232,121,249,0.55)]'
-                  : 'text-white/70 hover:text-white bg-white/5 hover:bg-white/10 ring-1 ring-white/10'
-                }`}
-            >
-              {isActive && (
-                <span
-                  className="absolute inset-0 rounded-full overflow-hidden"
-                  aria-hidden="true"
-                >
-                  <span
-                    className="absolute inset-[-30%]"
-                    style={{
-                      background:
-                        'conic-gradient(from 0deg, #f0abfc, #fde047, #67e8f9, #fb7185, #c084fc, #fde047, #f0abfc)',
-                      filter: 'blur(8px) saturate(140%)',
-                      animation: 'spin 14s linear infinite',
-                    }}
-                  />
-                  <span className="absolute inset-0 bg-white/15" />
-                </span>
-              )}
-              <Icon className="relative w-3.5 h-3.5" />
-              <span className="relative">{cat.label}</span>
-            </button>
-          );
-        })}
-      </div>
+      <FuturisticTabs
+        ariaLabel="Dashboard categories"
+        variant="pills"
+        value={active}
+        onChange={onChange}
+        options={CATEGORIES.map((cat) => ({
+          value: cat.id,
+          label: cat.label,
+          icon: cat.icon,
+          testId: `dashboard-category-tab-${cat.id}`,
+        }))}
+      />
     </div>
   );
 }

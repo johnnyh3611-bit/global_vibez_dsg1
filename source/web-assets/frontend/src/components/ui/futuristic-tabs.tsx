@@ -1,3 +1,10 @@
+/**
+ * FuturisticTabs — shared in-app tab control.
+ *
+ * Visual source of truth: My Vibez feed tabs
+ * (`backdrop-blur` tray + fuchsia→pink active pill).
+ * Use this everywhere instead of one-off cyan/rainbow tab bars.
+ */
 import React from 'react';
 import { cn } from '@/lib/utils';
 
@@ -20,7 +27,7 @@ interface FuturisticTabsProps {
 }
 
 const baseTrigger =
-  'relative flex items-center justify-center gap-2 whitespace-nowrap font-black uppercase tracking-wider transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 disabled:pointer-events-none disabled:opacity-50';
+  'relative flex items-center justify-center gap-2 whitespace-nowrap font-bold transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 disabled:pointer-events-none disabled:opacity-50';
 
 export function FuturisticTabs({
   value,
@@ -37,9 +44,11 @@ export function FuturisticTabs({
     'flex',
     isHorizontal ? 'flex-row' : 'flex-col',
     variant === 'segmented' &&
-      'p-1 rounded-2xl bg-slate-950/60 border border-white/10 backdrop-blur-md shadow-inner shadow-black/30',
-    variant === 'pills' && 'flex-wrap gap-2',
-    variant === 'sidebar' && 'gap-2',
+      'gap-1 p-1 rounded-2xl backdrop-blur-xl bg-white/5 border border-white/10',
+    variant === 'pills' &&
+      'flex-nowrap overflow-x-auto gap-1 p-1 rounded-2xl backdrop-blur-xl bg-white/5 border border-white/10 scrollbar-hide',
+    variant === 'sidebar' &&
+      'gap-1 p-1 rounded-2xl backdrop-blur-xl bg-white/5 border border-white/10',
     className
   );
 
@@ -49,6 +58,7 @@ export function FuturisticTabs({
       aria-label={ariaLabel}
       className={listClasses}
       data-orientation={orientation}
+      data-testid="futuristic-tabs"
     >
       {options.map((opt) => {
         const active = value === opt.value;
@@ -66,33 +76,40 @@ export function FuturisticTabs({
               baseTrigger,
               'text-xs sm:text-sm',
               variant === 'segmented' && [
-                'flex-1 px-3 py-2 rounded-xl',
+                'flex-1 px-4 py-2.5 sm:px-6 sm:py-3 rounded-xl',
                 active
-                  ? 'text-cyan-950 bg-gradient-to-r from-cyan-300 to-blue-400 shadow-[0_0_20px_rgba(34,211,238,0.35)]'
+                  ? 'bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white shadow-[0_0_20px_rgba(232,121,249,0.6)]'
                   : 'text-white/60 hover:text-white hover:bg-white/5',
               ],
               variant === 'pills' && [
-                'px-4 py-2 rounded-full border',
+                'shrink-0 px-4 py-2 rounded-xl',
                 active
-                  ? 'border-cyan-400/60 text-cyan-200 bg-cyan-500/15 shadow-[0_0_16px_rgba(34,211,238,0.25)]'
-                  : 'border-white/10 text-white/60 hover:border-white/25 hover:text-white hover:bg-white/5',
+                  ? 'bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white shadow-[0_0_20px_rgba(232,121,249,0.6)]'
+                  : 'text-white/60 hover:text-white hover:bg-white/5',
               ],
               variant === 'sidebar' && [
-                'w-full justify-start px-4 py-3 rounded-xl border-l-2',
+                'w-full justify-start px-4 py-3 rounded-xl',
                 active
-                  ? 'border-l-cyan-400 text-cyan-100 bg-gradient-to-r from-cyan-500/20 to-transparent shadow-[inset_0_0_20px_rgba(34,211,238,0.12)]'
-                  : 'border-l-transparent text-white/50 hover:text-white hover:bg-white/5',
+                  ? 'bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white shadow-[0_0_20px_rgba(232,121,249,0.45)]'
+                  : 'text-white/60 hover:text-white hover:bg-white/5',
               ]
             )}
           >
-            {Icon && <Icon className={cn('w-4 h-4', active && 'text-cyan-300')} />}
+            {Icon && (
+              <Icon
+                className={cn(
+                  'w-4 h-4 shrink-0',
+                  active ? 'text-white' : 'text-white/50'
+                )}
+              />
+            )}
             <span className="truncate">{opt.label}</span>
             {opt.badge !== undefined && (
               <span
                 className={cn(
                   'ml-auto text-[10px] min-w-[1.25rem] px-1.5 py-0.5 rounded-full text-center',
                   active
-                    ? 'bg-cyan-950/50 text-cyan-100'
+                    ? 'bg-white/20 text-white'
                     : 'bg-white/10 text-white/60'
                 )}
               >

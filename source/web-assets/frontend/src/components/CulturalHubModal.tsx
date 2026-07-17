@@ -11,6 +11,7 @@ import {
   globalVibeSync,
   type UserLocaleSelection,
 } from '@/utils/globalVibeSync';
+import { FuturisticTabs } from '@/components/ui/futuristic-tabs';
 
 const API = process.env.REACT_APP_BACKEND_URL as string;
 
@@ -151,21 +152,18 @@ export function CulturalHubModal({ open, onClose, onSelected }: Props) {
           </button>
         </div>
 
-        {/* Tabs */}
-        <div className="flex border-b border-white/5 bg-black/40">
-          {(['country', 'language', 'dialect'] as const).map(t => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              data-testid={`cultural-hub-tab-${t}`}
-              className={`flex-1 px-4 py-3 text-sm font-bold uppercase tracking-wider transition-colors
-                ${tab === t
-                  ? 'text-[#00E5C7] border-b-2 border-[#00E5C7]'
-                  : 'text-white/50 hover:text-white/80'}`}
-            >
-              {t}
-            </button>
-          ))}
+        <div className="px-3 pt-3 bg-black/40">
+          <FuturisticTabs
+            ariaLabel="Cultural hub sections"
+            variant="segmented"
+            value={tab}
+            onChange={(v) => setTab(v as typeof tab)}
+            options={[
+              { value: 'country', label: 'Country', testId: 'cultural-hub-tab-country' },
+              { value: 'language', label: 'Language', testId: 'cultural-hub-tab-language' },
+              { value: 'dialect', label: 'Dialect', testId: 'cultural-hub-tab-dialect' },
+            ]}
+          />
         </div>
 
         {/* Body */}

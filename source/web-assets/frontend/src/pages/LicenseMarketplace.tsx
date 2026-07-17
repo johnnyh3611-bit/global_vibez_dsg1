@@ -19,6 +19,7 @@ import {
   ChevronLeft, Tv, Dice5, Megaphone, Music, Coins, Award,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { FuturisticTabs } from '@/components/ui/futuristic-tabs';
 
 type Context = 'tv_sync' | 'casino_background' | 'commercial_use';
 
@@ -118,21 +119,19 @@ export default function LicenseMarketplace() {
             80/15/5 · NO BURN
           </span>
         </div>
-        <div className="max-w-5xl mx-auto mt-3 flex gap-2 overflow-x-auto" data-testid="marketplace-tabs">
-          {CONTEXTS.map(({ key, label, Icon, price }) => (
-            <button
-              key={key}
-              onClick={() => setContext(key)}
-              data-testid={`marketplace-tab-${key}`}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] uppercase tracking-widest font-bold border transition-colors ${
-                context === key
-                  ? 'bg-purple-500/30 border-purple-400/60 text-purple-100'
-                  : 'bg-white/5 border-white/10 text-white/60'
-              }`}
-            >
-              <Icon className="w-3 h-3" /> {label} · {fmt(price)} ₵
-            </button>
-          ))}
+        <div className="max-w-5xl mx-auto mt-3" data-testid="marketplace-tabs">
+          <FuturisticTabs
+            ariaLabel="License contexts"
+            variant="pills"
+            value={context}
+            onChange={(v) => setContext(v as Context)}
+            options={CONTEXTS.map(({ key, label, Icon, price }) => ({
+              value: key,
+              label: `${label} · ${fmt(price)} ₵`,
+              icon: Icon,
+              testId: `marketplace-tab-${key}`,
+            }))}
+          />
         </div>
       </header>
 

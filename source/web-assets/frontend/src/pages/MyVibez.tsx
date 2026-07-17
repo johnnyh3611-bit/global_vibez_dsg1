@@ -7,6 +7,7 @@ import { VideoRecorder } from '@/components/my-vibez/VideoRecorder';
 import { useToast } from '@/hooks/useToast';
 import { ToastContainer } from '@/components/ToastNotification';
 import { authFetch } from '@/utils/secureAuth';
+import { FuturisticTabs } from '@/components/ui/futuristic-tabs';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -79,43 +80,34 @@ export function MyVibez() {
         </div>
 
         {/* Tabs + Create Button */}
-        <div className="flex items-center justify-between mb-6">
-          {/* Feed Tabs */}
-          <div className="flex gap-2 backdrop-blur-xl bg-white/5 p-1 rounded-2xl border border-white/10">
-            <button
-              onClick={() => setActiveTab('for-you')}
-              className={`
-                px-6 py-3 rounded-xl font-bold transition-all flex items-center gap-2
-                ${activeTab === 'for-you'
-                  ? 'bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white shadow-[0_0_20px_rgba(232,121,249,0.6)]'
-                  : 'text-white/60 hover:text-white hover:bg-white/5'
-                }
-              `}
-            >
-              <TrendingUp size={18} />
-              For You
-            </button>
-            <button
-              onClick={() => setActiveTab('following')}
-              className={`
-                px-6 py-3 rounded-xl font-bold transition-all flex items-center gap-2
-                ${activeTab === 'following'
-                  ? 'bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white shadow-[0_0_20px_rgba(232,121,249,0.6)]'
-                  : 'text-white/60 hover:text-white hover:bg-white/5'
-                }
-              `}
-            >
-              <Users size={18} />
-              Following
-            </button>
-          </div>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-6">
+          <FuturisticTabs
+            ariaLabel="My Vibez feed"
+            variant="segmented"
+            value={activeTab}
+            onChange={setActiveTab}
+            className="flex-1 max-w-md"
+            options={[
+              {
+                value: 'for-you',
+                label: 'For You',
+                icon: TrendingUp,
+                testId: 'my-vibez-tab-for-you',
+              },
+              {
+                value: 'following',
+                label: 'Following',
+                icon: Users,
+                testId: 'my-vibez-tab-following',
+              },
+            ]}
+          />
 
-          {/* Create Video Button */}
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setShowRecorder(true)}
-            className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-2xl shadow-[0_0_30px_rgba(16,185,129,0.6)] flex items-center gap-2"
+            className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-2xl shadow-[0_0_30px_rgba(16,185,129,0.6)] flex items-center justify-center gap-2"
           >
             <Plus size={20} />
             Create Video

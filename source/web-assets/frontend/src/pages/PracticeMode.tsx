@@ -19,49 +19,20 @@ import type { LucideIcon } from 'lucide-react';
 import AppFooter from '@/components/AppFooter';
 import GameRulesModal from '@/components/GameRulesModal';
 import { getListedGames, getClientGameIds, getGameById, GAMES, GameCategory } from '@/data/gamesRegistry';
+import { FuturisticTabs } from '@/components/ui/futuristic-tabs';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
 const CATEGORY_META: Record<
   GameCategory | 'all',
-  { name: string; icon: LucideIcon; buttonClass: string; activeButtonClass: string }
+  { name: string; icon: LucideIcon }
 > = {
-  all: {
-    name: 'All Games',
-    icon: Gamepad2,
-    buttonClass: 'bg-white/5 text-white/70 border-2 border-white/10 hover:bg-white/10 hover:border-white/20',
-    activeButtonClass: 'bg-gradient-to-r from-purple-500 to-fuchsia-600 text-white border-2 border-purple-300 shadow-lg shadow-purple-500/50',
-  },
-  board: {
-    name: 'Board',
-    icon: Trophy,
-    buttonClass: 'bg-white/5 text-white/70 border-2 border-white/10 hover:bg-white/10 hover:border-white/20',
-    activeButtonClass: 'bg-gradient-to-r from-blue-500 to-blue-600 text-white border-2 border-blue-300 shadow-lg shadow-blue-500/50',
-  },
-  card: {
-    name: 'Card',
-    icon: Sparkles,
-    buttonClass: 'bg-white/5 text-white/70 border-2 border-white/10 hover:bg-white/10 hover:border-white/20',
-    activeButtonClass: 'bg-gradient-to-r from-pink-500 to-rose-600 text-white border-2 border-pink-300 shadow-lg shadow-pink-500/50',
-  },
-  casino: {
-    name: 'Casino',
-    icon: Star,
-    buttonClass: 'bg-white/5 text-white/70 border-2 border-white/10 hover:bg-white/10 hover:border-white/20',
-    activeButtonClass: 'bg-gradient-to-r from-yellow-500 to-amber-600 text-white border-2 border-yellow-300 shadow-lg shadow-yellow-500/50',
-  },
-  arcade: {
-    name: 'Arcade',
-    icon: Zap,
-    buttonClass: 'bg-white/5 text-white/70 border-2 border-white/10 hover:bg-white/10 hover:border-white/20',
-    activeButtonClass: 'bg-gradient-to-r from-green-500 to-emerald-600 text-white border-2 border-green-300 shadow-lg shadow-green-500/50',
-  },
-  social: {
-    name: 'Social',
-    icon: Flame,
-    buttonClass: 'bg-white/5 text-white/70 border-2 border-white/10 hover:bg-white/10 hover:border-white/20',
-    activeButtonClass: 'bg-gradient-to-r from-red-500 to-rose-600 text-white border-2 border-red-300 shadow-lg shadow-red-500/50',
-  },
+  all: { name: 'All Games', icon: Gamepad2 },
+  board: { name: 'Board', icon: Trophy },
+  card: { name: 'Card', icon: Sparkles },
+  casino: { name: 'Casino', icon: Star },
+  arcade: { name: 'Arcade', icon: Zap },
+  social: { name: 'Social', icon: Flame },
 };
 
 const DIFFICULTIES = [
@@ -186,34 +157,20 @@ export default function PracticeMode() {
             </div>
           </div>
 
-          {/* Category Filter */}
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3 pb-2">
-            {categories.map((cat) => {
-              const Icon = cat.icon;
-              const isActive = selectedCategory === cat.id;
-              return (
-                <motion.button
-                  key={cat.id}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => setSelectedCategory(cat.id)}
-                  className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 rounded-xl font-semibold transition-all w-full min-w-0 ${
-                    isActive ? cat.activeButtonClass : cat.buttonClass
-                  }`}
-                >
-                  <Icon className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                  <span className="text-[10px] sm:text-sm truncate min-w-0">{cat.name}</span>
-                  <span
-                    className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs shrink-0 ${
-                      isActive ? 'bg-white/20' : 'bg-white/10'
-                    }`}
-                  >
-                    {cat.count}
-                  </span>
-                </motion.button>
-              );
-            })}
-          </div>
+          {/* Category Filter — My Vibez tab style */}
+          <FuturisticTabs
+            ariaLabel="Practice categories"
+            variant="pills"
+            value={selectedCategory}
+            onChange={(v) => setSelectedCategory(v as GameCategory | 'all')}
+            options={categories.map((cat) => ({
+              value: cat.id,
+              label: cat.name,
+              icon: cat.icon,
+              badge: cat.count,
+              testId: `practice-category-tab-${cat.id}`,
+            }))}
+          />
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6 sm:gap-8">
