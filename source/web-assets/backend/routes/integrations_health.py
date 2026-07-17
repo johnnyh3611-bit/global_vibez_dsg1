@@ -46,8 +46,9 @@ async def integrations_health() -> Dict[str, Any]:
         "configured": bool(
             os.environ.get("OPENAI_API_KEY") or os.environ.get("EMERGENT_LLM_KEY")
         ),
-        "purpose": "AI date planner, coaches, content matching",
+        "purpose": "AI date planner, coaches, content matching, practice",
         "set": "OPENAI_API_KEY",
+        "get_key": "https://platform.openai.com/api-keys",
     }
     twilio = {
         "configured": _present("TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_PHONE_NUMBER"),
