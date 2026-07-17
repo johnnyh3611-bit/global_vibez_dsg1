@@ -208,7 +208,7 @@ export default function TournamentsListPage() {
         {/* View Leaderboard */}
         <div className="mt-12 text-center">
           <motion.button
-            onClick={() => navigate('/tournament-leaderboard')}
+            onClick={() => navigate('/leaderboard')}
             className="px-8 py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-white inline-flex items-center gap-2"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}

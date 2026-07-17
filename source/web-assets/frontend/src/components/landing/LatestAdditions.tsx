@@ -97,7 +97,7 @@ const FEATURES: Feature[] = [
     testid: "landing-feature-ridez",
   },
   {
-    to: "/vibe-phone",
+    to: "/voice-mirror",
     title: "Vibe Phone",
     tag: "In-app voice + AI translation",
     body:
@@ -127,7 +127,7 @@ const FEATURES: Feature[] = [
     testid: "landing-feature-premium",
   },
   {
-    to: "/feed",
+    to: "/my-vibez",
     title: "Music + Feed",
     tag: "Spotify-mirror · creator monetization",
     body:

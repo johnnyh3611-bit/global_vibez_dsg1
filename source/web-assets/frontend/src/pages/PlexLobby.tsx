@@ -51,7 +51,7 @@ export default function PlexLobby() {
   const createRoom = async () => {
     const token = localStorage.getItem('auth_token');
     if (!token) {
-      navigate('/auth');
+      navigate('/login');
       return;
     }
     setCreating(true);

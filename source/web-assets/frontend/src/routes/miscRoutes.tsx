@@ -59,6 +59,24 @@ export const miscRoutes = (ProtectedRoute) => (
     <Route path="/earn" element={<ProtectedRoute><EarnHub /></ProtectedRoute>} />
     <Route path="/earn/chair" element={<Navigate to="/chair-vault" replace />} />
     <Route path="/earn/referral" element={<Navigate to="/referral" replace />} />
+    {/* Dead-link / typo aliases — keep tabs & old CTAs from hitting NotFound */}
+    <Route path="/inbox" element={<Navigate to="/messages" replace />} />
+    <Route path="/chat" element={<Navigate to="/messages" replace />} />
+    <Route path="/auth" element={<Navigate to="/login" replace />} />
+    <Route path="/auth/sign-in" element={<Navigate to="/login" replace />} />
+    <Route path="/auth/signup" element={<Navigate to="/signup" replace />} />
+    <Route path="/games-new" element={<Navigate to="/games" replace />} />
+    <Route path="/roulette" element={<Navigate to="/european-roulette" replace />} />
+    <Route path="/viberidez" element={<Navigate to="/vibe-ridez" replace />} />
+    <Route path="/vibe-phone" element={<Navigate to="/voice-mirror" replace />} />
+    <Route path="/feed" element={<Navigate to="/my-vibez" replace />} />
+    <Route path="/chairs/vault" element={<Navigate to="/chair-vault" replace />} />
+    <Route path="/tournament-leaderboard" element={<Navigate to="/leaderboard" replace />} />
+    <Route path="/vibez-casino-blackjack" element={<Navigate to="/multiplayer-blackjack" replace />} />
+    <Route path="/poker-room" element={<Navigate to="/multiplayer-poker" replace />} />
+    <Route path="/grand-master-bid-whist" element={<Navigate to="/bid-whist" replace />} />
+    <Route path="/multiplayer/uno" element={<Navigate to="/uno" replace />} />
+    <Route path="/protocol-omega" element={<Navigate to="/practice/play/chess" replace />} />
     {/* Streaming IA: /tv* aliases → live streams / studio (Job Board canonical). */}
     <Route path="/tv" element={<Navigate to="/streams" replace />} />
     <Route path="/tv/discover" element={<Navigate to="/streams" replace />} />

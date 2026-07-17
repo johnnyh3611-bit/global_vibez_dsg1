@@ -81,7 +81,7 @@ export default function ArtistDashboard() {
   const fetchAll = async () => {
     const t = token();
     if (!t) {
-      navigate('/auth');
+      navigate('/login');
       return;
     }
     const auth = { Authorization: `Bearer ${t}` };
@@ -92,7 +92,7 @@ export default function ArtistDashboard() {
         fetch(`${API}/api/media/artist/me/tracks`, { headers: auth }),
       ]);
       if (bRes.status === 401) {
-        navigate('/auth');
+        navigate('/login');
         return;
       }
       const [b, t2, k] = await Promise.all([

@@ -509,7 +509,7 @@ export default function HowChairsWork() {
       {/* CTA */}
       <section className="px-6 pb-24 max-w-3xl mx-auto text-center">
         <Link
-          to="/chairs/vault"
+          to="/chair-vault"
           className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-500 px-8 py-4 text-base font-bold text-white shadow-xl shadow-fuchsia-500/30 hover:scale-105 transition-transform"
           data-testid="how-chairs-park-cta"
         >

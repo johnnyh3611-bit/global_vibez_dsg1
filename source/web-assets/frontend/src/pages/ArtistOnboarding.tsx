@@ -44,7 +44,7 @@ export default function ArtistOnboarding() {
   const handlePublish = async () => {
     const token = localStorage.getItem('auth_token');
     if (!token) {
-      navigate('/auth');
+      navigate('/login');
       return;
     }
     setPublishing(true);

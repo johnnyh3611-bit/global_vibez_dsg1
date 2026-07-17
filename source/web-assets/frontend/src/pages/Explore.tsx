@@ -55,10 +55,10 @@ export const EXPLORE_REGISTRY: Entry[] = [
   { route: '/bid-whist-lobby', title: 'Bid Whist', subtitle: 'Lobby + AAA variant', cat: 'casino', tags: ['whist', 'cards'] },
   { route: '/casino/high-roller', title: 'High-Roller VIP', subtitle: 'Premium-tier rooms · 100K+ ₵ stakes', cat: 'casino', tags: ['vip', 'highroller'] },
   { route: '/craps', title: 'Craps', subtitle: 'Traditional pass-line action', cat: 'casino', tags: ['craps'] },
-  { route: '/roulette', title: 'Roulette', subtitle: 'European wheel', cat: 'casino', tags: ['roulette'] },
+  { route: '/european-roulette', title: 'Roulette', subtitle: 'European wheel', cat: 'casino', tags: ['roulette'] },
   { route: '/big-six-wheel', title: 'Big Six Wheel', subtitle: 'Spin & win', cat: 'casino', tags: ['wheel'] },
   { route: '/uno', title: 'UNO', subtitle: 'Color-match card duels', cat: 'casino', tags: ['uno', 'cards'] },
-  { route: '/spades', title: 'Card Royale', subtitle: 'Modern remix of classics', cat: 'casino', tags: ['cards', 'royale'] },
+  { route: '/card-royale', title: 'Card Royale', subtitle: 'Modern remix of classics', cat: 'casino', tags: ['cards', 'royale'] },
 
   // Music & Media
   { route: '/plex', title: 'Music Studio Rooms', subtitle: 'Living rooms · Gaming · Dating · Showcase', cat: 'music', tags: ['plex', 'living-room', 'affinity', 'music'] },

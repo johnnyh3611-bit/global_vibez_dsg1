@@ -53,7 +53,7 @@ const WhatsNewBanner: React.FC = () => {
   // wildcard `<NotFound />` route is unknown by definition — we hide
   // the banner on every unknown path too so 404s stay clean.
   const KNOWN_TOP_LEVEL = [
-    "/dashboard", "/games", "/profile", "/settings", "/inbox",
+    "/dashboard", "/games", "/profile", "/settings", "/messages",
     "/chair-hall", "/treasury", "/cinema", "/streaming", "/streamer",
     "/dating", "/match", "/swipe", "/just-for-the-night",
     "/vibe-vault-admin", "/vibe-drive", "/vibe-ridez", "/rides",
