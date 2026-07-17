@@ -97,11 +97,11 @@ const FEATURES: Feature[] = [
     testid: "landing-feature-ridez",
   },
   {
-    to: "/voice-mirror",
+    to: "/vibe-phone",
     title: "Vibe Phone",
-    tag: "In-app voice + AI translation",
+    tag: "In-app voice + FaceTime video",
     body:
-      "Encrypted in-app calling powered by Agora. Vibe Suites, JFTN gated rooms, and live AI voice mirroring across languages.",
+      "Encrypted in-app calling with a privacy-masked Vibe number. FaceTime-style video on dating matches; Voice Mirror stays separate for translation.",
     icon: Phone,
     color: "from-emerald-400 to-teal-500",
     testid: "landing-feature-phone",

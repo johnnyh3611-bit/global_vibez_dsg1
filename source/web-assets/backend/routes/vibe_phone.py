@@ -197,6 +197,7 @@ async def unblock_user(payload: BlockPayload, http_request: Request):
 
 class InitiatePayload(BaseModel):
     callee_user_id: str = Field(..., description="The user being called")
+    media_type: str = Field(default="voice", pattern="^(voice|video)$")
 
 
 class RespondPayload(BaseModel):
@@ -252,6 +253,7 @@ async def initiate(payload: InitiatePayload, http_request: Request):
         "callee_id": callee_id,
         "callee_vibe_number": callee_number,
         "channel": channel,
+        "media_type": payload.media_type or "voice",
         "status": "ringing",
         "created_at": time.time(),
     }
@@ -266,6 +268,7 @@ async def initiate(payload: InitiatePayload, http_request: Request):
         "from_user_id": user.user_id,
         "from_vibe_number": caller_number,
         "channel": channel,
+        "media_type": record["media_type"],
     })
 
     # Auto-time-out after CALL_RING_TTL_SEC if no response.
@@ -284,6 +287,7 @@ async def initiate(payload: InitiatePayload, http_request: Request):
         "call_id": call_id,
         "channel": channel,
         "status": "ringing",
+        "media_type": record["media_type"],
         "delivered_to_callee": delivered,
         "caller_vibe_number": caller_number,
         "callee_vibe_number": callee_number,

@@ -47,6 +47,7 @@ import YellowPagesNewListing from "@/pages/yellow_pages/YellowPagesNewListing";
 import YellowPagesListingDetail from "@/pages/yellow_pages/YellowPagesListingDetail";
 import TopUpSuccess from "@/pages/wallet/TopUpSuccess";
 import LegacyVaultPage from "@/pages/LegacyVaultPage";
+import VibePhonePage from "@/pages/VibePhonePage";
 
 export const miscRoutes = (ProtectedRoute) => (
   <>
@@ -67,8 +68,8 @@ export const miscRoutes = (ProtectedRoute) => (
     <Route path="/auth/signup" element={<Navigate to="/signup" replace />} />
     <Route path="/games-new" element={<Navigate to="/games" replace />} />
     <Route path="/roulette" element={<Navigate to="/european-roulette" replace />} />
+    <Route path="/vibe-phone" element={<ProtectedRoute><VibePhonePage /></ProtectedRoute>} />
     <Route path="/viberidez" element={<Navigate to="/vibe-ridez" replace />} />
-    <Route path="/vibe-phone" element={<Navigate to="/voice-mirror" replace />} />
     <Route path="/feed" element={<Navigate to="/my-vibez" replace />} />
     <Route path="/chairs/vault" element={<Navigate to="/chair-vault" replace />} />
     <Route path="/tournament-leaderboard" element={<Navigate to="/leaderboard" replace />} />
