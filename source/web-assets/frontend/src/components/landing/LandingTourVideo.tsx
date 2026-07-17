@@ -42,7 +42,7 @@ const CLIP_TAGS: Array<{ kicker: string; line: string; tint: string }> = [
   { kicker: "All-new wow", line: "More rooms · more vibes", tint: "from-pink-400 to-fuchsia-500" },
   { kicker: "Welcome home", line: "Your Vibez universe awaits", tint: "from-violet-400 to-indigo-500" },
   { kicker: "Meet your host", line: "Founder talks the vision", tint: "from-orange-400 to-amber-500" },
-  { kicker: "Sit at the table", line: "Apex · Genesis · Genius chairs", tint: "from-yellow-400 to-emerald-500" },
+  { kicker: "Sit at the table", line: "Genius · Genesis · Final Phase chairs", tint: "from-yellow-400 to-emerald-500" },
   { kicker: "Find your match", line: "Vigilant Matchmaker · Cinema Dates · Memory Bank", tint: "from-rose-400 to-pink-500" },
   { kicker: "Commercial · 15s", line: "Coins that pay the rent", tint: "from-cyan-400 to-fuchsia-500" },
   { kicker: "Commercial · 15s", line: "From streamer to seat-holder", tint: "from-amber-400 to-rose-500" },

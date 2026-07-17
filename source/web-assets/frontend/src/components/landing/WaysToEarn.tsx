@@ -123,7 +123,7 @@ const BETA_PATHS: EarnPath[] = [
     Icon: Coins,
     eyebrow: "TGE",
     title: "₵ → $DSG (planned)",
-    body: "In-app Vibez Coins today. Verified balances planned to convert 1:1 at Token Generation Event.",
+    body: "In-app Vibez Coins today. Verified balances are planned to convert 1:1 at Token Generation Event — not a guarantee until TGE terms lock.",
     rate: "1:1 at TGE (planned)",
     tone: "border-white/15 bg-white/[0.03] text-white/70",
   },
@@ -345,8 +345,9 @@ export default function WaysToEarn() {
           </li>
           <li>
             <strong className="text-rose-300">$DSG TGE is the multiplier event.</strong>{" "}
-            All ₵ holdings convert 1:1 to the public token at mint. Hold
-            ₵ now = hold $DSG on day 1.
+            All ₵ holdings are planned to convert 1:1 to the public token at mint
+            once TGE terms lock. Hold
+            ₵ now = hold $DSG on day 1 (planned).
           </li>
           <li>
             <strong className="text-rose-300">Nothing is guaranteed.</strong>{" "}

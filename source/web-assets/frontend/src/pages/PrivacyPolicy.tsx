@@ -1,9 +1,9 @@
 /**
- * /privacy — public privacy policy page used for 3rd-party API approvals
- * (Uber Developer dashboard, Google OAuth consent screen, Privy, etc.).
+ * /privacy — public privacy policy page used for app-store and payment
+ * processor reviews (Stripe, Google OAuth consent screen, Privy, etc.).
  *
  * Hosted at:  /privacy   (public, no auth)
- * Last reviewed: April 2026
+ * Last reviewed: July 2026
  */
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, ShieldCheck } from "lucide-react";
@@ -51,8 +51,8 @@ const SECTIONS: { id: string; title: string; body: React.ReactNode }[] = [
         </li>
         <li>
           <strong>Ride request data:</strong> pickup/drop-off coordinates,
-          fare estimates, ETA, and (when you elect to use Uber) the same
-          parameters forwarded to the Uber Rides API to fetch live pricing.
+          fare estimates, and ETA used by Vibe Ridez dispatch. We do not
+          share ride requests with third-party ride networks.
         </li>
         <li>
           <strong>Gameplay & wagering data:</strong> ₵ Vibez Coin balances,

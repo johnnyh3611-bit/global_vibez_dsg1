@@ -59,7 +59,7 @@ const PILLARS = [
     Icon: Coins,
     title: "Solana Fare Splitter",
     body:
-      'A Rust smart contract executes a fair, on-chain split the moment the Safety Check-In is validated: 70% to the driver, 20% to the platform, 10% into the community Liquidity Pool. Funds sit in the Vibe Vault escrow until both GPS pings match the drop-off point.',
+      'A fair split runs when the Safety Check-In validates: 70% to the driver, 14% to the chair pool, ~8.5% platform ops, 5% insurance, ~2.5% referrals. At Escape Velocity the chair pool rises to 30% and drivers still keep 70%. Funds sit in escrow until GPS confirms drop-off.',
     tone: "border-emerald-500/40 bg-emerald-950/15 text-emerald-300",
   },
   {

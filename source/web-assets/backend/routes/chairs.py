@@ -88,7 +88,7 @@ PHASES = [
     {"name": "Genesis", "limit": 150_000, "price_usd": 100.00, "weight": 2.0,
      "tagline": "Expansion seats — 2× earn rate, open to all, no per-wallet cap."},
     {"name": "Apex",    "limit": 200_000, "price_usd": 250.00, "weight": 1.0,
-     "tagline": "Apex seats — 1× earn rate, the final 50K of the active supply."},
+     "tagline": "Final Phase seats — 1× earn rate, last 50K of the active supply (Escape Velocity unlock)."},
 ]
 
 # Genius Phase Implementation PDF directive — per-user cap during Genius.

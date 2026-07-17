@@ -6,10 +6,10 @@ canonical platform credit used by JFTN, Yellow Pages, ambassador
 commissions, casino games, etc.
 
 Coin packs (LOCKED — bigger packs reward bigger commitment):
-  • ₵500    →  $5    starter
-  • ₵1000   →  $9    save 10%   (Most Popular)
-  • ₵2500   →  $20   save 20%
-  • ₵5000   →  $35   save 30%
+  • ₵5,000   →  $5    starter   (1,000 ₵ / $1)
+  • ₵10,000  →  $9    popular   (~11% bonus)
+  • ₵25,000  →  $20   pro       (25% bonus)
+  • ₵50,000  →  $35   vip       (~43% bonus)
 
 On successful payment, ``users.credits_balance`` is incremented and
 a row is written to ``coin_topup_payments`` for audit. The Stripe
