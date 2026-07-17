@@ -11,8 +11,8 @@ How it works:
    any pending `crypto_deposits` row's `memo` field (e.g. "GVZ-1a2b3c4d").
 3. If a match is found AND the deposit is still `pending`, atomically:
      • mark the deposit `confirmed`
-     • increment the user's `users.token_balance` by `amount_usd * 100`
-       (1 USD = 100 ₵ Vibez Coins)
+     • increment the user's `users.credits_balance` by `amount_usd * 1000`
+       (1 USD = 1,000 ₵ Vibez Coins — matches coin packs / wallet)
      • record the on-chain tx signature on the deposit row for auditing.
 4. Persists a cursor (last_processed_signature) in `solana_indexer_state`
    so a restart doesn't double-credit.
@@ -140,8 +140,8 @@ async def _credit_deposit(
     if res.modified_count != 1:
         return False  # someone else (or a previous run) beat us to it
 
-    # 1 USD pledged → 100 ₵ Vibez Coins (matches the rest of the platform).
-    coins = int(round(float(deposit.get("amount_usd", 0)) * 100))
+    # 1 USD pledged → 1,000 ₵ Vibez Coins (matches COINS_PER_USD / coin packs).
+    coins = int(round(float(deposit.get("amount_usd", 0)) * 1000))
     if coins > 0 and deposit.get("user_id"):
         await db.users.update_one(
             {"user_id": deposit["user_id"]},
