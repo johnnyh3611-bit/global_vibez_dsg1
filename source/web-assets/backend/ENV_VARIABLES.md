@@ -43,6 +43,14 @@ TWILIO_ACCOUNT_SID=your-account-sid
 TWILIO_AUTH_TOKEN=your-auth-token
 TWILIO_PHONE_NUMBER=+1234567890
 
+# Agora RTC — Vibe Phone + FaceTime-style video (required for live media)
+# Historically provisioned under Emergent (Apr 2026). Secrets live only in
+# the host env (Railway / local .env) — never commit the certificate.
+# Console: https://console.agora.io → Project → App ID + App Certificate
+# Health: GET /api/agora/health → {"configured": true, "app_id_present": true}
+AGORA_APP_ID=your-agora-app-id
+AGORA_APP_CERTIFICATE=your-agora-app-certificate
+
 # SendGrid (for emails)
 SENDGRID_API_KEY=your-sendgrid-key
 ```
