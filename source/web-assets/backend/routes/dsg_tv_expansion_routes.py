@@ -9,6 +9,7 @@ from services.dsg_tv_expansion import (
     get_my_chair, upgrade_chair, get_stool_balance, grant_stools,
     redeem_stools_for_chair, create_pool, stake_on_pool, resolve_pool,
     list_open_pools, PRESTIGE_TIERS, UPGRADE_COIN_COSTS, STOOLS_PER_CHAIR,
+    STOOL_EARN_WEIGHT,
 )
 from utils.admin_guard import require_admin
 from utils.auth_dependencies import get_current_user_from_session
@@ -41,7 +42,12 @@ async def upgrade(body: UpgradeRequest, current_user=Depends(get_current_user_fr
 @router.get("/stools/me")
 async def me_stools(current_user=Depends(get_current_user_from_session)) -> Dict[str, Any]:
     bal = await get_stool_balance(db, current_user["user_id"])
-    return {"ok": True, "stools": bal, "stools_per_chair": STOOLS_PER_CHAIR}
+    return {
+        "ok": True,
+        "stools": bal,
+        "stools_per_chair": STOOLS_PER_CHAIR,
+        "stool_earn_weight": STOOL_EARN_WEIGHT,
+    }
 
 
 @router.post("/stools/redeem")
@@ -111,6 +117,7 @@ async def constants() -> Dict[str, Any]:
         "prestige_tiers": list(PRESTIGE_TIERS),
         "upgrade_costs_coins": {f"{f}->{t}": c for (f, t), c in UPGRADE_COIN_COSTS.items()},
         "stools_per_chair": STOOLS_PER_CHAIR,
+        "stool_earn_weight": STOOL_EARN_WEIGHT,
         "predict_split": {
             "broadcaster_pct": PRED_BROADCASTER_PCT,
             "treasury_pct": PRED_TREASURY_PCT,

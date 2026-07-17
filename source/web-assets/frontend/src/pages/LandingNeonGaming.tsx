@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, Gamepad2, Video, MapPin, Sparkles, Play, ArrowRight, Zap, Users, Shield, Moon, Crown, BookOpen, Map, Cpu, Rocket, Car, Armchair, DollarSign, UtensilsCrossed, Pizza, Home, Tv, Music, BookMarked } from 'lucide-react';
-import MissionBriefing from '../components/landing/MissionBriefing';
+import { Heart, Gamepad2, Video, MapPin, Sparkles, Play, ArrowRight, Zap, Users, Shield, Moon, Crown, BookOpen, Map, Cpu, Armchair, DollarSign, Pizza, Home, Tv, Music, BookMarked } from 'lucide-react';
 import UtilityRoomsDock from '../components/landing/UtilityRoomsDock';
 import NewThisDrop from '../components/landing/NewThisDrop';
 import EarningsSnapshot from '../components/landing/EarningsSnapshot';
-import LatestAdditions from '../components/landing/LatestAdditions';
 import TokenRoadmap from '../components/landing/TokenRoadmap';
 import ChairExpansionPlan from '../components/landing/ChairExpansionPlan';
 import WelcomeLetter from '../components/landing/WelcomeLetter';
@@ -16,14 +14,8 @@ import EvolutionCountdown from '../components/landing/EvolutionCountdown';
 import WinnerTicker from '../components/common/WinnerTicker';
 import LandingAccordion from '../components/landing/LandingAccordion';
 import { setBearerToken } from '@/utils/secureAuth';
-import EcosystemMechanics from '../components/landing/EcosystemMechanics';
 import PricingMasterVault from '../components/landing/PricingMasterVault';
-import WhatsNext from '../components/landing/WhatsNext';
-import VibeRidezSpotlight from '../components/landing/VibeRidezSpotlight';
-import HungryVibezSpotlight from '../components/landing/HungryVibezSpotlight';
-import VibeVenuesSpotlight from '../components/landing/VibeVenuesSpotlight';
 import ChairWallTeaser from '../components/landing/ChairWallTeaser';
-import WaysToEarn from '../components/landing/WaysToEarn';
 import LandingLanguageSwitcher from '../components/LandingLanguageSwitcher';
 import LandingHeaderEnhanced, { type RoomKey } from '../components/landing/LandingHeaderEnhanced';
 import LandingFeatureAccordions from '../components/landing/LandingFeatureAccordions';
@@ -870,25 +862,14 @@ export default function LandingNeonGaming() {
       {/* Earnings Snapshot — all 12 earn paths visible without a click (Founder directive 2026-05-04) */}
       <EarningsSnapshot />
 
-      {/* Quick-jump accordion stack — keeps the landing page short.
-          Each section is one click to expand. Visitors pick what they
-          care about instead of scrolling 12 screens of content. */}
+      {/* Quick-jump accordion stack — trimmed soft-launch set.
+          Removed overlapping Mission / Ecosystem / Ways-to-Earn /
+          What's Next / Feature Index (same facts lived above in
+          NewThisDrop, EarningsSnapshot, LandingFeatureAccordions). */}
 
-      {/* Mission Briefing — the platform's elevator pitch */}
-      <LandingAccordion
-        title="Mission Briefing"
-        subtitle="What Global Vibez is and why it exists"
-        Icon={Sparkles}
-        tone="cyan"
-        testId="acc-mission-briefing"
-      >
-        <MissionBriefing />
-      </LandingAccordion>
-
-      {/* Welcome Letter — narrative onboarding for first-time visitors. */}
       <LandingAccordion
         title="A Letter from the Founder"
-        subtitle="What a chair is, why pricing ramps, and Escape Velocity"
+        subtitle="Chairs, Equity Master valuation, and Stools"
         Icon={BookOpen}
         tone="amber"
         testId="acc-welcome-letter"
@@ -896,18 +877,6 @@ export default function LandingNeonGaming() {
         <WelcomeLetter />
       </LandingAccordion>
 
-      {/* Ecosystem Mechanics — Engagement Mining + Loyalty Loop + Currency Stack */}
-      <LandingAccordion
-        title="Ecosystem Mechanics"
-        subtitle="How Engagement Mining + the 72-hour Loyalty Loop work"
-        Icon={Cpu}
-        tone="cyan"
-        testId="acc-ecosystem-mechanics"
-      >
-        <EcosystemMechanics />
-      </LandingAccordion>
-
-      {/* Live Vibez Coin packs (matches /api/coins/packs) */}
       <LandingAccordion
         title="Vibez Coin Packs"
         subtitle="Four packs · $1 = 1,000 ₵ · planned 1:1 $DSG at TGE"
@@ -918,55 +887,9 @@ export default function LandingNeonGaming() {
         <PricingMasterVault />
       </LandingAccordion>
 
-      {/* Ways to Earn — full earnings explainer + monthly scenarios */}
-      <LandingAccordion
-        title="All The Ways You Can Earn"
-        subtitle="Eight earn paths · real production rates · monthly scenarios"
-        Icon={DollarSign}
-        tone="emerald"
-        testId="acc-ways-to-earn"
-      >
-        <WaysToEarn />
-      </LandingAccordion>
-
-      {/* VibeRidez — Creator Fleet driver/rider network spotlight */}
-      <LandingAccordion
-        title="VibeRidez · The Creator Fleet"
-        subtitle="Drive, stream, earn — Kill-Switch privacy + Solana fare splits"
-        Icon={Car}
-        tone="violet"
-        testId="acc-vibe-ridez"
-      >
-        <VibeRidezSpotlight />
-      </LandingAccordion>
-
-      {/* Hungry Vibez — same fleet, food delivery task type */}
-      <LandingAccordion
-        title="Hungry Vibez · Same Fleet, Second Task Type"
-        subtitle="Mom & Pop kitchens · Flat $30/mo partners · 70% driver split in $DSG"
-        Icon={UtensilsCrossed}
-        tone="amber"
-        testId="acc-hungry-vibez"
-      >
-        <HungryVibezSpotlight />
-      </LandingAccordion>
-
-      {/* Vibe Venues — hourly private-space rentals + Vibe Artisans */}
-      <LandingAccordion
-        title="Vibe Venues · Rent by the Hour, Live by the Vibe"
-        subtitle="Hourly blocks [3 · 6 · 9 · 12 · 24 hr] · $20/mo Artisans · $DSG smart escrow"
-        Icon={Home}
-        tone="fuchsia"
-        testId="acc-vibe-venues"
-      >
-        <VibeVenuesSpotlight />
-      </LandingAccordion>
-
-      {/* Chair Expansion Plan — already has its own internal
-          dropdown UI, so leave un-wrapped to avoid double-nesting. */}
+      {/* Chair Expansion Plan — Equity Master matrix (Genius → Floor/Genesis/Diamond/Platinum) */}
       <ChairExpansionPlan />
 
-      {/* Chair Wall — public believer wall preview + CTA to /chair-wall */}
       <LandingAccordion
         title="The Chair Wall"
         subtitle="Every chair has a unique ID — see who parked which seat"
@@ -977,18 +900,6 @@ export default function LandingNeonGaming() {
         <ChairWallTeaser />
       </LandingAccordion>
 
-      {/* What's Next — Live Now / Coming Soon / Post-Milestone trio */}
-      <LandingAccordion
-        title="What's Next"
-        subtitle="Live Now · Coming Soon · Post-Milestone"
-        Icon={Rocket}
-        tone="emerald"
-        testId="acc-whats-next"
-      >
-        <WhatsNext />
-      </LandingAccordion>
-
-      {/* Token & Treasury Roadmap — live on-chain status */}
       <LandingAccordion
         title="Token & Treasury Roadmap"
         subtitle="Path to TGE — live on-chain status"
@@ -997,17 +908,6 @@ export default function LandingNeonGaming() {
         testId="acc-token-roadmap"
       >
         <TokenRoadmap />
-      </LandingAccordion>
-
-      {/* Latest Additions — full feature index */}
-      <LandingAccordion
-        title="The Full Feature Index"
-        subtitle="Everything we've shipped so far"
-        Icon={Crown}
-        tone="fuchsia"
-        testId="acc-latest-additions"
-      >
-        <LatestAdditions />
       </LandingAccordion>
 
       {/* Footer */}
