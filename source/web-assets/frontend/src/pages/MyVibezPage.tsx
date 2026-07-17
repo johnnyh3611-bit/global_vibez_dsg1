@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { FuturisticTabs } from '@/components/ui/futuristic-tabs';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -119,29 +120,19 @@ export default function MyVibezPage() {
             MY VIBEZ
           </h1>
           
-          {/* Feed Type Selector */}
-          <div className="flex gap-2">
-            {[
-              { id: 'for_you', label: 'For You', icon: Sparkles },
-              { id: 'following', label: 'Following', icon: Users },
-              { id: 'gaming', label: 'Gaming', icon: Gamepad2 },
-              { id: 'dating', label: 'Dating', icon: Heart }
-            ].map(({ id, label, icon: Icon }) => (
-              <Button
-                key={id}
-                size="sm"
-                onClick={() => setFeedType(id)}
-                className={`${
-                  feedType === id
-                    ? 'bg-gradient-to-r from-pink-600 to-purple-600'
-                    : 'bg-slate-800/50 backdrop-blur-sm'
-                } px-3 py-1 text-xs`}
-              >
-                <Icon className="w-3 h-3 mr-1" />
-                {label}
-              </Button>
-            ))}
-          </div>
+          <FuturisticTabs
+            ariaLabel="Feed type"
+            variant="pills"
+            value={feedType}
+            onChange={setFeedType}
+            className="max-w-lg"
+            options={[
+              { value: 'for_you', label: 'For You', icon: Sparkles, testId: 'myvibez-page-tab-for-you' },
+              { value: 'following', label: 'Following', icon: Users, testId: 'myvibez-page-tab-following' },
+              { value: 'gaming', label: 'Gaming', icon: Gamepad2, testId: 'myvibez-page-tab-gaming' },
+              { value: 'dating', label: 'Dating', icon: Heart, testId: 'myvibez-page-tab-dating' },
+            ]}
+          />
         </div>
       </div>
 

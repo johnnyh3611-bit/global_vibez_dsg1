@@ -22,6 +22,7 @@ import { triggerHaptic } from '@/hooks/useGestures';
 import { recordRecentGame } from '@/hooks/useRecommendedGames';
 import { RecommendedGames } from '@/components/games/RecommendedGames';
 import { authFetch } from '@/utils/secureAuth';
+import { FuturisticTabs } from '@/components/ui/futuristic-tabs';
 
 /**
  * Lobby tile → playable solo room. Prefer dedicated AAA / casino pages;
@@ -601,70 +602,25 @@ export default function GamesNew() {
           <RecommendedGames />
         </div>
 
-        {/* Enhanced Category Tabs with Animations */}
+        {/* Category tabs — My Vibez fuchsia/pink segmented style */}
         {!searchQuery && (
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3 mb-4 sm:mb-6 pb-2">
-            {Object.entries(GAME_CATEGORIES).map(([key, category]) => {
-              const Icon = category.icon;
-              const isSelected = selectedCategory === key;
-              return (
-                <motion.button
-                  key={key}
-                  onClick={() => {
-                    setSelectedCategory(key);
-                    soundManager.buttonClick();
-                  }}
-                  onMouseEnter={() => soundManager.buttonHover()}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className={`relative flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-bold transition-all w-full min-w-0 ${
-                    isSelected
-                      ? 'bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 text-white shadow-2xl shadow-cyan-500/60'
-                      : 'bg-slate-800/70 text-slate-300 hover:bg-slate-700/70 border border-white/10'
-                  }`}
-                >
-                  {/* Animated background glow for selected */}
-                  {isSelected && (
-                    <motion.div
-                      className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 rounded-2xl blur-xl opacity-50"
-                      animate={{
-                        scale: [1, 1.1, 1],
-                        opacity: [0.5, 0.7, 0.5]
-                      }}
-                      transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        ease: "easeInOut"
-                      }}
-                    />
-                  )}
-                  
-                  {/* Icon with glow */}
-                  <div className="relative z-10">
-                    <Icon className={`w-4 h-4 sm:w-5 sm:h-5 ${isSelected ? 'drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]' : ''}`} />
-                  </div>
-                  
-                  {/* Category name */}
-                  <span className="relative z-10 text-[10px] sm:text-sm tracking-wide truncate min-w-0">
-                    {category.name}
-                  </span>
-                  
-                  {/* Active indicator dot */}
-                  {isSelected && (
-                    <motion.div
-                      className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full border-2 border-white shadow-lg"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: [1, 1.2, 1] }}
-                      transition={{
-                        duration: 1,
-                        repeat: Infinity,
-                        ease: "easeInOut"
-                      }}
-                    />
-                  )}
-                </motion.button>
-              );
-            })}
+          <div className="mb-4 sm:mb-6" data-testid="games-category-tabs">
+            <FuturisticTabs
+              ariaLabel="Game categories"
+              variant="pills"
+              value={selectedCategory}
+              onChange={(key) => {
+                setSelectedCategory(key);
+                soundManager.buttonClick();
+                triggerHaptic('light');
+              }}
+              options={Object.entries(GAME_CATEGORIES).map(([key, category]) => ({
+                value: key,
+                label: category.name,
+                icon: category.icon,
+                testId: `games-category-tab-${key}`,
+              }))}
+            />
           </div>
         )}
 

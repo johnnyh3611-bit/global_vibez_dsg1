@@ -12,6 +12,7 @@ import {
   ArrowLeft, Music4, Gavel, ShoppingBag, Plus, RefreshCcw,
   Tag, Activity, Coins,
 } from "lucide-react";
+import { FuturisticTabs } from "@/components/ui/futuristic-tabs";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -142,15 +143,24 @@ export default function BeatVaultMarketplace() {
           <button onClick={load} disabled={loading} data-testid="bv-refresh" className="p-2 rounded-lg hover:bg-white/10"><RefreshCcw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} /></button>
         </div>
 
-        {/* TAB BAR */}
-        <div className="max-w-6xl mx-auto px-5 pb-3 flex gap-2">
-          <button onClick={() => setTab("vault")} data-testid="bv-tab-vault" className={`px-4 py-1.5 rounded-full text-xs uppercase tracking-widest font-bold flex items-center gap-1.5 ${tab === "vault" ? "bg-amber-500 text-black" : "bg-white/5 hover:bg-white/10"}`}>
-            <ShoppingBag className="w-3 h-3" /> Vault ({beats.length})
-          </button>
-          <button onClick={() => setTab("auctions")} data-testid="bv-tab-auctions" className={`px-4 py-1.5 rounded-full text-xs uppercase tracking-widest font-bold flex items-center gap-1.5 ${tab === "auctions" ? "bg-amber-500 text-black" : "bg-white/5 hover:bg-white/10"}`}>
-            <Gavel className="w-3 h-3" /> Auctions ({auctions.filter(a => a.status === "live").length} live)
-          </button>
-          <button onClick={() => setShowAddBeat(true)} data-testid="bv-add-btn" className="ml-auto px-4 py-1.5 rounded-full text-xs uppercase tracking-widest font-bold bg-emerald-500/20 text-emerald-200 border border-emerald-500/40 hover:bg-emerald-500/30 flex items-center gap-1.5">
+        <div className="max-w-6xl mx-auto px-5 pb-3 flex gap-2 items-center flex-wrap">
+          <FuturisticTabs
+            ariaLabel="Beat Vault sections"
+            variant="pills"
+            value={tab}
+            onChange={(v) => setTab(v as typeof tab)}
+            className="flex-1 min-w-0"
+            options={[
+              { value: "vault", label: `Vault (${beats.length})`, icon: ShoppingBag, testId: "bv-tab-vault" },
+              {
+                value: "auctions",
+                label: `Auctions (${auctions.filter(a => a.status === "live").length} live)`,
+                icon: Gavel,
+                testId: "bv-tab-auctions",
+              },
+            ]}
+          />
+          <button onClick={() => setShowAddBeat(true)} data-testid="bv-add-btn" className="ml-auto px-4 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/20 text-emerald-200 border border-emerald-500/40 hover:bg-emerald-500/30 flex items-center gap-1.5">
             <Plus className="w-3 h-3" /> Upload Beat
           </button>
         </div>

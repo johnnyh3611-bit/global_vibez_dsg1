@@ -19,6 +19,7 @@ import {
   AlertTriangle, Megaphone, Sparkles,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { FuturisticTabs } from '@/components/ui/futuristic-tabs';
 
 type Tab = 'override' | 'hardware' | 'tier' | 'kitchen' | 'constants';
 
@@ -217,21 +218,19 @@ export default function DSGLogisticsHub() {
             40/30/30 · NO BURN
           </span>
         </div>
-        <div className="max-w-5xl mx-auto mt-3 flex gap-2 overflow-x-auto" data-testid="logistics-tabs">
-          {TABS.map(({ key, label, Icon }) => (
-            <button
-              key={key}
-              onClick={() => setTab(key)}
-              data-testid={`logistics-tab-${key}`}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] uppercase tracking-widest font-bold border transition-colors ${
-                tab === key
-                  ? 'bg-cyan-500/30 border-cyan-400/60 text-cyan-100'
-                  : 'bg-white/5 border-white/10 text-white/60'
-              }`}
-            >
-              <Icon className="w-3 h-3" /> {label}
-            </button>
-          ))}
+        <div className="max-w-5xl mx-auto mt-3" data-testid="logistics-tabs">
+          <FuturisticTabs
+            ariaLabel="Logistics sections"
+            variant="pills"
+            value={tab}
+            onChange={(v) => setTab(v as Tab)}
+            options={TABS.map(({ key, label, Icon }) => ({
+              value: key,
+              label,
+              icon: Icon,
+              testId: `logistics-tab-${key}`,
+            }))}
+          />
         </div>
       </header>
 

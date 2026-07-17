@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Tv, Plus, RefreshCcw, Megaphone, Clock, Film, Tag,
 } from "lucide-react";
+import { FuturisticTabs } from "@/components/ui/futuristic-tabs";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -102,17 +103,19 @@ export default function VibeTvScheduler() {
           <button onClick={load} disabled={loading} data-testid="tv-refresh" className="p-2 rounded-lg hover:bg-white/10"><RefreshCcw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} /></button>
         </div>
 
-        {/* TABS */}
         <div className="max-w-6xl mx-auto px-5 pb-3 flex gap-2 flex-wrap items-center">
-          <button onClick={() => setTab("schedule")} data-testid="tv-tab-schedule" className={`px-4 py-1.5 rounded-full text-xs uppercase tracking-widest font-bold flex items-center gap-1.5 ${tab === "schedule" ? "bg-blue-500 text-white" : "bg-white/5 hover:bg-white/10"}`}>
-            <Clock className="w-3 h-3" /> Schedule ({slots.length})
-          </button>
-          <button onClick={() => setTab("episodes")} data-testid="tv-tab-episodes" className={`px-4 py-1.5 rounded-full text-xs uppercase tracking-widest font-bold flex items-center gap-1.5 ${tab === "episodes" ? "bg-blue-500 text-white" : "bg-white/5 hover:bg-white/10"}`}>
-            <Film className="w-3 h-3" /> Episodes ({episodes.length})
-          </button>
-          <button onClick={() => setTab("ads")} data-testid="tv-tab-ads" className={`px-4 py-1.5 rounded-full text-xs uppercase tracking-widest font-bold flex items-center gap-1.5 ${tab === "ads" ? "bg-blue-500 text-white" : "bg-white/5 hover:bg-white/10"}`}>
-            <Megaphone className="w-3 h-3" /> Ads ({ads.length})
-          </button>
+          <FuturisticTabs
+            ariaLabel="Vibe TV sections"
+            variant="pills"
+            value={tab}
+            onChange={(v) => setTab(v as typeof tab)}
+            className="flex-1 min-w-0"
+            options={[
+              { value: "schedule", label: `Schedule (${slots.length})`, icon: Clock, testId: "tv-tab-schedule" },
+              { value: "episodes", label: `Episodes (${episodes.length})`, icon: Film, testId: "tv-tab-episodes" },
+              { value: "ads", label: `Ads (${ads.length})`, icon: Megaphone, testId: "tv-tab-ads" },
+            ]}
+          />
           <div className="ml-auto flex items-center gap-2 text-[10px]">
             <button onClick={() => setShowEpisodeModal(true)} data-testid="tv-add-episode-btn"
               className="px-3 py-1 rounded-full uppercase tracking-widest font-bold bg-emerald-500/20 text-emerald-200 border border-emerald-500/40 hover:bg-emerald-500/30 flex items-center gap-1">

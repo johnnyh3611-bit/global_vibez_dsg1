@@ -41,6 +41,7 @@ import {
 import { toast } from "sonner";
 import { authFetch } from "@/utils/secureAuth";
 import StripeConnectButton from "@/components/payout/StripeConnectButton";
+import { FuturisticTabs } from "@/components/ui/futuristic-tabs";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -293,12 +294,20 @@ export default function HungryVibesMerchant() {
           </div>
         )}
 
-        {/* Tabs */}
-        <div className="flex gap-2 mb-5 overflow-x-auto" data-testid="hv-tabs">
-          <TabButton active={tab === "menu"} onClick={() => setTab("menu")} icon={<Utensils className="w-4 h-4" />} label="Menu Builder" testId="hv-tab-menu" />
-          <TabButton active={tab === "orders"} onClick={() => setTab("orders")} icon={<ClipboardList className="w-4 h-4" />} label="Orders" testId="hv-tab-orders" />
-          <TabButton active={tab === "promos"} onClick={() => setTab("promos")} icon={<Tag className="w-4 h-4" />} label="VIBE Promos" testId="hv-tab-promos" />
-          <TabButton active={tab === "vibe"} onClick={() => setTab("vibe")} icon={<Wallet className="w-4 h-4" />} label="Vibe Account" testId="hv-tab-vibe" />
+        {/* Tabs — My Vibez style */}
+        <div className="mb-5" data-testid="hv-tabs">
+          <FuturisticTabs
+            ariaLabel="Merchant sections"
+            variant="pills"
+            value={tab}
+            onChange={(v) => setTab(v as typeof tab)}
+            options={[
+              { value: "menu", label: "Menu Builder", icon: Utensils, testId: "hv-tab-menu" },
+              { value: "orders", label: "Orders", icon: ClipboardList, testId: "hv-tab-orders" },
+              { value: "promos", label: "VIBE Promos", icon: Tag, testId: "hv-tab-promos" },
+              { value: "vibe", label: "Vibe Account", icon: Wallet, testId: "hv-tab-vibe" },
+            ]}
+          />
         </div>
 
         {/* Tab body */}
@@ -322,36 +331,6 @@ export default function HungryVibesMerchant() {
 }
 
 // ─── Sub-components ────────────────────────────────────────────────────
-
-function TabButton({
-  active,
-  onClick,
-  icon,
-  label,
-  testId,
-}: {
-  active: boolean;
-  onClick: () => void;
-  icon: React.ReactNode;
-  label: string;
-  testId: string;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      data-testid={testId}
-      className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-black uppercase tracking-wider whitespace-nowrap transition ${
-        active
-          ? "bg-gradient-to-r from-amber-400 to-orange-500 text-[#1a0d05] shadow-[0_0_18px_rgba(245,158,11,0.5)]"
-          : "bg-white/5 text-amber-100/70 hover:bg-white/10"
-      }`}
-      style={{ fontFamily: "'Cinzel', serif" }}
-    >
-      {icon}
-      {label}
-    </button>
-  );
-}
 
 function RegisterScreen({
   onRegistered,

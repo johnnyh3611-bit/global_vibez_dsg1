@@ -17,6 +17,7 @@ import {
   Search, ArrowLeft, ChevronRight, Sparkles,
   Dice6, Music2, Heart, Tv, Wallet, Crown, Spade, Compass,
 } from 'lucide-react';
+import { FuturisticTabs } from '@/components/ui/futuristic-tabs';
 
 type Cat = 'casino' | 'music' | 'dating' | 'streaming' | 'wallet' | 'founder';
 
@@ -168,38 +169,28 @@ export default function Explore() {
           />
         </div>
 
-        {/* Category chips */}
-        <div className="flex flex-nowrap overflow-x-auto gap-2 pb-1 scrollbar-hide snap-x snap-mandatory" data-testid="explore-category-chips">
-          <button
-            type="button"
-            onClick={() => setActiveCat('all')}
-            data-testid="explore-chip-all"
-            className={`flex-1 min-w-[120px] snap-start px-3 py-1.5 rounded-full text-[10px] uppercase tracking-widest font-bold border transition-colors flex items-center justify-center gap-1.5 ${
-              activeCat === 'all'
-                ? 'bg-fuchsia-500/30 border-fuchsia-400/60 text-fuchsia-100'
-                : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'
-            }`}
-          >
-            <Sparkles className="w-3 h-3 shrink-0" /> <span className="truncate">All ({counts.all})</span>
-          </button>
-          {(Object.keys(CATEGORY_META) as Cat[]).map((c) => {
-            const meta = CATEGORY_META[c];
-            const Icon = meta.Icon;
-            const isActive = activeCat === c;
-            return (
-              <button
-                key={c}
-                type="button"
-                onClick={() => setActiveCat(c)}
-                data-testid={`explore-chip-${c}`}
-                className={`flex-1 min-w-[120px] snap-start px-3 py-1.5 rounded-full text-[10px] uppercase tracking-widest font-bold border transition-colors flex items-center justify-center gap-1.5 ${
-                  isActive ? `${meta.tint} scale-105` : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'
-                }`}
-              >
-                <Icon className="w-3 h-3 shrink-0" /> <span className="truncate">{meta.label} ({counts[c]})</span>
-              </button>
-            );
-          })}
+        {/* Category chips — My Vibez tab style */}
+        <div data-testid="explore-category-chips">
+          <FuturisticTabs
+            ariaLabel="Explore categories"
+            variant="pills"
+            value={activeCat}
+            onChange={(v) => setActiveCat(v as Cat | 'all')}
+            options={[
+              {
+                value: 'all',
+                label: `All (${counts.all})`,
+                icon: Sparkles,
+                testId: 'explore-chip-all',
+              },
+              ...(Object.keys(CATEGORY_META) as Cat[]).map((c) => ({
+                value: c,
+                label: `${CATEGORY_META[c].label} (${counts[c]})`,
+                icon: CATEGORY_META[c].Icon,
+                testId: `explore-chip-${c}`,
+              })),
+            ]}
+          />
         </div>
 
         {/* Grid */}
