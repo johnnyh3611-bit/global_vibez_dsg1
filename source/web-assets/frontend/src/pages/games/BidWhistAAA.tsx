@@ -844,6 +844,9 @@ export default function BidWhistAAA() {
             <div className="flex items-center gap-2">
               <SpadesGameMenu
                 onExit={backToLobby}
+                entryFee={Number((raw as { wager?: number } | null)?.wager ?? 0)}
+                midGame={Boolean(raw && raw.phase !== "finished")}
+                gameLabel="Bid Whist"
                 onOpenMessages={() => setChatOpen(true)}
               />
               <CommHubButton compact />

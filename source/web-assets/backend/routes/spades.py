@@ -359,6 +359,106 @@ async def get_spades_game(game_id: str, request: Request) -> Dict[str, Any]:
     }
 
 
+# ==================== FORFEIT / QUIT ====================
+
+class QuitSpadesRequest(BaseModel):
+    game_id: str
+
+
+@router.get("/forfeit-policy")
+async def get_forfeit_policy() -> Dict[str, Any]:
+    """Public quitter-penalty rules for UI copy (15% house + partner split)."""
+    from utils.game_forfeit import forfeit_policy_public
+    return forfeit_policy_public()
+
+
+@router.post("/quit")
+async def quit_spades_game(req: QuitSpadesRequest, request: Request) -> Dict[str, Any]:
+    """
+    Mid-game quit for Spades:
+    - Entry forfeited (already in pot)
+    - Extra 15% house penalty from credits_balance
+    - 50% of entry → partner, 50% split among remaining opponents
+    """
+    from utils.game_forfeit import handle_player_quit
+
+    current_user = await get_current_user(request)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    user_id = current_user.user_id
+
+    db = get_database()
+    game = await db.spades_games.find_one({"game_id": req.game_id}, {"_id": 0})
+    if not game:
+        raise HTTPException(status_code=404, detail="Game not found")
+
+    player_mapping = game.get("player_mapping", {})
+    user_position = next(
+        (pos for pos, pid in player_mapping.items() if pid == user_id),
+        None,
+    )
+    if not user_position:
+        raise HTTPException(status_code=403, detail="You are not in this game")
+
+    forfeit_result = await handle_player_quit(
+        user_id=user_id,
+        game_id=req.game_id,
+        game_type="spades",
+    )
+
+    await db.spades_games.update_one(
+        {"game_id": req.game_id},
+        {
+            "$set": {
+                f"players_quit.{user_position}": True,
+                f"quit_timestamps.{user_position}": datetime.now(timezone.utc).isoformat(),
+            }
+        },
+    )
+
+    if game.get("status") in ["active", "in_progress", "playing"]:
+        try:
+            from websocket_server import sio
+            await sio.emit(
+                "player_quit",
+                {
+                    "position": user_position,
+                    "user_id": user_id,
+                    "penalty_applied": forfeit_result.get("penalty_applied", False),
+                    "forfeit": forfeit_result,
+                    "message": f"Player {user_position} has quit the game",
+                },
+                room=req.game_id,
+            )
+        except Exception:
+            pass
+
+    players_quit = len([v for v in game.get("players_quit", {}).values() if v]) + 1
+    total_players = len(player_mapping)
+    remaining_players = total_players - players_quit
+    if remaining_players < 2:
+        await db.spades_games.update_one(
+            {"game_id": req.game_id},
+            {
+                "$set": {
+                    "status": "ended",
+                    "end_reason": "insufficient_players",
+                    "ended_at": datetime.now(timezone.utc).isoformat(),
+                }
+            },
+        )
+
+    return {
+        "success": True,
+        "forfeit_result": forfeit_result,
+        "remaining_players": max(0, remaining_players),
+        "message": (
+            "You have left the game"
+            + (f" — {forfeit_result.get('message', '')}" if forfeit_result.get("penalty_applied") else "")
+        ),
+    }
+
+
 @router.get("/stats/{user_id}")
 async def get_spades_stats(user_id: str, request: Request) -> Dict[str, Any]:
     """Get player's Spades statistics"""

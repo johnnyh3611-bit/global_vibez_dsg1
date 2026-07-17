@@ -965,6 +965,16 @@ export default function UnoPremium() {
           onLeave={leaveTable}
           onOpenChat={() => setShowChat(!showChat)}
           unreadMessages={unreadMessages}
+          entryFee={Number(
+            (table as { wager?: number; settings?: { wager?: number } } | null)?.wager
+              ?? (table as { settings?: { wager?: number } } | null)?.settings?.wager
+              ?? 0,
+          )}
+          midGame={Boolean(
+            (table as { state?: string; phase?: string } | null)?.state === "playing"
+              || (table as { phase?: string } | null)?.phase === "playing",
+          )}
+          gameLabel="UNO"
         />
       </div>
 

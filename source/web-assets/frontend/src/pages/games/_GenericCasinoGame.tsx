@@ -7,14 +7,18 @@
  * layout. A single configurable shell keeps the codebase tight while still
  * delivering a real, fully-wired playable experience.
  */
-import { ReactNode, useCallback, useState, useEffect } from "react";
+import { ReactNode, useCallback, useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Trophy } from "lucide-react";
-import TurnIndicator from "@/components/games/TurnIndicator";
-import HotColdStrip from "@/components/games/HotColdStrip";
 import { BallSpin } from "@/components/games/CasinoCinematics";
-import CasinoTableEnhancer, { ChipStakeSelector, CasinoPhase } from "@/components/games/CasinoTableEnhancer";
+import CasinoTableEnhancer, { ChipStakeSelector } from "@/components/games/CasinoTableEnhancer";
+import BetSlip, {
+  BetButton,
+  notifyBetError,
+  notifyBetPlaced,
+} from "@/components/betting/BetSlip";
+import GameVideoLayout from "@/components/video/GameVideoLayout";
 import cardSoundManager from "@/utils/cardSoundManager";
 
 /**
@@ -73,6 +77,7 @@ export default function GenericCasinoGame(props: GenericGameProps) {
    * we tack it onto this rolling buffer.
    */
   const [history, setHistory] = useState<number[]>([]);
+  const [slipOpen, setSlipOpen] = useState(true);
 
   useEffect(() => {
     if (!result) return;
@@ -82,32 +87,68 @@ export default function GenericCasinoGame(props: GenericGameProps) {
     }
   }, [result]);
 
+  const selectionLabel = useMemo(() => {
+    const parts = props.bets.map((b) => `${b.label}: ${values[b.label]}`);
+    return parts.length ? parts.join(" · ") : props.title;
+  }, [props.bets, props.title, values]);
+
   const play = useCallback(async () => {
-    setBusy(true); setResult(null);
-    const body = props.buildBody(values, stake);
-    const res = await fetch(`${API}${props.endpoint}`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...body, stake }),
-    }).then(r => r.json());
-    setResult(res);
-    setBusy(false);
-  }, [props, values, stake]);
+    if (stake < 5) {
+      notifyBetError("Minimum bet is ₵5");
+      return;
+    }
+    setBusy(true);
+    setResult(null);
+    notifyBetPlaced(stake, selectionLabel);
+    try {
+      const body = props.buildBody(values, stake);
+      const res = await fetch(`${API}${props.endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...body, stake }),
+      }).then((r) => r.json());
+      if ((res as any)?.detail) {
+        notifyBetError(String((res as any).detail));
+      } else {
+        setResult(res);
+      }
+    } catch {
+      notifyBetError("Bet failed — try again");
+    } finally {
+      setBusy(false);
+    }
+  }, [props, values, stake, selectionLabel]);
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br ${props.themeBg} text-white pb-28 md:pb-8`} data-testid={props.testid}>
+    <div className={`min-h-screen bg-gradient-to-br ${props.themeBg} text-white pb-40 md:pb-28`} data-testid={props.testid}>
       <div className="sticky top-0 z-30 backdrop-blur-md bg-black/70 border-b border-white/10">
         <div className="max-w-5xl mx-auto px-5 py-3 flex items-center gap-4">
-          <button onClick={() => nav(-1)} data-testid={`${props.testid}-back-btn`} className="p-2 rounded-lg hover:bg-white/10"><ArrowLeft className="w-5 h-5" /></button>
+          <button
+            onClick={() => {
+              if (busy) {
+                notifyBetError("Finish this round before leaving");
+                return;
+              }
+              nav(-1);
+            }}
+            data-testid={`${props.testid}-back-btn`}
+            className="p-2 rounded-lg hover:bg-white/10"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <span className="text-2xl">{props.iconText}</span>
               <h1 className="text-lg font-black tracking-wide truncate">{props.title}</h1>
             </div>
-            <p className="text-xs text-neutral-400 mt-0.5 truncate">{props.tagline}</p>
+            <p className="text-xs text-neutral-400 mt-0.5 truncate">
+              Total bet ₵{stake} · {props.tagline}
+            </p>
           </div>
         </div>
       </div>
 
+      <GameVideoLayout criticalDecision={busy || (!result && slipOpen)} testid={`${props.testid}-video-layout`}>
       <div className="max-w-3xl mx-auto px-4 sm:px-5 py-5 sm:py-6 space-y-5">
         {/* AAA enhancer: phase-aware turn indicator + sound effects + recent
              results history. Wired 2026-02-17 Late × 5 (founder ask). */}
@@ -151,20 +192,26 @@ export default function GenericCasinoGame(props: GenericGameProps) {
             <span className="text-neutral-400 uppercase tracking-widest text-xs">Chip Stake</span>
             <ChipStakeSelector
               stake={stake}
-              onChange={(n) => { cardSoundManager.playChipClink?.(); setStake(n); }}
+              onChange={(n) => {
+                cardSoundManager.playChipClink?.();
+                setStake(n);
+                setSlipOpen(true);
+              }}
               disabled={busy}
               testid={`${props.testid}-stake`}
             />
           </div>
-          {/* Inline play (desktop) — mobile gets the sticky-bottom CTA too. */}
-          <button
-            onClick={play}
+          <BetButton
+            testid={`${props.testid}-play-btn`}
+            className="hidden md:inline-flex w-full"
             disabled={busy}
-            data-testid={`${props.testid}-play-btn`}
-            className={`hidden md:block w-full py-3 rounded-full bg-gradient-to-r ${props.themeButton} text-white font-black tracking-widest hover:brightness-110 disabled:opacity-50`}
+            onClick={() => {
+              setSlipOpen(true);
+              void play();
+            }}
           >
-            {busy ? "RESOLVING…" : "PLAY"}
-          </button>
+            {busy ? "Resolving…" : "Play"}
+          </BetButton>
         </div>
 
         <AnimatePresence>
@@ -187,17 +234,37 @@ export default function GenericCasinoGame(props: GenericGameProps) {
           )}
         </AnimatePresence>
       </div>
+      </GameVideoLayout>
+
+      <BetSlip
+        open={slipOpen && !result}
+        stake={stake}
+        payoutRatio={1}
+        selectionLabel={selectionLabel}
+        minBet={5}
+        maxBet={500}
+        balance={0}
+        confirming={busy}
+        disabled={busy}
+        onStakeChange={setStake}
+        onConfirm={() => {
+          void play();
+        }}
+        confirmLabel={busy ? "Resolving…" : "Confirm & play"}
+        testid={`${props.testid}-bet-slip`}
+      />
 
       {/* Mobile-only sticky play CTA — accessible without scrolling. */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-black/90 backdrop-blur border-t border-white/10 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
-        <button
-          onClick={play}
+        <BetButton
+          testid={`${props.testid}-play-btn-mobile`}
           disabled={busy}
-          data-testid={`${props.testid}-play-btn-mobile`}
-          className={`w-full py-3 rounded-full bg-gradient-to-r ${props.themeButton} text-white font-black tracking-widest disabled:opacity-50`}
+          onClick={() => {
+            void play();
+          }}
         >
-          {busy ? "RESOLVING…" : `PLAY · $${stake}`}
-        </button>
+          {busy ? "Resolving…" : `Play · ₵${stake}`}
+        </BetButton>
       </div>
     </div>
   );

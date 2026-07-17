@@ -22,11 +22,17 @@ import {
   Volume2,
   VolumeX,
 } from "lucide-react";
+import QuitForfeitDialog from "@/components/games/QuitForfeitDialog";
 
 interface Props {
   onExit: () => void;
   onOpenMessages?: () => void;
   onOpenSettings?: () => void;
+  /** Paid entry already in the pot (0 for free / practice). */
+  entryFee?: number;
+  /** True when bidding/playing — triggers 15% house penalty copy. */
+  midGame?: boolean;
+  gameLabel?: string;
 }
 
 const SOUND_KEY = "spades_sound_enabled";
@@ -35,8 +41,12 @@ export const SpadesGameMenu: React.FC<Props> = ({
   onExit,
   onOpenMessages,
   onOpenSettings,
+  entryFee = 0,
+  midGame = true,
+  gameLabel = "game",
 }) => {
   const [open, setOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [soundOn, setSoundOn] = useState<boolean>(() => {
     if (typeof window === "undefined") return true;
     const v = window.localStorage.getItem(SOUND_KEY);
@@ -120,7 +130,7 @@ export const SpadesGameMenu: React.FC<Props> = ({
                 label="Exit Game"
                 onClick={() => {
                   setOpen(false);
-                  onExit();
+                  setConfirmOpen(true);
                 }}
                 testid="spades-menu-exit"
                 danger
@@ -129,6 +139,18 @@ export const SpadesGameMenu: React.FC<Props> = ({
           </motion.div>
         ) : null}
       </AnimatePresence>
+
+      <QuitForfeitDialog
+        open={confirmOpen}
+        entryFee={entryFee}
+        midGame={midGame}
+        gameLabel={gameLabel}
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={() => {
+          setConfirmOpen(false);
+          onExit();
+        }}
+      />
     </div>
   );
 };
