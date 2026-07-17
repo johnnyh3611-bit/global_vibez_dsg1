@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Gamepad2, Heart, MessageCircle, Shield, Sparkles, Video } from 'lucide-react';
+import { Gamepad2, MessageCircle, Shield, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { MatchmakingModal } from '@/components/multiplayer/MatchmakingModal';
 import { TableForTwoModal } from '@/components/TableForTwoModal';
 import { DatePlanModal } from '@/components/DatePlanModal';
-import { VibeScoreCompact } from '@/components/VibeScoreBadge';
-import { authFetch, getUserId, getBearerToken } from '@/utils/secureAuth';
+import { authFetch } from '@/utils/secureAuth';
+import CallButton from '@/components/voice/CallButton';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -76,32 +75,6 @@ export function DatingMatches() {
       }
     } catch (error) {
       // console.error('Failed to send invite:', error);
-    }
-  };
-
-  const handleVideoCall = async (match) => {
-    try {
-      const response = await authFetch(`${API_URL}/api/video-call/initiate`, {
-        method: 'POST',
-        
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          caller_id: match.user.user_id,  // Backend can get user from session
-          callee_id: match.user.user_id,
-          call_type: 'video'
-        })
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        // Navigate to video call page
-        navigate(`/video-call/${data.call_id}?other_user=${match.user.user_id}&caller=true`);
-      } else {
-        alert(data.message || 'Failed to initiate call');
-      }
-    } catch (error) {
-      // console.error('Failed to initiate call:', error);
-      alert('Failed to initiate call');
     }
   };
 
@@ -254,16 +227,20 @@ export function DatingMatches() {
                         Going on a date — Safety
                       </motion.button>
 
-                      <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => handleVideoCall(match)}
-                        data-testid="video-call-btn"
-                        className="w-full px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg hover:shadow-purple-500/50 transition-all"
-                      >
-                        <Video className="w-5 h-5" />
-                        Video Call
-                      </motion.button>
+                      <div className="grid grid-cols-2 gap-2">
+                        <CallButton
+                          userId={user.user_id}
+                          displayName={user.name}
+                          mediaType="video"
+                          className="w-full !rounded-xl !py-3"
+                        />
+                        <CallButton
+                          userId={user.user_id}
+                          displayName={user.name}
+                          mediaType="voice"
+                          className="w-full !rounded-xl !py-3"
+                        />
+                      </div>
 
                       <motion.button
                         whileHover={{ scale: 1.02 }}

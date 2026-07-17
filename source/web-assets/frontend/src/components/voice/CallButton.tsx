@@ -13,7 +13,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Phone, PhoneOff, Loader2 } from "lucide-react";
+import { Phone, PhoneOff, Loader2, Video } from "lucide-react";
 import { authFetch, getUserId } from "@/utils/secureAuth";
 import VibeCallRoom from "@/components/voice/VibeCallRoom";
 
@@ -26,17 +26,21 @@ export default function CallButton({
   displayName,
   className = "",
   size = "md",
+  mediaType = "voice",
 }: {
   userId: string;
   displayName?: string;
   className?: string;
   size?: "sm" | "md";
+  /** voice = Vibe Phone audio; video = FaceTime-style Agora video */
+  mediaType?: "voice" | "video";
 }) {
   const [state, setState] = useState<DialState>("idle");
   const [callId, setCallId] = useState<string | null>(null);
   const [channel, setChannel] = useState<string | null>(null);
   const [calleeNumber, setCalleeNumber] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const enableVideo = mediaType === "video";
 
   const wsRef = useRef<WebSocket | null>(null);
 
@@ -75,7 +79,7 @@ export default function CallButton({
       const r = await authFetch(`${API}/api/vibe-phone/call/initiate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ callee_user_id: userId }),
+        body: JSON.stringify({ callee_user_id: userId, media_type: mediaType }),
       });
       if (!r.ok) {
         const j = await r.json().catch(() => ({}));
@@ -125,12 +129,20 @@ export default function CallButton({
     <>
       <button
         onClick={startCall}
-        className={`${sizing} rounded-full bg-emerald-500 hover:bg-emerald-600 text-black font-black uppercase tracking-widest flex items-center justify-center gap-2 ${className}`}
-        title={displayName ? `Call ${displayName}` : "Call"}
+        className={`${sizing} rounded-full ${
+          enableVideo
+            ? "bg-fuchsia-500 hover:bg-fuchsia-600 text-white"
+            : "bg-emerald-500 hover:bg-emerald-600 text-black"
+        } font-black uppercase tracking-widest flex items-center justify-center gap-2 ${className}`}
+        title={displayName ? `${enableVideo ? "Video call" : "Call"} ${displayName}` : enableVideo ? "Video call" : "Call"}
         data-testid={`vibe-phone-call-${userId}`}
       >
-        <Phone className={size === "sm" ? "w-4 h-4" : "w-3.5 h-3.5"} />
-        {size !== "sm" && <span>Call</span>}
+        {enableVideo ? (
+          <Video className={size === "sm" ? "w-4 h-4" : "w-3.5 h-3.5"} />
+        ) : (
+          <Phone className={size === "sm" ? "w-4 h-4" : "w-3.5 h-3.5"} />
+        )}
+        {size !== "sm" && <span>{enableVideo ? "Video" : "Call"}</span>}
       </button>
 
       <AnimatePresence>
@@ -146,7 +158,9 @@ export default function CallButton({
               initial={{ scale: 0.94, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.94, opacity: 0 }}
-              className="bg-gradient-to-b from-slate-900 to-black border border-cyan-400/40 rounded-3xl p-6 w-full max-w-sm shadow-[0_0_60px_rgba(34,211,238,0.3)]"
+              className={`bg-gradient-to-b from-slate-900 to-black border ${
+                enableVideo ? "border-fuchsia-400/40 max-w-lg" : "border-cyan-400/40 max-w-sm"
+              } rounded-3xl p-6 w-full shadow-[0_0_60px_rgba(34,211,238,0.3)]`}
             >
               {state === "ringing" && (
                 <div className="flex flex-col items-center text-center">
@@ -174,11 +188,16 @@ export default function CallButton({
               )}
 
               {state === "active" && channel && (
-                <div className="flex flex-col items-center">
+                <div className="flex flex-col items-center w-full">
                   <p className="text-[10px] uppercase tracking-[0.4em] text-emerald-400 mb-3">
                     Connected
                   </p>
-                  <VibeCallRoom channel={channel} onLeave={close} />
+                  <VibeCallRoom
+                    channel={channel}
+                    enableVideo={enableVideo}
+                    autoJoin
+                    onLeave={close}
+                  />
                   <p className="text-[10px] text-cyan-400/80 text-center mt-2 font-mono">
                     with {calleeNumber}
                   </p>

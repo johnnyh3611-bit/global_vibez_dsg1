@@ -22,6 +22,7 @@ type IncomingCall = {
   from_user_id: string;
   from_vibe_number: string;
   channel: string;
+  media_type?: "voice" | "video";
 };
 
 export default function IncomingCallModal() {
@@ -56,6 +57,7 @@ export default function IncomingCallModal() {
               from_user_id: data.from_user_id,
               from_vibe_number: data.from_vibe_number,
               channel: data.channel,
+              media_type: data.media_type === "video" ? "video" : "voice",
             });
             ringerRef.current?.play().catch(() => {});
           }
@@ -215,6 +217,8 @@ export default function IncomingCallModal() {
             <div className="relative">
               <VibeCallRoom
                 channel={accepted.channel}
+                enableVideo={accepted.media_type === "video"}
+                autoJoin
                 onLeave={() => setAccepted(null)}
               />
               <p className="text-[10px] text-cyan-400/80 text-center mt-1 font-mono">
