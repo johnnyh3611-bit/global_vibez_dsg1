@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Globe, ArrowLeft, MessageCircle, Heart, Circle } from 'lucide-react';
+import CallButton from '@/components/voice/CallButton';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -166,6 +167,25 @@ export default function Messages() {
                       <p className="text-gray-300 truncate">
                         {conversation.last_message || 'Start a conversation...'}
                       </p>
+                    </div>
+
+                    <div
+                      className="flex flex-shrink-0 items-center gap-2"
+                      onClick={(e) => e.stopPropagation()}
+                      data-testid="messages-call-actions"
+                    >
+                      <CallButton
+                        userId={conversation.other_user.user_id}
+                        displayName={conversation.other_user.name}
+                        mediaType="video"
+                        size="sm"
+                      />
+                      <CallButton
+                        userId={conversation.other_user.user_id}
+                        displayName={conversation.other_user.name}
+                        mediaType="voice"
+                        size="sm"
+                      />
                     </div>
 
                     {/* Unread Badge */}

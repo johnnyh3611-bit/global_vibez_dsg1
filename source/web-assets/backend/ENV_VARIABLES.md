@@ -24,21 +24,32 @@ FOUNDER_2FA_SECRET=JBSWY3DPEHPK3PXP
 
 ### Payment Integration
 ```env
-# Stripe
+# Preferred coin top-up (no Stripe): Solana deposit
+GLOBAL_VIBEZ_SOLANA_RECEIVE_WALLET=YourSolanaTreasuryPubkey
+
+# Helio / MoonPay Commerce — fiat card checkout for coin packs (Stripe alternative)
+# Dashboard: https://moonpay.hel.io → Developers → API keys + dynamic Pay Link
+# Webhook target: POST https://<api-host>/api/coins/webhook/helio
+# Health: GET /api/integrations/health → services.helio.configured
+HELIO_API_KEY=your_helio_public_api_key
+HELIO_SECRET_KEY=your_helio_secret_bearer
+HELIO_PAYLINK_ID=your_dynamic_paylink_id
+HELIO_WEBHOOK_TOKEN=shared_token_from_helio_webhook_create
+
+# Stripe (legacy — de-emphasized; chairs / High Roller may still use)
+STRIPE_API_KEY=sk_test_your_stripe_secret_key
 STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key
 STRIPE_PUBLISHABLE_KEY=pk_test_your_stripe_publishable_key
 STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret
-
-# Stripe Test Keys (available in pod)
-# Check /home/johnnie/master-project/.env for pre-configured test keys
 ```
 
 ### External Services (Optional)
 ```env
-# OpenAI (for AI features)
+# AI features (code reads EMERGENT_LLM_KEY first; OPENAI_API_KEY is fallback/docs)
+EMERGENT_LLM_KEY=your-emergent-or-openai-compatible-key
 OPENAI_API_KEY=sk-your-openai-key
 
-# Twilio (for SMS)
+# Twilio (optional PSTN / SMS — NOT required for in-app Vibe Phone calling)
 TWILIO_ACCOUNT_SID=your-account-sid
 TWILIO_AUTH_TOKEN=your-auth-token
 TWILIO_PHONE_NUMBER=+1234567890
@@ -51,8 +62,9 @@ TWILIO_PHONE_NUMBER=+1234567890
 AGORA_APP_ID=your-agora-app-id
 AGORA_APP_CERTIFICATE=your-agora-app-certificate
 
-# SendGrid (for emails)
-SENDGRID_API_KEY=your-sendgrid-key
+# Email — Resend is what the code actually uses (SendGrid is unused)
+RESEND_API_KEY=re_your_resend_key
+RESEND_SENDER_EMAIL=onboarding@resend.dev
 ```
 
 ### Application Configuration

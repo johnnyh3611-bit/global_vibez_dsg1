@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Gamepad2, Heart, Radio, User, Wallet, Crown, DollarSign } from 'lucide-react';
+import { Gamepad2, Heart, Radio, User, Wallet, Crown, DollarSign, Phone } from 'lucide-react';
 import { formatCoins } from '@/utils/currency';
 import { triggerHaptic } from '@/hooks/useGestures';
 
@@ -114,6 +114,20 @@ const UnifiedNavigation = () => {
 
           {/* User Actions */}
           <div className="flex items-center gap-2 sm:gap-4">
+            <motion.button
+              title="Vibe Phone"
+              data-testid="unified-nav-vibe-phone"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => {
+                triggerHaptic('light');
+                navigate('/vibe-phone');
+              }}
+              className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-full flex items-center justify-center shadow-lg"
+            >
+              <Phone className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+            </motion.button>
+
             {/* Vibe Credits */}
             <motion.div
               whileHover={{ scale: 1.05 }}

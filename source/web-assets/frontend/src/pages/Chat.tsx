@@ -12,6 +12,7 @@ import EmojiReactionPicker from '@/components/EmojiReactionPicker';
 import ComposeEmojiPicker from '@/components/ComposeEmojiPicker';
 import GiftCatalogPicker from '@/components/GiftCatalogPicker';
 import ReportUserModal from '@/components/ReportUserModal';
+import CallButton from '@/components/voice/CallButton';
 import { useVoiceMirrorTarget } from '@/contexts/VoiceMirrorContext';
 import TranslatedSubtitle from '@/components/common/TranslatedSubtitle';
 import { authFetch } from '@/utils/secureAuth';
@@ -503,6 +504,23 @@ export default function Chat() {
               </div>
             </div>
           </div>
+          {userId && (
+            <div className="flex items-center gap-2" data-testid="chat-call-actions">
+              <CallButton
+                userId={userId}
+                displayName={otherUser?.name}
+                mediaType="video"
+                size="sm"
+              />
+              <CallButton
+                userId={userId}
+                displayName={otherUser?.name}
+                mediaType="voice"
+                size="sm"
+              />
+            </div>
+          )}
+
           <button onClick={() => setShowSearch(!showSearch)} className="text-cyan-400 hover:text-cyan-300">
             <Search className="w-5 h-5" />
           </button>
