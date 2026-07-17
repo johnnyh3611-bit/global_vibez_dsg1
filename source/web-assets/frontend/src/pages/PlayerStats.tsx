@@ -85,7 +85,7 @@ export default function PlayerStats() {
           <div className="container mx-auto px-4 py-4 flex items-center justify-between">
             <Button
               variant="ghost"
-              onClick={() => navigate('/games-new')}
+              onClick={() => navigate('/games')}
               className="text-white hover:bg-white/10"
             >
               <ArrowLeft className="mr-2 h-5 w-5" />
@@ -220,7 +220,7 @@ export default function PlayerStats() {
                     <p className="text-slate-400 text-lg">No games played yet!</p>
                     <p className="text-slate-500 text-sm mt-2">Start playing to track your stats</p>
                     <Button
-                      onClick={() => navigate('/games-new')}
+                      onClick={() => navigate('/games')}
                       className="mt-6 bg-gradient-to-r from-cyan-600 to-blue-700 text-white"
                     >
                       Play Now

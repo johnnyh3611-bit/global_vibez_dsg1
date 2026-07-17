@@ -22,7 +22,7 @@ type Room = {
 /** Keep this short — core jobs live in the hero, not here. */
 const ROOMS: Room[] = [
   {
-    to: "/viberidez",
+    to: "/vibe-ridez",
     label: "VibeRidez",
     blurb: "Drive · stream · tip",
     Icon: Car,

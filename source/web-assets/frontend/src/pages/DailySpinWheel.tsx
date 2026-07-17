@@ -92,7 +92,7 @@ export default function DailySpinWheel() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.status === 401) {
-        navigate('/auth');
+        navigate('/login');
         return;
       }
       const data = await res.json();

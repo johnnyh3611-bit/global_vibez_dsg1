@@ -67,7 +67,7 @@ const SECTIONS: { title: string; items: SubItem[] }[] = [
     items: [
       { id: "voice_mirror_alt", label: "Voice Mirror",   hint: "Real-time speech translation", Icon: Mic,           color: "text-cyan-300",    onClick: fire("voice_mirror") },
       { id: "comm_mute_all",    label: "Mute All",       hint: "Toggle voice + chat mute",     Icon: Headphones,    color: "text-rose-300",    onClick: () => window.dispatchEvent(new CustomEvent("commhub:mute-all", { detail: { muted: true } })) },
-      { id: "comm_open_inbox",  label: "Inbox",          hint: "Friend messages",              Icon: MessageSquare, color: "text-fuchsia-300", href: "/inbox" },
+      { id: "comm_open_inbox",  label: "Inbox",          hint: "Friend messages",              Icon: MessageSquare, color: "text-fuchsia-300", href: "/messages" },
     ],
   },
   {

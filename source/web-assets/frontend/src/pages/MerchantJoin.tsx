@@ -113,7 +113,7 @@ export default function MerchantJoin() {
       if (!res.ok || !data.checkout_url) {
         if (res.status === 401) {
           toast.error("Please sign in to claim a merchant chair.");
-          navigate("/auth/sign-in?next=/merchant/join");
+          navigate("/login?next=/merchant/join");
           return;
         }
         throw new Error(data.detail || "Checkout failed");

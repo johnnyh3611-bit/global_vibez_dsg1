@@ -41,7 +41,7 @@ const COUNTRIES: Country[] = [
   {
     label: "Vibe Ridez",
     short: "Ridez",
-    to: "/viberidez",
+    to: "/vibe-ridez",
     left: "28%",
     top: "40%",
     color: "text-emerald-200",

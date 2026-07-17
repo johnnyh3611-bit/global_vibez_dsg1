@@ -152,7 +152,7 @@ export default function VRDatingRoom() {
         
         case 'kicked':
           alert(`You have been removed from the room: ${data.reason}`);
-          navigate('/chat');
+          navigate('/messages');
           break;
           
         default:
@@ -275,7 +275,7 @@ export default function VRDatingRoom() {
   };
 
   const leaveRoom = () => {
-    navigate('/chat');
+    navigate('/messages');
   };
 
   if (loading) {

@@ -53,7 +53,7 @@ export default function DSGTVExpansion() {
   const fetchAll = async () => {
     const t = token();
     if (!t) {
-      navigate('/auth');
+      navigate('/login');
       return;
     }
     const auth = { Authorization: `Bearer ${t}` };

@@ -23,7 +23,7 @@ const TABLE_STATIONS = [
     name: 'Vibez Casino\nBlackjack', 
     position: [-8, 0, -5], 
     color: '#0a4d0a',
-    route: '/vibez-casino-blackjack',
+    route: '/multiplayer-blackjack',
     icon: '🎰'
   },
   { 
@@ -31,7 +31,7 @@ const TABLE_STATIONS = [
     name: 'High Stakes\nPoker', 
     position: [-3, 0, -5], 
     color: '#0a1a4d',
-    route: '/poker-room',
+    route: '/multiplayer-poker',
     icon: '♠️'
   },
   { 
@@ -39,7 +39,7 @@ const TABLE_STATIONS = [
     name: 'Grand Master\nBid Whist', 
     position: [3, 0, -5], 
     color: '#4d0a1a',
-    route: '/grand-master-bid-whist',
+    route: '/bid-whist',
     icon: '🏆'
   },
   { 
@@ -55,7 +55,7 @@ const TABLE_STATIONS = [
     name: 'Multiplayer\nUNO', 
     position: [-5, 0, 2], 
     color: '#4d1a0a',
-    route: '/multiplayer/uno',
+    route: '/uno',
     icon: '🎴'
   },
   { 
@@ -63,7 +63,7 @@ const TABLE_STATIONS = [
     name: 'Protocol:\nOmega', 
     position: [5, 0, 2], 
     color: '#0a4d4d',
-    route: '/protocol-omega',
+    route: '/practice/play/chess',
     icon: '♟️'
   }
 ];

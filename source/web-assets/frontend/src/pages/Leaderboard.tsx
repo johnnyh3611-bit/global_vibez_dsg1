@@ -83,7 +83,7 @@ export default function Leaderboard() {
           <div className="container mx-auto px-4 py-4 flex items-center justify-between">
             <Button
               variant="ghost"
-              onClick={() => navigate('/games-new')}
+              onClick={() => navigate('/games')}
               className="text-white hover:bg-white/10"
             >
               <ArrowLeft className="mr-2 h-5 w-5" />
@@ -187,7 +187,7 @@ export default function Leaderboard() {
           <div className="mt-8 text-center">
             <p className="text-slate-400 mb-4">Want to see your name on the leaderboard?</p>
             <Button
-              onClick={() => navigate('/games-new')}
+              onClick={() => navigate('/games')}
               className="bg-gradient-to-r from-cyan-600 to-blue-700 text-white font-bold px-8 py-3"
             >
               Start Playing
