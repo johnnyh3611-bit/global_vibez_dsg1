@@ -29,11 +29,13 @@ GLOBAL_VIBEZ_SOLANA_RECEIVE_WALLET=YourSolanaTreasuryPubkey
 
 # Helio / MoonPay Commerce — fiat card checkout for coin packs (Stripe alternative)
 # Dashboard: https://moonpay.hel.io → Developers → API keys + dynamic Pay Link
+# Embed Pay Link id is public; secrets stay server-side.
 # Webhook target: POST https://<api-host>/api/coins/webhook/helio
 # Health: GET /api/integrations/health → services.helio.configured
 HELIO_API_KEY=your_helio_public_api_key
 HELIO_SECRET_KEY=your_helio_secret_bearer
 HELIO_PAYLINK_ID=your_dynamic_paylink_id
+HELIO_NETWORK=test
 HELIO_WEBHOOK_TOKEN=shared_token_from_helio_webhook_create
 
 # Stripe (legacy — de-emphasized; chairs / High Roller may still use)

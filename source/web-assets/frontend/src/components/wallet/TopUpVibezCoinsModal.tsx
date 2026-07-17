@@ -3,22 +3,16 @@
  *
  * Preferred order:
  *   1. Solana deposit (QR + memo)
- *   2. Helio card (MoonPay Commerce) — Stripe alternative
+ *   2. Helio embed / charge (card) — Stripe alternative
  *   3. Legacy Stripe card (if Helio not configured)
- *
- * Backend:
- *   GET  /api/coins/packs
- *   GET  /api/coins/topup/providers
- *   POST /api/coins/topup/helio
- *   POST /api/coins/topup/checkout
- *   POST /api/crypto-payments/create-deposit
  */
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Coins, Sparkles, Star, Zap, Loader2, Wallet, CreditCard } from "lucide-react";
 import SolanaDepositPanel from "@/components/wallet/SolanaDepositPanel";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const HELIO_EMBED_SRC = "https://embed.hel.io/assets/index-v1.js";
 
 interface Pack {
   id: string;
@@ -35,6 +29,9 @@ interface Provider {
   ready: boolean;
   primary?: boolean;
   kind?: string;
+  paylink_id?: string | null;
+  network?: string;
+  embed?: boolean;
 }
 
 interface Props {
@@ -53,6 +50,41 @@ const PACK_ICONS: Record<string, any> = {
 
 type PayMethod = "solana" | "card";
 
+declare global {
+  interface Window {
+    helioCheckout?: (
+      el: HTMLElement,
+      opts: Record<string, unknown>,
+    ) => void;
+  }
+}
+
+function loadHelioEmbedScript(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const existing = document.querySelector(
+      `script[src="${HELIO_EMBED_SRC}"]`,
+    ) as HTMLScriptElement | null;
+    if (existing) {
+      if (window.helioCheckout) {
+        resolve();
+        return;
+      }
+      existing.addEventListener("load", () => resolve());
+      existing.addEventListener("error", () =>
+        reject(new Error("Helio embed failed to load")),
+      );
+      return;
+    }
+    const script = document.createElement("script");
+    script.type = "module";
+    script.crossOrigin = "anonymous";
+    script.src = HELIO_EMBED_SRC;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Helio embed failed to load"));
+    document.body.appendChild(script);
+  });
+}
+
 export default function TopUpVibezCoinsModal({
   open,
   onClose,
@@ -65,14 +97,19 @@ export default function TopUpVibezCoinsModal({
   const [method, setMethod] = useState<PayMethod>("solana");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [helioMsg, setHelioMsg] = useState("");
+  const helioContainerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!open) return;
     setMethod("solana");
     setError("");
+    setHelioMsg("");
     Promise.all([
       fetch(`${API}/coins/packs`).then((r) => r.json()),
-      fetch(`${API}/coins/topup/providers`).then((r) => (r.ok ? r.json() : { providers: [] })),
+      fetch(`${API}/coins/topup/providers`).then((r) =>
+        r.ok ? r.json() : { providers: [] },
+      ),
     ])
       .then(([packData, providerData]) => {
         setPacks(packData.packs || []);
@@ -87,9 +124,57 @@ export default function TopUpVibezCoinsModal({
     [packs, selected],
   );
 
-  const helioReady = providers.some((p) => p.id === "helio" && p.ready);
+  const helioProvider = providers.find((p) => p.id === "helio");
+  const helioReady = Boolean(helioProvider?.ready);
+  const helioPaylinkId = helioProvider?.paylink_id || "";
+  const helioNetwork = helioProvider?.network === "test" ? "test" : "main";
   const stripeReady = providers.some((p) => p.id === "stripe" && p.ready);
   const cardLabel = helioReady ? "Card (Helio)" : "Card";
+
+  // Mount Helio embed when Card tab is active and we have a paylink.
+  useEffect(() => {
+    if (!open || method !== "card" || !helioPaylinkId || !selectedPack) return;
+    let cancelled = false;
+    const mount = async () => {
+      try {
+        await loadHelioEmbedScript();
+        if (cancelled || !helioContainerRef.current || !window.helioCheckout) {
+          return;
+        }
+        helioContainerRef.current.innerHTML = "";
+        window.helioCheckout(helioContainerRef.current, {
+          paylinkId: helioPaylinkId,
+          theme: { themeMode: "dark" },
+          primaryColor: "#22d3ee",
+          neutralColor: "#5A6578",
+          amount: String(selectedPack.usd),
+          network: helioNetwork,
+          display: "inline",
+          onSuccess: () => {
+            setHelioMsg(
+              "Payment received. Coins credit after Helio confirms (usually under a minute).",
+            );
+          },
+          onError: (event: unknown) => {
+            const msg =
+              typeof event === "object" && event && "message" in event
+                ? String((event as { message?: string }).message)
+                : "Helio payment error";
+            setError(msg);
+          },
+          onPending: () => setHelioMsg("Payment pending…"),
+          onCancel: () => setHelioMsg("Payment cancelled"),
+          onStartPayment: () => setHelioMsg("Starting payment…"),
+        });
+      } catch (e: any) {
+        setError(e?.message || "Couldn't load Helio checkout");
+      }
+    };
+    mount();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, method, helioPaylinkId, helioNetwork, selectedPack?.id, selectedPack?.usd]);
 
   const handleCardCheckout = async () => {
     setError("");
@@ -100,8 +185,9 @@ export default function TopUpVibezCoinsModal({
         window.location.href = "/login";
         return;
       }
-      // Prefer Helio when configured; fall back to legacy Stripe.
-      const endpoint = helioReady ? `${API}/coins/topup/helio` : `${API}/coins/topup/checkout`;
+      const endpoint = helioReady
+        ? `${API}/coins/topup/helio`
+        : `${API}/coins/topup/checkout`;
       const res = await fetch(endpoint, {
         method: "POST",
         headers: {
@@ -232,11 +318,17 @@ export default function TopUpVibezCoinsModal({
                         Popular
                       </span>
                     )}
-                    <Icon className={`w-5 h-5 mb-2 ${active ? "text-cyan-300" : "text-slate-400"}`} />
+                    <Icon
+                      className={`w-5 h-5 mb-2 ${
+                        active ? "text-cyan-300" : "text-slate-400"
+                      }`}
+                    />
                     <div className="text-2xl font-bold text-white">
                       ₵{p.coins.toLocaleString()}
                     </div>
-                    <div className="text-sm text-slate-300">${p.usd.toFixed(2)} USD</div>
+                    <div className="text-sm text-slate-300">
+                      ${p.usd.toFixed(2)} USD
+                    </div>
                     {p.bonus_pct > 0 && (
                       <div className="mt-1 text-[11px] font-semibold text-emerald-300">
                         save {p.bonus_pct}%
@@ -269,18 +361,46 @@ export default function TopUpVibezCoinsModal({
                   No card processor · Solana deposit · Credits after confirm.
                 </p>
               </div>
+            ) : helioPaylinkId ? (
+              <div data-testid="topup-helio-embed">
+                <p className="text-xs text-white/50 mb-3">
+                  Pay ${selectedPack?.usd?.toFixed(2) ?? "—"} for ₵
+                  {selectedPack?.coins?.toLocaleString() ?? "—"} via Helio
+                  {helioNetwork === "test" ? " (test network)" : ""}.
+                </p>
+                <div
+                  id="helioCheckoutContainer"
+                  ref={helioContainerRef}
+                  className="min-h-[280px] rounded-xl bg-white/5 p-2"
+                />
+                {helioMsg && (
+                  <p className="text-xs text-cyan-200 mt-3 text-center">
+                    {helioMsg}
+                  </p>
+                )}
+                <button
+                  type="button"
+                  onClick={handleCardCheckout}
+                  disabled={submitting || !helioReady}
+                  className="mt-3 w-full text-xs text-white/50 hover:text-white/80 underline disabled:opacity-40"
+                  data-testid="topup-helio-redirect-fallback"
+                >
+                  {submitting ? "Opening…" : "Or open Helio checkout in a new page"}
+                </button>
+              </div>
             ) : (
               <>
                 {!helioReady && !stripeReady && (
                   <p className="text-xs text-amber-200/80 mb-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-2">
-                    Card checkout is not configured yet. Use Solana, or ask an
-                    admin to set HELIO_API_KEY / HELIO_SECRET_KEY / HELIO_PAYLINK_ID
-                    on Railway.
+                    Card checkout is not configured on the server yet. Use
+                    Solana, or add Helio vars on Railway.
                   </p>
                 )}
                 <button
                   onClick={handleCardCheckout}
-                  disabled={submitting || !selected || (!helioReady && !stripeReady)}
+                  disabled={
+                    submitting || !selected || (!helioReady && !stripeReady)
+                  }
                   className="w-full bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 disabled:opacity-60 px-4 py-3 rounded-xl font-bold text-slate-950 flex items-center justify-center gap-2 transition-all"
                   data-testid="topup-checkout-btn"
                 >
@@ -291,15 +411,10 @@ export default function TopUpVibezCoinsModal({
                   ) : (
                     <>
                       <CreditCard className="w-4 h-4" />
-                      {helioReady ? "Pay with card (Helio)" : "Pay with card"}
+                      Pay with card
                     </>
                   )}
                 </button>
-                <p className="text-[10px] text-white/40 mt-3 text-center">
-                  {helioReady
-                    ? "Helio / MoonPay Commerce · card → crypto · credits after webhook."
-                    : "Legacy Stripe path · prefer Solana or Helio when available."}
-                </p>
               </>
             )}
           </motion.div>
