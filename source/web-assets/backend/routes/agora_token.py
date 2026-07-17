@@ -36,17 +36,21 @@ from utils.database import get_current_user
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-AGORA_APP_ID = os.environ.get("AGORA_APP_ID", "").strip()
-AGORA_APP_CERTIFICATE = os.environ.get("AGORA_APP_CERTIFICATE", "").strip()
-
 # RTC roles per agora_token_builder
 ROLE_PUBLISHER = 1
 ROLE_SUBSCRIBER = 2
 
 TOKEN_TTL_SECONDS = 3600  # 1h — long enough for a JFTN session, short enough to limit abuse
-PRIVILEGE_TTL_SECONDS = 3600
 
 CHANNEL_RE = re.compile(r"^[A-Za-z0-9._\-]{1,64}$")
+
+
+def _agora_creds() -> tuple[str, str]:
+    """Read Agora env on every call so Railway variable updates apply after restart."""
+    return (
+        os.environ.get("AGORA_APP_ID", "").strip(),
+        os.environ.get("AGORA_APP_CERTIFICATE", "").strip(),
+    )
 
 
 def stable_uid(user_id: str) -> int:
@@ -64,10 +68,19 @@ async def mint_rtc_token(payload: TokenRequest, http_request: Request):
     """
     Mint a short-lived Agora RTC token for the authenticated caller.
     """
-    if not AGORA_APP_ID or not AGORA_APP_CERTIFICATE:
+    app_id, app_cert = _agora_creds()
+    if not app_id or not app_cert:
+        missing = []
+        if not app_id:
+            missing.append("AGORA_APP_ID")
+        if not app_cert:
+            missing.append("AGORA_APP_CERTIFICATE")
         raise HTTPException(
             status_code=503,
-            detail="Agora is not configured on this deployment.",
+            detail=(
+                "Agora is not configured on this deployment. "
+                f"Set {', '.join(missing)} on the Railway backend service, then redeploy."
+            ),
         )
 
     if not CHANNEL_RE.match(payload.channel):
@@ -86,8 +99,8 @@ async def mint_rtc_token(payload: TokenRequest, http_request: Request):
 
     try:
         token = RtcTokenBuilder.buildTokenWithUid(
-            AGORA_APP_ID,
-            AGORA_APP_CERTIFICATE,
+            app_id,
+            app_cert,
             payload.channel,
             uid,
             role,
@@ -98,7 +111,7 @@ async def mint_rtc_token(payload: TokenRequest, http_request: Request):
         raise HTTPException(500, detail="Token mint failed")
 
     return {
-        "app_id": AGORA_APP_ID,
+        "app_id": app_id,
         "channel": payload.channel,
         "uid": uid,
         "token": token,
@@ -111,8 +124,15 @@ async def mint_rtc_token(payload: TokenRequest, http_request: Request):
 @router.get("/agora/health")
 async def agora_health():
     """Public health-check (no secrets leaked) — surfaces whether Agora is configured."""
+    app_id, app_cert = _agora_creds()
     return {
-        "configured": bool(AGORA_APP_ID and AGORA_APP_CERTIFICATE),
-        "app_id_present": bool(AGORA_APP_ID),
+        "configured": bool(app_id and app_cert),
+        "app_id_present": bool(app_id),
+        "certificate_present": bool(app_cert),
         "ttl_seconds": TOKEN_TTL_SECONDS,
+        "hint": (
+            None
+            if (app_id and app_cert)
+            else "Add AGORA_APP_ID + AGORA_APP_CERTIFICATE to Railway backend Variables, then redeploy."
+        ),
     }
