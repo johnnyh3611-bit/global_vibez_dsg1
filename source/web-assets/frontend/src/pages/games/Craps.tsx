@@ -18,6 +18,7 @@ import BetSlip, {
   runFixedDiceRoll,
 } from "@/components/betting/BetSlip";
 import GameVideoLayout from "@/components/video/GameVideoLayout";
+import { useGameTableCallVideo } from "@/components/video/GameTableCallVideo";
 import cardSoundManager from "@/utils/cardSoundManager";
 
 const API = process.env.REACT_APP_BACKEND_URL;
@@ -32,6 +33,7 @@ interface PropResult {
 
 export default function Craps() {
   const nav = useNavigate();
+  const tableCallVideo = useGameTableCallVideo();
   const [prop, setProp] = useState<"snake_eyes" | "boxcars">("snake_eyes");
   const [stake, setStake] = useState(10);
   const [dice, setDice] = useState<[number, number] | null>(null);
@@ -106,7 +108,11 @@ export default function Craps() {
         </div>
       </div>
 
-      <GameVideoLayout criticalDecision={rolling || (!result && slipOpen)} testid="craps-video-layout">
+      <GameVideoLayout
+        criticalDecision={rolling || (!result && slipOpen)}
+        testid="craps-video-layout"
+        video={tableCallVideo}
+      >
         <div className="max-w-5xl mx-auto px-4 sm:px-5 py-5 sm:py-6 space-y-5">
           <CasinoTableEnhancer
             gameId="craps"
