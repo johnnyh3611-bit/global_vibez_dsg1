@@ -30,20 +30,23 @@ def _resolve_api_key(explicit: Optional[str] = None) -> Optional[str]:
 
 
 # Map historical with_model(provider, model) calls onto Gemini model ids.
+# Prefer currently available models for new AI Studio keys (2026).
 _MODEL_ALIASES = {
-    ("gemini", "gemini-2.5-flash"): "gemini-2.0-flash",
-    ("gemini", "gemini-2.0-flash"): "gemini-2.0-flash",
-    ("gemini", "gemini-1.5-flash"): "gemini-1.5-flash",
-    ("gemini", "gemini-1.5-pro"): "gemini-1.5-pro",
-    ("openai", "gpt-5.2"): "gemini-2.0-flash",
-    ("openai", "gpt-5.1"): "gemini-2.0-flash",
-    ("openai", "gpt-4o"): "gemini-2.0-flash",
-    ("openai", "gpt-4o-mini"): "gemini-2.0-flash-lite",
-    ("anthropic", "claude-sonnet-4-5-20250929"): "gemini-2.0-flash",
-    ("anthropic", "claude-3-5-haiku-20241022"): "gemini-2.0-flash-lite",
+    ("gemini", "gemini-2.5-flash"): "gemini-flash-lite-latest",
+    ("gemini", "gemini-2.0-flash"): "gemini-flash-lite-latest",
+    ("gemini", "gemini-1.5-flash"): "gemini-flash-lite-latest",
+    ("gemini", "gemini-1.5-pro"): "gemini-pro-latest",
+    ("gemini", "gemini-3-flash-preview"): "gemini-3-flash-preview",
+    ("gemini", "gemini-3.1-flash-lite"): "gemini-3.1-flash-lite",
+    ("openai", "gpt-5.2"): "gemini-pro-latest",
+    ("openai", "gpt-5.1"): "gemini-pro-latest",
+    ("openai", "gpt-4o"): "gemini-pro-latest",
+    ("openai", "gpt-4o-mini"): "gemini-flash-lite-latest",
+    ("anthropic", "claude-sonnet-4-5-20250929"): "gemini-pro-latest",
+    ("anthropic", "claude-3-5-haiku-20241022"): "gemini-flash-lite-latest",
 }
 
-DEFAULT_MODEL = "gemini-2.0-flash"
+DEFAULT_MODEL = "gemini-flash-lite-latest"
 
 
 class UserMessage(BaseModel):
