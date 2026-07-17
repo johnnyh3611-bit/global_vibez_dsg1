@@ -2,7 +2,7 @@
  * High Roller VIP Casino — gated 10,000-coin-minimum tier.
  *
  * Two states:
- *   1. Not yet VIP → show 3-tier upgrade cards (Genius / Genesis / Apex)
+ *   1. Not yet VIP → show 3-tier upgrade cards (Genius / Genesis / Final Phase)
  *      with Stripe Checkout buttons.
  *   2. Active VIP → show the VIP lounge with the High Roller Blackjack
  *      entry tile + days-remaining countdown.

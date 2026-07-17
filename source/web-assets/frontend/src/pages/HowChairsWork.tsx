@@ -61,14 +61,13 @@ function fmtNum(n: number): string {
   return n.toLocaleString("en-US");
 }
 
-// Average weight per chair across all 5 active tiers, weighted by
-// each tier's chair limit. Used to translate a user-facing "market
+// Average weight per chair across the 3 active tiers, weighted by
+// each tier's chair capacity. Used to translate a user-facing "market
 // depth in chairs" assumption into a "weighted-chairs in circulation"
-// denominator. The math: Σ(limit × weight) / Σ(limit), so as tiers
-// fill organically the implied avg weight roughly tracks reality.
-//   = (50k×3 + 100k×2 + 150k×1.5 + 200k×1.25 + 250k×1) / 750k
-//   = 1075 / 750 ≈ 1.4333
-const AVG_WEIGHT_PER_CHAIR = 1.4333;
+// denominator. The math: Σ(capacity × weight) / Σ(capacity)
+//   = (50k×3 + 100k×2 + 50k×1) / 200k
+//   = 400 / 200 = 2.0
+const AVG_WEIGHT_PER_CHAIR = 2.0;
 
 export default function HowChairsWork() {
   const [econ, setEcon] = useState<Economics | null>(null);
@@ -179,7 +178,7 @@ export default function HowChairsWork() {
             num="01"
             Icon={Crown}
             title="Tier"
-            body="Which Phase you bought in. Genius ($10) → Genesis ($15) → Phase III ($20) → Phase IV ($25) → Phase V ($30). Locked to your chair forever."
+            body="Which phase you bought in. Genius ($20) → Genesis ($100) → Final Phase ($250). Locked to your chair forever."
             tone="amber"
             testId="lever-tier"
           />
@@ -187,7 +186,7 @@ export default function HowChairsWork() {
             num="02"
             Icon={TrendingUp}
             title="Weight (Multiplier)"
-            body="Your earn-rate multiplier, set the moment you buy. Genius = 3×, Genesis = 2×, Phase III = 1.5×, Phase IV = 1.25×, Phase V = 1×. Never decreases — even after Genius sells out."
+            body="Your earn-rate multiplier, set the moment you buy. Genius = 3×, Genesis = 2×, Final Phase = 1×. Never decreases — even after Genius sells out."
             tone="fuchsia"
             testId="lever-weight"
           />
@@ -195,7 +194,7 @@ export default function HowChairsWork() {
             num="03"
             Icon={Calculator}
             title="Cost Factor"
-            body="Total paid divided by total weight. Genius at $10 / 3× = $3.33 per weight unit. Phase V at $30 / 1× = $30 per weight unit. That 9× ratio is the early-believer reward."
+            body="Total paid divided by total weight. Genius at $20 / 3× ≈ $6.67 per weight unit. Final Phase at $250 / 1× = $250 per weight unit. That early-believer gap is intentional."
             tone="cyan"
             testId="lever-cost"
           />

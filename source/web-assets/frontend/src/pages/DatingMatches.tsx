@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Gamepad2, Heart, MessageCircle, Sparkles, Video } from 'lucide-react';
+import { Gamepad2, Heart, MessageCircle, Shield, Sparkles, Video } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { MatchmakingModal } from '@/components/multiplayer/MatchmakingModal';
 import { TableForTwoModal } from '@/components/TableForTwoModal';
@@ -128,6 +128,14 @@ export function DatingMatches() {
           <p className="text-xl text-white/60">
             {matches.length} people ready to play with you!
           </p>
+          <button
+            type="button"
+            onClick={() => navigate('/safety')}
+            className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-cyan-500/40 bg-cyan-950/40 text-cyan-200 text-sm font-semibold hover:bg-cyan-900/50"
+          >
+            <Shield className="w-4 h-4" />
+            Date safety · emergency contact
+          </button>
         </motion.div>
       </div>
 
@@ -233,6 +241,17 @@ export function DatingMatches() {
                         className="w-full px-4 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg hover:shadow-cyan-500/50 transition-all"
                       >
                         🤖 AI Date Planner
+                      </motion.button>
+
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => navigate(`/safety?match=${encodeURIComponent(match.match_id)}`)}
+                        className="w-full px-4 py-3 bg-gradient-to-r from-emerald-700 to-teal-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 border border-emerald-400/30"
+                        data-testid="going-on-date-safety"
+                      >
+                        <Shield className="w-5 h-5" />
+                        Going on a date — Safety
                       </motion.button>
 
                       <motion.button

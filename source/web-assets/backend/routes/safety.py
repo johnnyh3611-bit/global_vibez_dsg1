@@ -43,8 +43,11 @@ class CheckIn(BaseModel):
 
 
 class EmergencyAlert(BaseModel):
-    share_id: str
-    message: str
+    share_id: Optional[str] = None
+    match_id: Optional[str] = None
+    message: str = "Emergency — please check on me"
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
 class SetTrustedContact(BaseModel):
     name: str
@@ -127,27 +130,88 @@ async def remove_trusted_contact(request: Request) -> Dict[str, Any]:
     return {"message": "Trusted contact removed"}
 
 
+def _trusted_contact_as_list(user: Optional[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Normalize user trusted_contact_* fields into emergency_contacts shape."""
+    if not user or not user.get("trusted_contact_name"):
+        return []
+    return [{
+        "name": user.get("trusted_contact_name"),
+        "phone": user.get("trusted_contact_phone"),
+        "email": user.get("trusted_contact_email"),
+        "role": "trusted_contact",
+    }]
+
+
+async def _resolve_dating_match(db, current_user_id: str, match_id: str) -> Optional[Dict[str, Any]]:
+    """
+    Dating matches may live in `matches` (both_ids) or dating_matches
+    (user1_id/user2_id). Frontend dating match_id is often `{u1}_{u2}`.
+    Returns {match_id, other_user_id} or None.
+    """
+    match = await db.matches.find_one({
+        "match_id": match_id,
+        "both_ids": {"$all": [current_user_id]},
+    }, {"_id": 0})
+    if match:
+        other = match.get("user_id_1") if match.get("user_id_2") == current_user_id else match.get("user_id_2")
+        if not other and match.get("both_ids"):
+            other = next((uid for uid in match["both_ids"] if uid != current_user_id), None)
+        return {"match_id": match_id, "other_user_id": other, "raw": match}
+
+    dating = await db.dating_matches.find_one({
+        "match_id": match_id,
+        "$or": [
+            {"user1_id": current_user_id},
+            {"user2_id": current_user_id},
+            {"user_id": current_user_id},
+        ],
+    }, {"_id": 0})
+    if dating:
+        other = dating.get("user2_id") if dating.get("user1_id") == current_user_id else dating.get("user1_id")
+        if not other:
+            other = dating.get("matched_user_id") or dating.get("other_user_id")
+        return {"match_id": match_id, "other_user_id": other, "raw": dating}
+
+    # Composite dating match id: user1_user2 (as returned by GET /dating/matches)
+    candidates = await db.dating_matches.find({
+        "status": "active",
+        "$or": [
+            {"user1_id": current_user_id},
+            {"user2_id": current_user_id},
+        ],
+    }, {"_id": 0}).to_list(200)
+    for dm in candidates:
+        composite = f"{dm.get('user1_id')}_{dm.get('user2_id')}"
+        composite_rev = f"{dm.get('user2_id')}_{dm.get('user1_id')}"
+        if match_id in (composite, composite_rev):
+            other = dm["user2_id"] if dm["user1_id"] == current_user_id else dm["user1_id"]
+            return {"match_id": match_id, "other_user_id": other, "raw": dm}
+
+    return None
+
+
 @router.post("/share/start")
 async def start_location_sharing(share_data: StartLocationShare, request: Request) -> Dict[str, Any]:
-    """Start sharing location with a match"""
+    """Start sharing location with a match — auto-attaches trusted emergency contact."""
     current_user = await get_current_user(request)
     if not current_user:
         raise HTTPException(status_code=401, detail="Not authenticated")
     
     db = get_database()
-    
-    # Verify match exists
-    match = await db.matches.find_one({
-        "match_id": share_data.match_id,
-        "both_ids": {"$all": [current_user.user_id]}
-    }, {"_id": 0})
-    
-    if not match:
+    user_doc = await db.users.find_one({"user_id": current_user.user_id}, {"_id": 0})
+    trusted = _trusted_contact_as_list(user_doc)
+    if not trusted and not share_data.emergency_contacts:
+        raise HTTPException(
+            status_code=400,
+            detail="Set a trusted emergency contact before starting date safety sharing",
+        )
+
+    resolved = await _resolve_dating_match(db, current_user.user_id, share_data.match_id)
+    if not resolved or not resolved.get("other_user_id"):
         raise HTTPException(status_code=404, detail="Match not found")
-    
-    # Get other user
-    other_user_id = match["user_id_1"] if match["user_id_2"] == current_user.user_id else match["user_id_2"]
-    
+
+    other_user_id = resolved["other_user_id"]
+
     # Check for existing active share
     existing_share = await db.location_shares.find_one({
         "user_id": current_user.user_id,
@@ -158,7 +222,16 @@ async def start_location_sharing(share_data: StartLocationShare, request: Reques
     if existing_share:
         return {"message": "Location sharing already active", "share": existing_share}
     
-    # Create location share
+    # Merge client contacts + trusted contact (dedupe by phone/email)
+    contacts = list(share_data.emergency_contacts or [])
+    for tc in trusted:
+        key = (tc.get("phone") or "").strip() or (tc.get("email") or "").strip().lower()
+        if not any(
+            ((c.get("phone") or "").strip() or (c.get("email") or "").strip().lower()) == key
+            for c in contacts
+        ):
+            contacts.append(tc)
+
     expires_at = datetime.now(timezone.utc) + timedelta(minutes=share_data.duration_minutes)
     
     location_share = {
@@ -166,14 +239,15 @@ async def start_location_sharing(share_data: StartLocationShare, request: Reques
         "user_id": current_user.user_id,
         "match_id": share_data.match_id,
         "shared_with_user_id": other_user_id,
-        "latitude": 0.0,  # Will be updated when user shares location
+        "latitude": 0.0,
         "longitude": 0.0,
         "duration_minutes": share_data.duration_minutes,
         "expires_at": expires_at.isoformat(),
         "status": "active",
-        "emergency_contacts": share_data.emergency_contacts,
+        "emergency_contacts": contacts,
         "last_check_in": None,
         "created_at": datetime.now(timezone.utc).isoformat(),
+        "context": "dating",
     }
     
     await db.location_shares.insert_one(location_share)
@@ -181,7 +255,8 @@ async def start_location_sharing(share_data: StartLocationShare, request: Reques
     return {
         "message": "Location sharing started",
         "share_id": location_share["share_id"],
-        "expires_at": location_share["expires_at"]
+        "expires_at": location_share["expires_at"],
+        "emergency_contacts_count": len(contacts),
     }
 
 
@@ -366,44 +441,82 @@ async def send_check_in(check_in_data: CheckIn, request: Request) -> Dict[str, A
 
 @router.post("/emergency")
 async def send_emergency_alert(alert_data: EmergencyAlert, request: Request) -> Dict[str, Any]:
-    """Send emergency alert"""
+    """
+    Send emergency alert for an active date share, or stand-alone with
+    match_id / trusted contact only (going on a date SOS).
+    """
     current_user = await get_current_user(request)
     if not current_user:
         raise HTTPException(status_code=401, detail="Not authenticated")
     
     db = get_database()
-    
-    share = await db.location_shares.find_one({
-        "share_id": alert_data.share_id,
-        "user_id": current_user.user_id
-    }, {"_id": 0})
-    
-    if not share:
-        raise HTTPException(status_code=404, detail="Location share not found")
-    
-    # Create emergency alert
+    user_doc = await db.users.find_one({"user_id": current_user.user_id}, {"_id": 0})
+    trusted = _trusted_contact_as_list(user_doc)
+
+    share = None
+    if alert_data.share_id:
+        share = await db.location_shares.find_one({
+            "share_id": alert_data.share_id,
+            "user_id": current_user.user_id
+        }, {"_id": 0})
+
+    contacts = list((share or {}).get("emergency_contacts") or [])
+    for tc in trusted:
+        key = (tc.get("phone") or "").strip() or (tc.get("email") or "").strip().lower()
+        if key and not any(
+            ((c.get("phone") or "").strip() or (c.get("email") or "").strip().lower()) == key
+            for c in contacts
+        ):
+            contacts.append(tc)
+
+    if not contacts:
+        raise HTTPException(
+            status_code=400,
+            detail="No emergency contact on file — add a trusted contact first",
+        )
+
+    lat = alert_data.latitude
+    lng = alert_data.longitude
+    if lat is None and share:
+        lat = share.get("latitude", 0)
+    if lng is None and share:
+        lng = share.get("longitude", 0)
+
     emergency_alert = {
         "alert_id": f"alert_{uuid.uuid4().hex[:12]}",
-        "share_id": alert_data.share_id,
+        "share_id": (share or {}).get("share_id") or alert_data.share_id,
+        "match_id": alert_data.match_id or (share or {}).get("match_id"),
         "user_id": current_user.user_id,
-        "message": alert_data.message,
-        "latitude": share.get("latitude", 0),
-        "longitude": share.get("longitude", 0),
-        "emergency_contacts": share.get("emergency_contacts", []),
-        "shared_with_user_id": share["shared_with_user_id"],
+        "message": alert_data.message or "Emergency — please check on me",
+        "latitude": lat or 0,
+        "longitude": lng or 0,
+        "emergency_contacts": contacts,
+        "shared_with_user_id": (share or {}).get("shared_with_user_id"),
+        "context": "dating",
         "status": "active",
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     
     await db.emergency_alerts.insert_one(emergency_alert)
-    
-    # In a real app, send SMS/notifications to emergency contacts
-    # and the person they're sharing location with
+
+    # Also mirror into notifications for in-app visibility
+    for contact in contacts:
+        await db.notifications.insert_one({
+            "notification_id": f"notif_{uuid.uuid4().hex[:12]}",
+            "user_id": current_user.user_id,
+            "type": "dating_emergency",
+            "title": "Date safety alert logged",
+            "body": f"Emergency contact {contact.get('name')} queued for alert",
+            "meta": {"alert_id": emergency_alert["alert_id"]},
+            "read": False,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
     
     return {
         "message": "Emergency alert sent",
         "alert_id": emergency_alert["alert_id"],
-        "contacts_notified": len(share.get("emergency_contacts", []))
+        "contacts_notified": len(contacts),
+        "note": "SMS delivery is queued when provider credentials are configured",
     }
 
 

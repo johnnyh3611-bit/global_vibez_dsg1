@@ -27,9 +27,8 @@ type Row = {
 const PHASE_RING: Record<string, string> = {
   Genius: "ring-amber-400/60 from-amber-900/40 to-rose-900/30",
   Genesis: "ring-emerald-400/50 from-emerald-900/40 to-cyan-900/30",
-  "Phase III": "ring-cyan-400/50 from-cyan-900/40 to-blue-900/30",
-  "Phase IV": "ring-violet-400/50 from-violet-900/40 to-fuchsia-900/30",
-  "Phase V": "ring-fuchsia-400/50 from-fuchsia-900/40 to-pink-900/30",
+  Apex: "ring-fuchsia-400/50 from-fuchsia-900/40 to-pink-900/30",
+  "Final Phase": "ring-fuchsia-400/50 from-fuchsia-900/40 to-pink-900/30",
 };
 
 export default function ChairWallTeaser() {

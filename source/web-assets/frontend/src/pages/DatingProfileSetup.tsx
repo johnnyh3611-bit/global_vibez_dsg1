@@ -3,9 +3,10 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
   Heart, Camera, MapPin, Sparkles, Gamepad2,
-  Target, Users, Check, Upload, X, Loader2,
+  Target, Check, Upload, X, Loader2,
 } from 'lucide-react';
-import { authFetch, getBearerToken } from '@/utils/secureAuth';
+import { authFetch } from '@/utils/secureAuth';
+import ProgressiveAbcQuiz from '@/components/dating/ProgressiveAbcQuiz';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -21,24 +22,18 @@ const GAME_OPTIONS = [
   'Connect 4', 'Reversi'
 ];
 
-const PERSONALITY_TRAITS = [
-  'Adventurous', 'Creative', 'Funny', 'Intelligent', 'Kind',
-  'Outgoing', 'Romantic', 'Spontaneous', 'Ambitious', 'Chill',
-  'Loyal', 'Honest', 'Caring', 'Confident', 'Mysterious'
-];
-
 const GAMING_STYLES = [
-  { value: 'competitive', label: 'Competitive 🏆', desc: 'I play to win' },
-  { value: 'casual', label: 'Casual 🎮', desc: 'Just for fun' },
-  { value: 'strategic', label: 'Strategic 🧠', desc: 'I love planning moves' },
-  { value: 'social', label: 'Social 💬', desc: 'Games are about connection' }
+  { value: 'competitive', label: 'A · Competitive', desc: 'I play to win' },
+  { value: 'casual', label: 'B · Casual', desc: 'Just for fun' },
+  { value: 'strategic', label: 'C · Strategic', desc: 'I love planning moves' },
+  { value: 'social', label: 'Social table', desc: 'Games are about connection' }
 ];
 
 const RELATIONSHIP_GOALS = [
-  { value: 'casual', label: 'Casual Dating', emoji: '✨' },
-  { value: 'serious', label: 'Serious Relationship', emoji: '💕' },
-  { value: 'marriage', label: 'Marriage', emoji: '💍' },
-  { value: 'friends', label: 'Just Friends', emoji: '🤝' }
+  { value: 'casual', label: 'A · Casual dating' },
+  { value: 'serious', label: 'B · Serious relationship' },
+  { value: 'friends', label: 'C · Friends first' },
+  { value: 'marriage', label: 'Marriage-minded' }
 ];
 
 export function DatingProfileSetup() {
@@ -77,6 +72,7 @@ export function DatingProfileSetup() {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [abcDone, setAbcDone] = useState(false);
 
   useEffect(() => {
     loadExistingProfile();
@@ -174,9 +170,7 @@ export function DatingProfileSetup() {
     const newErrors: Record<string, string> = {};
 
     if (step === 1) {
-      if (!formData.bio || formData.bio.length < 20) {
-        newErrors.bio = 'Bio must be at least 20 characters';
-      }
+      // Bio is optional — personality comes from A/B/C taps, not typing
       const ageNum = Number(formData.age);
       if (!formData.age || ageNum < 18 || ageNum > 99) {
         newErrors.age = 'Age must be between 18 and 99';
@@ -199,14 +193,14 @@ export function DatingProfileSetup() {
     }
 
     if (step === 3) {
-      if (formData.personality_traits.length === 0) {
-        newErrors.personality_traits = 'Select at least 3 personality traits';
+      if (!abcDone && formData.personality_traits.length < 1) {
+        newErrors.personality_traits = 'Answer the A/B/C vibe questions';
       }
       if (!formData.gaming_style) {
-        newErrors.gaming_style = 'Select your gaming style';
+        newErrors.gaming_style = 'Select your gaming style (A/B/C)';
       }
       if (!formData.relationship_goals) {
-        newErrors.relationship_goals = 'Select your relationship goals';
+        newErrors.relationship_goals = 'Select your relationship goals (A/B/C)';
       }
     }
 
@@ -300,17 +294,18 @@ export function DatingProfileSetup() {
                 Basic Information
               </h2>
 
-              {/* Bio */}
+              {/* Optional one-liner — personality is A/B/C, not an essay */}
               <div>
-                <label className="block text-white font-bold mb-2">Tell us about yourself *</label>
-                <textarea
+                <label className="block text-white font-bold mb-2">One-line vibe (optional)</label>
+                <input
+                  type="text"
                   value={formData.bio}
-                  onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                  placeholder="I love gaming and meeting new people..."
-                  className="w-full px-4 py-3 bg-white/5 border-2 border-white/10 rounded-xl text-white placeholder-white/40 focus:border-fuchsia-500 outline-none resize-none"
-                  rows={4}
+                  onChange={(e) => setFormData({ ...formData, bio: e.target.value.slice(0, 120) })}
+                  placeholder="Tap A/B/C next — or add a short vibe line"
+                  maxLength={120}
+                  className="w-full px-4 py-3 bg-white/5 border-2 border-white/10 rounded-xl text-white placeholder-white/40 focus:border-fuchsia-500 outline-none"
                 />
-                {errors.bio && <p className="text-red-400 text-sm mt-1">{errors.bio}</p>}
+                <p className="text-white/40 text-xs mt-1">No essay needed — we learn you through A/B/C questions.</p>
               </div>
 
               {/* Age */}
@@ -436,44 +431,42 @@ export function DatingProfileSetup() {
             </div>
           )}
 
-          {/* Step 3: Personality & Goals */}
+          {/* Step 3: A/B/C personality + goals */}
           {currentStep === 3 && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-black text-white mb-4 flex items-center gap-2">
+              <h2 className="text-2xl font-black text-white mb-2 flex items-center gap-2">
                 <Target className="w-6 h-6 text-purple-500" />
-                Personality & Relationship Goals
+                Your vibe — A / B / C
               </h2>
+              <p className="text-white/50 text-sm mb-4">
+                Tap answers only. No typing. We use this for dating + gaming matches.
+              </p>
 
-              {/* Personality Traits */}
-              <div>
-                <label className="block text-white font-bold mb-3">Your Personality Traits * (Select at least 3)</label>
-                <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
-                  {PERSONALITY_TRAITS.map((trait) => (
-                    <motion.button
-                      key={trait}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => toggleSelection('personality_traits', trait)}
-                      className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-                        formData.personality_traits.includes(trait)
-                          ? 'bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white border-2 border-white/30'
-                          : 'bg-white/5 text-white/60 border-2 border-white/10 hover:border-white/30'
-                      }`}
-                    >
-                      {trait}
-                    </motion.button>
-                  ))}
-                </div>
-                {errors.personality_traits && <p className="text-red-400 text-sm mt-2">{errors.personality_traits}</p>}
-              </div>
+              <ProgressiveAbcQuiz
+                setup
+                onComplete={(result) => {
+                  setAbcDone(true);
+                  setFormData((prev) => ({
+                    ...prev,
+                    personality_traits: result.personality_traits?.length
+                      ? result.personality_traits
+                      : prev.personality_traits,
+                    gaming_style: result.gaming_style || prev.gaming_style,
+                    relationship_goals: result.relationship_goals || prev.relationship_goals,
+                  }));
+                }}
+              />
+              {errors.personality_traits && (
+                <p className="text-red-400 text-sm">{errors.personality_traits}</p>
+              )}
 
-              {/* Gaming Style */}
               <div>
-                <label className="block text-white font-bold mb-3">Gaming Style *</label>
+                <label className="block text-white font-bold mb-3">Gaming style *</label>
                 <div className="space-y-3">
                   {GAMING_STYLES.map((style) => (
                     <motion.button
                       key={style.value}
+                      type="button"
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => setFormData({ ...formData, gaming_style: style.value })}
@@ -491,15 +484,15 @@ export function DatingProfileSetup() {
                 {errors.gaming_style && <p className="text-red-400 text-sm mt-2">{errors.gaming_style}</p>}
               </div>
 
-              {/* Relationship Goals */}
               <div>
-                <label className="block text-white font-bold mb-3">Relationship Goals *</label>
-                <div className="grid grid-cols-2 gap-4">
+                <label className="block text-white font-bold mb-3">Looking for *</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {RELATIONSHIP_GOALS.map((goal) => (
                     <motion.button
                       key={goal.value}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                      type="button"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                       onClick={() => setFormData({ ...formData, relationship_goals: goal.value })}
                       className={`px-6 py-4 rounded-xl font-bold transition-all ${
                         formData.relationship_goals === goal.value
@@ -507,7 +500,6 @@ export function DatingProfileSetup() {
                           : 'bg-white/5 text-white border-2 border-white/10 hover:border-white/30'
                       }`}
                     >
-                      <div className="text-2xl mb-2">{goal.emoji}</div>
                       <div className="text-sm">{goal.label}</div>
                     </motion.button>
                   ))}

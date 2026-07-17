@@ -243,6 +243,20 @@ export function DatingDiscovery() {
           >
             Edit Profile
           </motion.button>
+
+          <motion.button
+            type="button"
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            onClick={() => {
+              triggerHaptic("light");
+              navigate("/dating/vibe-check");
+            }}
+            className="rounded-xl border-2 border-cyan-500/50 bg-black/70 px-4 py-2 text-sm font-bold text-cyan-300 transition-all hover:border-cyan-400"
+            data-testid="vibe-check-entry"
+          >
+            Vibe check
+          </motion.button>
         </div>
 
         <p className="fixed bottom-14 left-1/2 z-40 -translate-x-1/2 text-center text-[11px] text-white/35">
