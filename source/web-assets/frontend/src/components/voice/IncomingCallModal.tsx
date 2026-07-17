@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Phone, PhoneOff, ShieldAlert } from "lucide-react";
 import { authFetch, getUserId } from "@/utils/secureAuth";
 import VibeCallRoom from "@/components/voice/VibeCallRoom";
+import { useActiveVibeCall } from "@/contexts/ActiveVibeCallContext";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -30,6 +31,14 @@ export default function IncomingCallModal() {
   const [accepted, setAccepted] = useState<IncomingCall | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const ringerRef = useRef<HTMLAudioElement | null>(null);
+  const { call: activeCall, setCall, clearCall, gameDockConsumers } = useActiveVibeCall();
+  // When a game table owns the PiP dock, don't mount a second Agora room.
+  const hideFloatingDock = gameDockConsumers > 0;
+
+  // Keep local accepted UI in sync if the game dock ends the call.
+  useEffect(() => {
+    if (!activeCall) setAccepted(null);
+  }, [activeCall]);
 
   // Open the WS as soon as we have an authenticated user.
   useEffect(() => {
@@ -102,9 +111,15 @@ export default function IncomingCallModal() {
     }
     if (accept) {
       setAccepted(incoming);
+      setCall({
+        callId: incoming.call_id,
+        channel: incoming.channel,
+        mediaType: incoming.media_type === "video" ? "video" : "voice",
+        peerLabel: incoming.from_vibe_number,
+      });
     }
     setIncoming(null);
-  }, [incoming]);
+  }, [incoming, setCall]);
 
   const block = useCallback(async () => {
     if (!incoming) return;
@@ -204,9 +219,9 @@ export default function IncomingCallModal() {
         )}
       </AnimatePresence>
 
-      {/* Accepted call — embedded VibeCallRoom in a slide-up dock */}
+      {/* Accepted call — floating dock only when no game table video dock is hosting it */}
       <AnimatePresence>
-        {accepted && (
+        {accepted && !hideFloatingDock && (
           <motion.div
             initial={{ y: 80, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -219,7 +234,10 @@ export default function IncomingCallModal() {
                 channel={accepted.channel}
                 enableVideo={accepted.media_type === "video"}
                 autoJoin
-                onLeave={() => setAccepted(null)}
+                onLeave={() => {
+                  setAccepted(null);
+                  clearCall();
+                }}
               />
               <p className="text-[10px] text-cyan-400/80 text-center mt-1 font-mono">
                 with {accepted.from_vibe_number}

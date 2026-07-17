@@ -51,6 +51,7 @@ import CommHubDropdown from "@/components/common/CommHubDropdown";
 import VigilantDesignAgent from "@/components/common/VigilantDesignAgent";
 import { OrientationApplier, OrientationFAB } from "@/components/common/OrientationToggle";
 import IncomingCallModal from "@/components/voice/IncomingCallModal";
+import { ActiveVibeCallProvider } from "@/contexts/ActiveVibeCallContext";
 import BetaFeedbackButton from "@/components/common/BetaFeedbackButton";
 import FriendEventToaster from "@/components/common/FriendEventToaster";
 import { Toaster } from "sonner";
@@ -364,9 +365,11 @@ export default function App() {
               <PhantomConnectProvider>
                 <SolanaWalletProvider>
                   <LedgerSignerProvider>
-                    <Suspense fallback={<PageLoader message="Loading..." />}>
-                      <AppRouter />
-                    </Suspense>
+                    <ActiveVibeCallProvider>
+                      <Suspense fallback={<PageLoader message="Loading..." />}>
+                        <AppRouter />
+                      </Suspense>
+                    </ActiveVibeCallProvider>
                   </LedgerSignerProvider>
                 </SolanaWalletProvider>
               </PhantomConnectProvider>

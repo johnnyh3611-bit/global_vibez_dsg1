@@ -19,6 +19,7 @@ import BetSlip, {
   notifyBetPlaced,
 } from "@/components/betting/BetSlip";
 import GameVideoLayout from "@/components/video/GameVideoLayout";
+import { useGameTableCallVideo } from "@/components/video/GameTableCallVideo";
 import cardSoundManager from "@/utils/cardSoundManager";
 
 /**
@@ -64,6 +65,7 @@ export interface GenericGameProps {
 
 export default function GenericCasinoGame(props: GenericGameProps) {
   const nav = useNavigate();
+  const tableCallVideo = useGameTableCallVideo();
   const [stake, setStake] = useState(10);
   const initial: Record<string, string | number> = {};
   for (const b of props.bets) initial[b.label] = b.defaultValue;
@@ -148,7 +150,11 @@ export default function GenericCasinoGame(props: GenericGameProps) {
         </div>
       </div>
 
-      <GameVideoLayout criticalDecision={busy || (!result && slipOpen)} testid={`${props.testid}-video-layout`}>
+      <GameVideoLayout
+        criticalDecision={busy || (!result && slipOpen)}
+        testid={`${props.testid}-video-layout`}
+        video={tableCallVideo}
+      >
       <div className="max-w-3xl mx-auto px-4 sm:px-5 py-5 sm:py-6 space-y-5">
         {/* AAA enhancer: phase-aware turn indicator + sound effects + recent
              results history. Wired 2026-02-17 Late × 5 (founder ask). */}

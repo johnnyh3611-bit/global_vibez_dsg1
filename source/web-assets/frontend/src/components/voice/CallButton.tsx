@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Phone, PhoneOff, Loader2, Video } from "lucide-react";
 import { authFetch, getUserId } from "@/utils/secureAuth";
 import VibeCallRoom from "@/components/voice/VibeCallRoom";
+import { useActiveVibeCall } from "@/contexts/ActiveVibeCallContext";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -41,6 +42,8 @@ export default function CallButton({
   const [calleeNumber, setCalleeNumber] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const enableVideo = mediaType === "video";
+  const { setCall, clearCall, gameDockConsumers } = useActiveVibeCall();
+  const hideInModal = gameDockConsumers > 0;
 
   const wsRef = useRef<WebSocket | null>(null);
 
@@ -61,16 +64,28 @@ export default function CallButton({
       try {
         const data = JSON.parse(e.data);
         if (data.call_id !== callId) return;
-        if (data.event === "CALL_ANSWERED") setState("active");
-        else if (data.event === "CALL_DECLINED") setState("declined");
+        if (data.event === "CALL_ANSWERED") {
+          setState("active");
+          if (callId && channel) {
+            setCall({
+              callId,
+              channel,
+              mediaType,
+              peerLabel: calleeNumber || displayName || userId,
+            });
+          }
+        } else if (data.event === "CALL_DECLINED") setState("declined");
         else if (data.event === "CALL_TIMEOUT") setState("timed_out");
-        else if (data.event === "CALL_ENDED") setState("ended");
+        else if (data.event === "CALL_ENDED") {
+          setState("ended");
+          clearCall();
+        }
       } catch {
         /* ignore */
       }
     };
     return () => ws?.close();
-  }, [state, callId]);
+  }, [state, callId, channel, mediaType, calleeNumber, displayName, userId, setCall, clearCall]);
 
   const startCall = async () => {
     setError(null);
@@ -119,6 +134,7 @@ export default function CallButton({
     setChannel(null);
     setCalleeNumber(null);
     setError(null);
+    clearCall();
   };
 
   const sizing = size === "sm"
@@ -187,7 +203,7 @@ export default function CallButton({
                 </div>
               )}
 
-              {state === "active" && channel && (
+              {state === "active" && channel && !hideInModal && (
                 <div className="flex flex-col items-center w-full">
                   <p className="text-[10px] uppercase tracking-[0.4em] text-emerald-400 mb-3">
                     Connected
@@ -201,6 +217,22 @@ export default function CallButton({
                   <p className="text-[10px] text-cyan-400/80 text-center mt-2 font-mono">
                     with {calleeNumber}
                   </p>
+                </div>
+              )}
+              {state === "active" && hideInModal && (
+                <div className="flex flex-col items-center text-center py-4">
+                  <p className="text-[10px] uppercase tracking-[0.4em] text-emerald-400 mb-2">
+                    Connected · on table
+                  </p>
+                  <p className="text-xs text-cyan-300/80 font-mono mb-4">
+                    Call is in the game video dock
+                  </p>
+                  <button
+                    onClick={close}
+                    className="px-5 py-2 rounded-full bg-rose-500 text-white text-xs uppercase tracking-widest font-bold flex items-center gap-2"
+                  >
+                    <PhoneOff className="w-4 h-4" /> End call
+                  </button>
                 </div>
               )}
 
