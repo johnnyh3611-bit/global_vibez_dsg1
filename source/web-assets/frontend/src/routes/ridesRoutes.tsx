@@ -9,6 +9,11 @@ import SafetySettings from "@/pages/SafetySettings";
 import DriverLicenseVerification from "@/pages/DriverLicenseVerification";
 import DriverVerificationStatus from "@/pages/DriverVerificationStatus";
 import AdminDriverVerification from "@/pages/AdminDriverVerification";
+import InsuranceVerification from "@/pages/InsuranceVerification";
+import InsuranceVerificationStatus from "@/pages/InsuranceVerificationStatus";
+import AdminInsuranceVerification from "@/pages/AdminInsuranceVerification";
+import DriverComplianceGate from "@/components/age_verification/DriverComplianceGate";
+import IdVerificationGate from "@/components/age_verification/IdVerificationGate";
 
 // Vibe Ridez - New Ride-Sharing Platform
 import VibeRidezHome from "@/pages/VibeRidez/VibeRidezHome";
@@ -45,22 +50,26 @@ export const ridesRoutes = (ProtectedRoute) => (
         in-app links resolve cleanly. */}
     <Route path="/driver/dashboard" element={<Navigate to="/vibe-ridez/driver-dashboard" replace />} />
     <Route path="/driver-registration" element={<ProtectedRoute><DriverRegistration /></ProtectedRoute>} />
-    <Route path="/driver-license-verification" element={<ProtectedRoute><DriverLicenseVerification /></ProtectedRoute>} />
+    <Route path="/driver-license-verification" element={<ProtectedRoute><IdVerificationGate surfaceName="driver license verification"><DriverLicenseVerification /></IdVerificationGate></ProtectedRoute>} />
     <Route path="/driver-verification-status" element={<ProtectedRoute><DriverVerificationStatus /></ProtectedRoute>} />
     <Route path="/admin-driver-verification" element={<ProtectedRoute><AdminDriverVerification /></ProtectedRoute>} />
-    
+    <Route path="/insurance-verification" element={<ProtectedRoute><InsuranceVerification /></ProtectedRoute>} />
+    <Route path="/insurance-verification/status" element={<ProtectedRoute><InsuranceVerificationStatus /></ProtectedRoute>} />
+    <Route path="/admin-insurance-verification" element={<ProtectedRoute><AdminInsuranceVerification /></ProtectedRoute>} />
+    <Route path="/admin/insurance" element={<ProtectedRoute><AdminInsuranceVerification /></ProtectedRoute>} />
+
     {/* Vibe Ridez - New Ride-Sharing Platform */}
     <Route path="/vibe-ridez" element={<ProtectedRoute><VibeRidezHome /></ProtectedRoute>} />
     <Route path="/become-a-driver" element={<BecomeDriverLanding />} />
     <Route path="/vibe-ridez/become-a-driver" element={<BecomeDriverLanding />} />
-    <Route path="/vibe-ridez/register" element={<ProtectedRoute><VibeDriverRegistration /></ProtectedRoute>} />
+    <Route path="/vibe-ridez/register" element={<ProtectedRoute><IdVerificationGate surfaceName="driver registration"><VibeDriverRegistration /></IdVerificationGate></ProtectedRoute>} />
     <Route path="/vibe-ridez/search" element={<ProtectedRoute><RideSearch /></ProtectedRoute>} />
-    <Route path="/vibe-ridez/driver-registration" element={<ProtectedRoute><VibeDriverRegistration /></ProtectedRoute>} />
-    <Route path="/vibe-ridez/driver-dashboard" element={<ProtectedRoute><VibeDriverDashboard /></ProtectedRoute>} />
-    <Route path="/vibe-ridez/dispatch" element={<ProtectedRoute><DriverDispatch /></ProtectedRoute>} />
+    <Route path="/vibe-ridez/driver-registration" element={<ProtectedRoute><IdVerificationGate surfaceName="driver registration"><VibeDriverRegistration /></IdVerificationGate></ProtectedRoute>} />
+    <Route path="/vibe-ridez/driver-dashboard" element={<ProtectedRoute><DriverComplianceGate surfaceName="driver dashboard"><VibeDriverDashboard /></DriverComplianceGate></ProtectedRoute>} />
+    <Route path="/vibe-ridez/dispatch" element={<ProtectedRoute><DriverComplianceGate surfaceName="driver dispatch"><DriverDispatch /></DriverComplianceGate></ProtectedRoute>} />
     <Route path="/vibe-ridez/track" element={<ProtectedRoute><RiderTracking /></ProtectedRoute>} />
-    <Route path="/driver" element={<ProtectedRoute><DriverDispatch /></ProtectedRoute>} />
-    <Route path="/vibe-ridez/post-ride" element={<ProtectedRoute><PostRide /></ProtectedRoute>} />
+    <Route path="/driver" element={<ProtectedRoute><DriverComplianceGate surfaceName="driver dispatch"><DriverDispatch /></DriverComplianceGate></ProtectedRoute>} />
+    <Route path="/vibe-ridez/post-ride" element={<ProtectedRoute><DriverComplianceGate surfaceName="posting rides"><PostRide /></DriverComplianceGate></ProtectedRoute>} />
     <Route path="/vibe-ridez/payment/success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
     <Route path="/vibe-ridez/payment/cancel" element={<ProtectedRoute><PaymentCancel /></ProtectedRoute>} />
 

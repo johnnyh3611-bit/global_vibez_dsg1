@@ -338,6 +338,11 @@ async def demo_login(response: Response, fresh: bool = False):
             # Starter Vibez Coins so the user can immediately try paid AAA
             # rooms (Baccarat, Blackjack, Roulette) without manual seeding.
             "credits_balance": 5000,
+            # Soft-launch: demo accounts are pre-cleared for 18+ ID gates
+            # so SHIP_CORE (Demo Login → dating) still works while real
+            # users must complete /age-verification.
+            "age_verified": True,
+            "verification_status": "approved",
         }
         await db.users.insert_one(demo_user)
     else:
@@ -372,6 +377,8 @@ async def demo_login(response: Response, fresh: bool = False):
                 # Starter Vibez Coins so paid AAA rooms (Baccarat etc.)
                 # work immediately on a fresh DB without manual seeding.
                 "credits_balance": 5000,
+                "age_verified": True,
+                "verification_status": "approved",
             }
             await db.users.insert_one(demo_user)
             user_id = demo_user["user_id"]
@@ -384,7 +391,37 @@ async def demo_login(response: Response, fresh: bool = False):
                     {"email": demo_email},
                     {"$set": {"credits_balance": 5000}},
                 )
-    
+
+    # Ensure demo users pass IdVerificationGate (approved ID record).
+    await db.users.update_one(
+        {"user_id": user_id},
+        {"$set": {
+            "age_verified": True,
+            "verification_status": "approved",
+            "age": demo_user.get("age") or 25,
+        }},
+    )
+    existing_ver = await db.verification_requests.find_one(
+        {"user_id": user_id, "status": "approved"},
+        {"_id": 0},
+    )
+    if not existing_ver:
+        now_iso = datetime.now(timezone.utc).isoformat()
+        await db.verification_requests.insert_one({
+            "verification_id": f"ver_demo_{uuid.uuid4().hex[:12]}",
+            "user_id": user_id,
+            "document_type": "demo_preclear",
+            "document_url": "",
+            "selfie_url": "",
+            "status": "approved",
+            "submitted_at": now_iso,
+            "reviewed_at": now_iso,
+            "reviewed_by": "system_demo",
+            "extracted_dob": None,
+            "verification_notes": "Auto-approved for demo-login soft launch",
+            "rejection_reason": None,
+        })
+
     # Create session token
     session_token = f"demo_session_{uuid.uuid4().hex}"
     

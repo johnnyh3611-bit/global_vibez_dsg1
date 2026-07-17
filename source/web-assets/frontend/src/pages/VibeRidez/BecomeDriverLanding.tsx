@@ -56,6 +56,7 @@ const PERKS = [
 const ELIGIBILITY = [
   "21+ years old",
   "Valid driver's license (3+ years)",
+  "Active vehicle insurance (proof required)",
   "Personal-use car ≤ 12 years old",
   "Clean MVR (no DUI in past 7 years)",
   "Smartphone with GPS",
@@ -259,9 +260,25 @@ export default function BecomeDriverLanding() {
               )}
             </button>
             <p className="text-[10px] text-cyan-500/60 text-center mt-3 uppercase tracking-widest">
-              We assist with the rest — license verification typically clears
+              Next: upload license + insurance proof. Reviews typically clear
               within 24h.
             </p>
+            <div className="mt-3 flex flex-col sm:flex-row gap-2 justify-center text-xs">
+              <button
+                type="button"
+                onClick={() => navigate("/driver-license-verification")}
+                className="underline text-cyan-300"
+              >
+                License verification
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate("/insurance-verification")}
+                className="underline text-cyan-300"
+              >
+                Insurance verification
+              </button>
+            </div>
           </section>
         )}
 

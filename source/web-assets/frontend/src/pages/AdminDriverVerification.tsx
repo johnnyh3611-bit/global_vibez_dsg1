@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ArrowLeft, CheckCircle, XCircle, Clock, Users, TrendingUp, Eye, Car, Shield } from 'lucide-react';
+import { authFetch } from '@/utils/secureAuth';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -29,16 +30,14 @@ export default function AdminDriverVerification() {
   const fetchData = async () => {
     try {
       // Fetch pending driver verifications
-      const pendingRes = await fetch(`${API}/api/driver-verification/admin/pending`, {
-      });
+      const pendingRes = await authFetch(`${API}/api/driver-verification/admin/pending`);
       if (pendingRes.ok) {
         const pendingData = await pendingRes.json();
         setPendingVerifications(pendingData.verifications || []);
       }
 
       // Fetch stats
-      const statsRes = await fetch(`${API}/api/driver-verification/admin/stats`, {
-      });
+      const statsRes = await authFetch(`${API}/api/driver-verification/admin/stats`);
       if (statsRes.ok) {
         const statsData = await statsRes.json();
         setStats(statsData);
@@ -54,10 +53,8 @@ export default function AdminDriverVerification() {
     if (!selectedVerification) return;
 
     try {
-      const response = await fetch(`${API}/api/driver-verification/admin/review`, {
+      const response = await authFetch(`${API}/api/driver-verification/admin/review`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        
         body: JSON.stringify({
           verification_id: selectedVerification.verification_id,
           ...reviewForm

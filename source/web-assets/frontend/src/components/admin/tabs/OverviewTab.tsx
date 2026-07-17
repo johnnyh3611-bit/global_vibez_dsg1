@@ -1,5 +1,5 @@
 import { Card, Title, Grid, Flex, Text } from '@tremor/react';
-import { AlertTriangle, Car, Shield, LineChart, Activity, DollarSign, UserCheck, BadgeCheck } from 'lucide-react';
+import { AlertTriangle, Car, Shield, LineChart, Activity, DollarSign, UserCheck, BadgeCheck, FileText } from 'lucide-react';
 
 interface OverviewStats {
   pending_cashouts?: number;
@@ -19,6 +19,7 @@ const QUICK_TOOLS = [
   { to: '/admin/sos', icon: AlertTriangle, label: 'SOS Alerts', accent: 'text-red-400' },
   { to: '/admin/drivers', icon: Car, label: 'Driver Verification', accent: 'text-yellow-400' },
   { to: '/admin/verification', icon: BadgeCheck, label: 'ID Verification', accent: 'text-blue-400' },
+  { to: '/admin/insurance', icon: FileText, label: 'Insurance Queue', accent: 'text-cyan-400' },
   { to: '/admin/moderation', icon: Shield, label: 'Content Moderation', accent: 'text-purple-400' },
   { to: '/admin/analytics', icon: LineChart, label: 'Deep Analytics', accent: 'text-cyan-400' },
   { to: '/admin/monitoring', icon: Activity, label: 'System Monitoring', accent: 'text-green-400' },

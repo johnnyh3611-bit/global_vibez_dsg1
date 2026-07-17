@@ -22,6 +22,7 @@ import AmbassadorCarePackagePage from "@/pages/AmbassadorCarePackagePage";
 import MyVibezThemedRoom from "@/pages/MyVibezThemedRoom";
 import RoadmapHub from "@/pages/RoadmapHub";
 import AgeVerificationPage from "@/pages/AgeVerificationPage";
+import IdVerificationGate from "@/components/age_verification/IdVerificationGate";
 import ContentRightsPage from "@/pages/ContentRightsPage";
 import CinemaRoom from "@/pages/CinemaRoom";
 import FreeTVCinemaRoom from "@/pages/FreeTVCinemaRoom";
@@ -79,9 +80,9 @@ export const miscRoutes = (ProtectedRoute) => (
     <Route path="/wallet/topup-success" element={<TopUpSuccess />} />
     <Route path="/wallet/topup-cancelled" element={<TopUpSuccess />} />
 
-    {/* Vibe Yellow Pages — 4th Pillar (May 2026) */}
+    {/* Vibe Yellow Pages — 4th Pillar (May 2026). New listings require 18+ ID. */}
     <Route path="/yellow-pages" element={<YellowPagesDirectory />} />
-    <Route path="/yellow-pages/new" element={<ProtectedRoute><YellowPagesNewListing /></ProtectedRoute>} />
+    <Route path="/yellow-pages/new" element={<ProtectedRoute><IdVerificationGate surfaceName="Yellow Pages listings"><YellowPagesNewListing /></IdVerificationGate></ProtectedRoute>} />
     <Route path="/yellow-pages/:listingId" element={<YellowPagesListingDetail />} />
 
     {/* Public Demo Pages */}
@@ -106,7 +107,7 @@ export const miscRoutes = (ProtectedRoute) => (
     {/* Monetization */}
     <Route path="/referral" element={<ProtectedRoute><Referral /></ProtectedRoute>} />
     <Route path="/wallet-legacy" element={<ProtectedRoute><CreditsWallet /></ProtectedRoute>} />
-    <Route path="/wallet" element={<ProtectedRoute><Wallet /></ProtectedRoute>} />
+    <Route path="/wallet" element={<ProtectedRoute><IdVerificationGate surfaceName="Wallet"><Wallet /></IdVerificationGate></ProtectedRoute>} />
     <Route path="/pricing" element={<ProtectedRoute><SovereignTiers /></ProtectedRoute>} />
     <Route path="/upgrade" element={<ProtectedRoute><SovereignTiers /></ProtectedRoute>} />
     <Route path="/tiers" element={<ProtectedRoute><SovereignTiers /></ProtectedRoute>} />
@@ -125,7 +126,9 @@ export const miscRoutes = (ProtectedRoute) => (
     <Route path="/roadmap" element={<ProtectedRoute><RoadmapHub /></ProtectedRoute>} />
     <Route path="/roadmap-hub" element={<ProtectedRoute><RoadmapHub /></ProtectedRoute>} />
     {/* 21+ Age Verification Protocol — restricted goods (alcohol/tobacco).
-        Distinct from the platform-wide 18+ gate at /age-verification. */}
+        Distinct from the platform-wide 18+ gate at /age-verification.
+        Consumers (HungryVibes alcohol checkout, after-dark TV) use
+        AgeVerificationGate with category="alcohol"|"tobacco". */}
     <Route path="/restricted-goods-verification" element={<ProtectedRoute><AgeVerificationPage /></ProtectedRoute>} />
     {/* Public Content Rights & IP Anti-Piracy Policy + DMCA filing form. */}
     <Route path="/content-rights" element={<ContentRightsPage />} />

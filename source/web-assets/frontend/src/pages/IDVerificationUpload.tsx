@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Upload, Shield, CheckCircle2, AlertCircle } from "lucide-react";
+import { authFetch } from "@/utils/secureAuth";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -16,12 +17,15 @@ export default function IDVerificationUpload() {
   const handleFileUpload = async (file, type) => {
     const formData = new FormData();
     formData.append("file", file);
+    const endpoint =
+      type === "document"
+        ? `${API}/api/uploads/verification/document`
+        : `${API}/api/uploads/verification/selfie`;
 
     try {
-      const res = await fetch(`${API}/api/uploads/upload`, {
+      const res = await authFetch(endpoint, {
         method: "POST",
         body: formData,
-        
       });
 
       if (!res.ok) throw new Error("Upload failed");
@@ -50,9 +54,8 @@ export default function IDVerificationUpload() {
     }
 
     try {
-      const res = await fetch(`${API}/api/verification/upload`, {
+      const res = await authFetch(`${API}/api/verification/upload`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           document_type: documentType,
           document_url: documentUrl,
