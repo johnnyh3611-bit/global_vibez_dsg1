@@ -44,9 +44,10 @@ async def integrations_health() -> Dict[str, Any]:
     }
     llm = {
         "configured": bool(
-            os.environ.get("EMERGENT_LLM_KEY") or os.environ.get("OPENAI_API_KEY")
+            os.environ.get("OPENAI_API_KEY") or os.environ.get("EMERGENT_LLM_KEY")
         ),
         "purpose": "AI date planner, coaches, content matching",
+        "set": "OPENAI_API_KEY",
     }
     twilio = {
         "configured": _present("TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_PHONE_NUMBER"),

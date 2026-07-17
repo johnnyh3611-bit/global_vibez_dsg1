@@ -45,8 +45,7 @@ STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret
 
 ### External Services (Optional)
 ```env
-# AI features (code reads EMERGENT_LLM_KEY first; OPENAI_API_KEY is fallback/docs)
-EMERGENT_LLM_KEY=your-emergent-or-openai-compatible-key
+# AI features — use a normal OpenAI (or compatible) API key
 OPENAI_API_KEY=sk-your-openai-key
 
 # Twilio (optional PSTN / SMS — NOT required for in-app Vibe Phone calling)
@@ -55,14 +54,13 @@ TWILIO_AUTH_TOKEN=your-auth-token
 TWILIO_PHONE_NUMBER=+1234567890
 
 # Agora RTC — Vibe Phone + FaceTime-style video (required for live media)
-# Historically provisioned under Emergent (Apr 2026). Secrets live only in
-# the host env (Railway / local .env) — never commit the certificate.
+# Secrets live only in the host env (Railway / local .env) — never commit the certificate.
 # Console: https://console.agora.io → Project → App ID + App Certificate
 # Health: GET /api/agora/health → {"configured": true, "app_id_present": true}
 AGORA_APP_ID=your-agora-app-id
 AGORA_APP_CERTIFICATE=your-agora-app-certificate
 
-# Email — Resend is what the code actually uses (SendGrid is unused)
+# Email — Resend is what the code actually uses
 RESEND_API_KEY=re_your_resend_key
 RESEND_SENDER_EMAIL=onboarding@resend.dev
 ```

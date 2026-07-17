@@ -1,6 +1,9 @@
 """
 Helio (MoonPay Commerce) client — fiat/crypto checkout for coin packs.
 
+You (the operator) create the Helio merchant account and keys.
+Code here only calls Helio once HELIO_* env vars are on Railway.
+
 Docs: https://docs.hel.io/reference/charge/create
       https://docs.hel.io/docs/webhooks
 
