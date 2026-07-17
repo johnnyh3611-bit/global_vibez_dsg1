@@ -105,6 +105,10 @@ async def list_topup_providers() -> Dict[str, Any]:
         os.environ.get("GLOBAL_VIBEZ_SOLANA_RECEIVE_WALLET")
         or os.environ.get("SOLANA_RECEIVE_WALLET")
     )
+    paylink_id = os.environ.get("HELIO_PAYLINK_ID") or ""
+    network = (os.environ.get("HELIO_NETWORK") or "main").strip().lower()
+    if network not in ("test", "main"):
+        network = "main"
     return {
         "providers": [
             {
@@ -120,6 +124,10 @@ async def list_topup_providers() -> Dict[str, Any]:
                 "ready": helio_configured(),
                 "primary": False,
                 "kind": "fiat_onramp",
+                # Pay Link id is public (Helio embed uses it client-side).
+                "paylink_id": paylink_id or None,
+                "network": network,
+                "embed": bool(paylink_id),
             },
             {
                 "id": "stripe",
