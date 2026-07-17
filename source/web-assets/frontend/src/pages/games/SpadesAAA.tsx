@@ -577,6 +577,9 @@ export default function SpadesAAA() {
               <SpadesGameMenu
                 onExit={backToLobby}
                 onOpenMessages={() => setChatOpen(true)}
+                entryFee={Number((game as { wager?: number } | null)?.wager ?? 0)}
+                midGame={Boolean(game && game.phase !== "finished")}
+                gameLabel="Spades"
               />
               <CommHubButton compact />
             </div>

@@ -575,22 +575,32 @@ class QuitGameRequest(BaseModel):
     game_id: str
 
 
+@router.get("/forfeit-policy")
+async def get_forfeit_policy() -> Dict[str, Any]:
+    """Public quitter-penalty rules for UI copy (15% house + partner split)."""
+    from utils.game_forfeit import forfeit_policy_public
+    return forfeit_policy_public()
+
+
 @router.post("/quit")
 async def quit_game(req: QuitGameRequest, request: Request) -> Dict[str, Any]:
     """
     Handle player quitting/leaving game mid-match
-    - Applies 15% penalty if game is in progress
-    - Records forfeit in database
-    - Redistributes entry fees to remaining players
+    - Applies 15% house penalty if game is in progress
+    - Entry fee is forfeited (already in pot — not re-charged)
+    - Redistributes entry: 50% partner / 50% remaining opponents
     """
     db = get_database()
-    user_id = await get_current_user(request)
-    
+    current_user = await get_current_user(request)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    user_id = current_user.user_id
+
     # Get game
     game = await db.bid_whist_games.find_one({"game_id": req.game_id}, {"_id": 0})
     if not game:
         raise HTTPException(status_code=404, detail="Game not found")
-    
+
     # Check if user is in this game
     player_mapping = game.get("player_mapping", {})
     user_position = None
@@ -598,10 +608,10 @@ async def quit_game(req: QuitGameRequest, request: Request) -> Dict[str, Any]:
         if pid == user_id:
             user_position = pos
             break
-    
+
     if not user_position:
         raise HTTPException(status_code=403, detail="You are not in this game")
-    
+
     # Handle forfeit penalty
     forfeit_result = await handle_player_quit(
         user_id=user_id,

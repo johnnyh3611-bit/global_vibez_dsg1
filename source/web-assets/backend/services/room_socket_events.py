@@ -336,22 +336,64 @@ def register_room_events(sio):
     
     @sio.event
     async def leave_game_room(sid, data):
-        """Leave a room"""
+        """Leave a room — applies mid-game quitter penalty when wagered."""
         try:
             room_code = data.get('room_code')
-            
+            forfeit_result = None
+
+            room = get_room(room_code) if room_code else None
+            if room and str(getattr(room.get('state'), 'value', room.get('state'))).lower() in (
+                'playing', 'paused', 'active', 'in_progress'
+            ):
+                player = (room.get('players') or {}).get(sid)
+                wager = float((room.get('settings') or {}).get('wager') or 0)
+                if player and wager > 0 and player.get('user_id'):
+                    try:
+                        from utils.database import get_database
+                        from utils.game_forfeit import apply_quitter_penalty
+
+                        players = [
+                            {
+                                'user_id': p.get('user_id'),
+                                'seat': p.get('position') or p.get('seat'),
+                            }
+                            for p in (room.get('players') or {}).values()
+                            if p.get('user_id')
+                        ]
+                        game_type = str(
+                            getattr(room.get('game_type'), 'value', room.get('game_type'))
+                            or 'card_game'
+                        )
+                        db = get_database()
+                        forfeit_result = await apply_quitter_penalty(
+                            db,
+                            game_type=game_type,
+                            game_id=room_code,
+                            quitter_id=player['user_id'],
+                            entry_fee=wager,
+                            players=players,
+                            status=str(
+                                getattr(room.get('state'), 'value', room.get('state'))
+                            ),
+                        )
+                    except Exception as forfeit_err:
+                        print(f"Forfeit on leave failed: {forfeit_err}")
+
             result = leave_room(room_code, sid)
-            
+
             # Notify room if it still exists
             if result:
-                await sio.emit('player_left', {
+                payload = {
                     'session_id': sid,
-                    'room': _sanitize_room_for_client(result, sid)
-                }, room=room_code)
-            
+                    'room': _sanitize_room_for_client(result, sid),
+                }
+                if forfeit_result:
+                    payload['forfeit'] = forfeit_result
+                await sio.emit('player_left', payload, room=room_code)
+
             # Leave Socket.IO room
             await sio.leave_room(sid, room_code)
-            
+
         except Exception as e:
             print(f"Error leaving room: {e}")
     

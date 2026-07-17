@@ -1,0 +1,29 @@
+name: AI Agent Automation
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to push'
+        required: true
+        default: 'main'
+      message:
+        description: 'Commit message'
+        required: true
+
+jobs:
+  push-code:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.AI_AGENT_TOKEN }}
+      - name: Configure Git
+        run: |
+          git config --global user.name "AI-Agent"
+          git config --global user.email "ai@globalvibez.dsg"
+      - name: Apply Changes
+        run: |
+          # The agent will inject the file changes here via commands I give you
+          git add .
+          git commit -m "${{ github.event.inputs.message }}"
+          git push origin ${{ github.event.inputs.branch }}

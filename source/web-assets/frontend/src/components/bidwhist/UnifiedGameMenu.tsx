@@ -1,16 +1,21 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, Volume2, VolumeX, Maximize, LogOut, HelpCircle, MessageCircle, X, Monitor, Smartphone } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import QuitForfeitDialog from '@/components/games/QuitForfeitDialog';
 
 export default function UnifiedGameMenu({ gameId, 
   onLeave, 
   onOpenChat,
   unreadMessages = 0,
   viewMode = 'classic',
-  onViewModeChange }: { gameId?: any, onLeave?: any, onOpenChat?: any, unreadMessages?: any, viewMode?: any, onViewModeChange?: any }) {
+  onViewModeChange,
+  entryFee = 0,
+  midGame = true,
+  gameLabel = 'game',
+}: { gameId?: any, onLeave?: any, onOpenChat?: any, unreadMessages?: any, viewMode?: any, onViewModeChange?: any, entryFee?: number, midGame?: boolean, gameLabel?: string }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const navigate = useNavigate();
 
@@ -27,10 +32,14 @@ export default function UnifiedGameMenu({ gameId,
   };
 
   const handleLeaveGame = () => {
-    if (confirm('Are you sure you want to leave the game?')) {
-      if (onLeave) onLeave();
-      navigate('/games');
-    }
+    setIsOpen(false);
+    setConfirmOpen(true);
+  };
+
+  const confirmLeave = () => {
+    setConfirmOpen(false);
+    if (onLeave) onLeave();
+    navigate('/games');
   };
 
   const handleOpenChat = () => {
@@ -196,6 +205,15 @@ export default function UnifiedGameMenu({ gameId,
           </motion.div>
         )}
       </AnimatePresence>
+
+      <QuitForfeitDialog
+        open={confirmOpen}
+        entryFee={entryFee}
+        midGame={midGame}
+        gameLabel={gameLabel}
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={confirmLeave}
+      />
     </div>
   );
 }
