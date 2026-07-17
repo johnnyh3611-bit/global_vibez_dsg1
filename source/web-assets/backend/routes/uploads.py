@@ -275,6 +275,9 @@ VALID_KINDS = {
     "dish_sizzle",
     "atmosphere_loop",
     "menu_pdf",
+    "id_doc",
+    "selfie",
+    "gallery",
     "generic",
 }
 

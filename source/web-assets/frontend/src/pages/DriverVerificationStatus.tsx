@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ArrowLeft, CheckCircle, XCircle, Clock, AlertCircle, Car, RefreshCw } from 'lucide-react';
+import { authFetch } from '@/utils/secureAuth';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -20,8 +21,7 @@ export default function DriverVerificationStatus() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${API}/api/driver-verification/status`, {
-      });
+      const response = await authFetch(`${API}/api/driver-verification/status`);
 
       if (!response.ok) {
         throw new Error('Failed to fetch driver verification status');
@@ -228,11 +228,17 @@ export default function DriverVerificationStatus() {
 
           <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 mb-6">
             <p className="text-green-100 text-sm text-center">
-              Congratulations! You're now verified to register as a driver for Vibes Rides.
-              Start earning by providing safe and fun rides to the Global Vibez DSG community!
+              License approved. Next step: submit vehicle insurance proof before you can offer rides.
             </p>
           </div>
 
+          <Button
+            onClick={() => navigate('/insurance-verification')}
+            className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-bold py-6 text-lg mb-3"
+            data-testid="driver-status-insurance-cta"
+          >
+            Submit Vehicle Insurance
+          </Button>
           <Button
             onClick={() => navigate('/driver-registration')}
             className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold py-6 text-lg"

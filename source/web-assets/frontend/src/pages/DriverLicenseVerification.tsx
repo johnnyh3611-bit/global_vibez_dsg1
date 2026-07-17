@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Upload, Camera, CheckCircle, AlertCircle, Shield, Car, IdCard } from 'lucide-react';
+import { authFetch } from '@/utils/secureAuth';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -56,9 +57,8 @@ export default function DriverLicenseVerification() {
       const licenseFormData = new FormData();
       licenseFormData.append('file', licenseFile);
 
-      const licenseResponse = await fetch(`${API}/api/uploads/driver-license`, {
+      const licenseResponse = await authFetch(`${API}/api/uploads/driver-license`, {
         method: 'POST',
-        
         body: licenseFormData
       });
 
@@ -72,9 +72,8 @@ export default function DriverLicenseVerification() {
       const selfieFormData = new FormData();
       selfieFormData.append('file', selfieFile);
 
-      const selfieResponse = await fetch(`${API}/api/uploads/driver-selfie`, {
+      const selfieResponse = await authFetch(`${API}/api/uploads/driver-selfie`, {
         method: 'POST',
-        
         body: selfieFormData
       });
 
@@ -85,10 +84,8 @@ export default function DriverLicenseVerification() {
       const selfieData = await selfieResponse.json();
 
       // Submit driver license verification request
-      const verificationResponse = await fetch(`${API}/api/driver-verification/upload`, {
+      const verificationResponse = await authFetch(`${API}/api/driver-verification/upload`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        
         body: JSON.stringify({
           license_url: licenseData.file_url,
           selfie_url: selfieData.file_url

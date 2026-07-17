@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Clock, CheckCircle, XCircle, AlertCircle, ArrowLeft } from 'lucide-react';
+import { authFetch } from '@/utils/secureAuth';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -17,8 +18,7 @@ export default function VerificationStatus() {
 
   const fetchStatus = async () => {
     try {
-      const response = await fetch(`${API}/api/verification/status`, {
-      });
+      const response = await authFetch(`${API}/api/verification/status`);
 
       if (!response.ok) throw new Error('Failed to fetch status');
 
