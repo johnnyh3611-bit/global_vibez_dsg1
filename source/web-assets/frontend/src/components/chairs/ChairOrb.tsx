@@ -5,12 +5,12 @@
  *
  * Pure CSS radial-gradient + framer-motion bob/drift. No 3D library.
  *
- * Phase-tinted: Genius=amber, Genesis=emerald, Phase III=cyan,
- * Phase IV=violet, Phase V=fuchsia. Falls back to fuchsia.
+ * Phase-tinted: Genius=amber, Genesis=emerald, Final Phase=fuchsia.
+ * Falls back to fuchsia.
  */
 import { motion } from "framer-motion";
 
-type Phase = "Genius" | "Genesis" | "Phase III" | "Phase IV" | "Phase V";
+type Phase = "Genius" | "Genesis" | "Apex" | "Final Phase";
 
 interface PhaseTone {
   /** Light highlight applied to the upper-left of the orb (1 of 3 stops). */
@@ -26,11 +26,10 @@ interface PhaseTone {
 }
 
 const PHASE_TONES: Record<string, PhaseTone> = {
-  Genius:      { highlight: "rgba(254,243,199,0.95)", mid: "#fbbf24", shadow: "#7c2d12", glow: "rgba(251,191,36,0.55)", ink: "text-amber-100" },     // audit:allow-hex
-  Genesis:     { highlight: "rgba(209,250,229,0.95)", mid: "#10b981", shadow: "#064e3b", glow: "rgba(16,185,129,0.55)",  ink: "text-emerald-100" },  // audit:allow-hex
-  "Phase III": { highlight: "rgba(207,250,254,0.95)", mid: "#06b6d4", shadow: "#164e63", glow: "rgba(6,182,212,0.55)",   ink: "text-cyan-100" },     // audit:allow-hex
-  "Phase IV":  { highlight: "rgba(237,233,254,0.95)", mid: "#8b5cf6", shadow: "#3b0764", glow: "rgba(139,92,246,0.55)",  ink: "text-violet-100" },   // audit:allow-hex
-  "Phase V":   { highlight: "rgba(250,232,255,0.95)", mid: "#d946ef", shadow: "#581c87", glow: "rgba(217,70,239,0.55)",  ink: "text-fuchsia-100" },  // audit:allow-hex
+  Genius:       { highlight: "rgba(254,243,199,0.95)", mid: "#fbbf24", shadow: "#7c2d12", glow: "rgba(251,191,36,0.55)", ink: "text-amber-100" },     // audit:allow-hex
+  Genesis:      { highlight: "rgba(209,250,229,0.95)", mid: "#10b981", shadow: "#064e3b", glow: "rgba(16,185,129,0.55)",  ink: "text-emerald-100" },  // audit:allow-hex
+  Apex:         { highlight: "rgba(250,232,255,0.95)", mid: "#d946ef", shadow: "#581c87", glow: "rgba(217,70,239,0.55)",  ink: "text-fuchsia-100" },  // audit:allow-hex
+  "Final Phase":{ highlight: "rgba(250,232,255,0.95)", mid: "#d946ef", shadow: "#581c87", glow: "rgba(217,70,239,0.55)",  ink: "text-fuchsia-100" },  // audit:allow-hex
 };
 
 interface Props {
@@ -68,7 +67,7 @@ export default function ChairOrb({
   onClick,
   testId,
 }: Props) {
-  const tone = PHASE_TONES[phase] ?? PHASE_TONES["Phase V"];
+  const tone = PHASE_TONES[phase] ?? PHASE_TONES["Final Phase"];
   const dims = SIZES[size];
   const formattedId = `#${String(chairId).padStart(5, "0")}`;
   const tid = testId ?? `chair-orb-${chairId}`;

@@ -8,6 +8,12 @@ from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 from utils.database import get_database, get_current_user
 from datetime import datetime, timezone
+from data.abc_profile_questions import (
+    ABC_PROFILE_QUESTIONS,
+    questions_by_id,
+    get_batch,
+    max_batch,
+)
 import secrets
 secure_random = secrets.SystemRandom()
 
@@ -29,6 +35,17 @@ class DatingProfile(BaseModel):
     personality_traits: List[str] = []
     gaming_style: Optional[str] = None  # "Competitive", "Casual", "Strategic", "Social"
     relationship_goals: Optional[str] = None  # "Casual Dating", "Serious Relationship", "Marriage", "Just Friends"
+    # Progressive A/B/C answers (question_id -> option_id)
+    abc_answers: Optional[Dict[str, str]] = None
+
+
+class AbcAnswerItem(BaseModel):
+    question_id: str
+    option_id: str  # a | b | c
+
+
+class AbcAnswersSubmit(BaseModel):
+    answers: List[AbcAnswerItem]
 
 
 class GameInvite(BaseModel):
@@ -88,7 +105,17 @@ async def update_dating_profile(request: Request, profile: DatingProfile) -> Dic
     profile_data = profile.dict()
     profile_data["updated_at"] = datetime.now(timezone.utc).isoformat()
     profile_data["is_active"] = True
-    
+
+    # Preserve progressive ABC answers if client omitted them
+    existing = await db.users.find_one(
+        {"user_id": current_user.user_id},
+        {"_id": 0, "dating_profile.abc_answers": 1},
+    )
+    if not profile_data.get("abc_answers") and existing:
+        prior = ((existing.get("dating_profile") or {}).get("abc_answers"))
+        if prior:
+            profile_data["abc_answers"] = prior
+
     await db.users.update_one(
         {"user_id": current_user.user_id},
         {
@@ -103,6 +130,163 @@ async def update_dating_profile(request: Request, profile: DatingProfile) -> Dic
         "success": True,
         "message": "Dating profile updated successfully",
         "profile": profile_data
+    }
+
+
+# ==================== PROGRESSIVE A/B/C PROFILE ====================
+
+@router.get("/profile/abc/next")
+async def get_next_abc_batch(request: Request, setup: bool = False) -> Dict[str, Any]:
+    """
+    Return the next unanswered A/B/C batch (3 questions).
+    setup=true prefers batch 0–2 (onboarding personality).
+    Return visits pull subsequent batches so we learn more each time.
+    """
+    current_user = await get_current_user(request)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    db = get_database()
+    user = await db.users.find_one(
+        {"user_id": current_user.user_id},
+        {"_id": 0, "dating_profile": 1},
+    )
+    profile = (user or {}).get("dating_profile") or {}
+    answered = set((profile.get("abc_answers") or {}).keys())
+
+    batches = list(range(max_batch() + 1))
+    if setup:
+        # Onboarding: first unfinished batch among 0–2, else any
+        preferred = [b for b in batches if b <= 2]
+        ordered = preferred + [b for b in batches if b > 2]
+    else:
+        ordered = batches
+
+    next_batch = None
+    questions = []
+    for b in ordered:
+        qs = get_batch(b)
+        unanswered = [q for q in qs if q["id"] not in answered]
+        if unanswered:
+            next_batch = b
+            # Strip traits from client payload (keep matching signals server-side)
+            questions = [
+                {
+                    "id": q["id"],
+                    "batch": q["batch"],
+                    "category": q["category"],
+                    "domain": q["domain"],
+                    "question": q["question"],
+                    "emoji": q.get("emoji", ""),
+                    "options": [
+                        {"id": o["id"], "text": o["text"]} for o in q["options"]
+                    ],
+                }
+                for q in unanswered
+            ]
+            break
+
+    total = len(ABC_PROFILE_QUESTIONS)
+    return {
+        "success": True,
+        "batch": next_batch,
+        "questions": questions,
+        "answered_count": len(answered),
+        "total_count": total,
+        "complete": next_batch is None,
+        "progress_pct": round((len(answered) / total) * 100) if total else 100,
+    }
+
+
+@router.post("/profile/abc/answers")
+async def submit_abc_answers(request: Request, payload: AbcAnswersSubmit) -> Dict[str, Any]:
+    """Save A/B/C answers and derive personality_traits / gaming_style / goals."""
+    current_user = await get_current_user(request)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    if not payload.answers:
+        raise HTTPException(status_code=400, detail="No answers provided")
+
+    db = get_database()
+    qmap = questions_by_id()
+    user = await db.users.find_one(
+        {"user_id": current_user.user_id},
+        {"_id": 0, "dating_profile": 1},
+    )
+    profile = (user or {}).get("dating_profile") or {}
+    abc_answers = dict(profile.get("abc_answers") or {})
+    traits = list(profile.get("personality_traits") or [])
+    gaming_style = profile.get("gaming_style")
+    relationship_goals = profile.get("relationship_goals")
+
+    for item in payload.answers:
+        q = qmap.get(item.question_id)
+        if not q:
+            raise HTTPException(status_code=400, detail=f"Unknown question: {item.question_id}")
+        opt = next((o for o in q["options"] if o["id"] == item.option_id), None)
+        if not opt:
+            raise HTTPException(status_code=400, detail=f"Invalid option for {item.question_id}")
+        abc_answers[item.question_id] = item.option_id
+        for t in opt.get("traits") or []:
+            if t not in traits:
+                traits.append(t)
+        if opt.get("gaming_style"):
+            gaming_style = opt["gaming_style"]
+        if opt.get("relationship_goals"):
+            relationship_goals = opt["relationship_goals"]
+
+    profile.update({
+        "abc_answers": abc_answers,
+        "personality_traits": traits[:20],
+        "gaming_style": gaming_style,
+        "relationship_goals": relationship_goals,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "is_active": True,
+    })
+
+    await db.users.update_one(
+        {"user_id": current_user.user_id},
+        {"$set": {
+            "dating_profile": profile,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }},
+        upsert=True,
+    )
+
+    total = len(ABC_PROFILE_QUESTIONS)
+    return {
+        "success": True,
+        "answered_count": len(abc_answers),
+        "total_count": total,
+        "progress_pct": round((len(abc_answers) / total) * 100) if total else 100,
+        "personality_traits": profile["personality_traits"],
+        "gaming_style": gaming_style,
+        "relationship_goals": relationship_goals,
+    }
+
+
+@router.get("/profile/abc/status")
+async def abc_profile_status(request: Request) -> Dict[str, Any]:
+    """Lightweight progress for dashboard / return-visit prompts."""
+    current_user = await get_current_user(request)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    db = get_database()
+    user = await db.users.find_one(
+        {"user_id": current_user.user_id},
+        {"_id": 0, "dating_profile.abc_answers": 1},
+    )
+    answered = len(((user or {}).get("dating_profile") or {}).get("abc_answers") or {})
+    total = len(ABC_PROFILE_QUESTIONS)
+    return {
+        "success": True,
+        "answered_count": answered,
+        "total_count": total,
+        "complete": answered >= total,
+        "has_more": answered < total,
+        "progress_pct": round((answered / total) * 100) if total else 100,
     }
 
 

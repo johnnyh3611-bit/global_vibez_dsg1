@@ -19,6 +19,7 @@ import ProfileSetup from "@/pages/ProfileSetup";
 import ProfileEdit from "@/pages/ProfileEdit";
 import BondsPage from "@/pages/BondsPage";
 import CulturalOnboardingWizard from "@/pages/CulturalOnboardingWizard";
+import VibeCheck from "@/pages/VibeCheck";
 import PageLoader from "@/components/common/PageLoader";
 import IdVerificationGate from "@/components/age_verification/IdVerificationGate";
 
@@ -51,6 +52,7 @@ export const datingRoutes = (ProtectedRoute) => (
     <Route path="/speed-dating/lobby" element={<ProtectedRoute>{withIdGate("Speed dating lobby", LazyLobby)}</ProtectedRoute>} />
     <Route path="/dating/profile/setup" element={<ProtectedRoute>{withIdGate("Dating profile setup", <DatingProfileSetup />)}</ProtectedRoute>} />
     <Route path="/dating/cultural-onboarding" element={<ProtectedRoute>{withIdGate("Cultural onboarding", <CulturalOnboardingWizard />)}</ProtectedRoute>} />
+    <Route path="/dating/vibe-check" element={<ProtectedRoute>{withIdGate("Vibe check", <VibeCheck />)}</ProtectedRoute>} />
     <Route path="/dating/discover" element={<ProtectedRoute>{withIdGate("Dating discover", <DatingDiscovery />)}</ProtectedRoute>} />
     <Route path="/dating/matches" element={<ProtectedRoute>{withIdGate("Dating matches", <DatingMatches />)}</ProtectedRoute>} />
     <Route path="/dating-game/:gameId" element={<ProtectedRoute>{withIdGate("Dating game", <PartnerQuizGame />)}</ProtectedRoute>} />

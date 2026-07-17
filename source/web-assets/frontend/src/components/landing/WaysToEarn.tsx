@@ -129,10 +129,9 @@ const BETA_PATHS: EarnPath[] = [
   },
 ];
 
-// Monthly scenarios — assume 250K chairs sold (mid-rampup), ~437,500
-// total weighted units. Single Genius chair holder gets 3 / 437,500 of
-// the chair pool. Scenarios show MONTHLY chair payout at platform
-// profit levels, both pre-EV (14%) and post-EV (30%).
+// Monthly scenarios — assume full 200K-chair ladder sold, 400,000
+// total weighted units (50K Genius×3 + 100K Genesis×2 + 50K Final×1).
+// Single Genius chair holder gets 3 / 400,000 of the chair pool.
 const SCENARIOS = [
   {
     label: "Early ($50K/mo profit)",
@@ -156,7 +155,7 @@ const SCENARIOS = [
   },
 ];
 
-const TOTAL_WEIGHTED_AT_FULL = 437_500; // 50K Genius×3 + 50K Genesis×2 + 50K Phase III×1.5 + 50K Phase IV×1.25 + 50K Phase V×1
+const TOTAL_WEIGHTED_AT_FULL = 400_000; // 50K Genius×3 + 100K Genesis×2 + 50K Final Phase×1
 const GENIUS_WEIGHT = 3;
 
 function fmtUsd(n: number): string {
@@ -260,9 +259,10 @@ export default function WaysToEarn() {
           </h3>
         </div>
         <p className="text-xs text-neutral-400 mb-4 leading-relaxed">
-          Per-chair monthly payout assuming 250K chairs sold across the 5
-          active phases (≈437,500 total weighted units). Real
-          chair-pool percentages — same constants the quarterly job uses.
+          Per-chair monthly payout assuming the full 200K-chair ladder
+          (≈400,000 total weighted units across Genius → Genesis → Final
+          Phase). Real chair-pool percentages — same constants the
+          quarterly job uses.
         </p>
 
         <div className="overflow-x-auto -mx-2">
@@ -315,7 +315,7 @@ export default function WaysToEarn() {
 
         <p className="text-[10px] text-neutral-500 mt-3 leading-relaxed">
           Discretionary distributions, not investment yield. Numbers assume
-          250K chairs sold; smaller current sold-count means a higher slice
+          200K chairs sold; smaller current sold-count means a higher slice
           for early holders right now. Driver / creator / referral / stake
           earnings are <strong>on top of</strong> these chair payouts — not
           included in the table.

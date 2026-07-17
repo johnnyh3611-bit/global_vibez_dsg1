@@ -2,7 +2,7 @@
  * Admin Tier Pricing — Feb 2026
  *
  * Founder-facing UI for the Mongo-backed `pricing_catalog`. Lets you
- * change Genius / Genesis / Apex prices (and labels / taglines) on the
+ * change Genius / Genesis / Final Phase prices (and labels / taglines) on the
  * fly without a redeploy. Every save bumps the catalog version and is
  * recorded in `pricing_catalog_history` for audit.
  *
@@ -153,7 +153,7 @@ const AdminTierPricing: React.FC = () => {
         <div>
           <h1 className="text-3xl font-black text-white mb-1">VIP Tier Pricing</h1>
           <p className="text-sm text-gray-400">
-            Hot-edit Genius / Genesis / Apex prices. Changes propagate live
+            Hot-edit Genius / Genesis / Final Phase prices. Changes propagate live
             (no redeploy) via the Mongo pricing_catalog.
           </p>
         </div>

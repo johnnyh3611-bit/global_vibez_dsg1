@@ -51,24 +51,19 @@ const PHASE_TONES: Record<string, { ring: string; bg: string; accent: string }> 
     bg: "from-emerald-900/40 via-cyan-900/30 to-black",
     accent: "text-emerald-300",
   },
-  "Phase III": {
-    ring: "ring-cyan-400/50",
-    bg: "from-cyan-900/40 via-blue-900/30 to-black",
-    accent: "text-cyan-300",
+  Apex: {
+    ring: "ring-fuchsia-400/50",
+    bg: "from-fuchsia-900/40 via-pink-900/30 to-black",
+    accent: "text-fuchsia-300",
   },
-  "Phase IV": {
-    ring: "ring-violet-400/50",
-    bg: "from-violet-900/40 via-fuchsia-900/30 to-black",
-    accent: "text-violet-300",
-  },
-  "Phase V": {
+  "Final Phase": {
     ring: "ring-fuchsia-400/50",
     bg: "from-fuchsia-900/40 via-pink-900/30 to-black",
     accent: "text-fuchsia-300",
   },
 };
 
-const FILTERS = ["All", "Genius", "Genesis", "Phase III", "Phase IV", "Phase V"];
+const FILTERS = ["All", "Genius", "Genesis", "Final Phase"];
 
 function fmtChairId(id: number): string {
   return `#${String(id).padStart(5, "0")}`;
@@ -97,7 +92,11 @@ export default function ChairWall() {
     setLoading(true);
     const url = new URL(`${API}/api/chairs/wall`);
     url.searchParams.set("limit", "500");
-    if (filter !== "All") url.searchParams.set("phase", filter);
+    if (filter !== "All") {
+      // Backend still stores final tier as "Apex"
+      const phaseParam = filter === "Final Phase" ? "Apex" : filter;
+      url.searchParams.set("phase", phaseParam);
+    }
     fetch(url.toString())
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
@@ -110,7 +109,10 @@ export default function ChairWall() {
   const totalsByPhase = useMemo(() => {
     if (!data) return {};
     const out: Record<string, number> = {};
-    for (const r of data.rows) out[r.phase] = (out[r.phase] || 0) + 1;
+    for (const r of data.rows) {
+      const label = r.phase === "Apex" ? "Final Phase" : r.phase;
+      out[label] = (out[label] || 0) + 1;
+    }
     return out;
   }, [data]);
 
@@ -268,7 +270,7 @@ export default function ChairWall() {
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.92, y: 20 }}
               onClick={(e) => e.stopPropagation()}
-              className={`relative w-full max-w-md rounded-3xl border-2 ring-2 ${(PHASE_TONES[selected.phase] || PHASE_TONES["Phase V"]).ring} border-white/10 bg-gradient-to-br ${(PHASE_TONES[selected.phase] || PHASE_TONES["Phase V"]).bg} p-8`}
+              className={`relative w-full max-w-md rounded-3xl border-2 ring-2 ${(PHASE_TONES[selected.phase] || PHASE_TONES["Final Phase"]).ring} border-white/10 bg-gradient-to-br ${(PHASE_TONES[selected.phase] || PHASE_TONES["Final Phase"]).bg} p-8`}
               data-testid="chair-wall-modal"
             >
               <button
@@ -282,9 +284,9 @@ export default function ChairWall() {
               </button>
 
               <p
-                className={`text-[10px] font-mono uppercase tracking-[0.3em] ${(PHASE_TONES[selected.phase] || PHASE_TONES["Phase V"]).accent}`}
+                className={`text-[10px] font-mono uppercase tracking-[0.3em] ${(PHASE_TONES[selected.phase] || PHASE_TONES["Final Phase"]).accent}`}
               >
-                {selected.phase} · {selected.weight}× weight
+                {(selected.phase === "Apex" ? "Final Phase" : selected.phase)} · {selected.weight}× weight
               </p>
               <p className="text-5xl font-black font-mono text-white mt-2">
                 {fmtChairId(selected.chair_id)}
