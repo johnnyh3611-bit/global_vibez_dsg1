@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Upload, Camera, CheckCircle, AlertCircle, Shield, IdCard } from 'lucide-react';
+import { authFetch } from '@/utils/secureAuth';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -56,9 +57,8 @@ export default function AgeVerification() {
       const documentFormData = new FormData();
       documentFormData.append('file', documentFile);
 
-      const documentResponse = await fetch(`${API}/api/uploads/verification/document`, {
+      const documentResponse = await authFetch(`${API}/api/uploads/verification/document`, {
         method: 'POST',
-        
         body: documentFormData
       });
 
@@ -72,9 +72,8 @@ export default function AgeVerification() {
       const selfieFormData = new FormData();
       selfieFormData.append('file', selfieFile);
 
-      const selfieResponse = await fetch(`${API}/api/uploads/verification/selfie`, {
+      const selfieResponse = await authFetch(`${API}/api/uploads/verification/selfie`, {
         method: 'POST',
-        
         body: selfieFormData
       });
 
@@ -85,10 +84,8 @@ export default function AgeVerification() {
       const selfieData = await selfieResponse.json();
 
       // Submit verification request
-      const verificationResponse = await fetch(`${API}/api/verification/upload`, {
+      const verificationResponse = await authFetch(`${API}/api/verification/upload`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        
         body: JSON.stringify({
           document_type: documentType,
           document_url: documentData.file_url,

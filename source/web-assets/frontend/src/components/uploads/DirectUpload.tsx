@@ -16,6 +16,7 @@
 import React, { useRef, useState } from "react";
 import { Upload, X, Image as ImageIcon, Video, FileText, Loader2, Camera, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { getBearerToken } from "@/utils/secureAuth";
 
 const API = process.env.REACT_APP_BACKEND_URL!;
 
@@ -78,6 +79,10 @@ export const DirectUpload: React.FC<{
           const xhr = new XMLHttpRequest();
           xhr.open("POST", `${API}/api/uploads/media?kind=${kind}`);
           xhr.withCredentials = true;
+          const token = getBearerToken();
+          if (token) {
+            xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+          }
           xhr.upload.onprogress = (ev) => {
             if (ev.lengthComputable) {
               setPct(Math.round((ev.loaded / ev.total) * 100));
