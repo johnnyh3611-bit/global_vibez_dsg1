@@ -64,7 +64,7 @@ export default function VideoPiP({
         bottom: window.innerHeight - 230
       }}
       initial={{ x: window.innerWidth - 180, y: 100 }}
-      className="fixed z-50 touch-none"
+      className="fixed z-[20] touch-none"
       style={{ width: isMinimized ? '80px' : '160px' }}
     >
       <div className="bg-gray-900/95 backdrop-blur-lg rounded-2xl shadow-2xl border-2 border-purple-500/50 overflow-hidden">

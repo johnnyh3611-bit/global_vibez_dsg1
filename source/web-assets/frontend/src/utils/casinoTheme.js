@@ -63,11 +63,25 @@ export const CASINO_THEME = {
     chipPlace: '0.3s',
     chipClink: '0.15s',
     wheelSpin: '6s',
+    /** Fixed dice tumble — same on every device (Craps / Sic Bo / 654) */
+    diceRoll: '1.5s',
+    diceRollMs: 1500,
     buttonPress: '0.2s',
     victory: '2.5s',
     transition: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
     bounce: 'cubic-bezier(0.68, -0.55, 0.265, 1.55)',
     easeOut: 'cubic-bezier(0.22, 0.61, 0.36, 1)'
+  },
+
+  // Stacking: video dock under cards/bets; voice-call modals stay topmost
+  zIndex: {
+    videoDock: 20,
+    table: 30,
+    cards: 40,
+    chips: 45,
+    betSlip: 50,
+    toast: 60,
+    callOverlay: 9998,
   },
 
   // Card Dimensions (Standard Poker Size: 2.5" × 3.5")

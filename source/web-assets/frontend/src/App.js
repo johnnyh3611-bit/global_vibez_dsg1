@@ -53,6 +53,7 @@ import { OrientationApplier, OrientationFAB } from "@/components/common/Orientat
 import IncomingCallModal from "@/components/voice/IncomingCallModal";
 import BetaFeedbackButton from "@/components/common/BetaFeedbackButton";
 import FriendEventToaster from "@/components/common/FriendEventToaster";
+import { Toaster } from "sonner";
 import PushForegroundBridge from "@/components/notifications/PushForegroundBridge";
 import VipCrownBadge from "@/components/vip/VipCrownBadge";
 import VipConcierge from "@/components/vip/VipConcierge";
@@ -248,6 +249,13 @@ function AppRouter() {
       <BetaFeedbackButton />
       <LogDesignLesson />
       <FriendEventToaster />
+      <Toaster
+        theme="dark"
+        position="top-center"
+        richColors
+        closeButton
+        toastOptions={{ className: "gv-toast" }}
+      />
       <PushForegroundBridge />
       <VipCrownBadge />
       <VipConcierge />
