@@ -41,6 +41,13 @@ DISABLE_BG_SCHEDULERS=1            # REQUIRED on trial/small plans (avoids OOM �
 ENVIRONMENT=production
 CORS_ORIGINS=https://www.globalvibezdsg.com,https://globalvibezdsg.com
 FRONTEND_URL=https://www.globalvibezdsg.com
+
+# Vibe Phone / FaceTime video (Agora) — was set on Emergent; must be
+# re-added on Railway after the migration. Without these,
+# GET /api/agora/health returns configured:false and calls ring but
+# have no live audio/video.
+AGORA_APP_ID=<from https://console.agora.io>
+AGORA_APP_CERTIFICATE=<from same project → App Certificate>
 ```
 
 Also confirm on the **backend service**:
