@@ -159,7 +159,7 @@ export default function EvolutionCountdown() {
           <span className="text-amber-200 font-bold">
             {wishlist.chairs_reserved.toLocaleString()}
           </span>
-          Apex chairs reserved.
+          Final Phase chairs reserved.
         </p>
       )}
 

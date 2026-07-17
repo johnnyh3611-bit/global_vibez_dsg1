@@ -238,11 +238,11 @@ export const ROOM_INFO: Record<string, RoomInfo> = {
   },
   "/wallet": {
     title: "Vibe Wallet",
-    tagline: "Your ₵ Vibez Coin balance + top-up + Solana bridge.",
+    tagline: "Your ₵ Vibez Coin balance + top-up + cash out.",
     howItWorks: [
-      "Top up via Stripe — 4 packs ($5 / $9 / $20 / $35).",
-      "Wallet Top-up offers larger packs ($10–$250) for bigger players.",
-      "When the bridge is armed, convert ₵ → DSG SPL token at 4:1 (1.5× during Genius Phase).",
+      "Rate: $1 USD = 1,000 ₵ Vibez Coins.",
+      "Top up via Stripe — 4 packs: Starter $5 (₵5,000), Popular $9 (₵10,000), Pro $20 (₵25,000), VIP $35 (₵50,000).",
+      "Cash out from Wallet when you meet the minimum (₵20,000). $DSG conversion is planned 1:1 at TGE — not a live bridge yet.",
     ],
   },
   "/chair-hall": {

@@ -233,7 +233,7 @@ export default function MissionBriefing() {
               permanent slice of every quarterly distribution forever. The
               chair-holder profit share starts at <strong>14% of platform
               profit</strong>, distributed by weight (Genius 3× / Genesis 2× /
-              Phase III 1.5× / Phase IV 1.25× / Phase V 1×) — and the moment we
+              Final Phase 1×) — and the moment we
               hit Escape Velocity, that share auto-bumps to{" "}
               <strong>30%</strong>. Same chair, ~2× the payout from that day
               forward. Distributed by weight, never by who paid most.
@@ -244,8 +244,9 @@ export default function MissionBriefing() {
             </h3>
             <p>
               Three income streams from a single trip. <strong>70% of every
-              fare</strong> hits your wallet via the Solana on-chain split
-              (20% platform, 10% community liquidity pool). Stream POV from
+              fare</strong> goes to the driver. The rest funds the chair pool
+              (14%), platform ops (~8.5%), insurance (5%), and referrals
+              (~2.5%) — not a legacy rideshare cut. Stream POV from
               your AR/VR HUD and earn virtual gifts from viewers in real time.
               Plus: <strong>100 VibeXP per safe ride + 10 XP per streamed
               mile</strong>, which converts 1:1 to $DSG tokens at TGE.

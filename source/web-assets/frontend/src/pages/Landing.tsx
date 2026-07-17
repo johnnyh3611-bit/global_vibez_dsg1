@@ -350,7 +350,7 @@ export default function Landing() {
                   </div>
                   <div>
                     <h4 className="text-white font-bold text-lg">100% Verified Drivers</h4>
-                    <p className="text-gray-300">ID, insurance, and background checks required</p>
+                    <p className="text-gray-300">Government ID + vehicle insurance verification required</p>
                   </div>
                 </div>
                 
@@ -377,10 +377,11 @@ export default function Landing() {
               
               <motion.div
                 whileHover={{ scale: 1.05 }}
-                className="mt-8 inline-block"
+                className="mt-8 inline-block cursor-pointer"
+                onClick={() => navigate("/vibe-ridez")}
               >
                 <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-4 rounded-full font-bold text-lg shadow-2xl border-2 border-white/20">
-                  Coming Soon - Driver & Rider Platforms
+                  Open Vibe Ridez
                 </div>
               </motion.div>
             </motion.div>

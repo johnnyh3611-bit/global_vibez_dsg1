@@ -3,7 +3,7 @@
  *
  * Replacement landing for the loyalty buy-in system. Per user's Master
  * Deployment Plan:
- *   • Phase pricing (Genius $20 → Genesis $100 → Apex $250)
+ *   • Phase pricing (Genius $20 → Genesis $100 → Final Phase $250)
  *   • Invite-only purchase
  *   • Premium gate to qualify for distributions
  *   • 3D rotating chair carousel for owned chairs
@@ -35,6 +35,7 @@ import PhaseProgress from "@/components/chairs/PhaseProgress";
 import GeniusQRKit from "@/components/chairs/GeniusQRKit";
 import EvolutionCountdown from "@/components/landing/EvolutionCountdown";
 import ApexRaceLeaderboard from "@/components/chairs/ApexRaceLeaderboard";
+import { chairPhaseLabel } from "@/utils/chairPhaseLabel";
 import WelcomeLetterModal from "@/components/chairs/WelcomeLetterModal";
 
 const API = process.env.REACT_APP_BACKEND_URL;
@@ -306,7 +307,7 @@ export default function ChairVault() {
             <div className="rounded-2xl border border-cyan-400/30 bg-white/[0.03] backdrop-blur-3xl p-6 grid lg:grid-cols-2 gap-6">
               <ChairCarousel
                 chairCount={me.locked_chairs}
-                phaseLabel={me.current_phase.phase}
+                phaseLabel={chairPhaseLabel(me.current_phase.phase)}
                 chairIds={me.chair_ids || []}
               />
               <div>
@@ -457,7 +458,7 @@ export default function ChairVault() {
                   {fmtUsd(lineTotal)}
                 </p>
                 <p className="text-[10px] text-cyan-500/70">
-                  {qty} × ${phase.price_usd?.toFixed(2)} ({phase.phase})
+                  {qty} × ${phase.price_usd?.toFixed(2)} ({chairPhaseLabel(phase.phase)})
                 </p>
               </div>
             </div>
@@ -498,7 +499,7 @@ export default function ChairVault() {
               {
                 title: "Step 1 — Park your chair",
                 body:
-                  "Pay once at the current phase price. Genius ($20, 3×) → Genesis ($100, 2×) → Apex ($250, 1×). Locked in your Vault.",
+                  "Pay once at the current phase price. Genius ($20, 3×) → Genesis ($100, 2×) → Final Phase ($250, 1×). Locked in your Vault.",
                 icon: Crown,
               },
               {

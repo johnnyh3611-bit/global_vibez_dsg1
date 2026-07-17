@@ -7,6 +7,7 @@
  */
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { chairPhaseLabel } from "@/utils/chairPhaseLabel";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -87,7 +88,7 @@ export default function PublicHealthBadge() {
         {phase.total_sold.toLocaleString()} chairs parked
       </span>
       <span className="text-slate-500">·</span>
-      <span className="text-cyan-300">{phase.phase} phase</span>
+      <span className="text-cyan-300">{chairPhaseLabel(phase.phase)} phase</span>
     </motion.div>
   );
 }

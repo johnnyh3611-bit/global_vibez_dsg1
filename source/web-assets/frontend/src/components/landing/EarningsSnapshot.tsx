@@ -27,7 +27,7 @@ const CARDS: Card[] = [
     Icon: Pickaxe,
     headline: "5× Chair Mining",
     rate: "Daily ₵ pool",
-    body: "Holders earn 5× the daily ₵ pool vs non-holders. Weight stacks by tier: Genius 3× / Genesis 2× / Apex 1×.",
+    body: "Holders earn 5× the daily ₵ pool vs non-holders. Weight stacks by phase: Genius 3× / Genesis 2× / Final Phase 1×.",
     tone: "border-amber-500/40 bg-amber-950/20 text-amber-200",
     testId: "earnings-chair-mining",
   },

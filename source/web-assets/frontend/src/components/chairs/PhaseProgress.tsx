@@ -6,6 +6,7 @@
  * we say "early-bird seats remaining" not "price will go up so buy now".
  */
 import { Lock } from "lucide-react";
+import { chairPhaseLabel } from "@/utils/chairPhaseLabel";
 
 type Phase = {
   phase: string;
@@ -24,21 +25,15 @@ type Phase = {
 // rarely-changing config and avoids a network call just to render
 // a footer line.
 const NEXT_PHASE_PRICE: Record<string, number> = {
-  Genius: 15,
-  Genesis: 20,
-  "Phase III": 25,
-  "Phase IV": 30,
-  "Phase V": 0, // Phase V is the last buyable phase in the legacy engine
-  // — Phase X / Apex is the public ceiling, revealed via the Welcome
-  // Letter rather than the next-phase hint.
+  Genius: 100,   // → Genesis
+  Genesis: 250,  // → Final Phase
+  Apex: 0,
 };
 
 const NEXT_PHASE_WEIGHT: Record<string, number> = {
   Genius: 2.0,
-  Genesis: 1.5,
-  "Phase III": 1.25,
-  "Phase IV": 1.0,
-  "Phase V": 1.0,
+  Genesis: 1.0,
+  Apex: 1.0,
 };
 
 export default function PhaseProgress({ phase }: { phase: Phase }) {
@@ -74,7 +69,7 @@ export default function PhaseProgress({ phase }: { phase: Phase }) {
         <div>
           <div className="flex items-center gap-2">
             <p className="text-[10px] uppercase tracking-widest text-amber-300 font-bold">
-              Current phase · {phase.phase}
+              Current phase · {chairPhaseLabel(phase.phase)}
             </p>
             {weight > 1 && (
               <span

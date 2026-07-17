@@ -39,7 +39,7 @@ const FEATURES: Feature[] = [
   {
     to: "/chair-vault",
     title: "Founder Chairs",
-    tag: "Phase pricing · $20 → $100 → $250 (Genius → Genesis → Apex)",
+    tag: "Phase pricing · $20 → $100 → $250 (Genius → Genesis → Final Phase)",
     body:
       "Park a loyalty seat in the Vault. Stay Premium and active — get auto-paid every quarter from the community pool, weighted by chairs you own.",
     icon: Crown,

@@ -55,14 +55,14 @@ export default function ApexRaceLeaderboard({
       <div className="flex items-center gap-2 mb-2">
         <Trophy className="w-4 h-4 text-yellow-300" />
         <h3 className="text-sm font-black uppercase tracking-widest text-yellow-200">
-          Apex Race Leaderboard
+          Escape Velocity Race
         </h3>
       </div>
 
       {showBanner && (
         <p className="text-[11px] text-white/65 leading-relaxed mb-3">
-          Top 100 referrers when Apex unlocks each receive a{" "}
-          <span className="text-yellow-300 font-black">free Apex chair</span>.
+          Top 100 referrers when Escape Velocity unlocks each receive a{" "}
+          <span className="text-yellow-300 font-black">free Final Phase chair</span>.
           Race tracks invite redemptions
           {raceStartedAt && (
             <>
@@ -110,7 +110,7 @@ export default function ApexRaceLeaderboard({
                 <span className="font-mono text-slate-200">{l.anon_id}</span>
                 {l.qualifies_for_bonus && (
                   <span className="text-[9px] uppercase tracking-widest text-yellow-300 font-black">
-                    Apex bonus
+                    Final Phase bonus
                   </span>
                 )}
               </div>

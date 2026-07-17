@@ -885,12 +885,10 @@ export default function LandingNeonGaming() {
         <MissionBriefing />
       </LandingAccordion>
 
-      {/* Welcome Letter — narrative onboarding for first-time visitors.
-          Plain-English explainer of what a chair is, why pricing ramps,
-          and the Apex ceiling reveal. */}
+      {/* Welcome Letter — narrative onboarding for first-time visitors. */}
       <LandingAccordion
         title="A Letter from the Founder"
-        subtitle="What a chair is, why pricing ramps, and the Apex ceiling"
+        subtitle="What a chair is, why pricing ramps, and Escape Velocity"
         Icon={BookOpen}
         tone="amber"
         testId="acc-welcome-letter"
@@ -909,10 +907,10 @@ export default function LandingNeonGaming() {
         <EcosystemMechanics />
       </LandingAccordion>
 
-      {/* Pricing Master Vault — 6 Vibe Packs · 4:1 DSG bridge · tier-gated */}
+      {/* Live Vibez Coin packs (matches /api/coins/packs) */}
       <LandingAccordion
-        title="Pricing Master Vault · v1.0"
-        subtitle="Six Vibe Packs · $1 = 2,500 ₵ · 4:1 $DSG bridge · 13.5% Sovereign Tax"
+        title="Vibez Coin Packs"
+        subtitle="Four packs · $1 = 1,000 ₵ · planned 1:1 $DSG at TGE"
         Icon={Cpu}
         tone="violet"
         testId="acc-pricing-master-vault"

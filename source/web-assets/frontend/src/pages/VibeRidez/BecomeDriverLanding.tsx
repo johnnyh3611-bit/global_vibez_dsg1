@@ -29,9 +29,9 @@ const API = process.env.REACT_APP_BACKEND_URL;
 const PERKS = [
   {
     icon: Coins,
-    title: "Keep 90% of every fare",
+    title: "Keep 70% of every fare",
     body:
-      "Riders pay you in ₵ Vibez Coins. We take 10%. No 35% commission, no booking fees, no Acceptance-Rate guilt-trip nags.",
+      "Riders pay you in ₵ Vibez Coins. Drivers keep 70%. The rest funds the chair pool, platform ops, insurance, and referrals — not a 35% Uber-style cut.",
   },
   {
     icon: Bolt,
@@ -129,7 +129,7 @@ export default function BecomeDriverLanding() {
             .
           </h1>
           <p className="text-base sm:text-lg text-cyan-300/80 mt-4 max-w-2xl mx-auto">
-            We pay you in ₵ Vibez Coins, cap our take at 10%, and have human
+            We pay you in ₵ Vibez Coins, drivers keep 70% of every fare, and we have human
             support. Keep more, drive less, finally feel like the boss of
             your own car.
           </p>
@@ -269,7 +269,7 @@ export default function BecomeDriverLanding() {
         <section className="mt-16 grid sm:grid-cols-3 gap-4 text-center">
           {[
             { k: "Avg ₵/hour", v: "₵420 / hr" },
-            { k: "Platform take", v: "10%" },
+            { k: "Driver share", v: "70%" },
             { k: "Active drivers", v: "Growing" },
           ].map((s) => (
             <div

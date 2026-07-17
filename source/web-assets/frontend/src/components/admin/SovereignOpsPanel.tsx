@@ -102,7 +102,7 @@ const BridgeQueueCard = () => {
           <div>
             <Title>Solana Bridge Queue</Title>
             <Text className="text-xs text-slate-400">
-              4:1 in-app ₵ → DSG (1.5× Genius). Dry-run enforced server-side until safe phrase.
+              Planned 1:1 in-app ₵ → $DSG at TGE. Dry-run enforced server-side until safe phrase.
             </Text>
           </div>
         </div>

@@ -58,7 +58,7 @@ export default function ApexWishlistOptIn({
             type="button"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-300 text-black text-[11px] uppercase tracking-widest font-black hover:bg-amber-200"
           >
-            <Sparkles className="w-3.5 h-3.5" /> Reserve Apex
+            <Sparkles className="w-3.5 h-3.5" /> Reserve Final Phase
           </button>
         )}
       </span>
@@ -102,14 +102,14 @@ export default function ApexWishlistOptIn({
                     <span className="text-amber-300 font-black">
                       {done.chairs_wanted}
                     </span>{" "}
-                    Apex chair{done.chairs_wanted === 1 ? "" : "s"}. We'll DM
+                    Final Phase chair{done.chairs_wanted === 1 ? "" : "s"}. We'll DM
                     you the moment evolution day arrives.
                   </p>
                 </div>
               ) : (
                 <>
                   <p className="text-[10px] uppercase tracking-[0.4em] text-amber-300/70 flex items-center gap-2">
-                    <Sparkles className="w-3 h-3" /> Apex Pre-Sale Wishlist
+                    <Sparkles className="w-3 h-3" /> Final Phase Wishlist
                   </p>
                   <h3 className="text-2xl font-black text-amber-100 mt-1">
                     Reserve your spot.
