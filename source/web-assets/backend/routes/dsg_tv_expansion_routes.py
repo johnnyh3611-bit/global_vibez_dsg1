@@ -42,8 +42,12 @@ async def upgrade(body: UpgradeRequest, current_user=Depends(get_current_user_fr
 @router.get("/stools/me")
 async def me_stools(current_user=Depends(get_current_user_from_session)) -> Dict[str, Any]:
     bal = await get_stool_balance(db, current_user["user_id"])
-  return {"ok": True, "stools": bal, "stools_per_chair": STOOLS_PER_CHAIR,
-          "stool_earn_weight": STOOL_EARN_WEIGHT}
+    return {
+        "ok": True,
+        "stools": bal,
+        "stools_per_chair": STOOLS_PER_CHAIR,
+        "stool_earn_weight": STOOL_EARN_WEIGHT,
+    }
 
 
 @router.post("/stools/redeem")
