@@ -245,7 +245,9 @@ export function DatingMatches() {
                       <motion.button
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
+                        onClick={() => navigate(`/chat/${user.user_id}`)}
                         className="w-full px-4 py-2 bg-white/10 backdrop-blur-sm text-white font-bold rounded-xl flex items-center justify-center gap-2 border border-white/20"
+                        data-testid="match-open-chat-btn"
                       >
                         <MessageCircle className="w-5 h-5" />
                         Message

@@ -1,15 +1,16 @@
 /**
- * TopUpVibezCoinsModal — Stripe checkout for buying ₵ packs.
+ * TopUpVibezCoinsModal — buy ₵ packs.
  *
- * Triggered automatically when a user hits an "insufficient balance"
- * error during a JFTN buy-in or any other coin-debited flow. Also
- * usable as a standalone wallet top-up modal.
+ * Primary path: Solana / crypto deposit (QR + memo) via SolanaDepositPanel.
+ * Card checkout (Stripe) is kept as a secondary / legacy option only.
  *
- * Backend: GET /api/coins/packs · POST /api/coins/topup/checkout
+ * Backend: GET /api/coins/packs · POST /api/coins/topup/checkout (card)
+ *          POST /api/crypto-payments/create-deposit (Solana)
  */
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Coins, Sparkles, Star, Zap, Loader2 } from "lucide-react";
+import { X, Coins, Sparkles, Star, Zap, Loader2, Wallet } from "lucide-react";
+import SolanaDepositPanel from "@/components/wallet/SolanaDepositPanel";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -39,6 +40,8 @@ const PACK_ICONS: Record<string, any> = {
   vip: Zap,
 };
 
+type PayMethod = "solana" | "card";
+
 export default function TopUpVibezCoinsModal({
   open,
   onClose,
@@ -47,11 +50,14 @@ export default function TopUpVibezCoinsModal({
 }: Props) {
   const [packs, setPacks] = useState<Pack[]>([]);
   const [selected, setSelected] = useState<string>("popular");
+  const [method, setMethod] = useState<PayMethod>("solana");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (!open) return;
+    setMethod("solana");
+    setError("");
     fetch(`${API}/coins/packs`)
       .then((r) => r.json())
       .then((d) => {
@@ -60,6 +66,11 @@ export default function TopUpVibezCoinsModal({
       })
       .catch(() => setError("Couldn't load coin packs"));
   }, [open, recommendedPackId]);
+
+  const selectedPack = useMemo(
+    () => packs.find((p) => p.id === selected) || packs[0],
+    [packs, selected],
+  );
 
   const handleCheckout = async () => {
     setError("");
@@ -86,8 +97,6 @@ export default function TopUpVibezCoinsModal({
         setError(data.detail || "Couldn't start checkout");
         return;
       }
-      // Redirect to Stripe-hosted checkout. The success URL routes
-      // back to /wallet/topup-success which polls + credits the user.
       window.location.href = data.checkout_url;
     } catch (e: any) {
       setError(e?.message || "Network error");
@@ -112,7 +121,7 @@ export default function TopUpVibezCoinsModal({
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.92, opacity: 0 }}
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-lg rounded-2xl bg-slate-950/95 border border-yellow-500/30 shadow-[0_0_60px_rgba(234,179,8,0.25)] p-6 text-white"
+            className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-slate-950/95 border border-cyan-500/30 shadow-[0_0_60px_rgba(34,211,238,0.2)] p-6 text-white"
           >
             <button
               onClick={onClose}
@@ -124,15 +133,51 @@ export default function TopUpVibezCoinsModal({
             </button>
 
             <div className="flex items-center gap-2 mb-1">
-              <Coins className="w-6 h-6 text-yellow-300" />
-              <h2 className="text-2xl font-bold text-yellow-300">
+              <Coins className="w-6 h-6 text-cyan-300" />
+              <h2 className="text-2xl font-bold text-cyan-300">
                 Top Up Vibez Coins
               </h2>
             </div>
-            <p className="text-sm text-white/60 mb-5">
+            <p className="text-sm text-white/60 mb-4">
               {contextMessage ||
-                "Buy ₵ to play games, unlock JFTN rooms, and tip creators."}
+                "Buy ₵ with Solana — play games, unlock rooms, and tip creators."}
             </p>
+
+            <div
+              className="grid grid-cols-2 gap-2 mb-4 p-1 rounded-xl bg-black/40 border border-white/10"
+              role="tablist"
+              aria-label="Payment method"
+            >
+              <button
+                type="button"
+                role="tab"
+                aria-selected={method === "solana"}
+                data-testid="topup-method-solana"
+                onClick={() => setMethod("solana")}
+                className={`flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-bold transition ${
+                  method === "solana"
+                    ? "bg-gradient-to-r from-cyan-600 to-emerald-600 text-white shadow-lg"
+                    : "text-white/50 hover:text-white/80"
+                }`}
+              >
+                <Wallet className="w-4 h-4" />
+                Solana
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={method === "card"}
+                data-testid="topup-method-card"
+                onClick={() => setMethod("card")}
+                className={`flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-bold transition ${
+                  method === "card"
+                    ? "bg-white/10 text-white border border-white/20"
+                    : "text-white/40 hover:text-white/70"
+                }`}
+              >
+                Card
+              </button>
+            </div>
 
             <div className="grid grid-cols-2 gap-3 mb-5">
               {packs.map((p) => {
@@ -145,19 +190,19 @@ export default function TopUpVibezCoinsModal({
                     data-testid={`topup-pack-${p.id}`}
                     className={`relative p-4 rounded-xl border-2 text-left transition-all ${
                       active
-                        ? "border-yellow-400 bg-yellow-500/10 shadow-[0_0_24px_rgba(234,179,8,0.35)]"
-                        : "border-slate-700/60 bg-slate-900/40 hover:border-yellow-500/40"
+                        ? "border-cyan-400 bg-cyan-500/10 shadow-[0_0_24px_rgba(34,211,238,0.35)]"
+                        : "border-slate-700/60 bg-slate-900/40 hover:border-cyan-500/40"
                     }`}
                   >
                     {p.popular && (
                       <span
-                        className="absolute -top-2 right-3 px-2 py-0.5 rounded-full bg-yellow-400 text-slate-950 text-[10px] font-black uppercase tracking-wider"
+                        className="absolute -top-2 right-3 px-2 py-0.5 rounded-full bg-cyan-400 text-slate-950 text-[10px] font-black uppercase tracking-wider"
                         data-testid="topup-popular-badge"
                       >
                         Popular
                       </span>
                     )}
-                    <Icon className={`w-5 h-5 mb-2 ${active ? "text-yellow-300" : "text-slate-400"}`} />
+                    <Icon className={`w-5 h-5 mb-2 ${active ? "text-cyan-300" : "text-slate-400"}`} />
                     <div className="text-2xl font-bold text-white">
                       ₵{p.coins.toLocaleString()}
                     </div>
@@ -181,26 +226,42 @@ export default function TopUpVibezCoinsModal({
               </div>
             )}
 
-            <button
-              onClick={handleCheckout}
-              disabled={submitting || !selected}
-              className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-300 hover:to-orange-400 disabled:opacity-60 px-4 py-3 rounded-xl font-bold text-slate-950 flex items-center justify-center gap-2 shadow-[0_0_24px_rgba(234,179,8,0.35)] transition-all"
-              data-testid="topup-checkout-btn"
-            >
-              {submitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" /> Redirecting…
-                </>
-              ) : (
-                <>
-                  <Coins className="w-4 h-4" /> Pay with card
-                </>
-              )}
-            </button>
-
-            <p className="text-[10px] text-white/40 mt-3 text-center">
-              Secure checkout by Stripe · Coins credit instantly after payment.
-            </p>
+            {method === "solana" ? (
+              <div data-testid="topup-solana-panel">
+                <p className="text-xs text-white/50 mb-3">
+                  Send SOL (or USDC on Solana) for about $
+                  {(selectedPack?.usd ?? 25).toFixed(2)}. Include the memo so we
+                  can credit ₵{selectedPack?.coins?.toLocaleString() ?? "—"} to
+                  your account.
+                </p>
+                <SolanaDepositPanel amountUsd={selectedPack?.usd ?? 25} />
+                <p className="text-[10px] text-white/40 mt-3 text-center">
+                  No card processor · Solana deposit · Credits after confirm.
+                </p>
+              </div>
+            ) : (
+              <>
+                <button
+                  onClick={handleCheckout}
+                  disabled={submitting || !selected}
+                  className="w-full bg-white/10 hover:bg-white/15 border border-white/20 disabled:opacity-60 px-4 py-3 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all"
+                  data-testid="topup-checkout-btn"
+                >
+                  {submitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" /> Redirecting…
+                    </>
+                  ) : (
+                    <>
+                      <Coins className="w-4 h-4" /> Pay with card
+                    </>
+                  )}
+                </button>
+                <p className="text-[10px] text-white/40 mt-3 text-center">
+                  Legacy card checkout · Prefer Solana when you can.
+                </p>
+              </>
+            )}
           </motion.div>
         </motion.div>
       )}

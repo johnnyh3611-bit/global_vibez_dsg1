@@ -8,6 +8,7 @@ import {
   HeartCrack,
   Search,
   ShieldCheck,
+  MessageCircle,
 } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { authFetch } from "@/utils/secureAuth";
@@ -15,6 +16,7 @@ import { triggerHaptic, useLongPress } from "@/hooks/useGestures";
 import { PullToRefresh } from "@/components/mobile/PullToRefresh";
 import { DiscoverCardSkeleton } from "@/components/mobile/DiscoverCardSkeleton";
 import { LongPressSheet } from "@/components/mobile/LongPressSheet";
+import CallButton from "@/components/voice/CallButton";
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 const SWIPE_THRESHOLD = 110;
@@ -544,6 +546,36 @@ export function DatingDiscovery() {
                 </p>
 
                 <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    <CallButton
+                      userId={matchedUser.user_id}
+                      displayName={matchedUser.name}
+                      mediaType="video"
+                      className="w-full !rounded-xl !py-3"
+                    />
+                    <CallButton
+                      userId={matchedUser.user_id}
+                      displayName={matchedUser.name}
+                      mediaType="voice"
+                      className="w-full !rounded-xl !py-3"
+                    />
+                  </div>
+
+                  <motion.button
+                    type="button"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => {
+                      triggerHaptic("medium");
+                      navigate(`/chat/${matchedUser.user_id}`);
+                    }}
+                    className="flex w-full items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-fuchsia-600 to-pink-600 px-8 py-4 text-lg font-black text-white shadow-2xl shadow-fuchsia-500/40"
+                    data-testid="match-message-btn"
+                  >
+                    <MessageCircle className="h-6 w-6" />
+                    Message
+                  </motion.button>
+
                   <motion.button
                     type="button"
                     whileHover={{ scale: 1.05 }}

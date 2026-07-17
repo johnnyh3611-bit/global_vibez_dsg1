@@ -7,6 +7,7 @@ import PayoutRequestModal from '../components/payout/PayoutRequestModal';
 import PendingPayouts from '../components/payout/PendingPayouts';
 import PhantomConnectButton from '../components/web3/PhantomConnectButton';
 import TopUpVibezCoinsModal from '@/components/wallet/TopUpVibezCoinsModal';
+import SolanaDepositPanel from '@/components/wallet/SolanaDepositPanel';
 import { GlobalCard } from '@/components/ui/GlobalCard';
 import { getBackendUrl } from '@/config/backendUrl';
 
@@ -167,7 +168,7 @@ const Wallet = () => {
                   className="bg-white text-purple-700 hover:bg-white/90 font-bold py-4 rounded-2xl transition flex items-center justify-center gap-2"
                 >
                   <Sparkles className="w-5 h-5" />
-                  Buy Coins
+                  Buy Coins (Solana)
                 </button>
                 <button
                   onClick={() => navigate('/games')}
@@ -217,6 +218,23 @@ const Wallet = () => {
                 </div>
               </div>
               <PhantomConnectButton label="Connect" />
+            </motion.div>
+
+            {/* Solana deposit — primary top-up path (no Stripe). */}
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.18 }}
+              className="mb-8 rounded-2xl border border-cyan-500/30 bg-black/40 backdrop-blur p-5"
+              data-testid="wallet-solana-deposit"
+            >
+              <div className="mb-4">
+                <p className="text-sm font-black text-cyan-300">Add coins with Solana</p>
+                <p className="text-xs text-white/60 mt-0.5">
+                  Scan the QR or send SOL with the memo below. Card checkout is optional and secondary.
+                </p>
+              </div>
+              <SolanaDepositPanel amountUsd={25} />
             </motion.div>
 
             {/* Quick Stats */}
