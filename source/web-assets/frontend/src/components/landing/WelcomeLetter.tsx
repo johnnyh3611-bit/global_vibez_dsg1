@@ -71,9 +71,17 @@ export default function WelcomeLetter() {
           <Beat
             Icon={Crown}
             title="Genius is open right now — $20 a chair"
-            body="If you're reading this in early access, you're a Genius-eligible buyer. Chairs at this tier carry the 3× earn-rate multiplier for life. That weight is locked at purchase time — even after Genius sells out and the price moves to live revenue-driven valuation, your chair never loses its multiplier. Cap: 100 chairs per wallet during Genius to protect early equity from whales."
+            body="If you're reading this in early access, you're a Genius-eligible buyer. Chairs at this tier carry the 3× earn-rate multiplier for life. That weight is locked at purchase time — even after Genius sells out and pricing moves to live Equity Master valuation (Floor → Genesis → Diamond → Platinum), your chair never loses its multiplier. Cap: 100 chairs per wallet during Genius to protect early equity from whales."
             tone="fuchsia"
             testId="welcome-beat-current-price"
+          />
+
+          <Beat
+            Icon={Sparkles}
+            title="Stools keep the table open after chairs sell out"
+            body="Stools are platform-wide micro-seats — earned across streams, games, charts, and quests — not just DSG TV. Each stool carries a light 0.1× earn weight. Stack 100 stools and redeem them for one Founder Chair with full chair weight. That way we can still incentivize believers after the Genius supply is gone."
+            tone="amber"
+            testId="welcome-beat-stools"
           />
 
           <Beat

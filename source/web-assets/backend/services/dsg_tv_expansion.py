@@ -5,8 +5,12 @@ Implements the DSG TV Expansion Blueprint with counter-proposal
 economics:
   • Prestige Chair upgrades — DSG SPL burns the 50% on-chain, NOT
     in-app coins (consistent with the rest of the platform).
-  • Micro-Chairs (Stools) — 100 stools = 1 chair claim. Stools
-    accrue from broadcast consistency or chart points.
+  • Stools (platform-wide micro-seats) — earned across the app
+    (broadcast consistency, charts, tournaments, future quests).
+    After Genius chairs sell out, stools keep incentivizing players.
+    Each stool carries a light earn weight (STOOL_EARN_WEIGHT) —
+    far below a Founder Chair — until redeemed:
+    100 stools = 1 Founder Chair (full chair weight).
   • Predict-to-Win — 5% broadcaster commission · 1% to Treasury
     (NOT a 1% burn — counter-proposal).
         Remaining 94% returned to winning predictors pro-rata.
@@ -44,6 +48,9 @@ PRED_TREASURY_PCT = 0.01
 PRED_WINNERS_PCT = 0.94
 
 STOOLS_PER_CHAIR = 100
+# Light earn weight while holding stools (vs Genius chair 3.0×).
+# Full chair weight only after redeeming 100 stools → Founder Chair.
+STOOL_EARN_WEIGHT = 0.1
 
 
 def _now_iso() -> str:

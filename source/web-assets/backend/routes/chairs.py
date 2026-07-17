@@ -700,7 +700,8 @@ async def chair_wall(
     holder's display handle. Privacy-safe: no user_id, no email, no
     payment data — only `chair_id`, `phase`, `weight`, `parked_at`,
     `holder_handle` (or "Anonymous Founder" if user opted out via
-    `users.public_chair_holder = false`), and `holder_chair_count`.
+    `users.public_chair_holder = false`), optional `holder_picture`,
+    and `holder_chair_count`.
 
     Sorted by chair_id ascending so the wall reads like a chronological
     history of believers. Filterable by phase (e.g. ?phase=Genius).
@@ -751,6 +752,7 @@ async def chair_wall(
                 "user_id": 1,
                 "name": 1,
                 "username": 1,
+                "picture": 1,
                 "public_chair_holder": 1,
             },
         ).to_list(length=len(user_ids))
@@ -764,6 +766,7 @@ async def chair_wall(
             is_public = u.get("public_chair_holder") is not False
             handles[u["user_id"]] = {
                 "handle": handle if is_public else "Anonymous Founder",
+                "picture": (u.get("picture") if is_public else None),
                 "is_public": is_public,
             }
 
@@ -783,7 +786,7 @@ async def chair_wall(
     rows: List[Dict[str, Any]] = []
     for p in purchases:
         uid = p.get("_uid_decoded") or ""
-        info = handles.get(uid, {"handle": "Anonymous Founder", "is_public": False})
+        info = handles.get(uid, {"handle": "Anonymous Founder", "picture": None, "is_public": False})
         for cid in p.get("chair_ids") or []:
             rows.append({
                 "chair_id": int(cid),
@@ -791,6 +794,7 @@ async def chair_wall(
                 "weight": float(p.get("weight") or 1.0),
                 "parked_at": p.get("purchased_at"),
                 "holder_handle": info["handle"],
+                "holder_picture": info.get("picture"),
                 "holder_chair_count": chair_counts.get(uid, 0),
             })
 

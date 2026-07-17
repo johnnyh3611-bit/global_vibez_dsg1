@@ -265,10 +265,17 @@ export default function DSGTVExpansion() {
               </p>
             </div>
 
-            <div className="rounded-lg bg-black/40 border border-white/10 p-3 text-xs text-white/70 mb-4">
+            <div className="rounded-lg bg-black/40 border border-white/10 p-3 text-xs text-white/70 mb-4 space-y-2">
               <p className="flex items-start gap-2">
                 <AlertCircle className="w-3.5 h-3.5 mt-0.5 text-amber-300 flex-shrink-0" />
-                Earn Stools through broadcast consistency, weekly chart-points, and tournament finishes. Admins can grant them via the Stool Console.
+                <span>
+                  <strong className="text-amber-200">Stools are platform-wide</strong> — not just DSG TV.
+                  After Genius chairs sell out, stools keep incentivizing play across games, streams, and quests.
+                </span>
+              </p>
+              <p className="pl-5">
+                Each stool carries a <strong className="text-amber-200">light earn weight (0.1×)</strong> —
+                far below a Founder Chair. Redeem <strong>100 stools → 1 Founder Chair</strong> for full chair weight.
               </p>
             </div>
 
