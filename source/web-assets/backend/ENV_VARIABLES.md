@@ -47,10 +47,10 @@ STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret
 
 ### External Services (Optional)
 ```env
-# AI features — OpenAI key for date planner, coaches, matching, practice
-OPENAI_API_KEY=sk-your-openai-key
-# (optional alias; not required if OPENAI_API_KEY is set)
-# EMERGENT_LLM_KEY=sk-your-openai-key
+# AI — Google Gemini (date planner, coaches, matching, practice)
+# Get a key: https://aistudio.google.com/apikey
+GEMINI_API_KEY=your_gemini_api_key
+# GOOGLE_API_KEY=also_accepted_as_alias
 
 # Twilio (optional PSTN / SMS — NOT required for in-app Vibe Phone calling)
 TWILIO_ACCOUNT_SID=your-account-sid

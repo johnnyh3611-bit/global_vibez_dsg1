@@ -1,8 +1,11 @@
 """
-LlmChat — OpenAI-backed chat helper used by date planner, coaches, i18n, etc.
+LlmChat — Gemini-backed chat helper (date planner, coaches, i18n, etc.).
 
-Set OPENAI_API_KEY on Railway (or locally). Older EMERGENT_LLM_KEY env name
-is accepted as an alias only so existing deploys keep working.
+Set on Railway:
+  GEMINI_API_KEY=...   (preferred)
+  or GOOGLE_API_KEY=...
+
+No Emergent. No OpenAI required.
 """
 from __future__ import annotations
 
@@ -10,45 +13,44 @@ import logging
 import os
 from typing import Any, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 log = logging.getLogger(__name__)
 
-# Prefer OPENAI_API_KEY; accept legacy alias if still present in env.
+
 def _resolve_api_key(explicit: Optional[str] = None) -> Optional[str]:
     return (
         (explicit or "").strip()
-        or os.environ.get("OPENAI_API_KEY", "").strip()
+        or os.environ.get("GEMINI_API_KEY", "").strip()
+        or os.environ.get("GOOGLE_API_KEY", "").strip()
+        # legacy alias only — do not document; some old Railway rows may still use it
         or os.environ.get("EMERGENT_LLM_KEY", "").strip()
         or None
     )
 
 
-# Map historical provider/model pairs onto current OpenAI chat models.
+# Map historical with_model(provider, model) calls onto Gemini model ids.
 _MODEL_ALIASES = {
-    ("openai", "gpt-5.2"): "gpt-4o",
-    ("openai", "gpt-5.1"): "gpt-4o",
-    ("openai", "gpt-4o"): "gpt-4o",
-    ("openai", "gpt-4o-mini"): "gpt-4o-mini",
-    ("gemini", "gemini-2.5-flash"): "gpt-4o-mini",
-    ("anthropic", "claude-sonnet-4-5-20250929"): "gpt-4o",
-    ("anthropic", "claude-3-5-haiku-20241022"): "gpt-4o-mini",
+    ("gemini", "gemini-2.5-flash"): "gemini-2.0-flash",
+    ("gemini", "gemini-2.0-flash"): "gemini-2.0-flash",
+    ("gemini", "gemini-1.5-flash"): "gemini-1.5-flash",
+    ("gemini", "gemini-1.5-pro"): "gemini-1.5-pro",
+    ("openai", "gpt-5.2"): "gemini-2.0-flash",
+    ("openai", "gpt-5.1"): "gemini-2.0-flash",
+    ("openai", "gpt-4o"): "gemini-2.0-flash",
+    ("openai", "gpt-4o-mini"): "gemini-2.0-flash-lite",
+    ("anthropic", "claude-sonnet-4-5-20250929"): "gemini-2.0-flash",
+    ("anthropic", "claude-3-5-haiku-20241022"): "gemini-2.0-flash-lite",
 }
 
-DEFAULT_MODEL = "gpt-4o-mini"
+DEFAULT_MODEL = "gemini-2.0-flash"
 
 
 class UserMessage(BaseModel):
-    """Accept both `text=` (common) and `content=` callers."""
-
     text: Optional[str] = None
     content: Optional[str] = None
 
     def __init__(self, text: Optional[str] = None, content: Optional[str] = None, **kwargs: Any):
-        # Support UserMessage("plain string") and UserMessage(prompt) positional misuse
-        if text is None and content is None and kwargs:
-            # UserMessage(some_kw=...) unlikely; ignore
-            pass
         super().__init__(text=text, content=content, **kwargs)
 
     @property
@@ -68,20 +70,18 @@ class LlmChat:
         self.session_id = session_id
         self.system_message = system_message or "You are a helpful assistant for Global Vibez DSG."
         self.model = model or DEFAULT_MODEL
-        self._provider = "openai"
+        self._max_tokens = 2048
 
     def with_model(self, provider: str, model: str) -> "LlmChat":
-        self._provider = provider or "openai"
         mapped = _MODEL_ALIASES.get((provider, model))
         if mapped:
             self.model = mapped
-        elif provider == "openai":
+        elif provider == "gemini":
             self.model = model
         else:
-            # Non-OpenAI providers aren't wired — use a solid OpenAI default.
             self.model = DEFAULT_MODEL
             log.info(
-                "llm provider=%s model=%s mapped to openai/%s",
+                "llm mapped %s/%s → gemini/%s",
                 provider,
                 model,
                 self.model,
@@ -91,37 +91,42 @@ class LlmChat:
     @staticmethod
     def with_params(max_tokens: int = 2048) -> "LlmChat":
         chat = LlmChat()
-        chat._max_tokens = max_tokens  # type: ignore[attr-defined]
+        chat._max_tokens = max_tokens
         return chat
-
-    def _max(self) -> int:
-        return int(getattr(self, "_max_tokens", 2048))
 
     async def send_message(self, message: UserMessage) -> str:
         if not self.api_key:
             raise RuntimeError(
-                "AI not configured. Set OPENAI_API_KEY on the backend (Railway Variables)."
+                "AI not configured. Set GEMINI_API_KEY on the backend (Railway Variables)."
             )
         try:
-            from openai import AsyncOpenAI  # noqa: PLC0415
+            from google import genai  # noqa: PLC0415
+            from google.genai import types  # noqa: PLC0415
         except ImportError as exc:
-            raise RuntimeError("openai package not installed") from exc
+            raise RuntimeError("google-genai package not installed") from exc
 
-        client = AsyncOpenAI(api_key=self.api_key)
-        messages = [
-            {"role": "system", "content": self.system_message},
-            {"role": "user", "content": message.body},
-        ]
-        resp = await client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            max_tokens=self._max(),
+        client = genai.Client(api_key=self.api_key)
+        config = types.GenerateContentConfig(
+            system_instruction=self.system_message,
+            max_output_tokens=self._max_tokens,
             temperature=0.7,
         )
-        return (resp.choices[0].message.content or "").strip()
+        # google-genai async client
+        resp = await client.aio.models.generate_content(
+            model=self.model,
+            contents=message.body,
+            config=config,
+        )
+        text = getattr(resp, "text", None) or ""
+        if not text and getattr(resp, "candidates", None):
+            try:
+                parts = resp.candidates[0].content.parts
+                text = "".join(getattr(p, "text", "") or "" for p in parts)
+            except Exception:
+                text = ""
+        return (text or "").strip()
 
     async def chat(self, messages: Any) -> str:
-        # Legacy shape used by older callers
         if isinstance(messages, list) and messages:
             last = messages[-1]
             text = getattr(last, "body", None) or getattr(last, "content", None) or str(last)
@@ -129,10 +134,6 @@ class LlmChat:
         return await self.send_message(UserMessage(text=str(messages)))
 
     def ask(self, message: Any) -> UserMessage:
-        """
-        Sync helper used by a few game AI paths.
-        Prefer send_message in async routes.
-        """
         import asyncio
 
         if isinstance(message, str):
@@ -145,7 +146,6 @@ class LlmChat:
         try:
             loop = asyncio.get_event_loop()
             if loop.is_running():
-                # Can't block; return empty and let callers fall back
                 return UserMessage(content="")
             text = loop.run_until_complete(self.send_message(msg))
         except RuntimeError:

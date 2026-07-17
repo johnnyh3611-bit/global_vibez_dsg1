@@ -44,11 +44,14 @@ async def integrations_health() -> Dict[str, Any]:
     }
     llm = {
         "configured": bool(
-            os.environ.get("OPENAI_API_KEY") or os.environ.get("EMERGENT_LLM_KEY")
+            os.environ.get("GEMINI_API_KEY")
+            or os.environ.get("GOOGLE_API_KEY")
+            or os.environ.get("EMERGENT_LLM_KEY")
         ),
-        "purpose": "AI date planner, coaches, content matching, practice",
-        "set": "OPENAI_API_KEY",
-        "get_key": "https://platform.openai.com/api-keys",
+        "purpose": "AI date planner, coaches, content matching, practice (Gemini)",
+        "provider": "gemini",
+        "set": "GEMINI_API_KEY",
+        "get_key": "https://aistudio.google.com/apikey",
     }
     twilio = {
         "configured": _present("TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_PHONE_NUMBER"),

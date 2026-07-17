@@ -14,9 +14,15 @@ DB_NAME = os.environ.get('DB_NAME', 'global_vibez')
 
 # API Keys
 STRIPE_API_KEY = os.environ.get('STRIPE_API_KEY')
-# AI — use OPENAI_API_KEY. EMERGENT_LLM_KEY kept as alias for older env files only.
-OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY') or os.environ.get('EMERGENT_LLM_KEY')
-EMERGENT_LLM_KEY = OPENAI_API_KEY  # callers still import this name
+# AI — Google Gemini (preferred). GOOGLE_API_KEY also accepted.
+GEMINI_API_KEY = (
+    os.environ.get('GEMINI_API_KEY')
+    or os.environ.get('GOOGLE_API_KEY')
+    or os.environ.get('EMERGENT_LLM_KEY')  # legacy alias only
+)
+# Call sites still import EMERGENT_LLM_KEY — point it at Gemini.
+EMERGENT_LLM_KEY = GEMINI_API_KEY
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')  # unused for chat; kept for other tools
 MAPBOX_API_KEY = os.environ.get('MAPBOX_API_KEY')
 
 # URLs
