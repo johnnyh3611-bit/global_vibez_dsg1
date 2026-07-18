@@ -16,6 +16,11 @@ def get_database():
     return db
 
 
+def get_client() -> Optional[AsyncIOMotorClient]:
+    """Return the shared Motor client (needed for ``start_session`` / transactions)."""
+    return client
+
+
 def initialize_database(mongo_url: str, db_name: str):
     """Initialize database connection"""
     global client, db

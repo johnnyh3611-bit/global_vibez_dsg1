@@ -501,7 +501,7 @@ async def determine_winners_and_payout(table: Dict) -> None:
                     {'user_id': player['user_id']},
                     {'$set': {'credits_balance': player['balance']}}
                 )
-                print(f"✅ Blackjack: Updated balance for {player['name']} (user_id: {player['user_id']}): ${player['balance']}")
+                print(f"✅ Blackjack: Updated balance for {player['name']}: ₵{player['balance']}")
             except Exception as e:
                 print(f"❌ Blackjack: Failed to update balance for {player['name']}: {e}")
     

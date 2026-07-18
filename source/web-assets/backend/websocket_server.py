@@ -31,11 +31,17 @@ _cors_origins = (
 )
 _is_prod = os.environ.get("RAILWAY_ENVIRONMENT") or os.environ.get("ENV") == "production"
 
+from utils.socketio_manager import build_socketio_client_manager  # noqa: E402
+
+# Redis pub/sub adapter for multi-replica room fan-out (no-op when REDIS_URL unset).
+_client_manager = build_socketio_client_manager()
+
 sio = socketio.AsyncServer(
     async_mode='asgi',
     cors_allowed_origins=_cors_origins,
     logger=not _is_prod,
-    engineio_logger=not _is_prod,
+    engineio_logger=False,  # engineio packet dumps can include auth query strings
+    client_manager=_client_manager,
 )
 
 # Room management
