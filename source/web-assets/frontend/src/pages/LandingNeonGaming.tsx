@@ -176,7 +176,7 @@ export default function LandingNeonGaming() {
                 >
                   GLOBAL
                   <br />
-                  VIBEZ <span className="text-fuchsia-500">DSG</span>
+                  VIBEZ <span className="text-amber-400">DSG</span>
                 </motion.span>
 
                 {/* Main Text with Animations */}
@@ -283,9 +283,10 @@ export default function LandingNeonGaming() {
                           }}
                           className="inline-block text-transparent bg-clip-text font-black"
                           style={{
-                            backgroundImage: 'linear-gradient(90deg, #d946ef, #a855f7, #d946ef, #a855f7)',
+                            // Match landing globe: cyan ↔ amber (same DSG satellite language)
+                            backgroundImage: 'linear-gradient(90deg, #22d3ee, #fbbf24, #67e8f9, #f59e0b)',
                             backgroundSize: '200% 100%',
-                            textShadow: '0 0 80px rgba(217, 70, 239, 0.8)',
+                            textShadow: '0 0 80px rgba(34, 211, 238, 0.75)',
                           }}
                         >
                           {letter}
@@ -304,13 +305,13 @@ export default function LandingNeonGaming() {
                         animate={{
                           opacity: [0.5, 1, 0.5],
                           boxShadow: [
-                            '0 0 20px rgba(217, 70, 239, 0.8)',
-                            '0 0 40px rgba(217, 70, 239, 1)',
-                            '0 0 20px rgba(217, 70, 239, 0.8)',
+                            '0 0 20px rgba(34, 211, 238, 0.75)',
+                            '0 0 40px rgba(251, 191, 36, 0.9)',
+                            '0 0 20px rgba(34, 211, 238, 0.75)',
                           ],
                         }}
                         transition={{ duration: 2, repeat: Infinity }}
-                        className="w-full h-full bg-gradient-to-r from-fuchsia-500 to-purple-500 rounded-full"
+                        className="w-full h-full bg-gradient-to-r from-cyan-400 to-amber-400 rounded-full"
                       />
                     </motion.div>
                   </span>
