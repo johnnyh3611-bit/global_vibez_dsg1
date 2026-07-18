@@ -1,13 +1,14 @@
 /**
- * LandingOrbitGlobe — hub planet matching the Global Vibez DSG brand mark:
- * metallic grid globe, cyan radar spark, gold/purple orbital rings,
- * satellite nodes. Smaller DSG globe + more flare / fire / emotion.
- * Markers open work hubs (stashes return path for login).
+ * LandingOrbitGlobe — hub planet for Global Vibez DSG.
+ * Metallic grid world, atmosphere rim, and a DSG satellite that
+ * actually orbits the planet (not a static badge).
  */
 import { motion, useReducedMotion } from "framer-motion";
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { GLOBE_HUBS, openHubPath } from "@/hubs/hubRegistry";
+
+const ORBIT_SECONDS = 22;
 
 function buildStars(count: number) {
   const stars: { x: number; y: number; r: number; o: number; d: number }[] = [];
@@ -28,10 +29,55 @@ function buildStars(count: number) {
   return stars;
 }
 
+/** DSG brand satellite — V mark + DSG chip */
+function DsgSatellite({ compact = false }: { compact?: boolean }) {
+  return (
+    <div
+      className="relative flex flex-col items-center select-none"
+      data-testid="landing-orbit-v-mark"
+      aria-hidden
+    >
+      {/* Soft trail glow */}
+      <span
+        className="absolute -inset-3 rounded-full blur-md opacity-70"
+        style={{
+          background:
+            "radial-gradient(circle, rgba(34,211,238,0.55) 0%, rgba(251,191,36,0.25) 45%, transparent 70%)",
+        }}
+      />
+      <span
+        className={`relative font-black leading-none ${
+          compact ? "text-[18px] sm:text-[24px]" : "text-[22px] sm:text-[30px] lg:text-[36px]"
+        }`}
+        style={{
+          background:
+            "linear-gradient(160deg, #f8fafc 0%, #e2e8f0 40%, #67e8f9 72%, #fbbf24 100%)",
+          WebkitBackgroundClip: "text",
+          color: "transparent",
+          filter: "drop-shadow(0 0 10px rgba(34,211,238,0.75))",
+        }}
+      >
+        V
+      </span>
+      <span
+        className={`relative mt-0.5 rounded-sm border border-cyan-300/50 bg-slate-950/85 px-1 font-black uppercase tracking-[0.2em] text-amber-200 ${
+          compact ? "text-[6px] sm:text-[7px]" : "text-[7px] sm:text-[8px] lg:text-[9px]"
+        }`}
+        style={{ boxShadow: "0 0 12px rgba(34,211,238,0.45)" }}
+      >
+        DSG
+      </span>
+      {/* Tiny solar panel wings */}
+      <span className="absolute left-[-10px] top-[38%] h-[2px] w-[8px] rounded-full bg-cyan-200/70 sm:left-[-14px] sm:w-[11px]" />
+      <span className="absolute right-[-10px] top-[38%] h-[2px] w-[8px] rounded-full bg-cyan-200/70 sm:right-[-14px] sm:w-[11px]" />
+    </div>
+  );
+}
+
 export default function LandingOrbitGlobe() {
   const navigate = useNavigate();
   const reduceMotion = useReducedMotion();
-  const stars = useMemo(() => buildStars(56), []);
+  const stars = useMemo(() => buildStars(64), []);
 
   return (
     <div
@@ -39,7 +85,7 @@ export default function LandingOrbitGlobe() {
       data-testid="landing-orbit-globe"
       aria-label="Global Vibez hub planet — tap a hub to open its dashboard"
     >
-      {/* Galaxy stage */}
+      {/* Galaxy stage — cyan / amber brand wash (unified with hero) */}
       <div
         className="absolute -inset-[28%] sm:-inset-[32%] rounded-full overflow-hidden pointer-events-none"
         data-testid="landing-orbit-galaxy"
@@ -49,9 +95,9 @@ export default function LandingOrbitGlobe() {
           className="absolute inset-0"
           style={{
             background:
-              "radial-gradient(ellipse 70% 60% at 50% 45%, rgba(14,165,233,0.35) 0%, rgba(88,28,135,0.25) 38%, transparent 68%)," +
-              "radial-gradient(ellipse 50% 40% at 70% 30%, rgba(245,158,11,0.22) 0%, transparent 55%)," +
-              "radial-gradient(ellipse 45% 40% at 25% 70%, rgba(217,70,239,0.28) 0%, transparent 50%)," +
+              "radial-gradient(ellipse 72% 62% at 50% 44%, rgba(6,182,212,0.38) 0%, rgba(15,23,42,0.55) 42%, transparent 70%)," +
+              "radial-gradient(ellipse 48% 38% at 68% 28%, rgba(251,191,36,0.2) 0%, transparent 55%)," +
+              "radial-gradient(ellipse 40% 36% at 28% 72%, rgba(34,211,238,0.18) 0%, transparent 52%)," +
               "radial-gradient(circle at 50% 50%, #020617 0%, #000 100%)",
           }}
         />
@@ -59,31 +105,22 @@ export default function LandingOrbitGlobe() {
         {!reduceMotion && (
           <>
             <motion.div
-              className="absolute left-[10%] top-[18%] h-[50%] w-[50%] rounded-full blur-3xl"
+              className="absolute left-[12%] top-[16%] h-[48%] w-[48%] rounded-full blur-3xl"
               style={{
                 background:
-                  "radial-gradient(circle, rgba(34,211,238,0.35) 0%, transparent 70%)",
+                  "radial-gradient(circle, rgba(34,211,238,0.4) 0%, transparent 70%)",
               }}
-              animate={{ x: [0, 20, 0], y: [0, -14, 0], opacity: [0.4, 0.85, 0.4] }}
+              animate={{ x: [0, 18, 0], y: [0, -12, 0], opacity: [0.35, 0.8, 0.35] }}
               transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
             />
             <motion.div
-              className="absolute right-[5%] bottom-[12%] h-[48%] w-[48%] rounded-full blur-3xl"
+              className="absolute right-[6%] bottom-[14%] h-[44%] w-[44%] rounded-full blur-3xl"
               style={{
                 background:
-                  "radial-gradient(circle, rgba(251,146,60,0.28) 0%, transparent 70%)",
+                  "radial-gradient(circle, rgba(251,191,36,0.28) 0%, transparent 70%)",
               }}
-              animate={{ x: [0, -16, 0], y: [0, 12, 0], opacity: [0.3, 0.75, 0.3] }}
+              animate={{ x: [0, -14, 0], y: [0, 10, 0], opacity: [0.28, 0.7, 0.28] }}
               transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-            />
-            <motion.div
-              className="absolute left-[35%] top-[40%] h-[30%] w-[30%] rounded-full blur-2xl"
-              style={{
-                background:
-                  "radial-gradient(circle, rgba(217,70,239,0.3) 0%, transparent 70%)",
-              }}
-              animate={{ scale: [1, 1.25, 1], opacity: [0.35, 0.7, 0.35] }}
-              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
             />
           </>
         )}
@@ -111,121 +148,180 @@ export default function LandingOrbitGlobe() {
           ))}
         </svg>
 
-        {/* Shooting sparks */}
         {!reduceMotion && (
-          <>
-            <motion.span
-              className="absolute h-0.5 w-20 bg-gradient-to-r from-transparent via-cyan-200 to-transparent"
-              style={{ top: "18%", left: "8%", rotate: "-30deg" }}
-              animate={{ opacity: [0, 0, 1, 0], x: ["0%", "160%"], y: ["0%", "80%"] }}
-              transition={{ duration: 1.8, repeat: Infinity, repeatDelay: 5, ease: "easeOut" }}
-            />
-            <motion.span
-              className="absolute h-0.5 w-14 bg-gradient-to-r from-transparent via-amber-300 to-transparent"
-              style={{ top: "62%", left: "55%", rotate: "22deg" }}
-              animate={{ opacity: [0, 0, 1, 0], x: ["0%", "-120%"], y: ["0%", "-50%"] }}
-              transition={{ duration: 1.6, repeat: Infinity, repeatDelay: 7, delay: 2.2, ease: "easeOut" }}
-            />
-          </>
+          <motion.span
+            className="absolute h-0.5 w-20 bg-gradient-to-r from-transparent via-cyan-200 to-transparent"
+            style={{ top: "18%", left: "8%", rotate: "-30deg" }}
+            animate={{ opacity: [0, 0, 1, 0], x: ["0%", "160%"], y: ["0%", "80%"] }}
+            transition={{ duration: 1.8, repeat: Infinity, repeatDelay: 5, ease: "easeOut" }}
+          />
         )}
 
         <div
           className="absolute inset-0"
           style={{
             background:
-              "radial-gradient(circle at 50% 50%, transparent 38%, rgba(0,0,0,0.45) 72%, rgba(0,0,0,0.88) 100%)",
+              "radial-gradient(circle at 50% 50%, transparent 38%, rgba(0,0,0,0.4) 72%, rgba(0,0,0,0.9) 100%)",
           }}
         />
       </div>
 
-      {/* Orbital rings (logo-style gold / purple) — outside the smaller globe */}
+      {/* Orbital rings — thin, brand-aligned */}
       <motion.div
-        className="absolute inset-[2%] rounded-full border border-amber-400/35 pointer-events-none"
-        style={{ boxShadow: "0 0 24px rgba(251,191,36,0.25)" }}
+        className="absolute inset-[3%] rounded-full border border-amber-400/30 pointer-events-none"
+        style={{ boxShadow: "0 0 20px rgba(251,191,36,0.18)" }}
         animate={reduceMotion ? undefined : { rotate: 360 }}
-        transition={{ duration: 36, repeat: Infinity, ease: "linear" }}
+        transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
         aria-hidden
-      >
-        <span className="absolute -top-1 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full bg-amber-300 shadow-[0_0_12px_#fbbf24]" />
-        <span className="absolute top-1/2 -right-1 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-fuchsia-400 shadow-[0_0_10px_#e879f9]" />
-      </motion.div>
+      />
       <motion.div
-        className="absolute inset-[8%] rounded-full border border-fuchsia-400/30 pointer-events-none"
-        style={{ boxShadow: "0 0 20px rgba(217,70,239,0.2)", transform: "rotateX(62deg)" }}
+        className="absolute inset-[9%] rounded-full border border-cyan-400/25 pointer-events-none"
+        style={{ boxShadow: "0 0 18px rgba(34,211,238,0.16)", transform: "rotateX(64deg)" }}
         animate={reduceMotion ? undefined : { rotate: -360 }}
-        transition={{ duration: 28, repeat: Infinity, ease: "linear" }}
+        transition={{ duration: 32, repeat: Infinity, ease: "linear" }}
         aria-hidden
-      >
-        <span className="absolute bottom-2 left-[20%] h-1.5 w-1.5 rounded-full bg-cyan-300 shadow-[0_0_10px_#22d3ee]" />
-      </motion.div>
-      <motion.div
-        className="absolute inset-[14%] rounded-full border border-cyan-300/25 pointer-events-none"
-        animate={reduceMotion ? undefined : { rotate: 360 }}
-        transition={{ duration: 48, repeat: Infinity, ease: "linear" }}
+      />
+      <div
+        className="absolute inset-[15%] rounded-full border border-cyan-200/15 pointer-events-none"
         aria-hidden
       />
 
-      {/* Smaller DSG globe core */}
-      <div className="absolute inset-[22%] sm:inset-[24%] rounded-full pointer-events-none">
-        {/* Outer cyan bloom */}
+      {/* ── DSG satellite orbit (elliptical squash + upright counter-spin) ── */}
+      <div
+        className="absolute inset-[4%] z-[6] pointer-events-none"
+        style={{ transform: "scaleY(0.52)", transformOrigin: "center" }}
+        aria-hidden
+      >
+        {/* Orbit trail */}
+        <div
+          className="absolute inset-0 rounded-full border border-cyan-300/35"
+          style={{ boxShadow: "0 0 16px rgba(34,211,238,0.2)" }}
+        />
+        {reduceMotion ? (
+          <div
+            className="absolute left-[88%] top-1/2"
+            style={{ transform: "translate(-50%, -50%) scaleY(1.92)" }}
+          >
+            <DsgSatellite compact />
+          </div>
+        ) : (
+          <motion.div
+            className="absolute inset-0"
+            animate={{ rotate: 360 }}
+            transition={{ duration: ORBIT_SECONDS, repeat: Infinity, ease: "linear" }}
+            data-testid="landing-orbit-satellite-rail"
+          >
+            {/* Counter-spin keeps the badge upright; nested scale undoes the ellipse squash */}
+            <motion.div
+              className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2"
+              animate={{ rotate: -360 }}
+              transition={{ duration: ORBIT_SECONDS, repeat: Infinity, ease: "linear" }}
+            >
+              <div style={{ transform: "scaleY(1.92)" }}>
+                <DsgSatellite />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </div>
+
+      {/* ── Planet core ── */}
+      <div className="absolute inset-[22%] sm:inset-[24%] rounded-full pointer-events-none z-[4]">
+        {/* Atmosphere bloom */}
         <motion.div
-          className="absolute -inset-[12%] rounded-full"
+          className="absolute -inset-[14%] rounded-full"
           style={{
             background:
-              "radial-gradient(circle, rgba(34,211,238,0.45) 0%, rgba(59,130,246,0.15) 40%, transparent 70%)",
+              "radial-gradient(circle, rgba(34,211,238,0.5) 0%, rgba(56,189,248,0.18) 38%, transparent 68%)",
           }}
           animate={
             reduceMotion
               ? undefined
-              : { opacity: [0.55, 1, 0.55], scale: [0.96, 1.06, 0.96] }
+              : { opacity: [0.55, 0.95, 0.55], scale: [0.97, 1.05, 0.97] }
           }
-          transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
+          transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
         />
 
         <motion.div
-          className="absolute inset-0 rounded-full overflow-hidden border border-cyan-200/50"
+          className="absolute inset-0 rounded-full overflow-hidden border border-cyan-100/40"
           style={{
             background:
-              "radial-gradient(circle at 32% 22%, rgba(255,255,255,0.95) 0%, rgba(186,230,253,0.75) 8%, rgba(34,211,238,0.55) 22%, rgba(30,58,138,0.85) 48%, rgba(15,23,42,0.98) 72%, #020617 100%)",
+              "radial-gradient(circle at 30% 24%, rgba(255,255,255,0.9) 0%, rgba(186,230,253,0.65) 10%, rgba(14,165,233,0.55) 26%, rgba(30,64,175,0.9) 50%, rgba(15,23,42,0.98) 74%, #020617 100%)",
             boxShadow:
-              "inset -16px -16px 40px rgba(0,0,0,0.9), inset 12px 12px 32px rgba(34,211,238,0.35), 0 0 40px rgba(34,211,238,0.55), 0 0 80px rgba(251,146,60,0.25)",
+              "inset -18px -20px 42px rgba(0,0,0,0.92), inset 14px 12px 28px rgba(34,211,238,0.32), 0 0 36px rgba(34,211,238,0.5), 0 0 72px rgba(251,191,36,0.18)",
           }}
           animate={
             reduceMotion
               ? undefined
               : {
                   boxShadow: [
-                    "inset -16px -16px 40px rgba(0,0,0,0.9), inset 12px 12px 32px rgba(34,211,238,0.35), 0 0 40px rgba(34,211,238,0.55), 0 0 80px rgba(251,146,60,0.2)",
-                    "inset -16px -16px 40px rgba(0,0,0,0.9), inset 12px 12px 40px rgba(251,191,36,0.4), 0 0 55px rgba(251,191,36,0.55), 0 0 100px rgba(217,70,239,0.35)",
-                    "inset -16px -16px 40px rgba(0,0,0,0.9), inset 12px 12px 32px rgba(34,211,238,0.45), 0 0 50px rgba(34,211,238,0.7), 0 0 90px rgba(34,211,238,0.3)",
-                    "inset -16px -16px 40px rgba(0,0,0,0.9), inset 12px 12px 32px rgba(34,211,238,0.35), 0 0 40px rgba(34,211,238,0.55), 0 0 80px rgba(251,146,60,0.2)",
+                    "inset -18px -20px 42px rgba(0,0,0,0.92), inset 14px 12px 28px rgba(34,211,238,0.32), 0 0 36px rgba(34,211,238,0.5), 0 0 72px rgba(251,191,36,0.18)",
+                    "inset -18px -20px 42px rgba(0,0,0,0.92), inset 14px 12px 34px rgba(251,191,36,0.28), 0 0 48px rgba(251,191,36,0.4), 0 0 88px rgba(34,211,238,0.28)",
+                    "inset -18px -20px 42px rgba(0,0,0,0.92), inset 14px 12px 28px rgba(34,211,238,0.4), 0 0 42px rgba(34,211,238,0.65), 0 0 80px rgba(34,211,238,0.25)",
+                    "inset -18px -20px 42px rgba(0,0,0,0.92), inset 14px 12px 28px rgba(34,211,238,0.32), 0 0 36px rgba(34,211,238,0.5), 0 0 72px rgba(251,191,36,0.18)",
                   ],
                 }
           }
-          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+          transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
         >
-          {/* Metallic radar grid (logo spark language) */}
+          {/* Landmass silhouettes */}
+          <svg
+            className="absolute inset-0 h-full w-full opacity-80"
+            viewBox="0 0 100 100"
+            preserveAspectRatio="xMidYMid slice"
+            aria-hidden
+          >
+            <defs>
+              <linearGradient id="landFill" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="rgba(16,185,129,0.55)" />
+                <stop offset="55%" stopColor="rgba(20,83,45,0.7)" />
+                <stop offset="100%" stopColor="rgba(15,23,42,0.85)" />
+              </linearGradient>
+              <radialGradient id="hotSpot" cx="68%" cy="58%" r="18%">
+                <stop offset="0%" stopColor="rgba(251,146,60,0.95)" />
+                <stop offset="40%" stopColor="rgba(245,158,11,0.55)" />
+                <stop offset="100%" stopColor="rgba(245,158,11,0)" />
+              </radialGradient>
+            </defs>
+            <path
+              d="M18 42 C22 28, 38 24, 48 32 C58 40, 52 52, 44 56 C34 62, 22 58, 18 42 Z"
+              fill="url(#landFill)"
+            />
+            <path
+              d="M58 30 C66 22, 78 26, 82 36 C86 48, 74 54, 66 48 C58 42, 54 36, 58 30 Z"
+              fill="url(#landFill)"
+              opacity="0.85"
+            />
+            <path
+              d="M40 68 C48 62, 62 66, 68 74 C72 82, 58 88, 48 84 C40 80, 36 72, 40 68 Z"
+              fill="url(#landFill)"
+              opacity="0.75"
+            />
+            <circle cx="68" cy="58" r="16" fill="url(#hotSpot)" />
+          </svg>
+
+          {/* Latitude / longitude grid (slow spin) */}
           <motion.svg
-            className="absolute inset-0 w-full h-full opacity-95"
+            className="absolute inset-0 w-full h-full opacity-90"
             viewBox="0 0 100 100"
             preserveAspectRatio="xMidYMid meet"
             animate={reduceMotion ? undefined : { rotate: 360 }}
-            transition={{ duration: 55, repeat: Infinity, ease: "linear" }}
+            transition={{ duration: 70, repeat: Infinity, ease: "linear" }}
             style={{ transformOrigin: "50% 50%" }}
           >
-            {[10, 18, 28, 38, 48].map((r) => (
+            {[12, 22, 32, 42, 48].map((r) => (
               <circle
                 key={`lat-${r}`}
                 cx="50"
                 cy="50"
                 r={r}
                 fill="none"
-                stroke="rgba(34,211,238,0.7)"
-                strokeWidth="0.55"
-                strokeDasharray="2 1.5"
+                stroke="rgba(34,211,238,0.55)"
+                strokeWidth="0.45"
+                strokeDasharray="2.2 1.6"
               />
             ))}
-            {[10, 18, 28, 38].map((ry, i) => (
+            {[14, 24, 34].map((ry, i) => (
               <ellipse
                 key={`lon-${ry}`}
                 cx="50"
@@ -233,98 +329,71 @@ export default function LandingOrbitGlobe() {
                 rx="48"
                 ry={ry}
                 fill="none"
-                stroke={i % 2 === 0 ? "rgba(251,191,36,0.45)" : "rgba(217,70,239,0.4)"}
-                strokeWidth="0.4"
+                stroke={i % 2 === 0 ? "rgba(251,191,36,0.4)" : "rgba(103,232,249,0.35)"}
+                strokeWidth="0.35"
                 strokeDasharray="3 2"
               />
             ))}
-            <line x1="50" y1="2" x2="50" y2="98" stroke="rgba(34,211,238,0.55)" strokeWidth="0.5" />
-            <line x1="2" y1="50" x2="98" y2="50" stroke="rgba(34,211,238,0.35)" strokeWidth="0.4" />
+            <line x1="50" y1="2" x2="50" y2="98" stroke="rgba(34,211,238,0.4)" strokeWidth="0.4" />
+            <line x1="2" y1="50" x2="98" y2="50" stroke="rgba(34,211,238,0.28)" strokeWidth="0.35" />
           </motion.svg>
 
-          {/* Central brand spark / fire flare */}
+          {/* Cloud band */}
+          {!reduceMotion && (
+            <motion.div
+              className="absolute inset-0 opacity-40"
+              style={{
+                background:
+                  "linear-gradient(105deg, transparent 20%, rgba(255,255,255,0.18) 38%, transparent 48%, rgba(255,255,255,0.12) 62%, transparent 78%)",
+              }}
+              animate={{ x: ["-12%", "12%", "-12%"] }}
+              transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
+            />
+          )}
+
+          {/* Core spark */}
           <motion.div
             className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
             style={{
-              width: "28%",
-              height: "28%",
+              width: "22%",
+              height: "22%",
               background:
-                "radial-gradient(circle, #fff 0%, #67e8f9 18%, #22d3ee 40%, rgba(251,146,60,0.65) 62%, transparent 75%)",
-              boxShadow:
-                "0 0 20px #22d3ee, 0 0 40px #fbbf24, 0 0 60px rgba(217,70,239,0.5)",
+                "radial-gradient(circle, #fff 0%, #67e8f9 22%, #22d3ee 48%, rgba(251,191,36,0.55) 68%, transparent 78%)",
+              boxShadow: "0 0 18px #22d3ee, 0 0 32px rgba(251,191,36,0.55)",
             }}
             animate={
               reduceMotion
                 ? undefined
-                : {
-                    scale: [1, 1.35, 0.95, 1.2, 1],
-                    opacity: [0.85, 1, 0.9, 1, 0.85],
-                  }
+                : { scale: [1, 1.28, 0.96, 1.15, 1], opacity: [0.85, 1, 0.9, 1, 0.85] }
             }
-            transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+            transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
             data-testid="landing-orbit-spark"
           />
 
-          {/* Ember particles around the spark */}
-          {!reduceMotion &&
-            [0, 60, 120, 180, 240, 300].map((deg, i) => (
-              <motion.span
-                key={`ember-${deg}`}
-                className="absolute left-1/2 top-1/2 h-1 w-1 rounded-full"
-                style={{
-                  background: i % 2 === 0 ? "#fbbf24" : "#22d3ee",
-                  boxShadow: i % 2 === 0 ? "0 0 8px #fbbf24" : "0 0 8px #22d3ee",
-                }}
-                animate={{
-                  x: [
-                    Math.cos((deg * Math.PI) / 180) * 8,
-                    Math.cos((deg * Math.PI) / 180) * 28,
-                  ],
-                  y: [
-                    Math.sin((deg * Math.PI) / 180) * 8,
-                    Math.sin((deg * Math.PI) / 180) * 28,
-                  ],
-                  opacity: [0, 1, 0],
-                  scale: [0.6, 1.2, 0.2],
-                }}
-                transition={{
-                  duration: 1.6,
-                  repeat: Infinity,
-                  delay: i * 0.18,
-                  ease: "easeOut",
-                }}
-              />
-            ))}
-
-          {/* Horizon sheen */}
+          {/* Terminator / night side */}
           <div
-            className="absolute rounded-full bg-white/30 blur-md"
-            style={{ left: "16%", top: "14%", width: "22%", height: "12%", transform: "rotate(-28deg)" }}
+            className="absolute inset-0 rounded-full"
+            style={{
+              background:
+                "linear-gradient(118deg, transparent 42%, rgba(2,6,23,0.35) 58%, rgba(2,6,23,0.72) 100%)",
+            }}
+          />
+
+          {/* Specular sheen */}
+          <div
+            className="absolute rounded-full bg-white/35 blur-md"
+            style={{
+              left: "14%",
+              top: "12%",
+              width: "26%",
+              height: "14%",
+              transform: "rotate(-28deg)",
+            }}
           />
         </motion.div>
-
-        {/* Small metallic V badge (logo cue) — decorative, non-interactive */}
-        <div
-          className="absolute -right-[6%] top-[28%] z-[5] select-none"
-          aria-hidden
-          data-testid="landing-orbit-v-mark"
-        >
-          <span
-            className="block text-[22px] sm:text-[30px] lg:text-[40px] font-black leading-none"
-            style={{
-              background: "linear-gradient(160deg, #f8fafc 0%, #94a3b8 45%, #e2e8f0 70%, #fbbf24 100%)",
-              WebkitBackgroundClip: "text",
-              color: "transparent",
-              filter: "drop-shadow(0 0 8px rgba(34,211,238,0.55))",
-            }}
-          >
-            V
-          </span>
-          <span className="absolute right-[2px] top-[42%] h-0 w-0 border-y-[3px] border-y-transparent border-l-[5px] border-l-amber-400 sm:border-y-[4px] sm:border-l-[6px]" />
-        </div>
       </div>
 
-      <p className="absolute -bottom-8 left-0 right-0 text-center text-[9px] sm:text-[10px] uppercase tracking-[0.28em] text-cyan-200/60 pointer-events-none">
+      <p className="absolute -bottom-8 left-0 right-0 text-center text-[9px] sm:text-[10px] uppercase tracking-[0.28em] text-cyan-200/65 pointer-events-none">
         Tap a hub · your dashboard
       </p>
 
