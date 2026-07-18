@@ -19,8 +19,8 @@ const GLOBE_R = 2.1;
 const ORBIT_R = 3.35;
 const ORBIT_TILT = 0.35; // radians — tilts the orbital plane
 /** Tabs sit flush on the crust — never out past the silhouette as mini-planets */
-const TAB_R = GLOBE_R * 1.012;
-const TAB_SIZE = 0.36;
+const TAB_R = GLOBE_R * 1.006;
+const TAB_SIZE = 0.28;
 
 const HUB_ART: Partial<Record<HubId, { src: string; label: string; glow: string }>> = {
   ridez: { src: "/assets/hub-viberide.png", label: "VibeRide", glow: "#22d3ee" },
@@ -178,6 +178,7 @@ function EarthGlobe() {
 /**
  * Flat continent tab painted onto the planet surface (no glowing sphere bulge).
  * Icon + name sit on / in the landmass so the silhouette stays a clean planet.
+ * Limb/back-facing tabs fade out so they don't poke past the planet edge.
  */
 function ContinentTab({
   hub,
@@ -188,12 +189,21 @@ function ContinentTab({
 }) {
   const art = HUB_ART[hub.id];
   const map = useTexture(art?.src || "/assets/hub-home.png");
+  const groupRef = useRef<THREE.Group>(null);
   const pos = useMemo(() => hubToSphere(hub, TAB_R), [hub]);
   const quat = useMemo(() => surfaceBasis(pos), [pos]);
+  const normal = useMemo(() => pos.clone().normalize(), [pos]);
 
   useMemo(() => {
     map.colorSpace = THREE.SRGBColorSpace;
   }, [map]);
+
+  useFrame(({ camera }) => {
+    if (!groupRef.current) return;
+    // Hide near the limb / back so tabs never poke past the planet edge
+    const facing = normal.dot(camera.position.clone().normalize());
+    groupRef.current.visible = facing > 0.18;
+  });
 
   if (!art) return null;
 
@@ -207,14 +217,14 @@ function ContinentTab({
   };
 
   return (
-    <group position={pos} quaternion={quat}>
-      {/* Soft land pad under the icon — flush disk, not a mini-planet */}
-      <mesh position={[0, 0, -0.01]} renderOrder={2}>
-        <circleGeometry args={[TAB_SIZE * 0.72, 32]} />
+    <group ref={groupRef} position={pos} quaternion={quat}>
+      {/* Soft land pad under the icon — flush disk on the crust */}
+      <mesh position={[0, 0, 0.001]} renderOrder={2}>
+        <circleGeometry args={[TAB_SIZE * 0.85, 32]} />
         <meshBasicMaterial
           color={art.glow}
           transparent
-          opacity={0.35}
+          opacity={0.4}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
           toneMapped={false}
@@ -223,15 +233,15 @@ function ContinentTab({
         />
       </mesh>
 
-      {/* Flat icon tab on the crust */}
+      {/* Flat icon inset on that land — smaller so it reads as a tab, not a moon */}
       <mesh
-        position={[0, 0.02, 0.002]}
+        position={[0, 0.04, 0.003]}
         renderOrder={3}
         onClick={click}
         onPointerOver={() => setCursor(true)}
         onPointerOut={() => setCursor(false)}
       >
-        <circleGeometry args={[TAB_SIZE * 0.55, 32]} />
+        <circleGeometry args={[TAB_SIZE * 0.48, 32]} />
         <meshBasicMaterial
           map={map}
           transparent
@@ -242,18 +252,22 @@ function ContinentTab({
         />
       </mesh>
 
-      {/* Clear name sitting on the land — readable, not floating outside */}
+      {/* Name plate flush on the landmass */}
+      <mesh position={[0, -TAB_SIZE * 0.72, 0.004]} renderOrder={4}>
+        <planeGeometry args={[TAB_SIZE * 2.35, 0.14]} />
+        <meshBasicMaterial color="#020617" transparent opacity={0.72} depthWrite={false} />
+      </mesh>
       <Text
-        position={[0, -TAB_SIZE * 0.78, 0.02]}
-        fontSize={0.13}
+        position={[0, -TAB_SIZE * 0.72, 0.01]}
+        fontSize={0.105}
         color="#ffffff"
         anchorX="center"
         anchorY="middle"
-        outlineWidth={0.018}
+        outlineWidth={0.012}
         outlineColor="#020617"
-        maxWidth={1.1}
+        maxWidth={1.2}
         textAlign="center"
-        renderOrder={4}
+        renderOrder={5}
         onClick={click}
         onPointerOver={() => setCursor(true)}
         onPointerOut={() => setCursor(false)}
