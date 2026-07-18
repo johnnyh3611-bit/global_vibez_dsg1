@@ -13,6 +13,10 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Lock, Shield, KeyRound, ArrowRight } from 'lucide-react';
 import BackButton from '@/components/BackButton';
 import HLSPlayer from '@/components/streaming/HLSPlayer';
+import CommercialBreakStrip from '@/components/streaming/CommercialBreakStrip';
+import { useGameTableCallVideo } from '@/components/video/GameTableCallVideo';
+import GameVideoLayout from '@/components/video/GameVideoLayout';
+import CallButton from '@/components/voice/CallButton';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 const NOW_PLAYING_POLL_MS = 12_000;
@@ -54,6 +58,7 @@ type NowPlaying = {
 export default function DsgTvChannelPage() {
   const navigate = useNavigate();
   const { channelId } = useParams<{ channelId: string }>();
+  const tableCallVideo = useGameTableCallVideo();
   const [userId, setUserId] = useState<string>('');
   const [channel, setChannel] = useState<Channel | null>(null);
   const [access, setAccess] = useState<AccessState | null>(null);
@@ -62,6 +67,7 @@ export default function DsgTvChannelPage() {
   const [newPin, setNewPin] = useState<string>('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [guestId, setGuestId] = useState('');
 
   useEffect(() => { void load(); }, [channelId]);
 
@@ -162,7 +168,13 @@ export default function DsgTvChannelPage() {
         )}
 
         {isUnlocked ? (
+          <GameVideoLayout
+            video={tableCallVideo}
+            criticalDecision={false}
+            testid="dsg-tv-video-layout"
+          >
           <div data-testid="dsg-tv-player">
+            <CommercialBreakStrip channelId={channelId} enabled={isUnlocked} />
             {nowPlaying?.live && nowPlaying.live_input?.hls_playback_url ? (
               <div className="rounded-3xl overflow-hidden ring-1 ring-emerald-400/30 bg-black">
                 <HLSPlayer
@@ -199,7 +211,36 @@ export default function DsgTvChannelPage() {
                 </div>
               </div>
             )}
+
+            <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4 flex flex-col sm:flex-row gap-3 sm:items-end">
+              <div className="flex-1">
+                <p className="text-[10px] uppercase tracking-widest text-cyan-300/80 font-bold">Watch with a date / guest</p>
+                <p className="text-xs text-white/55 mt-1">Agora call stays in the PiP dock — talk while the channel plays.</p>
+                <input
+                  value={guestId}
+                  onChange={(e) => setGuestId(e.target.value.trim())}
+                  placeholder="Their user id"
+                  className="mt-2 w-full rounded-lg bg-black/40 border border-white/15 px-3 py-2 text-sm"
+                  data-testid="dsg-tv-guest-id"
+                />
+              </div>
+              {guestId ? (
+                <div className="flex gap-2">
+                  <CallButton userId={guestId} mediaType="voice" size="sm" />
+                  <CallButton userId={guestId} mediaType="video" size="sm" />
+                </div>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => navigate(`/vr-tv/${channelId}`)}
+                className="text-xs px-3 py-2 rounded-full border border-fuchsia-400/40 text-fuchsia-200 hover:bg-fuchsia-500/10"
+                data-testid="dsg-tv-open-vr"
+              >
+                Open VR lounge
+              </button>
+            </div>
           </div>
+          </GameVideoLayout>
         ) : (
           <div
             data-testid="dsg-tv-unlock-card"

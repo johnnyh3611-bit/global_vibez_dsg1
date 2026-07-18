@@ -18,32 +18,32 @@ const SITE = typeof window !== 'undefined' ? window.location.origin : 'https://g
 const STEPS = [
   {
     n: 1,
-    title: 'Open OBS Studio',
-    body: 'Click the + on your Sources panel and pick "Browser Source". Name it "Vibez Overlay".',
+    title: 'Open Streamer Studio & copy RTMPS',
+    body: 'Go to Streamer Studio → provision a Cloudflare live input → copy Server URL + Stream Key. Paste those into OBS Settings → Stream (Service: Custom).',
     Icon: Radio,
   },
   {
     n: 2,
-    title: 'Paste your unique overlay URL',
-    body: 'Drop the URL below into the URL field. Resolution: 1920×1080. Tick "Refresh browser when scene becomes active".',
+    title: 'Add the tip overlay Browser Source',
+    body: 'In OBS Sources click + → Browser Source → name it "Vibez Overlay". Paste the overlay URL below. Resolution 1920×1080. Tick "Refresh browser when scene becomes active".',
     Icon: ExternalLink,
   },
   {
     n: 3,
-    title: 'Make sure background is transparent',
-    body: 'In the OBS Custom CSS field paste:  body { background: transparent !important; }  — that\'s already the default but be safe.',
+    title: 'Transparent overlay CSS',
+    body: 'In the OBS Custom CSS field paste:  body { background: transparent !important; }  — keeps tips floating over your camera/game.',
     Icon: ShieldCheck,
   },
   {
     n: 4,
-    title: 'Test with a fake tip',
-    body: 'Send yourself a $1 tip from a second account. The hype meter at the top should fill, and a confetti toast should fly in from the right.',
+    title: 'Go live + optional DSG TV',
+    body: 'Hit Start Streaming in OBS. Confirm the HLS preview in Streamer Studio turns live. To put the feed on a network channel, open Broadcast Director and pick a DSG TV slot.',
     Icon: Zap,
   },
   {
     n: 5,
-    title: 'Connect your wallet for rewards',
-    body: 'Tips clear instantly to your Vibez Credits. Convert to fiat from /wallet. 70% to you, 13.5% sovereign tax, 10% liquidity, 6.5% platform.',
+    title: 'Wallet payouts',
+    body: 'Tips clear to Vibez Credits. Cash out from /wallet. Split: 70% you · 13.5% sovereign tax · 10% liquidity · 6.5% platform.',
     Icon: Wallet,
   },
 ];
@@ -92,6 +92,20 @@ export default function StreamerSetupGuide() {
           Heckle filters, hype meters, and confetti toasts that fire automatically when fans send credits — no plugins, no node-red, no API keys.
         </p>
         <div className="mt-7 flex flex-wrap gap-3">
+          <Link
+            to="/streamer/studio"
+            data-testid="setup-cta-studio"
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-emerald-400 hover:bg-emerald-300 text-black font-black"
+          >
+            Open Streamer Studio (RTMPS keys) <ArrowRight className="w-4 h-4" />
+          </Link>
+          <Link
+            to="/dashboard/streamer/broadcast-director"
+            data-testid="setup-cta-broadcast"
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-amber-400 hover:bg-amber-300 text-black font-black"
+          >
+            Broadcast Director <ArrowRight className="w-4 h-4" />
+          </Link>
           <a
             href="https://obsproject.com/download"
             target="_blank"
@@ -101,14 +115,16 @@ export default function StreamerSetupGuide() {
           >
             Download OBS <ExternalLink className="w-4 h-4" />
           </a>
-          <Link
-            to="/dashboard"
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl border border-white/30 hover:bg-white/10 font-bold"
-          >
-            Sign in & get my URL <ArrowRight className="w-4 h-4" />
-          </Link>
         </div>
       </header>
+
+      <section className="px-4 sm:px-8 max-w-5xl mx-auto pb-4" data-testid="setup-golive-strip">
+        <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-4 text-sm text-white/80">
+          <strong className="text-emerald-200">Go-live path:</strong> Studio (copy RTMPS) → OBS Start Streaming →
+          optional Broadcast Director (DSG TV channel) → overlay URL below for tip toasts.
+          If Cloudflare shows stub mode, set <code className="text-cyan-300">CLOUDFLARE_*</code> on Railway for real ingest.
+        </div>
+      </section>
 
       {/* Unique URL block */}
       <section className="px-4 sm:px-8 max-w-5xl mx-auto" data-testid="setup-url-block">

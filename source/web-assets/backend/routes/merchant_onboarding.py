@@ -270,6 +270,8 @@ class PublishAdFlightRequest(BaseModel):
     title: str = Field(min_length=2, max_length=200)
     target_zip_codes: List[str] = Field(default_factory=list)
     duration_seconds: int = Field(default=15, ge=5, le=60)
+    creative_url: str = Field(default="", max_length=2000)
+    channel_id: str = Field(default="", max_length=80)
 
 
 # ────────────────────────────────────────────── Read endpoints (public) ──
@@ -892,6 +894,9 @@ async def dsg_tv_publish_ad(
             title=req.title,
             target_zip_codes=req.target_zip_codes or [],
             duration_seconds=req.duration_seconds,
+            creative_url=req.creative_url or "",
+            channel_id=req.channel_id or "",
+            business_name=str(merchant.get("business_name") or ""),
         )
         _ADS[ad_id] = ad
         ad_doc = ad.__dict__
@@ -904,6 +909,9 @@ async def dsg_tv_publish_ad(
             "title": req.title,
             "target_zip_codes": req.target_zip_codes or [],
             "duration_seconds": req.duration_seconds,
+            "creative_url": req.creative_url or "",
+            "channel_id": req.channel_id or "",
+            "business_name": str(merchant.get("business_name") or ""),
             "is_active": True,
         }
 

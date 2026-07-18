@@ -67,6 +67,14 @@ AGORA_APP_CERTIFICATE=your-agora-app-certificate
 # Email — Resend is what the code actually uses
 RESEND_API_KEY=re_your_resend_key
 RESEND_SENDER_EMAIL=onboarding@resend.dev
+
+# Cloudflare Stream — DSG TV + streamer live ingest (RTMPS → HLS)
+# Dashboard: https://dash.cloudflare.com → Stream → Live inputs
+# Health: GET /api/streaming/cloudflare/status  and  GET /api/integrations/health
+CLOUDFLARE_ACCOUNT_ID=your_account_id
+CLOUDFLARE_API_TOKEN=your_stream_api_token
+CLOUDFLARE_STREAM_SUBDOMAIN=customer-xxxxx.cloudflarestream.com
+# CLOUDFLARE_STREAM_WEBHOOK_SECRET=optional
 ```
 
 ### Application Configuration

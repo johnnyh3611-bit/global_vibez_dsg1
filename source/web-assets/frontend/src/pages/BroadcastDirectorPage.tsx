@@ -15,8 +15,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Radio, Lock, Clock3, Megaphone, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Radio, Lock, Clock3, Megaphone, AlertCircle, CheckCircle2, Phone, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import BackButton from '@/components/BackButton';
+import CallButton from '@/components/voice/CallButton';
+import { useGameTableCallVideo } from '@/components/video/GameTableCallVideo';
+import GameVideoLayout from '@/components/video/GameVideoLayout';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -59,6 +63,7 @@ const DURATION_OPTIONS = [1, 2, 4, 8, 24];
 
 export default function BroadcastDirectorPage() {
   const navigate = useNavigate();
+  const tableCallVideo = useGameTableCallVideo();
   const [userId, setUserId] = useState<string>('');
   const [liveInput, setLiveInput] = useState<LiveInput | null>(null);
   const [channels, setChannels] = useState<Channel[]>([]);
@@ -67,6 +72,8 @@ export default function BroadcastDirectorPage() {
   const [duration, setDuration] = useState<number>(4);
   const [busy, setBusy] = useState<boolean>(false);
   const [message, setMessage] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
+  const [guestId, setGuestId] = useState('');
+  const [cfStatus, setCfStatus] = useState<{ mode?: string } | null>(null);
 
   useEffect(() => { void init(); }, []);
 
@@ -81,10 +88,12 @@ export default function BroadcastDirectorPage() {
     setUserId(uid);
 
     // Load channels + the streamer's CF live input (if any).
-    const [cRes, lRes] = await Promise.all([
+    const [cRes, lRes, st] = await Promise.all([
       fetch(`${API_URL}/api/media-master/tv/channels`).then((r) => r.json()).catch(() => ({ channels: [] })),
       fetch(`${API_URL}/api/streaming/cloudflare/live-inputs/by-streamer/${uid}`).then((r) => r.ok ? r.json() : null).catch(() => null),
+      fetch(`${API_URL}/api/streaming/cloudflare/status`).then((r) => r.json()).catch(() => null),
     ]);
+    setCfStatus(st);
     setChannels(cRes.channels || []);
     if (lRes && lRes.input_id) setLiveInput(lRes);
     if (cRes.channels?.[0]) setSelectedChannelId(cRes.channels[0].channel_id);
@@ -186,6 +195,7 @@ export default function BroadcastDirectorPage() {
       <div className="relative z-10 max-w-5xl mx-auto px-5 py-8">
         <BackButton to="/dashboard" label="Back to dashboard" />
 
+        <GameVideoLayout video={tableCallVideo} testid="broadcast-director-layout">
         <header className="mt-6 mb-10">
           <div className="flex items-center gap-2 text-amber-300/80 text-xs uppercase tracking-widest mb-2">
             <Megaphone className="w-4 h-4" /> Streamer · Broadcast Director
@@ -195,7 +205,52 @@ export default function BroadcastDirectorPage() {
             Attach your live feed to a DSG TV channel. Viewers will see your broadcast in the channel's
             HLS player — gated channels still charge viewers ₵ for a 24h pass.
           </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link
+              to="/streamer/studio"
+              className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-emerald-500 text-black font-bold"
+              data-testid="broadcast-director-studio-link"
+            >
+              Open Streamer Studio (OBS keys) <ExternalLink className="w-3 h-3" />
+            </Link>
+            <Link
+              to="/streamer/setup-guide"
+              className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-white/20 text-white/80"
+            >
+              OBS setup guide
+            </Link>
+            {cfStatus?.mode === 'stub' && (
+              <span className="text-[10px] uppercase tracking-wider text-amber-300/90 px-2 py-1.5 rounded-full border border-amber-400/30">
+                Cloudflare Stream = stub — set CLOUDFLARE_* on Railway for real RTMPS
+              </span>
+            )}
+          </div>
         </header>
+
+        {/* Guest call-in */}
+        <div className="rounded-2xl p-5 bg-black/40 ring-1 ring-cyan-400/25 mb-8" data-testid="broadcast-guest-callin">
+          <div className="flex items-center gap-2 text-cyan-300 text-xs uppercase tracking-widest mb-2">
+            <Phone className="w-4 h-4" /> Agora guest call-in
+          </div>
+          <p className="text-sm text-white/60 mb-3">
+            Bring a co-host / guest onto the show. Their call docks as PiP while you broadcast.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+            <input
+              value={guestId}
+              onChange={(e) => setGuestId(e.target.value.trim())}
+              placeholder="Guest user id"
+              className="flex-1 rounded-lg bg-black/50 border border-white/15 px-3 py-2 text-sm"
+              data-testid="broadcast-guest-id"
+            />
+            {guestId ? (
+              <div className="flex gap-2">
+                <CallButton userId={guestId} mediaType="voice" />
+                <CallButton userId={guestId} mediaType="video" />
+              </div>
+            ) : null}
+          </div>
+        </div>
 
         {/* Live input status */}
         <div
@@ -330,6 +385,7 @@ export default function BroadcastDirectorPage() {
             {busy ? 'Broadcasting…' : `Broadcast to ${selectedChannel?.name || '…'} for ${duration}h`}
           </button>
         </section>
+        </GameVideoLayout>
       </div>
     </div>
   );
