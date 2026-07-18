@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <defs>
+    <radialGradient id="sun" cx="50%" cy="45%" r="50%">
+      <stop offset="0%" stop-color="#fff7ed"/>
+      <stop offset="35%" stop-color="#fbbf24"/>
+      <stop offset="70%" stop-color="#f97316"/>
+      <stop offset="100%" stop-color="#dc2626"/>
+    </radialGradient>
+    <filter id="g"><feGaussianBlur stdDeviation="8"/></filter>
+  </defs>
+  <circle cx="128" cy="128" r="120" fill="#f97316" opacity="0.35" filter="url(#g)"/>
+  <circle cx="128" cy="128" r="100" fill="url(#sun)"/>
+  <circle cx="128" cy="128" r="58" fill="#111827" stroke="#fde68a" stroke-width="4"/>
+  <!-- flame -->
+  <path d="M128 70 C118 95 108 105 118 120 C110 112 128 140 138 118 C148 130 145 100 128 70 Z" fill="#fbbf24" stroke="#fff7ed" stroke-width="2"/>
+  <text x="128" y="168" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="28" font-weight="900" fill="#fde68a" letter-spacing="4">DSG</text>
+</svg>
