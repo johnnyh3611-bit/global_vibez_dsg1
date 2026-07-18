@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff, Mail, Lock, ArrowLeft, AlertCircle } from 'lucide-react';
 import { getBackendUrl } from '@/config/backendUrl';
 import { setBearerToken } from '@/utils/secureAuth';
+import { consumeReturnTo } from '@/hubs/hubRegistry';
 // Wallet linking happens AFTER login at /wallet (Connect Phantom flow).
 
 const API = getBackendUrl();
@@ -19,6 +20,13 @@ const API = getBackendUrl();
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const returnFrom = (location.state && location.state.from) || '';
+  const postLoginPath = (fallback = '/dashboard') => {
+    if (typeof returnFrom === 'string' && returnFrom.startsWith('/') && !returnFrom.startsWith('//')) {
+      return returnFrom;
+    }
+    return consumeReturnTo(fallback);
+  };
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -94,7 +102,7 @@ export default function LoginPage() {
       }
 
       if (userObj?.profile_completed) {
-        navigate('/dashboard');
+        navigate(postLoginPath('/dashboard'));
       } else {
         navigate('/profile/setup');
       }
@@ -143,8 +151,8 @@ export default function LoginPage() {
         localStorage.setItem('user_id', data.user.user_id || data.user.id);
       }
 
-      // Success! Redirect to dashboard
-      navigate('/dashboard');
+      // Success! Prefer hub / globe deep-link if one was stashed.
+      navigate(postLoginPath('/dashboard'));
     } catch (err) {
       setError(err.message);
     } finally {
@@ -309,7 +317,7 @@ export default function LoginPage() {
                           if (data.name) localStorage.setItem('username', data.name);
                           // Hard-redirect (not navigate) so any half-mounted
                           // Privy/SDK modal can't intercept React's transition.
-                          window.location.href = '/dashboard';
+                          window.location.href = postLoginPath('/dashboard');
                           return;
                         }
                         setError(data.detail || 'Demo login failed — please retry.');

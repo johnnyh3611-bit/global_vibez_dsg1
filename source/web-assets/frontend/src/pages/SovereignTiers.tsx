@@ -127,15 +127,23 @@ export default function SovereignTiers() {
         {/* Hero */}
         <section className="text-center py-6 md:py-8">
           <p className="text-[11px] uppercase tracking-[0.4em] text-fuchsia-300/70 mb-3">
-            One floor · five tiers · zero compromise
+            Simple pricing · three lanes
           </p>
           <h2 className="text-3xl md:text-5xl font-black bg-gradient-to-r from-amber-200 via-fuchsia-300 to-cyan-200 bg-clip-text text-transparent">
-            Pick the seat that fits.
+            Membership. Ownership. Spend.
           </h2>
           <p className="text-sm text-white/60 mt-3 max-w-2xl mx-auto">
-            Each tier doubles the previous one's perks for roughly 2× the price —
-            so the value is obvious before you click. <span className="text-fuchsia-300">Tastemaker</span> is where most members land.
+            One membership ladder below. Genius Chair is ownership (not a subscription).
+            In-app actions use ₵ from coin packs. Casino VIP / Founders Pass stay as optional game add-ons — not mixed in here.
           </p>
+          <div
+            className="mt-5 flex flex-wrap justify-center gap-2 text-[10px] uppercase tracking-widest"
+            data-testid="tiers-lane-legend"
+          >
+            <span className="rounded-full border border-fuchsia-400/40 px-3 py-1 text-fuchsia-200">1 · Membership</span>
+            <span className="rounded-full border border-amber-400/40 px-3 py-1 text-amber-200">2 · Chair ownership</span>
+            <span className="rounded-full border border-cyan-400/40 px-3 py-1 text-cyan-200">3 · ₵ spend</span>
+          </div>
 
           {/* Annual / monthly toggle */}
           <div className="mt-5 grid grid-cols-2 max-w-[320px] mx-auto gap-1 bg-white/5 backdrop-blur-lg p-1.5 rounded-full border border-white/10">
@@ -322,6 +330,41 @@ export default function SovereignTiers() {
                 </div>
               </section>
             )}
+
+            {/* Spend lane + demoted add-ons */}
+            <section className="mt-10 grid md:grid-cols-2 gap-4" data-testid="tiers-spend-lane">
+              <div className="rounded-2xl border border-cyan-400/30 bg-cyan-500/5 p-6">
+                <p className="text-[10px] uppercase tracking-widest text-cyan-300 mb-2">Lane 3 · Spend ₵</p>
+                <h3 className="text-xl font-black text-white">Vibez Coin packs</h3>
+                <p className="text-sm text-white/60 mt-2">
+                  Games, tips, DSG TV flights, and power-ups use wallet credits.
+                  Soft-launch packs: $5 / $9 / $20 / $35 (1,000 ₵ per $1).
+                </p>
+                <Button
+                  onClick={() => navigate("/wallet")}
+                  data-testid="tiers-open-wallet"
+                  className="mt-4 bg-cyan-400 text-black font-black uppercase tracking-widest text-xs"
+                >
+                  Open wallet · buy ₵
+                </Button>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+                <p className="text-[10px] uppercase tracking-widest text-white/40 mb-2">Optional game add-ons</p>
+                <h3 className="text-xl font-black text-white/80">Not membership tiers</h3>
+                <p className="text-sm text-white/50 mt-2">
+                  High Roller VIP and Founders Pass only unlock specific casino tables.
+                  They are not part of the Sovereign ladder — buy them when you need that table.
+                </p>
+                <Button
+                  variant="ghost"
+                  onClick={() => navigate("/casino/high-roller")}
+                  data-testid="tiers-high-roller-link"
+                  className="mt-4 text-white/60 hover:text-white text-xs uppercase tracking-widest"
+                >
+                  High Roller (optional) →
+                </Button>
+              </div>
+            </section>
 
             {/* Value math */}
             <section className="mt-12 grid md:grid-cols-3 gap-4">

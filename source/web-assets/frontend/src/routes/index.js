@@ -12,4 +12,5 @@ export { justForTheNightRoutes } from './justForTheNightRoutes';
 export { adminVaultRoutes } from './adminVaultRoutes';
 export { dsgRoutes } from './dsgRoutes';
 export { mediaMasterRoutes } from './mediaMasterRoutes';
+export { hubRoutes } from './hubRoutes';
 
