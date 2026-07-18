@@ -14,13 +14,16 @@ Policy (agreed product rule):
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 from uuid import uuid4
 
 from fastapi import HTTPException
 
-from utils.database import get_database
+from utils.database import get_client, get_database
+
+logger = logging.getLogger(__name__)
 
 # ── Tunables (keep in sync with frontend forfeitPolicy) ──────────────────────
 HOUSE_PENALTY_PCT = 0.15
@@ -169,6 +172,21 @@ def plan_redistribution(
     return out
 
 
+def _session_kwargs(session) -> Dict[str, Any]:
+    return {"session": session} if session is not None else {}
+
+
+def _is_standalone_txn_error(exc: BaseException) -> bool:
+    """True when Mongo rejects transactions (standalone / no replica set)."""
+    msg = str(exc).lower()
+    return (
+        "replica set" in msg
+        or "transaction numbers are only allowed" in msg
+        or "transactions are not supported" in msg
+        or "transaction" in msg and "not supported" in msg
+    )
+
+
 async def apply_quitter_penalty(
     db,
     *,
@@ -182,6 +200,10 @@ async def apply_quitter_penalty(
     """
     Apply forfeit + 15% house penalty + redistribute entry.
     Safe to call multiple times — second call is a no-op.
+
+    Money moves run inside ``client.start_session()`` / ``with_transaction``
+    when a Mongo client is available (replica set / mongos). Standalone
+    local Mongo falls back to non-transactional writes so dev/CI still works.
     """
     entry = float(entry_fee or 0)
     policy = forfeit_policy_public()
@@ -202,133 +224,158 @@ async def apply_quitter_penalty(
             "policy": policy,
         }
 
-    existing = await db.game_forfeits.find_one(
-        {"game_type": game_type, "game_id": game_id, "user_id": quitter_id}
-    )
-    if existing:
-        hp = float(existing.get("house_penalty") or existing.get("penalty_amount") or 0)
-        return {
-            "success": True,
-            "applied": False,
-            "penalty_applied": True,
-            "reason": "already_forfeited",
-            "entry_fee": entry,
-            "house_penalty": hp,
-            "penalty": hp,
-            "house_penalty_pct": HOUSE_PENALTY_PCT,
-            "total_deducted": entry + hp,
-            "redistributed": existing.get("redistributed") or [],
-            "message": "Forfeit already recorded",
-            "policy": policy,
-        }
+    async def _apply(session=None) -> Dict[str, Any]:
+        sk = _session_kwargs(session)
 
-    # ── House penalty (15% of entry, capped at available balance) ────────────
-    user = await db.users.find_one(
-        {"user_id": quitter_id}, {"_id": 0, "credits_balance": 1}
-    )
-    balance = float((user or {}).get("credits_balance") or 0)
-    raw_penalty = round(entry * HOUSE_PENALTY_PCT, 2)
-    house_penalty = min(raw_penalty, balance)
-
-    if house_penalty > 0:
-        result = await db.users.update_one(
-            {"user_id": quitter_id, "credits_balance": {"$gte": house_penalty}},
-            {"$inc": {"credits_balance": -house_penalty}},
+        existing = await db.game_forfeits.find_one(
+            {"game_type": game_type, "game_id": game_id, "user_id": quitter_id},
+            **sk,
         )
-        if result.modified_count == 0:
-            fresh = await db.users.find_one(
-                {"user_id": quitter_id}, {"_id": 0, "credits_balance": 1}
+        if existing:
+            hp = float(existing.get("house_penalty") or existing.get("penalty_amount") or 0)
+            return {
+                "success": True,
+                "applied": False,
+                "penalty_applied": True,
+                "reason": "already_forfeited",
+                "entry_fee": entry,
+                "house_penalty": hp,
+                "penalty": hp,
+                "house_penalty_pct": HOUSE_PENALTY_PCT,
+                "total_deducted": entry + hp,
+                "redistributed": existing.get("redistributed") or [],
+                "message": "Forfeit already recorded",
+                "policy": policy,
+            }
+
+        # ── House penalty (15% of entry, capped at available balance) ────────
+        user = await db.users.find_one(
+            {"user_id": quitter_id}, {"_id": 0, "credits_balance": 1}, **sk
+        )
+        balance = float((user or {}).get("credits_balance") or 0)
+        raw_penalty = round(entry * HOUSE_PENALTY_PCT, 2)
+        house_penalty = min(raw_penalty, balance)
+
+        if house_penalty > 0:
+            result = await db.users.update_one(
+                {"user_id": quitter_id, "credits_balance": {"$gte": house_penalty}},
+                {"$inc": {"credits_balance": -house_penalty}},
+                **sk,
             )
-            house_penalty = float((fresh or {}).get("credits_balance") or 0)
-            if house_penalty > 0:
-                await db.users.update_one(
-                    {"user_id": quitter_id},
-                    {"$set": {"credits_balance": 0}},
+            if result.modified_count == 0:
+                fresh = await db.users.find_one(
+                    {"user_id": quitter_id}, {"_id": 0, "credits_balance": 1}, **sk
                 )
+                house_penalty = float((fresh or {}).get("credits_balance") or 0)
+                if house_penalty > 0:
+                    await db.users.update_one(
+                        {"user_id": quitter_id},
+                        {"$set": {"credits_balance": 0}},
+                        **sk,
+                    )
 
-    # ── Redistribute entry to remaining human players ────────────────────────
-    partnership = game_type in PARTNERSHIP_GAME_TYPES
-    plan = plan_redistribution(
-        players, quitter_id, entry, partnership=partnership
-    )
-    redistributed: List[Dict[str, Any]] = []
-    for uid, amount, role in plan:
-        if amount <= 0:
-            continue
-        await db.users.update_one(
-            {"user_id": uid},
-            {"$inc": {"credits_balance": amount}},
+        # ── Redistribute entry to remaining human players ────────────────────
+        partnership = game_type in PARTNERSHIP_GAME_TYPES
+        plan = plan_redistribution(
+            players, quitter_id, entry, partnership=partnership
         )
-        redistributed.append({"user_id": uid, "amount": amount, "role": role})
+        redistributed: List[Dict[str, Any]] = []
+        for uid, amount, role in plan:
+            if amount <= 0:
+                continue
+            await db.users.update_one(
+                {"user_id": uid},
+                {"$inc": {"credits_balance": amount}},
+                **sk,
+            )
+            redistributed.append({"user_id": uid, "amount": amount, "role": role})
 
-    record = {
-        "id": str(uuid4()),
-        "game_type": game_type,
-        "game_id": game_id,
-        "user_id": quitter_id,
-        "entry_fee": entry,
-        "penalty_amount": house_penalty,
-        "house_penalty": house_penalty,
-        "house_penalty_pct": HOUSE_PENALTY_PCT,
-        "total_forfeited": entry + house_penalty,
-        "redistributed": redistributed,
-        "reason": "quit_mid_game",
-        "timestamp": _utc_now().isoformat(),
-        "created_at": _utc_now().isoformat(),
-    }
-    await db.game_forfeits.insert_one(record)
+        record = {
+            "id": str(uuid4()),
+            "game_type": game_type,
+            "game_id": game_id,
+            "user_id": quitter_id,
+            "entry_fee": entry,
+            "penalty_amount": house_penalty,
+            "house_penalty": house_penalty,
+            "house_penalty_pct": HOUSE_PENALTY_PCT,
+            "total_forfeited": entry + house_penalty,
+            "redistributed": redistributed,
+            "reason": "quit_mid_game",
+            "timestamp": _utc_now().isoformat(),
+            "created_at": _utc_now().isoformat(),
+        }
+        await db.game_forfeits.insert_one(record, **sk)
 
-    if house_penalty > 0:
+        if house_penalty > 0:
+            try:
+                await db.platform_revenue.insert_one({
+                    "source": "forfeit_penalty",
+                    "game_type": game_type,
+                    "game_id": game_id,
+                    "user_id": quitter_id,
+                    "amount": house_penalty,
+                    "timestamp": _utc_now().isoformat(),
+                }, **sk)
+            except Exception:
+                pass
+
         try:
-            await db.platform_revenue.insert_one({
-                "source": "forfeit_penalty",
+            await db.transactions.insert_one({
+                "id": str(uuid4()),
+                "user_id": quitter_id,
+                "type": "game_forfeit",
+                "amount": -(entry + house_penalty),
+                "entry_fee_forfeited": entry,
+                "house_penalty": house_penalty,
                 "game_type": game_type,
                 "game_id": game_id,
-                "user_id": quitter_id,
-                "amount": house_penalty,
-                "timestamp": _utc_now().isoformat(),
-            })
+                "description": (
+                    f"Quit mid-{game_type}: forfeited {int(entry)} entry + "
+                    f"{house_penalty:g} house penalty (15%)"
+                ),
+                "created_at": _utc_now().isoformat(),
+            }, **sk)
         except Exception:
             pass
 
-    try:
-        await db.transactions.insert_one({
-            "id": str(uuid4()),
-            "user_id": quitter_id,
-            "type": "game_forfeit",
-            "amount": -(entry + house_penalty),
+        msg = (
+            f"Forfeited {int(entry)} entry + {house_penalty:g} penalty (15%) "
+            f"= {entry + house_penalty:g} total"
+        )
+        return {
+            "success": True,
+            "applied": True,
+            "penalty_applied": True,
+            "reason": "mid_game_quit",
+            "entry_fee": entry,
             "entry_fee_forfeited": entry,
             "house_penalty": house_penalty,
-            "game_type": game_type,
-            "game_id": game_id,
-            "description": (
-                f"Quit mid-{game_type}: forfeited {int(entry)} entry + "
-                f"{house_penalty:g} house penalty (15%)"
-            ),
-            "created_at": _utc_now().isoformat(),
-        })
-    except Exception:
-        pass
+            "penalty": house_penalty,
+            "house_penalty_pct": HOUSE_PENALTY_PCT,
+            "total_deducted": entry + house_penalty,
+            "redistributed": redistributed,
+            "message": msg,
+            "policy": policy,
+        }
 
-    msg = (
-        f"Forfeited {int(entry)} entry + {house_penalty:g} penalty (15%) "
-        f"= {entry + house_penalty:g} total"
-    )
-    return {
-        "success": True,
-        "applied": True,
-        "penalty_applied": True,
-        "reason": "mid_game_quit",
-        "entry_fee": entry,
-        "entry_fee_forfeited": entry,
-        "house_penalty": house_penalty,
-        "penalty": house_penalty,
-        "house_penalty_pct": HOUSE_PENALTY_PCT,
-        "total_deducted": entry + house_penalty,
-        "redistributed": redistributed,
-        "message": msg,
-        "policy": policy,
-    }
+    mongo_client = get_client()
+    if mongo_client is None:
+        return await _apply(None)
+
+    try:
+        async with await mongo_client.start_session() as session:
+            # Motor accepts an async callback; all credit moves stay atomic.
+            return await session.with_transaction(_apply)
+    except Exception as exc:
+        if _is_standalone_txn_error(exc):
+            logger.warning(
+                "game_forfeit: Mongo transactions unavailable (%s); "
+                "applying forfeit without a session",
+                type(exc).__name__,
+            )
+            return await _apply(None)
+        raise
 
 
 async def handle_player_quit(

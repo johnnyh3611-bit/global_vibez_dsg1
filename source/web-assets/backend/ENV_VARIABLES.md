@@ -79,7 +79,10 @@ ENVIRONMENT=development  # development, staging, production
 # CORS
 CORS_ORIGINS=http://localhost:3000,https://yourdomain.com
 
-# Redis (for caching, optional)
+# Redis — required for multi-instance Socket.IO + optional caching
+# When unset, Socket.IO uses an in-process manager (single replica only).
+# Set this before scaling FastAPI beyond one replica or room mates on
+# different pods will not see each other's moves.
 REDIS_URL=redis://localhost:6379
 ```
 

@@ -3,6 +3,7 @@ import secrets
 Real-Time Multiplayer Infrastructure
 WebSocket-based multiplayer system for game rooms, matchmaking, and live sync
 """
+import os
 import socketio
 from typing import Dict, List, Optional, Set
 import uuid
@@ -10,20 +11,32 @@ secure_random = secrets.SystemRandom()
 import string
 from datetime import datetime
 
+from utils.socketio_manager import build_socketio_client_manager
+
+# Redis pub/sub adapter — required when scaling beyond a single FastAPI replica.
+# Without it, room mates on different pods never see each other's moves.
+_client_manager = build_socketio_client_manager()
+_is_prod = bool(
+    os.environ.get("RAILWAY_ENVIRONMENT")
+    or os.environ.get("ENV") == "production"
+)
+
 # Socket.IO Server (AsyncIO mode)
 # Configured to support both WebSocket AND HTTP Long Polling
 # Long polling works without WebSocket ingress support!
 sio = socketio.AsyncServer(
     async_mode='asgi',
     cors_allowed_origins='*',
-    logger=True,
+    # Verbose Socket.IO packet logs can leak session identifiers — keep off in prod.
+    logger=not _is_prod,
     engineio_logger=False,
     # Allow both transports - Socket.IO will auto-fallback to polling if WebSocket fails
     # This makes multiplayer work even without WebSocket ingress configuration!
     allow_upgrades=True,
     ping_timeout=20,
     ping_interval=25,
-    max_http_buffer_size=1000000
+    max_http_buffer_size=1000000,
+    client_manager=_client_manager,
 )
 
 # In-memory storage for rooms and players
@@ -950,7 +963,7 @@ async def create_blackjack_room(sid, data):
             'table': table_state
         }, room=sid)
         
-        print(f"🎰 Blackjack table created: {room_code} by {player_name} (user_id: {user_id})")
+        print(f"🎰 Blackjack table created: {room_code} by {player_name}")
         
     except Exception as e:
         print(f"Error creating blackjack table: {e}")
@@ -983,7 +996,7 @@ async def join_blackjack_room(sid, data):
         
         await broadcast_blackjack_state(room_code)
         
-        print(f"🎰 {player_name} joined blackjack table: {room_code} (user_id: {user_id})")
+        print(f"🎰 {player_name} joined blackjack table: {room_code}")
         
     except Exception as e:
         print(f"Error joining blackjack table: {e}")

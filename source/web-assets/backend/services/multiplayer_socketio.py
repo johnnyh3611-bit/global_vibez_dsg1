@@ -11,12 +11,16 @@ import uuid
 from datetime import datetime, timezone
 from collections import defaultdict
 
-# Socket.IO server with async support
+from utils.socketio_manager import build_socketio_client_manager
+
+# Socket.IO server with async support (+ Redis pub/sub when REDIS_URL is set)
+_client_manager = build_socketio_client_manager()
 sio = socketio.AsyncServer(
     async_mode='asgi',
     cors_allowed_origins='*',
     logger=True,
-    engineio_logger=False
+    engineio_logger=False,
+    client_manager=_client_manager,
 )
 
 # Game rooms storage

@@ -104,23 +104,41 @@ class BusinessLogicError(HTTPException):
     def __init__(self, message: str):
         super().__init__(status_code=422, detail=message)
 
+def _redact_id(value):
+    """Short fingerprint for logs — never write full user IDs or tokens to stdout."""
+    if not value:
+        return "anonymous"
+    text = str(value)
+    if len(text) <= 4:
+        return "***"
+    return f"{text[:2]}…{text[-2:]}"
+
+
 # Logging helpers
 def log_api_call(endpoint: str, user_id: str = None, duration_ms: float = None):
-    """Log API calls for monitoring"""
+    """Log API calls for monitoring (user id redacted)."""
+    duration = f"{duration_ms:.2f}ms" if duration_ms is not None else "n/a"
     logger.info(
-        f"API Call: {endpoint} | User: {user_id or 'anonymous'} | "
-        f"Duration: {duration_ms:.2f}ms" if duration_ms else ""
+        "API Call: %s | User: %s | Duration: %s",
+        endpoint,
+        _redact_id(user_id),
+        duration,
     )
 
 def log_security_event(event_type: str, details: dict):
-    """Log security-related events"""
-    logger.warning(
-        f"Security Event: {event_type} | Details: {details}"
-    )
+    """Log security-related events (strip token-like keys)."""
+    safe = {
+        k: ("***" if any(s in k.lower() for s in ("token", "password", "secret", "authorization")) else v)
+        for k, v in (details or {}).items()
+    }
+    logger.warning("Security Event: %s | Details: %s", event_type, safe)
 
 def log_transaction(transaction_type: str, user_id: str, amount: float, status: str):
-    """Log financial transactions"""
+    """Log financial transactions (user id redacted)."""
     logger.info(
-        f"Transaction: {transaction_type} | User: {user_id} | "
-        f"Amount: ${amount:.2f} | Status: {status}"
+        "Transaction: %s | User: %s | Amount: %.2f | Status: %s",
+        transaction_type,
+        _redact_id(user_id),
+        amount,
+        status,
     )
