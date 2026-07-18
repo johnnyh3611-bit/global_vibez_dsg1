@@ -135,79 +135,42 @@ function buildStars(count: number) {
   return stars;
 }
 
-/** Fiery DSG satellite — chrome V + white/red/amber flame trail */
+/** DSG fireball / shooting star — orbits OUTSIDE the planet only */
 function DsgFireSatellite({ compact = false }: { compact?: boolean }) {
+  const size = compact ? 40 : 56;
   return (
     <div
-      className="relative flex flex-col items-center select-none"
+      className="relative flex items-center justify-center select-none"
       data-testid="landing-orbit-v-mark"
       aria-hidden
     >
-      {/* Flame wake behind the craft */}
+      {/* Shooting-star trail */}
       <span
-        className="absolute left-1/2 top-[20%] -translate-x-1/2 rounded-full blur-md"
+        className="absolute right-full top-1/2 h-[3px] -translate-y-1/2 rounded-full"
         style={{
-          width: compact ? 28 : 44,
-          height: compact ? 36 : 56,
+          width: compact ? 36 : 56,
           background:
-            "radial-gradient(ellipse at 50% 20%, rgba(255,255,255,0.95) 0%, rgba(251,191,36,0.85) 22%, rgba(239,68,68,0.75) 48%, rgba(220,38,38,0.2) 72%, transparent 85%)",
+            "linear-gradient(90deg, transparent 0%, rgba(251,191,36,0.2) 35%, rgba(249,115,22,0.85) 85%, #fff 100%)",
+          boxShadow: "0 0 14px rgba(249,115,22,0.7)",
         }}
       />
-      {/* Ember sparks */}
-      {[0, 1, 2].map((i) => (
-        <motion.span
-          key={`ember-${i}`}
-          className="absolute left-1/2 top-[55%] h-1 w-1 rounded-full"
-          style={{
-            background: i === 1 ? "#fff" : i === 0 ? "#fbbf24" : "#ef4444",
-            boxShadow: `0 0 8px ${i === 1 ? "#fff" : i === 0 ? "#fbbf24" : "#ef4444"}`,
-          }}
-          animate={{
-            y: [0, 14 + i * 6],
-            x: [(i - 1) * 4, (i - 1) * 10],
-            opacity: [0.9, 0],
-            scale: [1, 0.2],
-          }}
-          transition={{
-            duration: 0.7 + i * 0.15,
-            repeat: Infinity,
-            ease: "easeOut",
-            delay: i * 0.12,
-          }}
-        />
-      ))}
-
-      {/* Chrome V */}
       <span
-        className={`relative z-[1] font-black leading-none ${
-          compact ? "text-[20px] sm:text-[26px]" : "text-[26px] sm:text-[34px] lg:text-[42px]"
-        }`}
+        className="absolute rounded-full blur-md"
         style={{
+          width: size + 20,
+          height: size + 20,
           background:
-            "linear-gradient(165deg, #ffffff 0%, #f8fafc 28%, #fca5a5 55%, #fbbf24 78%, #ef4444 100%)",
-          WebkitBackgroundClip: "text",
-          color: "transparent",
-          filter:
-            "drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(239,68,68,0.85))",
+            "radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(251,191,36,0.9) 28%, rgba(249,115,22,0.7) 55%, rgba(220,38,38,0.2) 78%, transparent 90%)",
         }}
-      >
-        V
-      </span>
-      {/* Play-chevron cue from logo */}
-      <span className="absolute z-[2] right-[-2px] top-[36%] h-0 w-0 border-y-[3px] border-y-transparent border-l-[5px] border-l-amber-300 sm:border-y-[4px] sm:border-l-[7px]" />
-      <span
-        className={`relative z-[1] mt-0.5 rounded-sm border border-white/40 bg-gradient-to-r from-red-600/90 via-amber-500/90 to-white/30 px-1.5 font-black uppercase tracking-[0.22em] text-white ${
-          compact ? "text-[6px] sm:text-[7px]" : "text-[7px] sm:text-[8px] lg:text-[9px]"
-        }`}
-        style={{
-          boxShadow: "0 0 14px rgba(239,68,68,0.8), 0 0 6px rgba(255,255,255,0.6)",
-        }}
-      >
-        DSG
-      </span>
-      {/* Solar wings — lit white/red */}
-      <span className="absolute left-[-12px] top-[34%] z-0 h-[3px] w-[10px] rounded-full bg-gradient-to-l from-white via-amber-300 to-red-500 sm:left-[-16px] sm:w-[14px]" />
-      <span className="absolute right-[-12px] top-[34%] z-0 h-[3px] w-[10px] rounded-full bg-gradient-to-r from-white via-amber-300 to-red-500 sm:right-[-16px] sm:w-[14px]" />
+      />
+      <img
+        src="/assets/dsg-sun-badge.png"
+        alt=""
+        width={size}
+        height={size}
+        className="relative z-[1] object-contain drop-shadow-[0_0_18px_rgba(249,115,22,1)]"
+        draggable={false}
+      />
     </div>
   );
 }
@@ -223,9 +186,10 @@ export default function LandingOrbitGlobe() {
 
   return (
     <div
-      className="relative mx-auto w-[200px] h-[200px] sm:w-[280px] sm:h-[280px] lg:w-[400px] lg:h-[400px] shrink-0"
-      data-testid="landing-orbit-globe"
-      aria-label="Global Vibez hub planet — tap a continent light to open its dashboard"
+      className="relative mx-auto w-[240px] h-[240px] sm:w-[320px] sm:h-[320px] lg:w-[440px] lg:h-[440px] shrink-0"
+      data-testid="landing-planet"
+      data-orbit-globe="landing-orbit-globe"
+      aria-label="Global Vibez hub planet — tap a continent inside the globe for its dashboard"
     >
       {/* Galaxy stage */}
       <div
@@ -612,13 +576,12 @@ export default function LandingOrbitGlobe() {
                 transition={{ duration: 1.8 + (c.id.length % 3) * 0.25, repeat: Infinity }}
               />
               <span
-                className={`mt-0.5 text-[7px] sm:text-[8px] lg:text-[10px] font-black uppercase tracking-wide opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-all whitespace-nowrap ${hub.accent.split(" ")[0]}`}
+                className="mt-0.5 text-[7px] sm:text-[8px] lg:text-[10px] font-black uppercase tracking-wide text-white opacity-95 group-hover:opacity-100 group-hover:scale-110 transition-all whitespace-nowrap"
                 style={{
-                  textShadow:
-                    "0 0 8px rgba(0,0,0,0.95), 0 0 10px rgba(255,255,255,0.35)",
+                  textShadow: `0 0 10px ${c.glow}, 0 0 16px ${c.glow}, 0 1px 3px #000`,
                 }}
               >
-                {hub.short}
+                {hub.label}
               </span>
             </button>
           );
