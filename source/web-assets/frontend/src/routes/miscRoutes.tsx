@@ -70,8 +70,6 @@ export const miscRoutes = (ProtectedRoute) => (
     <Route path="/roulette" element={<Navigate to="/european-roulette" replace />} />
     <Route path="/vibe-phone" element={<ProtectedRoute><VibePhonePage /></ProtectedRoute>} />
     <Route path="/viberidez" element={<Navigate to="/vibe-ridez" replace />} />
-    <Route path="/hungry-vibez" element={<Navigate to="/hungryvibes" replace />} />
-    <Route path="/hungry-vibez/*" element={<Navigate to="/hungryvibes" replace />} />
     <Route path="/feed" element={<Navigate to="/my-vibez" replace />} />
     <Route path="/chairs/vault" element={<Navigate to="/chair-vault" replace />} />
     <Route path="/tournament-leaderboard" element={<Navigate to="/leaderboard" replace />} />
