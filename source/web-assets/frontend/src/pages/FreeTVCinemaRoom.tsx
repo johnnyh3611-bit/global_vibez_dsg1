@@ -14,13 +14,16 @@
  * gradient slop — each network keeps its real brand color.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Tv, Users, Copy, ExternalLink, Send, ArrowRight, Play, Pause,
-  RadioTower, Sparkles, Plus,
+  RadioTower, Sparkles, Plus, Phone, ShieldAlert, Film,
 } from 'lucide-react';
 import BackButton from '@/components/BackButton';
+import CallButton from '@/components/voice/CallButton';
+import { useGameTableCallVideo } from '@/components/video/GameTableCallVideo';
+import GameVideoLayout from '@/components/video/GameVideoLayout';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 const WS_BASE = (API || '').replace(/^http/, 'ws');
@@ -76,6 +79,8 @@ export default function FreeTVCinemaRoom() {
   const [playbackState, setPlaybackState] = useState<'SYNCHRONIZED_RUNNING' | 'SYNCHRONIZED_PAUSED'>('SYNCHRONIZED_RUNNING');
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [dateGuestId, setDateGuestId] = useState('');
+  const tableCallVideo = useGameTableCallVideo();
   const wsRef = useRef<WebSocket | null>(null);
 
   // Bootstrap networks (always) + maybe an inbound room from /:roomId.
@@ -291,9 +296,25 @@ export default function FreeTVCinemaRoom() {
               </span>
             </h1>
             <p className="mt-5 max-w-xl text-white/70 text-base">
-              Pluto · Tubi · Plex · YouTube — frame-accurate watch parties.
-              Networks keep their own ads. You and your crew stay in sync.
+              Want to watch <em>with</em> your date without getting kicked out of Vibez?
+              Use Date Cinema (hosted free movies) + Agora voice/video. Tubi / Peacock / Plex
+              block in-app framing — we keep your call + chat here and only open their app for video.
             </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link
+                to="/cinema-room"
+                data-testid="free-tv-date-cinema-cta"
+                className="inline-flex items-center gap-2 rounded-full bg-emerald-400 text-black px-5 py-2.5 text-sm font-semibold"
+              >
+                <Film className="w-4 h-4" /> Date Cinema — stays in app
+              </Link>
+              <Link
+                to="/dsg-tv/arena"
+                className="inline-flex items-center gap-2 rounded-full border border-white/20 px-5 py-2.5 text-sm text-white/80"
+              >
+                Watch DSG TV together
+              </Link>
+            </div>
           </header>
 
           {error && (
@@ -302,11 +323,26 @@ export default function FreeTVCinemaRoom() {
             </div>
           )}
 
+          <div
+            data-testid="free-tv-partner-honesty"
+            className="mb-8 rounded-2xl border border-amber-400/30 bg-amber-500/5 px-4 py-3 text-sm text-amber-100/90 flex gap-3"
+          >
+            <ShieldAlert className="w-5 h-5 shrink-0 text-amber-300" />
+            <div>
+              <strong className="font-semibold">Why Tubi / Peacock kick you out:</strong> their sites
+              set a content-security policy that forbids embedding inside another app. We can&apos;t
+              legally or technically frame them. Best date path: Cinema Room or YouTube embeds below,
+              with your Agora call docked so you never lose the conversation.
+            </div>
+          </div>
+
           {/* Network grid */}
           <section data-testid="free-tv-network-grid" className="mb-12">
-            <h2 className="text-lg font-medium text-white/85 mb-5">Pick a network to start a room</h2>
+            <h2 className="text-lg font-medium text-white/85 mb-5">Partner networks · sync room + call stay here</h2>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {networks.map((n, idx) => (
+              {networks.map((n, idx) => {
+                const staysInApp = n.embed_mode === 'iframe';
+                return (
                 <motion.button
                   key={n.network_id}
                   data-testid={`free-tv-network-${n.network_id}`}
@@ -323,6 +359,15 @@ export default function FreeTVCinemaRoom() {
                     style={{ background: `radial-gradient(circle at top right, ${n.brand_color}, transparent 60%)` }}
                   />
                   <div
+                    className="absolute top-3 right-3 text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-full"
+                    style={{
+                      background: staysInApp ? 'rgba(52,211,153,0.2)' : 'rgba(251,191,36,0.15)',
+                      color: staysInApp ? '#6ee7b7' : '#fcd34d',
+                    }}
+                  >
+                    {staysInApp ? 'Stays in app' : 'Opens partner'}
+                  </div>
+                  <div
                     className="relative w-12 h-12 rounded-xl flex items-center justify-center mb-4"
                     style={{ background: n.brand_color, color: '#0a0a0a' }}
                   >
@@ -337,7 +382,8 @@ export default function FreeTVCinemaRoom() {
                     Start watching <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </div>
                 </motion.button>
-              ))}
+              );
+              })}
             </div>
           </section>
 
@@ -391,6 +437,40 @@ export default function FreeTVCinemaRoom() {
           </div>
         </div>
 
+        <GameVideoLayout video={tableCallVideo} testid="free-tv-call-layout">
+        <div
+          data-testid="free-tv-date-call-dock"
+          className="mb-5 rounded-2xl border border-cyan-400/25 bg-cyan-500/5 p-4 flex flex-col sm:flex-row gap-3 sm:items-end"
+        >
+          <div className="flex-1">
+            <p className="text-[10px] uppercase tracking-widest text-cyan-300 font-bold flex items-center gap-1.5">
+              <Phone className="w-3.5 h-3.5" /> Date call (stays in Vibez)
+            </p>
+            <p className="text-xs text-white/55 mt-1">
+              Even if the movie opens on Tubi/Peacock, keep talking here — Agora docks as PiP.
+            </p>
+            <input
+              value={dateGuestId}
+              onChange={(e) => setDateGuestId(e.target.value.trim())}
+              placeholder="Their user id"
+              className="mt-2 w-full rounded-lg bg-black/40 border border-white/15 px-3 py-2 text-sm"
+              data-testid="free-tv-date-guest-id"
+            />
+          </div>
+          {dateGuestId ? (
+            <div className="flex gap-2">
+              <CallButton userId={dateGuestId} mediaType="voice" />
+              <CallButton userId={dateGuestId} mediaType="video" />
+            </div>
+          ) : null}
+          <Link
+            to="/cinema-room"
+            className="text-xs px-3 py-2 rounded-full border border-emerald-400/40 text-emerald-200"
+          >
+            Switch to in-app cinema
+          </Link>
+        </div>
+
         <div className="grid lg:grid-cols-[1fr_320px] gap-6">
           {/* Player + controls */}
           <div>
@@ -413,17 +493,25 @@ export default function FreeTVCinemaRoom() {
                     {activeNetwork?.label} blocks in-app framing
                   </div>
                   <p className="text-sm text-white/60 max-w-md">
-                    {activeNetwork?.label}&apos;s site can&apos;t be embedded directly (their content
-                    security policy). Launch it in a new tab — your room stays in sync.
+                    {activeNetwork?.label} (and Peacock / Netflix-class apps) refuse to play inside
+                    our iframe. Open their player for video — keep this tab for sync chat + your date call.
                   </p>
-                  <a
-                    href={externalUrl || '#'}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-amber-300 via-amber-400 to-amber-500 text-black px-5 py-2.5 text-sm font-semibold"
-                  >
-                    <ExternalLink className="w-4 h-4" /> Open on {activeNetwork?.label}
-                  </a>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    <a
+                      href={externalUrl || '#'}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-amber-300 via-amber-400 to-amber-500 text-black px-5 py-2.5 text-sm font-semibold"
+                    >
+                      <ExternalLink className="w-4 h-4" /> Open on {activeNetwork?.label}
+                    </a>
+                    <Link
+                      to="/cinema-room"
+                      className="inline-flex items-center gap-2 rounded-full border border-emerald-400/50 text-emerald-200 px-5 py-2.5 text-sm font-semibold"
+                    >
+                      <Film className="w-4 h-4" /> Watch free movie in-app instead
+                    </Link>
+                  </div>
                 </div>
               )}
             </div>
@@ -554,6 +642,7 @@ export default function FreeTVCinemaRoom() {
             <Plus className="w-4 h-4" /> Spawn a new watch party
           </button>
         </div>
+        </GameVideoLayout>
       </div>
     </div>
   );

@@ -64,6 +64,14 @@ async def integrations_health() -> Dict[str, Any]:
         ),
         "purpose": "Legacy card checkout (de-emphasized; prefer Solana / Helio)",
     }
+    cloudflare_stream = {
+        "configured": _present("CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_TOKEN"),
+        "subdomain_present": bool(os.environ.get("CLOUDFLARE_STREAM_SUBDOMAIN")),
+        "purpose": "DSG TV / streamer live ingest (RTMPS) → HLS playback",
+        "set": "CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN, CLOUDFLARE_STREAM_SUBDOMAIN",
+        "docs": "https://developers.cloudflare.com/stream/stream-live/",
+        "status_path": "/api/streaming/cloudflare/status",
+    }
 
     services = {
         "agora": agora,
@@ -72,6 +80,7 @@ async def integrations_health() -> Dict[str, Any]:
         "resend_email": resend,
         "ai_llm": llm,
         "twilio": twilio,
+        "cloudflare_stream": cloudflare_stream,
         "stripe_legacy": stripe,
     }
     ready = sum(1 for s in services.values() if s.get("configured"))
@@ -84,5 +93,6 @@ async def integrations_health() -> Dict[str, Any]:
             "In-app calling uses Agora — Twilio PSTN is optional.",
             "Coin top-up preferred order: Solana deposit → Helio card → Stripe legacy.",
             "Set HELIO_* on Railway to enable Helio pack checkout.",
+            "DSG TV live needs Cloudflare Stream vars — until set, /api/streaming/cloudflare/* runs in stub mode.",
         ],
     }

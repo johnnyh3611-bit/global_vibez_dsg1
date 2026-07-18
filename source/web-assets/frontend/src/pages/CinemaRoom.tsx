@@ -22,9 +22,12 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Film, Users, Plus, Send, Pizza, Play, Pause, Volume2, VolumeX,
-  ArrowLeft, Loader2, Clapperboard, Lock, Heart,
+  ArrowLeft, Loader2, Clapperboard, Lock, Heart, Phone,
 } from "lucide-react";
 import { authFetch } from "@/utils/secureAuth";
+import CallButton from "@/components/voice/CallButton";
+import { useGameTableCallVideo } from "@/components/video/GameTableCallVideo";
+import GameVideoLayout from "@/components/video/GameVideoLayout";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 const WS_BASE = (API || "").replace(/^http/, "ws");
@@ -283,6 +286,7 @@ function CinemaLobby() {
 // ─────────────────────────────────────────────────────────────────────
 function CinemaScreen({ roomId }: { roomId: string }) {
   const navigate = useNavigate();
+  const tableCallVideo = useGameTableCallVideo();
   const [room, setRoom] = useState<Room | null>(null);
   const [content, setContent] = useState<CatalogItem | null>(null);
   const [audience, setAudience] = useState(1);
@@ -290,6 +294,7 @@ function CinemaScreen({ roomId }: { roomId: string }) {
   const [chatDraft, setChatDraft] = useState("");
   const [muted, setMuted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dateGuestId, setDateGuestId] = useState("");
 
   const wsRef = useRef<WebSocket | null>(null);
   const ytPlayerRef = useRef<unknown>(null);
@@ -470,6 +475,34 @@ function CinemaScreen({ roomId }: { roomId: string }) {
         )}
       </header>
 
+      <GameVideoLayout video={tableCallVideo} testid="cinema-room-call-layout">
+      <div
+        data-testid="cinema-date-call-dock"
+        className="px-4 py-3 border-b border-cyan-400/20 bg-cyan-500/5 flex flex-col sm:flex-row gap-3 sm:items-end"
+      >
+        <div className="flex-1">
+          <p className="text-[10px] uppercase tracking-widest text-cyan-300 font-bold flex items-center gap-1.5">
+            <Phone className="w-3.5 h-3.5" /> Talk during the movie
+          </p>
+          <p className="text-[11px] text-white/50 mt-0.5">
+            Hosted free cinema stays in Vibez — Agora call docks as PiP so you never leave the app.
+          </p>
+          <input
+            value={dateGuestId}
+            onChange={(e) => setDateGuestId(e.target.value.trim())}
+            placeholder="Their user id"
+            className="mt-2 w-full max-w-md rounded-lg bg-black/50 border border-white/15 px-3 py-2 text-sm"
+            data-testid="cinema-date-guest-id"
+          />
+        </div>
+        {dateGuestId ? (
+          <div className="flex gap-2">
+            <CallButton userId={dateGuestId} mediaType="voice" size="sm" />
+            <CallButton userId={dateGuestId} mediaType="video" size="sm" />
+          </div>
+        ) : null}
+      </div>
+
       <main className="flex-1 flex flex-col lg:flex-row overflow-hidden">
         {/* Player */}
         <section className="flex-1 min-h-0 flex flex-col bg-black">
@@ -576,6 +609,7 @@ function CinemaScreen({ roomId }: { roomId: string }) {
           </div>
         </aside>
       </main>
+      </GameVideoLayout>
     </div>
   );
 }

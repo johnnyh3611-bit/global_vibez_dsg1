@@ -9,6 +9,7 @@ import VibeRadioStationPage from '@/pages/VibeRadioStationPage';
 import MusicGroupPage from '@/pages/MusicGroupPage';
 import MediaMasterPulsePage from '@/pages/MediaMasterPulsePage';
 import BroadcastDirectorPage from '@/pages/BroadcastDirectorPage';
+import VrTvLounge from '@/pages/VrTvLounge';
 
 export const mediaMasterRoutes = (ProtectedRoute) => (
   <>
@@ -25,6 +26,14 @@ export const mediaMasterRoutes = (ProtectedRoute) => (
       element={
         <ProtectedRoute>
           <DsgTvChannelPage />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/vr-tv/:channelId"
+      element={
+        <ProtectedRoute>
+          <VrTvLounge />
         </ProtectedRoute>
       }
     />

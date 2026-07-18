@@ -56,6 +56,9 @@ class TVAd:
     target_zip_codes: List[str]    # empty list = national-only
     duration_seconds: int = AD_SLOT_DURATION_SECONDS
     is_active: bool = True
+    creative_url: str = ""         # MP4 / HLS URL played in the ad slot
+    channel_id: str = ""           # optional DSG TV channel target
+    business_name: str = ""
 
 
 # ──────────────────────────────────────────────────────────────────────────

@@ -91,6 +91,8 @@ export default function MerchantDashboard() {
   const [blastBody, setBlastBody] = useState("");
   const [adTitle, setAdTitle] = useState("");
   const [adZips, setAdZips] = useState("");
+  const [adCreativeUrl, setAdCreativeUrl] = useState("");
+  const [adChannelId, setAdChannelId] = useState("");
   const [qrCopied, setQrCopied] = useState(false);
 
   // recent activity
@@ -220,6 +222,34 @@ export default function MerchantDashboard() {
     }
   }
 
+  /** Pay for flights with in-app credits (Helio/Solana funded wallet) — no Stripe redirect. */
+  async function buyFlightsWithCredits() {
+    if (!merchant) return;
+    setBusy("dsg-tv-credits");
+    try {
+      const token = localStorage.getItem("auth_token");
+      const r = await fetch(`${API}/api/vibe-tv/ads/buy-flights`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ merchant_id: merchant.merchant_id, quantity: flightsToBuy }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.detail || "Could not buy flights");
+      toast.success(
+        `Bought ${data.quantity} flight(s) for ₵${data.credits_spent} · ${data.remaining_flights} left`
+      );
+      loadAll();
+    } catch (e: any) {
+      toast.error(e?.message || "Need wallet credits — top up via Helio/Solana");
+    } finally {
+      setBusy(null);
+    }
+  }
+
   async function sendBlast() {
     if (!merchant) return;
     if (blastHeadline.length < 2 || blastBody.length < 2) {
@@ -275,6 +305,8 @@ export default function MerchantDashboard() {
           title: adTitle.trim(),
           target_zip_codes: zips,
           duration_seconds: 15,
+          creative_url: adCreativeUrl.trim(),
+          channel_id: adChannelId.trim(),
         }),
       });
       const data = await r.json();
@@ -284,6 +316,8 @@ export default function MerchantDashboard() {
       );
       setAdTitle("");
       setAdZips("");
+      setAdCreativeUrl("");
+      setAdChannelId("");
       loadAll();
     } catch (e: any) {
       toast.error(e?.message || "Could not publish ad");
@@ -528,9 +562,22 @@ export default function MerchantDashboard() {
               className="inline-flex items-center gap-1 rounded-lg bg-fuchsia-400 px-4 py-2 font-semibold text-black hover:brightness-110 disabled:opacity-40"
             >
               {busy === "dsg-tv" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-              Buy flights
+              Buy (card)
+            </button>
+            <button
+              data-testid="dsg-tv-credits-cta"
+              disabled={busy === "dsg-tv-credits"}
+              onClick={buyFlightsWithCredits}
+              className="inline-flex items-center gap-1 rounded-lg bg-emerald-400 px-4 py-2 font-semibold text-black hover:brightness-110 disabled:opacity-40"
+              title="₵2500 per flight from wallet credits"
+            >
+              {busy === "dsg-tv-credits" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Coins className="h-4 w-4" />}
+              Buy with ₵
             </button>
           </div>
+          <p className="mt-2 text-[11px] text-white/45">
+            Card checkout uses Stripe when configured. Wallet path spends ₵2500/flight from credits (Helio/Solana).
+          </p>
         </Panel>
 
         {/* Push Blast Add-on (purchase) */}
@@ -688,6 +735,20 @@ export default function MerchantDashboard() {
             value={adZips}
             onChange={(e) => setAdZips(e.target.value)}
             placeholder="Target ZIPs (comma-separated, optional)"
+            className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 outline-none focus:border-fuchsia-300 mb-2"
+          />
+          <input
+            data-testid="dsg-tv-ad-creative"
+            value={adCreativeUrl}
+            onChange={(e) => setAdCreativeUrl(e.target.value)}
+            placeholder="Creative MP4/HLS URL (plays in commercial break)"
+            className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 outline-none focus:border-fuchsia-300 mb-2"
+          />
+          <input
+            data-testid="dsg-tv-ad-channel"
+            value={adChannelId}
+            onChange={(e) => setAdChannelId(e.target.value)}
+            placeholder="Optional channel id (e.g. arena)"
             className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 outline-none focus:border-fuchsia-300"
           />
           <button
