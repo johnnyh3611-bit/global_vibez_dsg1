@@ -39,6 +39,7 @@
     "@radix-ui/react-tooltip": "^1.2.4",
     "@react-three/drei": "^10.0.0",
     "@react-three/fiber": "^9.1.0",
+    "@react-three/postprocessing": "^3.0.4",
     "@react-three/xr": "^6.6.29",
     "@solana/wallet-adapter-base": "^0.9.27",
     "@solana/wallet-adapter-phantom": "^0.9.29",
