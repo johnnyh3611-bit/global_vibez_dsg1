@@ -21,7 +21,7 @@ import LandingLanguageSwitcher from '../components/LandingLanguageSwitcher';
 import LandingHeaderEnhanced, { type RoomKey } from '../components/landing/LandingHeaderEnhanced';
 import LandingFeatureAccordions from '../components/landing/LandingFeatureAccordions';
 import LandingTourVideo from '../components/landing/LandingTourVideo';
-import LandingPlanet from '../components/landing/LandingPlanet';
+import LandingOrbitGlobe from '../components/landing/LandingOrbitGlobe';
 import PageActionStrip from '@/components/common/PageActionStrip';
 
 const API = process.env.REACT_APP_BACKEND_URL;
@@ -479,7 +479,7 @@ export default function LandingNeonGaming() {
             transition={{ duration: 0.8, delay: 0.3 }}
             className="relative flex items-center justify-center min-h-[220px] sm:min-h-[300px] lg:min-h-[480px] order-2 lg:order-2 overflow-visible"
           >
-            <LandingPlanet />
+            <LandingOrbitGlobe />
           </motion.div>
         </div>
       </section>
