@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="280" viewBox="0 0 256 280">
+  <defs>
+    <radialGradient id="g" cx="40%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="35%" stop-color="#22d3ee"/>
+      <stop offset="100%" stop-color="#22d3ee" stop-opacity="0.75"/>
+    </radialGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="6" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <circle cx="128" cy="128" r="118" fill="#22d3ee" opacity="0.18" filter="url(#glow)"/>
+  <g filter="url(#glow)">
+    <ellipse cx="128" cy="150" rx="90" ry="28" fill="#0ea5e9" opacity="0.9"/>
+    <path d="M50 140 L70 100 Q90 70 160 70 L210 100 L230 140 Z" fill="url(#g)" stroke="#67e8f9" stroke-width="4"/>
+    <circle cx="80" cy="150" r="22" fill="#0f172a" stroke="#a5f3fc" stroke-width="5"/>
+    <circle cx="200" cy="150" r="22" fill="#0f172a" stroke="#a5f3fc" stroke-width="5"/>
+    <rect x="95" y="85" width="55" height="35" rx="8" fill="#67e8f9" opacity="0.55"/>
+  </g>
+  <rect x="28" y="230" width="200" height="36" rx="12" fill="#000000" fill-opacity="0.55" stroke="#22d3ee" stroke-width="2"/>
+  <text x="128" y="254" text-anchor="middle" font-family="Arial Black, Helvetica, sans-serif" font-size="16" font-weight="900" fill="#ffffff" letter-spacing="1.5">VIBERIDE</text>
+</svg>
