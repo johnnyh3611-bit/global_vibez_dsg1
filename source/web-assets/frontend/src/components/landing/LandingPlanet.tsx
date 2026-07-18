@@ -1,11 +1,10 @@
 /**
  * LandingPlanet — founder-target home globe.
  *
- * Match the reference mock closely:
- * • Clear Earth in deep space (Milky Way / constellation behind)
- * • Recognizable neon shapes ON the planet (car, heart, truck, towers…) — tappable tabs
- * • Thin constellation links between hubs
- * • ONE DSG fireball sun circling the planet
+ * • Hub tabs sit on the Earth brim (rim sockets) — planet atmosphere wraps around them
+ * • DSG fireball fully circles the planet on fire
+ * • Second VIBEZ satellite also orbits (different path)
+ * • Galaxy / stars behind
  */
 import { Suspense, useMemo, useRef } from "react";
 import { Canvas, useFrame, type ThreeEvent } from "@react-three/fiber";
@@ -15,11 +14,15 @@ import { useNavigate } from "react-router-dom";
 import * as THREE from "three";
 import { GLOBE_HUBS, openHubPath, type HubDef, type HubId } from "@/hubs/hubRegistry";
 
-const GLOBE_R = 2.15;
-const ORBIT_R = 3.45;
-const ORBIT_TILT = 0.32;
-/** Shapes sit on the front crust — close enough to read as “on” the planet */
-const SHAPE_R = GLOBE_R * 1.018;
+const GLOBE_R = 2.2;
+/** Tabs sit in the brim — atmosphere shell extends past them */
+const SHAPE_R = GLOBE_R * 1.012;
+const BRIM_R = GLOBE_R * 1.085;
+
+const DSG_ORBIT_R = 3.55;
+const DSG_TILT = 0.38;
+const VIBE_ORBIT_R = 3.95;
+const VIBE_TILT = -0.55;
 
 const HUB_SHAPE: Partial<
   Record<HubId, { src: string; label: string; glow: string; scale: number }>
@@ -28,51 +31,51 @@ const HUB_SHAPE: Partial<
     src: "/assets/shape-viberide.png",
     label: "VibeRide",
     glow: "#22d3ee",
-    scale: 0.72,
+    scale: 0.58,
   },
   dating: {
     src: "/assets/shape-dating.png",
     label: "Dating",
     glow: "#fb7185",
-    scale: 0.68,
+    scale: 0.55,
   },
   hungry: {
     src: "/assets/shape-hungry.png",
     label: "Hungry Vibez",
     glow: "#fb923c",
-    scale: 0.7,
+    scale: 0.56,
   },
   viberise: {
     src: "/assets/shape-viberise.png",
     label: "VibeRise",
     glow: "#c084fc",
-    scale: 0.7,
+    scale: 0.56,
   },
   cdl: {
     src: "/assets/shape-cdl.png",
     label: "CDL / GDL",
     glow: "#fbbf24",
-    scale: 0.72,
+    scale: 0.58,
   },
   vineyards: {
     src: "/assets/shape-vineyards.png",
     label: "Vibe Vineyards",
     glow: "#f9a8d4",
-    scale: 0.66,
+    scale: 0.54,
   },
   vibe: {
     src: "/assets/shape-home.png",
     label: "Home",
     glow: "#2dd4bf",
-    scale: 0.62,
+    scale: 0.52,
   },
 };
 
 function hubToSphere(hub: HubDef, radius: number): THREE.Vector3 {
   const left = parseFloat(String(hub.globeLeft ?? "50")) / 100;
   const top = parseFloat(String(hub.globeTop ?? "50")) / 100;
-  const lon = (left - 0.5) * Math.PI * 1.25;
-  const lat = (0.5 - top) * Math.PI * 0.8;
+  const lon = (left - 0.5) * Math.PI * 1.2;
+  const lat = (0.5 - top) * Math.PI * 0.78;
   return new THREE.Vector3(
     Math.cos(lat) * Math.sin(lon) * radius,
     Math.sin(lat) * radius,
@@ -86,7 +89,6 @@ function useGalaxyTexture() {
     c.width = 1024;
     c.height = 512;
     const ctx = c.getContext("2d")!;
-
     const space = ctx.createLinearGradient(0, 0, 0, 512);
     space.addColorStop(0, "#020617");
     space.addColorStop(0.5, "#0a0f2a");
@@ -103,12 +105,11 @@ function useGalaxyTexture() {
     ctx.fillStyle = band;
     ctx.fillRect(0, 0, 1024, 512);
 
-    const nebulae: Array<[number, number, number, string]> = [
+    for (const [x, y, r, color] of [
       [240, 220, 200, "rgba(56,189,248,0.18)"],
       [540, 250, 240, "rgba(168,85,247,0.16)"],
       [800, 200, 180, "rgba(244,114,182,0.12)"],
-    ];
-    for (const [x, y, r, color] of nebulae) {
+    ] as const) {
       const g = ctx.createRadialGradient(x, y, 0, x, y, r);
       g.addColorStop(0, color);
       g.addColorStop(1, "rgba(0,0,0,0)");
@@ -117,10 +118,8 @@ function useGalaxyTexture() {
     }
 
     for (let i = 0; i < 1200; i++) {
-      const x = Math.random() * 1024;
-      const y = Math.random() * 512;
       ctx.fillStyle = `rgba(255,255,255,${0.2 + Math.random() * 0.75})`;
-      ctx.fillRect(x, y, Math.random() * 1.7, Math.random() * 1.7);
+      ctx.fillRect(Math.random() * 1024, Math.random() * 512, Math.random() * 1.7, Math.random() * 1.7);
     }
 
     const tex = new THREE.CanvasTexture(c);
@@ -135,36 +134,79 @@ function useDsgSphereTexture() {
     c.width = 512;
     c.height = 512;
     const ctx = c.getContext("2d")!;
-    const g = ctx.createRadialGradient(256, 240, 20, 256, 256, 250);
-    g.addColorStop(0, "#fff7ed");
-    g.addColorStop(0.25, "#fbbf24");
-    g.addColorStop(0.55, "#f97316");
-    g.addColorStop(0.85, "#dc2626");
-    g.addColorStop(1, "#7f1d1d");
+    const g = ctx.createRadialGradient(256, 240, 16, 256, 256, 250);
+    g.addColorStop(0, "#fffbeb");
+    g.addColorStop(0.2, "#fbbf24");
+    g.addColorStop(0.45, "#f97316");
+    g.addColorStop(0.75, "#dc2626");
+    g.addColorStop(1, "#450a0a");
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, 512, 512);
 
-    ctx.fillStyle = "rgba(15,23,42,0.85)";
+    // Flame tongues
+    for (let i = 0; i < 14; i++) {
+      const a = (i / 14) * Math.PI * 2;
+      const len = 80 + (i % 3) * 28;
+      ctx.strokeStyle = i % 2 ? "rgba(253,224,71,0.55)" : "rgba(249,115,22,0.5)";
+      ctx.lineWidth = 10;
+      ctx.beginPath();
+      ctx.moveTo(256 + Math.cos(a) * 90, 256 + Math.sin(a) * 90);
+      ctx.quadraticCurveTo(
+        256 + Math.cos(a + 0.2) * (90 + len * 0.5),
+        256 + Math.sin(a + 0.2) * (90 + len * 0.5),
+        256 + Math.cos(a) * (90 + len),
+        256 + Math.sin(a) * (90 + len),
+      );
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = "rgba(15,23,42,0.88)";
     ctx.beginPath();
     ctx.ellipse(256, 270, 118, 86, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.fillStyle = "#fde68a";
-    ctx.beginPath();
-    ctx.moveTo(256, 175);
-    ctx.bezierCurveTo(230, 220, 220, 245, 245, 270);
-    ctx.bezierCurveTo(235, 250, 256, 290, 270, 255);
-    ctx.bezierCurveTo(290, 275, 285, 220, 256, 175);
-    ctx.fill();
-
-    ctx.font = "900 78px Arial Black, Impact, sans-serif";
+    ctx.font = "900 82px Arial Black, Impact, sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillStyle = "#ffffff";
     ctx.strokeStyle = "#7c2d12";
-    ctx.lineWidth = 7;
+    ctx.lineWidth = 8;
     ctx.strokeText("DSG", 256, 300);
+    ctx.fillStyle = "#fff7ed";
     ctx.fillText("DSG", 256, 300);
+
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+  }, []);
+}
+
+function useVibezSphereTexture() {
+  return useMemo(() => {
+    const c = document.createElement("canvas");
+    c.width = 512;
+    c.height = 512;
+    const ctx = c.getContext("2d")!;
+    const g = ctx.createRadialGradient(256, 230, 20, 256, 256, 250);
+    g.addColorStop(0, "#ecfeff");
+    g.addColorStop(0.3, "#22d3ee");
+    g.addColorStop(0.65, "#0891b2");
+    g.addColorStop(1, "#164e63");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 512, 512);
+
+    ctx.fillStyle = "rgba(15,23,42,0.78)";
+    ctx.beginPath();
+    ctx.ellipse(256, 268, 130, 78, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.font = "900 64px Arial Black, Impact, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.strokeStyle = "#083344";
+    ctx.lineWidth = 7;
+    ctx.strokeText("VIBEZ", 256, 275);
+    ctx.fillStyle = "#ecfeff";
+    ctx.fillText("VIBEZ", 256, 275);
 
     const tex = new THREE.CanvasTexture(c);
     tex.colorSpace = THREE.SRGBColorSpace;
@@ -186,40 +228,10 @@ function GalaxyBackdrop() {
   );
 }
 
-/** Thin neon links between hubs — constellation web from the reference */
-function ConstellationLinks() {
-  const positions = useMemo(() => GLOBE_HUBS.map((h) => hubToSphere(h, GLOBE_R * 1.01)), []);
-  const geom = useMemo(() => {
-    const pts: number[] = [];
-    // Connect each hub to its two nearest neighbors for a clean web
-    for (let i = 0; i < positions.length; i++) {
-      const a = positions[i];
-      const scored = positions
-        .map((p, j) => ({ j, d: a.distanceTo(p) }))
-        .filter((x) => x.j !== i)
-        .sort((u, v) => u.d - v.d)
-        .slice(0, 2);
-      for (const { j } of scored) {
-        if (j < i) continue; // draw each edge once
-        pts.push(a.x, a.y, a.z, positions[j].x, positions[j].y, positions[j].z);
-      }
-    }
-    const g = new THREE.BufferGeometry();
-    g.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
-    return g;
-  }, [positions]);
-
-  return (
-    <lineSegments geometry={geom}>
-      <lineBasicMaterial color="#e2e8f0" transparent opacity={0.35} toneMapped={false} />
-    </lineSegments>
-  );
-}
-
 function EarthGlobe() {
   const [earth, clouds] = useTexture(["/assets/earth-texture.jpg", "/assets/earth-clouds.jpg"]);
   const cloudRef = useRef<THREE.Mesh>(null);
-  const earthRef = useRef<THREE.Mesh>(null);
+  const earthRef = useRef<THREE.Group>(null);
 
   useMemo(() => {
     earth.colorSpace = THREE.SRGBColorSpace;
@@ -229,48 +241,73 @@ function EarthGlobe() {
 
   useFrame((_, dt) => {
     if (cloudRef.current) cloudRef.current.rotation.y += dt * 0.014;
-    if (earthRef.current) earthRef.current.rotation.y += dt * 0.004;
+    if (earthRef.current) earthRef.current.rotation.y += dt * 0.0035;
   });
 
   return (
     <group>
-      <mesh ref={earthRef}>
-        <sphereGeometry args={[GLOBE_R, 96, 96]} />
-        <meshStandardMaterial map={earth} roughness={0.7} metalness={0.08} />
-      </mesh>
+      <group ref={earthRef}>
+        <mesh>
+          <sphereGeometry args={[GLOBE_R, 96, 96]} />
+          <meshStandardMaterial map={earth} roughness={0.68} metalness={0.1} />
+        </mesh>
 
-      {/* Soft city-light sheen so continents read under the icons */}
-      <mesh scale={1.003}>
+        <mesh scale={1.004}>
+          <sphereGeometry args={[GLOBE_R, 64, 64]} />
+          <meshBasicMaterial
+            color="#38bdf8"
+            transparent
+            opacity={0.08}
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+          />
+        </mesh>
+
+        <mesh ref={cloudRef} scale={1.02}>
+          <sphereGeometry args={[GLOBE_R, 64, 64]} />
+          <meshStandardMaterial map={clouds} transparent opacity={0.3} depthWrite={false} />
+        </mesh>
+      </group>
+
+      {/* Bright Earth BRIM — wraps past the hub tabs so the rim reads clearly */}
+      <mesh scale={BRIM_R / GLOBE_R}>
         <sphereGeometry args={[GLOBE_R, 64, 64]} />
         <meshBasicMaterial
-          color="#38bdf8"
+          color="#67e8f9"
           transparent
-          opacity={0.07}
-          blending={THREE.AdditiveBlending}
-          depthWrite={false}
-        />
-      </mesh>
-
-      <mesh ref={cloudRef} scale={1.018}>
-        <sphereGeometry args={[GLOBE_R, 64, 64]} />
-        <meshStandardMaterial map={clouds} transparent opacity={0.28} depthWrite={false} />
-      </mesh>
-
-      <mesh scale={1.1}>
-        <sphereGeometry args={[GLOBE_R, 48, 48]} />
-        <meshBasicMaterial
-          color="#38bdf8"
-          transparent
-          opacity={0.16}
+          opacity={0.14}
           side={THREE.BackSide}
           blending={THREE.AdditiveBlending}
           depthWrite={false}
         />
       </mesh>
+      <mesh scale={(BRIM_R * 1.06) / GLOBE_R}>
+        <sphereGeometry args={[GLOBE_R, 48, 48]} />
+        <meshBasicMaterial
+          color="#38bdf8"
+          transparent
+          opacity={0.1}
+          side={THREE.BackSide}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+        />
+      </mesh>
+      {/* Thin crisp limb ring so the planet edge is obvious around the tabs */}
+      <mesh rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[GLOBE_R * 1.04, 0.018, 12, 128]} />
+        <meshBasicMaterial color="#a5f3fc" transparent opacity={0.45} toneMapped={false} />
+      </mesh>
+      <mesh rotation={[0.2, 0.4, 0.1]}>
+        <torusGeometry args={[GLOBE_R * 1.055, 0.01, 10, 128]} />
+        <meshBasicMaterial color="#67e8f9" transparent opacity={0.28} toneMapped={false} />
+      </mesh>
     </group>
   );
 }
 
+/**
+ * Hub tab in a nice brim “socket” — Earth atmosphere wraps around it.
+ */
 function HubShape({
   hub,
   onOpen,
@@ -291,7 +328,7 @@ function HubShape({
   useFrame(({ camera }) => {
     if (!groupRef.current) return;
     const facing = normal.dot(camera.position.clone().normalize());
-    groupRef.current.visible = facing > 0.08;
+    groupRef.current.visible = facing > 0.05;
   });
 
   if (!art) return null;
@@ -308,45 +345,58 @@ function HubShape({
 
   return (
     <group ref={groupRef} position={pos}>
-      <Billboard follow lockX={false} lockY={false} lockZ={false}>
-        {/* Soft neon halo behind the shape */}
+      <Billboard follow>
+        {/* Brim socket — glass ring so Earth edge frames the tab */}
+        <mesh position={[0, 0, -0.03]}>
+          <ringGeometry args={[s * 0.38, s * 0.48, 48]} />
+          <meshBasicMaterial
+            color="#e0f2fe"
+            transparent
+            opacity={0.55}
+            depthWrite={false}
+            toneMapped={false}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+        <mesh position={[0, 0, -0.025]}>
+          <circleGeometry args={[s * 0.4, 40]} />
+          <meshBasicMaterial
+            color="#020617"
+            transparent
+            opacity={0.55}
+            depthWrite={false}
+          />
+        </mesh>
         <mesh position={[0, 0, -0.02]}>
-          <circleGeometry args={[s * 0.42, 32]} />
+          <circleGeometry args={[s * 0.36, 40]} />
           <meshBasicMaterial
             color={art.glow}
             transparent
-            opacity={0.28}
+            opacity={0.22}
             depthWrite={false}
             blending={THREE.AdditiveBlending}
             toneMapped={false}
           />
         </mesh>
 
-        {/* The recognizable shape itself (car / heart / truck…) */}
         <sprite
-          scale={[s, s, 1]}
+          scale={[s * 0.92, s * 0.92, 1]}
           onClick={click}
           onPointerOver={() => setCursor(true)}
           onPointerOut={() => setCursor(false)}
         >
-          <spriteMaterial
-            map={map}
-            transparent
-            depthWrite={false}
-            toneMapped={false}
-            opacity={1}
-          />
+          <spriteMaterial map={map} transparent depthWrite={false} toneMapped={false} />
         </sprite>
 
         <Text
-          position={[0, -s * 0.52, 0.02]}
-          fontSize={0.125}
+          position={[0, -s * 0.55, 0.02]}
+          fontSize={0.11}
           color="#ffffff"
           anchorX="center"
           anchorY="middle"
-          outlineWidth={0.018}
+          outlineWidth={0.016}
           outlineColor="#020617"
-          maxWidth={1.4}
+          maxWidth={1.35}
           textAlign="center"
           onClick={click}
           onPointerOver={() => setCursor(true)}
@@ -362,7 +412,6 @@ function HubShape({
 function Continents({ onOpen }: { onOpen: (h: HubDef) => void }) {
   return (
     <group>
-      <ConstellationLinks />
       {GLOBE_HUBS.map((hub) => (
         <HubShape key={hub.id} hub={hub} onOpen={onOpen} />
       ))}
@@ -370,16 +419,18 @@ function Continents({ onOpen }: { onOpen: (h: HubDef) => void }) {
   );
 }
 
+/** DSG fireball — full circular orbit, clearly on fire */
 function DsgFireball() {
   const group = useRef<THREE.Group>(null);
   const core = useRef<THREE.Mesh>(null);
   const ring = useRef<THREE.Mesh>(null);
+  const ring2 = useRef<THREE.Mesh>(null);
   const light = useRef<THREE.PointLight>(null);
   const glow = useTexture("/assets/sun-glow.png");
   const dsgMap = useDsgSphereTexture();
   const orbitPlane = useMemo(() => {
     const m = new THREE.Matrix4();
-    m.makeRotationX(ORBIT_TILT);
+    m.makeRotationX(DSG_TILT);
     return m;
   }, []);
 
@@ -389,57 +440,71 @@ function DsgFireball() {
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
-    const a = t * 0.52;
-    const local = new THREE.Vector3(Math.cos(a) * ORBIT_R, 0, Math.sin(a) * ORBIT_R);
+    // Full 360° circle around the planet
+    const a = t * 0.48;
+    const local = new THREE.Vector3(Math.cos(a) * DSG_ORBIT_R, 0, Math.sin(a) * DSG_ORBIT_R);
     local.applyMatrix4(orbitPlane);
 
     if (group.current) group.current.position.copy(local);
-    if (ring.current) ring.current.rotation.z = t * 3.2;
+    if (ring.current) ring.current.rotation.z = t * 4.2;
+    if (ring2.current) ring2.current.rotation.z = -t * 3.1;
     if (core.current) {
-      core.current.rotation.y = t * 1.4;
+      core.current.rotation.y = t * 1.6;
       (core.current.material as THREE.MeshStandardMaterial).emissiveIntensity =
-        4.6 + Math.sin(t * 7) * 0.8;
+        5.2 + Math.sin(t * 9) * 1.1;
     }
     if (light.current) {
-      const front = THREE.MathUtils.clamp((local.z / ORBIT_R) * 0.5 + 0.5, 0.35, 1);
-      light.current.intensity = (4 + Math.sin(t * 5) * 0.5) * front;
+      const front = THREE.MathUtils.clamp((local.z / DSG_ORBIT_R) * 0.5 + 0.5, 0.4, 1);
+      light.current.intensity = (5.2 + Math.sin(t * 6) * 0.8) * front;
     }
   });
 
   return (
     <group ref={group}>
-      <pointLight ref={light} color="#ff6a00" intensity={4} distance={11} decay={2} />
+      <pointLight ref={light} color="#ff4500" intensity={5} distance={12} decay={2} />
 
-      <mesh scale={1.7}>
-        <sphereGeometry args={[0.36, 32, 32]} />
+      {/* Outer fire corona */}
+      <mesh scale={2.1}>
+        <sphereGeometry args={[0.34, 32, 32]} />
         <meshBasicMaterial
           map={glow}
           transparent
-          opacity={0.6}
+          opacity={0.7}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
           toneMapped={false}
+          color="#ff6a00"
         />
       </mesh>
 
-      <mesh ref={ring} rotation={[Math.PI / 2.2, 0.2, 0]}>
-        <torusGeometry args={[0.52, 0.045, 10, 48]} />
+      {/* Spinning fire rings */}
+      <mesh ref={ring} rotation={[Math.PI / 2.1, 0.15, 0]}>
+        <torusGeometry args={[0.55, 0.055, 12, 56]} />
         <meshStandardMaterial
           color="#ff4500"
           emissive="#ff4500"
+          emissiveIntensity={6}
+          toneMapped={false}
+        />
+      </mesh>
+      <mesh ref={ring2} rotation={[Math.PI / 2.6, 0.6, 0.3]}>
+        <torusGeometry args={[0.62, 0.03, 10, 48]} />
+        <meshStandardMaterial
+          color="#fbbf24"
+          emissive="#fbbf24"
           emissiveIntensity={5}
           toneMapped={false}
         />
       </mesh>
 
       <mesh ref={core}>
-        <sphereGeometry args={[0.36, 48, 48]} />
+        <sphereGeometry args={[0.38, 48, 48]} />
         <meshStandardMaterial
           map={dsgMap}
           emissiveMap={dsgMap}
           emissive="#ff4500"
-          emissiveIntensity={4.8}
-          roughness={0.35}
+          emissiveIntensity={5.2}
+          roughness={0.3}
           metalness={0.05}
           toneMapped={false}
         />
@@ -448,12 +513,76 @@ function DsgFireball() {
   );
 }
 
-function OrbitPath() {
+/** Second satellite — VIBEZ — opposite tilt / slower orbit */
+function VibezSatellite() {
+  const group = useRef<THREE.Group>(null);
+  const core = useRef<THREE.Mesh>(null);
+  const glow = useTexture("/assets/sun-glow.png");
+  const vibezMap = useVibezSphereTexture();
+  const orbitPlane = useMemo(() => {
+    const m = new THREE.Matrix4();
+    m.makeRotationX(VIBE_TILT);
+    m.multiply(new THREE.Matrix4().makeRotationZ(0.4));
+    return m;
+  }, []);
+
+  useMemo(() => {
+    glow.colorSpace = THREE.SRGBColorSpace;
+  }, [glow]);
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    // Opposite direction, different speed — full circle
+    const a = -t * 0.32 + Math.PI * 0.7;
+    const local = new THREE.Vector3(Math.cos(a) * VIBE_ORBIT_R, 0, Math.sin(a) * VIBE_ORBIT_R);
+    local.applyMatrix4(orbitPlane);
+    if (group.current) group.current.position.copy(local);
+    if (core.current) core.current.rotation.y = t * 1.1;
+  });
+
   return (
-    <mesh rotation={[Math.PI / 2 + ORBIT_TILT, 0, 0]}>
-      <torusGeometry args={[ORBIT_R, 0.01, 8, 128]} />
-      <meshBasicMaterial color="#f97316" transparent opacity={0.32} toneMapped={false} />
-    </mesh>
+    <group ref={group}>
+      <pointLight color="#22d3ee" intensity={2.2} distance={8} decay={2} />
+      <mesh scale={1.6}>
+        <sphereGeometry args={[0.26, 24, 24]} />
+        <meshBasicMaterial
+          map={glow}
+          transparent
+          opacity={0.5}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          toneMapped={false}
+          color="#22d3ee"
+        />
+      </mesh>
+      <mesh ref={core}>
+        <sphereGeometry args={[0.28, 40, 40]} />
+        <meshStandardMaterial
+          map={vibezMap}
+          emissiveMap={vibezMap}
+          emissive="#22d3ee"
+          emissiveIntensity={3.8}
+          roughness={0.35}
+          metalness={0.08}
+          toneMapped={false}
+        />
+      </mesh>
+    </group>
+  );
+}
+
+function OrbitPaths() {
+  return (
+    <group>
+      <mesh rotation={[Math.PI / 2 + DSG_TILT, 0, 0]}>
+        <torusGeometry args={[DSG_ORBIT_R, 0.012, 8, 128]} />
+        <meshBasicMaterial color="#f97316" transparent opacity={0.4} toneMapped={false} />
+      </mesh>
+      <mesh rotation={[Math.PI / 2 + VIBE_TILT, 0, 0.4]}>
+        <torusGeometry args={[VIBE_ORBIT_R, 0.008, 8, 128]} />
+        <meshBasicMaterial color="#22d3ee" transparent opacity={0.28} toneMapped={false} />
+      </mesh>
+    </group>
   );
 }
 
@@ -463,30 +592,31 @@ function Scene() {
 
   return (
     <>
-      <ambientLight intensity={0.5} />
-      <directionalLight position={[5, 3, 5]} intensity={1.45} />
-      <pointLight position={[-4, 2, 2]} intensity={0.4} color="#a78bfa" />
+      <ambientLight intensity={0.48} />
+      <directionalLight position={[5, 3, 5]} intensity={1.4} />
+      <pointLight position={[-4, 2, 2]} intensity={0.35} color="#a78bfa" />
 
       <Suspense fallback={null}>
         <GalaxyBackdrop />
         <Stars radius={70} depth={45} count={2800} factor={2.6} fade speed={0.4} />
         <EarthGlobe />
         <Continents onOpen={onOpen} />
-        <OrbitPath />
+        <OrbitPaths />
         <DsgFireball />
+        <VibezSatellite />
       </Suspense>
 
       <OrbitControls
         enableZoom={false}
         enablePan={false}
         autoRotate
-        autoRotateSpeed={0.2}
+        autoRotateSpeed={0.18}
         minPolarAngle={Math.PI * 0.4}
         maxPolarAngle={Math.PI * 0.6}
       />
 
       <EffectComposer multisampling={0}>
-        <Bloom intensity={1.35} luminanceThreshold={0.22} luminanceSmoothing={0.55} mipmapBlur />
+        <Bloom intensity={1.4} luminanceThreshold={0.2} luminanceSmoothing={0.5} mipmapBlur />
       </EffectComposer>
     </>
   );
@@ -500,13 +630,13 @@ export function LandingPlanet() {
       aria-label="Global Vibez Earth hub — tap a continent for its dashboard"
     >
       <Canvas
-        camera={{ position: [0, 0.25, 9.2], fov: 42 }}
+        camera={{ position: [0, 0.25, 9.4], fov: 42 }}
         dpr={[1, 1.75]}
         gl={{
           antialias: true,
           alpha: true,
           toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.18,
+          toneMappingExposure: 1.15,
         }}
         style={{ width: "100%", height: "100%" }}
       >
@@ -521,7 +651,6 @@ export function LandingPlanet() {
           WebkitBackgroundClip: "text",
           color: "transparent",
           animation: "landingCtaShift 2.4s ease-in-out infinite",
-          textShadow: "0 0 18px rgba(251,191,36,0.35)",
         }}
       >
         Tap a continent · your dashboard
