@@ -19,15 +19,19 @@ import { GLOBE_HUBS, openHubPath, type HubDef, type HubId } from "@/hubs/hubRegi
 const GLOBE_R = 2.05;
 const SUN_ORBIT = 3.25;
 
-/** Continent tabs inside the planet → dashboard links. */
+/**
+ * Continent tabs = glowing circular TILE orbs (founder style),
+ * each a unique recognizable shape (car / pizza / truck / buildings…),
+ * transparent outside the glow — no black square behind them.
+ */
 const HUB_ART: Partial<Record<HubId, { src: string; label: string; glow: string }>> = {
   ridez: { src: "/assets/hub-viberide.png", label: "VibeRide", glow: "#22d3ee" },
   vineyards: { src: "/assets/hub-vineyards.png", label: "Vibe Vineyards", glow: "#f9a8d4" },
   hungry: { src: "/assets/hub-hungry.png", label: "Hungry Vibez", glow: "#fb923c" },
   dating: { src: "/assets/hub-dating.png", label: "Dating", glow: "#fb7185" },
   viberise: { src: "/assets/hub-logistics.png", label: "Logistics Hub", glow: "#c084fc" },
-  cdl: { src: "/assets/hub-cdl.png", label: "CDL / GDL", glow: "#38bdf8" },
-  vibe: { src: "/assets/hub-home.png", label: "Home", glow: "#22d3ee" },
+  cdl: { src: "/assets/hub-cdl.png", label: "CDL / GDL", glow: "#fbbf24" },
+  vibe: { src: "/assets/hub-home.png", label: "Home", glow: "#2dd4bf" },
 };
 
 function hubToSphere(hub: HubDef, radius: number): THREE.Vector3 {
@@ -106,10 +110,10 @@ function PlanetWithContinentsInside() {
         <meshStandardMaterial
           map={continents}
           transparent
-          opacity={0.95}
+          opacity={0.35}
           depthWrite={false}
           emissive="#67e8f9"
-          emissiveIntensity={0.25}
+          emissiveIntensity={0.12}
           emissiveMap={continents}
           toneMapped={false}
         />
@@ -192,9 +196,10 @@ function ContinentTab({
           toneMapped={false}
         />
       </mesh>
+      {/* Glowing tile orb — style matches founder circular tiles */}
       <sprite
-        scale={[0.72, 0.72, 1]}
-        position={[0, 0.16, 0.04]}
+        scale={[0.95, 0.95, 1]}
+        position={[0, 0.12, 0.05]}
         onClick={click}
         onPointerOver={() => {
           document.body.style.cursor = "pointer";
@@ -203,17 +208,23 @@ function ContinentTab({
           document.body.style.cursor = "auto";
         }}
       >
-        <spriteMaterial map={map} transparent depthTest depthWrite={false} toneMapped={false} />
+        <spriteMaterial
+          map={map}
+          transparent
+          depthTest={false}
+          depthWrite={false}
+          toneMapped={false}
+        />
       </sprite>
       <Text
-        position={[0, -0.22, 0.06]}
-        fontSize={0.11}
+        position={[0, -0.42, 0.08]}
+        fontSize={0.12}
         color="#ffffff"
         anchorX="center"
         anchorY="middle"
-        outlineWidth={0.014}
+        outlineWidth={0.016}
         outlineColor="#000000"
-        maxWidth={1.2}
+        maxWidth={1.4}
         onClick={click}
       >
         {art.label}
@@ -387,9 +398,26 @@ export function LandingPlanet() {
       >
         <Scene />
       </Canvas>
-      <p className="pointer-events-none absolute bottom-1 left-0 right-0 text-center text-[9px] uppercase tracking-[0.32em] text-cyan-100/85 sm:text-[10px]">
-        Tap a continent · your dashboard
+      <p
+        data-testid="landing-planet-cta"
+        className="pointer-events-none absolute bottom-1 left-0 right-0 text-center text-[9px] font-black uppercase tracking-[0.32em] sm:text-[10px] animate-pulse"
+        style={{
+          background: "linear-gradient(90deg,#67e8f9,#f9a8d4,#fbbf24,#67e8f9)",
+          backgroundSize: "200% 100%",
+          WebkitBackgroundClip: "text",
+          color: "transparent",
+          animation: "landingCtaShift 2.4s ease-in-out infinite, pulse 1.6s ease-in-out infinite",
+        }}
+      >
+        Tap a continent · hit your dashboard
       </p>
+      <style>{`
+        @keyframes landingCtaShift {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+      `}</style>
     </div>
   );
 }
