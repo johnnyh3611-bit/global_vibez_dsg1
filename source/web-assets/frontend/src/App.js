@@ -30,8 +30,11 @@ import {
   justForTheNightRoutes,
   adminVaultRoutes,
   dsgRoutes,
-  mediaMasterRoutes
+  mediaMasterRoutes,
+  hubRoutes,
 } from "@/routes";
+import HubSwitcher from "@/components/hubs/HubSwitcher";
+import { stashReturnTo } from "@/hubs/hubRegistry";
 
 // Import notification components
 import { NotificationProvider } from "@/contexts/NotificationContext";
@@ -122,7 +125,9 @@ function ProtectedRoute({ children }) {
           localStorage.removeItem('user_data');
           localStorage.removeItem('user_id');
           localStorage.removeItem('username');
-          navigate("/login", { replace: true });
+          const ret = `${location.pathname}${location.search || ""}`;
+          stashReturnTo(ret);
+          navigate("/login", { replace: true, state: { from: ret } });
         }
       } catch (error) {
         if (cancelled) return;
@@ -136,7 +141,9 @@ function ProtectedRoute({ children }) {
           return;
         }
         setIsAuthenticated(false);
-        navigate("/login", { replace: true });
+        const ret = `${location.pathname}${location.search || ""}`;
+        stashReturnTo(ret);
+        navigate("/login", { replace: true, state: { from: ret } });
       }
     };
 
@@ -196,7 +203,10 @@ function ProtectedRouteContent({ children }) {
         className="mx-auto flex max-w-7xl flex-col gap-2 px-4 pt-3 sm:flex-row sm:items-center sm:justify-between"
         data-testid="protected-route-action-strip"
       >
-        <GlobalNavbar />
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+          <HubSwitcher />
+          <GlobalNavbar />
+        </div>
         <PageActionStrip align="end" />
       </div>
       <div className="gv-route-root">{children}</div>
@@ -320,6 +330,9 @@ function AppRouter() {
 
         {/* Media Master ecosystem — DSG TV, Vibe Radio, DSG Music Group */}
         {mediaMasterRoutes(ProtectedRoute)}
+
+        {/* Work / lifestyle hubs — VibeRise, Vineyards, Hungry shells + aliases */}
+        {hubRoutes(ProtectedRoute)}
 
         {/* Tombstone redirects — 3D Poker rooms deleted 2026-02-16 (founder
             directive). Send any cached bookmark to /games so users land on

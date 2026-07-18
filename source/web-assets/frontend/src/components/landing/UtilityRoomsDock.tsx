@@ -30,7 +30,7 @@ const ROOMS: Room[] = [
     testid: "dock-viberidez",
   },
   {
-    to: "/hungry-vibez",
+    to: "/hungryvibes",
     label: "Hungry Vibez",
     blurb: "Food on the same fleet",
     Icon: Pizza,

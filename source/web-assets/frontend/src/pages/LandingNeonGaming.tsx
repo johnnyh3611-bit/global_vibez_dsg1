@@ -14,6 +14,7 @@ import EvolutionCountdown from '../components/landing/EvolutionCountdown';
 import WinnerTicker from '../components/common/WinnerTicker';
 import LandingAccordion from '../components/landing/LandingAccordion';
 import { setBearerToken } from '@/utils/secureAuth';
+import { consumeReturnTo, getPreferredHubId, HUB_BY_ID } from '@/hubs/hubRegistry';
 import PricingMasterVault from '../components/landing/PricingMasterVault';
 import ChairWallTeaser from '../components/landing/ChairWallTeaser';
 import LandingLanguageSwitcher from '../components/LandingLanguageSwitcher';
@@ -48,7 +49,8 @@ export default function LandingNeonGaming() {
         setBearerToken(data.token);
         localStorage.setItem('user_id', data.user_id);
         if (data.name) localStorage.setItem('username', data.name);
-        window.location.href = '/dashboard';
+        const preferred = HUB_BY_ID[getPreferredHubId()]?.dashboardPath || '/dashboard';
+        window.location.href = consumeReturnTo(preferred);
         return;
       }
     } catch {
@@ -862,52 +864,35 @@ export default function LandingNeonGaming() {
       {/* Earnings Snapshot — all 12 earn paths visible without a click (Founder directive 2026-05-04) */}
       <EarningsSnapshot />
 
-      {/* Quick-jump accordion stack — trimmed soft-launch set.
-          Removed overlapping Mission / Ecosystem / Ways-to-Earn /
-          What's Next / Feature Index (same facts lived above in
-          NewThisDrop, EarningsSnapshot, LandingFeatureAccordions). */}
+      {/* Founder directive — downsize bottom info tabs.
+          Was 5+ overlapping accordions (letter / packs / chairs / wall / roadmap).
+          Now two: Ownership + Money. Details live inside each. */}
 
       <LandingAccordion
-        title="A Letter from the Founder"
-        subtitle="Chairs, Equity Master valuation, and Stools"
-        Icon={BookOpen}
-        tone="amber"
-        testId="acc-welcome-letter"
-      >
-        <WelcomeLetter />
-      </LandingAccordion>
-
-      <LandingAccordion
-        title="Vibez Coin Packs"
-        subtitle="Four packs · $1 = 1,000 ₵ · planned 1:1 $DSG at TGE"
-        Icon={Cpu}
-        tone="violet"
-        testId="acc-pricing-master-vault"
-      >
-        <PricingMasterVault />
-      </LandingAccordion>
-
-      {/* Chair Expansion Plan — Equity Master matrix (Genius → Floor/Genesis/Diamond/Platinum) */}
-      <ChairExpansionPlan />
-
-      <LandingAccordion
-        title="The Chair Wall"
-        subtitle="Every chair has a unique ID — see who parked which seat"
+        title="Ownership · Chairs & Founder Letter"
+        subtitle="Genius chairs, stools, chair wall — one place"
         Icon={Armchair}
         tone="amber"
-        testId="acc-chair-wall"
+        testId="acc-ownership"
       >
-        <ChairWallTeaser />
+        <div className="space-y-8">
+          <WelcomeLetter />
+          <ChairExpansionPlan />
+          <ChairWallTeaser />
+        </div>
       </LandingAccordion>
 
       <LandingAccordion
-        title="Token & Treasury Roadmap"
-        subtitle="Path to TGE — live on-chain status"
-        Icon={Map}
+        title="Money · Coin Packs & Roadmap"
+        subtitle="₵ packs · treasury path to TGE"
+        Icon={Cpu}
         tone="violet"
-        testId="acc-token-roadmap"
+        testId="acc-money"
       >
-        <TokenRoadmap />
+        <div className="space-y-8">
+          <PricingMasterVault />
+          <TokenRoadmap />
+        </div>
       </LandingAccordion>
 
       {/* Footer */}
