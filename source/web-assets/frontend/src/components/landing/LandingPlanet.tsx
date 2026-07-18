@@ -1,29 +1,24 @@
 /**
- * LandingPlanet — founder screenshot is the ONLY visual target.
+ * LandingPlanet — home globe people tap for dashboards.
  *
- * Exact layout (no in-between):
- *  1. Glass Earth hub on the right
- *  2. Little CONTINENT SHAPES inside the planet (VibeRide, Vibe Vineyards,
- *     Hungry Vibez, Dating, Logistics Hub, CDL/GDL, Home) — each its own
- *     landmass shape + icon/label tab → opens that dashboard
- *  3. ONE DSG fireball (fiery sun with DSG logo) circling the planet
+ * • Looks like Earth (texture + drifting clouds + soft glass atmosphere)
+ * • Continent tabs INSIDE/on the planet with clear names → dashboards
+ * • ONE DSG fireball that truly CIRCLES the planet (full 3D orbit)
+ * • DSG is a solid glowing 3D sun — not a flat paper sprite
  */
 import { Suspense, useMemo, useRef } from "react";
 import { Canvas, useFrame, type ThreeEvent } from "@react-three/fiber";
-import { OrbitControls, Sparkles, Stars, Text, useTexture } from "@react-three/drei";
+import { OrbitControls, Stars, Text, useTexture } from "@react-three/drei";
 import { Bloom, EffectComposer } from "@react-three/postprocessing";
 import { useNavigate } from "react-router-dom";
 import * as THREE from "three";
 import { GLOBE_HUBS, openHubPath, type HubDef, type HubId } from "@/hubs/hubRegistry";
 
-const GLOBE_R = 2.05;
-const SUN_ORBIT = 3.25;
+const GLOBE_R = 2.1;
+/** Radius of the DSG orbit around the planet center */
+const ORBIT_R = 3.35;
+const ORBIT_TILT = 0.35; // radians — tilts the orbital plane
 
-/**
- * Continent tabs = glowing circular TILE orbs (founder style),
- * each a unique recognizable shape (car / pizza / truck / buildings…),
- * transparent outside the glow — no black square behind them.
- */
 const HUB_ART: Partial<Record<HubId, { src: string; label: string; glow: string }>> = {
   ridez: { src: "/assets/hub-viberide.png", label: "VibeRide", glow: "#22d3ee" },
   vineyards: { src: "/assets/hub-vineyards.png", label: "Vibe Vineyards", glow: "#f9a8d4" },
@@ -46,106 +41,98 @@ function hubToSphere(hub: HubDef, radius: number): THREE.Vector3 {
   );
 }
 
-function GuideRings() {
-  const g = useRef<THREE.Group>(null);
-  useFrame((_, dt) => {
-    if (g.current) g.current.rotation.y += dt * 0.045;
-  });
-  return (
-    <group ref={g}>
-      {[
-        { r: 2.45, c: "#a78bfa", rot: [0.95, 0.15, 0.1] as const },
-        { r: 2.7, c: "#f97316", rot: [1.15, -0.35, 0.05] as const },
-        { r: 2.95, c: "#22d3ee", rot: [0.5, 0.55, -0.25] as const },
-      ].map((ring) => (
-        <mesh key={ring.r} rotation={[...ring.rot]}>
-          <torusGeometry args={[ring.r, 0.011, 12, 180]} />
-          <meshStandardMaterial
-            color={ring.c}
-            emissive={ring.c}
-            emissiveIntensity={2.2}
-            toneMapped={false}
-            transparent
-            opacity={0.7}
-          />
-        </mesh>
-      ))}
-    </group>
-  );
+/** Paint "DSG" onto a canvas so it wraps a real 3D sphere (no paper billboard). */
+function useDsgSphereTexture() {
+  return useMemo(() => {
+    const c = document.createElement("canvas");
+    c.width = 512;
+    c.height = 512;
+    const ctx = c.getContext("2d")!;
+    const g = ctx.createRadialGradient(256, 240, 20, 256, 256, 250);
+    g.addColorStop(0, "#fff7ed");
+    g.addColorStop(0.25, "#fbbf24");
+    g.addColorStop(0.55, "#f97316");
+    g.addColorStop(0.85, "#dc2626");
+    g.addColorStop(1, "#7f1d1d");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 512, 512);
+
+    // dark badge oval
+    ctx.fillStyle = "rgba(15,23,42,0.82)";
+    ctx.beginPath();
+    ctx.ellipse(256, 270, 120, 88, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // flame
+    ctx.fillStyle = "#fde68a";
+    ctx.beginPath();
+    ctx.moveTo(256, 175);
+    ctx.bezierCurveTo(230, 220, 220, 245, 245, 270);
+    ctx.bezierCurveTo(235, 250, 256, 290, 270, 255);
+    ctx.bezierCurveTo(290, 275, 285, 220, 256, 175);
+    ctx.fill();
+
+    ctx.font = "900 72px Arial Black, Impact, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#fde68a";
+    ctx.strokeStyle = "#7c2d12";
+    ctx.lineWidth = 6;
+    ctx.strokeText("DSG", 256, 300);
+    ctx.fillText("DSG", 256, 300);
+
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.needsUpdate = true;
+    return tex;
+  }, []);
 }
 
-/** Earth + shaped hub continents painted INSIDE + glass shell outside. */
-function PlanetWithContinentsInside() {
-  const [earth, clouds, continents] = useTexture([
-    "/assets/earth-texture.jpg",
-    "/assets/earth-clouds.jpg",
-    "/assets/hub-continent-shapes.png",
-  ]);
+function EarthGlobe() {
+  const [earth, clouds] = useTexture(["/assets/earth-texture.jpg", "/assets/earth-clouds.jpg"]);
   const cloudRef = useRef<THREE.Mesh>(null);
 
   useMemo(() => {
     earth.colorSpace = THREE.SRGBColorSpace;
     earth.anisotropy = 8;
     clouds.colorSpace = THREE.SRGBColorSpace;
-    continents.colorSpace = THREE.SRGBColorSpace;
-    continents.anisotropy = 8;
-  }, [earth, clouds, continents]);
+  }, [earth, clouds]);
 
   useFrame((_, dt) => {
-    // Only clouds drift — continent shapes stay locked under their tabs
-    if (cloudRef.current) cloudRef.current.rotation.y += dt * 0.01;
+    if (cloudRef.current) cloudRef.current.rotation.y += dt * 0.018;
   });
 
   return (
     <group>
-      {/* Core Earth */}
       <mesh>
-        <sphereGeometry args={[GLOBE_R * 0.97, 96, 96]} />
-        <meshStandardMaterial map={earth} roughness={0.82} metalness={0.06} />
-      </mesh>
-
-      {/* CONTINENT SHAPES living inside the planet (hub landmasses) */}
-      <mesh scale={0.985}>
         <sphereGeometry args={[GLOBE_R, 96, 96]} />
-        <meshStandardMaterial
-          map={continents}
-          transparent
-          opacity={0.35}
-          depthWrite={false}
-          emissive="#67e8f9"
-          emissiveIntensity={0.12}
-          emissiveMap={continents}
-          toneMapped={false}
-        />
+        <meshStandardMaterial map={earth} roughness={0.78} metalness={0.05} />
       </mesh>
 
-      <mesh ref={cloudRef} scale={1.01}>
+      {/* Soft hub glow patches under the tabs */}
+      <mesh scale={1.002}>
         <sphereGeometry args={[GLOBE_R, 64, 64]} />
-        <meshStandardMaterial map={clouds} transparent opacity={0.18} depthWrite={false} />
-      </mesh>
-
-      {/* Glass shell over the continents */}
-      <mesh scale={1.045}>
-        <sphereGeometry args={[GLOBE_R, 64, 64]} />
-        <meshPhysicalMaterial
-          color="#7dd3fc"
+        <meshBasicMaterial
+          color="#22d3ee"
           transparent
-          opacity={0.18}
-          transmission={0.8}
-          thickness={1}
-          roughness={0.04}
-          clearcoat={1}
-          clearcoatRoughness={0.06}
+          opacity={0.06}
+          blending={THREE.AdditiveBlending}
           depthWrite={false}
         />
       </mesh>
 
-      <mesh scale={1.16}>
+      <mesh ref={cloudRef} scale={1.02}>
+        <sphereGeometry args={[GLOBE_R, 64, 64]} />
+        <meshStandardMaterial map={clouds} transparent opacity={0.42} depthWrite={false} />
+      </mesh>
+
+      {/* Atmosphere */}
+      <mesh scale={1.08}>
         <sphereGeometry args={[GLOBE_R, 48, 48]} />
         <meshBasicMaterial
           color="#38bdf8"
           transparent
-          opacity={0.1}
+          opacity={0.12}
           side={THREE.BackSide}
           blending={THREE.AdditiveBlending}
           depthWrite={false}
@@ -155,10 +142,6 @@ function PlanetWithContinentsInside() {
   );
 }
 
-/**
- * Clickable continent tab seated ON its landmass (inside the glass).
- * Icon + name → dashboard.
- */
 function ContinentTab({
   hub,
   onOpen,
@@ -168,8 +151,7 @@ function ContinentTab({
 }) {
   const art = HUB_ART[hub.id];
   const map = useTexture(art?.src || "/assets/hub-home.png");
-  // Sit on / just under the glass — reads as “inside” the planet
-  const pos = useMemo(() => hubToSphere(hub, GLOBE_R * 1.02), [hub]);
+  const pos = useMemo(() => hubToSphere(hub, GLOBE_R * 1.05), [hub]);
 
   useMemo(() => {
     map.colorSpace = THREE.SRGBColorSpace;
@@ -184,22 +166,18 @@ function ContinentTab({
 
   return (
     <group position={pos}>
-      {/* landmass hotspot glow */}
       <mesh>
-        <sphereGeometry args={[0.12, 20, 20]} />
+        <sphereGeometry args={[0.1, 16, 16]} />
         <meshStandardMaterial
           color={art.glow}
           emissive={art.glow}
-          emissiveIntensity={3.8}
-          transparent
-          opacity={0.85}
+          emissiveIntensity={2.8}
           toneMapped={false}
         />
       </mesh>
-      {/* Glowing tile orb — style matches founder circular tiles */}
       <sprite
-        scale={[0.95, 0.95, 1]}
-        position={[0, 0.12, 0.05]}
+        scale={[0.7, 0.7, 1]}
+        position={[0, 0.1, 0.04]}
         onClick={click}
         onPointerOver={() => {
           document.body.style.cursor = "pointer";
@@ -208,23 +186,17 @@ function ContinentTab({
           document.body.style.cursor = "auto";
         }}
       >
-        <spriteMaterial
-          map={map}
-          transparent
-          depthTest={false}
-          depthWrite={false}
-          toneMapped={false}
-        />
+        <spriteMaterial map={map} transparent depthWrite={false} toneMapped={false} />
       </sprite>
+      {/* Large clear name */}
       <Text
-        position={[0, -0.42, 0.08]}
-        fontSize={0.12}
+        position={[0, -0.38, 0.1]}
+        fontSize={0.16}
         color="#ffffff"
         anchorX="center"
         anchorY="middle"
-        outlineWidth={0.016}
-        outlineColor="#000000"
-        maxWidth={1.4}
+        outlineWidth={0.02}
+        outlineColor="#020617"
         onClick={click}
       >
         {art.label}
@@ -233,7 +205,7 @@ function ContinentTab({
   );
 }
 
-function ContinentTabs({ onOpen }: { onOpen: (h: HubDef) => void }) {
+function Continents({ onOpen }: { onOpen: (h: HubDef) => void }) {
   return (
     <group>
       {GLOBE_HUBS.map((hub) => (
@@ -243,101 +215,103 @@ function ContinentTabs({ onOpen }: { onOpen: (h: HubDef) => void }) {
   );
 }
 
-/** ONE DSG fireball circling the planet — fiery sun + logo + fire ring. */
+/**
+ * Solid 3D DSG fireball on a FULL circular orbit around the planet.
+ * (Previous abs(sin) path made it scrub back-and-forth in front.)
+ */
 function DsgFireball() {
   const group = useRef<THREE.Group>(null);
   const core = useRef<THREE.Mesh>(null);
-  const fireRing = useRef<THREE.Mesh>(null);
+  const ring = useRef<THREE.Mesh>(null);
   const light = useRef<THREE.PointLight>(null);
-  const [glow, badge] = useTexture(["/assets/sun-glow.png", "/assets/dsg-sun-badge.png"]);
+  const glow = useTexture("/assets/sun-glow.png");
+  const dsgMap = useDsgSphereTexture();
+  const orbitPlane = useMemo(() => {
+    const m = new THREE.Matrix4();
+    m.makeRotationX(ORBIT_TILT);
+    return m;
+  }, []);
 
   useMemo(() => {
     glow.colorSpace = THREE.SRGBColorSpace;
-    badge.colorSpace = THREE.SRGBColorSpace;
-  }, [glow, badge]);
+  }, [glow]);
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
+    const a = t * 0.55; // angular speed
+
+    // Full circle in XZ, then tilt the plane — true orbit around the globe
+    const local = new THREE.Vector3(Math.cos(a) * ORBIT_R, 0, Math.sin(a) * ORBIT_R);
+    local.applyMatrix4(orbitPlane);
+
     if (group.current) {
-      const a = t * 0.42;
-      group.current.position.set(
-        Math.cos(a) * SUN_ORBIT,
-        Math.sin(a * 0.65) * 0.8,
-        1.15 + Math.abs(Math.sin(a)) * SUN_ORBIT * 0.5,
-      );
+      group.current.position.copy(local);
     }
-    if (fireRing.current) fireRing.current.rotation.z = t * 2.4;
+    if (ring.current) ring.current.rotation.z = t * 3.2;
     if (core.current) {
+      core.current.rotation.y = t * 1.4;
       (core.current.material as THREE.MeshStandardMaterial).emissiveIntensity =
-        9 + Math.sin(t * 8) * 1.8;
+        4.5 + Math.sin(t * 7) * 0.8;
     }
-    if (light.current) light.current.intensity = 5 + Math.sin(t * 6) * 0.8;
+    if (light.current) {
+      // Dim a bit when behind the planet (negative z after tilt ≈ local.z)
+      const front = THREE.MathUtils.clamp((local.z / ORBIT_R) * 0.5 + 0.5, 0.35, 1);
+      light.current.intensity = (3.8 + Math.sin(t * 5) * 0.5) * front;
+    }
   });
 
   return (
     <group ref={group}>
-      <pointLight ref={light} color="#ff4500" intensity={5} distance={14} decay={2} />
+      <pointLight ref={light} color="#ff6a00" intensity={4} distance={10} decay={2} />
 
-      <sprite scale={[1.85, 1.85, 1]}>
-        <spriteMaterial
+      {/* Soft corona — additive sphere shell, still 3D (not a paper card) */}
+      <mesh scale={1.55}>
+        <sphereGeometry args={[0.34, 32, 32]} />
+        <meshBasicMaterial
           map={glow}
           transparent
-          opacity={0.95}
+          opacity={0.55}
           depthWrite={false}
-          depthTest={false}
           blending={THREE.AdditiveBlending}
           toneMapped={false}
-        />
-      </sprite>
-
-      {/* Fire circling the DSG sun */}
-      <mesh ref={fireRing} rotation={[Math.PI / 2.5, 0.35, 0]}>
-        <torusGeometry args={[0.58, 0.05, 12, 64]} />
-        <meshStandardMaterial
-          color="#ff4500"
-          emissive="#ff4500"
-          emissiveIntensity={7}
-          toneMapped={false}
-          transparent
-          opacity={0.95}
         />
       </mesh>
 
-      <sprite position={[-0.6, 0.06, 0]} scale={[1.15, 0.38, 1]}>
-        <spriteMaterial
-          map={glow}
-          transparent
-          opacity={0.5}
-          depthWrite={false}
-          depthTest={false}
-          blending={THREE.AdditiveBlending}
+      {/* Fire ring spinning around the sun */}
+      <mesh ref={ring} rotation={[Math.PI / 2.2, 0.2, 0]}>
+        <torusGeometry args={[0.48, 0.04, 10, 48]} />
+        <meshStandardMaterial
+          color="#ff4500"
+          emissive="#ff4500"
+          emissiveIntensity={5}
           toneMapped={false}
-          color="#ff6a00"
         />
-      </sprite>
+      </mesh>
 
+      {/* Solid fiery core with DSG painted on the sphere */}
       <mesh ref={core}>
-        <sphereGeometry args={[0.32, 48, 48]} />
+        <sphereGeometry args={[0.34, 48, 48]} />
         <meshStandardMaterial
-          color="#ff4500"
+          map={dsgMap}
+          emissiveMap={dsgMap}
           emissive="#ff4500"
-          emissiveIntensity={10}
+          emissiveIntensity={4.8}
+          roughness={0.35}
+          metalness={0.05}
           toneMapped={false}
-          roughness={0.1}
-          depthTest={false}
         />
       </mesh>
-
-      <sprite scale={[0.9, 0.9, 1]} position={[0, 0, 0.22]}>
-        <spriteMaterial
-          map={badge}
-          transparent
-          depthTest={false}
-          depthWrite={false}
-          toneMapped={false}
-        />
-      </sprite>
     </group>
+  );
+}
+
+/** Visible thin orbit ring so the circle path reads clearly */
+function OrbitPath() {
+  return (
+    <mesh rotation={[Math.PI / 2 + ORBIT_TILT, 0, 0]}>
+      <torusGeometry args={[ORBIT_R, 0.012, 8, 128]} />
+      <meshBasicMaterial color="#f97316" transparent opacity={0.4} toneMapped={false} />
+    </mesh>
   );
 }
 
@@ -347,18 +321,16 @@ function Scene() {
 
   return (
     <>
-      <ambientLight intensity={0.32} />
-      <directionalLight position={[5, 4, 6]} intensity={1.15} />
-      <pointLight position={[-4, -1, 3]} intensity={0.5} color="#a78bfa" />
+      <ambientLight intensity={0.4} />
+      <directionalLight position={[5, 3, 4]} intensity={1.25} />
+      <pointLight position={[-3, 2, 2]} intensity={0.4} color="#a78bfa" />
 
-      <Stars radius={55} depth={35} count={1400} factor={2.2} saturation={0.45} fade speed={0.3} />
-      <Sparkles count={36} scale={8} size={2} speed={0.2} opacity={0.4} color="#c084fc" />
+      <Stars radius={50} depth={30} count={900} factor={2} fade speed={0.25} />
 
       <Suspense fallback={null}>
-        <PlanetWithContinentsInside />
-        <GuideRings />
-        <ContinentTabs onOpen={onOpen} />
-        {/* Only the DSG fireball orbits the planet */}
+        <EarthGlobe />
+        <Continents onOpen={onOpen} />
+        <OrbitPath />
         <DsgFireball />
       </Suspense>
 
@@ -366,13 +338,13 @@ function Scene() {
         enableZoom={false}
         enablePan={false}
         autoRotate
-        autoRotateSpeed={0.4}
-        minPolarAngle={Math.PI * 0.35}
-        maxPolarAngle={Math.PI * 0.65}
+        autoRotateSpeed={0.25}
+        minPolarAngle={Math.PI * 0.38}
+        maxPolarAngle={Math.PI * 0.62}
       />
 
       <EffectComposer multisampling={0}>
-        <Bloom intensity={1.75} luminanceThreshold={0.14} luminanceSmoothing={0.55} mipmapBlur />
+        <Bloom intensity={1.25} luminanceThreshold={0.25} luminanceSmoothing={0.6} mipmapBlur />
       </EffectComposer>
     </>
   );
@@ -383,16 +355,16 @@ export function LandingPlanet() {
     <div
       className="relative mx-auto flex h-[260px] w-full max-w-[520px] items-center justify-center sm:h-[360px] lg:h-[540px] lg:max-w-none"
       data-testid="landing-planet"
-      aria-label="Home hub planet — continent tabs open dashboards; DSG fireball orbits"
+      aria-label="Global Vibez Earth hub — tap a continent for its dashboard"
     >
       <Canvas
-        camera={{ position: [0, 0.2, 10], fov: 45 }}
+        camera={{ position: [0, 0.35, 9.5], fov: 42 }}
         dpr={[1, 1.75]}
         gl={{
           antialias: true,
           alpha: true,
           toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.2,
+          toneMappingExposure: 1.1,
         }}
         style={{ width: "100%", height: "100%" }}
       >
@@ -400,16 +372,16 @@ export function LandingPlanet() {
       </Canvas>
       <p
         data-testid="landing-planet-cta"
-        className="pointer-events-none absolute bottom-1 left-0 right-0 text-center text-[9px] font-black uppercase tracking-[0.32em] sm:text-[10px] animate-pulse"
+        className="pointer-events-none absolute bottom-1 left-0 right-0 text-center text-[9px] font-black uppercase tracking-[0.28em] sm:text-[10px]"
         style={{
           background: "linear-gradient(90deg,#67e8f9,#f9a8d4,#fbbf24,#67e8f9)",
           backgroundSize: "200% 100%",
           WebkitBackgroundClip: "text",
           color: "transparent",
-          animation: "landingCtaShift 2.4s ease-in-out infinite, pulse 1.6s ease-in-out infinite",
+          animation: "landingCtaShift 2.4s ease-in-out infinite",
         }}
       >
-        Tap a continent · hit your dashboard
+        Tap a continent · your dashboard
       </p>
       <style>{`
         @keyframes landingCtaShift {
