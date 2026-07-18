@@ -110,7 +110,7 @@ export default function PrivyAuthProvider({
             accentColor: "#22d3ee",
             showWalletLoginFirst: false,
             walletChainType: "solana-only",
-            logo: "/global-vibez-logo.png?v=11",
+            logo: "/global-vibez-logo.png?v=12",
           },
           // Embedded wallets intentionally OFF — PhantomConnectProvider
           // already owns that surface and Privy's embedded-wallet init
