@@ -1,7 +1,7 @@
 import React from 'react';
 
 /** Canonical local brand mark (globe + V lockup). Cache-bust via query when swapping PNG. */
-const LOGO_URL = '/global-vibez-logo.png?v=11';
+const LOGO_URL = '/global-vibez-logo.png?v=12';
 
 export default function Logo({ size = 'md', className = '' }) {
   const sizes = {

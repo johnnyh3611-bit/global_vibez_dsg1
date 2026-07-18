@@ -5,12 +5,35 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <meta name="theme-color" content="#000000" />
         <meta name="description" content="Global Vibez DSG — next-gen dating, social gaming, streams, and earn." />
-        <!-- Brand mark (same Global Vibez DSG emblem Google / PWA install uses) -->
-        <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-        <link rel="manifest" href="/manifest.json" />
+        <!--
+          Brand icons Google / browsers / PWA use. These MUST stay in sync with
+          /global-vibez-logo.png (the header mark). Cache-bust (?v=) when the
+          PNG set is regenerated so crawlers pick up the new mark faster.
+        -->
+        <link rel="icon" href="/favicon.ico?v=12" sizes="any" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=12" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png?v=12" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=12" />
+        <link rel="manifest" href="/manifest.json?v=12" />
+        <!-- Social / knowledge-panel hints (Google may still cache the old mark for days–weeks) -->
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="Global Vibez DSG" />
+        <meta property="og:title" content="Global Vibez DSG | Next-Gen Dating & Social Gaming" />
+        <meta property="og:description" content="Global Vibez DSG — next-gen dating, social gaming, streams, and earn." />
+        <meta property="og:image" content="https://www.globalvibezdsg.com/global-vibez-logo.png?v=12" />
+        <meta property="og:image:alt" content="Global Vibez DSG logo" />
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:image" content="https://www.globalvibezdsg.com/global-vibez-logo.png?v=12" />
+        <script type="application/ld+json">
+          {
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            "name": "Global Vibez DSG",
+            "url": "https://www.globalvibezdsg.com",
+            "logo": "https://www.globalvibezdsg.com/logo512.png?v=12",
+            "image": "https://www.globalvibezdsg.com/global-vibez-logo.png?v=12"
+          }
+        </script>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link rel="preconnect" href="https://api.mapbox.com" crossorigin />
