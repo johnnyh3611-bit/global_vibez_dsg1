@@ -1,6 +1,6 @@
 {
   "$schema": "https://railway.app/railway.schema.json",
-  "_comment": "Guard config: do not deploy repo root to Railway. Deploy source/web-assets/backend and source/web-assets/frontend as separate services in one Railway project.",
+  "_comment": "Guard config: do not deploy repo root to Railway. Create two services (backend-api → source/web-assets/backend, frontend-globalvibez → source/web-assets/frontend). Railway does not support a services[] array in one railway.json — see source/web-assets/RAILWAY_DEPLOY.md.",
   "build": {
     "builder": "NIXPACKS"
   },
