@@ -21,13 +21,17 @@ import { Bloom, EffectComposer } from "@react-three/postprocessing";
 import { useNavigate } from "react-router-dom";
 import * as THREE from "three";
 
-/** Official brand mark — `public/assets/logo.png` */
+/** Official brand mark — `public/assets/logo.png` (globe + wordmark below). */
 const LOGO_SRC = "/assets/logo.png";
+/** Intrinsic pixel aspect of logo.png — keep billboard geometry matched. */
+const LOGO_ASPECT = 1019 / 960;
 /** Large enough that hub orbits stay clear of the brand mark. */
 const SUN_RADIUS = 1.75;
 /** Keep hubs outside this XY radius so they never cover the logo face. */
-const HUB_CLEARANCE = SUN_RADIUS + 1.15;
-const CAMERA_Z = 10.8;
+const HUB_CLEARANCE = SUN_RADIUS + 1.25;
+/** Pull back so the full brand billboard + outer hub belt stay in frustum. */
+const CAMERA_Z = 12.4;
+const CAMERA_FOV = 42;
 const LOGO_EMISSIVE = 1.15;
 
 type HubId =
@@ -135,29 +139,55 @@ function useIsMobile(bp = 768) {
 }
 
 /**
- * Central Sun — logo on MeshStandardMaterial (map + emissiveMap) plus a
- * camera-facing billboard so the brand mark stays perfectly legible even
- * as the sphere slowly spins. Hubs orbit outside HUB_CLEARANCE.
+ * Central Sun — globe crop on the sphere + full brand mark on a
+ * camera-facing plane *in front of* the sphere surface.
+ *
+ * logo.png lays out globe (upper) + "GLOBAL VIBEZ" / "DSG" (lower). Mapping
+ * that whole sheet onto sphere UVs wraps the wordmark around the equator and
+ * clips it to fragments like "GLOB". The billboard carries the full mark;
+ * the sphere only samples the upper globe region.
  */
 function CentralLogoSun() {
   const sun = useRef<THREE.Mesh>(null);
   const billboard = useRef<THREE.Mesh>(null);
-  const map = useTexture(LOGO_SRC);
+  const sourceMap = useTexture(LOGO_SRC);
 
-  useMemo(() => {
-    map.colorSpace = THREE.SRGBColorSpace;
-    map.anisotropy = 8;
-    map.wrapS = THREE.ClampToEdgeWrapping;
-    map.wrapT = THREE.ClampToEdgeWrapping;
-  }, [map]);
+  const { sphereMap, brandMap } = useMemo(() => {
+    sourceMap.colorSpace = THREE.SRGBColorSpace;
+
+    const sphereMap = sourceMap.clone();
+    sphereMap.colorSpace = THREE.SRGBColorSpace;
+    sphereMap.anisotropy = 8;
+    sphereMap.wrapS = THREE.ClampToEdgeWrapping;
+    sphereMap.wrapT = THREE.ClampToEdgeWrapping;
+    // Zoom UV into the upper globe artwork (avoid south-pole wordmark wrap).
+    sphereMap.repeat.set(0.78, 0.5);
+    sphereMap.offset.set(0.11, 0.5);
+    sphereMap.needsUpdate = true;
+
+    const brandMap = sourceMap.clone();
+    brandMap.colorSpace = THREE.SRGBColorSpace;
+    brandMap.anisotropy = 8;
+    brandMap.wrapS = THREE.ClampToEdgeWrapping;
+    brandMap.wrapT = THREE.ClampToEdgeWrapping;
+    brandMap.repeat.set(1, 1);
+    brandMap.offset.set(0, 0);
+    brandMap.needsUpdate = true;
+
+    return { sphereMap, brandMap };
+  }, [sourceMap]);
 
   useFrame(({ camera }, dt) => {
-    if (sun.current) sun.current.rotation.y += dt * 0.1;
-    // Keep the logo face locked toward the viewer for branding clarity.
+    if (sun.current) sun.current.rotation.y += dt * 0.08;
+    // Keep the full brand mark locked toward the viewer.
     if (billboard.current) billboard.current.quaternion.copy(camera.quaternion);
   });
 
-  const logoSize = SUN_RADIUS * 1.55;
+  // Aspect-correct plane: tall enough for globe + GLOBAL VIBEZ + DSG.
+  const brandH = SUN_RADIUS * 2.15;
+  const brandW = brandH * LOGO_ASPECT;
+  // Must sit outside the sphere shell (toward +Z / camera), not inside it.
+  const brandZ = SUN_RADIUS + 0.14;
 
   return (
     <group>
@@ -167,34 +197,36 @@ function CentralLogoSun() {
       <mesh ref={sun} renderOrder={1} frustumCulled={false}>
         <sphereGeometry args={[SUN_RADIUS, 64, 64]} />
         <meshStandardMaterial
-          map={map}
-          emissiveMap={map}
+          map={sphereMap}
+          emissiveMap={sphereMap}
           emissive="#ffffff"
-          emissiveIntensity={LOGO_EMISSIVE}
-          roughness={0.32}
-          metalness={0.1}
+          emissiveIntensity={LOGO_EMISSIVE * 0.85}
+          roughness={0.35}
+          metalness={0.12}
           toneMapped={false}
         />
       </mesh>
 
-      {/* Camera-facing logo face — unmistakable brand mark above the sphere */}
+      {/* Full brand mark — in front of the sun, never frustum-clipped */}
       <mesh
         ref={billboard}
-        position={[0, 0, SUN_RADIUS * 0.18]}
-        renderOrder={4}
+        position={[0, 0, brandZ]}
+        renderOrder={5}
         frustumCulled={false}
       >
-        <planeGeometry args={[logoSize, logoSize]} />
+        <planeGeometry args={[brandW, brandH]} />
         <meshStandardMaterial
-          map={map}
-          emissiveMap={map}
+          map={brandMap}
+          emissiveMap={brandMap}
           emissive="#ffffff"
-          emissiveIntensity={LOGO_EMISSIVE + 0.25}
+          emissiveIntensity={LOGO_EMISSIVE + 0.35}
           transparent
           opacity={1}
+          depthTest
           depthWrite={false}
           toneMapped={false}
-          side={THREE.DoubleSide}
+          side={THREE.FrontSide}
+          alphaTest={0.08}
         />
       </mesh>
     </group>
@@ -215,7 +247,7 @@ function HubLabel({
       center
       position={[0, -0.62, 0]}
       distanceFactor={8}
-      zIndexRange={[50, 0]}
+      zIndexRange={[40, 0]}
       style={{ pointerEvents: "auto" }}
     >
       <button
@@ -495,16 +527,20 @@ export function LandingPlanet() {
 
   return (
     <div
-      className="relative mx-auto h-[420px] w-full max-w-[520px] overflow-hidden sm:h-[400px] lg:h-[540px] lg:max-w-none"
+      className="relative mx-auto h-[460px] w-full max-w-[560px] overflow-hidden sm:h-[440px] lg:h-[580px] lg:max-w-none"
       data-testid="landing-planet"
       aria-label="Global Vibez logo sun with orbiting hubs"
-      style={{ overflow: "hidden" }}
     >
       {isMobile ? (
         <MobileHubStrip onOpen={onOpen} />
       ) : (
         <Canvas
-          camera={{ position: [0, 0.35, CAMERA_Z], fov: 40, near: 0.1, far: 100 }}
+          camera={{
+            position: [0, 0.2, CAMERA_Z],
+            fov: CAMERA_FOV,
+            near: 0.1,
+            far: 100,
+          }}
           dpr={[1, 1.5]}
           gl={{
             antialias: true,
@@ -516,7 +552,6 @@ export function LandingPlanet() {
             width: "100%",
             height: "100%",
             background: "#000000",
-            overflow: "hidden",
           }}
         >
           <Scene onOpen={onOpen} />
