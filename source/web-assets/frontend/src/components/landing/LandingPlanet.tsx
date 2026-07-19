@@ -3,8 +3,9 @@
  *
  * 1. Central Body (Sun): large sphere textured with Global Vibez DSG logo
  *    (map + emissiveMap, emissive white @ 0.5, renderOrder 1).
- * 2. Orbiting hubs: Gaming, Dating, Streams — smaller spheres on fixed
- *    orbital radii with labels beneath + onClick → hub routes.
+ * 2. Orbiting hubs: Gaming, Dating, Streams, Vibe Rides, Vibe Vineyards,
+ *    Hungry Vibez — smaller spheres on fixed orbital radii with labels
+ *    beneath + onClick → hub routes.
  * 3. DSG Token moon: small golden/metallic sphere orbiting Gaming.
  * 4. Mobile (<768): no 3D orbits — static horizontal flex of hub logos.
  */
@@ -25,13 +26,21 @@ import * as THREE from "three";
 /** Official brand mark (CRA serves from /public) */
 const LOGO_SRC = "/global-vibez-logo.png";
 const SUN_RADIUS = 1.45;
-const CAMERA_Z = 9;
+const CAMERA_Z = 9.5;
 
-type HubId = "gaming" | "dating" | "streams";
+type HubId =
+  | "gaming"
+  | "dating"
+  | "streams"
+  | "ridez"
+  | "vineyards"
+  | "hungry";
 
 type HubDef = {
   id: HubId;
   label: string;
+  /** Shorter label for tight mobile cells */
+  shortLabel: string;
   path: string;
   color: string;
   emissive: string;
@@ -40,36 +49,73 @@ type HubDef = {
   speed: number;
 };
 
+/** Six lifestyle hubs evenly phased across two orbital belts. */
 const HUBS: HubDef[] = [
   {
     id: "gaming",
     label: "Gaming",
+    shortLabel: "Gaming",
     path: "/games",
     color: "#1e3a8a",
     emissive: "#38bdf8",
-    orbitR: 2.9,
+    orbitR: 2.85,
     phase: 0,
     speed: 0.3,
   },
   {
     id: "dating",
     label: "Dating",
+    shortLabel: "Dating",
     path: "/dating",
     color: "#9d174d",
     emissive: "#fb7185",
-    orbitR: 3.55,
+    orbitR: 2.85,
     phase: (Math.PI * 2) / 3,
-    speed: 0.24,
+    speed: 0.3,
   },
   {
     id: "streams",
     label: "Streams",
+    shortLabel: "Streams",
     path: "/streams",
     color: "#5b21b6",
     emissive: "#c084fc",
-    orbitR: 4.2,
+    orbitR: 2.85,
     phase: (Math.PI * 4) / 3,
-    speed: 0.2,
+    speed: 0.3,
+  },
+  {
+    id: "ridez",
+    label: "Vibe Ridez",
+    shortLabel: "Ridez",
+    path: "/vibe-ridez",
+    color: "#065f46",
+    emissive: "#34d399",
+    orbitR: 3.85,
+    phase: Math.PI / 3,
+    speed: 0.22,
+  },
+  {
+    id: "vineyards",
+    label: "Vibe Vineyards",
+    shortLabel: "Vineyards",
+    path: "/hub/vineyards",
+    color: "#86198f",
+    emissive: "#f9a8d4",
+    orbitR: 3.85,
+    phase: Math.PI,
+    speed: 0.22,
+  },
+  {
+    id: "hungry",
+    label: "Hungry Vibez",
+    shortLabel: "Hungry",
+    path: "/hungryvibes",
+    color: "#9a3412",
+    emissive: "#fb923c",
+    orbitR: 3.85,
+    phase: (Math.PI * 5) / 3,
+    speed: 0.22,
   },
 ];
 
@@ -291,13 +337,21 @@ function DsgTokenMoon({
 }
 
 function OrbitGuides() {
+  const rings = useMemo(() => {
+    const byR = new Map<number, string>();
+    for (const h of HUBS) {
+      if (!byR.has(h.orbitR)) byR.set(h.orbitR, h.emissive);
+    }
+    return [...byR.entries()];
+  }, []);
+
   return (
     <group rotation={[Math.PI / 2.35, 0.1, 0]}>
-      {HUBS.map((h) => (
-        <mesh key={h.id} renderOrder={0}>
-          <torusGeometry args={[h.orbitR, 0.006, 8, 96]} />
+      {rings.map(([r, color]) => (
+        <mesh key={`ring-${r}`} renderOrder={0}>
+          <torusGeometry args={[r, 0.006, 8, 96]} />
           <meshBasicMaterial
-            color={h.emissive}
+            color={color}
             transparent
             opacity={0.18}
             depthWrite={false}
@@ -359,7 +413,7 @@ function MobileHubStrip({ onOpen }: { onOpen: (path: string) => void }) {
         />
       </div>
       <nav
-        className="flex w-full shrink-0 items-stretch justify-center gap-2 overflow-hidden border-t border-white/10 bg-black/80 px-2 py-2"
+        className="grid w-full shrink-0 grid-cols-3 gap-1.5 overflow-hidden border-t border-white/10 bg-black/80 px-2 py-2"
         aria-label="Hub destinations"
         data-testid="landing-planet-mobile-nav"
       >
@@ -367,13 +421,14 @@ function MobileHubStrip({ onOpen }: { onOpen: (path: string) => void }) {
           <button
             key={hub.id}
             type="button"
+            title={hub.label}
             onClick={() => onOpen(hub.path)}
             data-testid={`landing-mobile-hub-${hub.id}`}
-            className="flex min-w-0 flex-1 flex-col items-center gap-1.5 rounded-lg px-1 py-2"
+            className="flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-2"
             style={{ background: "rgba(0,0,0,0.5)" }}
           >
             <span
-              className="h-8 w-8 rounded-full shadow-lg"
+              className="h-7 w-7 rounded-full shadow-lg"
               style={{
                 background: `radial-gradient(circle at 35% 30%, #fff 0%, ${hub.emissive} 35%, ${hub.color} 100%)`,
                 boxShadow: `0 0 12px ${hub.emissive}`,
@@ -381,7 +436,7 @@ function MobileHubStrip({ onOpen }: { onOpen: (path: string) => void }) {
               aria-hidden
             />
             <span className="w-full truncate text-center text-sm font-bold uppercase tracking-wide text-white">
-              {hub.label}
+              {hub.shortLabel}
             </span>
           </button>
         ))}
