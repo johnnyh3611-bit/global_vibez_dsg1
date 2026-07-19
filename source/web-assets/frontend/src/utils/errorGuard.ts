@@ -7,7 +7,8 @@
  *   - Firebase Analytics: same pattern when sandboxed in iframes
  *   - WalletConnect: "indexedDB is not available"
  *   - @react-three/xr / @iwer/devui: "devUIConstructor is not a constructor"
- *     when the desktop WebXR emulator auto-injects on localhost
+ *     when the desktop WebXR emulator auto-injects on localhost (also fixed
+ *     at the webpack layer via src/stubs/iwer-devui.js)
  *
  * Without this guard, the throws bubble up to `window.onerror` and
  * (in some browsers) freeze the JS event loop just long enough that a

@@ -96,14 +96,19 @@ module.exports = {
       // that never run when walletChainType="solana-only". Stub them so
       // webpack stops choking on their internal module resolution.
       const stub = path.resolve(__dirname, "src/empty-module.js");
+      // @iwer/devui MUST export a real DevUI class — empty-module made
+      // `installDevUI(DevUI)` throw "devUIConstructor is not a constructor"
+      // whenever @pmndrs/xr injected the desktop emulator on localhost.
+      const iwerDevUiStub = path.resolve(__dirname, "src/stubs/iwer-devui.js");
+      const iwerSemStub = path.resolve(__dirname, "src/stubs/iwer-sem.js");
       // Always re-assert `@` when merging stubs. Overwriting resolve.alias
       // without `@` breaks `@/engine/*` and `@/plugins/*` imports.
       webpackConfig.resolve.alias = {
         ...(webpackConfig.resolve.alias || {}),
         "@": srcRoot,
         "@walletconnect/ethereum-provider": stub,
-        "@iwer/devui": stub,
-        "@iwer/sem": stub,
+        "@iwer/devui": iwerDevUiStub,
+        "@iwer/sem": iwerSemStub,
         "@base-org/account": stub,
         "@privy-io/ethereum": stub,
       };

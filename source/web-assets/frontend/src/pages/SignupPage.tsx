@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff, Mail, Lock, User, Calendar, ArrowLeft, AlertCircle, CheckCircle, Crown } from 'lucide-react';
 import { getBackendUrl } from '@/config/backendUrl';
 import { setBearerToken } from '@/utils/secureAuth';
+import SocialAuthButtons from '@/components/web3/SocialAuthButtons';
 
 const API = getBackendUrl();
 
@@ -462,6 +463,13 @@ export default function SignupPage() {
                 {loading ? 'Creating Account...' : 'Sign Up'}
               </NeonButton>
             </form>
+
+            <div className="mt-6">
+              <SocialAuthButtons
+                postLoginPath={() => '/profile/setup'}
+                onError={(msg) => setError(msg)}
+              />
+            </div>
 
             <div className="mt-6 text-center">
               <p className="text-slate-300">
