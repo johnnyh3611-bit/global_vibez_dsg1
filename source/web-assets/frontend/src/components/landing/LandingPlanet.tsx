@@ -1,488 +1,484 @@
 /**
- * LandingPlanet — orbital architecture (locked).
+ * LandingPlanet — logo-mapped central sun + orbiting hub planets.
  *
- * • Central fixed Sphere — /global-vibez-logo.png texture (no distortion mesh)
- * • Branding text mesh ("Globalize Digital") — renderOrder > planet, depthTest:false
- * • 4 orbiting Sphere meshes — Gaming, Dating, Streams, Earn — each with
- *   Billboard name labels (depthTest:false) so hubs stay identifiable
- * • DSG fireball — dark "DSG" painted on the sphere; fire rings orbit the body;
- *   satellite itself ellipses around the planet (no outer name tag)
- * • Deep space #000000 · static camera · no blob continents
+ * 1. Central Body (Sun): large sphere textured with Global Vibez DSG logo
+ *    (map + emissiveMap, emissive white @ 0.5, renderOrder 1).
+ * 2. Orbiting hubs: Gaming, Dating, Streams, Vibe Rides, Vibe Vineyards,
+ *    Hungry Vibez — smaller spheres on fixed orbital radii with labels
+ *    beneath + onClick → hub routes.
+ * 3. DSG Token moon: small golden/metallic sphere orbiting Gaming.
+ * 4. Mobile (<768): no 3D orbits — static horizontal flex of hub logos.
  */
-import { Suspense, useMemo, useRef } from "react";
+import {
+  Suspense,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MutableRefObject,
+} from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Billboard, Text, useTexture } from "@react-three/drei";
+import { Html, useTexture } from "@react-three/drei";
 import { Bloom, EffectComposer } from "@react-three/postprocessing";
 import { useNavigate } from "react-router-dom";
 import * as THREE from "three";
 
-const ORBIT_R = 2.85;
-const HUB_ORBIT_SPEED = 0.35;
-const DSG_A = 4.1; // ellipse semi-major (X)
-const DSG_B = 2.55; // ellipse semi-minor (Z)
-const DSG_SPEED = 0.55;
+/** Official brand mark (CRA serves from /public) */
+const LOGO_SRC = "/global-vibez-logo.png";
+const SUN_RADIUS = 1.45;
 const CAMERA_Z = 9.5;
-/** Branding + hub labels always draw above planet geometry */
-const BRAND_RENDER_ORDER = 100;
-const HUB_LABEL_RENDER_ORDER = 90;
-const PLANET_RENDER_ORDER = 0;
 
-type HubPlanet = {
-  id: "gaming" | "dating" | "streams" | "earn";
-  src: string;
-  neon: string;
-  path: string;
-  /** Display name — always readable on the orbiting subplanet */
+type HubId =
+  | "gaming"
+  | "dating"
+  | "streams"
+  | "ridez"
+  | "vineyards"
+  | "hungry";
+
+type HubDef = {
+  id: HubId;
   label: string;
-  /** Fixed starting angle on the orbital ring (radians) */
+  /** Shorter label for tight mobile cells */
+  shortLabel: string;
+  path: string;
+  color: string;
+  emissive: string;
+  orbitR: number;
   phase: number;
+  speed: number;
 };
 
-const HUB_PLANETS: HubPlanet[] = [
+/** Six lifestyle hubs evenly phased across two orbital belts. */
+const HUBS: HubDef[] = [
   {
     id: "gaming",
-    src: "/assets/hub-gaming.png",
-    neon: "#22d3ee",
-    path: "/games",
     label: "Gaming",
+    shortLabel: "Gaming",
+    path: "/games",
+    color: "#1e3a8a",
+    emissive: "#38bdf8",
+    orbitR: 2.85,
     phase: 0,
+    speed: 0.3,
   },
   {
     id: "dating",
-    src: "/assets/hub-dating.png",
-    neon: "#fb7185",
-    path: "/dating",
     label: "Dating",
-    phase: Math.PI / 2,
+    shortLabel: "Dating",
+    path: "/dating",
+    color: "#9d174d",
+    emissive: "#fb7185",
+    orbitR: 2.85,
+    phase: (Math.PI * 2) / 3,
+    speed: 0.3,
   },
   {
     id: "streams",
-    src: "/assets/hub-streams.png",
-    neon: "#c084fc",
-    path: "/my-streams",
     label: "Streams",
-    phase: Math.PI,
+    shortLabel: "Streams",
+    path: "/streams",
+    color: "#5b21b6",
+    emissive: "#c084fc",
+    orbitR: 2.85,
+    phase: (Math.PI * 4) / 3,
+    speed: 0.3,
   },
   {
-    id: "earn",
-    src: "/assets/hub-earn.png",
-    neon: "#fbbf24",
-    path: "/wallet",
-    label: "Earn",
-    phase: (Math.PI * 3) / 2,
+    id: "ridez",
+    label: "Vibe Ridez",
+    shortLabel: "Ridez",
+    path: "/vibe-ridez",
+    color: "#065f46",
+    emissive: "#34d399",
+    orbitR: 3.85,
+    phase: Math.PI / 3,
+    speed: 0.22,
+  },
+  {
+    id: "vineyards",
+    label: "Vibe Vineyards",
+    shortLabel: "Vineyards",
+    path: "/hub/vineyards",
+    color: "#86198f",
+    emissive: "#f9a8d4",
+    orbitR: 3.85,
+    phase: Math.PI,
+    speed: 0.22,
+  },
+  {
+    id: "hungry",
+    label: "Hungry Vibez",
+    shortLabel: "Hungry",
+    path: "/hungryvibes",
+    color: "#9a3412",
+    emissive: "#fb923c",
+    orbitR: 3.85,
+    phase: (Math.PI * 5) / 3,
+    speed: 0.22,
   },
 ];
 
-/** Shared: force troika/Text materials to ignore depth so labels stay on top. */
-function applyAlwaysOnTopMaterial(troika: {
-  material?: THREE.Material | THREE.Material[];
-}) {
-  const mats = troika.material
-    ? Array.isArray(troika.material)
-      ? troika.material
-      : [troika.material]
-    : [];
-  for (const mat of mats) {
-    mat.depthTest = false;
-    mat.depthWrite = false;
-    mat.transparent = true;
-    mat.needsUpdate = true;
-  }
+function useIsMobile(bp = 768) {
+  const [mobile, setMobile] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth < bp : false,
+  );
+  useEffect(() => {
+    const sync = () => setMobile(window.innerWidth < bp);
+    sync();
+    window.addEventListener("resize", sync);
+    return () => window.removeEventListener("resize", sync);
+  }, [bp]);
+  return mobile;
 }
 
-function CentralLogoSphere() {
-  const map = useTexture("/global-vibez-logo.png");
+/**
+ * Central Sun — large sphere with the official logo mapped onto its surface.
+ * emissiveMap + white emissive keeps the mark legible in any lighting.
+ */
+function CentralLogoSun() {
+  const sun = useRef<THREE.Mesh>(null);
+  const map = useTexture(LOGO_SRC);
+
   useMemo(() => {
     map.colorSpace = THREE.SRGBColorSpace;
     map.anisotropy = 8;
+    map.wrapS = THREE.ClampToEdgeWrapping;
+    map.wrapT = THREE.ClampToEdgeWrapping;
   }, [map]);
 
+  // Slow spin so the mapped logo reads as a living sun surface
+  useFrame((_, dt) => {
+    if (sun.current) sun.current.rotation.y += dt * 0.12;
+  });
+
   return (
-    <mesh renderOrder={PLANET_RENDER_ORDER}>
-      <sphereGeometry args={[1.35, 64, 64]} />
-      <meshStandardMaterial
-        map={map}
-        roughness={0.45}
-        metalness={0.25}
-        emissive="#0ea5e9"
-        emissiveIntensity={0.35}
-        emissiveMap={map}
-      />
-    </mesh>
+    <group>
+      <pointLight color="#ffffff" intensity={3.2} distance={16} decay={2} />
+      <pointLight color="#67e8f9" intensity={1.6} distance={12} decay={2} />
+
+      <mesh ref={sun} renderOrder={1} frustumCulled={false}>
+        <sphereGeometry args={[SUN_RADIUS, 64, 64]} />
+        <meshStandardMaterial
+          map={map}
+          emissiveMap={map}
+          emissive="#ffffff"
+          emissiveIntensity={0.5}
+          roughness={0.4}
+          metalness={0.15}
+          toneMapped={false}
+        />
+      </mesh>
+    </group>
   );
 }
 
-/**
- * Branding text must stay readable over the planet at every rotation.
- * depthTest:false + high renderOrder wins the draw order; Billboard faces
- * the camera; frustumCulled:false + near padding avoids near-plane clips.
- */
-function BrandingTextMesh() {
+function HubLabel({
+  label,
+  onOpen,
+  testId,
+}: {
+  label: string;
+  onOpen: () => void;
+  testId: string;
+}) {
   return (
-    <Billboard
-      follow
-      lockX={false}
-      lockY={false}
-      lockZ={false}
-      position={[0, -2.05, 1.6]}
-      renderOrder={BRAND_RENDER_ORDER}
+    <Html
+      center
+      position={[0, -0.62, 0]}
+      distanceFactor={8}
+      zIndexRange={[50, 0]}
+      style={{ pointerEvents: "auto" }}
     >
-      <Text
-        fontSize={0.42}
-        maxWidth={6}
-        lineHeight={1.15}
-        letterSpacing={0.04}
-        textAlign="center"
-        anchorX="center"
-        anchorY="middle"
-        color="#e0f2fe"
-        outlineWidth={0.028}
-        outlineColor="#020617"
-        outlineOpacity={0.9}
-        fillOpacity={1}
-        depthOffset={-2}
-        renderOrder={BRAND_RENDER_ORDER}
-        frustumCulled={false}
-        onSync={applyAlwaysOnTopMaterial}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onOpen();
+        }}
+        data-testid={testId}
+        style={{
+          background: "rgba(0,0,0,0.5)",
+          color: "#ffffff",
+          border: "1px solid rgba(255,255,255,0.28)",
+          borderRadius: 8,
+          padding: "4px 10px",
+          fontSize: 14,
+          fontWeight: 800,
+          letterSpacing: "0.06em",
+          textTransform: "uppercase",
+          whiteSpace: "nowrap",
+          cursor: "pointer",
+          lineHeight: 1.2,
+        }}
       >
-        Globalize Digital
-      </Text>
-    </Billboard>
+        {label}
+      </button>
+    </Html>
   );
 }
 
-function OrbitHubSphere({
+function OrbitingHub({
   hub,
   onOpen,
+  gamingRef,
 }: {
-  hub: HubPlanet;
+  hub: HubDef;
   onOpen: (path: string) => void;
+  /** Expose Gaming world position so the DSG moon can orbit it */
+  gamingRef?: MutableRefObject<THREE.Vector3>;
 }) {
   const group = useRef<THREE.Group>(null);
-  const spin = useRef<THREE.Group>(null);
-  const map = useTexture(hub.src);
-
-  useMemo(() => {
-    map.colorSpace = THREE.SRGBColorSpace;
-  }, [map]);
 
   useFrame(({ clock }) => {
     if (!group.current) return;
-    const t = clock.getElapsedTime() * HUB_ORBIT_SPEED + hub.phase;
-    group.current.position.set(
-      Math.cos(t) * ORBIT_R,
-      Math.sin(t * 0.35) * 0.35,
-      Math.sin(t) * ORBIT_R,
-    );
-    // Spin only the globe mesh — keep the name billboard upright/readable
-    if (spin.current) spin.current.rotation.y = t * 0.8;
+    const t = clock.getElapsedTime() * hub.speed + hub.phase;
+    const x = Math.cos(t) * hub.orbitR;
+    const y = Math.sin(t * 0.35) * 0.25;
+    const z = Math.sin(t) * hub.orbitR * 0.35;
+    group.current.position.set(x, y, z);
+    if (hub.id === "gaming" && gamingRef) {
+      gamingRef.current.set(x, y, z);
+    }
   });
 
   return (
     <group ref={group}>
-      <group ref={spin}>
-        <mesh
-          renderOrder={1}
-          onClick={(e) => {
-            e.stopPropagation();
-            onOpen(hub.path);
-          }}
-          onPointerOver={() => {
-            document.body.style.cursor = "pointer";
-          }}
-          onPointerOut={() => {
-            document.body.style.cursor = "auto";
-          }}
-        >
-          <sphereGeometry args={[0.38, 48, 48]} />
-          <meshStandardMaterial
-            map={map}
-            emissive={hub.neon}
-            emissiveMap={map}
-            emissiveIntensity={2.8}
-            roughness={0.3}
-            metalness={0.15}
-            toneMapped={false}
-          />
-        </mesh>
-        {/* Neon rim — emissive shell */}
-        <mesh scale={1.12} renderOrder={1}>
-          <sphereGeometry args={[0.38, 32, 32]} />
-          <meshStandardMaterial
-            color={hub.neon}
-            emissive={hub.neon}
-            emissiveIntensity={1.6}
-            transparent
-            opacity={0.22}
-            toneMapped={false}
-            depthWrite={false}
-          />
-        </mesh>
-      </group>
-
-      {/* Hub name — always on top of planet + sibling hubs */}
-      <Billboard
-        follow
-        position={[0, -0.62, 0]}
-        renderOrder={HUB_LABEL_RENDER_ORDER}
+      <mesh
+        renderOrder={2}
+        onClick={(e) => {
+          e.stopPropagation();
+          onOpen(hub.path);
+        }}
+        onPointerOver={() => {
+          document.body.style.cursor = "pointer";
+        }}
+        onPointerOut={() => {
+          document.body.style.cursor = "auto";
+        }}
       >
-        <Text
-          fontSize={0.22}
-          maxWidth={2.2}
-          textAlign="center"
-          anchorX="center"
-          anchorY="top"
-          color="#ffffff"
-          outlineWidth={0.03}
-          outlineColor="#020617"
-          outlineOpacity={1}
-          fillOpacity={1}
-          depthOffset={-1}
-          renderOrder={HUB_LABEL_RENDER_ORDER}
-          frustumCulled={false}
-          onSync={applyAlwaysOnTopMaterial}
-          onClick={(e) => {
-            e.stopPropagation();
-            onOpen(hub.path);
-          }}
-          onPointerOver={() => {
-            document.body.style.cursor = "pointer";
-          }}
-          onPointerOut={() => {
-            document.body.style.cursor = "auto";
-          }}
-        >
-          {hub.label}
-        </Text>
-      </Billboard>
+        <sphereGeometry args={[0.38, 48, 48]} />
+        <meshStandardMaterial
+          color={hub.color}
+          emissive={hub.emissive}
+          emissiveIntensity={1.6}
+          roughness={0.35}
+          metalness={0.2}
+          toneMapped={false}
+          polygonOffset
+          polygonOffsetFactor={1}
+          polygonOffsetUnits={1}
+        />
+      </mesh>
+      <mesh scale={1.15} renderOrder={2}>
+        <sphereGeometry args={[0.38, 24, 24]} />
+        <meshStandardMaterial
+          color={hub.emissive}
+          emissive={hub.emissive}
+          emissiveIntensity={1.1}
+          transparent
+          opacity={0.25}
+          depthWrite={false}
+          toneMapped={false}
+        />
+      </mesh>
+      {/* Label sits below the sphere — not intersecting */}
+      <HubLabel
+        label={hub.label}
+        onOpen={() => onOpen(hub.path)}
+        testId={`landing-hub-label-${hub.id}`}
+      />
     </group>
   );
 }
 
-/**
- * Paint dark "DSG" into the fireball sphere texture itself.
- * Not an outer Billboard label — the mark lives on the satellite face,
- * with fire filling the rest of the sun.
- */
-function useDsgSatelliteTexture() {
-  return useMemo(() => {
-    const c = document.createElement("canvas");
-    c.width = 512;
-    c.height = 512;
-    const ctx = c.getContext("2d")!;
-
-    // Fire fill across the sphere
-    const fire = ctx.createRadialGradient(256, 230, 16, 256, 256, 255);
-    fire.addColorStop(0, "#fff7ed");
-    fire.addColorStop(0.18, "#fde68a");
-    fire.addColorStop(0.4, "#f97316");
-    fire.addColorStop(0.7, "#ea580c");
-    fire.addColorStop(0.9, "#dc2626");
-    fire.addColorStop(1, "#450a0a");
-    ctx.fillStyle = fire;
-    ctx.fillRect(0, 0, 512, 512);
-
-    // Flame tongues around the rim
-    for (let i = 0; i < 14; i++) {
-      const a = (i / 14) * Math.PI * 2;
-      const x = 256 + Math.cos(a) * 190;
-      const y = 256 + Math.sin(a) * 190;
-      const tipX = 256 + Math.cos(a) * 248;
-      const tipY = 256 + Math.sin(a) * 248;
-      const g = ctx.createLinearGradient(x, y, tipX, tipY);
-      g.addColorStop(0, "rgba(255,247,237,0.95)");
-      g.addColorStop(0.45, "rgba(249,115,22,0.85)");
-      g.addColorStop(1, "rgba(127,29,29,0)");
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.moveTo(x + Math.cos(a + 0.35) * 28, y + Math.sin(a + 0.35) * 28);
-      ctx.quadraticCurveTo(tipX, tipY, x + Math.cos(a - 0.35) * 28, y + Math.sin(a - 0.35) * 28);
-      ctx.closePath();
-      ctx.fill();
-    }
-
-    // Dark core — DSG reads from INSIDE the satellite
-    ctx.fillStyle = "rgba(8, 8, 12, 0.92)";
-    ctx.beginPath();
-    ctx.ellipse(256, 262, 118, 96, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = "#fbbf24";
-    ctx.lineWidth = 5;
-    ctx.stroke();
-
-    // Small flame mark above the letters
-    ctx.fillStyle = "#fde68a";
-    ctx.beginPath();
-    ctx.moveTo(256, 198);
-    ctx.bezierCurveTo(236, 232, 228, 252, 246, 272);
-    ctx.bezierCurveTo(238, 255, 256, 288, 268, 260);
-    ctx.bezierCurveTo(286, 278, 280, 228, 256, 198);
-    ctx.fill();
-
-    // Dark-contrast DSG lettering inside the core
-    ctx.font = "900 78px Arial Black, Impact, sans-serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.lineWidth = 8;
-    ctx.strokeStyle = "#1c1917";
-    ctx.strokeText("DSG", 256, 292);
-    ctx.fillStyle = "#fafaf9";
-    ctx.fillText("DSG", 256, 292);
-
-    const tex = new THREE.CanvasTexture(c);
-    tex.colorSpace = THREE.SRGBColorSpace;
-    tex.anisotropy = 8;
-    tex.needsUpdate = true;
-    return tex;
-  }, []);
-}
-
-function DsgFireball() {
+/** Golden metallic DSG token — orbits the Gaming hub as a moon. */
+function DsgTokenMoon({
+  gamingPos,
+}: {
+  gamingPos: MutableRefObject<THREE.Vector3>;
+}) {
   const group = useRef<THREE.Group>(null);
-  const coreMat = useRef<THREE.MeshStandardMaterial>(null);
-  const fireRing = useRef<THREE.Mesh>(null);
-  const fireRing2 = useRef<THREE.Mesh>(null);
-  const dsgMap = useDsgSatelliteTexture();
-  const glow = useTexture("/assets/sun-glow.png");
-
-  useMemo(() => {
-    glow.colorSpace = THREE.SRGBColorSpace;
-  }, [glow]);
+  const spin = useRef<THREE.Mesh>(null);
 
   useFrame(({ clock }) => {
-    const t = clock.getElapsedTime() * DSG_SPEED;
-    // Satellite orbits the planet grouping
-    const x = Math.cos(t) * DSG_A;
-    const z = Math.sin(t) * DSG_B;
-    const y = Math.sin(t * 1.4) * 0.45;
+    const t = clock.getElapsedTime();
+    const host = gamingPos.current;
+    const a = t * 1.35;
+    const moonR = 0.85;
     if (group.current) {
-      group.current.position.set(x, y, z);
+      group.current.position.set(
+        host.x + Math.cos(a) * moonR,
+        host.y + Math.sin(a * 1.2) * 0.2,
+        host.z + Math.sin(a) * moonR * 0.55,
+      );
     }
-    if (coreMat.current) {
-      coreMat.current.emissiveIntensity = 6.5 + Math.sin(t * 6) * 1.2;
-    }
-    // Fire rings spin around the satellite — DSG core stays camera-facing
-    if (fireRing.current) fireRing.current.rotation.z = t * 3.4;
-    if (fireRing2.current) fireRing2.current.rotation.z = -t * 2.6;
+    if (spin.current) spin.current.rotation.y = t * 2;
   });
 
   return (
     <group ref={group}>
-      <pointLight color="#ff6a00" intensity={8} distance={12} decay={2} />
-
-      {/* Soft corona */}
-      <mesh scale={1.7} renderOrder={2}>
-        <sphereGeometry args={[0.42, 32, 32]} />
-        <meshBasicMaterial
-          map={glow}
-          transparent
-          opacity={0.5}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          toneMapped={false}
-        />
-      </mesh>
-
-      {/* Fire going around the satellite */}
-      <mesh
-        ref={fireRing}
-        rotation={[Math.PI / 2.15, 0.25, 0]}
-        renderOrder={3}
-      >
-        <torusGeometry args={[0.55, 0.045, 12, 64]} />
+      <mesh ref={spin} renderOrder={3}>
+        <sphereGeometry args={[0.18, 32, 32]} />
         <meshStandardMaterial
-          color="#ff4500"
-          emissive="#ff4500"
-          emissiveIntensity={6}
+          color="#f59e0b"
+          emissive="#fbbf24"
+          emissiveIntensity={1.8}
+          metalness={0.9}
+          roughness={0.2}
           toneMapped={false}
+          polygonOffset
+          polygonOffsetFactor={1}
+          polygonOffsetUnits={1}
         />
       </mesh>
-      <mesh
-        ref={fireRing2}
-        rotation={[Math.PI / 2.6, -0.4, 0.5]}
-        renderOrder={3}
-      >
-        <torusGeometry args={[0.48, 0.028, 10, 48]} />
-        <meshStandardMaterial
-          color="#fbbf24"
-          emissive="#f59e0b"
-          emissiveIntensity={5}
-          transparent
-          opacity={0.85}
-          toneMapped={false}
-        />
-      </mesh>
-
-      {/*
-        Billboard keeps the dark DSG face toward the camera while the
-        satellite orbits. Fire rings spin around it. No outer under-label.
-      */}
-      <Billboard follow>
-        <mesh renderOrder={4}>
-          <sphereGeometry args={[0.42, 64, 64]} />
-          <meshStandardMaterial
-            ref={coreMat}
-            map={dsgMap}
-            emissiveMap={dsgMap}
-            emissive="#ff4500"
-            emissiveIntensity={6.5}
-            roughness={0.3}
-            metalness={0.08}
-            toneMapped={false}
-          />
-        </mesh>
-      </Billboard>
     </group>
   );
 }
 
-function Scene() {
-  const navigate = useNavigate();
-  const onOpen = (path: string) => navigate(path);
+function OrbitGuides() {
+  const rings = useMemo(() => {
+    const byR = new Map<number, string>();
+    for (const h of HUBS) {
+      if (!byR.has(h.orbitR)) byR.set(h.orbitR, h.emissive);
+    }
+    return [...byR.entries()];
+  }, []);
+
+  return (
+    <group rotation={[Math.PI / 2.35, 0.1, 0]}>
+      {rings.map(([r, color]) => (
+        <mesh key={`ring-${r}`} renderOrder={0}>
+          <torusGeometry args={[r, 0.006, 8, 96]} />
+          <meshBasicMaterial
+            color={color}
+            transparent
+            opacity={0.18}
+            depthWrite={false}
+            toneMapped={false}
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function Scene({ onOpen }: { onOpen: (path: string) => void }) {
+  const gamingPos = useRef(new THREE.Vector3(2.9, 0, 0));
 
   return (
     <>
       <color attach="background" args={["#000000"]} />
-      <ambientLight intensity={0.35} />
-      <directionalLight position={[4, 3, 5]} intensity={1.1} />
+      <ambientLight intensity={0.45} />
 
       <Suspense fallback={null}>
-        <CentralLogoSphere />
-        {HUB_PLANETS.map((hub) => (
-          <OrbitHubSphere key={hub.id} hub={hub} onOpen={onOpen} />
+        <CentralLogoSun />
+        <OrbitGuides />
+        {HUBS.map((hub) => (
+          <OrbitingHub
+            key={hub.id}
+            hub={hub}
+            onOpen={onOpen}
+            gamingRef={hub.id === "gaming" ? gamingPos : undefined}
+          />
         ))}
-        <DsgFireball />
-        <BrandingTextMesh />
+        <DsgTokenMoon gamingPos={gamingPos} />
       </Suspense>
 
       <EffectComposer multisampling={0}>
-        <Bloom intensity={1.35} luminanceThreshold={0.15} luminanceSmoothing={0.45} mipmapBlur />
+        <Bloom
+          intensity={1.05}
+          luminanceThreshold={0.25}
+          luminanceSmoothing={0.5}
+          mipmapBlur
+        />
       </EffectComposer>
     </>
   );
 }
 
-export function LandingPlanet() {
+/** Mobile: static horizontal flex of hub logos — no 3D orbits, no scroll. */
+function MobileHubStrip({ onOpen }: { onOpen: (path: string) => void }) {
   return (
     <div
-      className="relative mx-auto h-[280px] w-full max-w-[520px] overflow-hidden sm:h-[380px] lg:h-[520px] lg:max-w-none"
-      data-testid="landing-planet"
-      aria-label="Global Vibez orbital hub"
+      className="flex h-full w-full flex-col overflow-hidden"
+      data-testid="landing-planet-mobile"
     >
-      <Canvas
-        // near kept low so branding text at z≈1.6 never clips; far covers DSG ellipse
-        camera={{ position: [0, 0.15, CAMERA_Z], fov: 42, near: 0.05, far: 120 }}
-        dpr={1.25}
-        gl={{
-          antialias: true,
-          alpha: false,
-          toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.05,
-        }}
-        style={{ width: "100%", height: "100%", background: "#000000" }}
+      <div className="flex min-h-0 flex-1 items-center justify-center px-4">
+        <img
+          src={LOGO_SRC}
+          alt="Global Vibez DSG"
+          className="max-h-full w-auto max-w-[220px] object-contain drop-shadow-[0_0_28px_rgba(34,211,238,0.45)]"
+          draggable={false}
+        />
+      </div>
+      <nav
+        className="grid w-full shrink-0 grid-cols-3 gap-1.5 overflow-hidden border-t border-white/10 bg-black/80 px-2 py-2"
+        aria-label="Hub destinations"
+        data-testid="landing-planet-mobile-nav"
       >
-        <Scene />
-      </Canvas>
+        {HUBS.map((hub) => (
+          <button
+            key={hub.id}
+            type="button"
+            title={hub.label}
+            onClick={() => onOpen(hub.path)}
+            data-testid={`landing-mobile-hub-${hub.id}`}
+            className="flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-2"
+            style={{ background: "rgba(0,0,0,0.5)" }}
+          >
+            <span
+              className="h-7 w-7 rounded-full shadow-lg"
+              style={{
+                background: `radial-gradient(circle at 35% 30%, #fff 0%, ${hub.emissive} 35%, ${hub.color} 100%)`,
+                boxShadow: `0 0 12px ${hub.emissive}`,
+              }}
+              aria-hidden
+            />
+            <span className="w-full truncate text-center text-sm font-bold uppercase tracking-wide text-white">
+              {hub.shortLabel}
+            </span>
+          </button>
+        ))}
+      </nav>
+    </div>
+  );
+}
+
+export function LandingPlanet() {
+  const navigate = useNavigate();
+  const isMobile = useIsMobile(768);
+  const onOpen = (path: string) => navigate(path);
+
+  return (
+    <div
+      className="relative mx-auto h-[300px] w-full max-w-[520px] overflow-hidden sm:h-[400px] lg:h-[540px] lg:max-w-none"
+      data-testid="landing-planet"
+      aria-label="Global Vibez logo sun with orbiting hubs"
+      style={{ overflow: "hidden" }}
+    >
+      {isMobile ? (
+        <MobileHubStrip onOpen={onOpen} />
+      ) : (
+        <Canvas
+          camera={{ position: [0, 0.35, CAMERA_Z], fov: 40, near: 0.1, far: 100 }}
+          dpr={[1, 1.5]}
+          gl={{
+            antialias: true,
+            alpha: false,
+            toneMapping: THREE.ACESFilmicToneMapping,
+            toneMappingExposure: 1.05,
+          }}
+          style={{
+            width: "100%",
+            height: "100%",
+            background: "#000000",
+            overflow: "hidden",
+          }}
+        >
+          <Scene onOpen={onOpen} />
+        </Canvas>
+      )}
     </div>
   );
 }
