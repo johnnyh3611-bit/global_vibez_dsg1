@@ -7,7 +7,7 @@
  *    Hungry Vibez — smaller spheres on fixed orbital radii with labels
  *    beneath + onClick → hub routes.
  * 3. DSG Token moon: small golden/metallic sphere orbiting Gaming.
- * 4. Mobile (<768): no 3D orbits — static horizontal flex of hub logos.
+ * 4. Mobile (<768): no 3D orbits — vertical stacked hub labels (≥14px).
  */
 import {
   Suspense,
@@ -397,23 +397,26 @@ function Scene({ onOpen }: { onOpen: (path: string) => void }) {
   );
 }
 
-/** Mobile: static horizontal flex of hub logos — no 3D orbits, no scroll. */
+/**
+ * Mobile (<768): no 3D orbits — brand logo + vertical stacked hub labels.
+ * Labels stay ≥14px and never scale down to illegibility.
+ */
 function MobileHubStrip({ onOpen }: { onOpen: (path: string) => void }) {
   return (
     <div
       className="flex h-full w-full flex-col overflow-hidden"
       data-testid="landing-planet-mobile"
     >
-      <div className="flex min-h-0 flex-1 items-center justify-center px-4">
+      <div className="flex min-h-0 shrink-0 items-center justify-center px-4 py-3">
         <img
           src={LOGO_SRC}
           alt="Global Vibez DSG"
-          className="max-h-full w-auto max-w-[220px] object-contain drop-shadow-[0_0_28px_rgba(34,211,238,0.45)]"
+          className="max-h-[120px] w-auto max-w-[200px] object-contain drop-shadow-[0_0_28px_rgba(34,211,238,0.45)]"
           draggable={false}
         />
       </div>
       <nav
-        className="grid w-full shrink-0 grid-cols-3 gap-1.5 overflow-hidden border-t border-white/10 bg-black/80 px-2 py-2"
+        className="grid w-full min-h-0 flex-1 grid-cols-1 gap-2 overflow-y-auto border-t border-white/10 bg-black/80 px-3 py-3"
         aria-label="Hub destinations"
         data-testid="landing-planet-mobile-nav"
       >
@@ -424,19 +427,22 @@ function MobileHubStrip({ onOpen }: { onOpen: (path: string) => void }) {
             title={hub.label}
             onClick={() => onOpen(hub.path)}
             data-testid={`landing-mobile-hub-${hub.id}`}
-            className="flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-2"
+            className="flex w-full min-w-0 items-center gap-3 rounded-lg px-3 py-2.5"
             style={{ background: "rgba(0,0,0,0.5)" }}
           >
             <span
-              className="h-7 w-7 rounded-full shadow-lg"
+              className="h-8 w-8 shrink-0 rounded-full shadow-lg"
               style={{
                 background: `radial-gradient(circle at 35% 30%, #fff 0%, ${hub.emissive} 35%, ${hub.color} 100%)`,
                 boxShadow: `0 0 12px ${hub.emissive}`,
               }}
               aria-hidden
             />
-            <span className="w-full truncate text-center text-sm font-bold uppercase tracking-wide text-white">
-              {hub.shortLabel}
+            <span
+              className="min-w-0 flex-1 text-left font-bold uppercase tracking-wide text-white"
+              style={{ fontSize: 14, lineHeight: 1.3 }}
+            >
+              {hub.label}
             </span>
           </button>
         ))}
@@ -452,7 +458,7 @@ export function LandingPlanet() {
 
   return (
     <div
-      className="relative mx-auto h-[300px] w-full max-w-[520px] overflow-hidden sm:h-[400px] lg:h-[540px] lg:max-w-none"
+      className="relative mx-auto h-[420px] w-full max-w-[520px] overflow-hidden sm:h-[400px] lg:h-[540px] lg:max-w-none"
       data-testid="landing-planet"
       aria-label="Global Vibez logo sun with orbiting hubs"
       style={{ overflow: "hidden" }}

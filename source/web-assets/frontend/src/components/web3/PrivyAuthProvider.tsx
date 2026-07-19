@@ -104,6 +104,8 @@ export default function PrivyAuthProvider({
       <PrivyProvider
         appId={APP_ID}
         config={{
+          // facebook is not a Privy ExternalOAuthProviderID — Google + Twitter
+          // cover the social login CTAs; Apple remains available via Privy modal.
           loginMethods: ["wallet", "email", "google", "twitter", "apple"],
           appearance: {
             theme: "dark",

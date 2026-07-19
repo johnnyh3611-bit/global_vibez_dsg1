@@ -117,12 +117,26 @@ export default function SolanaDepositPanel({
   }
 
   if (error || !deposit?.deposit_address) {
+    const notConfigured =
+      /not configured|503|HTTP 503|Couldn't mint/i.test(error || "") ||
+      !deposit?.deposit_address;
     return (
       <div
-        className="text-rose-300 p-6 border border-rose-500/30 rounded-2xl bg-black/40 max-w-md text-sm"
+        className={`p-6 border rounded-2xl bg-black/40 max-w-md text-sm ${
+          notConfigured
+            ? "border-amber-500/30 text-amber-100"
+            : "border-rose-500/30 text-rose-300"
+        }`}
         data-testid="solana-deposit-error"
       >
-        {error || "Deposit unavailable."}
+        <p className="font-semibold mb-1">
+          {notConfigured ? "Solana deposits — Coming Soon" : "Deposit unavailable"}
+        </p>
+        <p className="text-xs opacity-80 leading-relaxed">
+          {notConfigured
+            ? "The platform Solana receive wallet / RPC is not configured here. Your Vibez Coin balance above still works — try again once GLOBAL_VIBEZ_SOLANA_RECEIVE_WALLET is set."
+            : error || "Could not mint a deposit address. Please try again shortly."}
+        </p>
       </div>
     );
   }

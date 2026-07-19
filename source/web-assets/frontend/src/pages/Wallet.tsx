@@ -213,7 +213,9 @@ const Wallet = () => {
                 <div>
                   <p className="text-sm font-black text-white">Connect Phantom Wallet</p>
                   <p className="text-xs text-white/60 mt-0.5">
-                    Link a Solana wallet to your account. Required before the DSG token bridge launches.
+                    {process.env.REACT_APP_PHANTOM_APP_ID
+                      ? "Link a Solana wallet to your account. Required before the DSG token bridge launches."
+                      : "Phantom Connect is not configured in this environment — your Vibez balance above stays available."}
                   </p>
                 </div>
               </div>

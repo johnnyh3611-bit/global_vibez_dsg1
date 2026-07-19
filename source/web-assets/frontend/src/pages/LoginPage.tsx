@@ -13,7 +13,9 @@ import { Eye, EyeOff, Mail, Lock, ArrowLeft, AlertCircle } from 'lucide-react';
 import { getBackendUrl } from '@/config/backendUrl';
 import { setBearerToken } from '@/utils/secureAuth';
 import { consumeReturnTo } from '@/hubs/hubRegistry';
+import SocialAuthButtons from '@/components/web3/SocialAuthButtons';
 // Wallet linking happens AFTER login at /wallet (Connect Phantom flow).
+// Social OAuth buttons (Privy-backed) live below email/password.
 
 const API = getBackendUrl();
 
@@ -285,8 +287,14 @@ export default function LoginPage() {
                 </div>
 
                 <div className="mt-6">
+                  <SocialAuthButtons
+                    postLoginPath={postLoginPath}
+                    onError={(msg) => setError(msg)}
+                  />
+
                   {/* Emergent Google OAuth removed — platform no longer uses Emergent.
-                      Auth is email/password + Demo Login. Wallet linking is post-login. */}
+                      Auth is email/password + social (Privy) + Demo Login.
+                      Wallet linking is post-login on /wallet. */}
                   <Button
                     variant="outline"
                     type="button"
