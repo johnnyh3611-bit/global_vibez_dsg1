@@ -70,7 +70,7 @@ export default function LandingNeonGaming() {
   };
 
   return (
-    <div className="min-h-screen bg-black relative">
+    <div className="min-h-screen bg-black relative overflow-x-hidden">
       {/* AAA-game-style landing nav. Founder directive 2026-02-09:
           NO STICK — header just scrolls away with the page. */}
       <LandingHeaderEnhanced onRoomHover={setHoveredRoom} />
@@ -445,23 +445,27 @@ export default function LandingNeonGaming() {
                   tone: 'border-emerald-500/40 from-emerald-500/10 to-green-500/5 text-emerald-300',
                 },
               ].map(({ id, path, label, hint, Icon, tone }) => (
-                <motion.button
+                <button
                   key={id}
                   type="button"
                   onClick={() => navigate(path)}
                   data-testid={`landing-cta-${id}`}
-                  whileHover={{ scale: 1.02 }}
-                  className={`group flex items-center gap-3 rounded-xl border-2 bg-gradient-to-br p-4 text-left transition-all hover:brightness-110 ${tone}`}
+                  className={`group flex min-w-0 flex-col items-center gap-2 rounded-xl border-2 bg-gradient-to-br p-3 text-center transition-[filter,border-color] hover:brightness-110 md:flex-row md:items-center md:gap-3 md:p-4 md:text-left ${tone}`}
                 >
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-black/40">
-                    <Icon className="h-5 w-5 text-white" />
+                    <Icon className="h-5 w-5 text-white" aria-hidden />
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm font-black text-white">{label}</div>
-                    <div className="truncate text-xs opacity-70">{hint}</div>
+                  <div className="min-w-0 w-full flex-1 overflow-hidden">
+                    {/* text-sm = 14px floor — never scale() these labels */}
+                    <div className="truncate text-sm font-black leading-snug text-white">
+                      {label}
+                    </div>
+                    <div className="mt-0.5 truncate text-sm leading-snug opacity-70">
+                      {hint}
+                    </div>
                   </div>
-                  <ArrowRight className="h-4 w-4 shrink-0 opacity-70 transition-transform group-hover:translate-x-1" />
-                </motion.button>
+                  <ArrowRight className="hidden h-4 w-4 shrink-0 opacity-70 transition-transform group-hover:translate-x-1 md:block" aria-hidden />
+                </button>
               ))}
             </div>
 

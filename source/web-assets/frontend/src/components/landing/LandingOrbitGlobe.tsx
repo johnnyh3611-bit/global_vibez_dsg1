@@ -559,7 +559,7 @@ export default function LandingOrbitGlobe() {
               onClick={() => navigate(openHubPath(hub))}
               title={`${hub.label} dashboard`}
               data-testid={hub.testid}
-              className="absolute z-20 -translate-x-1/2 -translate-y-1/2 group flex flex-col items-center justify-center min-w-[40px] min-h-[40px] rounded-full"
+              className="absolute z-20 -translate-x-1/2 -translate-y-1/2 group flex flex-col items-center justify-center min-w-[40px] min-h-[40px] max-w-[28%] rounded-full overflow-hidden"
               style={{ left: `${c.cx}%`, top: `${c.cy}%` }}
             >
               <motion.span
@@ -571,12 +571,13 @@ export default function LandingOrbitGlobe() {
                 animate={
                   reduceMotion
                     ? undefined
-                    : { scale: [1, 1.55, 1], opacity: [0.85, 1, 0.85] }
+                    : { opacity: [0.85, 1, 0.85] }
                 }
                 transition={{ duration: 1.8 + (c.id.length % 3) * 0.25, repeat: Infinity }}
               />
+              {/* Stacked under icon; 14px floor — no transform:scale (blur) */}
               <span
-                className="mt-0.5 text-[7px] sm:text-[8px] lg:text-[10px] font-black uppercase tracking-wide text-white opacity-95 group-hover:opacity-100 group-hover:scale-110 transition-all whitespace-nowrap"
+                className="mt-0.5 w-full truncate text-center text-sm font-black uppercase tracking-wide text-white opacity-95 transition-opacity group-hover:opacity-100"
                 style={{
                   textShadow: `0 0 10px ${c.glow}, 0 0 16px ${c.glow}, 0 1px 3px #000`,
                 }}
