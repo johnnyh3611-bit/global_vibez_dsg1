@@ -33,7 +33,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Bot, Crown, Loader2, Wifi } from "lucide-react";
+import { Bot, Crown, Loader2, Wifi } from "lucide-react";
 import { authFetch } from "@/utils/secureAuth";
 
 import SpadesTable from "@/components/spades/SpadesTable";
@@ -51,7 +51,8 @@ import CommHubButton from "@/components/common/CommHubButton";
 import SpadesPlayerProfile from "@/components/spades/SpadesPlayerProfile";
 import SpadesCommunityChat from "@/components/spades/SpadesCommunityChat";
 import TurnIndicator, { type TurnRole } from "@/components/games/TurnIndicator";
-import SpecialStatePrompt, { type SpecialStateVariant } from "@/components/games/SpecialStatePrompt";
+import SpecialStatePrompt from "@/components/games/SpecialStatePrompt";
+import GameRoomLayout from "@/components/games/GameRoomLayout";
 import type {
   SpadesCard,
   SpadesPracticeState,
@@ -547,283 +548,263 @@ export default function SpadesAAA() {
     );
   }
 
-  return (
-    <div
-      className="min-h-screen bg-gradient-to-b from-[#05070d] via-[#081021] to-[#050507] text-white relative overflow-x-hidden"
-      data-testid="spades-aaa"
-    >
-      {/* Subtle glasshouse grid — same as BidWhistPremium */}
-      <div
-        className="absolute inset-0 pointer-events-none opacity-[0.12]"
-        style={{
-          backgroundImage:
-            "linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px)",
-          backgroundSize: "60px 60px",
-        }}
+  const partnerOf: Record<string, string> = {
+    north: "south",
+    south: "north",
+    east: "west",
+    west: "east",
+  };
+  const yourPos = game.your_position;
+  const turnPos = game.turn_position;
+  const turnRole: TurnRole | null = turnPos
+    ? turnPos === yourPos
+      ? "me"
+      : turnPos === partnerOf[yourPos]
+        ? "partner"
+        : "opponent"
+    : null;
+  const turnPlayer = turnPos
+    ? game.players?.[turnPos as keyof typeof game.players]
+    : null;
+
+  const handNode =
+    game.phase === "playing" ? (
+      <SpadesHandFan
+        key={dealKey}
+        hand={game.your_hand}
+        validPlays={game.valid_plays ?? []}
+        isYourTurn={game.turn_position === "south"}
+        onPlay={playCard}
+        busy={busy}
       />
+    ) : game.phase === "bidding" && reviewActive ? (
+      <SpadesHandFan
+        key={`review-${dealKey}`}
+        hand={game.your_hand}
+        validPlays={[]}
+        isYourTurn={false}
+        onPlay={() => undefined}
+        busy={true}
+        hideTurnIndicator={true}
+      />
+    ) : game.phase === "bidding" && !dealing && !bidModalOpen ? (
+      <div className="text-center text-amber-300/60 text-xs uppercase tracking-[0.3em] font-bold pb-4">
+        Waiting for bids…
+      </div>
+    ) : null;
 
-      <div className="relative z-10 flex flex-col min-h-screen">
-        {/* ── Top bar: Back · Badges · Score ── */}
-        <div className="flex flex-wrap items-start justify-between px-2 sm:px-3 md:px-5 pt-2 sm:pt-3 md:pt-4 gap-2">
-          <div className="flex flex-col items-start gap-2">
-            <button
-              onClick={backToLobby}
-              className="flex items-center gap-1.5 text-amber-300/70 hover:text-white transition text-xs md:text-sm font-bold"
-              data-testid="spades-back-btn"
-            >
-              <ArrowLeft className="w-4 h-4" /> Lobby
-            </button>
-            <div className="flex items-center gap-2">
-              <SpadesGameMenu
-                onExit={backToLobby}
-                onOpenMessages={() => setChatOpen(true)}
-                entryFee={Number((game as { wager?: number } | null)?.wager ?? 0)}
-                midGame={Boolean(game && game.phase !== "finished")}
-                gameLabel="Spades"
-              />
-              <CommHubButton compact />
-            </div>
-            <div data-testid="room-menu-bar" className="hidden" aria-hidden="true" />
+  const reviewActions =
+    game.phase === "bidding" && reviewActive ? (
+      <div
+        className="flex items-center gap-2"
+        data-testid="spades-review-banner"
+      >
+        <div className="px-2.5 py-1 rounded-full bg-slate-950/90 backdrop-blur border-2 border-amber-500/70 flex items-center gap-1.5 shadow-[0_0_16px_rgba(251,191,36,0.35)]">
+          <span
+            className="text-[9px] uppercase tracking-[0.25em] text-amber-300/80 font-bold"
+            style={{ fontFamily: "'Cinzel', serif" }}
+          >
+            Review
+          </span>
+          <span
+            className="text-sm font-black text-amber-300 tabular-nums leading-none"
+            style={{ fontFamily: "'Cinzel', serif" }}
+            data-testid="spades-review-countdown"
+          >
+            {reviewRemaining}s
+          </span>
+        </div>
+        <button
+          onClick={endReviewAndShowBid}
+          className="px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-[#3a2500] font-black text-[10px] uppercase tracking-widest transition shadow-[0_0_16px_rgba(251,191,36,0.35)]"
+          style={{ fontFamily: "'Cinzel', serif" }}
+          data-testid="spades-review-bid-now-btn"
+        >
+          Bid Now
+        </button>
+      </div>
+    ) : null;
+
+  return (
+    <GameRoomLayout
+      testId="spades-aaa"
+      title="Spades"
+      subtitle={game.ruleset_label ?? "Classic"}
+      onBack={backToLobby}
+      nativeTable
+      hudExtra={
+        <div className="flex items-center gap-1.5">
+          <div className="hidden sm:flex items-center gap-1.5">
+            <SpadesGameMenu
+              onExit={backToLobby}
+              onOpenMessages={() => setChatOpen(true)}
+              entryFee={Number((game as { wager?: number } | null)?.wager ?? 0)}
+              midGame={Boolean(game && game.phase !== "finished")}
+              gameLabel="Spades"
+            />
+            <CommHubButton compact />
           </div>
-
-          <div className="flex flex-col items-center gap-1.5 order-3 w-full sm:order-none sm:w-auto">
-            <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
-              <div className="px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-amber-300 font-bold">
-                {game.ruleset_label ?? "Classic"}
-              </div>
-              <div className="px-2 py-0.5 rounded-full bg-fuchsia-500/15 border border-fuchsia-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-fuchsia-300 font-bold">
-                {mode === "ai" ? (
-                  <span className="inline-flex items-center gap-1">
-                    <Bot className="w-2.5 h-2.5" /> AI
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1">
-                    <Wifi className="w-2.5 h-2.5" /> Live
-                  </span>
-                )}
-              </div>
-            </div>
+          <div className="px-2 py-0.5 rounded-full bg-fuchsia-500/15 border border-fuchsia-400/40 text-[9px] uppercase tracking-[0.2em] text-fuchsia-300 font-bold">
+            {mode === "ai" ? (
+              <span className="inline-flex items-center gap-1">
+                <Bot className="w-2.5 h-2.5" /> AI
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1">
+                <Wifi className="w-2.5 h-2.5" /> Live
+              </span>
+            )}
           </div>
-
           <SpadesScoreBadge
             scores={game.scores}
             players={game.players}
             phase={game.phase}
             tricksPlayed={game.tricks_played}
           />
+          <div data-testid="room-menu-bar" className="hidden" aria-hidden="true" />
+          <button
+            type="button"
+            onClick={backToLobby}
+            className="sr-only"
+            data-testid="spades-back-btn"
+          >
+            Lobby
+          </button>
         </div>
-
-        {/* ── Status banner ── */}
-        <SpadesStatusBanner message={statusMsg} />
-
-        {/* ── Universal turn indicator (LOCKED 2026-02-16 — every multiplayer room) ── */}
-        {(() => {
-          const yourPos = game.your_position;
-          const turnPos = game.turn_position;
-          if (!turnPos) return null;
-          // Spades partnerships: north/south = team 1, east/west = team 2.
-          // From your perspective, your "partner" is the seat across the table.
-          const partnerOf: Record<string, string> = {
-            north: 'south', south: 'north', east: 'west', west: 'east',
-          };
-          const role: TurnRole =
-            turnPos === yourPos ? 'me'
-            : turnPos === partnerOf[yourPos] ? 'partner'
-            : 'opponent';
-          const turnPlayer = game.players?.[turnPos as keyof typeof game.players];
-          return (
-            <TurnIndicator
-              role={role}
-              name={role === 'me' ? undefined : (turnPlayer?.name || (turnPos as string))}
-              expiresAt={role === 'me' ? turnExpiresAt : null}
-              onExpire={role === 'me' ? handleShotClockExpire : undefined}
+      }
+      table={
+        <div className="relative">
+          <SpadesTable
+            brandSubLabel={
+              game.ruleset_label
+                ? `${game.ruleset_label.toUpperCase()}`
+                : "SPADES AAA"
+            }
+          >
+            <SpadesSeat
+              position="north"
+              player={game.players.north}
+              isTurn={game.turn_position === "north"}
+              isYou={false}
+              onClick={() => setProfileOpen("north")}
+              shotClockExpiresAt={
+                game.turn_position === "north" ? turnExpiresAt : null
+              }
+              onShotClockExpire={handleShotClockExpire}
             />
-          );
-        })()}
-
-        {/* ── ARENA (table + seats + dealing layer) ──
-            Content-sized so the hand fan directly below can tuck up
-            against the bottom rim instead of floating at the viewport
-            bottom. */}
-        <div className="flex items-center justify-center py-2 md:py-3 relative">
-          <div className="relative">
-            <SpadesTable brandSubLabel={game.ruleset_label ? `${game.ruleset_label.toUpperCase()}` : "SPADES AAA"}>
-              <SpadesSeat
-                position="north"
-                player={game.players.north}
-                isTurn={game.turn_position === "north"}
-                isYou={false}
-                onClick={() => setProfileOpen("north")}
-                shotClockExpiresAt={game.turn_position === "north" ? turnExpiresAt : null}
-                onShotClockExpire={handleShotClockExpire}
-              />
-              <SpadesSeat
-                position="east"
-                player={game.players.east}
-                isTurn={game.turn_position === "east"}
-                isYou={false}
-                onClick={() => setProfileOpen("east")}
-                shotClockExpiresAt={game.turn_position === "east" ? turnExpiresAt : null}
-                onShotClockExpire={handleShotClockExpire}
-              />
-              <SpadesSeat
-                position="west"
-                player={game.players.west}
-                isTurn={game.turn_position === "west"}
-                isYou={false}
-                onClick={() => setProfileOpen("west")}
-                shotClockExpiresAt={game.turn_position === "west" ? turnExpiresAt : null}
-                onShotClockExpire={handleShotClockExpire}
-              />
-              {/* South is YOU — we intentionally do NOT render your own
-                  seat badge on your own screen. You know who you are;
-                  other players in live mode still see it via their own
-                  client. The hand fan below visually anchors your seat. */}
-              <SpadesTrickPile trick={game.current_trick} />
-            </SpadesTable>
-
-            {/* Dealing animation sits on top of the arena */}
-            <SpadesDealingAnimation active={dealing} />
+            <SpadesSeat
+              position="east"
+              player={game.players.east}
+              isTurn={game.turn_position === "east"}
+              isYou={false}
+              onClick={() => setProfileOpen("east")}
+              shotClockExpiresAt={
+                game.turn_position === "east" ? turnExpiresAt : null
+              }
+              onShotClockExpire={handleShotClockExpire}
+            />
+            <SpadesSeat
+              position="west"
+              player={game.players.west}
+              isTurn={game.turn_position === "west"}
+              isYou={false}
+              onClick={() => setProfileOpen("west")}
+              shotClockExpiresAt={
+                game.turn_position === "west" ? turnExpiresAt : null
+              }
+              onShotClockExpire={handleShotClockExpire}
+            />
+            <SpadesTrickPile trick={game.current_trick} />
+          </SpadesTable>
+          <SpadesDealingAnimation active={dealing} />
+        </div>
+      }
+      actions={reviewActions}
+      hand={handNode}
+      overlay={
+        <>
+          <div className="absolute top-14 left-0 right-0 pointer-events-none">
+            <div className="pointer-events-auto">
+              <SpadesStatusBanner message={statusMsg} />
+              {turnRole && turnPos ? (
+                <TurnIndicator
+                  role={turnRole}
+                  name={
+                    turnRole === "me"
+                      ? undefined
+                      : turnPlayer?.name || (turnPos as string)
+                  }
+                  expiresAt={turnRole === "me" ? turnExpiresAt : null}
+                  onExpire={
+                    turnRole === "me" ? handleShotClockExpire : undefined
+                  }
+                />
+              ) : null}
+            </div>
           </div>
-        </div>
 
-        {/* ── Hand fan — "like cards sitting on the table edge" ──
-            Pulled close to the felt with a small negative margin so the
-            top of the fan kisses the bottom rim WITHOUT colliding with
-            the south played-card landing slot in the trick pile.
-            Founder fix Feb 2026 (round 5): cut the overlap from -mt-12
-            to -mt-6 so the south trick card has ~60px of breathing
-            room above the hand fan.
-
-            Renders during the playing phase AND during the 10s review
-            window so the player can study their freshly-dealt hand
-            before the bid modal pops up. */}
-        <div className="px-3 md:px-4 -mt-4 md:-mt-6 pb-3 md:pb-4 relative z-20">
-          {game.phase === "playing" ? (
-            <SpadesHandFan
-              key={dealKey}
-              hand={game.your_hand}
-              validPlays={game.valid_plays ?? []}
-              isYourTurn={game.turn_position === "south"}
-              onPlay={playCard}
-              busy={busy}
-            />
-          ) : game.phase === "bidding" && reviewActive ? (
-            <>
-              {/* Floating countdown pill — positioned high above the
-                  hand fan so it doesn't occlude the leftmost cards.
-                  Founder fix Feb 2026 (round 5): bumped from -top-4 to
-                  -top-10 so the chip floats clear of the fan radius. */}
-              <div
-                className="absolute left-1/2 -translate-x-1/2 -top-8 md:-top-10 flex items-center gap-2 z-30"
-                data-testid="spades-review-banner"
-              >
-                <div className="px-2.5 py-1 rounded-full bg-slate-950/90 backdrop-blur border-2 border-amber-500/70 flex items-center gap-1.5 shadow-[0_0_16px_rgba(251,191,36,0.35)]">
-                  <span
-                    className="text-[9px] uppercase tracking-[0.25em] text-amber-300/80 font-bold"
-                    style={{ fontFamily: "'Cinzel', serif" }}
-                  >
-                    Review
-                  </span>
-                  <span
-                    className="text-sm font-black text-amber-300 tabular-nums leading-none"
-                    style={{ fontFamily: "'Cinzel', serif" }}
-                    data-testid="spades-review-countdown"
-                  >
-                    {reviewRemaining}s
-                  </span>
-                </div>
-                <button
-                  onClick={endReviewAndShowBid}
-                  className="px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-[#3a2500] font-black text-[10px] uppercase tracking-widest transition shadow-[0_0_16px_rgba(251,191,36,0.35)]"
-                  style={{ fontFamily: "'Cinzel', serif" }}
-                  data-testid="spades-review-bid-now-btn"
-                >
-                  Bid Now
-                </button>
-              </div>
-              {/* Hand fan (display-only during review) */}
-              <SpadesHandFan
-                key={`review-${dealKey}`}
-                hand={game.your_hand}
-                validPlays={[]}
-                isYourTurn={false}
-                onPlay={() => undefined}
-                busy={true}
-                hideTurnIndicator={true}
+          {isFinished ? (
+            <div className="absolute inset-0 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+              <FinishedFooter
+                winnerTeam={
+                  (game.scores?.team1?.points ?? 0) >=
+                  (game.scores?.team2?.points ?? 0)
+                    ? "team1"
+                    : "team2"
+                }
+                onLobby={backToLobby}
+                onReplay={() => startAiGame(ruleset)}
+                busy={busy}
               />
-            </>
-          ) : game.phase === "bidding" && !dealing && !bidModalOpen ? (
-            <div className="text-center text-amber-300/60 text-xs uppercase tracking-[0.3em] font-bold">
-              Waiting for bids…
             </div>
           ) : null}
 
-          {isFinished ? (
-            <FinishedFooter
-              winnerTeam={
-                (game.scores?.team1?.points ?? 0) >=
-                (game.scores?.team2?.points ?? 0)
-                  ? "team1"
-                  : "team2"
-              }
-              onLobby={backToLobby}
-              onReplay={() => startAiGame(ruleset)}
-              busy={busy}
-            />
-          ) : null}
-        </div>
-      </div>
+          <SpadesBidModal
+            open={bidModalOpen && game.phase === "bidding" && !isFinished}
+            ruleset={game.ruleset as SpadesRuleset | undefined}
+            hand={game.your_hand}
+            onBid={placeBid}
+            busy={busy}
+          />
 
-      {/* ── Modals layer ── */}
-      <SpadesBidModal
-        open={bidModalOpen && game.phase === "bidding" && !isFinished}
-        ruleset={game.ruleset as SpadesRuleset | undefined}
-        hand={game.your_hand}
-        onBid={placeBid}
-        busy={busy}
-      />
+          <SpecialStatePrompt
+            open={pendingNil !== null}
+            variant="nil"
+            onConfirm={() => {
+              setPendingNil(null);
+              submitBidNow(0);
+            }}
+            onCancel={() => {
+              setPendingNil(null);
+              setBidModalOpen(true);
+            }}
+          />
 
-      {/* Nil full-screen confirmation (LOCKED 2026-02-16). Cancel reopens
-           the bid modal so the player can pick a number bid instead. */}
-      <SpecialStatePrompt
-        open={pendingNil !== null}
-        variant="nil"
-        onConfirm={() => {
-          setPendingNil(null);
-          submitBidNow(0);
-        }}
-        onCancel={() => {
-          setPendingNil(null);
-          setBidModalOpen(true);
-        }}
-      />
+          <SpadesRoundModal
+            open={roundModalOpen && !isFinished}
+            summary={lastRoundSummary}
+            scores={game.scores}
+            players={game.players}
+            onClose={handleRoundModalClose}
+          />
 
-      <SpadesRoundModal
-        open={roundModalOpen && !isFinished}
-        summary={lastRoundSummary}
-        scores={game.scores}
-        players={game.players}
-        onClose={handleRoundModalClose}
-      />
+          <SpadesPlayerProfile
+            open={profileOpen !== null}
+            position={profileOpen}
+            player={profileOpen ? game.players[profileOpen] : null}
+            isYou={profileOpen === "south"}
+            onClose={() => setProfileOpen(null)}
+          />
 
-      {/* Player profile popup — tap any seat */}
-      <SpadesPlayerProfile
-        open={profileOpen !== null}
-        position={profileOpen}
-        player={profileOpen ? game.players[profileOpen] : null}
-        isYou={profileOpen === "south"}
-        onClose={() => setProfileOpen(null)}
-      />
-
-      {/* Community chat drawer — opened via Menu → Messages */}
-      <SpadesCommunityChat
-        open={chatOpen}
-        gameId={game.game_id}
-        mode={mode}
-        onClose={() => setChatOpen(false)}
-      />
-    </div>
+          <SpadesCommunityChat
+            open={chatOpen}
+            gameId={game.game_id}
+            mode={mode}
+            onClose={() => setChatOpen(false)}
+          />
+        </>
+      }
+    />
   );
 }
 

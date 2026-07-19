@@ -9,6 +9,9 @@
    orientation-lock fallback. Founder mandate (May 2026). */
 @import './styles/mobile-foundation.css';
 
+/* Table Standard — GameRoomLayout / GameCarousel shared ergonomics. */
+@import './styles/game-room-standard.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

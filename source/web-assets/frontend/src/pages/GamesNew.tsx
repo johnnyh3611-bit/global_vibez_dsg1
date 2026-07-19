@@ -21,8 +21,18 @@ import { EarningsBanner } from '@/components/dashboard/EarningsBanner';
 import { triggerHaptic } from '@/hooks/useGestures';
 import { recordRecentGame } from '@/hooks/useRecommendedGames';
 import { RecommendedGames } from '@/components/games/RecommendedGames';
+import { GameCarousel, type GameCarouselItem } from '@/components/games/GameCarousel';
 import { authFetch } from '@/utils/secureAuth';
 import { FuturisticTabs } from '@/components/ui/futuristic-tabs';
+
+const CAROUSEL_DESCRIPTIONS: Record<string, string> = {
+  bid_whist_premium: 'Partnership whist with AAA bidding and neon felt.',
+  blackjack_universal: 'Hit, stand, and double — universal engine blackjack.',
+  poker_universal: "Texas Hold'em practice — build your stack vs the room.",
+  spades_universal: 'Classic Spades with dealing animation and hand fan.',
+  vibez_654: 'House dice — ride the Vibez 654 streak.',
+  uno: 'Color chaos — dump your hand before the table does.',
+};
 
 /**
  * Lobby tile → playable solo room. Prefer dedicated AAA / casino pages;
@@ -600,6 +610,34 @@ export default function GamesNew() {
 
         <div className="mb-6">
           <RecommendedGames />
+        </div>
+
+        {/* Universal horizontal carousel — snap-to-center + Play Now */}
+        <div className="mb-8" data-testid="games-featured-carousel">
+          <GameCarousel
+            title="Featured Tables"
+            busy={startingGame}
+            games={
+              GAME_CATEGORIES.featured.games.map(
+                (g): GameCarouselItem => ({
+                  id: g.id,
+                  name: g.name,
+                  image: g.image,
+                  emoji: g.emoji,
+                  badge: g.badge,
+                  description:
+                    CAROUSEL_DESCRIPTIONS[g.id] ||
+                    `${g.players} players · Tap Play Now to load the table.`,
+                }),
+              )
+            }
+            onSelect={(game) =>
+              startPracticeGame(
+                GAME_CATEGORIES.featured.games.find((g) => g.id === game.id) ||
+                  game,
+              )
+            }
+          />
         </div>
 
         {/* Category tabs — My Vibez fuchsia/pink segmented style */}

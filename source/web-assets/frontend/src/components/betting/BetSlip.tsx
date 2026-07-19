@@ -8,14 +8,22 @@ import { toast } from "sonner";
 
 export const DICE_ROLL_MS = 1500;
 
-/** Z-index layers so cards/bets always sit above in-game video docks. */
+/** Z-index layers so cards/bets always sit above in-game video docks.
+ *  Room chrome (HUD / quick settings) uses `.gv-room-*` CSS vars;
+ *  keep table > videoDock so PiP never covers the felt. */
 export const GAME_Z = {
   videoDock: 20,
+  /** Active game table / felt */
   table: 30,
+  actions: 35,
   cards: 40,
   chips: 45,
   betSlip: 50,
+  /** Score, chat, secondary UI overlays */
+  overlay: 55,
   toast: 60,
+  hud: 60,
+  settings: 70,
   /** Voice call modals stay above everything (existing 9998+) */
   callOverlay: 9998,
 } as const;

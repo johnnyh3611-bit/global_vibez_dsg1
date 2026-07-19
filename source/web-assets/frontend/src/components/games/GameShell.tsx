@@ -70,15 +70,16 @@ export const GameShell: React.FC<GameShellProps> = ({
     <div
       className={`min-h-screen w-full relative overflow-hidden bg-gradient-to-br ${bgGradient} text-white`}
       style={{ WebkitFontSmoothing: 'antialiased' }}
+      data-testid="game-shell"
     >
-      {/* Ambient lighting */}
+      {/* Ambient lighting — Vibez cyan / indigo neon (matches landing) */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-64 h-64 sm:w-96 sm:h-96 bg-purple-600/15 rounded-full blur-[80px] sm:blur-[120px]" />
-        <div className="absolute bottom-0 right-1/4 w-64 h-64 sm:w-96 sm:h-96 bg-cyan-600/15 rounded-full blur-[80px] sm:blur-[120px]" />
+        <div className="absolute top-0 left-1/4 w-64 h-64 sm:w-96 sm:h-96 bg-cyan-500/15 rounded-full blur-[80px] sm:blur-[120px]" />
+        <div className="absolute bottom-0 right-1/4 w-64 h-64 sm:w-96 sm:h-96 bg-indigo-600/18 rounded-full blur-[80px] sm:blur-[120px]" />
       </div>
 
       {/* Top bar */}
-      <div className="sticky top-0 z-50 w-full bg-black/40 backdrop-blur-xl border-b border-white/10">
+      <div className="sticky top-0 z-50 w-full bg-black/40 backdrop-blur-xl border-b border-cyan-400/20">
         <div className="max-w-7xl mx-auto px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
@@ -199,7 +200,7 @@ export const GameShell: React.FC<GameShellProps> = ({
       {controls && (
         <div className="fixed bottom-[72px] left-0 right-0 z-40 px-4 py-3 sm:bottom-0 sm:px-6 sm:py-4 pointer-events-none">
           <div className="max-w-3xl mx-auto pointer-events-auto">
-            <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl p-3 sm:p-4 shadow-2xl">
+            <div className="bg-black/60 backdrop-blur-xl border border-cyan-400/20 rounded-2xl p-3 sm:p-4 shadow-2xl">
               {controls}
             </div>
           </div>
