@@ -2,13 +2,14 @@
  * LandingPlanet — orbital architecture (locked).
  *
  * • Central fixed Sphere — /global-vibez-logo.png texture (no distortion mesh)
+ * • Branding text mesh ("Globalize Digital") — renderOrder > planet, depthTest:false
  * • 4 orbiting Sphere meshes — Gaming, Dating, Streams, Earn
  * • DSG fireball — dsg-emissive.png, emissiveIntensity 15, elliptical path
  * • Deep space #000000 · static camera · no blob continents · no auto labels
  */
 import { Suspense, useMemo, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { useTexture } from "@react-three/drei";
+import { Billboard, Text, useTexture } from "@react-three/drei";
 import { Bloom, EffectComposer } from "@react-three/postprocessing";
 import { useNavigate } from "react-router-dom";
 import * as THREE from "three";
@@ -19,6 +20,9 @@ const DSG_A = 4.1; // ellipse semi-major (X)
 const DSG_B = 2.55; // ellipse semi-minor (Z)
 const DSG_SPEED = 0.55;
 const CAMERA_Z = 9.5;
+/** Branding always draws above planet / hubs / fireball */
+const BRAND_RENDER_ORDER = 100;
+const PLANET_RENDER_ORDER = 0;
 
 type HubPlanet = {
   id: "gaming" | "dating" | "streams" | "earn";
@@ -68,7 +72,7 @@ function CentralLogoSphere() {
   }, [map]);
 
   return (
-    <mesh>
+    <mesh renderOrder={PLANET_RENDER_ORDER}>
       <sphereGeometry args={[1.35, 64, 64]} />
       <meshStandardMaterial
         map={map}
@@ -79,6 +83,59 @@ function CentralLogoSphere() {
         emissiveMap={map}
       />
     </mesh>
+  );
+}
+
+/**
+ * Branding text must stay readable over the planet at every rotation.
+ * depthTest:false + high renderOrder wins the draw order; Billboard faces
+ * the camera; frustumCulled:false + near padding avoids near-plane clips.
+ */
+function BrandingTextMesh() {
+  const applyBrandMaterial = (troika: { material?: THREE.Material | THREE.Material[] }) => {
+    const mats = troika.material
+      ? Array.isArray(troika.material)
+        ? troika.material
+        : [troika.material]
+      : [];
+    for (const mat of mats) {
+      mat.depthTest = false;
+      mat.depthWrite = false;
+      mat.transparent = true;
+      mat.needsUpdate = true;
+    }
+  };
+
+  return (
+    <Billboard
+      follow
+      lockX={false}
+      lockY={false}
+      lockZ={false}
+      position={[0, -2.05, 1.6]}
+      renderOrder={BRAND_RENDER_ORDER}
+    >
+      <Text
+        fontSize={0.42}
+        maxWidth={6}
+        lineHeight={1.15}
+        letterSpacing={0.04}
+        textAlign="center"
+        anchorX="center"
+        anchorY="middle"
+        color="#e0f2fe"
+        outlineWidth={0.028}
+        outlineColor="#020617"
+        outlineOpacity={0.9}
+        fillOpacity={1}
+        depthOffset={-2}
+        renderOrder={BRAND_RENDER_ORDER}
+        frustumCulled={false}
+        onSync={applyBrandMaterial}
+      >
+        Globalize Digital
+      </Text>
+    </Billboard>
   );
 }
 
@@ -110,6 +167,7 @@ function OrbitHubSphere({
   return (
     <group ref={group}>
       <mesh
+        renderOrder={1}
         onClick={(e) => {
           e.stopPropagation();
           onOpen(hub.path);
@@ -133,7 +191,7 @@ function OrbitHubSphere({
         />
       </mesh>
       {/* Neon rim — emissive shell, no labels */}
-      <mesh scale={1.12}>
+      <mesh scale={1.12} renderOrder={1}>
         <sphereGeometry args={[0.38, 32, 32]} />
         <meshStandardMaterial
           color={hub.neon}
@@ -221,6 +279,7 @@ function Scene() {
           <OrbitHubSphere key={hub.id} hub={hub} onOpen={onOpen} />
         ))}
         <DsgFireball />
+        <BrandingTextMesh />
       </Suspense>
 
       <EffectComposer multisampling={0}>
@@ -233,12 +292,13 @@ function Scene() {
 export function LandingPlanet() {
   return (
     <div
-      className="relative mx-auto h-[280px] w-full max-w-[520px] sm:h-[380px] lg:h-[520px] lg:max-w-none"
+      className="relative mx-auto h-[280px] w-full max-w-[520px] overflow-hidden sm:h-[380px] lg:h-[520px] lg:max-w-none"
       data-testid="landing-planet"
       aria-label="Global Vibez orbital hub"
     >
       <Canvas
-        camera={{ position: [0, 0.4, CAMERA_Z], fov: 40, near: 0.1, far: 100 }}
+        // near kept low so branding text at z≈1.6 never clips; far covers DSG ellipse
+        camera={{ position: [0, 0.15, CAMERA_Z], fov: 42, near: 0.05, far: 120 }}
         dpr={1.25}
         gl={{
           antialias: true,

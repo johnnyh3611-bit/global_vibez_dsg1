@@ -104,23 +104,23 @@ const LandingHeaderEnhanced: React.FC<Props> = ({ onRoomHover }) => {
         WebkitBackdropFilter: "blur(10px)",
         borderBottom: "1px solid rgba(217, 70, 239, 0.2)",
       }}
-      className="px-6 py-4"
+      className="overflow-x-hidden px-4 py-4 sm:px-6"
     >
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+      <div className="mx-auto flex max-w-7xl min-w-0 flex-wrap items-center justify-between gap-3 md:flex-nowrap md:gap-4">
         {/* Brand block */}
         <div
-          className="flex items-center gap-3 cursor-pointer shrink-0"
+          className="flex min-w-0 shrink items-center gap-2 cursor-pointer sm:gap-3"
           onClick={() => navigate("/vibe-vault-admin")}
           data-testid="landing-logo"
         >
           <img
             src="/global-vibez-logo.png?v=12"
             alt="Global Vibez DSG Logo"
-            className="h-12 w-auto object-contain drop-shadow-[0_0_22px_rgba(217,70,239,0.45)]"
+            className="h-10 w-auto object-contain drop-shadow-[0_0_22px_rgba(217,70,239,0.45)] sm:h-12"
           />
-          <div className="hidden sm:block">
+          <div className="min-w-0 hidden sm:block">
             <h1
-              className="text-xl font-black"
+              className="truncate text-base font-black md:text-xl"
               onClick={(e) => {
                 e.stopPropagation();
                 navigate("/");
@@ -131,15 +131,15 @@ const LandingHeaderEnhanced: React.FC<Props> = ({ onRoomHover }) => {
                 DSG
               </span>
             </h1>
-            <p className="text-[10px] text-purple-400 font-mono uppercase tracking-wider">
+            <p className="truncate text-sm text-purple-400 font-mono uppercase tracking-wider">
               Gaming · Dating · Rides · Food · Venues
             </p>
           </div>
         </div>
 
-        {/* Center nav — PDF §3 entries with neon-fuchsia glow + parallax icons */}
+        {/* Desktop nav — row icon + label (≥768px via md:) */}
         <nav
-          className="hidden lg:flex items-center gap-2 mx-4"
+          className="hidden md:flex items-center gap-2 mx-4 min-w-0"
           data-testid="landing-nav-progressive"
           onMouseLeave={() => onRoomHover?.(null)}
         >
@@ -155,7 +155,7 @@ const LandingHeaderEnhanced: React.FC<Props> = ({ onRoomHover }) => {
             >
               <ParallaxIcon Icon={Icon} color={glow} />
               <span
-                className="transition-all"
+                className="transition-colors"
                 style={{
                   animation: "vibezNeonPulse 2.4s ease-in-out infinite",
                 }}
@@ -166,8 +166,8 @@ const LandingHeaderEnhanced: React.FC<Props> = ({ onRoomHover }) => {
           ))}
         </nav>
 
-        {/* Right CTAs */}
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        {/* Right CTAs — no transform:scale (avoids blurry text) */}
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           <LandingLanguageSwitcher />
 
           {/* 2026-05-12: Phantom wallet button moved from landing header
@@ -176,7 +176,7 @@ const LandingHeaderEnhanced: React.FC<Props> = ({ onRoomHover }) => {
           <button
             onClick={() => navigate("/login")}
             data-testid="landing-signin-btn"
-            className="hidden md:inline-flex px-4 py-2 text-purple-300 font-bold hover:text-fuchsia-400 transition-colors border border-purple-500/30 rounded-lg hover:border-fuchsia-500"
+            className="hidden md:inline-flex px-4 py-2 text-sm text-purple-300 font-bold hover:text-fuchsia-400 transition-colors border border-purple-500/30 rounded-lg hover:border-fuchsia-500"
           >
             Sign In
           </button>
@@ -184,7 +184,7 @@ const LandingHeaderEnhanced: React.FC<Props> = ({ onRoomHover }) => {
             type="button"
             onClick={() => navigate("/login")}
             data-testid="landing-header-demo-hint"
-            className="hidden sm:inline-flex px-4 py-2 text-emerald-300 font-bold hover:text-emerald-200 transition-colors border border-emerald-500/40 rounded-lg hover:border-emerald-400"
+            className="hidden sm:inline-flex px-4 py-2 text-sm text-emerald-300 font-bold hover:text-emerald-200 transition-colors border border-emerald-500/40 rounded-lg hover:border-emerald-400"
           >
             Demo
           </button>
@@ -192,12 +192,41 @@ const LandingHeaderEnhanced: React.FC<Props> = ({ onRoomHover }) => {
             type="button"
             onClick={() => navigate("/signup")}
             data-testid="landing-signup-btn"
-            className="px-5 py-2 bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white font-bold rounded-lg hover:scale-105 transition-transform shadow-lg shadow-fuchsia-500/50"
+            className="px-4 py-2 text-sm sm:px-5 bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white font-bold rounded-lg transition-colors hover:from-fuchsia-500 hover:to-purple-500 shadow-lg shadow-fuchsia-500/50"
           >
             Join Now
           </button>
         </div>
       </div>
+
+      {/* Mobile nav (<768px): stacked icon above label — no horizontal scroll */}
+      <nav
+        className="mt-3 grid grid-cols-3 gap-2 md:hidden"
+        data-testid="landing-nav-progressive-mobile"
+        onMouseLeave={() => onRoomHover?.(null)}
+      >
+        {NAV_ITEMS.map(({ key, label, href, Icon, glow }) => (
+          <a
+            key={key}
+            href={href}
+            onClick={(e) => handleNavClick(e, href)}
+            onMouseEnter={() => onRoomHover?.(key)}
+            data-testid={`landing-nav-mobile-${key}`}
+            className="group flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl border border-white/10 bg-white/[0.03] px-2 py-2.5 text-center text-white/85 transition hover:border-fuchsia-400/40 hover:text-white"
+            style={{ textShadow: NEON_GLOW }}
+          >
+            <ParallaxIcon Icon={Icon} color={glow} />
+            <span
+              className="w-full truncate text-sm font-bold uppercase tracking-wide"
+              style={{
+                animation: "vibezNeonPulse 2.4s ease-in-out infinite",
+              }}
+            >
+              {label}
+            </span>
+          </a>
+        ))}
+      </nav>
 
       {/* Inlined keyframes — keeps the neon pulse self-contained without
           editing the global stylesheet. */}
