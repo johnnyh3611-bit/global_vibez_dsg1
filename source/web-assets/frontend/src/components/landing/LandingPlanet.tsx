@@ -139,43 +139,29 @@ function useIsMobile(bp = 768) {
 }
 
 /**
- * Central Sun — globe crop on the sphere + full brand mark on a
- * camera-facing plane *in front of* the sphere surface.
+ * Central Sun — emissive shell + full brand mark on a camera-facing plane
+ * *in front of* the sphere surface (toward the camera).
  *
  * logo.png lays out globe (upper) + "GLOBAL VIBEZ" / "DSG" (lower). Mapping
  * that whole sheet onto sphere UVs wraps the wordmark around the equator and
- * clips it to fragments like "GLOB". The billboard carries the full mark;
- * the sphere only samples the upper globe region.
+ * clips it to fragments like "GLOB". Never put the wordmark on sphere UVs —
+ * the billboard carries the complete mark with ClampToEdgeWrapping.
  */
 function CentralLogoSun() {
   const sun = useRef<THREE.Mesh>(null);
   const billboard = useRef<THREE.Mesh>(null);
-  const sourceMap = useTexture(LOGO_SRC);
+  const brandMap = useTexture(LOGO_SRC);
 
-  const { sphereMap, brandMap } = useMemo(() => {
-    sourceMap.colorSpace = THREE.SRGBColorSpace;
-
-    const sphereMap = sourceMap.clone();
-    sphereMap.colorSpace = THREE.SRGBColorSpace;
-    sphereMap.anisotropy = 8;
-    sphereMap.wrapS = THREE.ClampToEdgeWrapping;
-    sphereMap.wrapT = THREE.ClampToEdgeWrapping;
-    // Zoom UV into the upper globe artwork (avoid south-pole wordmark wrap).
-    sphereMap.repeat.set(0.78, 0.5);
-    sphereMap.offset.set(0.11, 0.5);
-    sphereMap.needsUpdate = true;
-
-    const brandMap = sourceMap.clone();
+  useMemo(() => {
     brandMap.colorSpace = THREE.SRGBColorSpace;
     brandMap.anisotropy = 8;
     brandMap.wrapS = THREE.ClampToEdgeWrapping;
     brandMap.wrapT = THREE.ClampToEdgeWrapping;
     brandMap.repeat.set(1, 1);
     brandMap.offset.set(0, 0);
+    brandMap.center.set(0.5, 0.5);
     brandMap.needsUpdate = true;
-
-    return { sphereMap, brandMap };
-  }, [sourceMap]);
+  }, [brandMap]);
 
   useFrame(({ camera }, dt) => {
     if (sun.current) sun.current.rotation.y += dt * 0.08;
@@ -184,30 +170,40 @@ function CentralLogoSun() {
   });
 
   // Aspect-correct plane: tall enough for globe + GLOBAL VIBEZ + DSG.
-  const brandH = SUN_RADIUS * 2.15;
+  const brandH = SUN_RADIUS * 2.2;
   const brandW = brandH * LOGO_ASPECT;
   // Must sit outside the sphere shell (toward +Z / camera), not inside it.
-  const brandZ = SUN_RADIUS + 0.14;
+  const brandZ = SUN_RADIUS + 0.16;
 
   return (
     <group>
       <pointLight color="#ffffff" intensity={3.6} distance={18} decay={2} />
       <pointLight color="#67e8f9" intensity={1.8} distance={14} decay={2} />
 
+      {/* Glow shell only — no wordmark UVs (avoids GLOB truncation). */}
       <mesh ref={sun} renderOrder={1} frustumCulled={false}>
         <sphereGeometry args={[SUN_RADIUS, 64, 64]} />
         <meshStandardMaterial
-          map={sphereMap}
-          emissiveMap={sphereMap}
-          emissive="#ffffff"
-          emissiveIntensity={LOGO_EMISSIVE * 0.85}
-          roughness={0.35}
-          metalness={0.12}
+          color="#0a1628"
+          emissive="#22d3ee"
+          emissiveIntensity={0.55}
+          roughness={0.4}
+          metalness={0.35}
+          toneMapped={false}
+        />
+      </mesh>
+      <mesh scale={1.06} renderOrder={0} frustumCulled={false}>
+        <sphereGeometry args={[SUN_RADIUS, 32, 32]} />
+        <meshBasicMaterial
+          color="#67e8f9"
+          transparent
+          opacity={0.12}
+          depthWrite={false}
           toneMapped={false}
         />
       </mesh>
 
-      {/* Full brand mark — in front of the sun, never frustum-clipped */}
+      {/* Full brand mark — in front of the sun, fully in camera frustum */}
       <mesh
         ref={billboard}
         position={[0, 0, brandZ]}
@@ -219,14 +215,14 @@ function CentralLogoSun() {
           map={brandMap}
           emissiveMap={brandMap}
           emissive="#ffffff"
-          emissiveIntensity={LOGO_EMISSIVE + 0.35}
+          emissiveIntensity={LOGO_EMISSIVE + 0.4}
           transparent
           opacity={1}
           depthTest
           depthWrite={false}
           toneMapped={false}
           side={THREE.FrontSide}
-          alphaTest={0.08}
+          alphaTest={0.05}
         />
       </mesh>
     </group>
