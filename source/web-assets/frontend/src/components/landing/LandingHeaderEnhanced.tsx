@@ -27,15 +27,17 @@ export type RoomKey =
 interface NavItem {
   key: Exclude<RoomKey, null>;
   label: string;
+  /** Shorter label for stacked mobile cells (<768px) so text isn't ellipsed */
+  shortLabel: string;
   href: string;          // anchor target id on the same page
   Icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   glow: string;          // rgb glow used for the per-room hover tint
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { key: "game_logic", label: "Game Logic",   href: "#feature-game-logic", Icon: Spade,    glow: "34, 211, 238"   /* cyan   */ },
-  { key: "tokenomics", label: "Tokenomics",   href: "#feature-tokenomics", Icon: Coins,    glow: "251, 191, 36"   /* amber  */ },
-  { key: "lifestyle",  label: "Lifestyle Hub", href: "#feature-lifestyle", Icon: Sparkles, glow: "232, 121, 249"  /* fuchsia*/ },
+  { key: "game_logic", label: "Game Logic", shortLabel: "Logic", href: "#feature-game-logic", Icon: Spade, glow: "34, 211, 238" },
+  { key: "tokenomics", label: "Tokenomics", shortLabel: "Tokens", href: "#feature-tokenomics", Icon: Coins, glow: "251, 191, 36" },
+  { key: "lifestyle", label: "Lifestyle Hub", shortLabel: "Lifestyle", href: "#feature-lifestyle", Icon: Sparkles, glow: "232, 121, 249" },
 ];
 
 const NEON_GLOW = "0 0 10px #d946ef, 0 0 22px rgba(217, 70, 239, 0.55)";
@@ -205,10 +207,11 @@ const LandingHeaderEnhanced: React.FC<Props> = ({ onRoomHover }) => {
         data-testid="landing-nav-progressive-mobile"
         onMouseLeave={() => onRoomHover?.(null)}
       >
-        {NAV_ITEMS.map(({ key, label, href, Icon, glow }) => (
+        {NAV_ITEMS.map(({ key, label, shortLabel, href, Icon, glow }) => (
           <a
             key={key}
             href={href}
+            title={label}
             onClick={(e) => handleNavClick(e, href)}
             onMouseEnter={() => onRoomHover?.(key)}
             data-testid={`landing-nav-mobile-${key}`}
@@ -217,12 +220,12 @@ const LandingHeaderEnhanced: React.FC<Props> = ({ onRoomHover }) => {
           >
             <ParallaxIcon Icon={Icon} color={glow} />
             <span
-              className="w-full truncate text-sm font-bold uppercase tracking-wide"
+              className="w-full text-center text-sm font-bold uppercase tracking-wide leading-tight"
               style={{
                 animation: "vibezNeonPulse 2.4s ease-in-out infinite",
               }}
             >
-              {label}
+              {shortLabel}
             </span>
           </a>
         ))}
