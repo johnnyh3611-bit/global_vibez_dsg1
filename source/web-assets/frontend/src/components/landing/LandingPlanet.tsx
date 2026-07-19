@@ -1,9 +1,8 @@
 /**
  * LandingPlanet — logo-mapped central sun + orbiting hub planets.
  *
- * 1. Central Sun: official mark at /assets/logo.png on MeshStandardMaterial
- *    (map + emissiveMap, glowing emissiveIntensity).
- * 2. Orbiting hubs stay outside HUB_CLEARANCE so they never cover the logo.
+ * 1. Central brand billboard (renderOrder 10, depthTest false) always on top.
+ * 2. Orbiting hubs stay outside HUB_CLEARANCE so glow never covers the mark.
  * 3. DSG Token moon orbits Gaming.
  * 4. Mobile (<768): static vertical hub list (≥14px), no 3D orbits.
  */
@@ -27,12 +26,20 @@ const LOGO_SRC = "/assets/logo.png";
 const LOGO_ASPECT = 1019 / 960;
 /** Large enough that hub orbits stay clear of the brand mark. */
 const SUN_RADIUS = 1.75;
-/** Keep hubs outside this XY radius so they never cover the logo face. */
-const HUB_CLEARANCE = SUN_RADIUS + 1.25;
+/**
+ * Brand billboard half-diagonal + hub glow — hard floor for satellite XY.
+ * Inner orbitR must stay ≥ this so glow shells never cross the mark.
+ */
+const HUB_CLEARANCE = SUN_RADIUS + 1.85;
+/** Hub body + glow shell radius used for clearance math. */
+const HUB_BODY_R = 0.38;
+const HUB_GLOW_SCALE = 1.15;
 /** Pull back so the full brand billboard + outer hub belt stay in frustum. */
-const CAMERA_Z = 12.4;
+const CAMERA_Z = 13.6;
 const CAMERA_FOV = 42;
 const LOGO_EMISSIVE = 1.15;
+/** Brand plane always wins the draw (above sun, hubs, moon, bloom shells). */
+const BRAND_RENDER_ORDER = 10;
 
 type HubId =
   | "gaming"
@@ -55,7 +62,7 @@ type HubDef = {
   speed: number;
 };
 
-/** Six lifestyle hubs evenly phased across two orbital belts. */
+/** Six lifestyle hubs — radii keep body+glow outside HUB_CLEARANCE. */
 const HUBS: HubDef[] = [
   {
     id: "gaming",
@@ -64,9 +71,9 @@ const HUBS: HubDef[] = [
     path: "/games",
     color: "#1e3a8a",
     emissive: "#38bdf8",
-    orbitR: 3.35,
+    orbitR: 4.35,
     phase: 0,
-    speed: 0.28,
+    speed: 0.26,
   },
   {
     id: "dating",
@@ -75,9 +82,9 @@ const HUBS: HubDef[] = [
     path: "/dating",
     color: "#9d174d",
     emissive: "#fb7185",
-    orbitR: 3.35,
+    orbitR: 4.35,
     phase: (Math.PI * 2) / 3,
-    speed: 0.28,
+    speed: 0.26,
   },
   {
     id: "streams",
@@ -86,9 +93,9 @@ const HUBS: HubDef[] = [
     path: "/streams",
     color: "#5b21b6",
     emissive: "#c084fc",
-    orbitR: 3.35,
+    orbitR: 4.35,
     phase: (Math.PI * 4) / 3,
-    speed: 0.28,
+    speed: 0.26,
   },
   {
     id: "ridez",
@@ -97,9 +104,9 @@ const HUBS: HubDef[] = [
     path: "/vibe-ridez",
     color: "#065f46",
     emissive: "#34d399",
-    orbitR: 4.45,
+    orbitR: 5.55,
     phase: Math.PI / 3,
-    speed: 0.2,
+    speed: 0.18,
   },
   {
     id: "vineyards",
@@ -108,9 +115,9 @@ const HUBS: HubDef[] = [
     path: "/hub/vineyards",
     color: "#86198f",
     emissive: "#f9a8d4",
-    orbitR: 4.45,
+    orbitR: 5.55,
     phase: Math.PI,
-    speed: 0.2,
+    speed: 0.18,
   },
   {
     id: "hungry",
@@ -119,9 +126,9 @@ const HUBS: HubDef[] = [
     path: "/hungryvibes",
     color: "#9a3412",
     emissive: "#fb923c",
-    orbitR: 4.45,
+    orbitR: 5.55,
     phase: (Math.PI * 5) / 3,
-    speed: 0.2,
+    speed: 0.18,
   },
 ];
 
@@ -199,15 +206,19 @@ function CentralLogoSun() {
           transparent
           opacity={0.12}
           depthWrite={false}
+          depthTest
           toneMapped={false}
         />
       </mesh>
 
-      {/* Full brand mark — in front of the sun, fully in camera frustum */}
+      {/*
+        Full brand mark — always the dominant draw.
+        renderOrder + depthTest=false so satellites/glow never occlude it.
+      */}
       <mesh
         ref={billboard}
         position={[0, 0, brandZ]}
-        renderOrder={5}
+        renderOrder={BRAND_RENDER_ORDER}
         frustumCulled={false}
       >
         <planeGeometry args={[brandW, brandH]} />
@@ -218,7 +229,7 @@ function CentralLogoSun() {
           emissiveIntensity={LOGO_EMISSIVE + 0.4}
           transparent
           opacity={1}
-          depthTest
+          depthTest={false}
           depthWrite={false}
           toneMapped={false}
           side={THREE.FrontSide}
@@ -241,9 +252,10 @@ function HubLabel({
   return (
     <Html
       center
-      position={[0, -0.62, 0]}
+      position={[0, -0.78, 0]}
       distanceFactor={8}
-      zIndexRange={[40, 0]}
+      // Keep DOM labels under the WebGL brand layer stacking context.
+      zIndexRange={[20, 0]}
       style={{ pointerEvents: "auto" }}
     >
       <button
@@ -289,18 +301,23 @@ function OrbitingHub({
   useFrame(({ clock }) => {
     if (!group.current) return;
     const t = clock.getElapsedTime() * hub.speed + hub.phase;
-    let x = Math.cos(t) * hub.orbitR;
-    const y = Math.sin(t * 0.35) * 0.22;
-    // Shallow Z so hubs stay in a ring around the sun, not in front of it.
-    let z = Math.sin(t) * hub.orbitR * 0.12;
-    // Hard clearance: never let a hub cross the logo face in XY.
+    const minOrbit = HUB_CLEARANCE + HUB_BODY_R * HUB_GLOW_SCALE;
+    const orbitR = Math.max(hub.orbitR, minOrbit);
+    let x = Math.cos(t) * orbitR;
+    const y = Math.sin(t * 0.35) * 0.18;
+    // Keep satellites in a shallow ring — never park in front of the brand.
+    let z = Math.sin(t) * orbitR * 0.08;
+    // Hard clearance: body + glow never cross the logo face in XY.
+    const glowR = HUB_BODY_R * HUB_GLOW_SCALE;
     const xy = Math.hypot(x, y);
-    if (xy < HUB_CLEARANCE && xy > 0.001) {
-      const scale = HUB_CLEARANCE / xy;
+    const need = HUB_CLEARANCE + glowR;
+    if (xy < need && xy > 0.001) {
+      const scale = need / xy;
       x *= scale;
     }
-    // Prefer hubs slightly behind the sun when they would sit in front.
-    if (z > 0.35) z = 0.35;
+    // Cap toward-camera Z so bloom shells stay behind the brand plane.
+    if (z > 0.12) z = 0.12;
+    if (z < -0.55) z = -0.55;
     group.current.position.set(x, y, z);
     if (hub.id === "gaming" && gamingRef) {
       gamingRef.current.set(x, y, z);
@@ -322,11 +339,11 @@ function OrbitingHub({
           document.body.style.cursor = "auto";
         }}
       >
-        <sphereGeometry args={[0.38, 48, 48]} />
+        <sphereGeometry args={[HUB_BODY_R, 48, 48]} />
         <meshStandardMaterial
           color={hub.color}
           emissive={hub.emissive}
-          emissiveIntensity={1.6}
+          emissiveIntensity={1.35}
           roughness={0.35}
           metalness={0.2}
           toneMapped={false}
@@ -335,14 +352,14 @@ function OrbitingHub({
           polygonOffsetUnits={1}
         />
       </mesh>
-      <mesh scale={1.15} renderOrder={2}>
-        <sphereGeometry args={[0.38, 24, 24]} />
+      <mesh scale={HUB_GLOW_SCALE} renderOrder={2}>
+        <sphereGeometry args={[HUB_BODY_R, 24, 24]} />
         <meshStandardMaterial
           color={hub.emissive}
           emissive={hub.emissive}
-          emissiveIntensity={1.1}
+          emissiveIntensity={0.85}
           transparent
-          opacity={0.25}
+          opacity={0.2}
           depthWrite={false}
           toneMapped={false}
         />
@@ -372,11 +389,18 @@ function DsgTokenMoon({
     const a = t * 1.35;
     const moonR = 0.85;
     if (group.current) {
-      group.current.position.set(
-        host.x + Math.cos(a) * moonR,
-        host.y + Math.sin(a * 1.2) * 0.2,
-        host.z + Math.sin(a) * moonR * 0.55,
-      );
+      let x = host.x + Math.cos(a) * moonR;
+      let y = host.y + Math.sin(a * 1.2) * 0.2;
+      let z = host.z + Math.sin(a) * moonR * 0.35;
+      // Keep the DSG moon outside the brand clearance disk.
+      const xy = Math.hypot(x, y);
+      if (xy < HUB_CLEARANCE && xy > 0.001) {
+        const s = HUB_CLEARANCE / xy;
+        x *= s;
+        y *= s;
+      }
+      if (z > 0.1) z = 0.1;
+      group.current.position.set(x, y, z);
     }
     if (spin.current) spin.current.rotation.y = t * 2;
   });
@@ -388,7 +412,7 @@ function DsgTokenMoon({
         <meshStandardMaterial
           color="#f59e0b"
           emissive="#fbbf24"
-          emissiveIntensity={1.8}
+          emissiveIntensity={1.5}
           metalness={0.9}
           roughness={0.2}
           toneMapped={false}
@@ -523,7 +547,7 @@ export function LandingPlanet() {
 
   return (
     <div
-      className="relative mx-auto h-[460px] w-full max-w-[560px] overflow-hidden sm:h-[440px] lg:h-[580px] lg:max-w-none"
+      className="relative mx-auto h-[480px] w-full max-w-[600px] overflow-hidden sm:h-[460px] lg:h-[600px] lg:max-w-none"
       data-testid="landing-planet"
       aria-label="Global Vibez logo sun with orbiting hubs"
     >
