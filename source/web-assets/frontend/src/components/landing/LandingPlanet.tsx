@@ -5,7 +5,7 @@
  * • Branding text mesh ("Globalize Digital") — renderOrder > planet, depthTest:false
  * • 4 orbiting Sphere meshes — Gaming, Dating, Streams, Earn — each with
  *   Billboard name labels (depthTest:false) so hubs stay identifiable
- * • DSG fireball — dsg-emissive.png + "DSG" label, emissiveIntensity 15, ellipse
+ * • DSG fireball — "DSG" text mesh INSIDE the spinning satellite core (not an outer tag)
  * • Deep space #000000 · static camera · no blob continents
  */
 import { Suspense, useMemo, useRef } from "react";
@@ -260,6 +260,7 @@ function OrbitHubSphere({
 
 function DsgFireball() {
   const group = useRef<THREE.Group>(null);
+  const spin = useRef<THREE.Group>(null);
   const core = useRef<THREE.Mesh>(null);
   const map = useTexture("/assets/dsg-emissive.png");
 
@@ -276,8 +277,10 @@ function DsgFireball() {
     if (group.current) {
       group.current.position.set(x, y, z);
     }
+    if (spin.current) {
+      spin.current.rotation.y = t * 2.2;
+    }
     if (core.current) {
-      core.current.rotation.y = t * 2.2;
       const mat = core.current.material as THREE.MeshStandardMaterial;
       mat.emissiveIntensity = 15 + Math.sin(t * 6) * 2;
     }
@@ -286,53 +289,51 @@ function DsgFireball() {
   return (
     <group ref={group}>
       <pointLight color="#ff6a00" intensity={8} distance={12} decay={2} />
-      <mesh ref={core} renderOrder={2}>
-        <sphereGeometry args={[0.42, 48, 48]} />
-        <meshStandardMaterial
-          map={map}
-          emissiveMap={map}
-          emissive="#ff4500"
-          emissiveIntensity={15}
-          roughness={0.25}
-          metalness={0.05}
-          toneMapped={false}
-        />
-      </mesh>
-      <mesh scale={1.45} renderOrder={2}>
-        <sphereGeometry args={[0.42, 32, 32]} />
-        <meshStandardMaterial
-          color="#ff6a00"
-          emissive="#ff4500"
-          emissiveIntensity={4}
-          transparent
-          opacity={0.28}
-          toneMapped={false}
-          depthWrite={false}
-        />
-      </mesh>
-      <Billboard
-        follow
-        position={[0, -0.68, 0]}
-        renderOrder={HUB_LABEL_RENDER_ORDER}
-      >
+      {/* DSG lettering lives INSIDE the satellite — spins with the core, not a floating outer tag */}
+      <group ref={spin}>
+        <mesh ref={core} renderOrder={2}>
+          <sphereGeometry args={[0.42, 48, 48]} />
+          <meshStandardMaterial
+            map={map}
+            emissiveMap={map}
+            emissive="#ff4500"
+            emissiveIntensity={15}
+            roughness={0.25}
+            metalness={0.05}
+            toneMapped={false}
+          />
+        </mesh>
+        <mesh scale={1.45} renderOrder={2}>
+          <sphereGeometry args={[0.42, 32, 32]} />
+          <meshStandardMaterial
+            color="#ff6a00"
+            emissive="#ff4500"
+            emissiveIntensity={4}
+            transparent
+            opacity={0.28}
+            toneMapped={false}
+            depthWrite={false}
+          />
+        </mesh>
         <Text
-          fontSize={0.24}
+          position={[0, 0, 0]}
+          fontSize={0.26}
+          letterSpacing={0.06}
           textAlign="center"
           anchorX="center"
-          anchorY="top"
-          color="#ffe7c2"
-          outlineWidth={0.032}
-          outlineColor="#1a0500"
-          outlineOpacity={1}
+          anchorY="middle"
+          color="#fff7ed"
+          outlineWidth={0.018}
+          outlineColor="#7c2d12"
+          outlineOpacity={0.95}
           fillOpacity={1}
-          depthOffset={-1}
-          renderOrder={HUB_LABEL_RENDER_ORDER}
+          renderOrder={3}
           frustumCulled={false}
           onSync={applyAlwaysOnTopMaterial}
         >
           DSG
         </Text>
-      </Billboard>
+      </group>
     </group>
   );
 }
