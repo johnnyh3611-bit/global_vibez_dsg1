@@ -16,6 +16,12 @@ JWT_SECRET=your-super-secret-jwt-key-change-in-production
 JWT_ALGORITHM=HS256
 JWT_EXPIRATION_HOURS=24
 
+# Privy social login (Google / X) — JWT verify via JWKS
+# Frontend also needs REACT_APP_PRIVY_APP_ID (bake-time) with the same app id.
+# PRIVY_APP_SECRET is NOT used by this FastAPI app (JWKS-only verification).
+PRIVY_APP_ID=your_privy_app_id
+PRIVY_JWKS_URL=https://auth.privy.io/api/v1/apps/your_privy_app_id/jwks.json
+
 # Admin Access
 ADMIN_EMAILS=admin@globalvibez.com,founder@globalvibez.com
 ADMIN_PASSWORD=GlobalVibez_Founder_2025!
@@ -96,11 +102,16 @@ REDIS_URL=redis://localhost:6379
 
 ## Frontend Environment Variables
 
-Located at `/app/frontend/.env`:
+Located at `source/web-assets/frontend/.env` (local) or Railway frontend service vars (production build):
 
 ```env
-# Backend API URL
+# Backend API URL (public HTTPS — not *.railway.internal)
 REACT_APP_BACKEND_URL=https://your-backend-url.com
+# Optional alias accepted by src/config/backendUrl.ts
+# REACT_APP_API_URL=https://your-backend-url.com
+
+# Privy (required for Google / X buttons; rebuild frontend after setting)
+REACT_APP_PRIVY_APP_ID=your_privy_app_id
 
 # Socket.IO
 REACT_APP_SOCKET_URL=https://your-backend-url.com

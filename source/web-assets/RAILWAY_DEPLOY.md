@@ -162,21 +162,68 @@ In Railway frontend service → **Settings** → **Custom Domain**:
 
 ## Auth Notes
 
-- **Google Login**: Works via `https://auth.emergentagent.com` (still live ✓)
-- **Demo Login**: Works immediately, no config needed
+- **Demo Login**: Works immediately, no config needed (`POST /api/auth/demo-login`)
 - **Email/Password**: Works with MongoDB
-- **Privy social**: Needs `REACT_APP_PRIVY_APP_ID` on frontend + `PRIVY_APP_ID` / `PRIVY_JWKS_URL` on backend
+- **Privy social (Google / X)**: Requires bake-time + runtime env (see below). Facebook stays **Coming Soon** (no Privy Facebook OAuth provider in this app).
+
+### Environment variable finalization (Privy + API URL)
+
+**Frontend service** (must redeploy after changing bake-time vars):
+
+```
+REACT_APP_BACKEND_URL=https://globalvibezdsg1-production.up.railway.app
+REACT_APP_FRONTEND_URL=https://www.globalvibezdsg.com
+REACT_APP_PRIVY_APP_ID=<from Privy dashboard>
+```
+
+**Backend service**:
+
+```
+PRIVY_APP_ID=<same app id as frontend>
+PRIVY_JWKS_URL=https://auth.privy.io/api/v1/apps/<PRIVY_APP_ID>/jwks.json
+CORS_ORIGINS=https://www.globalvibezdsg.com,https://globalvibezdsg.com
+FRONTEND_URL=https://www.globalvibezdsg.com
+```
+
+Notes:
+
+- This codebase verifies Privy JWTs with **JWKS** (`PRIVY_APP_ID` + `PRIVY_JWKS_URL`). It does **not** read `PRIVY_APP_SECRET` — you can keep that secret in Privy/dashboard tooling, but it is not required for our FastAPI session exchange.
+- If login shows Google/X as **Not Configured**, `REACT_APP_PRIVY_APP_ID` was missing at frontend **build** time. Set it and **redeploy the frontend**.
+- Also allowlist `https://www.globalvibezdsg.com` (and apex) in the Privy dashboard allowed origins / redirect URLs.
 
 ## Verify Deployment
 
 ```bash
 # Backend health
-curl https://<backend-url>.up.railway.app/health
+curl https://globalvibezdsg1-production.up.railway.app/health
 # expect: {"status":"ok"}
 
 # Frontend
-curl -I https://<frontend-url>.up.railway.app
+curl -I https://www.globalvibezdsg.com/
+
+# CORS (expect Access-Control-Allow-Origin echoing the Origin)
+curl -sD - -o /dev/null -X OPTIONS \
+  https://globalvibezdsg1-production.up.railway.app/api/auth/demo-login \
+  -H "Origin: https://www.globalvibezdsg.com" \
+  -H "Access-Control-Request-Method: POST"
+
+# Demo session
+curl -s -X POST https://globalvibezdsg1-production.up.railway.app/api/auth/demo-login \
+  -H "Content-Type: application/json" -d '{}'
 ```
+
+### Production smoke checklist
+
+| Check | How | Pass criteria |
+|---|---|---|
+| Landing Sun / logo | Open `/` | DSG branding visible; `/assets/logo.png` 200 |
+| CORS | Browser console on `/` and `/login` | No CORS errors to `REACT_APP_BACKEND_URL` |
+| Demo login | `/login` → Continue with demo account | Lands on `/dashboard` authenticated |
+| Social Google/X | `/login` buttons | Opens Privy OAuth (not “Not Configured”) |
+| AI practice | Spades / Bid Whist AI match | Cards dealt; moves talk to FastAPI |
+| Railway logs | Both services first ~5 min | No Mongo timeouts / crash loops |
+
+Known non-blocking gaps seen in live smoke (2026-07-19): `GET /api/recirculation/public-summary` → 404 (widget); social buttons **Not Configured** until Privy frontend bake is set.
 
 ### Healthcheck failure / edge 502
 
