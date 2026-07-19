@@ -157,20 +157,54 @@ export default function TopUpVibezCoinsModal({
           network: helioNetwork,
           display: "inline",
           onSuccess: () => {
-            setHelioMsg(
-              "Payment received. Coins credit after Helio confirms (usually under a minute).",
-            );
+            try {
+              setError("");
+              setHelioMsg(
+                "Payment received. Coins credit after Helio confirms (usually under a minute).",
+              );
+            } catch {
+              /* never throw out of Helio embed callbacks */
+            }
           },
           onError: (event: unknown) => {
-            const msg =
-              typeof event === "object" && event && "message" in event
-                ? String((event as { message?: string }).message)
-                : "Helio payment error";
-            setError(msg);
+            try {
+              const msg =
+                typeof event === "object" && event && "message" in event
+                  ? String((event as { message?: string }).message)
+                  : "Card payment failed. No charge was completed — try again or use Solana.";
+              setHelioMsg("");
+              setError(msg);
+            } catch {
+              setError("Card payment failed. Please try again or use Solana.");
+            }
           },
-          onPending: () => setHelioMsg("Payment pending…"),
-          onCancel: () => setHelioMsg("Payment cancelled"),
-          onStartPayment: () => setHelioMsg("Starting payment…"),
+          onPending: () => {
+            try {
+              setHelioMsg("Payment pending… confirming with Helio.");
+            } catch {
+              /* ignore */
+            }
+          },
+          onCancel: () => {
+            // Mid-checkout cancel — friendly status, never an unhandled exception.
+            try {
+              setSubmitting(false);
+              setError("");
+              setHelioMsg(
+                "Payment cancelled — no charge was made. You can try again or switch to Solana.",
+              );
+            } catch {
+              setHelioMsg("Payment cancelled — no charge was made.");
+            }
+          },
+          onStartPayment: () => {
+            try {
+              setError("");
+              setHelioMsg("Starting secure Helio checkout…");
+            } catch {
+              /* ignore */
+            }
+          },
         });
       } catch (e: any) {
         setError(e?.message || "Couldn't load Helio checkout");
@@ -406,7 +440,11 @@ export default function TopUpVibezCoinsModal({
                   className="min-h-[280px] rounded-xl bg-white/5 p-2"
                 />
                 {helioMsg && (
-                  <p className="text-xs text-cyan-200 mt-3 text-center">
+                  <p
+                    className="text-xs text-cyan-200 mt-3 text-center"
+                    data-testid="topup-helio-status"
+                    role="status"
+                  >
                     {helioMsg}
                   </p>
                 )}

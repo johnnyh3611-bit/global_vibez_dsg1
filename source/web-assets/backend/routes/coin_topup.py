@@ -188,6 +188,7 @@ async def create_helio_topup(
     except RuntimeError as exc:
         raise HTTPException(502, str(exc)) from exc
 
+    paylink_id = os.environ.get("HELIO_PAYLINK_ID") or ""
     await PAYMENTS.insert_one({
         "id": payment_id,
         "user_id": user["user_id"],
@@ -196,6 +197,7 @@ async def create_helio_topup(
         "amount_usd": pack["usd"],
         "provider": "helio",
         "helio_charge_id": charge_id,
+        "payment_request_id": paylink_id or None,
         "status": "pending",
         "credited": False,
         "created_at": datetime.now(timezone.utc).isoformat(),
@@ -212,7 +214,12 @@ async def create_helio_topup(
             user_id=user["user_id"],
             amount_usd=pack["usd"],
             coins=pack["coins"],
-            metadata={"pack_id": payload.pack_id, "payment_id": payment_id, "helio_charge_id": charge_id},
+            metadata={
+                "pack_id": payload.pack_id,
+                "payment_id": payment_id,
+                "helio_charge_id": charge_id,
+                "payment_request_id": paylink_id or None,
+            },
         )
     except Exception:
         pass
@@ -229,12 +236,21 @@ async def create_helio_topup(
 
 @router.post("/webhook/helio")
 async def helio_webhook(request: Request) -> Dict[str, Any]:
-    """Helio / MoonPay Commerce payment webhook → credit coin pack."""
-    from services.helio_client import extract_payment_meta, verify_webhook_signature
+    """Helio / MoonPay Commerce payment webhook → credit coin pack.
+
+    Security handshake: only Bearer ``HELIO_WEBHOOK_TOKEN`` or a valid
+    ``x-helio-signature`` (HMAC-SHA256 of the raw body) is accepted.
+    Spoofed POSTs are rejected with 401 and audited.
+    """
+    from services.helio_client import (
+        extract_payment_meta,
+        extract_webhook_signature,
+        verify_webhook_signature,
+    )
     from services.payments_audit import record_payment_event
 
     raw = await request.body()
-    sig = request.headers.get("X-Signature") or request.headers.get("x-signature")
+    sig = extract_webhook_signature(request.headers)
     auth = request.headers.get("Authorization") or ""
     token = os.environ.get("HELIO_WEBHOOK_TOKEN") or ""
 
@@ -243,16 +259,25 @@ async def helio_webhook(request: Request) -> Dict[str, Any]:
     if token:
         bearer_ok = auth.lower().startswith("bearer ") and auth.split(" ", 1)[1].strip() == token
         if not bearer_ok and not verify_webhook_signature(raw, sig):
+            log.warning(
+                "helio webhook REJECTED — missing/invalid x-helio-signature "
+                "(spoof attempt or misconfigured Helio dashboard)"
+            )
             await record_payment_event(
                 _db,
                 kind="coin_topup",
                 source="helio_webhook",
                 status="rejected_signature",
-                metadata={"reason": "invalid_helio_webhook_auth"},
+                metadata={
+                    "reason": "invalid_helio_webhook_auth",
+                    "has_x_helio_signature": bool(sig),
+                    "path": str(request.url.path),
+                },
             )
             raise HTTPException(401, "invalid helio webhook auth")
     else:
         if not verify_webhook_signature(raw, sig):
+            log.warning("helio webhook REJECTED — HELIO_WEBHOOK_TOKEN required")
             await record_payment_event(
                 _db,
                 kind="coin_topup",
@@ -285,6 +310,8 @@ async def helio_webhook(request: Request) -> Dict[str, Any]:
 
     meta = extract_payment_meta(payload if isinstance(payload, dict) else {})
     payment_id = meta.get("payment_id")
+    payment_request_id = meta.get("payment_request_id")
+    transaction_hash = meta.get("transaction_hash")
     data_obj = payload.get("data") if isinstance(payload.get("data"), dict) else {}
     charge_id = (
         payload.get("id")
@@ -293,14 +320,36 @@ async def helio_webhook(request: Request) -> Dict[str, Any]:
         or meta.get("helio_charge_id")
     )
 
+    # Prefer matching on our payment_id; also accept Helio paymentRequestId
+    # when the pending row stored it at charge-create time.
     pay = None
     if payment_id:
         pay = await PAYMENTS.find_one({"id": payment_id}, {"_id": 0})
     if not pay and charge_id:
         pay = await PAYMENTS.find_one({"helio_charge_id": str(charge_id)}, {"_id": 0})
+    if not pay and payment_request_id:
+        pay = await PAYMENTS.find_one(
+            {"payment_request_id": str(payment_request_id)}, {"_id": 0}
+        )
 
     if not pay:
-        log.warning("helio webhook: no matching payment meta=%s charge=%s", meta, charge_id)
+        log.warning(
+            "helio webhook: no matching payment meta=%s charge=%s payment_request_id=%s",
+            meta,
+            charge_id,
+            payment_request_id,
+        )
+        await record_payment_event(
+            _db,
+            kind="coin_topup",
+            source="helio_webhook",
+            status="unknown_payment",
+            metadata={
+                "payment_request_id": payment_request_id,
+                "transaction_hash": transaction_hash,
+                "charge_id": str(charge_id) if charge_id else None,
+            },
+        )
         return {"received": True, "credited": False, "reason": "unknown_payment"}
 
     if pay.get("credited"):
@@ -308,10 +357,37 @@ async def helio_webhook(request: Request) -> Dict[str, Any]:
 
     await PAYMENTS.update_one(
         {"id": pay["id"]},
-        {"$set": {"helio_webhook_event": event or "SUCCESS", "provider": "helio"}},
+        {
+            "$set": {
+                "helio_webhook_event": event or "SUCCESS",
+                "provider": "helio",
+                "payment_request_id": payment_request_id
+                or pay.get("payment_request_id"),
+                "transaction_hash": transaction_hash,
+            }
+        },
     )
+    # Stash ids on the in-memory pay dict so the audit row records them.
+    pay["payment_request_id"] = payment_request_id or pay.get("payment_request_id")
+    pay["transaction_hash"] = transaction_hash
     await _credit_user(pay, source="helio_webhook")
-    return {"received": True, "credited": True, "payment_id": pay["id"]}
+    return {
+        "received": True,
+        "credited": True,
+        "payment_id": pay["id"],
+        "payment_request_id": pay.get("payment_request_id"),
+        "transaction_hash": transaction_hash,
+    }
+
+
+# Alias path from the Final Payment Test Protocol (/api/webhooks/helio).
+# Same handler — Helio dashboard may be pointed at either URL.
+helio_alias_router = APIRouter(tags=["coin-topup-webhooks"])
+
+
+@helio_alias_router.post("/webhooks/helio")
+async def helio_webhook_alias(request: Request) -> Dict[str, Any]:
+    return await helio_webhook(request)
 
 
 @router.post("/topup/checkout")
@@ -457,6 +533,9 @@ async def _credit_user(pay: Dict[str, Any], source: str = "stripe_webhook") -> N
                 "pack_id": pay.get("pack_id"),
                 "payment_id": pay.get("id"),
                 "helio_charge_id": pay.get("helio_charge_id"),
+                "payment_request_id": pay.get("payment_request_id"),
+                "transaction_hash": pay.get("transaction_hash"),
+                "status": "paid",
                 "provider": pay.get("provider") or ("helio" if "helio" in source else "stripe"),
             },
         )

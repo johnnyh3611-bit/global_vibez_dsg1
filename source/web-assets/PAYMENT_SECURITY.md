@@ -90,20 +90,39 @@ When beta mode is on (default in `ENVIRONMENT=production` until set `false`):
 
 Start with **20–50** Founding Members. Open the gate only after live Helio credits reconcile.
 
-## 8. Sandbox before Live (Helio)
+## 8. Final Payment Test Protocol (Helio sandbox)
 
-1. Set `HELIO_NETWORK=test` + test API keys / Pay Link
-2. Run a real Helio card checkout (Helio test cards / MoonPay test mode)
-3. Confirm webhook → `payments_audit` → `users.credits_balance`
-4. Flip to `HELIO_NETWORK=main` only after that path is green
+Executable runner (no live Helio keys required — simulates the SUCCESS webhook):
+
+```bash
+cd source/web-assets/backend && . .venv/bin/activate
+python scripts/run_helio_payment_protocol.py
+# pytest: tests/test_helio_payment_protocol.py
+```
+
+| Step | Check |
+|------|--------|
+| Sandbox webhook | Signed `POST /api/coins/webhook/helio` (alias `/api/webhooks/helio`) returns `payment_request_id` + `transaction_hash` |
+| Ledger | `users.credits_balance` += exact pack coins (popular = ₵10,000 for $9) |
+| Audit | `payments_audit` row with `status=credited`, tx hash, `payment_request_id` |
+| Cancel UX | Helio embed `onCancel` → friendly status (`data-testid=topup-helio-status`), no unhandled exception |
+| Security handshake | Missing/invalid `x-helio-signature` → **401** + `rejected_signature` audit |
+
+Staging with a real Helio charge:
+
+1. Set `HELIO_NETWORK=test` + test API keys / Pay Link + `HELIO_WEBHOOK_TOKEN`
+2. Point Helio dashboard webhook at `/api/coins/webhook/helio` (or `/api/webhooks/helio`)
+3. Complete a test card checkout, then cancel once to confirm cancel copy
+4. Flip to `HELIO_NETWORK=main` only after credits reconcile
 5. Keep the Beta banner until you exit Founding Member mode
 
 ## 9. Related files
 
-- `backend/services/helio_client.py` — charges + webhook verify
+- `backend/services/helio_client.py` — charges + webhook verify (`x-helio-signature`)
 - `backend/services/payment_beta_gate.py` — cohort gate
 - `backend/services/payments_audit.py` — append-only ledger
 - `backend/routes/coin_topup.py` — Helio coin packs (Stripe path retired)
+- `backend/scripts/run_helio_payment_protocol.py` — protocol runner
 - `frontend/src/components/wallet/BetaPaymentBanner.tsx`
 - `frontend/src/components/wallet/TopUpVibezCoinsModal.tsx`
 - `backend/ENV_VARIABLES.md` — Helio secret catalogue
