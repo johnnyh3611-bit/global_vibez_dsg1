@@ -2,6 +2,7 @@
  * Media Master ecosystem routes — DSG TV, Vibe Radio, DSG Music Group.
  * Mounted from App.js alongside the other route blocks.
  */
+import { lazy, Suspense } from 'react';
 import { Route } from 'react-router-dom';
 import MediaMasterHub from '@/pages/MediaMasterHub';
 import DsgTvChannelPage from '@/pages/DsgTvChannelPage';
@@ -9,7 +10,12 @@ import VibeRadioStationPage from '@/pages/VibeRadioStationPage';
 import MusicGroupPage from '@/pages/MusicGroupPage';
 import MediaMasterPulsePage from '@/pages/MediaMasterPulsePage';
 import BroadcastDirectorPage from '@/pages/BroadcastDirectorPage';
-import VrTvLounge from '@/pages/VrTvLounge';
+import PageLoader from '@/components/common/PageLoader';
+
+// Lazy: VrTvLounge module-level createXRStore() auto-injects the @iwer/devui
+// emulator on localhost and can throw "devUIConstructor is not a constructor"
+// on every SPA boot when this route was eagerly imported.
+const VrTvLounge = lazy(() => import('@/pages/VrTvLounge'));
 
 export const mediaMasterRoutes = (ProtectedRoute) => (
   <>
@@ -33,7 +39,9 @@ export const mediaMasterRoutes = (ProtectedRoute) => (
       path="/vr-tv/:channelId"
       element={
         <ProtectedRoute>
-          <VrTvLounge />
+          <Suspense fallback={<PageLoader message="Loading VR lounge…" />}>
+            <VrTvLounge />
+          </Suspense>
         </ProtectedRoute>
       }
     />

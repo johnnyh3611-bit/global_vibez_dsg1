@@ -6,10 +6,14 @@
  *   - Privy analytics: "TypeError: e is not a function" inside la.initialize
  *   - Firebase Analytics: same pattern when sandboxed in iframes
  *   - WalletConnect: "indexedDB is not available"
+ *   - @react-three/xr / @iwer/devui: "devUIConstructor is not a constructor"
+ *     when the desktop WebXR emulator auto-injects on localhost (also fixed
+ *     at the webpack layer via src/stubs/iwer-devui.js)
  *
  * Without this guard, the throws bubble up to `window.onerror` and
  * (in some browsers) freeze the JS event loop just long enough that a
  * user click on the Demo Login button is registered but never executes.
+ * In CRA they also paint a full-screen red overlay on every page load.
  *
  * We DON'T silence app code throws — only the specific SDK signatures.
  */
@@ -20,10 +24,24 @@ const HARMLESS_PATTERNS: RegExp[] = [
   /firebase\/analytics/,                         // Firebase analytics SDK
   /Failed to fetch.*auth\.privy\.io/,            // Privy fetch in restricted env
   /privy.*analytics/i,                           // any privy analytics throw
+  /devUIConstructor is not a constructor/i,      // @iwer/devui via @pmndrs/xr emulate
+  /installDevUI/i,                               // XRDevice.installDevUI stack
+  /@iwer\/devui/i,                               // DevUI module load failures
+  /@pmndrs\/xr.*emulat/i,                        // XR emulator injection path
 ];
 
 function isHarmless(msg: string): boolean {
   return HARMLESS_PATTERNS.some((rx) => rx.test(msg));
+}
+
+function logSwallowed(kind: string, msg: string, stack?: string): void {
+  if (process.env.NODE_ENV === "production") return;
+  // eslint-disable-next-line no-console
+  console.debug(`[errorGuard] swallowed ${kind}:`, msg.slice(0, 160));
+  if (stack) {
+    // eslint-disable-next-line no-console
+    console.debug("[errorGuard] stack:", stack.slice(0, 600));
+  }
 }
 
 export function installGlobalErrorGuard(): void {
@@ -37,10 +55,7 @@ export function installGlobalErrorGuard(): void {
       if (isHarmless(msg)) {
         event.preventDefault();
         event.stopPropagation();
-        if (process.env.NODE_ENV !== "production") {
-          // eslint-disable-next-line no-console
-          console.debug("[errorGuard] swallowed harmless SDK error:", msg.slice(0, 120));
-        }
+        logSwallowed("SDK error", msg, event.error?.stack);
       }
     },
     true,
@@ -53,12 +68,10 @@ export function installGlobalErrorGuard(): void {
       typeof reason === "string"
         ? reason
         : `${reason?.message || ""} ${reason?.stack || ""}`;
+    const stack = typeof reason === "object" && reason?.stack ? String(reason.stack) : undefined;
     if (isHarmless(msg)) {
       event.preventDefault();
-      if (process.env.NODE_ENV !== "production") {
-        // eslint-disable-next-line no-console
-        console.debug("[errorGuard] swallowed harmless SDK rejection:", msg.slice(0, 120));
-      }
+      logSwallowed("SDK rejection", msg, stack);
     }
   });
 }

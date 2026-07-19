@@ -19,12 +19,19 @@ const NETWORK = (process.env.REACT_APP_SOLANA_NETWORK || "devnet") as
   | "mainnet-beta"
   | "testnet";
 
+/** Prefer an explicit RPC URL when set; fall back to public cluster endpoint. */
+function resolveSolanaEndpoint(): string {
+  const custom = (process.env.REACT_APP_SOLANA_RPC || process.env.REACT_APP_SOLANA_RPC_URL || "").trim();
+  if (custom) return custom;
+  return clusterApiUrl(NETWORK);
+}
+
 export default function SolanaWalletProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const endpoint = useMemo(() => clusterApiUrl(NETWORK), []);
+  const endpoint = useMemo(() => resolveSolanaEndpoint(), []);
   const wallets = useMemo(
     () => [new PhantomWalletAdapter(), new SolflareWalletAdapter()],
     [],

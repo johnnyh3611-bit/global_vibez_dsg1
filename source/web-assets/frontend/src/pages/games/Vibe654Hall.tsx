@@ -186,11 +186,11 @@ export default function Vibe654Hall() {
     <div className="min-h-screen bg-[#06080f] text-slate-100" data-testid="vibe-654-hall-page">
       <header className="flex items-center justify-between px-6 py-4 border-b border-white/10 backdrop-blur-md">
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/games')}
           className="text-sm flex items-center gap-2 text-white/70 hover:text-white"
           data-testid="vibe-654-hall-back"
         >
-          <ArrowLeft className="w-4 h-4" /> Back
+          <ArrowLeft className="w-4 h-4" /> Games
         </button>
         <h1 className="text-base md:text-xl tracking-[0.3em] uppercase text-amber-200 flex items-center gap-3">
           <Dice6 className="w-5 h-5" /> Vibez 654 Hall

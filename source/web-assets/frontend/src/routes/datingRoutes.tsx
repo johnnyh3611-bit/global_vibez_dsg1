@@ -14,7 +14,6 @@ import { DatingDiscovery } from "@/pages/DatingDiscovery";
 import { DatingMatches } from "@/pages/DatingMatches";
 import DatingQuiz from "@/pages/DatingQuiz";
 import PartnerQuizGame from "@/pages/PartnerQuizGame";
-import VRDatingRoom from "@/pages/VRDatingRoom";
 import ProfileSetup from "@/pages/ProfileSetup";
 import ProfileEdit from "@/pages/ProfileEdit";
 import BondsPage from "@/pages/BondsPage";
@@ -26,10 +25,20 @@ import IdVerificationGate from "@/components/age_verification/IdVerificationGate
 // Lazy: SpeedDatingLobby pulls SpeedDatingVideo which previously crashed the
 // entire SPA at import time when REACT_APP_BACKEND_URL was missing.
 const SpeedDatingLobby = lazy(() => import("@/pages/SpeedDatingLobby"));
+// Lazy: VRDatingRoom pulls @react-three/xr which auto-injects the desktop
+// WebXR emulator on localhost and can throw "devUIConstructor is not a
+// constructor" — keep it off the critical path for every page load.
+const VRDatingRoom = lazy(() => import("@/pages/VRDatingRoom"));
 
 const LazyLobby = (
   <Suspense fallback={<PageLoader message="Loading..." />}>
     <SpeedDatingLobby />
+  </Suspense>
+);
+
+const LazyVRDating = (
+  <Suspense fallback={<PageLoader message="Loading VR…" />}>
+    <VRDatingRoom />
   </Suspense>
 );
 
@@ -57,8 +66,8 @@ export const datingRoutes = (ProtectedRoute) => (
     <Route path="/dating/matches" element={<ProtectedRoute>{withIdGate("Dating matches", <DatingMatches />)}</ProtectedRoute>} />
     <Route path="/dating-game/:gameId" element={<ProtectedRoute>{withIdGate("Dating game", <PartnerQuizGame />)}</ProtectedRoute>} />
     <Route path="/quiz/dating" element={<ProtectedRoute>{withIdGate("Dating quiz", <DatingQuiz />)}</ProtectedRoute>} />
-    <Route path="/vr-dating" element={<ProtectedRoute>{withIdGate("VR dating", <VRDatingRoom />)}</ProtectedRoute>} />
-    <Route path="/vr-date/:roomId" element={<ProtectedRoute>{withIdGate("VR date", <VRDatingRoom />)}</ProtectedRoute>} />
+    <Route path="/vr-dating" element={<ProtectedRoute>{withIdGate("VR dating", LazyVRDating)}</ProtectedRoute>} />
+    <Route path="/vr-date/:roomId" element={<ProtectedRoute>{withIdGate("VR date", LazyVRDating)}</ProtectedRoute>} />
     <Route path="/bonds" element={<ProtectedRoute>{withIdGate("Bonds", <BondsPage />)}</ProtectedRoute>} />
     <Route path="/matches" element={<ProtectedRoute>{withIdGate("Matches", <Matches />)}</ProtectedRoute>} />
     <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />

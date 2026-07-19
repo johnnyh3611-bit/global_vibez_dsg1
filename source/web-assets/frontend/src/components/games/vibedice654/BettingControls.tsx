@@ -3,7 +3,8 @@ import { Dices, Zap, Shield, Sparkles, X, ChevronDown, History } from 'lucide-re
 import { Button } from '@/components/ui/button';
 import MetalChip from './MetalChip';
 
-const CHIP_AMOUNTS = [5, 10, 25, 50, 100];
+/** Align with Hall stakes ladder so Premium chips stay current with Classic. */
+const CHIP_AMOUNTS = [5, 10, 25, 50, 100, 250, 500];
 
 const AssurancePill = ({
   sideBets,

@@ -14,12 +14,13 @@ from __future__ import annotations
 
 import os
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
+from uuid import uuid4
 
 import jwt
 from jwt import PyJWKClient, InvalidTokenError
-from fastapi import APIRouter, HTTPException, Header
+from fastapi import APIRouter, HTTPException, Header, Response
 from pydantic import BaseModel, Field
 
 from utils.database import get_database
@@ -135,3 +136,120 @@ async def privy_sync(
     if doc and isinstance(doc.get("updated_at"), datetime):
         doc["updated_at"] = doc["updated_at"].isoformat()
     return {"status": "Synced", "did": did, "profile": doc}
+
+
+@router.post("/auth/privy/session")
+async def privy_session(
+    payload: PrivySyncPayload,
+    response: Response,
+    authorization: Optional[str] = Header(default=None),
+):
+    """Exchange a verified Privy access token for a platform session.
+
+    Upserts `user_identities` + a `users` row (keyed by Privy DID / email),
+    then returns the same `{token, user_id, user}` shape as email/demo login
+    so the SPA can call setBearerToken() and continue into the app shell.
+    """
+    token = _bearer(authorization)
+    claims = verify_privy_token(token)
+    did = claims.get("sub")
+    if not did:
+        raise HTTPException(status_code=401, detail="Token missing 'sub'")
+
+    db = get_database()
+    now = datetime.now(timezone.utc)
+    email = (payload.email or "").strip().lower() or None
+    display_name = (payload.display_name or "Social Player").strip() or "Social Player"
+
+    # Hybrid identity ledger (web2 + web3).
+    await db.user_identities.update_one(
+        {"did": did},
+        {
+            "$set": {
+                "did": did,
+                "display_name": display_name,
+                "email": email,
+                "linked_accounts": [
+                    {"type": a.type, "address": a.address, "verified_at": now}
+                    for a in payload.linked_accounts
+                ],
+                "auth_provider": "privy",
+                "session_id": claims.get("sid"),
+                "updated_at": now,
+            },
+            "$setOnInsert": {
+                "created_at": now,
+                "total_vibez_earned": 0.0,
+            },
+        },
+        upsert=True,
+    )
+
+    # Resolve / create the canonical users row used by /api/auth/me.
+    user = None
+    if email:
+        user = await db.users.find_one({"email": email}, {"_id": 0})
+    if not user:
+        user = await db.users.find_one({"privy_did": did}, {"_id": 0})
+    if not user:
+        user_id = f"privy_{uuid4().hex[:12]}"
+        user = {
+            "user_id": user_id,
+            "email": email or f"{user_id}@privy.globalvibez.local",
+            "name": display_name,
+            "auth_provider": "privy",
+            "privy_did": did,
+            "profile_completed": bool(email),
+            "membership_type": "free",
+            "subscription_tier": "free",
+            "credits_balance": 50,
+            "age_verified": False,
+            "verification_status": "pending",
+            "swipes_today": 0,
+            "swipes_limit": 20,
+            "interests": [],
+            "photos": [],
+            "created_at": now.isoformat(),
+            "updated_at": now.isoformat(),
+        }
+        await db.users.insert_one(user)
+    else:
+        user_id = user["user_id"]
+        await db.users.update_one(
+            {"user_id": user_id},
+            {
+                "$set": {
+                    "privy_did": did,
+                    "auth_provider": "privy",
+                    "name": user.get("name") or display_name,
+                    "updated_at": now.isoformat(),
+                }
+            },
+        )
+        user = await db.users.find_one({"user_id": user_id}, {"_id": 0}) or user
+
+    session_token = str(uuid4())
+    expires_at = now + timedelta(days=30)
+    await db.user_sessions.insert_one({
+        "user_id": user_id,
+        "session_token": session_token,
+        "expires_at": expires_at,
+        "created_at": now,
+        "auth_provider": "privy",
+    })
+
+    response.set_cookie(
+        key="session_token",
+        value=session_token,
+        httponly=True,
+        samesite="lax",
+        max_age=30 * 24 * 3600,
+    )
+
+    safe_user = {k: v for k, v in (user or {}).items() if k != "password_hash"}
+    return {
+        "token": session_token,
+        "user_id": user_id,
+        "profile_completed": bool(safe_user.get("profile_completed")),
+        "user": safe_user,
+    }

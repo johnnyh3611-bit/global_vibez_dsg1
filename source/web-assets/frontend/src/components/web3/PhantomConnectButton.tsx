@@ -109,20 +109,25 @@ function PhantomConnectButtonInner({
 
 /**
  * Public wrapper. If Phantom has not been configured (no REACT_APP_PHANTOM_APP_ID),
- * render an unobtrusive placeholder instead of crashing the tree because the
- * PhantomProvider is missing.
+ * render a graceful Coming Soon / Not Configured pill so the wallet page still
+ * shows account balance + deposit UI without a hard failure state.
  */
 export default function PhantomConnectButton(props: PhantomConnectButtonProps) {
   const isConfigured = Boolean(process.env.REACT_APP_PHANTOM_APP_ID);
 
   if (!isConfigured) {
     return (
-      <span
-        className={`text-xs text-neutral-500 ${props.className || ""}`}
+      <div
+        className={`inline-flex flex-col items-end gap-1 ${props.className || ""}`}
         data-testid="phantom-not-configured"
       >
-        Wallet connect not configured
-      </span>
+        <span className="inline-flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-sm font-semibold text-amber-200">
+          Coming Soon
+        </span>
+        <span className="text-[11px] text-white/50 text-right max-w-[220px]">
+          Phantom Connect not configured — balance and account info still work above.
+        </span>
+      </div>
     );
   }
 
