@@ -1,10 +1,12 @@
 /**
- * LandingPlanet — logo billboard sun + hub satellites on true orbital rings.
+ * LandingPlanet — the logo IS the planet; hubs circle outside; DSG moon may cross it.
  *
- * 1. Central core is the official logo plane inside <Billboard> (no sphere).
- * 2. Hubs orbit Clockwise around the logo (+elapsed) on a horizontal ring.
- * 3. DSG moon orbits Counter-Clockwise (-elapsed) on a tighter ring.
+ * 1. Center: official logo Billboard only (no sphere, no halo circle, no ring guides).
+ * 2. Hub planets: Clockwise on a screen-facing ring AROUND the logo — never through it.
+ * 3. DSG moon: Counter-Clockwise on a path that goes through & around the logo.
  * 4. Mobile (<768): stacked hub list, no 3D orbits.
+ *
+ * Screen clock (looking at the logo): top → right → bottom → left = Clockwise.
  */
 import {
   Suspense,
@@ -22,33 +24,34 @@ import { useNavigate } from "react-router-dom";
 import * as THREE from "three";
 
 const LOGO_SRC = "/assets/logo.png";
-/** Intrinsic pixel aspect of logo.png */
 const LOGO_ASPECT = 1019 / 960;
-/**
- * Base logo plane size, then +20% so it is the unmistakable page anchor.
- * (No sphere — the logo itself is the sun.)
- */
+/** Logo plane (+20%) — this graphic already is the planet. */
 const LOGO_BASE_H = 3.45;
 const LOGO_SCALE = 1.2;
 const LOGO_H = LOGO_BASE_H * LOGO_SCALE;
 const LOGO_W = LOGO_H * LOGO_ASPECT;
-/** Keep every satellite outside the logo disk (+ glow margin). */
-const LOGO_CLEARANCE = Math.hypot(LOGO_W, LOGO_H) * 0.5 + 0.55;
+/**
+ * Hub hard floor: outside the logo rectangle so satellites only circle
+ * around the planet, never cut through it.
+ */
+const LOGO_CLEARANCE = Math.max(LOGO_W, LOGO_H) * 0.5 + 0.85;
 
-const HUB_BODY_R = 0.38;
-const HUB_GLOW_SCALE = 1.15;
-/** Unique tighter DSG track — always inside the hub belts. */
-const DSG_ORBIT_R = 3.15;
-const DSG_BODY_R = 0.22;
-const DSG_ORBIT_SPEED = 0.55;
-const DSG_SPIN_SPEED = 2.2;
+const HUB_BODY_R = 0.36;
+const HUB_GLOW_SCALE = 1.12;
+/**
+ * DSG moon — allowed through the logo. Smaller path so it crosses the face.
+ */
+const DSG_ORBIT_R = 1.65;
+const DSG_BODY_R = 0.2;
+const DSG_ORBIT_SPEED = 0.7;
+const DSG_SPIN_SPEED = 2.4;
 
-const CAMERA_Z = 14.2;
-const CAMERA_FOV = 42;
-const LOGO_EMISSIVE = 2.4;
-const LOGO_RENDER_ORDER = 10;
+const CAMERA_Z = 13.5;
+const CAMERA_FOV = 40;
+const LOGO_EMISSIVE = 2.5;
+const LOGO_RENDER_ORDER = 5;
 const HUB_RENDER_ORDER = 2;
-const DSG_RENDER_ORDER = 3;
+const DSG_RENDER_ORDER = 6;
 
 type HubId =
   | "gaming"
@@ -66,10 +69,19 @@ type HubDef = {
   color: string;
   emissive: string;
   orbitR: number;
+  /** 0 = top of logo, increases Clockwise (right → bottom → left). */
   phase: number;
   speed: number;
 };
 
+/**
+ * Phases on the screen clock around the logo:
+ *   top    → Gaming
+ *   right  → Vibe Ridez
+ *   bottom → Streams (TV)
+ *   left   → Vibe Vineyards
+ * Outer belt fills the diagonals.
+ */
 const HUBS: HubDef[] = [
   {
     id: "gaming",
@@ -78,31 +90,9 @@ const HUBS: HubDef[] = [
     path: "/games",
     color: "#1e3a8a",
     emissive: "#38bdf8",
-    orbitR: 4.55,
+    orbitR: 4.7,
     phase: 0,
-    speed: 0.24,
-  },
-  {
-    id: "dating",
-    label: "Dating",
-    shortLabel: "Dating",
-    path: "/dating",
-    color: "#9d174d",
-    emissive: "#fb7185",
-    orbitR: 4.55,
-    phase: (Math.PI * 2) / 3,
-    speed: 0.24,
-  },
-  {
-    id: "streams",
-    label: "Streams",
-    shortLabel: "Streams",
-    path: "/streams",
-    color: "#5b21b6",
-    emissive: "#c084fc",
-    orbitR: 4.55,
-    phase: (Math.PI * 4) / 3,
-    speed: 0.24,
+    speed: 0.22,
   },
   {
     id: "ridez",
@@ -111,9 +101,20 @@ const HUBS: HubDef[] = [
     path: "/vibe-ridez",
     color: "#065f46",
     emissive: "#34d399",
-    orbitR: 5.85,
-    phase: Math.PI / 3,
-    speed: 0.16,
+    orbitR: 4.7,
+    phase: Math.PI / 2,
+    speed: 0.22,
+  },
+  {
+    id: "streams",
+    label: "Streams",
+    shortLabel: "Streams",
+    path: "/streams",
+    color: "#5b21b6",
+    emissive: "#c084fc",
+    orbitR: 4.7,
+    phase: Math.PI,
+    speed: 0.22,
   },
   {
     id: "vineyards",
@@ -122,9 +123,20 @@ const HUBS: HubDef[] = [
     path: "/hub/vineyards",
     color: "#86198f",
     emissive: "#f9a8d4",
-    orbitR: 5.85,
-    phase: Math.PI,
-    speed: 0.16,
+    orbitR: 4.7,
+    phase: (Math.PI * 3) / 2,
+    speed: 0.22,
+  },
+  {
+    id: "dating",
+    label: "Dating",
+    shortLabel: "Dating",
+    path: "/dating",
+    color: "#9d174d",
+    emissive: "#fb7185",
+    orbitR: 5.9,
+    phase: Math.PI / 4,
+    speed: 0.15,
   },
   {
     id: "hungry",
@@ -133,9 +145,9 @@ const HUBS: HubDef[] = [
     path: "/hungryvibes",
     color: "#9a3412",
     emissive: "#fb923c",
-    orbitR: 5.85,
-    phase: (Math.PI * 5) / 3,
-    speed: 0.16,
+    orbitR: 5.9,
+    phase: (Math.PI * 5) / 4,
+    speed: 0.15,
   },
 ];
 
@@ -153,27 +165,37 @@ function useIsMobile(bp = 768) {
 }
 
 /**
- * Place a body on a horizontal ring around the logo (XZ plane).
- * Viewed from above (+Y): increasing angle with z = -sin → Clockwise.
- * Slight Y bob only — never cuts through the logo plane.
+ * Hub path — screen-plane ring AROUND the logo.
+ * angle 0 = top, +angle = Clockwise (right, bottom, left).
+ * z stays behind the logo so hubs never fly through the brand face.
  */
-function placeOnRing(
+function placeHubAroundLogo(
   angle: number,
   orbitR: number,
   out: THREE.Vector3,
-  bob = 0.14,
 ) {
   const r = Math.max(orbitR, LOGO_CLEARANCE);
-  const x = Math.cos(angle) * r;
-  const z = -Math.sin(angle) * r;
-  const y = Math.sin(angle * 0.85) * bob;
+  const x = Math.sin(angle) * r;
+  const y = Math.cos(angle) * r;
+  // Park slightly behind the logo plane — circle around, never through.
+  const z = -0.35;
   out.set(x, y, z);
 }
 
 /**
- * Hub belt — Clockwise.
- * MUST be called with +state.clock.getElapsedTime().
+ * DSG moon — Counter-Clockwise path that goes THROUGH and around the logo.
+ * Swings in front of (z>0) and behind (z<0) the brand face.
  */
+function placeDSGThroughLogo(angle: number, out: THREE.Vector3) {
+  const r = DSG_ORBIT_R;
+  const x = Math.sin(angle) * r * 1.05;
+  const y = Math.cos(angle) * r * 0.75;
+  // Depth swing crosses the logo plane → "through the planet".
+  const z = Math.sin(angle) * 1.35;
+  out.set(x, y, z);
+}
+
+/** Hubs: Clockwise. Pass +state.clock.getElapsedTime(). */
 function animateHubPlanets(
   hubGroups: MutableRefObject<Array<THREE.Group | null>>,
   elapsedPositive: number,
@@ -184,16 +206,12 @@ function animateHubPlanets(
     const group = hubGroups.current[i];
     if (!group) continue;
     const angle = hub.phase + elapsedPositive * hub.speed;
-    const minR = LOGO_CLEARANCE + HUB_BODY_R * HUB_GLOW_SCALE;
-    placeOnRing(angle, Math.max(hub.orbitR, minR), scratch, 0.16);
+    placeHubAroundLogo(angle, hub.orbitR, scratch);
     group.position.copy(scratch);
   }
 }
 
-/**
- * DSG moon — Counter-Clockwise on its own tighter radius.
- * MUST be called with -state.clock.getElapsedTime().
- */
+/** DSG moon: Counter-Clockwise through the logo. Pass -elapsed. */
 function animateDSGMoon(
   moonGroup: RefObject<THREE.Group | null>,
   spinMesh: RefObject<THREE.Mesh | null>,
@@ -202,14 +220,8 @@ function animateDSGMoon(
 ) {
   const group = moonGroup.current;
   if (!group) return;
-  // elapsedNegative is already -getElapsedTime(); advancing this angle
-  // runs opposite the hubs' (+elapsed) ring.
   const angle = elapsedNegative * DSG_ORBIT_SPEED;
-  const r = Math.min(
-    DSG_ORBIT_R,
-    Math.min(...HUBS.map((h) => h.orbitR)) - 1.1,
-  );
-  placeOnRing(angle, Math.max(r, LOGO_CLEARANCE + 0.15), scratch, 0.12);
+  placeDSGThroughLogo(angle, scratch);
   group.position.copy(scratch);
   if (spinMesh.current) {
     spinMesh.current.rotation.y = Math.abs(elapsedNegative) * DSG_SPIN_SPEED;
@@ -217,8 +229,7 @@ function animateDSGMoon(
 }
 
 /**
- * Central core — official logo plane in a <Billboard>.
- * No sphere. The logo IS the sun.
+ * The planet = the logo. Nothing else — no sphere, no halo circle, no rings.
  */
 function CentralLogoBillboard() {
   const brandMap = useTexture(LOGO_SRC);
@@ -235,22 +246,8 @@ function CentralLogoBillboard() {
 
   return (
     <group>
-      <pointLight color="#ffffff" intensity={3.8} distance={18} decay={2} />
-      <pointLight color="#67e8f9" intensity={1.9} distance={14} decay={2} />
-
-      {/* Soft glow disc behind the logo — not a planet sphere */}
-      <Billboard follow>
-        <mesh renderOrder={0} position={[0, 0, -0.02]}>
-          <circleGeometry args={[LOGO_H * 0.58, 48]} />
-          <meshBasicMaterial
-            color="#22d3ee"
-            transparent
-            opacity={0.16}
-            depthWrite={false}
-            toneMapped={false}
-          />
-        </mesh>
-      </Billboard>
+      <pointLight color="#ffffff" intensity={3.6} distance={16} decay={2} />
+      <pointLight color="#67e8f9" intensity={1.6} distance={12} decay={2} />
 
       <Billboard follow>
         <mesh renderOrder={LOGO_RENDER_ORDER} frustumCulled={false}>
@@ -285,7 +282,7 @@ function HubLabel({
   return (
     <Html
       center
-      position={[0, -0.72, 0]}
+      position={[0, -0.7, 0]}
       distanceFactor={8}
       zIndexRange={[20, 0]}
       style={{ pointerEvents: "auto" }}
@@ -298,12 +295,12 @@ function HubLabel({
         }}
         data-testid={testId}
         style={{
-          background: "rgba(0,0,0,0.5)",
+          background: "rgba(0,0,0,0.55)",
           color: "#ffffff",
           border: "1px solid rgba(255,255,255,0.28)",
           borderRadius: 8,
           padding: "4px 10px",
-          fontSize: 14,
+          fontSize: 13,
           fontWeight: 800,
           letterSpacing: "0.06em",
           textTransform: "uppercase",
@@ -355,9 +352,9 @@ function HubPlanetMesh({
         <meshStandardMaterial
           color={hub.emissive}
           emissive={hub.emissive}
-          emissiveIntensity={0.85}
+          emissiveIntensity={0.8}
           transparent
-          opacity={0.2}
+          opacity={0.18}
           depthWrite={false}
           toneMapped={false}
         />
@@ -371,11 +368,6 @@ function HubPlanetMesh({
   );
 }
 
-/**
- * One useFrame, two independent time vectors:
- *   hubs  → +elapsed  (Clockwise around the logo)
- *   DSG   → -elapsed  (Counter-Clockwise, tighter ring)
- */
 function OrbitSystem({ onOpen }: { onOpen: (path: string) => void }) {
   const hubGroups = useRef<Array<THREE.Group | null>>([]);
   const moonGroup = useRef<THREE.Group | null>(null);
@@ -384,6 +376,7 @@ function OrbitSystem({ onOpen }: { onOpen: (path: string) => void }) {
 
   useFrame((state) => {
     const elapsed = state.clock.getElapsedTime();
+    // Independent vectors — hubs CW around logo; DSG CCW through logo.
     animateHubPlanets(hubGroups, +elapsed, scratch);
     animateDSGMoon(moonGroup, moonSpin, -elapsed, scratch);
   });
@@ -407,29 +400,17 @@ function OrbitSystem({ onOpen }: { onOpen: (path: string) => void }) {
           <meshStandardMaterial
             color="#f59e0b"
             emissive="#fbbf24"
-            emissiveIntensity={1.7}
+            emissiveIntensity={1.75}
             metalness={0.9}
             roughness={0.2}
             toneMapped={false}
           />
         </mesh>
-        <mesh scale={1.25} renderOrder={DSG_RENDER_ORDER}>
-          <sphereGeometry args={[DSG_BODY_R, 16, 16]} />
-          <meshStandardMaterial
-            color="#fbbf24"
-            emissive="#fbbf24"
-            emissiveIntensity={0.95}
-            transparent
-            opacity={0.22}
-            depthWrite={false}
-            toneMapped={false}
-          />
-        </mesh>
         <Html
           center
-          position={[0, -0.45, 0]}
+          position={[0, -0.42, 0]}
           distanceFactor={8}
-          zIndexRange={[18, 0]}
+          zIndexRange={[22, 0]}
           style={{ pointerEvents: "none" }}
         >
           <span
@@ -452,35 +433,6 @@ function OrbitSystem({ onOpen }: { onOpen: (path: string) => void }) {
   );
 }
 
-/** Horizontal ring guides in the same XZ plane as the satellites. */
-function OrbitGuides() {
-  const rings = useMemo(() => {
-    const byR = new Map<number, string>();
-    byR.set(DSG_ORBIT_R, "#fbbf24");
-    for (const h of HUBS) {
-      if (!byR.has(h.orbitR)) byR.set(h.orbitR, h.emissive);
-    }
-    return [...byR.entries()];
-  }, []);
-
-  return (
-    <group rotation={[Math.PI / 2, 0, 0]}>
-      {rings.map(([r, color]) => (
-        <mesh key={`ring-${r}`} renderOrder={0}>
-          <torusGeometry args={[r, 0.007, 8, 128]} />
-          <meshBasicMaterial
-            color={color}
-            transparent
-            opacity={r === DSG_ORBIT_R ? 0.32 : 0.16}
-            depthWrite={false}
-            toneMapped={false}
-          />
-        </mesh>
-      ))}
-    </group>
-  );
-}
-
 function Scene({ onOpen }: { onOpen: (path: string) => void }) {
   return (
     <>
@@ -489,15 +441,14 @@ function Scene({ onOpen }: { onOpen: (path: string) => void }) {
 
       <Suspense fallback={null}>
         <CentralLogoBillboard />
-        <OrbitGuides />
         <OrbitSystem onOpen={onOpen} />
       </Suspense>
 
       <EffectComposer multisampling={0}>
         <Bloom
-          intensity={1.05}
-          luminanceThreshold={0.22}
-          luminanceSmoothing={0.5}
+          intensity={0.95}
+          luminanceThreshold={0.28}
+          luminanceSmoothing={0.55}
           mipmapBlur
         />
       </EffectComposer>
@@ -564,14 +515,14 @@ export function LandingPlanet() {
     <div
       className="relative mx-auto h-[500px] w-full max-w-[640px] overflow-hidden sm:h-[480px] lg:h-[620px] lg:max-w-none"
       data-testid="landing-planet"
-      aria-label="Global Vibez logo sun with orbiting hubs"
+      aria-label="Global Vibez logo planet with orbiting hubs"
     >
       {isMobile ? (
         <MobileHubStrip onOpen={onOpen} />
       ) : (
         <Canvas
           camera={{
-            position: [0, 2.4, CAMERA_Z],
+            position: [0, 0, CAMERA_Z],
             fov: CAMERA_FOV,
             near: 0.1,
             far: 100,
@@ -589,7 +540,6 @@ export function LandingPlanet() {
             background: "#000000",
           }}
         >
-          {/* Slight top-down so rings read as orbiting around the logo */}
           <Scene onOpen={onOpen} />
         </Canvas>
       )}
