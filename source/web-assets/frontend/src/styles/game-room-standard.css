@@ -1,0 +1,376 @@
+/**
+ * Game Room Standard — platform-wide table + HUD ergonomics.
+ *
+ * Every card room (Blackjack, Spades, Hearts, …) should use these
+ * class names so layout, z-index, and Vibez neon stay consistent.
+ *
+ * Layers (low → high):
+ *   .gv-room-table     — felt / deck (base)
+ *   .gv-room-actions   — Draw / Play / Hit buttons above the hand
+ *   .gv-room-hand      — semi-circular player hand at bottom
+ *   .gv-room-overlay   — score, chat, modals
+ *   .gv-room-hud       — persistent navigation chrome
+ */
+
+:root {
+  --gv-neon-cyan: #22d3ee;
+  --gv-neon-indigo: #6366f1;
+  --gv-neon-fuchsia: #e879f9;
+  --gv-room-felt: radial-gradient(ellipse at 50% 40%, #0a3d2e 0%, #041a14 55%, #020a08 100%);
+  --gv-room-bg: linear-gradient(160deg, #05070d 0%, #0a1628 45%, #0c0a1a 100%);
+  --gv-z-table: 10;
+  --gv-z-actions: 30;
+  --gv-z-hand: 40;
+  --gv-z-overlay: 50;
+  --gv-z-hud: 60;
+  --gv-z-settings: 70;
+  --gv-game-speed: 1;
+}
+
+/* ── Room shell ─────────────────────────────────────────────── */
+.gv-room {
+  position: relative;
+  min-height: 100dvh;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--gv-room-bg);
+  color: #fff;
+  --gv-anim-scale: calc(1 / var(--gv-game-speed, 1));
+}
+
+.gv-room::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 0%, rgba(34, 211, 238, 0.12), transparent 55%),
+    radial-gradient(ellipse 70% 45% at 85% 100%, rgba(99, 102, 241, 0.14), transparent 50%);
+  z-index: 0;
+}
+
+.gv-room[data-view-cards="true"] .gv-room-hand {
+  transform: scale(1.12) translateY(-8px);
+  filter: drop-shadow(0 0 12px rgba(34, 211, 238, 0.35));
+}
+
+/* ── Persistent Room HUD ────────────────────────────────────── */
+.gv-room-hud {
+  position: sticky;
+  top: 0;
+  z-index: var(--gv-z-hud);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  padding-top: max(0.5rem, env(safe-area-inset-top));
+  background: linear-gradient(
+    180deg,
+    rgba(5, 10, 24, 0.92) 0%,
+    rgba(5, 10, 24, 0.72) 70%,
+    transparent 100%
+  );
+  backdrop-filter: blur(14px) saturate(140%);
+  border-bottom: 1px solid rgba(34, 211, 238, 0.18);
+  flex-shrink: 0;
+}
+
+.gv-room-hud__brand {
+  font-family: "Cinzel", "Outfit", serif;
+  font-weight: 800;
+  font-size: 0.7rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  background: linear-gradient(90deg, var(--gv-neon-cyan), var(--gv-neon-indigo), var(--gv-neon-fuchsia));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.gv-room-hud__wallet {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #a5f3fc;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(34, 211, 238, 0.35);
+  background: rgba(6, 182, 212, 0.12);
+}
+
+/* ── Centered table focal point ─────────────────────────────── */
+.gv-room-stage {
+  flex: 1;
+  position: relative;
+  z-index: var(--gv-z-table);
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  padding: 0.5rem 0.75rem 7.5rem;
+}
+
+.gv-room-table {
+  position: relative;
+  z-index: var(--gv-z-table);
+  width: min(92vw, 720px);
+  aspect-ratio: 16 / 10;
+  max-height: min(58vh, 420px);
+  border-radius: 48% / 42%;
+  background: var(--gv-room-felt);
+  border: 4px solid rgba(34, 211, 238, 0.22);
+  box-shadow:
+    0 0 0 6px rgba(15, 23, 42, 0.85),
+    0 0 40px rgba(34, 211, 238, 0.15),
+    0 0 80px rgba(99, 102, 241, 0.12),
+    inset 0 0 60px rgba(0, 0, 0, 0.45);
+  display: grid;
+  place-items: center;
+}
+
+.gv-room-table--passthrough {
+  /* When the room supplies its own table chrome (SpadesTable etc.),
+     keep centering + z-index without forcing the oval felt. */
+  width: auto;
+  aspect-ratio: auto;
+  max-height: none;
+  background: none;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+/* ── Actions above the hand arc (thumb-safe) ────────────────── */
+.gv-room-actions {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(7.25rem + env(safe-area-inset-bottom, 0px));
+  z-index: var(--gv-z-actions);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  max-width: min(96vw, 520px);
+  pointer-events: none;
+}
+
+/* No hand fan → park actions near the bottom edge */
+.gv-room:not(:has(.gv-room-hand)) .gv-room-actions {
+  bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+}
+
+.gv-room:not(:has(.gv-room-hand)) .gv-room-stage {
+  padding-bottom: 5rem;
+}
+
+.gv-room-actions > * {
+  pointer-events: auto;
+}
+
+/* ── Semi-circular hand at bottom ───────────────────────────── */
+.gv-room-hand {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: max(0.35rem, env(safe-area-inset-bottom));
+  z-index: var(--gv-z-hand);
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  min-height: 6.5rem;
+  padding: 0 0.5rem;
+  pointer-events: none;
+  transition: transform 220ms ease, filter 220ms ease;
+}
+
+.gv-room-hand > * {
+  pointer-events: auto;
+}
+
+.gv-room-hand-arc {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  width: 100%;
+  max-width: 720px;
+  /* Children should set transform: rotate() with transform-origin bottom */
+}
+
+.gv-room-hand-arc > * {
+  transform-origin: bottom center;
+}
+
+/* ── Secondary overlay layer (score / chat) ─────────────────── */
+.gv-room-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: var(--gv-z-overlay);
+  pointer-events: none;
+}
+
+.gv-room-overlay > * {
+  pointer-events: auto;
+}
+
+/* ── Quick Settings panel ───────────────────────────────────── */
+.gv-room-settings {
+  position: absolute;
+  top: calc(3.25rem + env(safe-area-inset-top, 0px));
+  right: 0.75rem;
+  z-index: var(--gv-z-settings);
+  width: min(16rem, calc(100vw - 1.5rem));
+  padding: 0.85rem;
+  border-radius: 0.85rem;
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  background: rgba(5, 12, 28, 0.92);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55), 0 0 24px rgba(34, 211, 238, 0.12);
+}
+
+.gv-room-settings label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(165, 243, 252, 0.85);
+  margin-bottom: 0.65rem;
+}
+
+.gv-room-settings input[type="range"] {
+  width: 7rem;
+  accent-color: var(--gv-neon-cyan);
+}
+
+/* ── Mobile landscape lock (ResizeObserver-driven) ──────────── */
+.gv-room[data-mobile-landscape="true"] {
+  /* Prefer landscape usable area; rotate hint handled by body class */
+}
+
+.gv-room[data-mobile-landscape="true"] .gv-room-stage {
+  padding-bottom: 5.5rem;
+}
+
+.gv-room[data-mobile-landscape="true"] .gv-room-table:not(.gv-room-table--passthrough) {
+  max-height: min(72vh, 360px);
+  width: min(88vw, 640px);
+}
+
+.gv-room[data-mobile-landscape="true"] .gv-room-hand {
+  min-height: 4.75rem;
+}
+
+.gv-room[data-mobile-landscape="true"] .gv-room-actions {
+  bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* When body has force-landscape (from RoomLayout ResizeObserver) */
+body.gv-force-landscape .gv-room-stage {
+  padding-bottom: 5rem;
+}
+
+/* ── Shared game-card surface for carousel ──────────────────── */
+.gv-carousel {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.gv-carousel-track {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem 0 1.5rem;
+  cursor: grab;
+  touch-action: pan-y;
+}
+
+.gv-carousel-track:active {
+  cursor: grabbing;
+}
+
+.gv-carousel-card {
+  flex: 0 0 min(78vw, 280px);
+  scroll-snap-align: center;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(34, 211, 238, 0.28);
+  background:
+    linear-gradient(160deg, rgba(8, 20, 40, 0.95), rgba(12, 10, 32, 0.92)),
+    radial-gradient(ellipse at top, rgba(34, 211, 238, 0.12), transparent 60%);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+
+.gv-carousel-card.is-active {
+  border-color: rgba(34, 211, 238, 0.65);
+  box-shadow:
+    0 12px 48px rgba(0, 0, 0, 0.5),
+    0 0 28px rgba(34, 211, 238, 0.22);
+}
+
+.gv-carousel-card__media {
+  position: relative;
+  height: 9.5rem;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0e7490, #312e81);
+}
+
+.gv-carousel-card__body {
+  padding: 0.9rem 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  flex: 1;
+}
+
+.gv-carousel-card__title {
+  font-family: "Outfit", "Cinzel", sans-serif;
+  font-weight: 800;
+  font-size: 1.1rem;
+  letter-spacing: 0.02em;
+}
+
+.gv-carousel-card__desc {
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: rgba(226, 232, 240, 0.7);
+  flex: 1;
+}
+
+.gv-carousel-card__cta {
+  margin-top: 0.35rem;
+  width: 100%;
+  border: none;
+  border-radius: 0.65rem;
+  padding: 0.55rem 0.75rem;
+  font-weight: 800;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #041016;
+  background: linear-gradient(90deg, #22d3ee, #818cf8);
+  cursor: pointer;
+  transition: filter 160ms ease, transform 160ms ease;
+}
+
+.gv-carousel-card__cta:hover {
+  filter: brightness(1.08);
+}
+
+.gv-carousel-card__cta:active {
+  transform: scale(0.98);
+}
+
+.gv-carousel-card__cta:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
