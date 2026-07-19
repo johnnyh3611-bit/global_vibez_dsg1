@@ -98,36 +98,48 @@ function useIsMobile(breakpoint = 768) {
 /** Central Sun — full logo always facing camera, never occluded. */
 function CentralSun() {
   const map = useTexture("/global-vibez-logo.png");
+  const matRef = useRef<THREE.MeshStandardMaterial>(null);
+
   useMemo(() => {
     map.colorSpace = THREE.SRGBColorSpace;
     map.anisotropy = 8;
   }, [map]);
 
+  // Hard-enforce draw-on-top so orbiting hubs can never cover the logo.
+  useEffect(() => {
+    const mat = matRef.current;
+    if (!mat) return;
+    mat.depthTest = false;
+    mat.depthWrite = false;
+    mat.transparent = true;
+    mat.needsUpdate = true;
+  }, [map]);
+
   return (
-    <group>
+    <group position={[0, 0.15, 0.8]}>
       {/* Point light from the Sun onto orbiting planets */}
       <pointLight
         color="#67e8f9"
-        intensity={4.5}
+        intensity={5}
         distance={18}
         decay={2}
         position={[0, 0, 0]}
       />
       <pointLight
         color="#fbbf24"
-        intensity={1.8}
+        intensity={2}
         distance={12}
         decay={2}
         position={[0.4, 0.2, 0.6]}
       />
 
       {/* Soft glow shell behind the logo */}
-      <mesh renderOrder={SUN_RENDER_ORDER - 1} scale={1.15}>
-        <sphereGeometry args={[1.15, 32, 32]} />
+      <mesh renderOrder={SUN_RENDER_ORDER - 1}>
+        <sphereGeometry args={[1.45, 32, 32]} />
         <meshBasicMaterial
           color="#22d3ee"
           transparent
-          opacity={0.22}
+          opacity={0.2}
           depthTest={false}
           depthWrite={false}
           toneMapped={false}
@@ -137,19 +149,20 @@ function CentralSun() {
       {/* Logo disc — Billboard so the full mark is always readable */}
       <Billboard follow>
         <mesh renderOrder={SUN_RENDER_ORDER} frustumCulled={false}>
-          <circleGeometry args={[1.35, 64]} />
+          <circleGeometry args={[1.55, 64]} />
           <meshStandardMaterial
+            ref={matRef}
             map={map}
             emissiveMap={map}
             emissive="#67e8f9"
-            emissiveIntensity={2.4}
-            roughness={0.35}
-            metalness={0.2}
+            emissiveIntensity={2.8}
+            roughness={0.3}
+            metalness={0.15}
             toneMapped={false}
             depthTest={false}
             depthWrite={false}
             transparent
-            alphaTest={0.05}
+            alphaTest={0.02}
           />
         </mesh>
       </Billboard>
@@ -220,10 +233,11 @@ function OrbitHubPlanet({
   useFrame(({ clock }) => {
     if (!group.current || !animate) return;
     const t = clock.getElapsedTime() * hub.speed + hub.phase;
+    // Flatten Z so hubs stay on the orbital plane and don't cover the sun
     group.current.position.set(
       Math.cos(t) * hub.radius,
-      Math.sin(t * 0.4) * 0.28,
-      Math.sin(t) * hub.radius * 0.55,
+      Math.sin(t * 0.35) * 0.22,
+      Math.sin(t) * hub.radius * 0.22,
     );
   });
 
@@ -247,7 +261,7 @@ function OrbitHubPlanet({
           document.body.style.cursor = "auto";
         }}
       >
-        <sphereGeometry args={[0.42, 48, 48]} />
+        <sphereGeometry args={[0.36, 48, 48]} />
         <meshStandardMaterial
           color={hub.color}
           emissive={hub.emissive}
@@ -261,7 +275,7 @@ function OrbitHubPlanet({
         />
       </mesh>
       <mesh scale={1.18} renderOrder={HUB_RENDER_ORDER}>
-        <sphereGeometry args={[0.42, 24, 24]} />
+        <sphereGeometry args={[0.36, 24, 24]} />
         <meshStandardMaterial
           color={hub.emissive}
           emissive={hub.emissive}
@@ -333,25 +347,25 @@ function DsgMoon({ animate }: { animate: boolean }) {
       const r = 1.95;
       group.current.position.set(
         Math.cos(a) * r,
-        0.35 + Math.sin(a * 1.3) * 0.2,
-        Math.sin(a) * r * 0.7,
+        0.55 + Math.sin(a * 1.3) * 0.15,
+        Math.sin(a) * r * 0.25,
       );
     } else if (group.current) {
-      group.current.position.set(1.7, 0.55, 0.9);
+      group.current.position.set(1.85, 0.7, 0.4);
     }
   });
 
   return (
     <group ref={group}>
       {/* Fire corona around the golden moon */}
-      <mesh scale={1.4} renderOrder={HUB_RENDER_ORDER + 1}>
-        <sphereGeometry args={[0.28, 24, 24]} />
+      <mesh scale={1.45} renderOrder={HUB_RENDER_ORDER + 1}>
+        <sphereGeometry args={[0.34, 24, 24]} />
         <meshStandardMaterial
           color="#ff6a00"
           emissive="#ff4500"
-          emissiveIntensity={2.8}
+          emissiveIntensity={3}
           transparent
-          opacity={0.4}
+          opacity={0.42}
           depthWrite={false}
           toneMapped={false}
         />
@@ -359,12 +373,12 @@ function DsgMoon({ animate }: { animate: boolean }) {
       {/* Camera-facing golden moon with DSG in the dark core */}
       <Billboard follow>
         <mesh renderOrder={HUB_RENDER_ORDER + 2}>
-          <sphereGeometry args={[0.3, 48, 48]} />
+          <sphereGeometry args={[0.36, 48, 48]} />
           <meshStandardMaterial
             map={map}
             emissiveMap={map}
             emissive="#fbbf24"
-            emissiveIntensity={2.4}
+            emissiveIntensity={2.8}
             metalness={0.8}
             roughness={0.25}
             toneMapped={false}
