@@ -3,8 +3,9 @@
  *
  * Preferred order:
  *   1. Solana deposit (QR + memo)
- *   2. Helio embed / charge (card) — Stripe alternative
- *   3. Legacy Stripe card (if Helio not configured)
+ *   2. Helio embed / charge (card) — the only card rail
+ *
+ * Stripe is not used for coin top-up.
  */
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -134,8 +135,7 @@ export default function TopUpVibezCoinsModal({
   const helioReady = Boolean(helioProvider?.ready);
   const helioPaylinkId = helioProvider?.paylink_id || "";
   const helioNetwork = helioProvider?.network === "test" ? "test" : "main";
-  const stripeReady = providers.some((p) => p.id === "stripe" && p.ready);
-  const cardLabel = helioReady ? "Card (Helio)" : "Card";
+  const cardLabel = "Card (Helio)";
 
   // Mount Helio embed when Card tab is active and we have a paylink.
   useEffect(() => {
@@ -191,10 +191,13 @@ export default function TopUpVibezCoinsModal({
         window.location.href = "/login";
         return;
       }
-      const endpoint = helioReady
-        ? `${API}/coins/topup/helio`
-        : `${API}/coins/topup/checkout`;
-      const res = await fetch(endpoint, {
+      if (!helioReady) {
+        setError(
+          "Helio card checkout is not configured. Use Solana, or set HELIO_* on the API.",
+        );
+        return;
+      }
+      const res = await fetch(`${API}/coins/topup/helio`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -419,17 +422,17 @@ export default function TopUpVibezCoinsModal({
               </div>
             ) : (
               <>
-                {!helioReady && !stripeReady && (
+                {!helioReady && (
                   <p className="text-xs text-amber-200/80 mb-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-2">
-                    Card checkout is not configured on the server yet. Use
-                    Solana, or add Helio vars on Railway.
+                    Helio card checkout is not configured yet. Use Solana, or
+                    add HELIO_API_KEY / HELIO_SECRET_KEY / HELIO_PAYLINK_ID on
+                    Railway.
                   </p>
                 )}
                 <button
                   onClick={handleCardCheckout}
-                  disabled={
-                    submitting || !selected || (!helioReady && !stripeReady)
-                  }
+                  disabled={submitting || !selected || !helioReady}
+
                   className="w-full bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 disabled:opacity-60 px-4 py-3 rounded-xl font-bold text-slate-950 flex items-center justify-center gap-2 transition-all"
                   data-testid="topup-checkout-btn"
                 >

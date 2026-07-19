@@ -131,21 +131,23 @@ npm run dev          # scripts/dev-up.sh — mongo + :8001 + :3000
 
 ---
 
-## Payments / PCI (beta)
+## Payments / PCI (beta) — Helio only
 
 Full runbook: `source/web-assets/PAYMENT_SECURITY.md`.
 
-Checklist before opening card rails beyond Founding Members:
+**Card rail = Helio.** We do not use Stripe for coin top-up.
+
+Checklist before opening Helio beyond Founding Members:
 
 1. **TLS** — Railway public domain is `https://…`. Confirm:
    ```bash
    curl -sSI https://YOUR-API/health | head -n 5
    ```
-2. **Secrets on Railway** — `STRIPE_API_KEY`, `STRIPE_WEBHOOK_SECRET`, `HELIO_*`, `HELIO_WEBHOOK_TOKEN`, `PAYMENT_BETA_*`
-3. **Sandbox first** — `sk_test_` + `HELIO_NETWORK=test`; run a real Checkout; confirm `payments_audit` + wallet credit
+2. **Secrets on Railway** — `HELIO_API_KEY`, `HELIO_SECRET_KEY`, `HELIO_PAYLINK_ID`, `HELIO_WEBHOOK_TOKEN`, `PAYMENT_BETA_*`
+3. **Sandbox first** — `HELIO_NETWORK=test`; run a real Helio checkout; confirm `payments_audit` + wallet credit
 4. **Founding Member gate** — keep `PAYMENT_BETA_MODE=true` with a 20–50 email allowlist until live credits reconcile
 5. **UI** — Wallet / Top-Up show **Beta Payment Environment** + support email/Discord
-6. **Never** collect raw card numbers in the SPA — Stripe Checkout / Helio embed only
+6. **Never** collect raw card numbers in the SPA — Helio embed only
 
 ---
 

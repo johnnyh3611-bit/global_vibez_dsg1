@@ -123,3 +123,26 @@ def test_checkout_builds_fraud_controls():
         == "automatic"
     )
     assert kwargs["line_items"][0]["price_data"]["unit_amount"] == 900
+
+
+def test_coin_topup_stripe_path_retired():
+    """Stripe is not the card rail — legacy checkout must 410."""
+    import inspect
+    from routes import coin_topup
+
+    src = inspect.getsource(coin_topup.create_topup_checkout)
+    assert "410" in src
+    assert "stripe_retired" in src
+
+
+def test_providers_omit_stripe_card_rail():
+    """Public providers catalogue must not advertise Stripe for coins."""
+    import asyncio
+    from routes.coin_topup import list_topup_providers
+
+    data = asyncio.run(list_topup_providers())
+    ids = {p["id"] for p in data["providers"]}
+    assert "helio" in ids
+    assert "solana" in ids
+    assert "stripe" not in ids
+    assert data["environment"]["card_provider"] == "helio"

@@ -1,16 +1,17 @@
 # Payment Security & PCI Compliance (Global Vibez)
 
-**Non-negotiable rules for card / fiat rails.** Crypto (Solana) deposits never touch card data and are out of PCI scope.
+**Card rail = Helio (MoonPay Commerce) only.** Solana deposits never touch card data.  
+**We do not use Stripe for coin top-up or wallet card checkout.**
 
 ## 1. Tokenization — never handle raw cards
 
 | Rule | How we enforce it |
 |------|-------------------|
-| No PAN / CVV on our servers | Card entry is **Stripe Checkout** or **Helio embed** only — never Elements/raw inputs in our SPA |
-| No card fields in Mongo | `payments_audit` + webhook stores strip `number` / `cvc` / nested PAN via `sanitize_stripe_object` |
-| Prefer Solana for open beta | Wallet UI puts Solana first; card rails are Founding-Member gated |
+| No PAN / CVV on our servers | Card entry is the **Helio embed / hosted charge page** only |
+| No card fields in Mongo | Audit + webhook stores keep charge ids, amounts, status — never PAN/CVC |
+| Prefer Solana for open access | Wallet UI puts Solana first; Helio card is Founding-Member gated in beta |
 
-**Do not add** `@stripe/react-stripe-js` CardElement or custom card forms without a PCI SAQ review.
+**Do not add** custom card number / CVV inputs to the SPA. If Helio’s embed isn’t configured, show Solana — do not invent a card form.
 
 ## 2. TLS / SSL (client ↔ FastAPI)
 
@@ -20,13 +21,10 @@ Every production request must be HTTPS:
 |---------|-------------|
 | Railway API | Public domain auto-provisions TLS (`https://…up.railway.app`) |
 | Vercel frontend | `https://www.globalvibezdsg.com` |
-| `REACT_APP_BACKEND_URL` | Must be `https://…` in production builds — never `http://` or `*.railway.internal` for the browser |
-
-Verify SSL:
+| `REACT_APP_BACKEND_URL` | Must be `https://…` in production builds |
 
 ```bash
 curl -sSI https://YOUR-API/health | head -n 5
-# expect HTTP/2 200 and no certificate errors
 openssl s_client -connect YOUR-API-HOST:443 -servername YOUR-API-HOST </dev/null 2>/dev/null | openssl x509 -noout -dates
 ```
 
@@ -34,29 +32,28 @@ openssl s_client -connect YOUR-API-HOST:443 -servername YOUR-API-HOST </dev/null
 
 Store only what support needs to reconcile:
 
-- `user_id`, amounts, pack ids, Stripe/Helio session/charge ids, status, timestamps
-- Optional: card **brand**, **last4**, AVS/CVC **check results** (never full PAN)
-- Do **not** store billing address copies beyond what Stripe keeps on their side
+- `user_id`, pack id, USD amount, coins, Helio `charge_id` / `payment_id`, status, timestamps
+- Do **not** store full card numbers, CVV, or full billing PAN copies
 
-## 4. Fraud protection (AVS / CVV / 3DS)
+## 4. Fraud protection (via Helio / MoonPay)
 
-`services/payment_hub.py` creates Checkout sessions with:
+Fraud controls (AVS, CVV, 3DS, Radar-equivalent) run **inside Helio / MoonPay** before settlement. We:
 
-- `billing_address_collection="required"` (AVS)
-- `payment_method_options.card.request_three_d_secure="automatic"`
-- Webhook path logs `card_checks` and refuses credit when CVC / postal checks report `fail`
+- Never accept an unsigned Helio webhook
+- Credit coins only after a verified SUCCESS/COMPLETED-style event
+- Log every attempt (created / rejected_signature / credited) in `payments_audit`
 
-Radar rules stay in the Stripe Dashboard (velocity, blocked countries, etc.).
+Configure AVS/CVV and risk rules in the Helio / MoonPay Commerce dashboard — not in our app.
 
-## 5. Webhook security
+## 5. Webhook security (Helio)
 
 | Endpoint | Verification |
 |----------|--------------|
-| `POST /api/payouts/stripe-webhook` | `stripe.Webhook.construct_event` + hard-fail if secret missing |
-| `POST /api/coins/webhook/stripe` (+ other hub callers) | Same via `StripeCheckout.handle_webhook` |
-| `POST /api/coins/webhook/helio` | Bearer token and/or HMAC; **fail closed** in production if token unset |
+| `POST /api/coins/webhook/helio` | Bearer `HELIO_WEBHOOK_TOKEN` and/or HMAC; **fail closed** in production if token unset |
 
-Never trust a payment event without a valid signature.
+Never trust a Helio payment event without a valid signature/token.
+
+Legacy `POST /api/coins/topup/checkout` (Stripe) returns **410 Gone**.
 
 ## 6. Audit logging
 
@@ -64,11 +61,11 @@ Collection: `payments_audit` (append-only, unique `event_id`).
 
 Record at minimum:
 
-- Checkout **created**
-- Webhook **received** / **rejected_signature** / **rejected_fraud_checks**
-- Coin **credited** / **failed**
+- Helio checkout **created**
+- Webhook **received** / **rejected_signature**
+- Coin **credited**
 
-Admin UI: `/admin/payments-audit` (see `routes/admin_payments_audit.py`).
+Admin UI: `/admin/payments-audit`.
 
 ## 7. Founding Member beta rollout
 
@@ -76,34 +73,37 @@ Env:
 
 ```bash
 PAYMENT_BETA_MODE=true
-PAYMENT_BETA_ALLOWLIST=alice@example.com,bob@example.com,user_id_xyz
+PAYMENT_BETA_ALLOWLIST=alice@example.com,bob@example.com
 PAYMENT_SUPPORT_EMAIL=payments-beta@globalvibezdsg.com
 PAYMENT_SUPPORT_DISCORD=https://discord.gg/globalvibez
+HELIO_WEBHOOK_TOKEN=<required in production>
+HELIO_NETWORK=test   # until sandbox credits reconcile, then main
 # optional hard-fail for Helio even in staging:
-PAYMENTS_REQUIRE_WEBHOOK_AUTH=1
+# PAYMENTS_REQUIRE_WEBHOOK_AUTH=1
 ```
 
-When `PAYMENT_BETA_MODE` is on (default in `ENVIRONMENT=production` until set `false`):
+When beta mode is on (default in `ENVIRONMENT=production` until set `false`):
 
-- Helio / Stripe coin checkout and High Roller card checkout require Founding Member / allowlist / admin
+- Helio card checkout requires Founding Member / allowlist / beta tester / admin
 - Solana deposits stay open for everyone
-- UI shows **Beta Payment Environment** banner with support links
+- UI shows **Beta Payment Environment** + support links
 
-Start with **20–50** Founding Members. Open the gate (`PAYMENT_BETA_MODE=false`) only after live credits reconcile cleanly.
+Start with **20–50** Founding Members. Open the gate only after live Helio credits reconcile.
 
-## 8. Sandbox before Live
+## 8. Sandbox before Live (Helio)
 
-1. Use Stripe **test** keys (`sk_test_…` / `pk_test_…`) and Helio `HELIO_NETWORK=test`
-2. Run a real Checkout with Stripe test cards (e.g. `4242…`) against production product/price IDs mirrored in test
-3. Confirm webhook → `payments_audit` → `users.credits_balance` update
-4. Flip to `sk_live_` / Helio main only after that path is green
+1. Set `HELIO_NETWORK=test` + test API keys / Pay Link
+2. Run a real Helio card checkout (Helio test cards / MoonPay test mode)
+3. Confirm webhook → `payments_audit` → `users.credits_balance`
+4. Flip to `HELIO_NETWORK=main` only after that path is green
 5. Keep the Beta banner until you exit Founding Member mode
 
 ## 9. Related files
 
-- `backend/services/payment_hub.py` — Checkout + signed webhooks
+- `backend/services/helio_client.py` — charges + webhook verify
 - `backend/services/payment_beta_gate.py` — cohort gate
 - `backend/services/payments_audit.py` — append-only ledger
-- `backend/routes/coin_topup.py` — Helio/Stripe coin packs
+- `backend/routes/coin_topup.py` — Helio coin packs (Stripe path retired)
 - `frontend/src/components/wallet/BetaPaymentBanner.tsx`
-- `backend/ENV_VARIABLES.md` — secret catalogue
+- `frontend/src/components/wallet/TopUpVibezCoinsModal.tsx`
+- `backend/ENV_VARIABLES.md` — Helio secret catalogue

@@ -89,7 +89,7 @@ def require_payment_beta_access(user: Optional[Dict[str, Any]]) -> None:
         detail={
             "error": "payment_beta_restricted",
             "message": (
-                "Card payments are limited to Founding Members during the "
+                "Helio card payments are limited to Founding Members during the "
                 "Beta Payment Environment. Solana deposits remain open for everyone."
             ),
             "support_email": payment_support_email(),

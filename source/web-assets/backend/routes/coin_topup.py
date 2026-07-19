@@ -5,8 +5,9 @@ Buy Vibez Coins (₵) — canonical platform credit for JFTN, games, tips.
 
 Preferred providers (in order):
   1. Solana deposit (frontend SolanaDepositPanel + indexer) — no card
-  2. Helio / MoonPay Commerce — fiat card → crypto checkout
-  3. Stripe — legacy card path (payment_hub stub may 503)
+  2. Helio / MoonPay Commerce — ONLY card rail (PCI via Helio embed)
+
+Stripe is NOT used for coin top-up. Legacy ``/topup/checkout`` returns 410.
 
 Coin packs (LOCKED — bigger packs reward bigger commitment):
   • ₵5,000   →  $5    starter   (1,000 ₵ / $1)
@@ -99,9 +100,6 @@ async def list_topup_providers() -> Dict[str, Any]:
     from services.helio_client import helio_configured
     from services.payment_beta_gate import payment_beta_public_status
 
-    stripe_ready = bool(
-        os.environ.get("STRIPE_API_KEY") or os.environ.get("STRIPE_SECRET_KEY")
-    )
     solana_ready = bool(
         os.environ.get("GLOBAL_VIBEZ_SOLANA_RECEIVE_WALLET")
         or os.environ.get("SOLANA_RECEIVE_WALLET")
@@ -132,22 +130,12 @@ async def list_topup_providers() -> Dict[str, Any]:
                 "embed": bool(paylink_id),
                 "founding_member_required": beta["beta_mode"],
             },
-            {
-                "id": "stripe",
-                "label": "Card (legacy)",
-                "ready": stripe_ready,
-                "primary": False,
-                "kind": "card_legacy",
-                "founding_member_required": beta["beta_mode"],
-            },
+            # Stripe deliberately omitted — Global Vibez does not use Stripe
+            # for coin top-up. Card rail = Helio only.
         ],
         "environment": {
             "helio_network": network,
-            "stripe_mode": (
-                "live"
-                if (os.environ.get("STRIPE_API_KEY") or "").startswith("sk_live")
-                else "test"
-            ),
+            "card_provider": "helio",
             "tls_required": True,
         },
         "beta_payment": beta,
@@ -159,7 +147,7 @@ async def create_helio_topup(
     payload: CheckoutRequest,
     authorization: Optional[str] = Header(default=None),
 ) -> Dict[str, Any]:
-    """Create a Helio (MoonPay Commerce) charge for a coin pack — Stripe alternative."""
+    """Create a Helio (MoonPay Commerce) charge for a coin pack — the only card rail."""
     from services.helio_client import create_charge, helio_configured
 
     user = await _resolve_user(authorization)
@@ -332,81 +320,18 @@ async def create_topup_checkout(
     request: Request,
     authorization: Optional[str] = Header(default=None),
 ) -> Dict[str, Any]:
-    """Create a Stripe checkout session for a coin pack."""
-    user = await _resolve_user(authorization)
-    if not user:
-        raise HTTPException(401, "Sign in to top up")
-
-    from services.payment_beta_gate import require_payment_beta_access
-
-    require_payment_beta_access(user)
-
-    pack = COIN_PACKS.get(payload.pack_id)
-    if not pack:
-        raise HTTPException(400, f"Invalid pack_id. Choose from {list(COIN_PACKS)}")
-
-    from services.payment_hub import (
-        StripeCheckout, CheckoutSessionRequest,
+    """Retired — Stripe is not used for coin top-up. Use Helio instead."""
+    raise HTTPException(
+        status_code=410,
+        detail={
+            "error": "stripe_retired",
+            "message": (
+                "Stripe checkout is not used. Pay with Helio (card) via "
+                "POST /api/coins/topup/helio, or deposit Solana from the wallet."
+            ),
+            "use": "/api/coins/topup/helio",
+        },
     )
-    from config import STRIPE_API_KEY
-
-    host_url = str(request.base_url).rstrip("/")
-    webhook_url = f"{host_url}/api/coins/webhook/stripe"
-    sc = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
-
-    success_url = f"{payload.origin_url.rstrip('/')}/wallet/topup-success?session_id={{CHECKOUT_SESSION_ID}}"
-    cancel_url = f"{payload.origin_url.rstrip('/')}/wallet/topup-cancelled"
-
-    metadata = {
-        "kind": "coin_topup",
-        "pack_id": payload.pack_id,
-        "user_id": user["user_id"],
-        "coins": str(pack["coins"]),
-        "usd": str(pack["usd"]),
-    }
-
-    session = await sc.create_checkout_session(CheckoutSessionRequest(
-        amount=pack["usd"], currency="usd",
-        success_url=success_url, cancel_url=cancel_url,
-        metadata=metadata,
-    ))
-
-    payment_id = f"coin_pay_{uuid.uuid4().hex[:12]}"
-    await PAYMENTS.insert_one({
-        "id": payment_id,
-        "user_id": user["user_id"],
-        "pack_id": payload.pack_id,
-        "coins": pack["coins"],
-        "amount_usd": pack["usd"],
-        "stripe_session_id": session.session_id,
-        "status": "pending",
-        "credited": False,
-        "created_at": datetime.now(timezone.utc).isoformat(),
-    })
-
-    # Unified payments audit — best-effort, never fails the checkout.
-    try:
-        from services.payments_audit import record_payment_event  # noqa: PLC0415
-        await record_payment_event(
-            _db,
-            kind="coin_topup",
-            source="stripe_checkout",
-            status="created",
-            user_id=user["user_id"],
-            amount_usd=pack["usd"],
-            coins=pack["coins"],
-            stripe_session_id=session.session_id,
-            metadata={"pack_id": payload.pack_id, "payment_id": payment_id},
-        )
-    except Exception:
-        pass
-
-    return {
-        "success": True,
-        "checkout_url": session.url,
-        "session_id": session.session_id,
-        "pack": {**pack, "id": payload.pack_id},
-    }
 
 
 @router.get("/topup/status/{session_id}")

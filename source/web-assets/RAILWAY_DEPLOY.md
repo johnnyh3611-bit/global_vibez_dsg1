@@ -81,12 +81,15 @@ DISABLE_BG_SCHEDULERS=1
 ENVIRONMENT=production
 CORS_ORIGINS=*
 EMERGENT_LLM_KEY=<your Emergent LLM key>
-STRIPE_API_KEY=<your Stripe secret key — sk_test_ until sandbox verified>
-STRIPE_WEBHOOK_SECRET=<whsec_ from Stripe Dashboard webhook endpoint>
+# Card rail = Helio only (do not set Stripe for coin top-up)
+HELIO_API_KEY=<Helio public API key>
+HELIO_SECRET_KEY=<Helio secret>
+HELIO_PAYLINK_ID=<dynamic Pay Link id>
+HELIO_NETWORK=test
+HELIO_WEBHOOK_TOKEN=<required in production — Helio webhooks fail closed without it>
 PAYMENT_BETA_MODE=true
 PAYMENT_BETA_ALLOWLIST=<comma-separated founding member emails>
 PAYMENT_SUPPORT_EMAIL=payments-beta@globalvibezdsg.com
-HELIO_WEBHOOK_TOKEN=<required in production — Helio webhooks fail closed without it>
 FRONTEND_URL=<set after frontend deploys>
 ```
 
