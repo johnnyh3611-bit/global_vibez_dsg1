@@ -5,7 +5,8 @@
  * • Branding text mesh ("Globalize Digital") — renderOrder > planet, depthTest:false
  * • 4 orbiting Sphere meshes — Gaming, Dating, Streams, Earn — each with
  *   Billboard name labels (depthTest:false) so hubs stay identifiable
- * • DSG fireball — "DSG" text mesh INSIDE the spinning satellite core (not an outer tag)
+ * • DSG fireball — dark "DSG" painted on the sphere; fire rings orbit the body;
+ *   satellite itself ellipses around the planet (no outer name tag)
  * • Deep space #000000 · static camera · no blob continents
  */
 import { Suspense, useMemo, useRef } from "react";
@@ -258,82 +259,175 @@ function OrbitHubSphere({
   );
 }
 
+/**
+ * Paint dark "DSG" into the fireball sphere texture itself.
+ * Not an outer Billboard label — the mark lives on the satellite face,
+ * with fire filling the rest of the sun.
+ */
+function useDsgSatelliteTexture() {
+  return useMemo(() => {
+    const c = document.createElement("canvas");
+    c.width = 512;
+    c.height = 512;
+    const ctx = c.getContext("2d")!;
+
+    // Fire fill across the sphere
+    const fire = ctx.createRadialGradient(256, 230, 16, 256, 256, 255);
+    fire.addColorStop(0, "#fff7ed");
+    fire.addColorStop(0.18, "#fde68a");
+    fire.addColorStop(0.4, "#f97316");
+    fire.addColorStop(0.7, "#ea580c");
+    fire.addColorStop(0.9, "#dc2626");
+    fire.addColorStop(1, "#450a0a");
+    ctx.fillStyle = fire;
+    ctx.fillRect(0, 0, 512, 512);
+
+    // Flame tongues around the rim
+    for (let i = 0; i < 14; i++) {
+      const a = (i / 14) * Math.PI * 2;
+      const x = 256 + Math.cos(a) * 190;
+      const y = 256 + Math.sin(a) * 190;
+      const tipX = 256 + Math.cos(a) * 248;
+      const tipY = 256 + Math.sin(a) * 248;
+      const g = ctx.createLinearGradient(x, y, tipX, tipY);
+      g.addColorStop(0, "rgba(255,247,237,0.95)");
+      g.addColorStop(0.45, "rgba(249,115,22,0.85)");
+      g.addColorStop(1, "rgba(127,29,29,0)");
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.moveTo(x + Math.cos(a + 0.35) * 28, y + Math.sin(a + 0.35) * 28);
+      ctx.quadraticCurveTo(tipX, tipY, x + Math.cos(a - 0.35) * 28, y + Math.sin(a - 0.35) * 28);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // Dark core — DSG reads from INSIDE the satellite
+    ctx.fillStyle = "rgba(8, 8, 12, 0.92)";
+    ctx.beginPath();
+    ctx.ellipse(256, 262, 118, 96, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#fbbf24";
+    ctx.lineWidth = 5;
+    ctx.stroke();
+
+    // Small flame mark above the letters
+    ctx.fillStyle = "#fde68a";
+    ctx.beginPath();
+    ctx.moveTo(256, 198);
+    ctx.bezierCurveTo(236, 232, 228, 252, 246, 272);
+    ctx.bezierCurveTo(238, 255, 256, 288, 268, 260);
+    ctx.bezierCurveTo(286, 278, 280, 228, 256, 198);
+    ctx.fill();
+
+    // Dark-contrast DSG lettering inside the core
+    ctx.font = "900 78px Arial Black, Impact, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.lineWidth = 8;
+    ctx.strokeStyle = "#1c1917";
+    ctx.strokeText("DSG", 256, 292);
+    ctx.fillStyle = "#fafaf9";
+    ctx.fillText("DSG", 256, 292);
+
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = 8;
+    tex.needsUpdate = true;
+    return tex;
+  }, []);
+}
+
 function DsgFireball() {
   const group = useRef<THREE.Group>(null);
-  const spin = useRef<THREE.Group>(null);
   const core = useRef<THREE.Mesh>(null);
-  const map = useTexture("/assets/dsg-emissive.png");
+  const fireRing = useRef<THREE.Mesh>(null);
+  const fireRing2 = useRef<THREE.Mesh>(null);
+  const dsgMap = useDsgSatelliteTexture();
+  const glow = useTexture("/assets/sun-glow.png");
 
   useMemo(() => {
-    map.colorSpace = THREE.SRGBColorSpace;
-  }, [map]);
+    glow.colorSpace = THREE.SRGBColorSpace;
+  }, [glow]);
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime() * DSG_SPEED;
-    // Elliptical path around the entire central grouping
+    // Keep elliptical orbit around the whole planetary grouping
     const x = Math.cos(t) * DSG_A;
     const z = Math.sin(t) * DSG_B;
     const y = Math.sin(t * 1.4) * 0.45;
     if (group.current) {
       group.current.position.set(x, y, z);
     }
-    if (spin.current) {
-      spin.current.rotation.y = t * 2.2;
-    }
     if (core.current) {
+      core.current.rotation.y = t * 1.6;
       const mat = core.current.material as THREE.MeshStandardMaterial;
-      mat.emissiveIntensity = 15 + Math.sin(t * 6) * 2;
+      mat.emissiveIntensity = 6.5 + Math.sin(t * 6) * 1.2;
     }
+    // Fire rings spin around the satellite body
+    if (fireRing.current) fireRing.current.rotation.z = t * 3.4;
+    if (fireRing2.current) fireRing2.current.rotation.z = -t * 2.6;
   });
 
   return (
     <group ref={group}>
       <pointLight color="#ff6a00" intensity={8} distance={12} decay={2} />
-      {/* DSG lettering lives INSIDE the satellite — spins with the core, not a floating outer tag */}
-      <group ref={spin}>
-        <mesh ref={core} renderOrder={2}>
-          <sphereGeometry args={[0.42, 48, 48]} />
-          <meshStandardMaterial
-            map={map}
-            emissiveMap={map}
-            emissive="#ff4500"
-            emissiveIntensity={15}
-            roughness={0.25}
-            metalness={0.05}
-            toneMapped={false}
-          />
-        </mesh>
-        <mesh scale={1.45} renderOrder={2}>
-          <sphereGeometry args={[0.42, 32, 32]} />
-          <meshStandardMaterial
-            color="#ff6a00"
-            emissive="#ff4500"
-            emissiveIntensity={4}
-            transparent
-            opacity={0.28}
-            toneMapped={false}
-            depthWrite={false}
-          />
-        </mesh>
-        <Text
-          position={[0, 0, 0]}
-          fontSize={0.26}
-          letterSpacing={0.06}
-          textAlign="center"
-          anchorX="center"
-          anchorY="middle"
-          color="#fff7ed"
-          outlineWidth={0.018}
-          outlineColor="#7c2d12"
-          outlineOpacity={0.95}
-          fillOpacity={1}
-          renderOrder={3}
-          frustumCulled={false}
-          onSync={applyAlwaysOnTopMaterial}
-        >
-          DSG
-        </Text>
-      </group>
+
+      {/* Soft corona */}
+      <mesh scale={1.7} renderOrder={2}>
+        <sphereGeometry args={[0.42, 32, 32]} />
+        <meshBasicMaterial
+          map={glow}
+          transparent
+          opacity={0.5}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          toneMapped={false}
+        />
+      </mesh>
+
+      {/* Fire going around the satellite */}
+      <mesh
+        ref={fireRing}
+        rotation={[Math.PI / 2.15, 0.25, 0]}
+        renderOrder={3}
+      >
+        <torusGeometry args={[0.55, 0.045, 12, 64]} />
+        <meshStandardMaterial
+          color="#ff4500"
+          emissive="#ff4500"
+          emissiveIntensity={6}
+          toneMapped={false}
+        />
+      </mesh>
+      <mesh
+        ref={fireRing2}
+        rotation={[Math.PI / 2.6, -0.4, 0.5]}
+        renderOrder={3}
+      >
+        <torusGeometry args={[0.48, 0.028, 10, 48]} />
+        <meshStandardMaterial
+          color="#fbbf24"
+          emissive="#f59e0b"
+          emissiveIntensity={5}
+          transparent
+          opacity={0.85}
+          toneMapped={false}
+        />
+      </mesh>
+
+      {/* Fiery core — dark DSG is painted INTO the sphere texture */}
+      <mesh ref={core} renderOrder={4}>
+        <sphereGeometry args={[0.42, 64, 64]} />
+        <meshStandardMaterial
+          map={dsgMap}
+          emissiveMap={dsgMap}
+          emissive="#ff4500"
+          emissiveIntensity={6.5}
+          roughness={0.3}
+          metalness={0.08}
+          toneMapped={false}
+        />
+      </mesh>
     </group>
   );
 }
