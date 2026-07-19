@@ -1,9 +1,10 @@
 /**
- * LandingPlanet — logo-mapped central sun + orbiting hub planets.
+ * LandingPlanet — logo-skinned central sun + orbiting hub planets.
  *
- * 1. Central brand billboard (renderOrder 10, depthTest false) always on top.
- * 2. Orbiting hubs stay outside HUB_CLEARANCE so glow never covers the mark.
- * 3. DSG Token moon orbits Gaming.
+ * 1. Official logo is the MeshStandardMaterial skin of the central sun
+ *    (map + emissiveMap, high emissiveIntensity), renderOrder above hubs.
+ * 2. Primary hubs orbit the sun Clockwise (elapsed-time driven).
+ * 3. DSG token satellite orbits the sun Counter-Clockwise on a tighter radius.
  * 4. Mobile (<768): static vertical hub list (≥14px), no 3D orbits.
  */
 import {
@@ -12,7 +13,6 @@ import {
   useMemo,
   useRef,
   useState,
-  type MutableRefObject,
 } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Html, useTexture } from "@react-three/drei";
@@ -22,24 +22,34 @@ import * as THREE from "three";
 
 /** Official brand mark — `public/assets/logo.png` (globe + wordmark below). */
 const LOGO_SRC = "/assets/logo.png";
-/** Intrinsic pixel aspect of logo.png — keep billboard geometry matched. */
+/** Intrinsic pixel aspect — front-face skin plane stays matched to the asset. */
 const LOGO_ASPECT = 1019 / 960;
 /** Large enough that hub orbits stay clear of the brand mark. */
 const SUN_RADIUS = 1.75;
 /**
- * Brand billboard half-diagonal + hub glow — hard floor for satellite XY.
- * Inner orbitR must stay ≥ this so glow shells never cross the mark.
+ * Brand half-extent + hub glow — hard floor for hub satellite XY.
+ * Inner hub orbitR must stay ≥ this so glow shells never cross the mark.
  */
 const HUB_CLEARANCE = SUN_RADIUS + 1.85;
 /** Hub body + glow shell radius used for clearance math. */
 const HUB_BODY_R = 0.38;
 const HUB_GLOW_SCALE = 1.15;
-/** Pull back so the full brand billboard + outer hub belt stay in frustum. */
+/**
+ * DSG satellite — tighter than primary hubs, outside the sun shell.
+ * Must stay < min hub orbit (4.35) for a distinct inner path.
+ */
+const DSG_ORBIT_R = 2.95;
+const DSG_BODY_R = 0.2;
+const DSG_SPEED = 0.55;
+/** Pull back so the logo sun + outer hub belt stay in frustum. */
 const CAMERA_Z = 13.6;
 const CAMERA_FOV = 42;
-const LOGO_EMISSIVE = 1.15;
-/** Brand plane always wins the draw (above sun, hubs, moon, bloom shells). */
-const BRAND_RENDER_ORDER = 10;
+/** Bright glow on the logo skin. */
+const LOGO_EMISSIVE = 2.15;
+/** Central sun / logo skin draws above orbiting satellites. */
+const SUN_RENDER_ORDER = 10;
+const HUB_RENDER_ORDER = 2;
+const DSG_RENDER_ORDER = 3;
 
 type HubId =
   | "gaming"
@@ -146,17 +156,12 @@ function useIsMobile(bp = 768) {
 }
 
 /**
- * Central Sun — emissive shell + full brand mark on a camera-facing plane
- * *in front of* the sphere surface (toward the camera).
- *
- * logo.png lays out globe (upper) + "GLOBAL VIBEZ" / "DSG" (lower). Mapping
- * that whole sheet onto sphere UVs wraps the wordmark around the equator and
- * clips it to fragments like "GLOB". Never put the wordmark on sphere UVs —
- * the billboard carries the complete mark with ClampToEdgeWrapping.
+ * Central Sun — logo.png is the MeshStandardMaterial skin (map + emissiveMap).
+ * The whole sun group is camera-locked so the brand face stays on the planet
+ * surface (flush front skin), not a hovering card away from the sphere.
  */
 function CentralLogoSun() {
-  const sun = useRef<THREE.Mesh>(null);
-  const billboard = useRef<THREE.Mesh>(null);
+  const sunGroup = useRef<THREE.Group>(null);
   const brandMap = useTexture(LOGO_SRC);
 
   useMemo(() => {
@@ -170,72 +175,74 @@ function CentralLogoSun() {
     brandMap.needsUpdate = true;
   }, [brandMap]);
 
-  useFrame(({ camera }, dt) => {
-    if (sun.current) sun.current.rotation.y += dt * 0.08;
-    // Keep the full brand mark locked toward the viewer.
-    if (billboard.current) billboard.current.quaternion.copy(camera.quaternion);
+  useFrame(({ camera }) => {
+    // Lock logo-skinned face toward the viewer.
+    if (sunGroup.current) sunGroup.current.quaternion.copy(camera.quaternion);
   });
 
-  // Aspect-correct plane: tall enough for globe + GLOBAL VIBEZ + DSG.
-  const brandH = SUN_RADIUS * 2.2;
-  const brandW = brandH * LOGO_ASPECT;
-  // Must sit outside the sphere shell (toward +Z / camera), not inside it.
-  const brandZ = SUN_RADIUS + 0.16;
+  // Flush front-face skin — sized inside the sphere silhouette.
+  const faceH = SUN_RADIUS * 1.92;
+  const faceW = faceH * LOGO_ASPECT;
 
   return (
     <group>
       <pointLight color="#ffffff" intensity={3.6} distance={18} decay={2} />
       <pointLight color="#67e8f9" intensity={1.8} distance={14} decay={2} />
 
-      {/* Glow shell only — no wordmark UVs (avoids GLOB truncation). */}
-      <mesh ref={sun} renderOrder={1} frustumCulled={false}>
-        <sphereGeometry args={[SUN_RADIUS, 64, 64]} />
-        <meshStandardMaterial
-          color="#0a1628"
-          emissive="#22d3ee"
-          emissiveIntensity={0.55}
-          roughness={0.4}
-          metalness={0.35}
-          toneMapped={false}
-        />
-      </mesh>
-      <mesh scale={1.06} renderOrder={0} frustumCulled={false}>
+      <mesh scale={1.08} renderOrder={0} frustumCulled={false}>
         <sphereGeometry args={[SUN_RADIUS, 32, 32]} />
         <meshBasicMaterial
           color="#67e8f9"
           transparent
-          opacity={0.12}
+          opacity={0.14}
           depthWrite={false}
-          depthTest
           toneMapped={false}
         />
       </mesh>
 
-      {/*
-        Full brand mark — always the dominant draw.
-        renderOrder + depthTest=false so satellites/glow never occlude it.
-      */}
-      <mesh
-        ref={billboard}
-        position={[0, 0, brandZ]}
-        renderOrder={BRAND_RENDER_ORDER}
-        frustumCulled={false}
-      >
-        <planeGeometry args={[brandW, brandH]} />
-        <meshStandardMaterial
-          map={brandMap}
-          emissiveMap={brandMap}
-          emissive="#ffffff"
-          emissiveIntensity={LOGO_EMISSIVE + 0.4}
-          transparent
-          opacity={1}
-          depthTest={false}
-          depthWrite={false}
-          toneMapped={false}
-          side={THREE.FrontSide}
-          alphaTest={0.05}
-        />
-      </mesh>
+      <group ref={sunGroup}>
+        {/* Curved planet body — same logo skin wraps the sphere */}
+        <mesh renderOrder={SUN_RENDER_ORDER} frustumCulled={false}>
+          <sphereGeometry args={[SUN_RADIUS, 64, 64]} />
+          <meshStandardMaterial
+            map={brandMap}
+            emissiveMap={brandMap}
+            emissive="#ffffff"
+            emissiveIntensity={LOGO_EMISSIVE * 0.85}
+            roughness={0.32}
+            metalness={0.16}
+            toneMapped={false}
+            side={THREE.FrontSide}
+          />
+        </mesh>
+
+        {/*
+          Front-face skin flush with the sphere surface (local +Z pole).
+          Keeps GLOBAL VIBEZ / DSG fully legible without hovering off-planet.
+        */}
+        <mesh
+          position={[0, 0, SUN_RADIUS * 0.02]}
+          renderOrder={SUN_RENDER_ORDER + 1}
+          frustumCulled={false}
+        >
+          <planeGeometry args={[faceW, faceH]} />
+          <meshStandardMaterial
+            map={brandMap}
+            emissiveMap={brandMap}
+            emissive="#ffffff"
+            emissiveIntensity={LOGO_EMISSIVE}
+            roughness={0.28}
+            metalness={0.12}
+            transparent
+            opacity={1}
+            depthTest={false}
+            depthWrite={false}
+            toneMapped={false}
+            side={THREE.FrontSide}
+            alphaTest={0.04}
+          />
+        </mesh>
+      </group>
     </group>
   );
 }
@@ -254,7 +261,6 @@ function HubLabel({
       center
       position={[0, -0.78, 0]}
       distanceFactor={8}
-      // Keep DOM labels under the WebGL brand layer stacking context.
       zIndexRange={[20, 0]}
       style={{ pointerEvents: "auto" }}
     >
@@ -286,28 +292,25 @@ function HubLabel({
   );
 }
 
+/** Primary hubs — Clockwise around the sun via negative elapsed angle. */
 function OrbitingHub({
   hub,
   onOpen,
-  gamingRef,
 }: {
   hub: HubDef;
   onOpen: (path: string) => void;
-  /** Expose Gaming world position so the DSG moon can orbit it */
-  gamingRef?: MutableRefObject<THREE.Vector3>;
 }) {
   const group = useRef<THREE.Group>(null);
 
   useFrame(({ clock }) => {
     if (!group.current) return;
-    const t = clock.getElapsedTime() * hub.speed + hub.phase;
+    // Clockwise: decreasing angle over time (standard math CCW is +t).
+    const t = hub.phase - clock.getElapsedTime() * hub.speed;
     const minOrbit = HUB_CLEARANCE + HUB_BODY_R * HUB_GLOW_SCALE;
     const orbitR = Math.max(hub.orbitR, minOrbit);
     let x = Math.cos(t) * orbitR;
     const y = Math.sin(t * 0.35) * 0.18;
-    // Keep satellites in a shallow ring — never park in front of the brand.
     let z = Math.sin(t) * orbitR * 0.08;
-    // Hard clearance: body + glow never cross the logo face in XY.
     const glowR = HUB_BODY_R * HUB_GLOW_SCALE;
     const xy = Math.hypot(x, y);
     const need = HUB_CLEARANCE + glowR;
@@ -315,19 +318,15 @@ function OrbitingHub({
       const scale = need / xy;
       x *= scale;
     }
-    // Cap toward-camera Z so bloom shells stay behind the brand plane.
     if (z > 0.12) z = 0.12;
     if (z < -0.55) z = -0.55;
     group.current.position.set(x, y, z);
-    if (hub.id === "gaming" && gamingRef) {
-      gamingRef.current.set(x, y, z);
-    }
   });
 
   return (
     <group ref={group}>
       <mesh
-        renderOrder={2}
+        renderOrder={HUB_RENDER_ORDER}
         onClick={(e) => {
           e.stopPropagation();
           onOpen(hub.path);
@@ -352,7 +351,7 @@ function OrbitingHub({
           polygonOffsetUnits={1}
         />
       </mesh>
-      <mesh scale={HUB_GLOW_SCALE} renderOrder={2}>
+      <mesh scale={HUB_GLOW_SCALE} renderOrder={HUB_RENDER_ORDER}>
         <sphereGeometry args={[HUB_BODY_R, 24, 24]} />
         <meshStandardMaterial
           color={hub.emissive}
@@ -364,7 +363,6 @@ function OrbitingHub({
           toneMapped={false}
         />
       </mesh>
-      {/* Label sits below the sphere — not intersecting */}
       <HubLabel
         label={hub.label}
         onOpen={() => onOpen(hub.path)}
@@ -374,45 +372,41 @@ function OrbitingHub({
   );
 }
 
-/** Golden metallic DSG token — orbits the Gaming hub as a moon. */
-function DsgTokenMoon({
-  gamingPos,
-}: {
-  gamingPos: MutableRefObject<THREE.Vector3>;
-}) {
+/**
+ * DSG token satellite — Counter-Clockwise around the central sun on a
+ * tighter radius than Gaming / Dating / Streams hubs.
+ */
+function DsgTokenMoon() {
   const group = useRef<THREE.Group>(null);
   const spin = useRef<THREE.Mesh>(null);
 
   useFrame(({ clock }) => {
-    const t = clock.getElapsedTime();
-    const host = gamingPos.current;
-    const a = t * 1.35;
-    const moonR = 0.85;
-    if (group.current) {
-      let x = host.x + Math.cos(a) * moonR;
-      let y = host.y + Math.sin(a * 1.2) * 0.2;
-      let z = host.z + Math.sin(a) * moonR * 0.35;
-      // Keep the DSG moon outside the brand clearance disk.
-      const xy = Math.hypot(x, y);
-      if (xy < HUB_CLEARANCE && xy > 0.001) {
-        const s = HUB_CLEARANCE / xy;
-        x *= s;
-        y *= s;
-      }
-      if (z > 0.1) z = 0.1;
-      group.current.position.set(x, y, z);
-    }
-    if (spin.current) spin.current.rotation.y = t * 2;
+    const elapsed = clock.getElapsedTime();
+    // Opposite of hubs: +elapsed → Counter-Clockwise.
+    const a = elapsed * DSG_SPEED;
+    // Tighter than hub belt (4.35+), outside the sun shell.
+    const r = Math.min(
+      DSG_ORBIT_R,
+      Math.min(...HUBS.map((h) => h.orbitR)) - 0.9,
+    );
+    const orbitR = Math.max(SUN_RADIUS + 0.65, r);
+    let x = Math.cos(a) * orbitR;
+    const y = Math.sin(a * 0.4) * 0.16;
+    let z = Math.sin(a) * orbitR * 0.1;
+    if (z > 0.1) z = 0.1;
+    if (z < -0.4) z = -0.4;
+    if (group.current) group.current.position.set(x, y, z);
+    if (spin.current) spin.current.rotation.y = elapsed * 2.2;
   });
 
   return (
     <group ref={group}>
-      <mesh ref={spin} renderOrder={3}>
-        <sphereGeometry args={[0.18, 32, 32]} />
+      <mesh ref={spin} renderOrder={DSG_RENDER_ORDER}>
+        <sphereGeometry args={[DSG_BODY_R, 32, 32]} />
         <meshStandardMaterial
           color="#f59e0b"
           emissive="#fbbf24"
-          emissiveIntensity={1.5}
+          emissiveIntensity={1.65}
           metalness={0.9}
           roughness={0.2}
           toneMapped={false}
@@ -421,6 +415,40 @@ function DsgTokenMoon({
           polygonOffsetUnits={1}
         />
       </mesh>
+      <mesh scale={1.2} renderOrder={DSG_RENDER_ORDER}>
+        <sphereGeometry args={[DSG_BODY_R, 16, 16]} />
+        <meshStandardMaterial
+          color="#fbbf24"
+          emissive="#fbbf24"
+          emissiveIntensity={0.9}
+          transparent
+          opacity={0.22}
+          depthWrite={false}
+          toneMapped={false}
+        />
+      </mesh>
+      <Html
+        center
+        position={[0, -0.42, 0]}
+        distanceFactor={8}
+        zIndexRange={[18, 0]}
+        style={{ pointerEvents: "none" }}
+      >
+        <span
+          data-testid="landing-dsg-moon-label"
+          style={{
+            color: "#fbbf24",
+            fontSize: 11,
+            fontWeight: 800,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            whiteSpace: "nowrap",
+            textShadow: "0 0 8px rgba(251,191,36,0.65)",
+          }}
+        >
+          DSG
+        </span>
+      </Html>
     </group>
   );
 }
@@ -428,6 +456,7 @@ function DsgTokenMoon({
 function OrbitGuides() {
   const rings = useMemo(() => {
     const byR = new Map<number, string>();
+    byR.set(DSG_ORBIT_R, "#fbbf24");
     for (const h of HUBS) {
       if (!byR.has(h.orbitR)) byR.set(h.orbitR, h.emissive);
     }
@@ -442,7 +471,7 @@ function OrbitGuides() {
           <meshBasicMaterial
             color={color}
             transparent
-            opacity={0.18}
+            opacity={r === DSG_ORBIT_R ? 0.28 : 0.18}
             depthWrite={false}
             toneMapped={false}
           />
@@ -453,8 +482,6 @@ function OrbitGuides() {
 }
 
 function Scene({ onOpen }: { onOpen: (path: string) => void }) {
-  const gamingPos = useRef(new THREE.Vector3(2.9, 0, 0));
-
   return (
     <>
       <color attach="background" args={["#000000"]} />
@@ -464,20 +491,15 @@ function Scene({ onOpen }: { onOpen: (path: string) => void }) {
         <CentralLogoSun />
         <OrbitGuides />
         {HUBS.map((hub) => (
-          <OrbitingHub
-            key={hub.id}
-            hub={hub}
-            onOpen={onOpen}
-            gamingRef={hub.id === "gaming" ? gamingPos : undefined}
-          />
+          <OrbitingHub key={hub.id} hub={hub} onOpen={onOpen} />
         ))}
-        <DsgTokenMoon gamingPos={gamingPos} />
+        <DsgTokenMoon />
       </Suspense>
 
       <EffectComposer multisampling={0}>
         <Bloom
-          intensity={1.05}
-          luminanceThreshold={0.25}
+          intensity={1.1}
+          luminanceThreshold={0.22}
           luminanceSmoothing={0.5}
           mipmapBlur
         />
