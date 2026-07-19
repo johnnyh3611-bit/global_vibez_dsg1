@@ -32,6 +32,35 @@ from typing import Any, Dict, Optional
 log = logging.getLogger(__name__)
 
 
+_SENSITIVE_META_KEYS = {
+    "card_number",
+    "pan",
+    "cvv",
+    "cvc",
+    "number",
+    "exp_month",
+    "exp_year",
+    "raw_card",
+    "payment_method_details",
+}
+
+
+def _sanitize_metadata(metadata: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """Data minimization — never persist PAN/CVV-shaped keys in the ledger."""
+    if not metadata:
+        return {}
+    clean: Dict[str, Any] = {}
+    for k, v in metadata.items():
+        lk = str(k).lower()
+        if lk in _SENSITIVE_META_KEYS or "card_number" in lk or lk.endswith("_pan"):
+            continue
+        if isinstance(v, dict):
+            clean[k] = _sanitize_metadata(v)
+        else:
+            clean[k] = v
+    return clean
+
+
 async def record_payment_event(
     db,
     *,
@@ -44,8 +73,12 @@ async def record_payment_event(
     stripe_session_id: Optional[str] = None,
     metadata: Optional[Dict[str, Any]] = None,
 ) -> Optional[str]:
-    """Append a row to ``payments_audit``. Returns the event_id on
-    success, None on any error (best-effort)."""
+    """Append-only insert into ``payments_audit``.
+
+    Returns the event_id on success, None on any error (best-effort).
+    Documents are insert-only by convention — admin routes must not
+    update/delete rows (customer-support lineage for missing payments).
+    """
     try:
         event = {
             "event_id": f"pae_{uuid.uuid4().hex[:14]}",
@@ -56,8 +89,9 @@ async def record_payment_event(
             "amount_usd": float(amount_usd) if amount_usd is not None else None,
             "coins": int(coins) if coins is not None else None,
             "stripe_session_id": stripe_session_id,
-            "metadata": metadata or {},
+            "metadata": _sanitize_metadata(metadata),
             "at": datetime.now(timezone.utc).isoformat(),
+            "immutable": True,
         }
         await db.payments_audit.insert_one(event)
         return event["event_id"]

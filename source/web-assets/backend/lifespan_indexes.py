@@ -192,6 +192,8 @@ _INDEX_SPECS = [
     {"coll": "security_events", "key": [("type", 1), ("at", -1)], "background": True},
 
     # Feb 2026 — unified payments_audit ledger (Stripe vs internal coin top-ups).
+    # Append-only: unique event_id prevents silent overwrites of the lineage.
+    {"coll": "payments_audit", "key": "event_id", "unique": True, "background": True},
     {"coll": "payments_audit", "key": [("at", -1)], "background": True},
     {"coll": "payments_audit", "key": [("kind", 1), ("status", 1), ("at", -1)], "background": True},
     {"coll": "payments_audit", "key": "stripe_session_id", "sparse": True, "background": True},

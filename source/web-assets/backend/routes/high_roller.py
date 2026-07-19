@@ -163,6 +163,18 @@ async def create_checkout(req: CheckoutRequest) -> Dict[str, Any]:
     if not is_valid_tier(req.tier):
         raise HTTPException(400, detail=f"Unknown tier '{req.tier}'")
 
+    # Founding Member beta gate for card checkout (Solana/crypto not used here).
+    try:
+        from services.payment_beta_gate import require_payment_beta_access
+        user_doc = await _db.users.find_one(
+            {"user_id": req.user_id}, {"_id": 0, "password_hash": 0}
+        )
+        require_payment_beta_access(user_doc)
+    except HTTPException:
+        raise
+    except Exception:
+        pass
+
     # Live pricing — admins can change these via /api/admin/pricing
     # without a redeploy. Falls back to the hardcoded defaults if the
     # catalog row is missing or Mongo is unreachable.

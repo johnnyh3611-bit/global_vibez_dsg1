@@ -110,11 +110,29 @@ async def create_charge(
     return charge_id, page_url
 
 
+def _require_webhook_auth() -> bool:
+    """Fail closed in production (or when PAYMENTS_REQUIRE_WEBHOOK_AUTH=1)."""
+    force = (os.environ.get("PAYMENTS_REQUIRE_WEBHOOK_AUTH") or "").strip().lower()
+    if force in ("1", "true", "yes", "on"):
+        return True
+    if force in ("0", "false", "no", "off"):
+        return False
+    env = (os.environ.get("ENVIRONMENT") or os.environ.get("ENV") or "").strip().lower()
+    return env in ("production", "prod", "live")
+
+
 def verify_webhook_signature(raw_body: bytes, signature: Optional[str]) -> bool:
-    """HMAC-SHA256 of body with HELIO_WEBHOOK_TOKEN. Pass-through if token unset."""
+    """HMAC-SHA256 of body with HELIO_WEBHOOK_TOKEN.
+
+    Soft-pass only allowed in non-production when the token is unset.
+    Production always requires a configured token + valid signature.
+    """
     token = os.environ.get("HELIO_WEBHOOK_TOKEN") or ""
     if not token:
-        return True  # soft verify when token not yet provisioned
+        if _require_webhook_auth():
+            log.error("HELIO_WEBHOOK_TOKEN unset — refusing webhook in production")
+            return False
+        return True  # local/dev soft verify until token is provisioned
     if not signature:
         return False
     digest = hmac.new(token.encode("utf-8"), raw_body, hashlib.sha256).hexdigest()

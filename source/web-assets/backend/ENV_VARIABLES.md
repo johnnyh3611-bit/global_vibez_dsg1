@@ -44,12 +44,24 @@ HELIO_PAYLINK_ID=your_dynamic_paylink_id
 HELIO_NETWORK=test
 HELIO_WEBHOOK_TOKEN=shared_token_from_helio_webhook_create
 
-# Stripe (legacy — de-emphasized; chairs / High Roller may still use)
+# Stripe (hosted Checkout only — never put PAN/CVV on our servers)
+# Use sk_test_ / pk_test_ until sandbox credits reconcile, then sk_live_
 STRIPE_API_KEY=sk_test_your_stripe_secret_key
 STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key
 STRIPE_PUBLISHABLE_KEY=pk_test_your_stripe_publishable_key
 STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret
+
+# Founding Member payment beta (card rails). Solana stays open for everyone.
+# Default ON when ENVIRONMENT=production until you set PAYMENT_BETA_MODE=false.
+PAYMENT_BETA_MODE=true
+PAYMENT_BETA_ALLOWLIST=alice@example.com,bob@example.com
+PAYMENT_SUPPORT_EMAIL=payments-beta@globalvibezdsg.com
+PAYMENT_SUPPORT_DISCORD=https://discord.gg/globalvibez
+# Fail closed on Helio webhooks even outside production:
+# PAYMENTS_REQUIRE_WEBHOOK_AUTH=1
 ```
+
+See `source/web-assets/PAYMENT_SECURITY.md` for PCI / TLS / webhook / audit rules.
 
 ### External Services (Optional)
 ```env

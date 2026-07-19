@@ -74,15 +74,25 @@ async def stripe_payouts_webhook(request: Request) -> Dict[str, Any]:
     event_type = event.get("type", "")
     data_obj: Dict[str, Any] = event.get("data", {}).get("object", {})  # type: ignore
 
-    # Persist the raw event for audit + replay debugging. _id excluded
-    # from any future reads via projection in the consuming route.
+    # Persist a sanitized event for audit + replay. Never store PAN/CVC.
+    from services.payment_hub import sanitize_stripe_object, extract_card_checks
+
+    try:
+        from stripe import util as stripe_util
+
+        event_dict = stripe_util.convert_to_dict(event)
+    except Exception:
+        event_dict = event if isinstance(event, dict) else dict(event)
+
+    safe_event = sanitize_stripe_object(event_dict)
     await _db.stripe_webhook_events.insert_one({
         "stripe_event_id": event.get("id"),
         "type": event_type,
         "livemode": event.get("livemode", False),
         "received_at": datetime.now(timezone.utc).isoformat(),
         "object_id": data_obj.get("id"),
-        "raw": event,
+        "card_checks": extract_card_checks(event_dict),
+        "raw": safe_event,
     })
 
     # Per-event side-effects. Each handler is intentionally small + idempotent

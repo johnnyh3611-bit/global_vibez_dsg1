@@ -97,6 +97,7 @@ async def list_packs() -> Dict[str, Any]:
 async def list_topup_providers() -> Dict[str, Any]:
     """Which checkout rails are ready (no secrets)."""
     from services.helio_client import helio_configured
+    from services.payment_beta_gate import payment_beta_public_status
 
     stripe_ready = bool(
         os.environ.get("STRIPE_API_KEY") or os.environ.get("STRIPE_SECRET_KEY")
@@ -109,6 +110,7 @@ async def list_topup_providers() -> Dict[str, Any]:
     network = (os.environ.get("HELIO_NETWORK") or "main").strip().lower()
     if network not in ("test", "main"):
         network = "main"
+    beta = payment_beta_public_status()
     return {
         "providers": [
             {
@@ -128,6 +130,7 @@ async def list_topup_providers() -> Dict[str, Any]:
                 "paylink_id": paylink_id or None,
                 "network": network,
                 "embed": bool(paylink_id),
+                "founding_member_required": beta["beta_mode"],
             },
             {
                 "id": "stripe",
@@ -135,8 +138,19 @@ async def list_topup_providers() -> Dict[str, Any]:
                 "ready": stripe_ready,
                 "primary": False,
                 "kind": "card_legacy",
+                "founding_member_required": beta["beta_mode"],
             },
-        ]
+        ],
+        "environment": {
+            "helio_network": network,
+            "stripe_mode": (
+                "live"
+                if (os.environ.get("STRIPE_API_KEY") or "").startswith("sk_live")
+                else "test"
+            ),
+            "tls_required": True,
+        },
+        "beta_payment": beta,
     }
 
 
@@ -151,6 +165,10 @@ async def create_helio_topup(
     user = await _resolve_user(authorization)
     if not user:
         raise HTTPException(401, "Sign in to top up")
+
+    from services.payment_beta_gate import require_payment_beta_access
+
+    require_payment_beta_access(user)
 
     pack = COIN_PACKS.get(payload.pack_id)
     if not pack:
@@ -225,18 +243,36 @@ async def create_helio_topup(
 async def helio_webhook(request: Request) -> Dict[str, Any]:
     """Helio / MoonPay Commerce payment webhook → credit coin pack."""
     from services.helio_client import extract_payment_meta, verify_webhook_signature
+    from services.payments_audit import record_payment_event
 
     raw = await request.body()
     sig = request.headers.get("X-Signature") or request.headers.get("x-signature")
     auth = request.headers.get("Authorization") or ""
     token = os.environ.get("HELIO_WEBHOOK_TOKEN") or ""
 
+    # Never trust an unsigned payment event when a token is configured —
+    # and never soft-pass in production (verify_webhook_signature fails closed).
     if token:
         bearer_ok = auth.lower().startswith("bearer ") and auth.split(" ", 1)[1].strip() == token
         if not bearer_ok and not verify_webhook_signature(raw, sig):
+            await record_payment_event(
+                _db,
+                kind="coin_topup",
+                source="helio_webhook",
+                status="rejected_signature",
+                metadata={"reason": "invalid_helio_webhook_auth"},
+            )
             raise HTTPException(401, "invalid helio webhook auth")
-    elif sig and not verify_webhook_signature(raw, sig):
-        raise HTTPException(401, "invalid helio webhook signature")
+    else:
+        if not verify_webhook_signature(raw, sig):
+            await record_payment_event(
+                _db,
+                kind="coin_topup",
+                source="helio_webhook",
+                status="rejected_signature",
+                metadata={"reason": "helio_webhook_token_required"},
+            )
+            raise HTTPException(401, "helio webhook auth required")
 
     try:
         import json as _json
@@ -300,6 +336,10 @@ async def create_topup_checkout(
     user = await _resolve_user(authorization)
     if not user:
         raise HTTPException(401, "Sign in to top up")
+
+    from services.payment_beta_gate import require_payment_beta_access
+
+    require_payment_beta_access(user)
 
     pack = COIN_PACKS.get(payload.pack_id)
     if not pack:
@@ -399,6 +439,7 @@ async def check_topup_status(session_id: str, request: Request) -> Dict[str, Any
 @router.post("/webhook/stripe")
 async def stripe_webhook(request: Request) -> Dict[str, Any]:
     from services.payment_hub import StripeCheckout
+    from services.payments_audit import record_payment_event
     from config import STRIPE_API_KEY
 
     host_url = str(request.base_url).rstrip("/")
@@ -411,8 +452,42 @@ async def stripe_webhook(request: Request) -> Dict[str, Any]:
     try:
         evt = await sc.handle_webhook(body, sig)
     except Exception as e:
-        log.error(f"coin top-up stripe webhook parse failed: {e}")
+        log.error("coin top-up stripe webhook parse failed: %s", e)
+        await record_payment_event(
+            _db,
+            kind="coin_topup",
+            source="stripe_webhook",
+            status="rejected_signature",
+            metadata={"reason": str(e)[:200]},
+        )
         raise HTTPException(400, "invalid webhook")
+
+    await record_payment_event(
+        _db,
+        kind="coin_topup",
+        source="stripe_webhook",
+        status="webhook_received",
+        stripe_session_id=evt.session_id,
+        metadata={
+            "event_type": evt.event_type,
+            "payment_status": evt.payment_status,
+            "card_checks": evt.card_checks,
+            "livemode": evt.livemode,
+        },
+    )
+
+    # Reject obviously bad AVS/CVC when Stripe surfaces fail checks.
+    checks = evt.card_checks or {}
+    if checks.get("cvc_check") == "fail" or checks.get("address_postal_code_check") == "fail":
+        await record_payment_event(
+            _db,
+            kind="coin_topup",
+            source="stripe_webhook",
+            status="rejected_fraud_checks",
+            stripe_session_id=evt.session_id,
+            metadata={"card_checks": checks},
+        )
+        return {"received": True, "credited": False, "reason": "avs_cvc_fail"}
 
     if (evt.event_type or "").endswith("checkout.session.completed") and evt.payment_status == "paid":
         pay = await PAYMENTS.find_one({"stripe_session_id": evt.session_id}, {"_id": 0})

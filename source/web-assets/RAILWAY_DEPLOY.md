@@ -81,7 +81,12 @@ DISABLE_BG_SCHEDULERS=1
 ENVIRONMENT=production
 CORS_ORIGINS=*
 EMERGENT_LLM_KEY=<your Emergent LLM key>
-STRIPE_API_KEY=<your Stripe secret key>
+STRIPE_API_KEY=<your Stripe secret key — sk_test_ until sandbox verified>
+STRIPE_WEBHOOK_SECRET=<whsec_ from Stripe Dashboard webhook endpoint>
+PAYMENT_BETA_MODE=true
+PAYMENT_BETA_ALLOWLIST=<comma-separated founding member emails>
+PAYMENT_SUPPORT_EMAIL=payments-beta@globalvibezdsg.com
+HELIO_WEBHOOK_TOKEN=<required in production — Helio webhooks fail closed without it>
 FRONTEND_URL=<set after frontend deploys>
 ```
 

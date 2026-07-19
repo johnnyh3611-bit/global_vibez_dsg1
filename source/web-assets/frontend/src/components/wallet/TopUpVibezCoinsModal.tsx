@@ -10,6 +10,9 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Coins, Sparkles, Star, Zap, Loader2, Wallet, CreditCard } from "lucide-react";
 import SolanaDepositPanel from "@/components/wallet/SolanaDepositPanel";
+import BetaPaymentBanner, {
+  type BetaPaymentInfo,
+} from "@/components/wallet/BetaPaymentBanner";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const HELIO_EMBED_SRC = "https://embed.hel.io/assets/index-v1.js";
@@ -32,6 +35,7 @@ interface Provider {
   paylink_id?: string | null;
   network?: string;
   embed?: boolean;
+  founding_member_required?: boolean;
 }
 
 interface Props {
@@ -93,6 +97,7 @@ export default function TopUpVibezCoinsModal({
 }: Props) {
   const [packs, setPacks] = useState<Pack[]>([]);
   const [providers, setProviders] = useState<Provider[]>([]);
+  const [betaPayment, setBetaPayment] = useState<BetaPaymentInfo | null>(null);
   const [selected, setSelected] = useState<string>("popular");
   const [method, setMethod] = useState<PayMethod>("solana");
   const [submitting, setSubmitting] = useState(false);
@@ -114,6 +119,7 @@ export default function TopUpVibezCoinsModal({
       .then(([packData, providerData]) => {
         setPacks(packData.packs || []);
         setProviders(providerData.providers || []);
+        setBetaPayment(providerData.beta_payment || null);
         if (recommendedPackId) setSelected(recommendedPackId);
       })
       .catch(() => setError("Couldn't load coin packs"));
@@ -201,11 +207,28 @@ export default function TopUpVibezCoinsModal({
       });
       const data = await res.json();
       if (!res.ok) {
-        const detail =
-          typeof data.detail === "string"
-            ? data.detail
-            : data.detail?.msg || "Couldn't start checkout";
-        setError(detail);
+        const detail = data.detail;
+        if (detail && typeof detail === "object" && detail.error === "payment_beta_restricted") {
+          setError(
+            detail.message ||
+              "Card payments are limited to Founding Members during beta.",
+          );
+          if (detail.support_email || detail.support_discord) {
+            setBetaPayment({
+              beta_mode: true,
+              label: "Beta Payment Environment",
+              support_email: detail.support_email,
+              support_discord: detail.support_discord,
+              note: detail.message,
+            });
+          }
+          return;
+        }
+        const msg =
+          typeof detail === "string"
+            ? detail
+            : detail?.msg || detail?.message || "Couldn't start checkout";
+        setError(msg);
         return;
       }
       if (!data.checkout_url) {
@@ -246,6 +269,12 @@ export default function TopUpVibezCoinsModal({
             >
               <X className="w-5 h-5" />
             </button>
+
+            <BetaPaymentBanner
+              info={betaPayment}
+              force={helioNetwork === "test"}
+              className="mb-4 mt-1 mr-8"
+            />
 
             <div className="flex items-center gap-2 mb-1">
               <Coins className="w-6 h-6 text-cyan-300" />
