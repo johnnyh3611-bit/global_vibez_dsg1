@@ -8,6 +8,9 @@ import PendingPayouts from '../components/payout/PendingPayouts';
 import PhantomConnectButton from '../components/web3/PhantomConnectButton';
 import TopUpVibezCoinsModal from '@/components/wallet/TopUpVibezCoinsModal';
 import SolanaDepositPanel from '@/components/wallet/SolanaDepositPanel';
+import BetaPaymentBanner, {
+  type BetaPaymentInfo,
+} from '@/components/wallet/BetaPaymentBanner';
 import { GlobalCard } from '@/components/ui/GlobalCard';
 import { getBackendUrl } from '@/config/backendUrl';
 
@@ -32,6 +35,16 @@ const Wallet = () => {
   const [showPayoutModal, setShowPayoutModal] = useState(false);
   const [showTopUpModal, setShowTopUpModal] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [betaPayment, setBetaPayment] = useState<BetaPaymentInfo | null>(null);
+
+  useEffect(() => {
+    fetch(`${API_URL}/api/coins/topup/providers`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.beta_payment) setBetaPayment(data.beta_payment);
+      })
+      .catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -221,6 +234,8 @@ const Wallet = () => {
               </div>
               <PhantomConnectButton label="Connect" />
             </motion.div>
+
+            <BetaPaymentBanner info={betaPayment} className="mb-6" />
 
             {/* Solana deposit — primary top-up path (no Stripe). */}
             <motion.div

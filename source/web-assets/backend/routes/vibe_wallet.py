@@ -213,9 +213,15 @@ async def get_wallet_balance(user_id: str) -> Dict[str, Any]:
 @router.post("/credit/{user_id}")
 async def manual_credit_wallet(
     user_id: str,
+    request: Request,
     body: ManualCreditRequest = ManualCreditRequest(),
 ) -> Dict[str, Any]:
-    """Manual wallet credit for testing/demo purposes."""
+    """Admin-only wallet credit (demo/support). Never a public mint path."""
+    from utils.admin_guard import require_admin
+    from services.payments_audit import record_payment_event
+
+    await require_admin(request)
+
     amount = float(body.amount)
     if amount <= 0:
         raise HTTPException(status_code=400, detail="amount must be positive")
@@ -224,7 +230,16 @@ async def manual_credit_wallet(
         user_id=user_id,
         amount=amount,
         description=description,
-        metadata={"type": "demo_credit"},
+        metadata={"type": "admin_credit"},
+    )
+    await record_payment_event(
+        db,
+        kind="manual_credit",
+        source="admin",
+        status="credited",
+        user_id=user_id,
+        amount_usd=amount,
+        metadata={"description": description},
     )
     return {
         "success": True,
@@ -270,7 +285,22 @@ async def create_topup_session(package: TopUpPackage, request: Request) -> Dict[
     from services.payment_hub import (
         StripeCheckout, CheckoutSessionRequest, CheckoutSessionResponse
     )
+    from services.payment_beta_gate import require_payment_beta_access
+    from services.payments_audit import record_payment_event
     from config import STRIPE_API_KEY
+    from utils.database import get_current_user
+
+    current_user = await get_current_user(request)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    user_doc = {
+        "user_id": getattr(current_user, "user_id", None) or getattr(current_user, "id", None),
+        "email": getattr(current_user, "email", None),
+        "is_admin": getattr(current_user, "is_admin", False),
+        "is_beta_tester": getattr(current_user, "is_beta_tester", False),
+        "is_founding_member": getattr(current_user, "is_founding_member", False),
+    }
+    require_payment_beta_access(user_doc)
     
     # Validate package
     if package.package_id not in TOPUP_PACKAGES:
@@ -282,9 +312,7 @@ async def create_topup_session(package: TopUpPackage, request: Request) -> Dict[
     bonus = package_details["bonus"]
     total_credits = amount + bonus
     
-    # Get current user (you can add auth here)
-    # For now, we'll use demo user or extract from session
-    user_id = "demo_user_wallet"  # Replace with actual auth
+    user_id = user_doc["user_id"]
     
     # Build success and cancel URLs
     success_url = f"{package.origin_url}/wallet/success?session_id={{CHECKOUT_SESSION_ID}}"
@@ -297,7 +325,7 @@ async def create_topup_session(package: TopUpPackage, request: Request) -> Dict[
     
     # Create metadata
     metadata = {
-        "user_id": user_id,
+        "user_id": str(user_id),
         "package_id": package.package_id,
         "base_amount": str(amount),
         "bonus_amount": str(bonus),
@@ -332,6 +360,16 @@ async def create_topup_session(package: TopUpPackage, request: Request) -> Dict[
     }
     
     await db.payment_transactions.insert_one(payment_transaction)
+    await record_payment_event(
+        db,
+        kind="wallet_topup",
+        source="stripe_checkout",
+        status="created",
+        user_id=str(user_id),
+        amount_usd=float(amount),
+        stripe_session_id=session.session_id,
+        metadata={"package_id": package.package_id},
+    )
     
     return {
         "success": True,

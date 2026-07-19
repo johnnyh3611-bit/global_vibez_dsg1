@@ -131,6 +131,26 @@ npm run dev          # scripts/dev-up.sh — mongo + :8001 + :3000
 
 ---
 
+## Payments / PCI (beta) — Helio only
+
+Full runbook: `source/web-assets/PAYMENT_SECURITY.md`.
+
+**Card rail = Helio.** We do not use Stripe for coin top-up.
+
+Checklist before opening Helio beyond Founding Members:
+
+1. **TLS** — Railway public domain is `https://…`. Confirm:
+   ```bash
+   curl -sSI https://YOUR-API/health | head -n 5
+   ```
+2. **Secrets on Railway** — `HELIO_API_KEY`, `HELIO_SECRET_KEY`, `HELIO_PAYLINK_ID`, `HELIO_WEBHOOK_TOKEN`, `PAYMENT_BETA_*`
+3. **Sandbox first** — `HELIO_NETWORK=test`; run a real Helio checkout; confirm `payments_audit` + wallet credit
+4. **Founding Member gate** — keep `PAYMENT_BETA_MODE=true` with a 20–50 email allowlist until live credits reconcile
+5. **UI** — Wallet / Top-Up show **Beta Payment Environment** + support email/Discord
+6. **Never** collect raw card numbers in the SPA — Helio embed only
+
+---
+
 ## Why demo / email login still fail today
 
 Frontend is on Vercel. With no `REACT_APP_BACKEND_URL`, the browser calls same-origin `/api/...`, and Vercel’s SPA fallback returns `index.html` (HTTP 200 HTML). That looks “up” but is not FastAPI. Fix = steps 1–2 above.

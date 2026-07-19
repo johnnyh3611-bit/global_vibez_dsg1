@@ -157,98 +157,34 @@ async def get_eligibility(user_id: str) -> Dict[str, Any]:
 
 @router.post("/checkout")
 async def create_checkout(req: CheckoutRequest) -> Dict[str, Any]:
-    """Spin a Stripe Checkout Session for a tier upgrade. The session's
-    `client_reference_id` is `vip:<user_id>:<tier>` — the payouts webhook
-    parses it and calls `apply_vip_grant`."""
+    """VIP tier purchase — Stripe path retired; platform cards use Helio.
+
+    VIP grants can still be applied via ``apply_vip_grant`` (admin /
+    out-of-band) until a Helio VIP product is wired.
+    """
     if not is_valid_tier(req.tier):
         raise HTTPException(400, detail=f"Unknown tier '{req.tier}'")
 
-    # Live pricing — admins can change these via /api/admin/pricing
-    # without a redeploy. Falls back to the hardcoded defaults if the
-    # catalog row is missing or Mongo is unreachable.
     try:
         live_tiers = await get_vip_tiers(_db)
         tier_info = live_tiers.get(req.tier) or VIP_TIERS[req.tier]
         price_usd = float(tier_info.get("price_usd", tier_price_usd(req.tier)))
     except Exception:
         price_usd = tier_price_usd(req.tier)
-        tier_info = VIP_TIERS[req.tier]
 
-    if not STRIPE_API_KEY:
-        # Mock checkout for preview env / test runs.
-        return {
-            "mode": "mock",
-            "checkout_url": (
-                f"https://example.com/mock-checkout?user={req.user_id}"
-                f"&tier={req.tier}&plan=high_roller"
+    raise HTTPException(
+        status_code=410,
+        detail={
+            "error": "stripe_retired",
+            "message": (
+                "High Roller Stripe checkout is disabled. Platform card "
+                "payments use Helio; VIP grants are handled out-of-band until "
+                "a Helio VIP product is wired."
             ),
             "tier": req.tier,
             "price_usd": price_usd,
-            "duration_days": HIGH_ROLLER_GRANT_DAYS,
-        }
-
-    return_url = req.return_url or "https://globalvibezdsg.com/casino/high-roller"
-
-    try:
-        session = stripe.checkout.Session.create(
-            mode="payment",
-            payment_method_types=["card"],
-            line_items=[{
-                "price_data": {
-                    "currency": "usd",
-                    "product_data": {
-                        "name": f"High Roller VIP · {tier_info['label']}",
-                        "description": (
-                            f"{tier_info['tagline']} 30-day window. "
-                            f"Includes the {HIGH_ROLLER_MIN_BET:,} ₵ min-bet VIP Blackjack room."
-                        ),
-                    },
-                    "unit_amount": int(price_usd * 100),
-                },
-                "quantity": 1,
-            }],
-            success_url=f"{return_url}?vip=success",
-            cancel_url=f"{return_url}?vip=cancel",
-            client_reference_id=f"{HIGH_ROLLER_REF_PREFIX}{req.user_id}:{req.tier}",
-            metadata={
-                "kind": "high_roller_vip",
-                "user_id": req.user_id,
-                "tier": req.tier,
-                "duration_days": str(HIGH_ROLLER_GRANT_DAYS),
-                **({"referral_code": req.referral_code.strip().upper()} if req.referral_code else {}),
-            },
-        )
-    except stripe.error.StripeError as e:
-        raise HTTPException(502, detail=f"Stripe checkout error: {e}")
-
-    # Unified payments audit — best-effort, never fails the checkout.
-    try:
-        from services.payments_audit import record_payment_event  # noqa: PLC0415
-        await record_payment_event(
-            _db,
-            kind="high_roller_vip",
-            source="stripe_checkout",
-            status="created",
-            user_id=req.user_id,
-            amount_usd=price_usd,
-            stripe_session_id=session.id,
-            metadata={
-                "tier": req.tier,
-                "duration_days": HIGH_ROLLER_GRANT_DAYS,
-                **({"referral_code": req.referral_code.strip().upper()} if req.referral_code else {}),
-            },
-        )
-    except Exception:
-        pass
-
-    return {
-        "mode": "live",
-        "checkout_url": session.url,
-        "session_id": session.id,
-        "tier": req.tier,
-        "price_usd": price_usd,
-        "duration_days": HIGH_ROLLER_GRANT_DAYS,
-    }
+        },
+    )
 
 
 @router.post("/blackjack/deal")

@@ -3,13 +3,17 @@
  *
  * Preferred order:
  *   1. Solana deposit (QR + memo)
- *   2. Helio embed / charge (card) — Stripe alternative
- *   3. Legacy Stripe card (if Helio not configured)
+ *   2. Helio embed / charge (card) — the only card rail
+ *
+ * Stripe is not used for coin top-up.
  */
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Coins, Sparkles, Star, Zap, Loader2, Wallet, CreditCard } from "lucide-react";
 import SolanaDepositPanel from "@/components/wallet/SolanaDepositPanel";
+import BetaPaymentBanner, {
+  type BetaPaymentInfo,
+} from "@/components/wallet/BetaPaymentBanner";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const HELIO_EMBED_SRC = "https://embed.hel.io/assets/index-v1.js";
@@ -32,6 +36,7 @@ interface Provider {
   paylink_id?: string | null;
   network?: string;
   embed?: boolean;
+  founding_member_required?: boolean;
 }
 
 interface Props {
@@ -93,6 +98,7 @@ export default function TopUpVibezCoinsModal({
 }: Props) {
   const [packs, setPacks] = useState<Pack[]>([]);
   const [providers, setProviders] = useState<Provider[]>([]);
+  const [betaPayment, setBetaPayment] = useState<BetaPaymentInfo | null>(null);
   const [selected, setSelected] = useState<string>("popular");
   const [method, setMethod] = useState<PayMethod>("solana");
   const [submitting, setSubmitting] = useState(false);
@@ -114,6 +120,7 @@ export default function TopUpVibezCoinsModal({
       .then(([packData, providerData]) => {
         setPacks(packData.packs || []);
         setProviders(providerData.providers || []);
+        setBetaPayment(providerData.beta_payment || null);
         if (recommendedPackId) setSelected(recommendedPackId);
       })
       .catch(() => setError("Couldn't load coin packs"));
@@ -128,8 +135,7 @@ export default function TopUpVibezCoinsModal({
   const helioReady = Boolean(helioProvider?.ready);
   const helioPaylinkId = helioProvider?.paylink_id || "";
   const helioNetwork = helioProvider?.network === "test" ? "test" : "main";
-  const stripeReady = providers.some((p) => p.id === "stripe" && p.ready);
-  const cardLabel = helioReady ? "Card (Helio)" : "Card";
+  const cardLabel = "Card (Helio)";
 
   // Mount Helio embed when Card tab is active and we have a paylink.
   useEffect(() => {
@@ -185,10 +191,13 @@ export default function TopUpVibezCoinsModal({
         window.location.href = "/login";
         return;
       }
-      const endpoint = helioReady
-        ? `${API}/coins/topup/helio`
-        : `${API}/coins/topup/checkout`;
-      const res = await fetch(endpoint, {
+      if (!helioReady) {
+        setError(
+          "Helio card checkout is not configured. Use Solana, or set HELIO_* on the API.",
+        );
+        return;
+      }
+      const res = await fetch(`${API}/coins/topup/helio`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -201,11 +210,28 @@ export default function TopUpVibezCoinsModal({
       });
       const data = await res.json();
       if (!res.ok) {
-        const detail =
-          typeof data.detail === "string"
-            ? data.detail
-            : data.detail?.msg || "Couldn't start checkout";
-        setError(detail);
+        const detail = data.detail;
+        if (detail && typeof detail === "object" && detail.error === "payment_beta_restricted") {
+          setError(
+            detail.message ||
+              "Card payments are limited to Founding Members during beta.",
+          );
+          if (detail.support_email || detail.support_discord) {
+            setBetaPayment({
+              beta_mode: true,
+              label: "Beta Payment Environment",
+              support_email: detail.support_email,
+              support_discord: detail.support_discord,
+              note: detail.message,
+            });
+          }
+          return;
+        }
+        const msg =
+          typeof detail === "string"
+            ? detail
+            : detail?.msg || detail?.message || "Couldn't start checkout";
+        setError(msg);
         return;
       }
       if (!data.checkout_url) {
@@ -246,6 +272,12 @@ export default function TopUpVibezCoinsModal({
             >
               <X className="w-5 h-5" />
             </button>
+
+            <BetaPaymentBanner
+              info={betaPayment}
+              force={helioNetwork === "test"}
+              className="mb-4 mt-1 mr-8"
+            />
 
             <div className="flex items-center gap-2 mb-1">
               <Coins className="w-6 h-6 text-cyan-300" />
@@ -390,17 +422,17 @@ export default function TopUpVibezCoinsModal({
               </div>
             ) : (
               <>
-                {!helioReady && !stripeReady && (
+                {!helioReady && (
                   <p className="text-xs text-amber-200/80 mb-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-2">
-                    Card checkout is not configured on the server yet. Use
-                    Solana, or add Helio vars on Railway.
+                    Helio card checkout is not configured yet. Use Solana, or
+                    add HELIO_API_KEY / HELIO_SECRET_KEY / HELIO_PAYLINK_ID on
+                    Railway.
                   </p>
                 )}
                 <button
                   onClick={handleCardCheckout}
-                  disabled={
-                    submitting || !selected || (!helioReady && !stripeReady)
-                  }
+                  disabled={submitting || !selected || !helioReady}
+
                   className="w-full bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 disabled:opacity-60 px-4 py-3 rounded-xl font-bold text-slate-950 flex items-center justify-center gap-2 transition-all"
                   data-testid="topup-checkout-btn"
                 >
