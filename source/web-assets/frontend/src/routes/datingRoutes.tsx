@@ -25,9 +25,7 @@ import IdVerificationGate from "@/components/age_verification/IdVerificationGate
 // Lazy: SpeedDatingLobby pulls SpeedDatingVideo which previously crashed the
 // entire SPA at import time when REACT_APP_BACKEND_URL was missing.
 const SpeedDatingLobby = lazy(() => import("@/pages/SpeedDatingLobby"));
-// Lazy: VRDatingRoom pulls @react-three/xr which auto-injects the desktop
-// WebXR emulator on localhost and can throw "devUIConstructor is not a
-// constructor" — keep it off the critical path for every page load.
+// Lazy: keep @react-three/xr off the critical path for every page load.
 const VRDatingRoom = lazy(() => import("@/pages/VRDatingRoom"));
 
 const LazyLobby = (

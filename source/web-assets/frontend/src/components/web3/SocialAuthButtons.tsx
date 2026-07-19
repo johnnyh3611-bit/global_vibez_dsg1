@@ -60,15 +60,15 @@ const PROVIDERS: Array<{
     privyProvider: "google",
     testId: "social-login-google",
     className:
-      "border-white/20 bg-white/95 text-slate-900 hover:bg-white hover:shadow-[0_0_20px_rgba(255,255,255,0.25)]",
+      "border-white/15 bg-white text-slate-900 hover:bg-slate-100",
   },
   {
     id: "twitter",
-    label: "Continue with X / Twitter",
+    label: "Continue with X",
     privyProvider: "twitter",
     testId: "social-login-twitter",
     className:
-      "border-sky-400/40 bg-sky-500/15 text-sky-100 hover:bg-sky-500/25 hover:shadow-[0_0_20px_rgba(56,189,248,0.35)]",
+      "border-white/15 bg-white/[0.04] text-slate-100 hover:bg-white/[0.08]",
   },
   {
     id: "facebook",
@@ -76,7 +76,7 @@ const PROVIDERS: Array<{
     privyProvider: null,
     testId: "social-login-facebook",
     className:
-      "border-blue-400/40 bg-blue-600/20 text-blue-100 hover:bg-blue-600/30 hover:shadow-[0_0_20px_rgba(59,130,246,0.35)]",
+      "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.06]",
   },
 ];
 
@@ -147,12 +147,12 @@ async function exchangePrivySession(
 
 function Divider() {
   return (
-    <div className="relative my-2">
+    <div className="relative my-5">
       <div className="absolute inset-0 flex items-center">
         <div className="w-full border-t border-white/10" />
       </div>
-      <div className="relative flex justify-center text-xs uppercase tracking-wider">
-        <span className="bg-transparent px-3 text-slate-400">or continue with</span>
+      <div className="relative flex justify-center text-xs tracking-wide">
+        <span className="bg-[#070a12] px-3 text-slate-500">or continue with</span>
       </div>
     </div>
   );

@@ -285,8 +285,6 @@ function VRScene({ gameState, onSpin, onBetChange }: { gameState?: any, onSpin?:
 
 // Main VR Component
 export default function VRCelestialSlots() {
-  // Create XR store for @react-three/xr v6 — disable desktop emulator
-  // (avoids "devUIConstructor is not a constructor" on localhost).
   const store = createXRStore({ emulate: false });
 
   const [gameState, setGameState] = useState({

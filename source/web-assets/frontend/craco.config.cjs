@@ -64,14 +64,19 @@ module.exports = {
         });
       }
 
-      // Ignore source-map warnings for packages without published sources
+      // Keep production builds quiet — third-party SDKs emit noisy warnings.
       webpackConfig.ignoreWarnings = (webpackConfig.ignoreWarnings || []).concat([
         { module: /node_modules\/@react-three/ },
         { module: /node_modules\/three/ },
         { module: /node_modules\/iwer/ },
         { module: /node_modules\/@privy-io/ },
         { module: /node_modules\/@base-org/ },
+        { module: /node_modules\/@phantom/ },
+        { module: /node_modules\/@solana/ },
         /Failed to parse source map/,
+        /Critical dependency: the request of a dependency is an expression/,
+        /Failed to parse source map from/,
+        /export '.*' \(imported as '.*'\) was not found/,
       ]);
 
       // Add health check plugin to webpack if enabled
@@ -96,9 +101,7 @@ module.exports = {
       // that never run when walletChainType="solana-only". Stub them so
       // webpack stops choking on their internal module resolution.
       const stub = path.resolve(__dirname, "src/empty-module.js");
-      // @iwer/devui MUST export a real DevUI class — empty-module made
-      // `installDevUI(DevUI)` throw "devUIConstructor is not a constructor"
-      // whenever @pmndrs/xr injected the desktop emulator on localhost.
+      // Real constructors required — empty stubs break XRDevice.installDevUI.
       const iwerDevUiStub = path.resolve(__dirname, "src/stubs/iwer-devui.js");
       const iwerSemStub = path.resolve(__dirname, "src/stubs/iwer-sem.js");
       // Always re-assert `@` when merging stubs. Overwriting resolve.alias
