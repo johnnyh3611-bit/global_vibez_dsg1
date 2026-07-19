@@ -19,10 +19,7 @@ import GameVideoLayout from "@/components/video/GameVideoLayout";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
-// Module-level store so Enter VR button + Canvas share one session.
-// emulate:false — default createXRStore() auto-injects @iwer/devui on
-// localhost and throws "devUIConstructor is not a constructor" (bundler
-// interop). Real Quest/WebXR devices still work without the desktop emulator.
+// Shared XR store — desktop emulator disabled; Quest/WebXR still works.
 const xrStore = createXRStore({ emulate: false });
 
 function TheaterScreen({ hlsUrl }: { hlsUrl: string | null }) {

@@ -6,9 +6,7 @@
  *   - Privy analytics: "TypeError: e is not a function" inside la.initialize
  *   - Firebase Analytics: same pattern when sandboxed in iframes
  *   - WalletConnect: "indexedDB is not available"
- *   - @react-three/xr / @iwer/devui: "devUIConstructor is not a constructor"
- *     when the desktop WebXR emulator auto-injects on localhost (also fixed
- *     at the webpack layer via src/stubs/iwer-devui.js)
+ *   - XR emulator constructor mismatches (also stubbed via src/stubs/iwer-*)
  *
  * Without this guard, the throws bubble up to `window.onerror` and
  * (in some browsers) freeze the JS event loop just long enough that a
@@ -24,10 +22,10 @@ const HARMLESS_PATTERNS: RegExp[] = [
   /firebase\/analytics/,                         // Firebase analytics SDK
   /Failed to fetch.*auth\.privy\.io/,            // Privy fetch in restricted env
   /privy.*analytics/i,                           // any privy analytics throw
-  /devUIConstructor is not a constructor/i,      // @iwer/devui via @pmndrs/xr emulate
-  /installDevUI/i,                               // XRDevice.installDevUI stack
-  /@iwer\/devui/i,                               // DevUI module load failures
-  /@pmndrs\/xr.*emulat/i,                        // XR emulator injection path
+  /devUIConstructor is not a constructor/i,
+  /installDevUI/i,
+  /@iwer\/devui/i,
+  /@pmndrs\/xr.*emulat/i,
 ];
 
 function isHarmless(msg: string): boolean {
@@ -35,7 +33,8 @@ function isHarmless(msg: string): boolean {
 }
 
 function logSwallowed(kind: string, msg: string, stack?: string): void {
-  if (process.env.NODE_ENV === "production") return;
+  // Opt-in only — keep production & default local consoles clean.
+  if (process.env.REACT_APP_DEBUG_ERROR_GUARD !== "1") return;
   // eslint-disable-next-line no-console
   console.debug(`[errorGuard] swallowed ${kind}:`, msg.slice(0, 160));
   if (stack) {
