@@ -1,17 +1,7 @@
 /**
- * Stub for @iwer/devui — webpack alias target (craco.config.cjs).
- *
- * ROOT CAUSE of "devUIConstructor is not a constructor":
- *   @pmndrs/xr/emulate.js does:
- *     import { DevUI } from '@iwer/devui';
- *     xrdevice.installDevUI(DevUI);   // → new DevUI(xrDevice)
- *   We previously aliased @iwer/devui → empty-module.js (`module.exports = {}`),
- *   so the named export `DevUI` was `undefined`. XRDevice.installDevUI then
- *   threw TypeError: devUIConstructor is not a constructor.
- *
- * This stub exports a real constructor (CJS + __esModule) so named and
- * default imports both receive a callable class, matching the real package
- * API without shipping Meta's heavy DevUI UI.
+ * Webpack alias for @iwer/devui (see craco.config.cjs).
+ * Exports a real DevUI constructor so @pmndrs/xr installDevUI() succeeds
+ * without loading Meta's desktop emulator UI.
  */
 "use strict";
 

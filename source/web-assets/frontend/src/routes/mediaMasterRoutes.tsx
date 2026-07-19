@@ -12,9 +12,7 @@ import MediaMasterPulsePage from '@/pages/MediaMasterPulsePage';
 import BroadcastDirectorPage from '@/pages/BroadcastDirectorPage';
 import PageLoader from '@/components/common/PageLoader';
 
-// Lazy: VrTvLounge module-level createXRStore() auto-injects the @iwer/devui
-// emulator on localhost and can throw "devUIConstructor is not a constructor"
-// on every SPA boot when this route was eagerly imported.
+// Lazy: keep createXRStore / @react-three/xr off the critical path.
 const VrTvLounge = lazy(() => import('@/pages/VrTvLounge'));
 
 export const mediaMasterRoutes = (ProtectedRoute) => (

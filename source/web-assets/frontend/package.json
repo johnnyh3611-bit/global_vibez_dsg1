@@ -2,6 +2,7 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
+  "license": "UNLICENSED",
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
     "@ledgerhq/device-management-kit": "^1.2.0",

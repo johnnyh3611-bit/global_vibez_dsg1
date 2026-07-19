@@ -1,13 +1,11 @@
 /**
  * LandingPlanet — logo-mapped central sun + orbiting hub planets.
  *
- * 1. Central Body (Sun): large sphere textured with Global Vibez DSG logo
- *    (map + emissiveMap, emissive white @ 0.5, renderOrder 1).
- * 2. Orbiting hubs: Gaming, Dating, Streams, Vibe Rides, Vibe Vineyards,
- *    Hungry Vibez — smaller spheres on fixed orbital radii with labels
- *    beneath + onClick → hub routes.
- * 3. DSG Token moon: small golden/metallic sphere orbiting Gaming.
- * 4. Mobile (<768): no 3D orbits — vertical stacked hub labels (≥14px).
+ * 1. Central Sun: official mark at /assets/logo.png on MeshStandardMaterial
+ *    (map + emissiveMap, glowing emissiveIntensity).
+ * 2. Orbiting hubs stay outside HUB_CLEARANCE so they never cover the logo.
+ * 3. DSG Token moon orbits Gaming.
+ * 4. Mobile (<768): static vertical hub list (≥14px), no 3D orbits.
  */
 import {
   Suspense,
@@ -23,13 +21,14 @@ import { Bloom, EffectComposer } from "@react-three/postprocessing";
 import { useNavigate } from "react-router-dom";
 import * as THREE from "three";
 
-/** Official brand mark (CRA serves from /public) */
-const LOGO_SRC = "/global-vibez-logo.png";
+/** Official brand mark — `public/assets/logo.png` */
+const LOGO_SRC = "/assets/logo.png";
 /** Large enough that hub orbits stay clear of the brand mark. */
-const SUN_RADIUS = 1.7;
+const SUN_RADIUS = 1.75;
 /** Keep hubs outside this XY radius so they never cover the logo face. */
-const HUB_CLEARANCE = SUN_RADIUS + 1.05;
-const CAMERA_Z = 10.5;
+const HUB_CLEARANCE = SUN_RADIUS + 1.15;
+const CAMERA_Z = 10.8;
+const LOGO_EMISSIVE = 1.15;
 
 type HubId =
   | "gaming"
@@ -171,17 +170,17 @@ function CentralLogoSun() {
           map={map}
           emissiveMap={map}
           emissive="#ffffff"
-          emissiveIntensity={0.75}
-          roughness={0.35}
-          metalness={0.12}
+          emissiveIntensity={LOGO_EMISSIVE}
+          roughness={0.32}
+          metalness={0.1}
           toneMapped={false}
         />
       </mesh>
 
-      {/* Front-facing logo plane — glowing brand mark, never occluded by hubs */}
+      {/* Camera-facing logo face — unmistakable brand mark above the sphere */}
       <mesh
         ref={billboard}
-        position={[0, 0, SUN_RADIUS * 0.15]}
+        position={[0, 0, SUN_RADIUS * 0.18]}
         renderOrder={4}
         frustumCulled={false}
       >
@@ -190,9 +189,9 @@ function CentralLogoSun() {
           map={map}
           emissiveMap={map}
           emissive="#ffffff"
-          emissiveIntensity={1.05}
+          emissiveIntensity={LOGO_EMISSIVE + 0.25}
           transparent
-          opacity={0.98}
+          opacity={1}
           depthWrite={false}
           toneMapped={false}
           side={THREE.DoubleSide}

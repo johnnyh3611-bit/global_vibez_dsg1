@@ -1,10 +1,6 @@
-
 import { useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { RoomLayout } from '@/components/RoomLayout';
-import { GlassCard } from '@/components/GlassCard';
-import { NeonButton } from '@/components/NeonButton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,10 +10,9 @@ import { getBackendUrl } from '@/config/backendUrl';
 import { setBearerToken } from '@/utils/secureAuth';
 import { consumeReturnTo } from '@/hubs/hubRegistry';
 import SocialAuthButtons from '@/components/web3/SocialAuthButtons';
-// Wallet linking happens AFTER login at /wallet (Connect Phantom flow).
-// Social OAuth buttons (Privy-backed) live below email/password.
 
 const API = getBackendUrl();
+const BRAND_LOGO = '/assets/logo.png';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -31,7 +26,7 @@ export default function LoginPage() {
   };
   const [formData, setFormData] = useState({
     email: '',
-    password: ''
+    password: '',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -43,7 +38,7 @@ export default function LoginPage() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -51,11 +46,8 @@ export default function LoginPage() {
     if (loading) return;
     setError('');
     setLoading(true);
-
-    // Tell versionManager not to hard-reload while this request is in flight.
     localStorage.setItem('auth_in_progress', '1');
 
-    // Abort after 15s so the button can never spin forever on a stalled request.
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000);
 
@@ -63,13 +55,9 @@ export default function LoginPage() {
       const response = await fetch(`${API}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // NOTE: do NOT use credentials:'include' here. The platform's edge
-        // gateway returns Access-Control-Allow-Origin:* which the browser
-        // blocks when combined with credentials. Auth uses Bearer tokens
-        // in localStorage — cookies are not required for this flow.
         body: JSON.stringify({
           email: formData.email.trim().toLowerCase(),
-          password: formData.password
+          password: formData.password,
         }),
         signal: controller.signal,
       });
@@ -81,7 +69,6 @@ export default function LoginPage() {
         throw new Error(data.detail || 'Login failed');
       }
 
-      // Check if age verification is needed
       if (data.requires_age_verification) {
         setNeedsAgeVerification(true);
         setUserId(data.user_id);
@@ -133,8 +120,8 @@ export default function LoginPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           user_id: userId,
-          date_of_birth: dateOfBirth
-        })
+          date_of_birth: dateOfBirth,
+        }),
       });
 
       const raw = await response.text();
@@ -144,7 +131,6 @@ export default function LoginPage() {
         throw new Error(data.detail || 'Age verification failed');
       }
 
-      // Store token + user for Bearer fallback if cookies are dropped
       if (data.token) {
         localStorage.setItem('auth_token', data.token);
       }
@@ -153,7 +139,6 @@ export default function LoginPage() {
         localStorage.setItem('user_id', data.user.user_id || data.user.id);
       }
 
-      // Success! Prefer hub / globe deep-link if one was stashed.
       navigate(postLoginPath('/dashboard'));
     } catch (err) {
       setError(err.message);
@@ -162,246 +147,264 @@ export default function LoginPage() {
     }
   };
 
+  const handleDemoLogin = async (evt) => {
+    evt.preventDefault();
+    evt.stopPropagation();
+    if (loading) return;
+    setLoading(true);
+    setError('');
+    localStorage.setItem('auth_in_progress', '1');
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    try {
+      const response = await fetch(`${API}/api/auth/demo-login`, {
+        method: 'POST',
+        signal: controller.signal,
+      });
+      const data = await response.json().catch(() => ({}));
+      if (response.ok && data.token && data.user_id) {
+        setBearerToken(data.token);
+        localStorage.setItem('user_id', data.user_id);
+        if (data.name) localStorage.setItem('username', data.name);
+        window.location.href = postLoginPath('/dashboard');
+        return;
+      }
+      setError(data.detail || 'Demo login failed — please retry.');
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        setError('Demo login timed out — please try again.');
+      } else {
+        setError('Demo login failed — check your connection and retry.');
+      }
+    } finally {
+      clearTimeout(timeoutId);
+      localStorage.removeItem('auth_in_progress');
+      setLoading(false);
+    }
+  };
+
   return (
-    <RoomLayout theme="dating" showStars={true}>
-      <div className="min-h-screen flex items-center justify-center px-4 py-12">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="w-full max-w-md"
+    <div
+      className="relative min-h-screen overflow-hidden bg-[#070a12] text-slate-100"
+      data-testid="login-page"
+    >
+      {/* Atmosphere — soft brand wash, not casino neon */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(34,211,238,0.14), transparent 55%), radial-gradient(ellipse 60% 40% at 80% 100%, rgba(99,102,241,0.1), transparent 50%)',
+        }}
+      />
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.04]"
+        style={{
+          backgroundImage:
+            'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)',
+          backgroundSize: '48px 48px',
+        }}
+      />
+
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 py-12">
+        <Button
+          variant="ghost"
+          onClick={() => navigate('/')}
+          className="mb-6 w-fit text-slate-300 hover:bg-white/5 hover:text-white"
         >
-          <Button
-            variant="ghost"
-            onClick={() => navigate('/')}
-            className="text-white hover:bg-white/10 mb-6"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Home
-          </Button>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Home
+        </Button>
 
-          <GlassCard className="p-8" hoverable={false}>
-            {!needsAgeVerification ? (
-              <>
-                <div className="text-center mb-8">
-                  <h1 className="text-4xl font-bold text-white mb-2">Welcome Back</h1>
-                  <p className="text-slate-300">Sign in to your Global Vibez DSG account</p>
-                </div>
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45 }}
+          className="rounded-2xl border border-white/10 bg-black/45 p-8 shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur-xl"
+        >
+          {!needsAgeVerification ? (
+            <>
+              <div className="mb-8 text-center">
+                <img
+                  src={BRAND_LOGO}
+                  alt="Global Vibez DSG"
+                  className="mx-auto mb-5 h-16 w-auto object-contain drop-shadow-[0_0_24px_rgba(34,211,238,0.35)]"
+                  draggable={false}
+                />
+                <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+                  Sign in
+                </h1>
+                <p className="mt-2 text-sm text-slate-400">
+                  Welcome back to Global Vibez DSG
+                </p>
+              </div>
 
-                {notice && !error && (
-                  <Alert className="mb-6 bg-amber-500/20 border-amber-500/50 text-white">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>{notice}</AlertDescription>
-                  </Alert>
-                )}
+              {notice && !error && (
+                <Alert className="mb-5 border-cyan-500/30 bg-cyan-500/10 text-cyan-50">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{notice}</AlertDescription>
+                </Alert>
+              )}
 
-                {error && (
-                  <Alert className="mb-6 bg-red-500/20 border-red-500/50 text-white">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
+              {error && (
+                <Alert className="mb-5 border-rose-500/35 bg-rose-500/10 text-rose-50">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
 
-                <form onSubmit={handleSubmit} className="space-y-5">
-                  {/* Email */}
-                  <div>
-                    <Label htmlFor="email" className="text-white mb-2 block">
-                      Email Address
-                    </Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        autoCapitalize="none"
-                        autoCorrect="off"
-                        spellCheck={false}
-                        inputMode="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        className="pl-10 bg-slate-950/50 border-white/10 focus:border-pink-500 text-white"
-                        placeholder="you@example.com"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  {/* Password */}
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <Label htmlFor="password" className="text-white block">
-                        Password
-                      </Label>
-                      <Link
-                        to="/forgot-password"
-                        className="text-xs text-fuchsia-400 hover:text-fuchsia-300 font-semibold"
-                        data-testid="login-forgot-password-link"
-                      >
-                        Forgot password?
-                      </Link>
-                    </div>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
-                      <Input
-                        id="password"
-                        name="password"
-                        type={showPassword ? 'text' : 'password'}
-                        value={formData.password}
-                        onChange={handleChange}
-                        className="pl-10 pr-10 bg-slate-950/50 border-white/10 focus:border-pink-500 text-white"
-                        placeholder="••••••••"
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white"
-                      >
-                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <NeonButton
-                    type="submit"
-                    variant="gradient"
-                    className="w-full hover:shadow-[0_0_24px_rgba(236,72,153,0.6)] hover:scale-[1.02] transition-all duration-200"
-                    disabled={loading}
-                    data-testid="login-signin-btn"
-                  >
-                    {loading ? 'Signing In...' : 'Sign In'}
-                  </NeonButton>
-                </form>
-
-                <div className="mt-6 text-center">
-                  <p className="text-slate-300">
-                    Don't have an account?{' '}
-                    <button
-                      onClick={() => navigate('/signup')}
-                      className="text-pink-400 hover:text-pink-300 font-semibold"
-                    >
-                      Sign Up
-                    </button>
-                  </p>
-                </div>
-
-                <div className="mt-6">
-                  <SocialAuthButtons
-                    postLoginPath={postLoginPath}
-                    onError={(msg) => setError(msg)}
-                  />
-
-                  {/* Emergent Google OAuth removed — platform no longer uses Emergent.
-                      Auth is email/password + social (Privy) + Demo Login.
-                      Wallet linking is post-login on /wallet. */}
-                  <Button
-                    variant="outline"
-                    type="button"
-                    onClick={async (evt) => {
-                      // Stop Privy/other parent overlays from eating the click.
-                      evt.preventDefault();
-                      evt.stopPropagation();
-                      if (loading) return;
-                      setLoading(true);
-                      setError('');
-                      // Block versionManager from reloading mid-login.
-                      localStorage.setItem('auth_in_progress', '1');
-                      const controller = new AbortController();
-                      const timeoutId = setTimeout(() => controller.abort(), 15000);
-                      try {
-                        const response = await fetch(`${API}/api/auth/demo-login`, {
-                          method: 'POST',
-                          // NOTE: do NOT use credentials:'include'. The edge
-                          // gateway returns Access-Control-Allow-Origin:*
-                          // which browsers block when combined with credentials,
-                          // causing demo-login to fail on globalvibezdsg.com.
-                          signal: controller.signal,
-                        });
-                        const data = await response.json().catch(() => ({}));
-                        if (response.ok && data.token && data.user_id) {
-                          setBearerToken(data.token);
-                          localStorage.setItem('user_id', data.user_id);
-                          if (data.name) localStorage.setItem('username', data.name);
-                          // Hard-redirect (not navigate) so any half-mounted
-                          // Privy/SDK modal can't intercept React's transition.
-                          window.location.href = postLoginPath('/dashboard');
-                          return;
-                        }
-                        setError(data.detail || 'Demo login failed — please retry.');
-                      } catch (err) {
-                        if (err.name === 'AbortError') {
-                          setError('Demo login timed out — please try again.');
-                        } else {
-                          setError('Demo login failed — check your connection and retry.');
-                        }
-                      } finally {
-                        clearTimeout(timeoutId);
-                        localStorage.removeItem('auth_in_progress');
-                        setLoading(false);
-                      }
-                    }}
-                    className="w-full mt-3 border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10 hover:shadow-[0_0_24px_rgba(34,211,238,0.55)] hover:scale-[1.02] transition-all duration-200"
-                    data-testid="login-demo-btn"
-                  >
-                    🎮 Demo Login (Quick Access)
-                  </Button>
-                  <p className="mt-4 text-center text-[11px] text-slate-500 leading-relaxed">
-                    Adults 18+ only.{' '}
-                    <Link to="/terms" className="text-slate-400 hover:text-cyan-300 underline">
-                      Terms
-                    </Link>
-                    {' · '}
-                    <Link to="/privacy" className="text-slate-400 hover:text-cyan-300 underline">
-                      Privacy
-                    </Link>
-                  </p>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="text-center mb-8">
-                  <h1 className="text-4xl font-bold text-white mb-2">Age Verification</h1>
-                  <p className="text-slate-300">Please confirm your date of birth</p>
-                </div>
-
-                {error && (
-                  <Alert className="mb-6 bg-yellow-500/20 border-yellow-500/50 text-white">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
-
-                <form onSubmit={handleAgeUpdate} className="space-y-5">
-                  <div>
-                    <Label htmlFor="dateOfBirth" className="text-white mb-2 block">
-                      Date of Birth <span className="text-xs text-slate-400">(Must be 18+)</span>
-                    </Label>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <Label htmlFor="email" className="mb-2 block text-sm text-slate-200">
+                    Email
+                  </Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
                     <Input
-                      id="dateOfBirth"
-                      type="date"
-                      value={dateOfBirth}
-                      onChange={(e) => setDateOfBirth(e.target.value)}
-                      className="bg-slate-950/50 border-white/10 focus:border-pink-500 text-white"
-                      max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split('T')[0]}
+                      id="email"
+                      name="email"
+                      type="email"
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      inputMode="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      className="h-11 border-white/10 bg-white/[0.04] pl-10 text-white placeholder:text-slate-500 focus-visible:border-cyan-400/60 focus-visible:ring-cyan-400/20"
+                      placeholder="you@example.com"
                       required
+                      data-testid="login-email"
                     />
                   </div>
+                </div>
 
-                  <NeonButton
-                    type="submit"
-                    variant="gradient"
-                    className="w-full"
-                    disabled={loading}
-                  >
-                    {loading ? 'Verifying...' : 'Continue'}
-                  </NeonButton>
-                </form>
-              </>
-            )}
-          </GlassCard>
+                <div>
+                  <div className="mb-2 flex items-center justify-between">
+                    <Label htmlFor="password" className="block text-sm text-slate-200">
+                      Password
+                    </Label>
+                    <Link
+                      to="/forgot-password"
+                      className="text-xs font-medium text-cyan-300/90 hover:text-cyan-200"
+                      data-testid="login-forgot-password-link"
+                    >
+                      Forgot password?
+                    </Link>
+                  </div>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                    <Input
+                      id="password"
+                      name="password"
+                      type={showPassword ? 'text' : 'password'}
+                      value={formData.password}
+                      onChange={handleChange}
+                      className="h-11 border-white/10 bg-white/[0.04] pl-10 pr-10 text-white placeholder:text-slate-500 focus-visible:border-cyan-400/60 focus-visible:ring-cyan-400/20"
+                      placeholder="••••••••"
+                      required
+                      data-testid="login-password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-200"
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  data-testid="login-signin-btn"
+                  className="h-11 w-full rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-500 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
+                >
+                  {loading ? 'Signing in…' : 'Sign in with email'}
+                </button>
+              </form>
+
+              <SocialAuthButtons
+                postLoginPath={postLoginPath}
+                onError={(msg) => setError(msg)}
+              />
+
+              <button
+                type="button"
+                onClick={handleDemoLogin}
+                disabled={loading}
+                data-testid="login-demo-btn"
+                className="mt-3 h-11 w-full rounded-xl border border-white/15 bg-white/[0.03] text-sm font-medium text-slate-200 transition hover:border-cyan-400/35 hover:bg-cyan-500/10 hover:text-cyan-100 disabled:opacity-60"
+              >
+                Continue with demo account
+              </button>
+
+              <p className="mt-6 text-center text-sm text-slate-400">
+                New here?{' '}
+                <button
+                  type="button"
+                  onClick={() => navigate('/signup')}
+                  className="font-semibold text-cyan-300 hover:text-cyan-200"
+                >
+                  Create an account
+                </button>
+              </p>
+
+              <p className="mt-4 text-center text-[11px] leading-relaxed text-slate-500">
+                Adults 18+ only.{' '}
+                <Link to="/terms" className="text-slate-400 underline hover:text-cyan-300">
+                  Terms
+                </Link>
+                {' · '}
+                <Link to="/privacy" className="text-slate-400 underline hover:text-cyan-300">
+                  Privacy
+                </Link>
+              </p>
+            </>
+          ) : (
+            <>
+              <div className="mb-8 text-center">
+                <h1 className="text-2xl font-semibold text-white">Age verification</h1>
+                <p className="mt-2 text-sm text-slate-400">Confirm you are 18 or older</p>
+              </div>
+
+              {error && (
+                <Alert className="mb-5 border-amber-500/35 bg-amber-500/10 text-amber-50">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              <form onSubmit={handleAgeUpdate} className="space-y-5">
+                <div>
+                  <Label htmlFor="dateOfBirth" className="mb-2 block text-sm text-slate-200">
+                    Date of birth
+                  </Label>
+                  <Input
+                    id="dateOfBirth"
+                    type="date"
+                    value={dateOfBirth}
+                    onChange={(e) => setDateOfBirth(e.target.value)}
+                    className="h-11 border-white/10 bg-white/[0.04] text-white focus-visible:border-cyan-400/60 focus-visible:ring-cyan-400/20"
+                    max={new Date(new Date().setFullYear(new Date().getFullYear() - 18))
+                      .toISOString()
+                      .split('T')[0]}
+                    required
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="h-11 w-full rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-500 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
+                >
+                  {loading ? 'Verifying…' : 'Continue'}
+                </button>
+              </form>
+            </>
+          )}
         </motion.div>
       </div>
-    </RoomLayout>
+    </div>
   );
 }
