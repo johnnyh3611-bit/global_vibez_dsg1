@@ -35,6 +35,13 @@ class WalletTransaction(BaseModel):
     created_at: str
     metadata: Optional[dict] = None
 
+class ManualCreditRequest(BaseModel):
+    """Body for POST /credit/{user_id} — amount must come from JSON, not ignored query default."""
+    amount: float = 1000
+    description: Optional[str] = None
+    reason: Optional[str] = None
+
+
 class TopUpPackage(BaseModel):
     package_id: str
     origin_url: str
@@ -204,18 +211,25 @@ async def get_wallet_balance(user_id: str) -> Dict[str, Any]:
     }
 
 @router.post("/credit/{user_id}")
-async def manual_credit_wallet(user_id: str, amount: float = 1000) -> Dict[str, Any]:
-    """Manual wallet credit for testing/demo purposes"""
+async def manual_credit_wallet(
+    user_id: str,
+    body: ManualCreditRequest = ManualCreditRequest(),
+) -> Dict[str, Any]:
+    """Manual wallet credit for testing/demo purposes."""
+    amount = float(body.amount)
+    if amount <= 0:
+        raise HTTPException(status_code=400, detail="amount must be positive")
+    description = body.description or body.reason or f"Demo credits: ${amount}"
     result = await credit_wallet(
         user_id=user_id,
         amount=amount,
-        description=f"Demo credits: ${amount}",
-        metadata={"type": "demo_credit"}
+        description=description,
+        metadata={"type": "demo_credit"},
     )
     return {
         "success": True,
         "message": f"Added ${amount} to wallet",
-        **result
+        **result,
     }
 
 @router.get("/transactions/{user_id}")
