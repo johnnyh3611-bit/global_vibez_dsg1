@@ -339,7 +339,7 @@ function useDsgSatelliteTexture() {
 
 function DsgFireball() {
   const group = useRef<THREE.Group>(null);
-  const core = useRef<THREE.Mesh>(null);
+  const coreMat = useRef<THREE.MeshStandardMaterial>(null);
   const fireRing = useRef<THREE.Mesh>(null);
   const fireRing2 = useRef<THREE.Mesh>(null);
   const dsgMap = useDsgSatelliteTexture();
@@ -351,19 +351,17 @@ function DsgFireball() {
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime() * DSG_SPEED;
-    // Keep elliptical orbit around the whole planetary grouping
+    // Satellite orbits the planet grouping
     const x = Math.cos(t) * DSG_A;
     const z = Math.sin(t) * DSG_B;
     const y = Math.sin(t * 1.4) * 0.45;
     if (group.current) {
       group.current.position.set(x, y, z);
     }
-    if (core.current) {
-      core.current.rotation.y = t * 1.6;
-      const mat = core.current.material as THREE.MeshStandardMaterial;
-      mat.emissiveIntensity = 6.5 + Math.sin(t * 6) * 1.2;
+    if (coreMat.current) {
+      coreMat.current.emissiveIntensity = 6.5 + Math.sin(t * 6) * 1.2;
     }
-    // Fire rings spin around the satellite body
+    // Fire rings spin around the satellite — DSG core stays camera-facing
     if (fireRing.current) fireRing.current.rotation.z = t * 3.4;
     if (fireRing2.current) fireRing2.current.rotation.z = -t * 2.6;
   });
@@ -415,19 +413,25 @@ function DsgFireball() {
         />
       </mesh>
 
-      {/* Fiery core — dark DSG is painted INTO the sphere texture */}
-      <mesh ref={core} renderOrder={4}>
-        <sphereGeometry args={[0.42, 64, 64]} />
-        <meshStandardMaterial
-          map={dsgMap}
-          emissiveMap={dsgMap}
-          emissive="#ff4500"
-          emissiveIntensity={6.5}
-          roughness={0.3}
-          metalness={0.08}
-          toneMapped={false}
-        />
-      </mesh>
+      {/*
+        Billboard keeps the dark DSG face toward the camera while the
+        satellite orbits. Fire rings spin around it. No outer under-label.
+      */}
+      <Billboard follow>
+        <mesh renderOrder={4}>
+          <sphereGeometry args={[0.42, 64, 64]} />
+          <meshStandardMaterial
+            ref={coreMat}
+            map={dsgMap}
+            emissiveMap={dsgMap}
+            emissive="#ff4500"
+            emissiveIntensity={6.5}
+            roughness={0.3}
+            metalness={0.08}
+            toneMapped={false}
+          />
+        </mesh>
+      </Billboard>
     </group>
   );
 }
