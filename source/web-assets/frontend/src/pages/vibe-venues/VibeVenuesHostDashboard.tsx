@@ -28,6 +28,7 @@ import {
 import { toast } from "sonner";
 import { authFetch } from "@/utils/secureAuth";
 import StripeConnectButton from "@/components/payout/StripeConnectButton";
+import VibezTabStyle from "@/components/ui/VibezTabStyle";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -226,21 +227,27 @@ export default function VibeVenuesHostDashboard() {
           />
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-2 mb-5" data-testid="vvhd-tabs">
-          <TabPill
-            active={tab === "venues"}
-            onClick={() => setTab("venues")}
-            icon={<Home className="w-4 h-4" />}
-            label={`My properties · ${venues.length}`}
-            testId="vvhd-tab-venues"
-          />
-          <TabPill
-            active={tab === "bookings"}
-            onClick={() => setTab("bookings")}
-            icon={<Calendar className="w-4 h-4" />}
-            label={`Bookings · ${bookings.length}`}
-            testId="vvhd-tab-bookings"
+        {/* Tabs — My Vibez visual language; venue labels/logic unchanged */}
+        <div className="mb-5" data-testid="vvhd-tabs">
+          <VibezTabStyle
+            ariaLabel="Host dashboard sections"
+            variant="pills"
+            value={tab}
+            onChange={(v) => setTab(v as TabKey)}
+            options={[
+              {
+                value: "venues",
+                label: `My properties · ${venues.length}`,
+                icon: Home,
+                testId: "vvhd-tab-venues",
+              },
+              {
+                value: "bookings",
+                label: `Bookings · ${bookings.length}`,
+                icon: Calendar,
+                testId: "vvhd-tab-bookings",
+              },
+            ]}
           />
         </div>
 
@@ -278,36 +285,6 @@ function EarningsTile({
       <p className={`text-2xl font-black ${tint}`}>{value}</p>
       <p className="text-[10px] text-white/40 mt-1">{sub}</p>
     </div>
-  );
-}
-
-function TabPill({
-  active,
-  onClick,
-  icon,
-  label,
-  testId,
-}: {
-  active: boolean;
-  onClick: () => void;
-  icon: React.ReactNode;
-  label: string;
-  testId: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      data-testid={testId}
-      className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-colors ${
-        active
-          ? "bg-fuchsia-500 text-white"
-          : "bg-black/30 text-fuchsia-200/70 border border-white/10 hover:text-white"
-      }`}
-    >
-      {icon}
-      {label}
-    </button>
   );
 }
 

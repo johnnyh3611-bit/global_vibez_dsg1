@@ -19,7 +19,7 @@ import type { LucideIcon } from 'lucide-react';
 import AppFooter from '@/components/AppFooter';
 import GameRulesModal from '@/components/GameRulesModal';
 import { getListedGames, getClientGameIds, getGameById, GAMES, GameCategory } from '@/data/gamesRegistry';
-import { FuturisticTabs } from '@/components/ui/futuristic-tabs';
+import { VibezTabStyle } from '@/components/ui/VibezTabStyle';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -158,7 +158,7 @@ export default function PracticeMode() {
           </div>
 
           {/* Category Filter — My Vibez tab style */}
-          <FuturisticTabs
+          <VibezTabStyle
             ariaLabel="Practice categories"
             variant="pills"
             value={selectedCategory}

@@ -33,8 +33,8 @@ import {
   mediaMasterRoutes,
   hubRoutes,
 } from "@/routes";
-import HubSwitcher from "@/components/hubs/HubSwitcher";
 import { stashReturnTo } from "@/hubs/hubRegistry";
+import VibezShell from "@/components/layout/VibezShell";
 
 // Import notification components
 import { NotificationProvider } from "@/contexts/NotificationContext";
@@ -70,7 +70,6 @@ import GlobeFAB from "@/components/GlobeFAB";
 import RoomCommsMounter from "@/components/room/RoomCommsMounter";
 import FloatingFoodMenu from "@/components/common/FloatingFoodMenu";
 import CoWatchLauncher from "@/components/common/CoWatchLauncher";
-import PageActionStrip from "@/components/common/PageActionStrip";
 import NotFound from "@/pages/NotFound";
 import CinemaRoom from "@/pages/CinemaRoom";
 import RoomInfoCube from "@/components/common/RoomInfoCube";
@@ -79,7 +78,6 @@ import RoleSwitcher from "@/components/common/RoleSwitcher";
 import LandscapeRotateHint from "@/components/common/LandscapeRotateHint";
 import CmdKLauncher from "@/components/CmdKLauncher";
 import MobileBottomNav from "@/components/MobileBottomNav";
-import GlobalNavbar from "@/components/GlobalNavbar";
 
 // Import version manager for cache busting
 import { startVersionMonitoring } from "@/utils/versionManager";
@@ -189,28 +187,11 @@ function ProtectedRouteContent({ children }) {
     };
   }, [isFullscreenGame]);
 
-  if (isFullscreenGame) {
-    // Founder directive 2026-05-09 — every game/cinema room gets a
-    // top-right "Chat & Video" pill via the global <GlobalCommsMounter />
-    // higher up the tree. Inside ProtectedRoute we just render children
-    // (the global mounter handles the pill for protected + unprotected
-    // routes alike). No PageActionStrip in fullscreen rooms.
-    return <div className="gv-route-root">{children}</div>;
-  }
+  // My Vibez design standard — persistent VibezSidebar on every protected
+  // route (lobbies + fullscreen rooms). Horizontal category tabs are
+  // decommissioned in favor of sidebar Subjects + Activity feed.
   return (
-    <>
-      <div
-        className="mx-auto flex max-w-7xl flex-col gap-2 px-4 pt-3 sm:flex-row sm:items-center sm:justify-between"
-        data-testid="protected-route-action-strip"
-      >
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-          <HubSwitcher />
-          <GlobalNavbar />
-        </div>
-        <PageActionStrip align="end" />
-      </div>
-      <div className="gv-route-root">{children}</div>
-    </>
+    <VibezShell isFullscreenRoom={isFullscreenGame}>{children}</VibezShell>
   );
 }
 

@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { FuturisticTabs } from '@/components/ui/futuristic-tabs';
+import { useVibezSubject } from '@/contexts/VibezNavContext';
 import { SoundSettings } from '@/components/SoundSettings';
 import {
   isAIDealerVoiceMuted, setAIDealerVoiceMuted,
@@ -28,8 +28,13 @@ import {
 
 const API = process.env.REACT_APP_BACKEND_URL as string;
 
+const SETTINGS_IDS = [
+  'sound', 'ai-dealer', 'language', 'game', 'display', 'notifications', 'privacy',
+];
+
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState('sound');
+  // Section filter lives in VibezSidebar Subjects (local sidebar tabs removed).
+  const [activeTab, setActiveTab] = useVibezSubject('sound', SETTINGS_IDS);
   const [aiVoiceMuted, setAiVoiceMutedState] = useState(false);
   const [locale, setLocale] = useState<UserLocaleSelection | null>(null);
   const [countries, setCountries] = useState<Array<{ code: string; name: string; flag: string; default_language: string; default_dialect: string; currency: string; currency_symbol: string; unit_system: string; }>>([]);
@@ -120,30 +125,15 @@ export default function SettingsPage() {
           <p className="text-xl text-gray-400">Customize your experience</p>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Sidebar Tabs */}
-          <FuturisticTabs
-            ariaLabel="Settings sections"
-            orientation="vertical"
-            variant="sidebar"
-            value={activeTab}
-            onChange={setActiveTab}
-            options={tabs.map((tab) => {
-              const testId =
-                tab.id === 'ai-dealer' ? 'settings-ai-dealer-tab'
-                : tab.id === 'language' ? 'settings-language-tab'
-                : `settings-tab-nav-${tab.id}`;
-              return {
-                value: tab.id,
-                label: tab.label,
-                icon: tab.icon,
-                testId,
-              };
-            })}
-          />
-
-          {/* Content Area */}
-          <div className="lg:col-span-3">
+        <div className="grid grid-cols-1 gap-6">
+          {/* Content Area — section nav via VibezSidebar Subjects */}
+          <div>
+            <p className="mb-4 text-sm text-white/50">
+              Section:{' '}
+              <span className="font-bold text-fuchsia-300">
+                {tabs.find((t) => t.id === activeTab)?.label || activeTab}
+              </span>
+            </p>
             <Card className="bg-slate-900/90 backdrop-blur-xl border-cyan-500/30 p-8">
               {/* Sound Settings */}
               {activeTab === 'sound' && (

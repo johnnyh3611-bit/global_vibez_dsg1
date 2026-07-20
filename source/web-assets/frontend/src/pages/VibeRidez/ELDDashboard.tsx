@@ -10,7 +10,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { authFetch } from "@/utils/secureAuth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FuturisticTabs } from "@/components/ui/futuristic-tabs";
+import { VibezTabStyle } from "@/components/ui/VibezTabStyle";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -672,7 +672,7 @@ export default function ELDDashboard() {
 
               {isDriver && (
                 <div className="mb-4">
-                  <FuturisticTabs
+                  <VibezTabStyle
                     ariaLabel="Driver loads"
                     value={activeTab}
                     onChange={(v) => setActiveTab(v as typeof activeTab)}

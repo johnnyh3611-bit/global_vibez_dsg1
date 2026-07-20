@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { FuturisticTabs } from '@/components/ui/futuristic-tabs';
+import { VibezTabStyle } from '@/components/ui/VibezTabStyle';
 import { Brain, Trophy, Play, ArrowLeft, Star, Target } from 'lucide-react';
 import { authFetch } from '@/utils/secureAuth';
 
@@ -126,7 +126,7 @@ export default function TriviaLobby() {
             {/* Category Selection */}
             <div className="mb-6">
               <label className="text-white font-semibold mb-3 block">Select Category:</label>
-              <FuturisticTabs
+              <VibezTabStyle
                 ariaLabel="Trivia category"
                 variant="pills"
                 value={selectedCategory}
@@ -144,7 +144,7 @@ export default function TriviaLobby() {
             {/* Difficulty Selection */}
             <div className="mb-6">
               <label className="text-white font-semibold mb-3 block">Difficulty:</label>
-              <FuturisticTabs
+              <VibezTabStyle
                 ariaLabel="Trivia difficulty"
                 variant="segmented"
                 value={selectedDifficulty}

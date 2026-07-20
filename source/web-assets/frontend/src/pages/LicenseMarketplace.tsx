@@ -19,7 +19,7 @@ import {
   ChevronLeft, Tv, Dice5, Megaphone, Music, Coins, Award,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { FuturisticTabs } from '@/components/ui/futuristic-tabs';
+import { VibezTabStyle } from '@/components/ui/VibezTabStyle';
 
 type Context = 'tv_sync' | 'casino_background' | 'commercial_use';
 
@@ -120,7 +120,7 @@ export default function LicenseMarketplace() {
           </span>
         </div>
         <div className="max-w-5xl mx-auto mt-3" data-testid="marketplace-tabs">
-          <FuturisticTabs
+          <VibezTabStyle
             ariaLabel="License contexts"
             variant="pills"
             value={context}

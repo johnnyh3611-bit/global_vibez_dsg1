@@ -11,7 +11,7 @@ import {
   ArrowLeft, Film, Library, Plus, RefreshCcw, Tag, Clock,
   ShoppingCart, PlayCircle, Lock,
 } from "lucide-react";
-import { FuturisticTabs } from "@/components/ui/futuristic-tabs";
+import { VibezTabStyle } from "@/components/ui/VibezTabStyle";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -121,7 +121,7 @@ export default function MemoryBankMarketplace() {
         </div>
 
         <div className="max-w-6xl mx-auto px-5 pb-3 flex gap-2 items-center flex-wrap">
-          <FuturisticTabs
+          <VibezTabStyle
             ariaLabel="Memory Bank sections"
             variant="pills"
             value={tab}

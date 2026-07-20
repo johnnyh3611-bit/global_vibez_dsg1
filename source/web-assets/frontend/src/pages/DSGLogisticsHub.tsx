@@ -19,7 +19,7 @@ import {
   AlertTriangle, Megaphone, Sparkles,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { FuturisticTabs } from '@/components/ui/futuristic-tabs';
+import { VibezTabStyle } from '@/components/ui/VibezTabStyle';
 
 type Tab = 'override' | 'hardware' | 'tier' | 'kitchen' | 'constants';
 
@@ -219,7 +219,7 @@ export default function DSGLogisticsHub() {
           </span>
         </div>
         <div className="max-w-5xl mx-auto mt-3" data-testid="logistics-tabs">
-          <FuturisticTabs
+          <VibezTabStyle
             ariaLabel="Logistics sections"
             variant="pills"
             value={tab}

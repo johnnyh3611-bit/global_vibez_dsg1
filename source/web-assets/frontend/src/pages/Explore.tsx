@@ -17,7 +17,7 @@ import {
   Search, ArrowLeft, ChevronRight, Sparkles,
   Dice6, Music2, Heart, Tv, Wallet, Crown, Spade, Compass,
 } from 'lucide-react';
-import { FuturisticTabs } from '@/components/ui/futuristic-tabs';
+import { VibezTabStyle } from '@/components/ui/VibezTabStyle';
 
 type Cat = 'casino' | 'music' | 'dating' | 'streaming' | 'wallet' | 'founder';
 
@@ -171,7 +171,7 @@ export default function Explore() {
 
         {/* Category chips — My Vibez tab style */}
         <div data-testid="explore-category-chips">
-          <FuturisticTabs
+          <VibezTabStyle
             ariaLabel="Explore categories"
             variant="pills"
             value={activeCat}

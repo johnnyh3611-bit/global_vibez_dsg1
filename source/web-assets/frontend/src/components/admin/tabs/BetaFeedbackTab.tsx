@@ -9,6 +9,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Card, Title, Text, Badge } from "@tremor/react";
 import { Loader2, MessageSquareWarning, RefreshCw } from "lucide-react";
+import VibezTabStyle from "@/components/ui/VibezTabStyle";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -88,21 +89,20 @@ export default function BetaFeedbackTab() {
           </button>
         </div>
 
-        <div className="flex gap-2 mt-4 flex-wrap" role="tablist">
-          {(["ALL", "UNREAD", "TRIAGED", "RESOLVED"] as Status[]).map((s) => (
-            <button
-              key={s}
-              onClick={() => setFilter(s)}
-              className={`px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider ${
-                filter === s
-                  ? "bg-cyan-500 text-black"
-                  : "bg-slate-800 text-cyan-300 border border-cyan-500/20"
-              }`}
-              data-testid={`vault-beta-feedback-filter-${s.toLowerCase()}`}
-            >
-              {s}
-            </button>
-          ))}
+        <div className="mt-4">
+          <VibezTabStyle
+            ariaLabel="Feedback status filter"
+            variant="pills"
+            value={filter}
+            onChange={(v) => setFilter(v as Status)}
+            options={(["ALL", "UNREAD", "TRIAGED", "RESOLVED"] as Status[]).map(
+              (s) => ({
+                value: s,
+                label: s,
+                testId: `vault-beta-feedback-filter-${s.toLowerCase()}`,
+              }),
+            )}
+          />
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4">
