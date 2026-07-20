@@ -201,6 +201,23 @@ async def complete_spot(payload: CompletePayload, http_request: Request):
             "settlement": settlement,
         }},
     )
+
+    # Venue Partnership — commission on sponsored-spot conversions.
+    try:
+        from services.venue_sponsorship import record_conversion  # noqa: PLC0415
+
+        await record_conversion(
+            db,
+            spot_id=booking["spot_id"],
+            user_id=booking["guest_user_id"],
+            kind="booking_complete",
+            amount_vibe=int(booking.get("fee_vibe") or 0),
+            booking_id=booking["booking_id"],
+        )
+    except Exception:
+        log = __import__("logging").getLogger(__name__)
+        log.exception("venue sponsorship conversion failed (non-fatal)")
+
     return {**booking, "status": "completed", "settlement": settlement}
 
 

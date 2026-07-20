@@ -615,7 +615,16 @@ async def payment_status(session_id: str) -> Dict[str, Any]:
         elif sub["kind"] == "restaurant_partnership":
             await db.restaurants.update_one(
                 {"restaurant_id": sub["restaurant_id"]},
-                {"$set": {"subscription_active": True, "subscription_paid_at": _utc_iso()}},
+                {
+                    "$set": {
+                        "subscription_active": True,
+                        "subscription_paid_at": _utc_iso(),
+                        # Feeds /api/restaurants/promoted + Vibe-Ring Partners carousel.
+                        "is_promoted": True,
+                        "promoted_via": "restaurant_partnership",
+                        "promoted_at": _utc_iso(),
+                    }
+                },
             )
     return {
         "status": status.status,
@@ -732,6 +741,9 @@ async def vibe_venues_stripe_webhook(request: Request) -> Dict[str, Any]:
             {"$set": {
                 "subscription_active": True,
                 "subscription_paid_at": _utc_iso(),
+                "is_promoted": True,
+                "promoted_via": "restaurant_partnership",
+                "promoted_at": _utc_iso(),
             }},
         )
 

@@ -43,6 +43,7 @@ import { triggerHaptic } from '@/hooks/useGestures';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SocialProofStrip } from '@/components/common/SocialProofStrip';
 import { FuturisticTabs } from '@/components/ui/futuristic-tabs';
+import SponsoredSpotsCarousel from '@/components/venues/SponsoredSpotsCarousel';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -1128,6 +1129,9 @@ export default function Dashboard() {
         {/* ─────── Hot Rooms carousel — top 3 individual live rooms by
               audience. Turns the pulse counter into an invitation. */}
         <HotRoomsCarousel />
+
+        {/* Venue Partnership — sponsored Vibez Spots premium carousel */}
+        <SponsoredSpotsCarousel className="mb-6" limit={6} compact />
 
         {/* ─────── Category Tabs (founder ask 2026-05-16: less scroll,
               sectioned by category. Less mess, more focus. Active tab
