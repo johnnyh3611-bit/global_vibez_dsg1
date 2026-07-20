@@ -45,9 +45,35 @@ def _to_public(case, guilty: int = 0, innocent: int = 0) -> CasePublic:
 
 
 @router.get("/health")
+@router.get("/status")
 async def health() -> Dict[str, Any]:
+    """Liveness + fee config. ``/status`` is the ops curl alias for ``/health``."""
     init_db()
-    return {"ok": True, "module": "ai_judge", "fee_bps": svc.PLATFORM_FEE_BPS}
+    open_n = 0
+    try:
+        from sqlmodel import Session, select
+        from app.modules.ai_judge.db import get_engine
+        from app.modules.ai_judge.models import CaseStatus, DisputeCase
+
+        with Session(get_engine()) as session:
+            open_n = len(
+                list(
+                    session.exec(
+                        select(DisputeCase).where(
+                            DisputeCase.status == CaseStatus.VOTING.value
+                        )
+                    ).all()
+                )
+            )
+    except Exception:
+        open_n = -1
+    return {
+        "ok": True,
+        "module": "ai_judge",
+        "status": "ready",
+        "fee_bps": svc.PLATFORM_FEE_BPS,
+        "open_cases": open_n,
+    }
 
 
 @router.post("/cases", response_model=CasePublic)
