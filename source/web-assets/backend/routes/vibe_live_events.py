@@ -13,7 +13,7 @@ import uuid
 from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from utils.database import get_current_user, get_database
 from services.vibe_live_events import (

@@ -9,7 +9,7 @@ Collections:
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 # Catalog of recurring / seeded events (ids are stable).
 EVENT_CATALOG: Dict[str, Dict[str, Any]] = {

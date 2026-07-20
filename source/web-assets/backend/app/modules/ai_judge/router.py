@@ -1,7 +1,7 @@
 """FastAPI routes for AI Judge dispute resolution."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlmodel import Session
