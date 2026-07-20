@@ -65,6 +65,7 @@ const PinochleAAA = lazy(() => import("@/pages/games/PinochleAAA"));
 const BigWheelLounge = lazy(() => import("@/pages/games/BigWheelLounge"));
 const Vibez654Game = lazy(() => import("@/pages/games/Vibez654Game"));
 const BlackjackUniversal = lazy(() => import("@/pages/games/BlackjackUniversal"));
+const AiJudgeRoom = lazy(() => import("@/components/pages/AiJudgeRoom"));
 const PokerPractice = lazy(() => import("@/pages/games/PokerPractice"));
 const BaccaratPremium = lazy(() => import("@/pages/games/BaccaratPremium"));
 const CyberCasino = lazy(() => import("@/pages/games/CyberCasino"));
@@ -229,6 +230,7 @@ export const gamesRoutes = (ProtectedRoute) => (
     <Route path="/vibe-654/prescription" element={<ProtectedRoute><Vibe654Prescription /></ProtectedRoute>} />
     <Route path="/games/vibe654/prescription" element={<Navigate to="/vibe-654/prescription" replace />} />
     <Route path="/blackjack-universal" element={<ProtectedRoute><BlackjackUniversal /></ProtectedRoute>} />
+    <Route path="/network/judge" element={<ProtectedRoute><AiJudgeRoom /></ProtectedRoute>} />
     <Route path="/poker-practice" element={<ProtectedRoute><PokerPractice /></ProtectedRoute>} />
     {/* Legacy /rummy-practice URL → new Rummy AAA */}
     <Route path="/rummy-practice" element={<Navigate to="/rummy" replace />} />
