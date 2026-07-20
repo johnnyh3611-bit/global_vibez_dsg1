@@ -367,6 +367,36 @@ async def disconnect_all_bots(bots: List[BotClient]):
     await asyncio.gather(*tasks, return_exceptions=True)
 
 
+async def _run_batched(
+    coros,
+    *,
+    concurrency: int = 25,
+    yield_delay: float = 0.01,
+):
+    """Run awaitables with a semaphore so the event loop can process WS frames.
+
+    Caps in-flight work at ``concurrency`` and yields briefly after each task
+    so FastAPI/Uvicorn / python-socketio background handlers are not starved
+    by a tight client-side join storm.
+    """
+    sem = asyncio.Semaphore(concurrency)
+
+    async def _guarded(coro):
+        async with sem:
+            try:
+                result = await coro
+            finally:
+                # Force a yield so incoming Socket.IO frames (room_created,
+                # player_joined, etc.) get dispatched between client emits.
+                await asyncio.sleep(yield_delay)
+            return result
+
+    return await asyncio.gather(
+        *[_guarded(c) for c in coros],
+        return_exceptions=True,
+    )
+
+
 class TestWebSocketBasicConnectivity:
     """Basic WebSocket connectivity tests"""
     
@@ -589,9 +619,16 @@ class TestWebSocketScaleTest:
 
 class TestWebSocketStressTest:
     """Stress testing - find server limits"""
+
+    # Cap in-flight room create/join/move work so the client event loop
+    # keeps draining inbound Socket.IO frames under load.
+    STRESS_JOIN_CONCURRENCY = 25
+    STRESS_CREATE_CONCURRENCY = 25
+    STRESS_MOVE_CONCURRENCY = 25
+    STRESS_YIELD_DELAY = 0.01
     
     async def test_09_stress_test_with_rooms(self):
-        """Stress test with room operations"""
+        """Stress test with room operations (batched async joins)."""
         print(f"\n{'='*60}")
         print("TEST: Stress Test - 200 Rooms with Active Games")
         print(f"{'='*60}")
@@ -603,35 +640,66 @@ class TestWebSocketStressTest:
         
         hosts = bots[:len(bots)//2]
         guests = bots[len(bots)//2:]
-        
-        # Create rooms
+
+        # Create rooms concurrently (semaphore-bounded), yielding between
+        # creates so room_created handlers can run.
+        create_results = await _run_batched(
+            [host.create_room("tictactoe") for host in hosts],
+            concurrency=self.STRESS_CREATE_CONCURRENCY,
+            yield_delay=self.STRESS_YIELD_DELAY,
+        )
         room_codes = []
-        for host in hosts:
-            room_code = await host.create_room("tictactoe")
-            if room_code:
-                room_codes.append((host, room_code))
-                
+        for host, room_code in zip(hosts, create_results):
+            if isinstance(room_code, Exception) or not room_code:
+                continue
+            room_codes.append((host, room_code))
+            await asyncio.sleep(self.STRESS_YIELD_DELAY)
+
         print(f"  Rooms created: {len(room_codes)}")
-        
-        # Join rooms
-        active_pairs = []
+
+        # Join rooms with asyncio.gather + semaphore instead of a blocking
+        # back-to-back sequential join loop that starves WS frame processing.
+        join_jobs = []
         for i, guest in enumerate(guests):
-            if i < len(room_codes):
-                host, room_code = room_codes[i]
-                if await guest.join_room(room_code):
-                    active_pairs.append((host, guest))
-                    
+            if i >= len(room_codes):
+                break
+            _host, room_code = room_codes[i]
+            join_jobs.append((guest, room_codes[i][0], room_code))
+            await asyncio.sleep(self.STRESS_YIELD_DELAY)
+
+        join_results = await _run_batched(
+            [guest.join_room(room_code) for guest, _host, room_code in join_jobs],
+            concurrency=self.STRESS_JOIN_CONCURRENCY,
+            yield_delay=self.STRESS_YIELD_DELAY,
+        )
+
+        active_pairs = []
+        for (guest, host, _room_code), ok in zip(join_jobs, join_results):
+            if ok is True:
+                active_pairs.append((host, guest))
+            await asyncio.sleep(self.STRESS_YIELD_DELAY)
+
         print(f"  Active game pairs: {len(active_pairs)}")
-        
-        # Simulate game activity - each pair sends 10 moves
-        moves_sent = 0
+
+        # Simulate game activity — batched moves so the loop still yields.
+        move_coros = []
         for host, guest in active_pairs[:50]:  # Limit to 50 pairs for speed
             for _ in range(5):
-                if await host.send_move("move", {"position": secrets.randbelow(8)}):
-                    moves_sent += 1
-                if await guest.send_move("move", {"position": secrets.randbelow(8)}):
-                    moves_sent += 1
-                    
+                move_coros.append(
+                    host.send_move("move", {"position": secrets.randbelow(8)})
+                )
+                move_coros.append(
+                    guest.send_move("move", {"position": secrets.randbelow(8)})
+                )
+                await asyncio.sleep(self.STRESS_YIELD_DELAY)
+
+        move_results = await _run_batched(
+            move_coros,
+            concurrency=self.STRESS_MOVE_CONCURRENCY,
+            yield_delay=self.STRESS_YIELD_DELAY,
+        )
+        moves_sent = sum(1 for r in move_results if r is True)
+
         print(f"  Moves sent: {moves_sent}")
         
         await disconnect_all_bots(bots)
