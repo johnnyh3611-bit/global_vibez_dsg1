@@ -278,6 +278,13 @@ def register_all_routes(
     # ── Wave 2B — Vibez Spots + Vibe Venues (local / reservations) ───
     _soft_mount(api_router, log, "vibe_spots", "routes.vibe_spots", tags=["vibe-spots"])
     _soft_mount(api_router, log, "vibe_venues", "routes.vibe_venues")
+    _soft_mount(
+        api_router,
+        log,
+        "venue_sponsorship",
+        "routes.venue_sponsorship",
+        tags=["venue-sponsorship"],
+    )
 
     # ── Wave 2C — Vibe Ridez (courier / delivery routing) ────────────
     _soft_mount(api_router, log, "vibe_ridez", "routes.vibe_ridez")
