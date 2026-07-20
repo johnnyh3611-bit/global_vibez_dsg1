@@ -90,7 +90,26 @@ When beta mode is on (default in `ENVIRONMENT=production` until set `false`):
 
 Start with **20–50** Founding Members. Open the gate only after live Helio credits reconcile.
 
-## 8. Final Payment Test Protocol (Helio sandbox)
+## 8. Founding Member Top-Up Workflow (live staging)
+
+Staging host: `https://www.globalvibezdsg.com` → API `https://globalvibezdsg1-production.up.railway.app`.
+
+| Prep check | Status |
+|------------|--------|
+| Frontend bake points at Railway API (not localhost) | Verified in `main.*.js` |
+| `HELIO_*` present (`integrations/health` → helio configured) | Verified (api/secret/paylink/webhook token) |
+| Helio dashboard Payload URL | Must be `…/api/coins/webhook/helio` (HMAC via `HELIO_WEBHOOK_TOKEN`) |
+| Spoof webhook → 401 | Verified live |
+
+**Happy path (Solana):** Demo Login (`demo@globalvibez.com` is beta-allowed). Popular pack ₵10,000 / $9 mints deposit + `GVZ-*` memo. Solana treasury is **mainnet** (not Devnet) — send a real SOL transfer with the memo to credit; indexer credits `users.credits_balance`. Do not expect 500→10500 unless that user started at ₵500.
+
+**Cancel path (Helio):** Embed loads in **test mode**. Closing the Top-Up shell while Card is active shows `Payment cancelled — no charge was made…` (`data-testid=topup-helio-status`). Helio’s own wallet-picker X does not always fire `onCancel`.
+
+**Monitor:** Railway logs for `POST /api/coins/webhook/helio` → **200** on paid events; **401** on unsigned/spoofed POSTs.
+
+> Note: `POST /api/coins/topup/helio` (redirect charge API) currently returns **502 / Helio 401** on staging while the **embed paylink** path works. Prefer the embed; rotate Helio API/secret keys if redirect checkout is still needed.
+
+## 9. Final Payment Test Protocol (Helio sandbox)
 
 Executable runner (no live Helio keys required — simulates the SUCCESS webhook):
 
@@ -116,7 +135,7 @@ Staging with a real Helio charge:
 4. Flip to `HELIO_NETWORK=main` only after credits reconcile
 5. Keep the Beta banner until you exit Founding Member mode
 
-## 9. Related files
+## 10. Related files
 
 - `backend/services/helio_client.py` — charges + webhook verify (`x-helio-signature`)
 - `backend/services/payment_beta_gate.py` — cohort gate
