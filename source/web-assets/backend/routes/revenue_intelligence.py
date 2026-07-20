@@ -8,10 +8,10 @@ Revenue Intelligence — Vibe Velocity + VIP tiered access.
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from utils.database import get_current_user, get_database
 from services.payment_beta_gate import user_is_payment_beta_allowed
