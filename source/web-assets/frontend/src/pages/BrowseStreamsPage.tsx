@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FuturisticTabs } from '@/components/ui/futuristic-tabs';
+import { useVibezSubject } from '@/contexts/VibezNavContext';
 import { Users, Video, Play, Radio } from 'lucide-react';
 
 const API = process.env.REACT_APP_BACKEND_URL;
+const STREAM_SUBJECT_IDS = ['all', 'gaming', 'dating', 'casual', 'music', 'art'];
 
 export default function BrowseStreamsPage() {
   const navigate = useNavigate();
   const [streams, setStreams] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState(null);
+  // Stream category filter lives in VibezSidebar Subjects.
+  const [subjectId] = useVibezSubject('all', STREAM_SUBJECT_IDS);
+  const selectedCategory = subjectId === 'all' ? null : subjectId;
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -37,15 +40,6 @@ export default function BrowseStreamsPage() {
     }
   };
 
-  const categories = [
-    { id: null, label: 'All', icon: '🌎' },
-    { id: 'gaming', label: 'Gaming', icon: '🎮' },
-    { id: 'dating', label: 'Dating', icon: '💕' },
-    { id: 'casual', label: 'Casual', icon: '💬' },
-    { id: 'music', label: 'Music', icon: '🎵' },
-    { id: 'art', label: 'Art', icon: '🎨' }
-  ];
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-950 via-black to-blue-950 p-4">
       <div className="max-w-7xl mx-auto">
@@ -53,20 +47,10 @@ export default function BrowseStreamsPage() {
           <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-red-400 via-pink-400 to-purple-400 bg-clip-text text-transparent">
             🔴 Live Now
           </h1>
-          <p className="text-gray-400">Watch live streams from the community</p>
-        </div>
-
-        <div className="mb-8">
-          <FuturisticTabs
-            ariaLabel="Stream category"
-            variant="pills"
-            value={selectedCategory ?? 'all'}
-            onChange={(v) => setSelectedCategory(v === 'all' ? null : v)}
-            options={categories.map((cat) => ({
-              value: cat.id ?? 'all',
-              label: `${cat.icon} ${cat.label}`,
-            }))}
-          />
+          <p className="text-gray-400">
+            Watch live streams from the community
+            {selectedCategory ? ` · ${selectedCategory}` : ''}
+          </p>
         </div>
 
         <div className="mb-8">

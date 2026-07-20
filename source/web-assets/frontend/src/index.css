@@ -11,6 +11,7 @@
 
 /* Table Standard — GameRoomLayout / GameCarousel shared ergonomics. */
 @import './styles/game-room-standard.css';
+@import './styles/vibez-sidebar.css';
 
 @tailwind base;
 @tailwind components;

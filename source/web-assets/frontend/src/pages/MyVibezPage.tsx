@@ -17,15 +17,16 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { FuturisticTabs } from '@/components/ui/futuristic-tabs';
+import { useVibezSubject } from '@/contexts/VibezNavContext';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
+const MY_VIBEZ_FEED_IDS = ['for_you', 'following', 'gaming', 'dating'];
 
 export default function MyVibezPage() {
   const [posts, setPosts] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [feedType, setFeedType] = useState('for_you'); // for_you, following, gaming, dating
+  // Feed subject filter lives in VibezSidebar (horizontal tabs removed).
+  const [feedType, setFeedType] = useVibezSubject('for_you', MY_VIBEZ_FEED_IDS);
   const [loading, setLoading] = useState(false);
   const [userId] = useState(() => localStorage.getItem('user_id') || 'demo_user');
   const [muted, setMuted] = useState(true);
@@ -113,26 +114,15 @@ export default function MyVibezPage() {
 
   return (
     <div className="h-screen bg-black overflow-hidden">
-      {/* Top Navigation */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-b from-black/80 to-transparent p-4">
-        <div className="flex items-center justify-between max-w-md mx-auto">
-          <h1 className="text-2xl font-black text-transparent bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400 bg-clip-text">
+      {/* Brand chip — subjects live in VibezSidebar */}
+      <div className="pointer-events-none absolute top-0 left-0 right-0 z-40 bg-gradient-to-b from-black/80 to-transparent p-4">
+        <div className="mx-auto flex max-w-md items-center justify-between">
+          <h1 className="text-2xl font-black text-transparent bg-gradient-to-r from-pink-400 via-fuchsia-400 to-violet-400 bg-clip-text">
             MY VIBEZ
           </h1>
-          
-          <FuturisticTabs
-            ariaLabel="Feed type"
-            variant="pills"
-            value={feedType}
-            onChange={setFeedType}
-            className="max-w-lg"
-            options={[
-              { value: 'for_you', label: 'For You', icon: Sparkles, testId: 'myvibez-page-tab-for-you' },
-              { value: 'following', label: 'Following', icon: Users, testId: 'myvibez-page-tab-following' },
-              { value: 'gaming', label: 'Gaming', icon: Gamepad2, testId: 'myvibez-page-tab-gaming' },
-              { value: 'dating', label: 'Dating', icon: Heart, testId: 'myvibez-page-tab-dating' },
-            ]}
-          />
+          <span className="pointer-events-none text-xs font-bold uppercase tracking-widest text-white/50">
+            {feedType.replace('_', ' ')}
+          </span>
         </div>
       </div>
 

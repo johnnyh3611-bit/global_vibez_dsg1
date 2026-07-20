@@ -4,6 +4,9 @@
  * Split testimony (A | B), bottom-arc GUILTY / INNOCENT vote HUD with
  * VibeCredit stake slider (Blackjack-style bet selector).
  *
+ * Layout: inherits VibezShell / VibezSidebar from ProtectedRoute — main
+ * event (Digital Bench) stays centered; sidebar provides Subjects + Activity.
+ *
  * Route: /network/judge
  */
 import React, { Suspense, useEffect, useMemo, useState } from "react";

@@ -1,9 +1,12 @@
 /**
- * FuturisticTabs — shared in-app tab control.
+ * FuturisticTabs — shared in-app tab control (legacy).
  *
- * Visual source of truth: My Vibez feed tabs
- * (`backdrop-blur` tray + fuchsia→pink active pill).
- * Use this everywhere instead of one-off cyan/rainbow tab bars.
+ * Visual source of truth: My Vibez fuchsia→pink active pill.
+ *
+ * @deprecated For route / suite navigation and subject filtering, use
+ * VibezSidebar + useVibezSubject. Prefer `orientation="vertical"` /
+ * `variant="sidebar"` for any remaining in-page section switches.
+ * Horizontal top-nav tabs are decommissioned platform-wide.
  */
 import React from 'react';
 import { cn } from '@/lib/utils';
