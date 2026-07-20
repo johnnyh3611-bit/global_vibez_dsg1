@@ -157,20 +157,54 @@ export default function TopUpVibezCoinsModal({
           network: helioNetwork,
           display: "inline",
           onSuccess: () => {
-            setHelioMsg(
-              "Payment received. Coins credit after Helio confirms (usually under a minute).",
-            );
+            try {
+              setError("");
+              setHelioMsg(
+                "Payment received. Coins credit after Helio confirms (usually under a minute).",
+              );
+            } catch {
+              /* never throw out of Helio embed callbacks */
+            }
           },
           onError: (event: unknown) => {
-            const msg =
-              typeof event === "object" && event && "message" in event
-                ? String((event as { message?: string }).message)
-                : "Helio payment error";
-            setError(msg);
+            try {
+              const msg =
+                typeof event === "object" && event && "message" in event
+                  ? String((event as { message?: string }).message)
+                  : "Card payment failed. No charge was completed — try again or use Solana.";
+              setHelioMsg("");
+              setError(msg);
+            } catch {
+              setError("Card payment failed. Please try again or use Solana.");
+            }
           },
-          onPending: () => setHelioMsg("Payment pending…"),
-          onCancel: () => setHelioMsg("Payment cancelled"),
-          onStartPayment: () => setHelioMsg("Starting payment…"),
+          onPending: () => {
+            try {
+              setHelioMsg("Payment pending… confirming with Helio.");
+            } catch {
+              /* ignore */
+            }
+          },
+          onCancel: () => {
+            // Mid-checkout cancel — friendly status, never an unhandled exception.
+            try {
+              setSubmitting(false);
+              setError("");
+              setHelioMsg(
+                "Payment cancelled — no charge was made. You can try again or switch to Solana.",
+              );
+            } catch {
+              setHelioMsg("Payment cancelled — no charge was made.");
+            }
+          },
+          onStartPayment: () => {
+            try {
+              setError("");
+              setHelioMsg("Starting secure Helio checkout…");
+            } catch {
+              /* ignore */
+            }
+          },
         });
       } catch (e: any) {
         setError(e?.message || "Couldn't load Helio checkout");
@@ -181,6 +215,31 @@ export default function TopUpVibezCoinsModal({
       cancelled = true;
     };
   }, [open, method, helioPaylinkId, helioNetwork, selectedPack?.id, selectedPack?.usd]);
+
+  /** Outer modal close / backdrop click while Card (Helio) is active.
+   * Helio's embed often has no Cancel control of its own — closing the
+   * Top-Up shell is the real cancel path. Keep the modal open and show a
+   * friendly status (never hang / never throw). A second close dismisses.
+   */
+  const handleRequestClose = () => {
+    if (
+      method === "card" &&
+      helioPaylinkId &&
+      !helioMsg.toLowerCase().includes("cancelled")
+    ) {
+      try {
+        setSubmitting(false);
+        setError("");
+        setHelioMsg(
+          "Payment cancelled — no charge was made. You can try again or switch to Solana.",
+        );
+      } catch {
+        setHelioMsg("Payment cancelled — no charge was made.");
+      }
+      return;
+    }
+    onClose();
+  };
 
   const handleCardCheckout = async () => {
     setError("");
@@ -255,7 +314,7 @@ export default function TopUpVibezCoinsModal({
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-[90] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
           data-testid="topup-modal"
-          onClick={onClose}
+          onClick={handleRequestClose}
         >
           <motion.div
             initial={{ scale: 0.92, opacity: 0 }}
@@ -265,7 +324,7 @@ export default function TopUpVibezCoinsModal({
             className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-slate-950/95 border border-cyan-500/30 shadow-[0_0_60px_rgba(34,211,238,0.2)] p-6 text-white"
           >
             <button
-              onClick={onClose}
+              onClick={handleRequestClose}
               className="absolute top-3 right-3 p-1 rounded-full text-white/60 hover:bg-white/10"
               aria-label="Close"
               data-testid="topup-close"
@@ -406,7 +465,11 @@ export default function TopUpVibezCoinsModal({
                   className="min-h-[280px] rounded-xl bg-white/5 p-2"
                 />
                 {helioMsg && (
-                  <p className="text-xs text-cyan-200 mt-3 text-center">
+                  <p
+                    className="text-xs text-cyan-200 mt-3 text-center"
+                    data-testid="topup-helio-status"
+                    role="status"
+                  >
                     {helioMsg}
                   </p>
                 )}

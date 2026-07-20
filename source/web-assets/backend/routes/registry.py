@@ -213,6 +213,14 @@ def register_all_routes(
     # ── Wave 1C — Tokenomics / economy ───────────────────────────────
     _soft_mount(api_router, log, "coins", "routes.coins")
     _soft_mount(api_router, log, "coin_topup", "routes.coin_topup")
+    # Protocol alias: POST /api/webhooks/helio → same Helio signature handshake
+    _soft_mount(
+        api_router,
+        log,
+        "coin_topup_helio_alias",
+        "routes.coin_topup",
+        attr="helio_alias_router",
+    )
     _soft_mount(api_router, log, "integrations_health", "routes.integrations_health")
     _soft_mount(api_router, log, "coin_stats", "routes.coin_stats")
     _soft_mount(api_router, log, "currency", "routes.currency")

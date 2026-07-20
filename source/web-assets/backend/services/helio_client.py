@@ -121,6 +121,29 @@ def _require_webhook_auth() -> bool:
     return env in ("production", "prod", "live")
 
 
+def extract_webhook_signature(headers: Any) -> Optional[str]:
+    """Pull Helio signature from common header names.
+
+    Protocol requires ``x-helio-signature``; we also accept legacy
+    ``X-Signature`` / ``x-signature`` used by earlier Helio docs.
+    """
+    if headers is None:
+        return None
+    for key in (
+        "x-helio-signature",
+        "X-Helio-Signature",
+        "X-Signature",
+        "x-signature",
+    ):
+        try:
+            val = headers.get(key)
+        except Exception:
+            val = None
+        if val:
+            return str(val).strip()
+    return None
+
+
 def verify_webhook_signature(raw_body: bytes, signature: Optional[str]) -> bool:
     """HMAC-SHA256 of body with HELIO_WEBHOOK_TOKEN.
 
@@ -135,16 +158,33 @@ def verify_webhook_signature(raw_body: bytes, signature: Optional[str]) -> bool:
         return True  # local/dev soft verify until token is provisioned
     if not signature:
         return False
+    # Accept raw hex or ``sha256=<hex>`` style
+    sig = signature.strip()
+    if sig.lower().startswith("sha256="):
+        sig = sig.split("=", 1)[1].strip()
     digest = hmac.new(token.encode("utf-8"), raw_body, hashlib.sha256).hexdigest()
-    return hmac.compare_digest(digest, signature)
+    return hmac.compare_digest(digest, sig)
 
 
 def extract_payment_meta(payload: Dict[str, Any]) -> Dict[str, Any]:
     """Best-effort extract of our metadata from Helio webhook shapes."""
     meta: Dict[str, Any] = {}
 
-    # Direct fields
-    for key in ("payment_id", "pack_id", "user_id", "coins"):
+    # Direct fields + Helio payment_request_id / tx identifiers
+    for key in (
+        "payment_id",
+        "pack_id",
+        "user_id",
+        "coins",
+        "paymentRequestId",
+        "payment_request_id",
+        "transactionSignature",
+        "transaction_signature",
+        "txHash",
+        "tx_hash",
+        "transactionHash",
+        "transaction_hash",
+    ):
         if key in payload:
             meta[key] = payload[key]
 
@@ -169,8 +209,50 @@ def extract_payment_meta(payload: Dict[str, Any]) -> Dict[str, Any]:
                 pass
         elif isinstance(raw, dict):
             meta.update(raw)
-        for key in ("payment_id", "pack_id", "user_id", "coins"):
+        for key in (
+            "payment_id",
+            "pack_id",
+            "user_id",
+            "coins",
+            "paymentRequestId",
+            "payment_request_id",
+            "transactionSignature",
+            "txHash",
+            "transactionHash",
+        ):
             if key in cand and key not in meta:
                 meta[key] = cand[key]
+
+    # Normalize aliases used by the Final Payment Test Protocol
+    pr_id = (
+        meta.get("payment_request_id")
+        or meta.get("paymentRequestId")
+        or payload.get("paymentRequestId")
+        or payload.get("payment_request_id")
+    )
+    if pr_id:
+        meta["payment_request_id"] = str(pr_id)
+
+    tx_hash = (
+        meta.get("transaction_hash")
+        or meta.get("transactionHash")
+        or meta.get("tx_hash")
+        or meta.get("txHash")
+        or meta.get("transaction_signature")
+        or meta.get("transactionSignature")
+    )
+    # Nested transaction object
+    tx_obj = payload.get("transaction") if isinstance(payload.get("transaction"), dict) else {}
+    if not tx_hash and tx_obj:
+        tx_hash = (
+            tx_obj.get("signature")
+            or tx_obj.get("transactionSignature")
+            or tx_obj.get("txHash")
+            or tx_obj.get("hash")
+        )
+    if not pr_id and tx_obj.get("paymentRequestId"):
+        meta["payment_request_id"] = str(tx_obj["paymentRequestId"])
+    if tx_hash:
+        meta["transaction_hash"] = str(tx_hash)
 
     return meta
