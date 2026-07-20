@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { FuturisticTabs } from '@/components/ui/futuristic-tabs';
+import { VibezTabStyle } from '@/components/ui/VibezTabStyle';
 import { Trophy, Users, Calendar, Coins, Play, ChevronRight } from 'lucide-react';
 
 export default function TournamentHub() {
@@ -122,7 +122,7 @@ export default function TournamentHub() {
 
         {/* Tabs */}
         <div className="max-w-md mx-auto mb-8">
-          <FuturisticTabs
+          <VibezTabStyle
             ariaLabel="Tournament status"
             value={activeTab}
             onChange={setActiveTab}

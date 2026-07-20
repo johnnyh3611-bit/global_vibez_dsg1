@@ -12,7 +12,7 @@ import {
   ArrowLeft, Music4, Gavel, ShoppingBag, Plus, RefreshCcw,
   Tag, Activity, Coins,
 } from "lucide-react";
-import { FuturisticTabs } from "@/components/ui/futuristic-tabs";
+import { VibezTabStyle } from "@/components/ui/VibezTabStyle";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -144,7 +144,7 @@ export default function BeatVaultMarketplace() {
         </div>
 
         <div className="max-w-6xl mx-auto px-5 pb-3 flex gap-2 items-center flex-wrap">
-          <FuturisticTabs
+          <VibezTabStyle
             ariaLabel="Beat Vault sections"
             variant="pills"
             value={tab}

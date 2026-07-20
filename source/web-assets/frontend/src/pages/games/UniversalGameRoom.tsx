@@ -26,7 +26,7 @@ import {
   triggerVictoryFireworks 
 } from '../../utils/universalGameAnimations';
 import './UniversalGameRoom.css';
-import { FuturisticTabs } from '@/components/ui/futuristic-tabs';
+import { VibezTabStyle } from '@/components/ui/VibezTabStyle';
 
 const UniversalGameRoom = () => {
   const { gameType, roomCode } = useParams();
@@ -1221,7 +1221,7 @@ const Sidebar = ({ isOpen, chatMessages, gameLogs, onSendMessage }) => {
   return (
     <div className={`sidebar-sci-fi ${isOpen ? 'open' : 'closed'}`}>
       {/* Tabs */}
-      <FuturisticTabs
+      <VibezTabStyle
         ariaLabel="Sidebar panel"
         value={activeTab}
         onChange={setActiveTab}

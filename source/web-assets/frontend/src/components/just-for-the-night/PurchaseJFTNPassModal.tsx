@@ -13,6 +13,7 @@ import { X, Sparkles, ShieldCheck, Loader2, Coins } from "lucide-react";
 import { authFetch } from "@/utils/secureAuth";
 import { CURRENCY_SYMBOL, formatCoins } from "@/utils/currency";
 import TopUpVibezCoinsModal from "@/components/wallet/TopUpVibezCoinsModal";
+import VibezTabStyle from "@/components/ui/VibezTabStyle";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -164,44 +165,31 @@ export default function PurchaseJFTNPassModal({
               {formatCoins(feeCoins)} · 24-hour access · pass auto-expires.
             </p>
 
-            {/* Mode toggle — PRIMARY = coins. */}
-            <div
-              className="grid grid-cols-3 gap-2 mb-4 p-1 rounded-xl bg-white/5 border border-white/10"
-              role="tablist"
-            >
-              <button
-                onClick={() => setMode("coins")}
-                className={`py-2 rounded-lg text-[11px] font-bold uppercase tracking-widest transition-colors ${
-                  mode === "coins"
-                    ? "bg-cyan-500/20 text-cyan-200 border border-cyan-400/40"
-                    : "text-white/60 hover:text-white/80"
-                }`}
-                data-testid="jftn-mode-coins"
-              >
-                {CURRENCY_SYMBOL} Vibez
-              </button>
-              <button
-                onClick={() => setMode("solana_real")}
-                className={`py-2 rounded-lg text-[11px] font-bold uppercase tracking-widest transition-colors ${
-                  mode === "solana_real"
-                    ? "bg-purple-500/20 text-purple-200 border border-purple-400/40"
-                    : "text-white/60 hover:text-white/80"
-                }`}
-                data-testid="jftn-mode-solana-real"
-              >
-                Wallet SOL
-              </button>
-              <button
-                onClick={() => setMode("solana_mock")}
-                className={`py-2 rounded-lg text-[11px] font-bold uppercase tracking-widest transition-colors ${
-                  mode === "solana_mock"
-                    ? "bg-amber-500/20 text-amber-200 border border-amber-400/40"
-                    : "text-white/60 hover:text-white/80"
-                }`}
-                data-testid="jftn-mode-mock"
-              >
-                Demo
-              </button>
+            {/* Mode toggle — PRIMARY = coins. My Vibez tab visuals. */}
+            <div className="mb-4">
+              <VibezTabStyle
+                ariaLabel="Pass payment mode"
+                variant="segmented"
+                value={mode}
+                onChange={(v) => setMode(v as typeof mode)}
+                options={[
+                  {
+                    value: "coins",
+                    label: `${CURRENCY_SYMBOL} Vibez`,
+                    testId: "jftn-mode-coins",
+                  },
+                  {
+                    value: "solana_real",
+                    label: "Wallet SOL",
+                    testId: "jftn-mode-solana-real",
+                  },
+                  {
+                    value: "solana_mock",
+                    label: "Demo",
+                    testId: "jftn-mode-mock",
+                  },
+                ]}
+              />
             </div>
 
             {mode === "coins" && (

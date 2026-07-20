@@ -14,6 +14,7 @@ import SolanaDepositPanel from "@/components/wallet/SolanaDepositPanel";
 import BetaPaymentBanner, {
   type BetaPaymentInfo,
 } from "@/components/wallet/BetaPaymentBanner";
+import VibezTabStyle from "@/components/ui/VibezTabStyle";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const HELIO_EMBED_SRC = "https://embed.hel.io/assets/index-v1.js";
@@ -349,41 +350,27 @@ export default function TopUpVibezCoinsModal({
                 "Buy ₵ with Solana — or card via Helio when you need fiat."}
             </p>
 
-            <div
-              className="grid grid-cols-2 gap-2 mb-4 p-1 rounded-xl bg-black/40 border border-white/10"
-              role="tablist"
-              aria-label="Payment method"
-            >
-              <button
-                type="button"
-                role="tab"
-                aria-selected={method === "solana"}
-                data-testid="topup-method-solana"
-                onClick={() => setMethod("solana")}
-                className={`flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-bold transition ${
-                  method === "solana"
-                    ? "bg-gradient-to-r from-cyan-600 to-emerald-600 text-white shadow-lg"
-                    : "text-white/50 hover:text-white/80"
-                }`}
-              >
-                <Wallet className="w-4 h-4" />
-                Solana
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={method === "card"}
-                data-testid="topup-method-card"
-                onClick={() => setMethod("card")}
-                className={`flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-bold transition ${
-                  method === "card"
-                    ? "bg-white/10 text-white border border-white/20"
-                    : "text-white/40 hover:text-white/70"
-                }`}
-              >
-                <CreditCard className="w-4 h-4" />
-                {cardLabel}
-              </button>
+            <div className="mb-4">
+              <VibezTabStyle
+                ariaLabel="Payment method"
+                variant="segmented"
+                value={method}
+                onChange={(v) => setMethod(v as "solana" | "card")}
+                options={[
+                  {
+                    value: "solana",
+                    label: "Solana",
+                    icon: Wallet,
+                    testId: "topup-method-solana",
+                  },
+                  {
+                    value: "card",
+                    label: cardLabel,
+                    icon: CreditCard,
+                    testId: "topup-method-card",
+                  },
+                ]}
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-3 mb-5">

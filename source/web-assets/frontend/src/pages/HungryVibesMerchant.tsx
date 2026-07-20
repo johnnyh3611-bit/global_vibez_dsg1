@@ -41,7 +41,7 @@ import {
 import { toast } from "sonner";
 import { authFetch } from "@/utils/secureAuth";
 import StripeConnectButton from "@/components/payout/StripeConnectButton";
-import { FuturisticTabs } from "@/components/ui/futuristic-tabs";
+import VibezTabStyle from "@/components/ui/VibezTabStyle";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -296,7 +296,7 @@ export default function HungryVibesMerchant() {
 
         {/* Tabs — My Vibez style */}
         <div className="mb-5" data-testid="hv-tabs">
-          <FuturisticTabs
+          <VibezTabStyle
             ariaLabel="Merchant sections"
             variant="pills"
             value={tab}
@@ -751,21 +751,19 @@ function PromosTab({
             data-testid="hv-promo-new-value"
             className="md:col-span-2 px-3 py-2 rounded-lg bg-black/40 border border-amber-400/20 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-amber-400"
           />
-          <div className="md:col-span-3 flex rounded-lg overflow-hidden border border-amber-400/20" role="tablist">
-            <button
-              onClick={() => setDraft({ ...draft, isPercent: true })}
-              data-testid="hv-promo-new-pct"
-              className={`flex-1 text-xs font-black uppercase tracking-wider ${draft.isPercent ? "bg-amber-500 text-[#1a0d05]" : "bg-black/40 text-amber-200"}`}
-            >
-              Percent
-            </button>
-            <button
-              onClick={() => setDraft({ ...draft, isPercent: false })}
-              data-testid="hv-promo-new-fixed"
-              className={`flex-1 text-xs font-black uppercase tracking-wider ${!draft.isPercent ? "bg-amber-500 text-[#1a0d05]" : "bg-black/40 text-amber-200"}`}
-            >
-              Fixed $
-            </button>
+          <div className="md:col-span-3">
+            <VibezTabStyle
+              ariaLabel="Promo discount type"
+              variant="segmented"
+              value={draft.isPercent ? "percent" : "fixed"}
+              onChange={(v) =>
+                setDraft({ ...draft, isPercent: v === "percent" })
+              }
+              options={[
+                { value: "percent", label: "Percent", testId: "hv-promo-new-pct" },
+                { value: "fixed", label: "Fixed $", testId: "hv-promo-new-fixed" },
+              ]}
+            />
           </div>
           <input
             type="number"

@@ -16,6 +16,10 @@ import {
 import { cn } from "@/lib/utils";
 import { useVibezNav } from "@/contexts/VibezNavContext";
 import type { VibezSubject } from "@/components/layout/vibezSubjects";
+import {
+  vibezTabIconClass,
+  vibezTabTriggerClass,
+} from "@/components/ui/VibezTabStyle";
 
 function SubjectButton({
   subject,
@@ -38,22 +42,12 @@ function SubjectButton({
       onClick={onSelect}
       title={subject.label}
       className={cn(
-        "relative flex w-full shrink-0 items-center gap-2 rounded-xl px-3 py-3 text-left text-xs sm:text-sm font-bold transition-all duration-200 snap-start",
-        "focus:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/60",
-        collapsed && "justify-center px-2",
-        active
-          ? "bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white shadow-[0_0_20px_rgba(232,121,249,0.45)]"
-          : "text-white/60 hover:text-white hover:bg-white/5"
+        vibezTabTriggerClass({ active, variant: "sidebar" }),
+        "shrink-0 snap-start",
+        collapsed && "justify-center px-2"
       )}
     >
-      {Icon ? (
-        <Icon
-          className={cn(
-            "h-4 w-4 shrink-0",
-            active ? "text-white" : "text-white/50"
-          )}
-        />
-      ) : null}
+      {Icon ? <Icon className={vibezTabIconClass(active)} /> : null}
       {!collapsed && <span className="truncate">{subject.label}</span>}
     </button>
   );

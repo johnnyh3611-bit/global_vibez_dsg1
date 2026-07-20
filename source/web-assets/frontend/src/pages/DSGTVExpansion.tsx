@@ -16,7 +16,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { FuturisticTabs } from '@/components/ui/futuristic-tabs';
+import { VibezTabStyle } from '@/components/ui/VibezTabStyle';
 import { toast } from 'sonner';
 
 const API = process.env.REACT_APP_BACKEND_URL;
@@ -175,7 +175,7 @@ export default function DSGTVExpansion() {
         </div>
 
         <div className="max-w-5xl mx-auto mt-3" data-testid="dsg-tv-tabs">
-          <FuturisticTabs
+          <VibezTabStyle
             ariaLabel="DSG TV sections"
             variant="pills"
             value={tab}

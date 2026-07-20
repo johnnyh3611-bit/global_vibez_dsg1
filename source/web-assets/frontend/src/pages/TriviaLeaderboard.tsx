@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { FuturisticTabs } from '@/components/ui/futuristic-tabs';
+import { VibezTabStyle } from '@/components/ui/VibezTabStyle';
 import { Trophy, Medal, ArrowLeft, Filter, Star } from 'lucide-react';
 import { authFetch } from '@/utils/secureAuth';
 
@@ -93,7 +93,7 @@ export default function TriviaLeaderboard() {
             <Filter className="w-5 h-5 text-white" />
             <h3 className="text-white font-semibold">Filter by Category:</h3>
           </div>
-          <FuturisticTabs
+          <VibezTabStyle
             ariaLabel="Trivia category"
             variant="pills"
             value={selectedCategory}

@@ -11,7 +11,7 @@ import {
   globalVibeSync,
   type UserLocaleSelection,
 } from '@/utils/globalVibeSync';
-import { FuturisticTabs } from '@/components/ui/futuristic-tabs';
+import { VibezTabStyle } from '@/components/ui/VibezTabStyle';
 
 const API = process.env.REACT_APP_BACKEND_URL as string;
 
@@ -153,7 +153,7 @@ export function CulturalHubModal({ open, onClose, onSelected }: Props) {
         </div>
 
         <div className="px-3 pt-3 bg-black/40">
-          <FuturisticTabs
+          <VibezTabStyle
             ariaLabel="Cultural hub sections"
             variant="segmented"
             value={tab}

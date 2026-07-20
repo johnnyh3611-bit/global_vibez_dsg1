@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import soundManager from "@/utils/soundManager";
 import { authFetch } from "@/utils/secureAuth";
+import { vibezTabTriggerClass } from "@/components/ui/VibezTabStyle";
 
 const SPEED_KEY = "gv_game_speed";
 const VIEW_CARDS_KEY = "gv_view_cards";
@@ -192,7 +193,11 @@ export function GameRoomLayout({
           <button
             type="button"
             onClick={handleBack}
-            className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-cyan-200/80 hover:bg-white/10 hover:text-white transition text-xs font-bold"
+            className={vibezTabTriggerClass({
+              active: false,
+              variant: "pills",
+              className: "px-2.5 py-1.5",
+            })}
             data-testid="room-hud-back"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -201,7 +206,11 @@ export function GameRoomLayout({
           <button
             type="button"
             onClick={() => navigate("/games")}
-            className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-indigo-200/80 hover:bg-white/10 hover:text-white transition text-xs font-bold"
+            className={vibezTabTriggerClass({
+              active: false,
+              variant: "pills",
+              className: "px-2.5 py-1.5",
+            })}
             title="Swap games without leaving the suite"
             data-testid="room-hud-swap"
           >

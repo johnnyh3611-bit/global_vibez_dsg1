@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import CommHubButton from '@/components/common/CommHubButton';
 import OrientationToggle from '@/components/common/OrientationToggle';
+import { vibezTabTriggerClass } from '@/components/ui/VibezTabStyle';
 
 export type RoomTheme =
   | 'spades'      // emerald + amber
@@ -228,7 +229,11 @@ export const RoomMenuBar: React.FC<RoomMenuBarProps> = ({
             onClick={() => navigate(backTo)}
             data-testid="room-menu-bar-back"
             aria-label="Back"
-            className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-black/50 hover:bg-black/70 border border-white/10 hover:border-white/30 transition text-xs sm:text-sm font-bold ${t.accent}`}
+            className={vibezTabTriggerClass({
+              active: false,
+              variant: 'pills',
+              className: 'shrink-0 px-2.5 sm:px-3 py-1.5',
+            })}
           >
             <ArrowLeft className="w-4 h-4" />
             <span className="hidden sm:inline">Back</span>

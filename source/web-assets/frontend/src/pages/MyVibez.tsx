@@ -7,7 +7,7 @@ import { VideoRecorder } from '@/components/my-vibez/VideoRecorder';
 import { useToast } from '@/hooks/useToast';
 import { ToastContainer } from '@/components/ToastNotification';
 import { authFetch } from '@/utils/secureAuth';
-import { FuturisticTabs } from '@/components/ui/futuristic-tabs';
+import { VibezTabStyle } from '@/components/ui/VibezTabStyle';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -81,7 +81,7 @@ export function MyVibez() {
 
         {/* Tabs + Create Button */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-6">
-          <FuturisticTabs
+          <VibezTabStyle
             ariaLabel="My Vibez feed"
             variant="segmented"
             value={activeTab}

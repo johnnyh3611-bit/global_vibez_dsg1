@@ -253,7 +253,7 @@ export function GameCarousel({
             aria-label={`Show ${g.name}`}
             className={`h-1.5 rounded-full transition-all ${
               i === activeIndex
-                ? "w-5 bg-cyan-400"
+                ? "w-5 bg-gradient-to-r from-fuchsia-500 to-pink-500 shadow-[0_0_12px_rgba(232,121,249,0.55)]"
                 : "w-1.5 bg-white/25 hover:bg-white/40"
             }`}
             onClick={() => snapTo(i)}
