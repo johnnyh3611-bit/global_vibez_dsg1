@@ -56,6 +56,7 @@ def test_fernet_idempotent_encrypt():
 
 
 @pytest.mark.asyncio
+@pytest.mark.timeout(120)
 async def test_solvency_websocket_emits_within_window():
     """Subscribe to `treasury` Socket.IO room, wait up to 75s, expect at
     least one `solvency_update` event with the schema we contract on.
