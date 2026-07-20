@@ -1,1 +1,5 @@
 tge_treasury.json
+
+# AI Judge SQLite (local escrow metadata)
+data/
+*.db
