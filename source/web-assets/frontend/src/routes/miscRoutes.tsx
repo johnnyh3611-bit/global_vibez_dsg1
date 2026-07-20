@@ -27,6 +27,7 @@ import ContentRightsPage from "@/pages/ContentRightsPage";
 import CinemaRoom from "@/pages/CinemaRoom";
 import FreeTVCinemaRoom from "@/pages/FreeTVCinemaRoom";
 import VibeSpotsPage from "@/pages/VibeSpotsPage";
+import VibeEventsPage from "@/pages/VibeEventsPage";
 import DashboardRouter from "@/pages/DashboardRouter";
 import { DashboardViewRedirect } from "@/pages/DashboardViewRedirect";
 import EarnHub from "@/pages/EarnHub";
@@ -157,6 +158,7 @@ export const miscRoutes = (ProtectedRoute) => (
     <Route path="/free-tv/:roomId" element={<ProtectedRoute><FreeTVCinemaRoom /></ProtectedRoute>} />
     {/* Volumetric Dashboard "Vibez Spots" tile lands here. */}
     <Route path="/vibe-spots" element={<ProtectedRoute><VibeSpotsPage /></ProtectedRoute>} />
+    <Route path="/vibe-events" element={<ProtectedRoute><VibeEventsPage /></ProtectedRoute>} />
     <Route path="/payment/success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
     <Route path="/payment/cancel" element={<ProtectedRoute><PaymentCancel /></ProtectedRoute>} />
 

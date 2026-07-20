@@ -285,6 +285,23 @@ def register_all_routes(
         "routes.venue_sponsorship",
         tags=["venue-sponsorship"],
     )
+    _soft_mount(
+        api_router, log, "vibe_live_events", "routes.vibe_live_events", tags=["vibe-events"]
+    )
+    _soft_mount(
+        api_router,
+        log,
+        "stream_engagement",
+        "routes.stream_engagement",
+        tags=["stream-engagement"],
+    )
+    _soft_mount(
+        api_router,
+        log,
+        "revenue_intelligence",
+        "routes.revenue_intelligence",
+        tags=["revenue-intelligence"],
+    )
 
     # ── Wave 2C — Vibe Ridez (courier / delivery routing) ────────────
     _soft_mount(api_router, log, "vibe_ridez", "routes.vibe_ridez")
