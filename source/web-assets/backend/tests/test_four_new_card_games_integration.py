@@ -215,7 +215,13 @@ class TestRummyPractice:
 
 class TestRegressions:
     def test_baccarat_routes_reachable(self, auth_client):
-        r = auth_client.post(f"{BASE_URL}/api/baccarat/start", json={})
+        # Canonical play route (there is no /api/baccarat/start).
+        r = auth_client.post(
+            f"{BASE_URL}/api/baccarat/play",
+            json={"bet_type": "player", "bet_amount": 50},
+        )
+        # Auth'd callers should not get 404 (route mounted) or 5xx.
+        assert r.status_code != 404, f"baccarat play unmounted: {r.text[:200]}"
         assert r.status_code < 500, f"baccarat 5xx: {r.status_code} {r.text[:200]}"
 
     def test_admin_vault_login(self):

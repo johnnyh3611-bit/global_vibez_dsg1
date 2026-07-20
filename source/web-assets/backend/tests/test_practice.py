@@ -8,19 +8,17 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL').rstrip('/')
-SESSION_TOKEN = os.environ.get('TEST_SESSION_TOKEN', 'test_session_fixture')
+BASE_URL = (os.environ.get('REACT_APP_BACKEND_URL') or '').rstrip('/')
 
 class TestPracticeMode:
     """Practice Mode endpoint tests"""
     
     @pytest.fixture(autouse=True)
-    def setup(self):
-        """Setup test session"""
-        self.headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {SESSION_TOKEN}"
-        }
+    def setup(self, auth_headers):
+        """Inject a real demo-login Bearer token (not a fake fixture string)."""
+        if not BASE_URL:
+            pytest.skip("REACT_APP_BACKEND_URL is not configured")
+        self.headers = auth_headers
         self.game_id = None
     
     # ==================== START GAME TESTS ====================
@@ -224,8 +222,8 @@ class TestPracticeMode:
         
         data = response.json()
         assert "game_state" in data
-        # Piece should be at bottom of column 3 (row 5)
-        assert data["game_state"]["board"][5][3] == "R"  # Player is Red
+        # Piece should be at bottom of column 3 (row 5); API uses full color names.
+        assert data["game_state"]["board"][5][3] == "red"  # Player is Red
         
     def test_make_move_completed_game(self):
         """Test making a move in a completed game should fail"""
@@ -340,12 +338,11 @@ class TestGameAI:
     """Tests for AI game logic - verify AI returns valid moves"""
     
     @pytest.fixture(autouse=True)
-    def setup(self):
-        """Setup test session"""
-        self.headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {SESSION_TOKEN}"
-        }
+    def setup(self, auth_headers):
+        """Setup test session via demo-login Bearer token."""
+        if not BASE_URL:
+            pytest.skip("REACT_APP_BACKEND_URL is not configured")
+        self.headers = auth_headers
         
     def test_tictactoe_ai_makes_valid_move(self):
         """Test that AI makes a valid move in Tic-Tac-Toe"""
@@ -403,12 +400,11 @@ class TestDifficultyLevels:
     """Tests for different AI difficulty levels"""
     
     @pytest.fixture(autouse=True)
-    def setup(self):
-        """Setup test session"""
-        self.headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {SESSION_TOKEN}"
-        }
+    def setup(self, auth_headers):
+        """Setup test session via demo-login Bearer token."""
+        if not BASE_URL:
+            pytest.skip("REACT_APP_BACKEND_URL is not configured")
+        self.headers = auth_headers
         
     def test_easy_difficulty_stored(self):
         """Test easy difficulty is stored correctly"""

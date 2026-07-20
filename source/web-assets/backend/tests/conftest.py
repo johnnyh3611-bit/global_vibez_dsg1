@@ -92,6 +92,47 @@ def api_base(base_url: str) -> str:
 
 
 @pytest.fixture(scope="session")
+def auth_session(base_url: str):
+    """Authenticated ``requests.Session`` via ``POST /api/auth/demo-login``.
+
+    Practice / dating / trivia routes resolve the user from a real
+    ``user_sessions`` document (cookie ``session_token`` or
+    ``Authorization: Bearer …``). Legacy tests that hard-code
+    ``test_session_fixture`` get 401 because that token is never seeded.
+    Prefer this fixture over inventing tokens.
+    """
+    import requests
+
+    session = requests.Session()
+    response = session.post(
+        f"{base_url}/api/auth/demo-login",
+        json={},
+        timeout=15,
+    )
+    assert response.status_code == 200, (
+        f"demo-login failed: {response.status_code} {response.text[:300]}"
+    )
+    token = (response.json() or {}).get("token")
+    assert token, "demo-login response missing token"
+    session.headers.update(
+        {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        }
+    )
+    return session
+
+
+@pytest.fixture(scope="session")
+def auth_headers(auth_session) -> dict:
+    """Bearer headers for callers that use ``requests.post(..., headers=…)``."""
+    return {
+        "Content-Type": "application/json",
+        "Authorization": auth_session.headers["Authorization"],
+    }
+
+
+@pytest.fixture(scope="session")
 def admin_password() -> str:
     """God-Mode admin password (skips test if unset)."""
     pw = _env("ADMIN_PASSWORD")

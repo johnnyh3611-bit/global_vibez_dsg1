@@ -54,10 +54,16 @@ class TestPracticeGameStart:
     
     @pytest.fixture
     def auth_session(self):
-        """Get authenticated session"""
+        """Get authenticated session (cookie + Bearer from demo-login)."""
         session = requests.Session()
         response = session.post(f"{BASE_URL}/api/auth/demo-login", json={})
         assert response.status_code == 200
+        token = (response.json() or {}).get("token")
+        assert token, "demo-login missing token"
+        session.headers.update({
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        })
         return session
     
     def test_start_chess_game(self, auth_session):
@@ -152,10 +158,16 @@ class TestGameMoves:
     
     @pytest.fixture
     def auth_session(self):
-        """Get authenticated session"""
+        """Get authenticated session (cookie + Bearer from demo-login)."""
         session = requests.Session()
         response = session.post(f"{BASE_URL}/api/auth/demo-login", json={})
         assert response.status_code == 200
+        token = (response.json() or {}).get("token")
+        assert token, "demo-login missing token"
+        session.headers.update({
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        })
         return session
     
     def test_tictactoe_move_and_ai_response(self, auth_session):
@@ -373,10 +385,16 @@ class TestGameCompletion:
     
     @pytest.fixture
     def auth_session(self):
-        """Get authenticated session"""
+        """Get authenticated session (cookie + Bearer from demo-login)."""
         session = requests.Session()
         response = session.post(f"{BASE_URL}/api/auth/demo-login", json={})
         assert response.status_code == 200
+        token = (response.json() or {}).get("token")
+        assert token, "demo-login missing token"
+        session.headers.update({
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        })
         return session
     
     def test_tictactoe_win_detection(self, auth_session):
@@ -418,10 +436,16 @@ class TestAllGameTypes:
     
     @pytest.fixture
     def auth_session(self):
-        """Get authenticated session"""
+        """Get authenticated session (cookie + Bearer from demo-login)."""
         session = requests.Session()
         response = session.post(f"{BASE_URL}/api/auth/demo-login", json={})
         assert response.status_code == 200
+        token = (response.json() or {}).get("token")
+        assert token, "demo-login missing token"
+        session.headers.update({
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        })
         return session
     
     @pytest.mark.parametrize("game_type", [

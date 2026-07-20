@@ -9,27 +9,27 @@ import requests
 BASE = os.environ.get("REACT_APP_BACKEND_URL", "https://social-connect-953.preview.emergentagent.com").rstrip("/")
 HEADERS = {"Content-Type": "application/json"}
 
-# (slug, sub_path, payload)
+# (slug, sub_path, payload) — monetary fields use platform floor (>= 50)
 PLAY_CASES = [
     # Wave I
-    ("caribbean-stud", "deal", {"ante": 10, "seed": 1}),
-    ("sic-bo", "play", {"bet_type": "any_triple", "dice": [3, 3, 3], "stake": 10}),
-    ("craps", "prop", {"prop": "snake_eyes", "dice_roll": [1, 1], "stake": 10}),
-    ("vibes-wheel", "spin", {"stake": 10, "seed": 1}),
-    ("keno", "play", {"picks": [1, 2, 3, 4, 5], "stake": 10, "seed": 1}),
-    ("vibes-slots", "spin", {"stake": 10, "user_count": 100, "seed": 1}),
+    ("caribbean-stud", "deal", {"ante": 50, "seed": 1}),
+    ("sic-bo", "play", {"bet_type": "any_triple", "dice": [3, 3, 3], "stake": 50}),
+    ("craps", "prop", {"prop": "snake_eyes", "dice_roll": [1, 1], "stake": 50}),
+    ("vibes-wheel", "spin", {"stake": 50, "seed": 1}),
+    ("keno", "play", {"picks": [1, 2, 3, 4, 5], "stake": 50, "seed": 1}),
+    ("vibes-slots", "spin", {"stake": 50, "user_count": 100, "seed": 1}),
     # Wave II
-    ("three-card-poker", "play", {"ante": 10, "raise_play": True, "pair_plus": 5, "seed": 1}),
-    ("pai-gow", "play", {"stake": 10, "seed": 1}),
-    ("casino-war", "play", {"stake": 10, "go_to_war": True, "seed": 1}),
-    ("chemin-de-fer", "play", {"bet_side": "player", "stake": 10, "seed": 1}),
-    ("european-roulette", "play", {"bet_type": "straight", "bet_value": 17, "stake": 10, "seed": 1}),
-    ("hazard", "play", {"main": 7, "stake": 10, "seed": 1}),
-    ("chuck-a-luck", "play", {"picked_number": 3, "stake": 10, "seed": 1}),
-    ("big-six-wheel", "play", {"bet_label": "1", "stake": 10, "seed": 1}),
-    ("fan-tan", "play", {"pick": 1, "stake": 10, "seed": 1}),
-    ("faro", "play", {"picked_rank": "7", "stake": 10, "seed": 1}),
-    ("vibes-darts", "throw", {"distance_from_bullseye": 0.05, "stake": 10}),
+    ("three-card-poker", "play", {"ante": 50, "raise_play": True, "pair_plus": 50, "seed": 1}),
+    ("pai-gow", "play", {"stake": 50, "seed": 1}),
+    ("casino-war", "play", {"stake": 50, "go_to_war": True, "seed": 1}),
+    ("chemin-de-fer", "play", {"bet_side": "player", "stake": 50, "seed": 1}),
+    ("european-roulette", "play", {"bet_type": "straight", "bet_value": 17, "stake": 50, "seed": 1}),
+    ("hazard", "play", {"main": 7, "stake": 50, "seed": 1}),
+    ("chuck-a-luck", "play", {"picked_number": 3, "stake": 50, "seed": 1}),
+    ("big-six-wheel", "play", {"bet_label": "1", "stake": 50, "seed": 1}),
+    ("fan-tan", "play", {"pick": 1, "stake": 50, "seed": 1}),
+    ("faro", "play", {"picked_rank": "7", "stake": 50, "seed": 1}),
+    ("vibes-darts", "throw", {"distance_from_bullseye": 0.05, "stake": 50}),
 ]
 
 CONSTANTS_SLUGS = [
@@ -69,6 +69,6 @@ def test_jacks_or_better_deal_and_draw():
     assert d.status_code == 200, f"deal: {d.text[:300]}"
     initial = d.json().get("hand", [])
     assert len(initial) == 5, f"expected 5 cards, got {initial}"
-    payload = {"initial": initial, "hold_indices": [0, 1, 2, 3, 4], "stake": 10, "seed": 1}
+    payload = {"initial": initial, "hold_indices": [0, 1, 2, 3, 4], "stake": 50, "seed": 1}
     r2 = requests.post(f"{BASE}/api/games/jacks-or-better/draw", json=payload, timeout=15)
     assert r2.status_code == 200, f"draw: {r2.text[:300]}"
