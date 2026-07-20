@@ -32,6 +32,7 @@ const CAROUSEL_DESCRIPTIONS: Record<string, string> = {
   spades_universal: 'Classic Spades with dealing animation and hand fan.',
   vibez_654: 'House dice — ride the Vibez 654 streak.',
   uno: 'Color chaos — dump your hand before the table does.',
+  ai_judge: 'Render the Verdict. Earn VibeCredits.',
 };
 
 /**
@@ -58,6 +59,7 @@ const DEDICATED_PRACTICE_ROUTES: Record<string, string> = {
   underground_spades: '/spades',
   blackjack_universal: '/blackjack-universal',
   poker_universal: '/poker-practice',
+  ai_judge: '/network/judge',
   vibez_654: '/vibe-654-hall',
   vibe_654_dice: '/dice',
   vibe_654_tournament: '/games/vibe654/tournament',
@@ -199,6 +201,7 @@ const GAME_CATEGORIES = {
     games: [
       { id: 'bid_whist_premium', name: 'Vibez Whist Premium', emoji: '🎴', image: '/bidwhist-card.png', players: '4', type: 'card', featured: true, badge: '✨ AAA ROOM' },
       { id: 'blackjack_universal', name: 'Blackjack Universal', emoji: '⚡', image: '/blackjack-card.png', players: '1-7', type: 'card', featured: true, badge: '🚀 ENGINE' },
+      { id: 'ai_judge', name: 'AI JUDGE', emoji: '⚖️', image: '/assets/icons/gavel_neon.png', players: 'crowd', type: 'social', featured: true, badge: '⚖️ COURT' },
       { id: 'poker_universal', name: 'Texas Hold\'em', emoji: '♠️', image: '/poker-card.png', players: '2-10', type: 'card', featured: true, badge: '🚀 NEW' },
       { id: 'spades_universal', name: 'Spades AAA', emoji: '♠️', image: '/spades-card.png', players: '4', type: 'card', featured: true, badge: '✨ NEW AAA ROOM' },
       { id: 'vibez_654', name: 'Vibez 654', emoji: '🎲', image: '/dice654-card.png', players: '1', type: 'casino', featured: true, badge: '💰 POPULAR' },

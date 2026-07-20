@@ -82,6 +82,7 @@ def register_all_routes(
     _soft_mount(api_router, log, "safety", "routes.safety")
     _soft_mount(api_router, log, "games", "routes.games")
     _soft_mount(api_router, log, "tournaments", "routes.tournaments")
+    _soft_mount(api_router, log, "ai_judge", "routes.ai_judge")
     _soft_mount(api_router, log, "games_lock", "routes.games_lock_routes", "games_lock_router")
     _soft_mount(api_router, log, "leaderboard", "routes.leaderboard")
     _soft_mount(api_router, log, "leaderboards", "routes.leaderboards", tags=["leaderboards"])
