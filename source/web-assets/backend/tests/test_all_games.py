@@ -8,18 +8,15 @@ import os
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
-# Test session token - from environment or fixture
-SESSION_TOKEN = os.environ.get('TEST_SESSION_TOKEN', 'test_session_fixture')
-
 class TestPracticeGamesAPI:
     """Test all practice game endpoints"""
     
     @pytest.fixture(autouse=True)
-    def setup(self):
-        """Setup session for all tests"""
-        self.session = requests.Session()
-        self.session.cookies.set('session_token', SESSION_TOKEN)
-        self.session.headers.update({'Content-Type': 'application/json'})
+    def setup(self, auth_session):
+        """Use shared demo-login session (real user_sessions token)."""
+        if not BASE_URL:
+            pytest.skip("REACT_APP_BACKEND_URL is not configured")
+        self.session = auth_session
     
     # ==================== CARD GAMES (7) ====================
     
@@ -435,12 +432,12 @@ class TestPracticeGamesAPI:
         assert move_response.status_code == 200, f"Move failed: {move_response.text}"
         data = move_response.json()
         
-        # Verify piece dropped to bottom
+        # Verify piece dropped to bottom (API uses full color names: red/yellow)
         board = data["game_state"]["board"]
-        assert board[5][3] == "R", "Player piece should be at bottom of column"
+        assert board[5][3] == "red", "Player piece should be at bottom of column"
         
         # AI should have responded
-        ai_moved = any(cell == "Y" for row in board for cell in row)
+        ai_moved = any(cell == "yellow" for row in board for cell in row)
         assert ai_moved, "AI should have made a move"
         
         print("✅ Connect 4 move successful")
@@ -486,10 +483,10 @@ class TestGameValidation:
     """Test game validation and error handling"""
     
     @pytest.fixture(autouse=True)
-    def setup(self):
-        self.session = requests.Session()
-        self.session.cookies.set('session_token', SESSION_TOKEN)
-        self.session.headers.update({'Content-Type': 'application/json'})
+    def setup(self, auth_session):
+        if not BASE_URL:
+            pytest.skip("REACT_APP_BACKEND_URL is not configured")
+        self.session = auth_session
     
     def test_invalid_game_type(self):
         """Test starting invalid game type"""

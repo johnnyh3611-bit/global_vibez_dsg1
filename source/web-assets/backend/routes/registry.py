@@ -172,6 +172,7 @@ def register_all_routes(
             battle_router,
         ):
             api_router.include_router(r)
+        _MOUNTED.append("founder_engines")
         log.info("mounted founder_engines")
     except Exception as exc:  # noqa: BLE001
         log.warning("Wave-1 skip founder_engines: %s", exc)
@@ -207,6 +208,7 @@ def register_all_routes(
             darts_router,
         ):
             api_router.include_router(r)
+        _MOUNTED.append("casino_wave2")
         log.info("mounted casino_wave2")
     except Exception as exc:  # noqa: BLE001
         log.warning("Wave-1 skip casino_wave2: %s", exc)

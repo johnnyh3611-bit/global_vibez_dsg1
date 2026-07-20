@@ -10,17 +10,16 @@ import requests
 import os
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
-SESSION_TOKEN = os.environ.get('TEST_SESSION_TOKEN', 'test_session_fixture')
 
 class TestConnect4AllColumns:
     """Test Connect 4 - verify ALL 7 columns work (user reported 'only one spot works')"""
     
     @pytest.fixture(autouse=True)
-    def setup(self):
-        """Setup session for each test"""
-        self.session = requests.Session()
-        self.session.cookies.set('session_token', SESSION_TOKEN)
-        self.session.headers.update({'Content-Type': 'application/json'})
+    def setup(self, auth_session):
+        """Setup session for each test via demo-login."""
+        if not BASE_URL:
+            pytest.skip("REACT_APP_BACKEND_URL is not configured")
+        self.session = auth_session
     
     def test_start_connect4_game(self):
         """Test starting a Connect 4 practice game"""
@@ -195,11 +194,11 @@ class TestTicTacToeAllCells:
     """Test Tic-Tac-Toe - verify ALL 9 cells work"""
     
     @pytest.fixture(autouse=True)
-    def setup(self):
-        """Setup session for each test"""
-        self.session = requests.Session()
-        self.session.cookies.set('session_token', SESSION_TOKEN)
-        self.session.headers.update({'Content-Type': 'application/json'})
+    def setup(self, auth_session):
+        """Setup session for each test via demo-login."""
+        if not BASE_URL:
+            pytest.skip("REACT_APP_BACKEND_URL is not configured")
+        self.session = auth_session
     
     def test_start_tictactoe_game(self):
         """Test starting a Tic-Tac-Toe practice game"""
@@ -369,11 +368,11 @@ class TestHouseViewsAPI:
     """Test HouseViews related APIs"""
     
     @pytest.fixture(autouse=True)
-    def setup(self):
-        """Setup session for each test"""
-        self.session = requests.Session()
-        self.session.cookies.set('session_token', SESSION_TOKEN)
-        self.session.headers.update({'Content-Type': 'application/json'})
+    def setup(self, auth_session):
+        """Setup session for each test via demo-login."""
+        if not BASE_URL:
+            pytest.skip("REACT_APP_BACKEND_URL is not configured")
+        self.session = auth_session
     
     def test_tables_available_endpoint(self):
         """Test /api/tables/available endpoint"""
