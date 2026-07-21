@@ -19,7 +19,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   MoreHorizontal, MessageSquare, Mic, RotateCcw, Globe, Utensils, Sparkles,
-  Headphones, ZapOff, DollarSign,
+  Headphones, ZapOff, DollarSign, Bot,
 } from "lucide-react";
 import { VibezTabChrome } from "@/components/ui/VibezTabChrome";
 
@@ -77,6 +77,7 @@ const SECTIONS: { title: string; items: SubItem[] }[] = [
       { id: "voice_mirror",  label: "Voice Mirror",      hint: "Hold to speak in any language",  Icon: Mic,           color: "text-cyan-300",    onClick: fire("voice_mirror") },
       { id: "orientation",   label: "Auto-Rotate Lock",  hint: "Pin landscape or portrait",      Icon: RotateCcw,     color: "text-emerald-300", onClick: fire("orientation") },
       { id: "beta_feedback", label: "Beta Feedback",     hint: "Report a bug / request feature", Icon: MessageSquare, color: "text-amber-300",   onClick: fire("beta_feedback") },
+      { id: "ai_guide",      label: "AI Navigator",      hint: "Get a hint for this room",       Icon: Bot,           color: "text-fuchsia-300", onClick: fire("ai_guide") },
       { id: "no_flash",      label: "Reduce Motion",     hint: "Stop pulsing / flashing UI",     Icon: ZapOff,        color: "text-emerald-300", onClick: toggleNoFlash },
     ],
   },
