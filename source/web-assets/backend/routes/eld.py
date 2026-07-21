@@ -1,16 +1,26 @@
 import hashlib
 import hmac
 import json
+import logging
 import os
 import uuid
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
+import httpx
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
-from models.eld import ELDLog, ELDTrip, GeoPoint, ELDTripStop
+from models.eld import ELDLog, ELDTrip, GeoPoint, ELDTripStop, HOSStatusResponse
+from services.eld_hos import (
+    CycleType,
+    calculate_hos_from_logs,
+    resolve_motion_status,
+    SPEED_DRIVING_MPH,
+)
 from utils.database import get_current_user, get_database
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/eld", tags=["eld"])
 
@@ -59,7 +69,10 @@ def _hash_fields(log: Dict[str, Any]) -> Dict[str, Any]:
         "location",
         "vehicle_miles",
         "engine_hours",
+        "speed_mph",
         "annotation",
+        "original_log_id",
+        "amendment_reason",
         "previous_hash",
         "certified",
         "created_at",
@@ -104,14 +117,28 @@ async def _verify_driver_hash_chain(db, driver_id: str) -> Dict[str, Any]:
     )
 
     broken = []
+    prev_hash = None
     for log in logs:
         expected_hash = _compute_log_hash(log)
         expected_signature = _sign_hash(expected_hash)
+        link_ok = True
+        if prev_hash is not None and log.get("previous_hash") != prev_hash:
+            link_ok = False
         if (
             log.get("log_hash") != expected_hash
             or log.get("signature") != expected_signature
+            or not link_ok
         ):
-            broken.append({"log_id": log.get("log_id"), "valid": False})
+            broken.append(
+                {
+                    "log_id": log.get("log_id"),
+                    "valid": False,
+                    "hash_ok": log.get("log_hash") == expected_hash,
+                    "signature_ok": log.get("signature") == expected_signature,
+                    "chain_ok": link_ok,
+                }
+            )
+        prev_hash = log.get("log_hash")
 
     return {
         "driver_id": driver_id,
@@ -131,21 +158,14 @@ def _to_dt(iso: str) -> datetime:
     return datetime.fromisoformat(iso.replace("Z", "+00:00"))
 
 
-def _interval_minutes(start: datetime, end: datetime) -> float:
-    return max(0.0, (end - start).total_seconds() / 60.0)
-
-
-async def _calculate_hos(
-    db, driver_id: str, now: Optional[datetime] = None
-) -> Dict[str, Any]:
-    now = now or datetime.now(timezone.utc)
-    eight_days_ago = now - timedelta(days=8)
-
-    logs = (
+async def _load_hos_logs(db, driver_id: str, days: int = 8) -> list:
+    now = datetime.now(timezone.utc)
+    since = now - timedelta(days=days)
+    return (
         await db.eld_logs.find(
             {
                 "driver_id": driver_id,
-                "created_at": {"$gte": eight_days_ago.isoformat()},
+                "created_at": {"$gte": since.isoformat()},
             },
             {"_id": 0},
         )
@@ -153,115 +173,106 @@ async def _calculate_hos(
         .to_list(10000)
     )
 
-    if not logs:
-        return {
-            "driver_id": driver_id,
-            "status": "OFF_DUTY",
-            "current_driving_minutes": 0,
-            "current_on_duty_minutes": 0,
-            "remaining_drive_minutes": 11 * 60,
-            "remaining_duty_window_minutes": 14 * 60,
-            "remaining_8_day_on_duty_minutes": 70 * 60,
-            "break_required": False,
-            "in_violation": False,
-            "violations": [],
-        }
 
-    # 1. Find the start of the current duty window: most recent >=10h rest.
-    window_start = eight_days_ago
-    rest_start = None
-    for i in range(len(logs) - 1, -1, -1):
-        if logs[i]["status"] in REST_STATUSES:
-            if rest_start is None:
-                rest_start = _to_dt(logs[i]["created_at"])
-            else:
-                if (
-                    _to_dt(logs[i]["created_at"]) - rest_start
-                ).total_seconds() <= 300:
-                    rest_start = _to_dt(logs[i]["created_at"])
-                else:
-                    break
-        else:
-            if rest_start is not None:
-                rest_end = (
-                    _to_dt(logs[i + 1]["created_at"])
-                    if i + 1 < len(logs)
-                    else now
-                )
-                if (rest_end - rest_start).total_seconds() >= 10 * 3600:
-                    window_start = rest_end
-                    break
-                rest_start = None
-
-    # 2. Accumulate driving / on-duty since window_start.
-    current_driving_minutes = 0.0
-    current_on_duty_minutes = 0.0
-    driving_before_last_break = 0.0
-    break_taken = False
-    last_break_reset = window_start
-
-    for i, log in enumerate(logs):
-        t = _to_dt(log["created_at"])
-        if t < window_start:
-            continue
-        next_t = (
-            _to_dt(logs[i + 1]["created_at"]) if i + 1 < len(logs) else now
-        )
-        if log["status"] in ON_DUTY_STATUSES:
-            duration = _interval_minutes(t, next_t)
-            current_on_duty_minutes += duration
-            if log["status"] == "DRIVING":
-                current_driving_minutes += duration
-                driving_before_last_break += _interval_minutes(
-                    max(t, last_break_reset), next_t
-                )
-        elif log["status"] in REST_STATUSES:
-            if _interval_minutes(t, next_t) >= 30:
-                break_taken = True
-                driving_before_last_break = 0
-                last_break_reset = next_t
-
-    # 3. 8-day rolling on-duty total.
-    eight_day_on_duty_minutes = 0.0
-    for i, log in enumerate(logs):
-        t = _to_dt(log["created_at"])
-        if t < eight_days_ago:
-            continue
-        next_t = (
-            _to_dt(logs[i + 1]["created_at"]) if i + 1 < len(logs) else now
-        )
-        if log["status"] in ON_DUTY_STATUSES:
-            eight_day_on_duty_minutes += _interval_minutes(t, next_t)
-
-    remaining_drive = max(0, 11 * 60 - current_driving_minutes)
-    remaining_window = max(0, 14 * 60 - current_on_duty_minutes)
-    remaining_8_day = max(0, 70 * 60 - eight_day_on_duty_minutes)
-
-    violations = []
-    if current_driving_minutes > 11 * 60:
-        violations.append("11-hour driving limit exceeded")
-    if current_on_duty_minutes > 14 * 60:
-        violations.append("14-hour on-duty window exceeded")
-    if eight_day_on_duty_minutes > 70 * 60:
-        violations.append("70-hour / 8-day limit exceeded")
-
-    # 30-minute break required after 8 cumulative driving hours in window
-    break_required = driving_before_last_break >= 8 * 60 and not break_taken
-    if break_required:
-        violations.append("30-minute break required after 8 hours of driving")
-
-    return {
+async def _upsert_hos_state(db, driver_id: str, hos: Dict[str, Any]) -> None:
+    """Persist real-time counters to eld_hos_state (product schema)."""
+    doc = {
         "driver_id": driver_id,
-        "status": logs[-1]["status"],
-        "current_driving_minutes": round(current_driving_minutes, 1),
-        "current_on_duty_minutes": round(current_on_duty_minutes, 1),
-        "remaining_drive_minutes": round(remaining_drive, 1),
-        "remaining_duty_window_minutes": round(remaining_window, 1),
-        "remaining_8_day_on_duty_minutes": round(remaining_8_day, 1),
-        "break_required": break_required,
-        "in_violation": bool(violations),
-        "violations": violations,
+        "current_status": hos.get("status", "OFF_DUTY"),
+        "status_start_time": hos.get("status_start_time"),
+        "cycle": hos.get("cycle", "70_8"),
+        "driving_time_today_minutes": hos.get("driving_time_today_minutes", 0),
+        "on_duty_window_minutes": hos.get("on_duty_window_minutes", 0),
+        "time_since_last_break_minutes": hos.get(
+            "time_since_last_break_minutes", 0
+        ),
+        "rolling_8_day_duty_minutes": hos.get("rolling_8_day_duty_minutes", 0),
+        "driving_minutes_remaining": hos.get("driving_minutes_remaining", 0),
+        "duty_window_minutes_remaining": hos.get(
+            "duty_window_minutes_remaining", 0
+        ),
+        "cycle_70hr_minutes_remaining": hos.get(
+            "cycle_70hr_minutes_remaining", 0
+        ),
+        "requires_break": hos.get("requires_break", False),
+        "in_violation": hos.get("in_violation", False),
+        "violations": hos.get("violations", []),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
     }
+    await db.eld_hos_state.update_one(
+        {"driver_id": driver_id},
+        {"$set": doc},
+        upsert=True,
+    )
+
+
+async def _calculate_hos(
+    db,
+    driver_id: str,
+    now: Optional[datetime] = None,
+    cycle: CycleType = "70_8",
+) -> Dict[str, Any]:
+    now = now or datetime.now(timezone.utc)
+    days = 7 if cycle == "60_7" else 8
+    logs = await _load_hos_logs(db, driver_id, days=days)
+    hos = calculate_hos_from_logs(
+        logs, now=now, cycle=cycle, driver_id=driver_id
+    )
+    try:
+        await _upsert_hos_state(db, driver_id, hos)
+    except Exception:
+        # Counters are best-effort — never fail the primary HOS read.
+        pass
+    return hos
+
+
+async def _append_sealed_log(
+    db,
+    *,
+    driver_id: str,
+    status: str,
+    event_type: str = "status_change",
+    trip_id: Optional[str] = None,
+    location: Optional[GeoPoint] = None,
+    vehicle_miles: Optional[float] = None,
+    engine_hours: Optional[float] = None,
+    speed_mph: Optional[float] = None,
+    annotation: Optional[str] = None,
+    original_log_id: Optional[str] = None,
+    amendment_reason: Optional[str] = None,
+) -> Dict[str, Any]:
+    previous = await _last_driver_log(db, driver_id)
+    previous_hash = previous.get("log_hash") if previous else None
+    log = ELDLog(
+        log_id=f"eld_{uuid.uuid4().hex[:12]}",
+        driver_id=driver_id,
+        trip_id=trip_id,
+        event_type=event_type,  # type: ignore[arg-type]
+        status=status,  # type: ignore[arg-type]
+        location=location,
+        vehicle_miles=vehicle_miles,
+        engine_hours=engine_hours,
+        speed_mph=speed_mph,
+        annotation=annotation,
+        original_log_id=original_log_id,
+        amendment_reason=amendment_reason,
+        previous_hash=previous_hash,
+    )
+    sealed = _seal_log(log.model_dump())
+    await db.eld_logs.insert_one(sealed)
+    sealed.pop("_id", None)
+
+    await db.drivers.update_one(
+        {"driver_id": driver_id},
+        {
+            "$set": {
+                "eld_status": status,
+                "eld_last_log_at": sealed["created_at"],
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            }
+        },
+    )
+    return sealed
 
 
 # ───────────────────────────────
@@ -293,6 +304,28 @@ class LocationPingRequest(BaseModel):
     location: GeoPoint
     vehicle_miles: Optional[float] = None
     engine_hours: Optional[float] = None
+    speed_mph: Optional[float] = None
+
+
+class AmendLogRequest(BaseModel):
+    status: str
+    annotation: str
+    amendment_reason: str
+    location: Optional[GeoPoint] = None
+
+
+class TransferRequest(BaseModel):
+    method: str  # "email" | "web_service"
+    recipient: str
+    start: Optional[str] = None
+    end: Optional[str] = None
+    cycle: str = "70_8"
+    comment: Optional[str] = None
+
+
+class CertifyRequest(BaseModel):
+    date_from: str
+    date_to: str
 
 
 # ───────────────────────────────
@@ -323,38 +356,22 @@ async def change_duty_status(
             status_code=400, detail=f"Invalid duty status: {change.status}"
         )
 
-    previous = await _last_driver_log(db, driver["driver_id"])
-    previous_hash = previous.get("log_hash") if previous else None
-
-    log = ELDLog(
-        log_id=f"eld_{uuid.uuid4().hex[:12]}",
+    sealed = await _append_sealed_log(
+        db,
         driver_id=driver["driver_id"],
-        trip_id=change.trip_id,
-        event_type="status_change",
         status=change.status,
+        event_type="status_change",
+        trip_id=change.trip_id,
         location=change.location,
         vehicle_miles=change.vehicle_miles,
         engine_hours=change.engine_hours,
         annotation=change.annotation,
-        previous_hash=previous_hash,
     )
 
-    sealed = _seal_log(log.model_dump())
-    await db.eld_logs.insert_one(sealed)
-    sealed.pop("_id", None)
-
-    await db.drivers.update_one(
-        {"driver_id": driver["driver_id"]},
-        {
-            "$set": {
-                "eld_status": change.status,
-                "eld_last_log_at": sealed["created_at"],
-                "updated_at": datetime.now(timezone.utc).isoformat(),
-            }
-        },
-    )
-
-    hos = await _calculate_hos(db, driver["driver_id"])
+    cycle = driver.get("eld_cycle", "70_8")
+    if cycle not in ("70_8", "60_7"):
+        cycle = "70_8"
+    hos = await _calculate_hos(db, driver["driver_id"], cycle=cycle)
     return {"log": sealed, "hos": hos}
 
 
@@ -419,14 +436,60 @@ async def get_hos_status(request: Request) -> Dict[str, Any]:
 
     db = get_database()
     driver = await db.drivers.find_one(
-        {"user_id": current_user.user_id}, {"_id": 0, "driver_id": 1}
+        {"user_id": current_user.user_id}, {"_id": 0, "driver_id": 1, "eld_cycle": 1}
     )
     if not driver:
         raise HTTPException(
             status_code=403, detail="You must be a registered driver"
         )
 
-    return await _calculate_hos(db, driver["driver_id"])
+    cycle = driver.get("eld_cycle", "70_8")
+    if cycle not in ("70_8", "60_7"):
+        cycle = "70_8"
+    return await _calculate_hos(db, driver["driver_id"], cycle=cycle)
+
+
+@router.get("/hos/{driver_id}", response_model=HOSStatusResponse)
+async def get_driver_hos(driver_id: str, request: Request) -> HOSStatusResponse:
+    """
+    HOS snapshot for a driver id.
+
+    Drivers may only request their own id. Admins may query any driver.
+    """
+    current_user = await get_current_user(request)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    from utils.admin_guard import is_admin
+
+    db = get_database()
+    if not is_admin(current_user):
+        me = await db.drivers.find_one(
+            {"user_id": current_user.user_id}, {"_id": 0, "driver_id": 1}
+        )
+        if not me or me.get("driver_id") != driver_id:
+            raise HTTPException(
+                status_code=403, detail="Cannot view another driver's HOS"
+            )
+
+    driver = await db.drivers.find_one({"driver_id": driver_id}, {"_id": 0})
+    if not driver:
+        raise HTTPException(status_code=404, detail="Driver not found")
+
+    cycle = driver.get("eld_cycle", "70_8")
+    if cycle not in ("70_8", "60_7"):
+        cycle = "70_8"
+    hos = await _calculate_hos(db, driver_id, cycle=cycle)
+    return HOSStatusResponse(
+        driver_id=driver_id,
+        driving_minutes_remaining=hos["driving_minutes_remaining"],
+        duty_window_minutes_remaining=hos["duty_window_minutes_remaining"],
+        cycle_70hr_minutes_remaining=hos["cycle_70hr_minutes_remaining"],
+        requires_break=hos["requires_break"],
+        status=hos.get("status"),
+        in_violation=hos.get("in_violation", False),
+        violations=hos.get("violations", []),
+    )
 
 
 @router.post("/trips")
@@ -664,18 +727,13 @@ async def start_trip(trip_id: str, request: Request) -> Dict[str, Any]:
         {"trip_id": trip_id}, {"$set": update_fields}
     )
 
-    previous = await _last_driver_log(db, driver["driver_id"])
-    log = ELDLog(
-        log_id=f"eld_{uuid.uuid4().hex[:12]}",
+    sealed = await _append_sealed_log(
+        db,
         driver_id=driver["driver_id"],
-        trip_id=trip_id,
-        event_type="trip_start",
         status="DRIVING",
-        previous_hash=previous.get("log_hash") if previous else None,
+        event_type="trip_start",
+        trip_id=trip_id,
     )
-    sealed = _seal_log(log.model_dump())
-    await db.eld_logs.insert_one(sealed)
-    sealed.pop("_id", None)
 
     return {"message": "Trip started", "trip_id": trip_id, "log": sealed}
 
@@ -714,18 +772,13 @@ async def complete_trip(trip_id: str, request: Request) -> Dict[str, Any]:
         },
     )
 
-    previous = await _last_driver_log(db, driver["driver_id"])
-    log = ELDLog(
-        log_id=f"eld_{uuid.uuid4().hex[:12]}",
+    sealed = await _append_sealed_log(
+        db,
         driver_id=driver["driver_id"],
-        trip_id=trip_id,
-        event_type="trip_end",
         status="OFF_DUTY",
-        previous_hash=previous.get("log_hash") if previous else None,
+        event_type="trip_end",
+        trip_id=trip_id,
     )
-    sealed = _seal_log(log.model_dump())
-    await db.eld_logs.insert_one(sealed)
-    sealed.pop("_id", None)
 
     return {"message": "Trip completed", "trip_id": trip_id, "log": sealed}
 
@@ -736,7 +789,12 @@ async def ping_trip_location(
     ping: LocationPingRequest,
     request: Request,
 ) -> Dict[str, Any]:
-    """Record a location ping for an active trip."""
+    """Record a location ping for an active trip.
+
+    Automatic motion detection (FMCSA ELD):
+      • speed ≥ 5 mph → auto-switch to DRIVING if not already
+      • speed < 5 mph after ≥5 minutes stopped → ON_DUTY_NOT_DRIVING
+    """
     current_user = await get_current_user(request)
     if not current_user:
         raise HTTPException(status_code=401, detail="Not authenticated")
@@ -756,23 +814,69 @@ async def ping_trip_location(
     if not trip:
         raise HTTPException(status_code=404, detail="Trip not found")
 
-    previous = await _last_driver_log(db, driver["driver_id"])
-    log = ELDLog(
-        log_id=f"eld_{uuid.uuid4().hex[:12]}",
+    now = datetime.now(timezone.utc)
+    current_status = driver.get("eld_status") or "OFF_DUTY"
+    auto_logs: list = []
+
+    # Track last time the vehicle was moving (≥5 mph).
+    if ping.speed_mph is not None and ping.speed_mph >= SPEED_DRIVING_MPH:
+        await db.drivers.update_one(
+            {"driver_id": driver["driver_id"]},
+            {"$set": {"eld_last_moving_at": now.isoformat()}},
+        )
+        seconds_since_moving = 0.0
+    else:
+        last_moving = driver.get("eld_last_moving_at")
+        if last_moving:
+            seconds_since_moving = (
+                now - _to_dt(last_moving)
+            ).total_seconds()
+        else:
+            seconds_since_moving = None
+
+    new_status = resolve_motion_status(
+        current_status=current_status,
+        speed_mph=ping.speed_mph,
+        seconds_since_moving=seconds_since_moving,
+    )
+    if new_status and new_status != current_status:
+        sealed_auto = await _append_sealed_log(
+            db,
+            driver_id=driver["driver_id"],
+            status=new_status,
+            event_type="auto_motion",
+            trip_id=trip_id,
+            location=ping.location,
+            vehicle_miles=ping.vehicle_miles,
+            engine_hours=ping.engine_hours,
+            speed_mph=ping.speed_mph,
+            annotation=(
+                f"Auto status from speed={ping.speed_mph} mph "
+                f"(threshold {SPEED_DRIVING_MPH} mph)"
+            ),
+        )
+        auto_logs.append(sealed_auto)
+        current_status = new_status
+
+    sealed = await _append_sealed_log(
+        db,
         driver_id=driver["driver_id"],
-        trip_id=trip_id,
+        status=current_status,
         event_type="location_ping",
-        status="DRIVING",
+        trip_id=trip_id,
         location=ping.location,
         vehicle_miles=ping.vehicle_miles,
         engine_hours=ping.engine_hours,
-        previous_hash=previous.get("log_hash") if previous else None,
+        speed_mph=ping.speed_mph,
     )
-    sealed = _seal_log(log.model_dump())
-    await db.eld_logs.insert_one(sealed)
-    sealed.pop("_id", None)
 
-    return {"message": "Location recorded", "log": sealed}
+    hos = await _calculate_hos(db, driver["driver_id"])
+    return {
+        "message": "Location recorded",
+        "log": sealed,
+        "auto_status_logs": auto_logs,
+        "hos": hos,
+    }
 
 
 @router.get("/trips/{trip_id}/track")
@@ -826,6 +930,344 @@ async def track_trip(
         "trip": trip,
         "location_history": list(reversed(pings)),
         "hos": hos,
+    }
+
+
+# ───────────────────────────────
+# Certification / amendments / roadside transfer
+# ───────────────────────────────
+
+
+@router.post("/logs/certify")
+async def certify_logs(
+    body: CertifyRequest, request: Request
+) -> Dict[str, Any]:
+    """Driver certifies that logs for a date range are true and correct."""
+    current_user = await get_current_user(request)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    db = get_database()
+    driver = await db.drivers.find_one(
+        {"user_id": current_user.user_id}, {"_id": 0}
+    )
+    if not driver:
+        raise HTTPException(
+            status_code=403, detail="You must be a registered driver"
+        )
+
+    now = datetime.now(timezone.utc).isoformat()
+    result = await db.eld_logs.update_many(
+        {
+            "driver_id": driver["driver_id"],
+            "created_at": {"$gte": body.date_from, "$lte": body.date_to},
+            "certified": {"$ne": True},
+        },
+        {"$set": {"certified": True, "certified_at": now}},
+    )
+
+    await _append_sealed_log(
+        db,
+        driver_id=driver["driver_id"],
+        status=driver.get("eld_status") or "OFF_DUTY",
+        event_type="certification",
+        annotation=f"Certified logs {body.date_from} → {body.date_to}",
+    )
+
+    return {
+        "status": "certified",
+        "date_from": body.date_from,
+        "date_to": body.date_to,
+        "modified_count": result.modified_count,
+    }
+
+
+@router.post("/logs/{log_id}/amend")
+async def amend_log(
+    log_id: str, body: AmendLogRequest, request: Request
+) -> Dict[str, Any]:
+    """
+    Amend a historical duty-status log without overwriting the original.
+
+    FMCSA: edits retain an audit trail — original stays sealed; we append an
+    amendment event that points at it, with a required reason.
+    """
+    current_user = await get_current_user(request)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    if body.status not in DUTY_STATUSES:
+        raise HTTPException(
+            status_code=400, detail=f"Invalid duty status: {body.status}"
+        )
+    reason = (body.amendment_reason or "").strip()
+    if len(reason) < 3:
+        raise HTTPException(
+            status_code=400, detail="amendment_reason is required"
+        )
+
+    db = get_database()
+    driver = await db.drivers.find_one(
+        {"user_id": current_user.user_id}, {"_id": 0}
+    )
+    if not driver:
+        raise HTTPException(
+            status_code=403, detail="You must be a registered driver"
+        )
+
+    original = await db.eld_logs.find_one(
+        {"log_id": log_id, "driver_id": driver["driver_id"]},
+        {"_id": 0},
+    )
+    if not original:
+        raise HTTPException(status_code=404, detail="Log entry not found")
+    if original.get("event_type") == "amendment":
+        raise HTTPException(
+            status_code=400, detail="Cannot amend an amendment record"
+        )
+    if original.get("event_type") not in (
+        "status_change",
+        "auto_motion",
+        None,
+    ):
+        raise HTTPException(
+            status_code=400, detail="Only duty-status logs can be amended"
+        )
+
+    # Mark original as amended — do not rewrite sealed payload fields.
+    await db.eld_logs.update_one(
+        {"log_id": log_id},
+        {
+            "$set": {
+                "amended": True,
+                "amended_at": datetime.now(timezone.utc).isoformat(),
+            }
+        },
+    )
+
+    sealed = await _append_sealed_log(
+        db,
+        driver_id=driver["driver_id"],
+        status=body.status,
+        event_type="amendment",
+        trip_id=original.get("trip_id"),
+        location=body.location or (
+            GeoPoint(**original["location"])
+            if isinstance(original.get("location"), dict)
+            else None
+        ),
+        vehicle_miles=original.get("vehicle_miles"),
+        engine_hours=original.get("engine_hours"),
+        annotation=body.annotation,
+        original_log_id=log_id,
+        amendment_reason=reason,
+    )
+    hos = await _calculate_hos(db, driver["driver_id"])
+
+    return {
+        "status": "amended",
+        "original_log_id": log_id,
+        "amendment": sealed,
+        "hos": hos,
+        "message": "Original log retained; amendment appended with audit trail",
+    }
+
+
+@router.post("/transfer")
+async def transfer_eld_data(
+    body: TransferRequest, request: Request
+) -> Dict[str, Any]:
+    """
+    Secure ELD data transfer for roadside inspection.
+
+    Builds an FMCSA-style output package (driver identity, duty logs, HOS
+    clocks) and delivers via Email or Web Services.
+    """
+    current_user = await get_current_user(request)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    method = (body.method or "").strip().lower()
+    if method not in ("email", "web_service"):
+        raise HTTPException(
+            status_code=400,
+            detail="method must be 'email' or 'web_service'",
+        )
+    recipient = (body.recipient or "").strip()
+    if not recipient:
+        raise HTTPException(status_code=400, detail="recipient is required")
+
+    db = get_database()
+    driver = await db.drivers.find_one(
+        {"user_id": current_user.user_id}, {"_id": 0}
+    )
+    if not driver:
+        raise HTTPException(
+            status_code=403, detail="You must be a registered driver"
+        )
+
+    date_from = body.start or (
+        datetime.now(timezone.utc) - timedelta(days=8)
+    ).isoformat()
+    date_to = body.end or datetime.now(timezone.utc).isoformat()
+
+    cycle = body.cycle if body.cycle in ("70_8", "60_7") else "70_8"
+    logs: List[Dict[str, Any]] = (
+        await db.eld_logs.find(
+            {
+                "driver_id": driver["driver_id"],
+                "created_at": {"$gte": date_from, "$lte": date_to},
+            },
+            {"_id": 0},
+        )
+        .sort("created_at", 1)
+        .to_list(5000)
+    )
+    hos = await _calculate_hos(db, driver["driver_id"], cycle=cycle)
+    user = await db.users.find_one(
+        {"user_id": current_user.user_id},
+        {"_id": 0, "password": 0, "email": 1, "display_name": 1, "name": 1},
+    )
+
+    package = {
+        "schema": "FMCSA_ELD_OUTPUT_V1",
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "comment": body.comment,
+        "driver": {
+            "driver_id": driver["driver_id"],
+            "user_id": current_user.user_id,
+            "email": (user or {}).get("email"),
+            "display_name": (user or {}).get("display_name")
+            or (user or {}).get("name"),
+            "cdl_number": driver.get("cdl_number"),
+        },
+        "period": {"from": date_from, "to": date_to},
+        "hos_summary": hos,
+        "eld_records": [
+            {
+                "log_id": lg.get("log_id"),
+                "event_type": lg.get("event_type"),
+                "status": lg.get("status"),
+                "created_at": lg.get("created_at"),
+                "location": lg.get("location"),
+                "vehicle_miles": lg.get("vehicle_miles"),
+                "engine_hours": lg.get("engine_hours"),
+                "speed_mph": lg.get("speed_mph"),
+                "trip_id": lg.get("trip_id"),
+                "certified": lg.get("certified", False),
+                "log_hash": lg.get("log_hash"),
+                "previous_hash": lg.get("previous_hash"),
+                "original_log_id": lg.get("original_log_id"),
+                "amendment_reason": lg.get("amendment_reason"),
+                "annotation": lg.get("annotation"),
+            }
+            for lg in logs
+        ],
+        "record_count": len(logs),
+        "hash_chain_tip": logs[-1].get("log_hash") if logs else None,
+    }
+
+    transfer_id = f"xfer_{uuid.uuid4().hex[:12]}"
+    transfer_doc: Dict[str, Any] = {
+        "id": transfer_id,
+        "driver_id": driver["driver_id"],
+        "method": method,
+        "recipient": recipient,
+        "date_from": date_from,
+        "date_to": date_to,
+        "record_count": len(logs),
+        "status": "queued",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+    delivered = False
+    delivery_detail = None
+
+    if method == "email":
+        try:
+            import asyncio
+
+            import resend
+
+            api_key = os.environ.get("RESEND_API_KEY")
+            sender = os.environ.get(
+                "RESEND_SENDER_EMAIL", "onboarding@resend.dev"
+            )
+            if not api_key:
+                raise RuntimeError("RESEND_API_KEY not configured")
+            resend.api_key = api_key
+            params = {
+                "from": sender,
+                "to": [recipient],
+                "subject": (
+                    f"ELD Output Transfer — Driver {driver['driver_id'][:8]}"
+                ),
+                "text": (
+                    f"FMCSA ELD output package ({len(logs)} records)\n"
+                    f"Period: {date_from} → {date_to}\n"
+                    f"Transfer ID: {transfer_id}\n"
+                    f"Comment: {body.comment or 'n/a'}\n\n"
+                    f"{json.dumps(package, indent=2, default=str)[:100000]}"
+                ),
+            }
+            await asyncio.to_thread(resend.Emails.send, params)
+            delivered = True
+            transfer_doc["status"] = "sent"
+        except Exception as exc:
+            logger.warning(
+                "ELD email transfer queued (mailer unavailable): %s", exc
+            )
+            transfer_doc["status"] = "queued_local"
+            transfer_doc["package"] = package
+            delivery_detail = str(exc)
+    else:
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                resp = await client.post(
+                    recipient,
+                    json=package,
+                    headers={
+                        "Content-Type": "application/json",
+                        "X-ELD-Transfer-Id": transfer_id,
+                        "X-ELD-Schema": "FMCSA_ELD_OUTPUT_V1",
+                    },
+                )
+            transfer_doc["http_status"] = resp.status_code
+            if resp.status_code < 300:
+                delivered = True
+                transfer_doc["status"] = "sent"
+            else:
+                transfer_doc["status"] = "failed"
+                delivery_detail = f"HTTP {resp.status_code}: {resp.text[:300]}"
+        except Exception as exc:
+            transfer_doc["status"] = "failed"
+            delivery_detail = str(exc)
+            logger.error("ELD web_service transfer failed: %s", exc)
+
+    if delivery_detail:
+        transfer_doc["delivery_detail"] = delivery_detail
+
+    await db.eld_transfers.insert_one(transfer_doc)
+
+    await _append_sealed_log(
+        db,
+        driver_id=driver["driver_id"],
+        status=driver.get("eld_status") or "OFF_DUTY",
+        event_type="intermediate",
+        annotation=(
+            f"ELD transfer {method} → status={transfer_doc['status']} "
+            f"id={transfer_id}"
+        ),
+    )
+
+    return {
+        "transfer_id": transfer_id,
+        "method": method,
+        "status": transfer_doc["status"],
+        "delivered": delivered,
+        "record_count": len(logs),
+        "schema": "FMCSA_ELD_OUTPUT_V1",
+        "delivery_detail": delivery_detail,
     }
 
 

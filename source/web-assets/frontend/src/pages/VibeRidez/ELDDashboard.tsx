@@ -578,25 +578,35 @@ export default function ELDDashboard() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6" data-testid="eld-hos-meters">
             <HosMeter
               label="Drive left"
-              remaining={hos.remaining_drive_minutes ?? 660}
+              remaining={
+                hos.driving_minutes_remaining ?? hos.remaining_drive_minutes ?? 660
+              }
               total={660}
               testId="eld-hos-drive"
             />
             <HosMeter
               label="Duty window"
-              remaining={hos.remaining_duty_window_minutes ?? 840}
+              remaining={
+                hos.duty_window_minutes_remaining ??
+                hos.remaining_duty_window_minutes ??
+                840
+              }
               total={840}
               testId="eld-hos-duty"
             />
             <HosMeter
               label="70h / 8 days"
-              remaining={hos.remaining_8_day_on_duty_minutes ?? 4200}
+              remaining={
+                hos.cycle_70hr_minutes_remaining ??
+                hos.remaining_8_day_on_duty_minutes ??
+                4200
+              }
               total={4200}
               testId="eld-hos-cycle"
             />
             <Card
               className={`border p-4 ${
-                hos.break_required
+                hos.requires_break || hos.break_required
                   ? "bg-rose-500/10 border-rose-400/40"
                   : "bg-white/5 border-white/10"
               }`}
@@ -605,13 +615,13 @@ export default function ELDDashboard() {
               <p className="text-white/55 text-[10px] uppercase tracking-widest">30-min break</p>
               <p
                 className={`text-2xl font-black mt-1 ${
-                  hos.break_required ? "text-rose-300" : "text-emerald-200"
+                  hos.requires_break || hos.break_required ? "text-rose-300" : "text-emerald-200"
                 }`}
               >
-                {hos.break_required ? "Due now" : "OK"}
+                {hos.requires_break || hos.break_required ? "Due now" : "OK"}
               </p>
               <p className="mt-3 text-[10px] text-white/35">
-                {hos.break_required
+                {hos.requires_break || hos.break_required
                   ? "Switch to Off Duty or Sleeper before driving further."
                   : "Break requirement satisfied."}
               </p>

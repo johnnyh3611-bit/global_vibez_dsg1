@@ -253,4 +253,16 @@ _INDEX_SPECS = [
     {"coll": "prediction_stakes", "key": "stake_id", "unique": True, "background": True},
     {"coll": "prediction_stakes", "key": [("pool_id", 1), ("option", 1)], "background": True},
     {"coll": "prediction_stakes", "key": [("user_id", 1), ("at", -1)], "background": True},
+
+    # Vibe Fleet ELD / HOS
+    {"coll": "eld_logs", "key": "log_id", "unique": True, "background": True},
+    {"coll": "eld_logs", "key": [("driver_id", 1), ("created_at", -1)], "background": True},
+    {"coll": "eld_logs", "key": [("driver_id", 1), ("event_type", 1), ("created_at", -1)], "background": True},
+    {"coll": "eld_logs", "key": "trip_id", "sparse": True, "background": True},
+    {"coll": "eld_trips", "key": "trip_id", "unique": True, "background": True},
+    {"coll": "eld_trips", "key": [("driver_id", 1), ("status", 1), ("created_at", -1)], "background": True},
+    {"coll": "eld_trips", "key": [("status", 1), ("created_at", -1)], "background": True},
+    {"coll": "eld_hos_state", "key": "driver_id", "unique": True, "background": True},
+    {"coll": "eld_transfers", "key": "id", "unique": True, "background": True},
+    {"coll": "eld_transfers", "key": [("driver_id", 1), ("created_at", -1)], "background": True},
 ]
