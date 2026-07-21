@@ -7,7 +7,7 @@ Endpoints
 POST /api/voice-coach/move-tip
     Body: { fen: str, last_move: str, side: "white" | "black", elo: int? }
     Returns: { tip: str }
-    Calls Claude Sonnet 4.5 for a 1-2 sentence coaching tip on the
+    Calls Gemini (via LlmChat) for a 1-2 sentence coaching tip on the
     last move. Stateless — no chat history is preserved server-side.
 
 POST /api/voice-coach/voice-question  (multipart/form-data)
@@ -16,45 +16,22 @@ POST /api/voice-coach/voice-question  (multipart/form-data)
         fen: str
         side: "white" | "black"
     Returns: { question: str, answer: str }
-    Whisper STT → Claude answer in one round-trip.
-
-Both routes use the EMERGENT_LLM_KEY from backend/.env.
+    Whisper STT (OPENAI_API_KEY) → Gemini answer in one round-trip.
 """
 from __future__ import annotations
-import os
-import io
 import logging
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from pydantic import BaseModel
-from dotenv import load_dotenv
 
+from config import GEMINI_API_KEY
 from services.ai_engine import LlmChat, UserMessage
+from services.openai_audio import resolve_openai_api_key, whisper_transcribe
 
-load_dotenv()
 log = logging.getLogger(__name__)
 
-EMERGENT_LLM_KEY = os.environ.get("EMERGENT_LLM_KEY")
-
 router = APIRouter(prefix="/voice-coach", tags=["voice-coach"])
-
-
-def _speech_to_text_cls():
-    """Lazy import so the router mounts even when the optional package is absent."""
-    try:
-        from emergentintegrations.llm.openai import OpenAISpeechToText
-    except ImportError:
-        try:
-            from emergentintegrations.llm.openai.speech_to_text import (
-                OpenAISpeechToText,
-            )
-        except ImportError as exc:
-            raise HTTPException(
-                503,
-                "Voice coach STT unavailable: install emergentintegrations",
-            ) from exc
-    return OpenAISpeechToText
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -82,11 +59,10 @@ SYSTEM_PROMPT = (
 
 @router.post("/move-tip", response_model=MoveTipResponse)
 async def move_tip(req: MoveTipRequest):
-    if not EMERGENT_LLM_KEY:
-        raise HTTPException(503, "Voice coach unavailable: missing LLM key")
+    if not GEMINI_API_KEY:
+        raise HTTPException(503, "Voice coach unavailable: missing GEMINI_API_KEY")
     try:
         chat = LlmChat(
-            api_key=EMERGENT_LLM_KEY,
             session_id=f"voice-coach-{req.fen[:16]}",
             system_message=SYSTEM_PROMPT,
         ).with_model("anthropic", "claude-sonnet-4-5-20250929")
@@ -106,7 +82,7 @@ async def move_tip(req: MoveTipRequest):
 
 
 # ─────────────────────────────────────────────────────────────────
-# Voice-question — Whisper STT → Claude answer
+# Voice-question — Whisper STT → Gemini answer
 # ─────────────────────────────────────────────────────────────────
 class VoiceQuestionResponse(BaseModel):
     question: str
@@ -119,8 +95,10 @@ async def voice_question(
     fen: str = Form(...),
     side: str = Form("white"),
 ):
-    if not EMERGENT_LLM_KEY:
-        raise HTTPException(503, "Voice coach unavailable: missing LLM key")
+    if not GEMINI_API_KEY:
+        raise HTTPException(503, "Voice coach unavailable: missing GEMINI_API_KEY")
+    if not resolve_openai_api_key():
+        raise HTTPException(503, "Voice coach STT unavailable: missing OPENAI_API_KEY")
 
     # Whisper has a 25 MB cap; reject early.
     raw = await audio.read()
@@ -130,28 +108,18 @@ async def voice_question(
         raise HTTPException(400, "Audio is empty")
 
     try:
-        # 1. Transcribe (optional dep — lazy import).
-        OpenAISpeechToText = _speech_to_text_cls()
-        stt = OpenAISpeechToText(api_key=EMERGENT_LLM_KEY)
-        buf = io.BytesIO(raw)
-        # Whisper expects a name on the file-like; emergentintegrations
-        # passes the underlying stream straight through, but a name on
-        # the BufferedReader helps content-type detection.
-        buf.name = audio.filename or "voice-coach.webm"
-        transcription = await stt.transcribe(
-            file=buf,
-            model="whisper-1",
-            response_format="json",
+        transcription = await whisper_transcribe(
+            raw,
+            filename=audio.filename or "voice-coach.webm",
             language="en",
             prompt="Chess coaching question for an online casino game.",
+            response_format="json",
         )
-        question = (getattr(transcription, "text", "") or "").strip()
+        question = (transcription.get("text") or "").strip()
         if not question:
             raise HTTPException(422, "Could not understand audio")
 
-        # 2. Answer.
         chat = LlmChat(
-            api_key=EMERGENT_LLM_KEY,
             session_id=f"voice-coach-q-{fen[:16]}",
             system_message=(
                 SYSTEM_PROMPT + " For voice questions, give 2-3 sentences max."
