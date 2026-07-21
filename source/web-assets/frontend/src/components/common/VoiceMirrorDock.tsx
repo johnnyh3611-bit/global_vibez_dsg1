@@ -84,10 +84,10 @@ export const VoiceMirrorDock: React.FC = () => {
   const [sentFeedback, setSentFeedback] = useState(false);
 
   // Detect whether we're running inside an iframe that likely blocks
-  // getUserMedia (the Emergent editor preview panel is the common case).
-  // We can't reliably check the parent's `allow="microphone"` attribute
-  // from inside (cross-origin), so we flag the iframe case up-front and
-  // resolve the exact error after the first mic attempt.
+  // getUserMedia. We can't reliably check the parent's
+  // `allow="microphone"` attribute from inside (cross-origin), so we
+  // flag the iframe case up-front and resolve the exact error after
+  // the first mic attempt.
   const inIframe =
     typeof window !== "undefined" && window.self !== window.top;
 
@@ -218,12 +218,12 @@ export const VoiceMirrorDock: React.FC = () => {
       const name = err?.name || "";
       // NotAllowedError can mean:
       //   (a) browser-level deny (user clicked block)
-      //   (b) iframe sandbox / permissions-policy deny (Emergent editor)
+      //   (b) iframe sandbox / permissions-policy deny
       // In iframe context we strongly suspect (b) and show a "Open in
       // new tab" CTA instead of the browser-settings instructions.
       if (name === "NotAllowedError" || /Permission|NotAllowed/i.test(msg)) {
         if (inIframe) {
-          setError("Voice Mirror needs mic access, which is blocked inside the Emergent preview panel.");
+          setError("Voice Mirror needs mic access, which is blocked inside this embedded preview. Open the page in a new tab.");
           setErrorKind("iframe");
         } else {
           setError("Mic blocked — click the 🎙 icon in your browser's address bar, allow mic access, then try again.");

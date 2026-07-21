@@ -1,8 +1,8 @@
 """
 Iter 115 — Voice Mirror end-to-end backend validation.
 
-Tests the refactored route that now uses emergentintegrations (OpenAISpeechToText +
-OpenAITextToSpeech) instead of raw httpx → api.openai.com. Verifies that:
+Tests the Voice Mirror route that uses the official openai SDK (Whisper STT +
+TTS via OPENAI_API_KEY). Verifies that:
   - POST /api/voice-mirror/transcribe-and-translate returns 200 with real
     gTTS-generated audio (not 502).
   - POST /api/voice-mirror/speak-phrase returns 200 with translated audio.

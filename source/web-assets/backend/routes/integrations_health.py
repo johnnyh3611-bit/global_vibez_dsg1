@@ -53,6 +53,13 @@ async def integrations_health() -> Dict[str, Any]:
         "set": "GEMINI_API_KEY",
         "get_key": "https://aistudio.google.com/apikey",
     }
+    openai_audio = {
+        "configured": bool(os.environ.get("OPENAI_API_KEY")),
+        "purpose": "Voice Mirror + Voice Coach Whisper STT / OpenAI TTS",
+        "provider": "openai",
+        "set": "OPENAI_API_KEY",
+        "get_key": "https://platform.openai.com/api-keys",
+    }
     twilio = {
         "configured": _present("TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_PHONE_NUMBER"),
         "purpose": "Optional PSTN / SMS (not required for in-app Vibe Phone)",
@@ -79,6 +86,7 @@ async def integrations_health() -> Dict[str, Any]:
         "helio": helio,
         "resend_email": resend,
         "ai_llm": llm,
+        "openai_audio": openai_audio,
         "twilio": twilio,
         "cloudflare_stream": cloudflare_stream,
         "stripe_legacy": stripe,
