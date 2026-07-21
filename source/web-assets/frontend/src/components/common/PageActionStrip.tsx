@@ -19,8 +19,9 @@ import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   MoreHorizontal, MessageSquare, Mic, RotateCcw, Globe, Utensils, Sparkles,
-  Headphones, X, ZapOff, DollarSign, Bot,
+  Headphones, ZapOff, DollarSign, Bot,
 } from "lucide-react";
+import { VibezTabChrome } from "@/components/ui/VibezTabChrome";
 
 const fire = (id: string) => () => {
   if (typeof window !== "undefined") {
@@ -163,19 +164,14 @@ const PageActionStrip: React.FC<Props> = ({ align = "end", className = "" }) => 
               align === "end" ? "right-0" : align === "center" ? "left-1/2 -translate-x-1/2" : "left-0"
             }`}
           >
-            <div className="flex items-center justify-between px-2 py-1 mb-1 border-b border-white/10">
-              <span className="text-[10px] uppercase tracking-[0.3em] text-white/50 font-bold">
-                Quick Access
-              </span>
-              <button
-                onClick={() => setOpen(false)}
-                data-testid="page-action-strip-close"
-                aria-label="Close menu"
-                className="text-white/60 hover:text-white"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
+            <VibezTabChrome
+              title="Quick Access"
+              onClose={() => setOpen(false)}
+              closeTestId="page-action-strip-close"
+              testId="page-action-strip-chrome"
+              className="rounded-none mb-1 px-2 py-1 bg-transparent"
+              titleClassName="text-[10px] uppercase tracking-[0.3em] text-white/50 font-bold"
+            />
 
             {SECTIONS.map(({ title, items }, sIdx) => (
               <div key={title} className={sIdx > 0 ? "mt-2 pt-2 border-t border-white/8" : ""}>

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Copy, Check, Facebook, Twitter, MessageCircle } from 'lucide-react';
+import { Copy, Check, Facebook, Twitter, MessageCircle } from 'lucide-react';
 import { GlassCard } from '../GlassCard';
+import { VibezTabChrome } from '@/components/ui/VibezTabChrome';
 
 export function ShareModal({ isOpen, onClose, videoId, videoTitle }) {
   const [copied, setCopied] = useState(false);
@@ -50,16 +51,14 @@ export function ShareModal({ isOpen, onClose, videoId, videoTitle }) {
           className="max-w-md w-full"
         >
           <GlassCard variant="gaming" className="p-6">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-black text-white">Share Video</h2>
-              <button
-                onClick={onClose}
-                className="text-white/60 hover:text-white transition-colors"
-              >
-                <X size={24} />
-              </button>
-            </div>
+            <VibezTabChrome
+              title="Share Video"
+              onClose={onClose}
+              closeTestId="share-modal-close"
+              testId="share-modal-chrome"
+              className="rounded-xl mb-6 px-2 bg-black/20"
+              titleClassName="text-2xl font-black"
+            />
 
             {/* Copy Link */}
             <div className="mb-6">

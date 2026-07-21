@@ -22,7 +22,8 @@ GEMINI_API_KEY = (
 )
 # Call sites still import EMERGENT_LLM_KEY — point it at Gemini.
 EMERGENT_LLM_KEY = GEMINI_API_KEY
-OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')  # unused for chat; kept for other tools
+# Voice Mirror / Voice Coach audio (Whisper STT + OpenAI TTS). Not used for chat.
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
 MAPBOX_API_KEY = os.environ.get('MAPBOX_API_KEY')
 
 # URLs

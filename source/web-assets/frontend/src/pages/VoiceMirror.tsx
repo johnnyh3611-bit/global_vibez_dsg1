@@ -1,16 +1,17 @@
 /**
- * Voice Mirror — Whisper STT → Claude translate → OpenAI TTS pipeline.
+ * Voice Mirror — Whisper STT → Gemini translate → OpenAI TTS pipeline.
  *
  * Uses MediaRecorder to capture short WebM/Opus clips (~3s) from the user's
  * mic and POSTs them as base64 to /api/voice-mirror/transcribe-and-translate.
  * Plays the returned translated MP3 inline.
  *
- * No extra API keys — everything runs through the Emergent LLM Key.
+ * Backend needs OPENAI_API_KEY (STT/TTS) + GEMINI_API_KEY (translation).
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, MicOff, Volume2, Loader2, Languages, Sparkles, ArrowLeft, History, Trash2, Zap, X } from "lucide-react";
+import { Mic, MicOff, Volume2, Loader2, Languages, Sparkles, ArrowLeft, History, Trash2, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { VibezCloseControl } from "@/components/ui/VibezCloseControl";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -335,7 +336,7 @@ const VoiceMirror: React.FC = () => {
       const name = err?.name || "";
       if (name === "NotAllowedError" || /Permission|NotAllowed/i.test(msg)) {
         if (inIframe) {
-          setError("Voice Mirror needs mic access, which is blocked inside the Emergent preview panel.");
+          setError("Voice Mirror needs mic access, which is blocked inside this embedded preview. Open the page in a new tab.");
           setErrorKind("iframe");
         } else {
           setError("Mic blocked — click the 🎙 icon in your browser's address bar and allow microphone access, then try again.");
@@ -382,8 +383,8 @@ const VoiceMirror: React.FC = () => {
             </span>
           </h1>
           <p className="mt-6 text-neutral-400 max-w-xl">
-            Real-time bilingual voice translation. Whisper transcribes, Claude translates, and OpenAI
-            gives you a deterministic voice — no cloning, no extra keys.
+            Real-time bilingual voice translation. Whisper transcribes, Gemini translates, and OpenAI
+            gives you a deterministic voice — no cloning required.
           </p>
         </div>
       </section>
@@ -665,13 +666,11 @@ const VoiceMirror: React.FC = () => {
                 >
                   <Trash2 className="w-3 h-3" /> Clear all
                 </button>
-                <button
+                <VibezCloseControl
                   onClick={() => setHistoryOpen(false)}
-                  className="text-white/50 hover:text-white"
-                  data-testid="voice-mirror-history-close"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+                  label="Close"
+                  testId="voice-mirror-history-close"
+                />
               </div>
 
               <div className="flex-1 overflow-y-auto p-4 space-y-3">

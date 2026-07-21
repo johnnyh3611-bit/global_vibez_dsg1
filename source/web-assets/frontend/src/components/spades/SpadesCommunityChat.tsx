@@ -18,8 +18,9 @@
  */
 import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, Send, Smile, Wifi, WifiOff, X } from "lucide-react";
+import { MessageCircle, Send, Smile, Wifi, WifiOff } from "lucide-react";
 import { getAuthToken, getUsername } from "@/utils/secureAuth";
+import { VibezCloseControl } from "@/components/ui/VibezCloseControl";
 
 const QUICK_EMOJIS = [
   "❤️", "😂", "😍", "🔥", "👍", "👏",
@@ -295,13 +296,11 @@ export const SpadesCommunityChat: React.FC<Props> = ({
                 </p>
               </div>
             </div>
-            <button
+            <VibezCloseControl
               onClick={onClose}
-              className="text-amber-300/70 hover:text-white p-1 rounded transition"
-              data-testid="spades-chat-close-btn"
-            >
-              <X className="w-5 h-5" />
-            </button>
+              label="Close"
+              testId="spades-chat-close-btn"
+            />
           </div>
 
           {/* Messages */}

@@ -3117,14 +3117,28 @@ def test_voice_coach_router_registered():
         "Voice Coach: /api/voice-coach/voice-question missing"
 
 
-def test_voice_coach_uses_emergent_llm_key():
-    """Voice Coach must read EMERGENT_LLM_KEY from env, not hard-code keys."""
-    src = open("source/web-assets/backend/routes/voice_coach.py").read()
-    assert "EMERGENT_LLM_KEY" in src, \
-        "voice_coach.py must read EMERGENT_LLM_KEY from os.environ"
+def test_voice_coach_uses_gemini_and_openai_audio():
+    """Voice Coach: Gemini for tips, OpenAI Whisper for STT — no Emergent."""
+    from pathlib import Path
+    here = Path(__file__).resolve().parent
+    candidates = [
+        here.parent / "routes" / "voice_coach.py",
+        Path("source/web-assets/backend/routes/voice_coach.py"),
+        Path("routes/voice_coach.py"),
+    ]
+    path = next((p for p in candidates if p.exists()), None)
+    assert path is not None, "voice_coach.py not found"
+    src = path.read_text(encoding="utf-8")
+    assert "GEMINI_API_KEY" in src, \
+        "voice_coach.py must check GEMINI_API_KEY for LLM tips"
+    assert "OPENAI_API_KEY" in src or "resolve_openai_api_key" in src, \
+        "voice_coach.py must require OPENAI_API_KEY for Whisper STT"
+    assert "from emergentintegrations" not in src and "import emergentintegrations" not in src, \
+        "voice_coach.py must not import emergentintegrations"
     assert "claude-sonnet-4-5" in src, \
-        "voice_coach.py must use claude-sonnet-4-5-20250929"
-    assert "whisper-1" in src, "voice_coach.py must call whisper-1 STT"
+        "voice_coach.py must keep the historical with_model alias string"
+    assert "whisper_transcribe" in src, \
+        "voice_coach.py must call shared whisper_transcribe helper"
 
 
 def test_roguelite_chess_router_registered():

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { Mic, MicOff, Video, VideoOff, Users } from 'lucide-react';
+import { VibezCloseControl } from '@/components/ui/VibezCloseControl';
 
 /**
  * VibeRoomVoice — Universal 2-20 Player voice/video bar.
@@ -634,15 +635,11 @@ const VibeRoomVoice: React.FC<VibeRoomVoiceProps> = ({
             {videoEnabled ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
           </button>
           {onClose && (
-            <button
-              type="button"
+            <VibezCloseControl
               onClick={onClose}
-              className="w-8 h-8 rounded-full flex items-center justify-center bg-white/5 hover:bg-rose-500/30 text-white/50 hover:text-rose-200 transition text-xs font-bold"
-              aria-label="Collapse voice bar"
-              data-testid="vibe-room-close"
-            >
-              ×
-            </button>
+              label="Close"
+              testId="vibe-room-close"
+            />
           )}
         </div>
       </div>

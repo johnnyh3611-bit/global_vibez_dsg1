@@ -1,7 +1,8 @@
 
 import React from 'react';
-import { X, Info } from 'lucide-react';
+import { Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { VibezCloseControl } from '@/components/ui/VibezCloseControl';
 
 export const GAME_RULES = {
   // CARD GAMES
@@ -830,12 +831,12 @@ export default function GameRulesModal({ gameType, isOpen, onClose }: { gameType
             className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 rounded-2xl border-4 border-cyan-500 shadow-2xl shadow-cyan-500/50"
           >
             {/* Close button */}
-            <button
+            <VibezCloseControl
               onClick={onClose}
-              className="absolute top-4 right-4 p-2 bg-red-600 hover:bg-red-700 rounded-lg transition-colors z-10"
-            >
-              <X className="w-6 h-6 text-white" />
-            </button>
+              label="Close"
+              testId="game-rules-close"
+              className="absolute top-4 right-4 z-10"
+            />
 
             {/* Header */}
             <div className="bg-gradient-to-r from-cyan-600 to-purple-600 p-6 rounded-t-xl">

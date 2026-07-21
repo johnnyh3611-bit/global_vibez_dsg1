@@ -1,14 +1,13 @@
 """
-Voice Mirroring (Phase 3) — user choice 4(b): OpenAI stack via Emergent LLM Key only.
+Voice Mirroring (Phase 3) — Whisper STT + Gemini translate + OpenAI TTS.
 
 Pipeline per audio chunk (~2-4s clips):
-    1. Whisper STT       → transcript + source language
-    2. Claude translate  → target language text (reuses chat.translate_message)
-    3. OpenAI TTS        → translated audio bytes
+    1. Whisper STT       → transcript + source language (OPENAI_API_KEY)
+    2. Translate         → target language text (reuses chat.translate_message / Gemini)
+    3. OpenAI TTS        → translated audio bytes (OPENAI_API_KEY)
 
 The client uploads WebM/Opus chunks via WebSocket. Returns TTS audio bytes
-(MP3) plus metadata. The implementation uses the Emergent LLM Key so no
-extra 3rd-party keys are required.
+(MP3) plus metadata. Uses the official openai SDK with OPENAI_API_KEY.
 
 NOTE: Voice *cloning* (sender's specific voice) requires ElevenLabs. Not
 used here per user direction. We use a deterministic voice per speaker
@@ -21,16 +20,15 @@ from typing import Optional, Dict, Any, List
 from datetime import datetime, timezone
 import base64
 import hashlib
-import os
 import secrets
 
 from routes.chat import translate_message
+from services.openai_audio import OPENAI_TTS_VOICES, openai_tts, whisper_transcribe
 from utils.database import get_database
 
 router = APIRouter(prefix="/voice-mirror", tags=["voice-mirror"])
 
-EMERGENT_LLM_KEY = os.environ.get("EMERGENT_LLM_KEY", "")
-OPENAI_VOICES = ["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
+OPENAI_VOICES = list(OPENAI_TTS_VOICES)
 
 # Display metadata for the voice picker UI.
 VOICE_CATALOG: List[Dict[str, str]] = [
@@ -172,52 +170,13 @@ class SpeakPhrasePayload(BaseModel):
 
 
 async def _whisper_stt(audio_bytes: bytes) -> Dict[str, Any]:
-    """
-    STT via OpenAI Whisper through the Emergent LLM Key gateway.
-    Uses emergentintegrations.OpenAISpeechToText which routes through the
-    Emergent proxy (https://integrations.emergentagent.com/llm) when the key
-    starts with `sk-emergent-`.
-    Returns {text, language}.
-    """
-    from io import BytesIO
-    from emergentintegrations.llm.openai.speech_to_text import OpenAISpeechToText
-
-    stt = OpenAISpeechToText(api_key=EMERGENT_LLM_KEY)
-    buf = BytesIO(audio_bytes)
-    buf.name = "clip.webm"  # litellm infers format from the filename suffix
-    resp = await stt.transcribe(
-        file=buf,
-        model="whisper-1",
-        response_format="verbose_json",
-    )
-    # Response may be a pydantic model, dict, or an object with .text / .language
-    if isinstance(resp, dict):
-        text = resp.get("text", "")
-        lang = resp.get("language", "")
-    else:
-        text = getattr(resp, "text", "") or ""
-        lang = getattr(resp, "language", "") or ""
-    return {"text": text, "language": lang}
+    """STT via OpenAI Whisper (OPENAI_API_KEY). Returns {text, language}."""
+    return await whisper_transcribe(audio_bytes, filename="clip.webm")
 
 
 async def _openai_tts(text: str, voice: str) -> bytes:
-    """
-    TTS via OpenAI through the Emergent LLM Key gateway. Returns MP3 bytes.
-    Uses emergentintegrations.OpenAITextToSpeech.
-    """
-    from emergentintegrations.llm.openai.text_to_speech import OpenAITextToSpeech
-
-    tts = OpenAITextToSpeech(api_key=EMERGENT_LLM_KEY)
-    # Safety: OpenAITextToSpeech only accepts its whitelisted voices; fall
-    # back to 'nova' if the caller passed something unsupported (e.g. legacy
-    # 'alloy-hd' or a gpt-4o-mini-tts-only voice like 'ballad').
-    voice_safe = voice if voice in OpenAITextToSpeech.VOICES else "nova"
-    return await tts.generate_speech(
-        text=text,
-        model="tts-1",
-        voice=voice_safe,
-        response_format="mp3",
-    )
+    """TTS via OpenAI (OPENAI_API_KEY). Returns MP3 bytes."""
+    return await openai_tts(text, voice=voice)
 
 
 @router.post("/transcribe-and-translate")

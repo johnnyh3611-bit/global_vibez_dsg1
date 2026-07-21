@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, X, MessageCircle, Smile } from 'lucide-react';
+import { Send, MessageCircle, Smile } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { VibezCloseControl } from '@/components/ui/VibezCloseControl';
 
 // Quick-pick emoji palette for the inline picker (input bar) AND for
 // per-message reactions. Kept short so it fits the cyan glass aesthetic.
@@ -170,14 +171,11 @@ export default function GameChat({
             <MessageCircle className="w-5 h-5 text-white" />
             <h3 className="font-bold text-white">Game Chat</h3>
           </div>
-          <button
+          <VibezCloseControl
             onClick={onClose}
-            className="text-white/80 hover:text-white"
-            aria-label="Close chat"
-            data-testid="game-chat-close"
-          >
-            <X className="w-5 h-5" />
-          </button>
+            label="Close"
+            testId="game-chat-close"
+          />
         </div>
 
         {/* Messages */}

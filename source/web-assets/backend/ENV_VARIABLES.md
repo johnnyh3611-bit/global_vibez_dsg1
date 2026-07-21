@@ -26,6 +26,10 @@ PRIVY_JWKS_URL=https://auth.privy.io/api/v1/apps/your_privy_app_id/jwks.json
 ADMIN_EMAILS=admin@globalvibez.com,founder@globalvibez.com
 ADMIN_PASSWORD=GlobalVibez_Founder_2025!
 FOUNDER_2FA_SECRET=JBSWY3DPEHPK3PXP
+
+# Vibe Fleet ELD — HMAC signing key for tamper-evident log hash chain.
+# Rotate only with a re-sign migration; never leave the default in production.
+ELD_SIGNING_KEY=change-me-eld-signing-key-production
 ```
 
 ### Payment Integration
@@ -61,10 +65,15 @@ See `source/web-assets/PAYMENT_SECURITY.md` for Helio PCI / TLS / webhook / audi
 
 ### External Services (Optional)
 ```env
-# AI — Google Gemini (date planner, coaches, matching, practice)
+# AI — Google Gemini (date planner, coaches, matching, practice, translation)
 # Get a key: https://aistudio.google.com/apikey
 GEMINI_API_KEY=your_gemini_api_key
 # GOOGLE_API_KEY=also_accepted_as_alias
+
+# OpenAI — Voice Mirror + Voice Coach STT/TTS (Whisper + tts-1)
+# Required for /api/voice-mirror/* audio and /api/voice-coach/voice-question
+# Get a key: https://platform.openai.com/api-keys
+OPENAI_API_KEY=your_openai_api_key
 
 # Twilio (optional PSTN / SMS — NOT required for in-app Vibe Phone calling)
 TWILIO_ACCOUNT_SID=your-account-sid
