@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Video, X, Sparkles, Users } from 'lucide-react';
+import { Video, Sparkles, Users } from 'lucide-react';
 import VibeRoomVoice from '@/components/games/VibeRoomVoice';
+import { VibezCloseControl } from '@/components/ui/VibezCloseControl';
 
 interface RoomCommsDockProps {
   roomId: string;
@@ -57,15 +58,11 @@ const RoomCommsDock: React.FC<RoomCommsDockProps> = ({
                 >
                   <Sparkles className="w-3.5 h-3.5" />
                 </button>
-                <button
-                  type="button"
+                <VibezCloseControl
                   onClick={() => setOpen(false)}
-                  title="Minimize room video"
-                  className="w-8 h-8 rounded-full flex items-center justify-center bg-white/5 hover:bg-rose-500/30 text-white/70 hover:text-rose-200 transition"
-                  aria-label="Minimize"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
+                  label="Close"
+                  testId="room-comms-dock-close"
+                />
               </div>
             </div>
             <div className="p-2">

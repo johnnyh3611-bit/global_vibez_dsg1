@@ -12,7 +12,8 @@
  */
 import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, MicOff, MessageCircle, Sparkles, X } from "lucide-react";
+import { Mic, MicOff, MessageCircle, Sparkles } from "lucide-react";
+import { VibezCloseControl } from "@/components/ui/VibezCloseControl";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -204,13 +205,11 @@ export const VoiceCoachButton: React.FC<Props> = ({
                     Sharp eyes on the board.
                   </h3>
                 </div>
-                <button
+                <VibezCloseControl
                   onClick={() => setOpen(false)}
-                  className="p-1.5 rounded-full hover:bg-white/10 transition"
-                  aria-label="Close"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+                  label="Close"
+                  testId="voice-coach-close"
+                />
               </div>
 
               {/* Latest move tip */}

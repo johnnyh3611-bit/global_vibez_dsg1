@@ -11,8 +11,9 @@
  */
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
-import { Info, X, Sparkles, Coins, HeartHandshake, Shield, Volume2, VolumeX } from "lucide-react";
+import { Info, Sparkles, Coins, HeartHandshake, Shield, Volume2, VolumeX } from "lucide-react";
 import { matchInfo, type RoomInfo } from "@/data/roomInfo";
+import { VibezCloseControl } from "@/components/ui/VibezCloseControl";
 
 // Paths where the cube would feel intrusive (login/signup/landing).
 const HIDDEN_PREFIXES = ["/login", "/signup", "/forgot-password", "/reset-password"];
@@ -121,15 +122,12 @@ export default function RoomInfoCube() {
             className="bg-[#0a1218] border border-cyan-500/30 rounded-2xl max-w-lg w-full p-6 relative shadow-[0_0_40px_-10px_rgba(56,189,248,0.5)]"
             onClick={(e) => e.stopPropagation()}
           >
-            <button
-              type="button"
+            <VibezCloseControl
               onClick={() => setOpen(false)}
-              data-testid="room-info-cube-close"
-              aria-label="Close info"
-              className="absolute top-3 right-3 text-white/50 hover:text-white"
-            >
-              <X className="w-5 h-5" />
-            </button>
+              label="Close"
+              testId="room-info-cube-close"
+              className="absolute top-3 right-3"
+            />
 
             <div className="flex items-center gap-2 mb-1">
               <Info className="w-5 h-5 text-cyan-300" />

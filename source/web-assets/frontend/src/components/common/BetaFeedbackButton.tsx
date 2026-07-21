@@ -6,9 +6,10 @@
  */
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bug, X, Send, Check, Loader2 } from "lucide-react";
+import { Bug, Send, Check, Loader2 } from "lucide-react";
 import { authFetch, getUserId } from "@/utils/secureAuth";
 import useCornerDockTrigger from "@/hooks/useCornerDockTrigger";
+import { VibezCloseControl } from "@/components/ui/VibezCloseControl";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -83,16 +84,18 @@ export default function BetaFeedbackButton() {
               exit={{ scale: 0.95, opacity: 0 }}
               className="glass-panel p-6 w-full max-w-md"
             >
-              <div className="flex items-start justify-between mb-3">
+              <div className="flex items-start justify-between mb-3 gap-3">
                 <div>
                   <p className="text-[10px] uppercase tracking-[0.3em] text-amber-300">
                     Beta Feedback
                   </p>
                   <h2 className="text-xl font-black text-white">Help build Global Vibez</h2>
                 </div>
-                <button onClick={() => setOpen(false)} className="text-cyan-400">
-                  <X className="w-5 h-5" />
-                </button>
+                <VibezCloseControl
+                  onClick={() => setOpen(false)}
+                  label="Close"
+                  testId="beta-feedback-close"
+                />
               </div>
 
               {done ? (

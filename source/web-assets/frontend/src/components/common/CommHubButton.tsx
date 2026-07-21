@@ -14,10 +14,10 @@ import {
   MicOff,
   Languages,
   Video,
-  X,
   ChevronDown,
 } from "lucide-react";
 import { useVoiceMirror } from "@/contexts/VoiceMirrorContext";
+import { VibezCloseControl } from "@/components/ui/VibezCloseControl";
 
 interface Props {
   /** Compact variant: shorter button copy on small screens. */
@@ -101,13 +101,11 @@ export const CommHubButton: React.FC<Props> = ({ compact = false }) => {
               <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-fuchsia-300">
                 Communications
               </span>
-              <button
+              <VibezCloseControl
                 onClick={() => setOpen(false)}
-                className="text-slate-500 hover:text-white"
-                aria-label="Close"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
+                label="Close"
+                testId="commhub-inline-close"
+              />
             </div>
 
             <Item

@@ -6,12 +6,13 @@
  * 4 tabs: Country / Language / Dialect / Currency+Units (auto-derived).
  */
 import React, { useEffect, useMemo, useState } from 'react';
-import { X, Search, Check } from 'lucide-react';
+import { Search, Check } from 'lucide-react';
 import {
   globalVibeSync,
   type UserLocaleSelection,
 } from '@/utils/globalVibeSync';
 import { VibezTabStyle } from '@/components/ui/VibezTabStyle';
+import { VibezCloseControl } from '@/components/ui/VibezCloseControl';
 
 const API = process.env.REACT_APP_BACKEND_URL as string;
 
@@ -143,13 +144,11 @@ export function CulturalHubModal({ open, onClose, onSelected }: Props) {
               200% Global Fit
             </p>
           </div>
-          <button
+          <VibezCloseControl
             onClick={onClose}
-            data-testid="cultural-hub-close"
-            className="text-white/60 hover:text-white p-1 rounded-md hover:bg-white/5"
-          >
-            <X className="w-5 h-5" />
-          </button>
+            label="Close"
+            testId="cultural-hub-close"
+          />
         </div>
 
         <div className="px-3 pt-3 bg-black/40">

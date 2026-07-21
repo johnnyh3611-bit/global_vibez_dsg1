@@ -19,8 +19,9 @@ import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   MoreHorizontal, MessageSquare, Mic, RotateCcw, Globe, Utensils, Sparkles,
-  Headphones, X, ZapOff, DollarSign,
+  Headphones, ZapOff, DollarSign,
 } from "lucide-react";
+import { VibezCloseControl } from "@/components/ui/VibezCloseControl";
 
 const fire = (id: string) => () => {
   if (typeof window !== "undefined") {
@@ -166,14 +167,11 @@ const PageActionStrip: React.FC<Props> = ({ align = "end", className = "" }) => 
               <span className="text-[10px] uppercase tracking-[0.3em] text-white/50 font-bold">
                 Quick Access
               </span>
-              <button
+              <VibezCloseControl
                 onClick={() => setOpen(false)}
-                data-testid="page-action-strip-close"
-                aria-label="Close menu"
-                className="text-white/60 hover:text-white"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
+                label="Close"
+                testId="page-action-strip-close"
+              />
             </div>
 
             {SECTIONS.map(({ title, items }, sIdx) => (

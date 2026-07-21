@@ -9,8 +9,9 @@
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, MicOff, Volume2, Loader2, Languages, Sparkles, ArrowLeft, History, Trash2, Zap, X } from "lucide-react";
+import { Mic, MicOff, Volume2, Loader2, Languages, Sparkles, ArrowLeft, History, Trash2, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { VibezCloseControl } from "@/components/ui/VibezCloseControl";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -665,13 +666,11 @@ const VoiceMirror: React.FC = () => {
                 >
                   <Trash2 className="w-3 h-3" /> Clear all
                 </button>
-                <button
+                <VibezCloseControl
                   onClick={() => setHistoryOpen(false)}
-                  className="text-white/50 hover:text-white"
-                  data-testid="voice-mirror-history-close"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+                  label="Close"
+                  testId="voice-mirror-history-close"
+                />
               </div>
 
               <div className="flex-1 overflow-y-auto p-4 space-y-3">

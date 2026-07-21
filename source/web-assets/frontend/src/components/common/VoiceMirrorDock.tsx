@@ -24,7 +24,6 @@ import {
   Loader2,
   Languages,
   Send,
-  X,
   Volume2,
   Sparkles,
   ChevronDown,
@@ -34,6 +33,7 @@ import {
   useVoiceMirror,
   VOICE_MIRROR_LANGUAGES,
 } from "@/contexts/VoiceMirrorContext";
+import { VibezCloseControl } from "@/components/ui/VibezCloseControl";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -306,14 +306,11 @@ export const VoiceMirrorDock: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <button
+              <VibezCloseControl
                 onClick={() => setOpen(false)}
-                className="text-slate-400 hover:text-white p-1"
-                data-testid="voice-mirror-dock-close"
-                aria-label="Close Voice Mirror"
-              >
-                <X className="w-4 h-4" />
-              </button>
+                label="Close"
+                testId="voice-mirror-dock-close"
+              />
             </div>
 
             {/* Language picker */}

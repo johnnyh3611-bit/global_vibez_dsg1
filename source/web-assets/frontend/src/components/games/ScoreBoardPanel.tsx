@@ -11,7 +11,8 @@
  */
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { VibezCloseControl } from '@/components/ui/VibezCloseControl';
 
 interface TeamRow {
   /** "us" / "them" / etc. */
@@ -77,13 +78,12 @@ export function ScoreBoardPanel({
               transition={{ type: 'spring', stiffness: 200, damping: 25 }}
               className="fixed inset-x-0 bottom-0 z-50 max-h-[70vh] bg-[#0A0A0F] border-t-2 border-[#D4AF37]/30 rounded-t-2xl px-5 pt-3 pb-6"
             >
-              <button
+              <VibezCloseControl
                 onClick={() => setOpen(false)}
-                data-testid="scoreboard-close"
-                className="absolute top-3 right-3 p-1 text-white/50 hover:text-white"
-              >
-                <X className="w-5 h-5" />
-              </button>
+                label="Close"
+                testId="scoreboard-close"
+                className="absolute top-3 right-3"
+              />
               <div className="mx-auto w-12 h-1 bg-white/20 rounded-full mb-3" />
               <h3 className="text-lg font-black mb-3">{title}</h3>
               <ScoreBody rows={rows} />
