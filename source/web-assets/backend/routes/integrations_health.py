@@ -3,6 +3,8 @@ GET /api/integrations/health — public (no secrets) readiness for third-party w
 
 Surfaces which launch integrations are configured so ops can finish Railway
 env vars without digging through code. Never returns secret values.
+
+Card checkout is Helio only — Stripe is not a product rail and is not reported.
 """
 from __future__ import annotations
 
@@ -35,7 +37,7 @@ async def integrations_health() -> Dict[str, Any]:
     }
     helio = {
         **helio_status(),
-        "purpose": "Fiat (card) → crypto checkout for coin packs (Stripe alternative)",
+        "purpose": "Fiat (card) → crypto checkout for coin packs (Helio only)",
     }
     resend = {
         "configured": _present("RESEND_API_KEY"),
@@ -61,17 +63,11 @@ async def integrations_health() -> Dict[str, Any]:
         "get_key": "https://platform.openai.com/api-keys",
     }
     twilio = {
-        "configured": _present("TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_PHONE_NUMBER"),
-        "optional": True,
-        "purpose": "Optional PSTN / SMS (not required for in-app Vibe Phone)",
-    }
-    stripe = {
-        "configured": bool(
-            os.environ.get("STRIPE_API_KEY")
-            or os.environ.get("STRIPE_SECRET_KEY")
+        "configured": _present(
+            "TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_PHONE_NUMBER"
         ),
         "optional": True,
-        "purpose": "Legacy card checkout (de-emphasized; prefer Solana / Helio)",
+        "purpose": "Optional PSTN / SMS (not required for in-app Vibe Phone)",
     }
     cloudflare_stream = {
         "configured": _present("CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_TOKEN"),
@@ -91,19 +87,13 @@ async def integrations_health() -> Dict[str, Any]:
         "openai_audio": openai_audio,
         "twilio": twilio,
         "cloudflare_stream": cloudflare_stream,
-        "stripe_legacy": stripe,
     }
-    # Required launch rails only — optional/legacy keys must not ding ready_count.
-    required = {
-        k: v
-        for k, v in services.items()
-        if not v.get("optional")
-    }
+    # Required launch rails only — optional keys must not ding ready_count.
+    required = {k: v for k, v in services.items() if not v.get("optional")}
     ready = sum(1 for s in required.values() if s.get("configured"))
     notes = [
         "In-app calling uses Agora — Twilio PSTN is optional.",
-        "Coin top-up preferred order: Solana deposit → Helio card → Stripe legacy.",
-        "Stripe is optional/legacy and excluded from ready_count.",
+        "Coin top-up: Solana deposit (primary) → Helio card. Stripe is not used.",
     ]
     if not helio.get("configured"):
         notes.append("Set HELIO_* on Railway to enable Helio pack checkout.")
@@ -119,9 +109,8 @@ async def integrations_health() -> Dict[str, Any]:
         "ok": ready == len(required),
         "ready_count": ready,
         "total": len(required),
-        "optional_count": sum(
-            1 for s in services.values() if s.get("optional")
-        ),
+        "optional_count": sum(1 for s in services.values() if s.get("optional")),
         "services": services,
         "notes": notes,
+        "card_provider": "helio",
     }

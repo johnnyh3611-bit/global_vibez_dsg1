@@ -1,10 +1,10 @@
-"""Integrations health scoring — optional rails must not ding readiness."""
+"""Integrations health — Helio/Solana rails; Stripe must not appear."""
 import pytest
 from httpx import ASGITransport, AsyncClient
 
 
 @pytest.mark.asyncio
-async def test_integrations_health_excludes_optional_stripe(monkeypatch):
+async def test_integrations_health_omits_stripe(monkeypatch):
     monkeypatch.setenv("AGORA_APP_ID", "a")
     monkeypatch.setenv("AGORA_APP_CERTIFICATE", "b")
     monkeypatch.setenv("GLOBAL_VIBEZ_SOLANA_RECEIVE_WALLET", "Sol111")
@@ -17,19 +17,18 @@ async def test_integrations_health_excludes_optional_stripe(monkeypatch):
     monkeypatch.setenv("OPENAI_API_KEY", "o")
     monkeypatch.setenv("CLOUDFLARE_ACCOUNT_ID", "c")
     monkeypatch.setenv("CLOUDFLARE_API_TOKEN", "t")
-    monkeypatch.delenv("STRIPE_API_KEY", raising=False)
-    monkeypatch.delenv("STRIPE_SECRET_KEY", raising=False)
     monkeypatch.delenv("TWILIO_ACCOUNT_SID", raising=False)
 
     from routes.integrations_health import integrations_health
 
     payload = await integrations_health()
-    assert payload["services"]["stripe_legacy"]["configured"] is False
-    assert payload["services"]["stripe_legacy"]["optional"] is True
+    assert "stripe_legacy" not in payload["services"]
+    assert "stripe" not in payload["services"]
+    assert payload["card_provider"] == "helio"
     assert payload["services"]["twilio"]["optional"] is True
     assert payload["ok"] is True
     assert payload["ready_count"] == payload["total"]
-    assert "Stripe is optional" in " ".join(payload["notes"])
+    assert "Stripe is not used" in " ".join(payload["notes"])
 
 
 @pytest.mark.asyncio
@@ -40,7 +39,6 @@ async def test_root_and_health_probes_return_200(monkeypatch):
     monkeypatch.setenv("JWT_SECRET", "test-secret")
     monkeypatch.setenv("DISABLE_BG_SCHEDULERS", "1")
 
-    # Import after env so settings pick up test values.
     from server import app
 
     transport = ASGITransport(app=app)
