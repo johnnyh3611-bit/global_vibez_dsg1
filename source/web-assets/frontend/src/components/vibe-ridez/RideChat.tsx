@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, MessageCircle, X, Check, CheckCheck } from 'lucide-react';
+import { VibezTabChrome } from '@/components/ui/VibezTabChrome';
 import { io } from 'socket.io-client';
 import QuickEmojiButton from '@/components/chat/QuickEmojiButton';
 
@@ -253,23 +254,19 @@ export default function RideChat({ rideId, userId, role }) {
             className="fixed bottom-24 right-6 z-40 w-96 h-[500px] bg-black/90 backdrop-blur-2xl border border-cyan-500/30 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
             style={{ background: 'linear-gradient(180deg, rgba(6, 182, 212, 0.1) 0%, rgba(0, 0, 0, 0.95) 100%)' }}
           >
-            {/* Header */}
-            <div className="bg-gradient-to-r from-cyan-500/20 to-blue-600/20 backdrop-blur-xl border-b border-cyan-500/30 p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-400' : 'bg-red-400'} animate-pulse`} />
-                  <div>
-                    <h3 className="text-white font-bold">Ride Chat</h3>
-                    <p className="text-xs text-gray-400">
-                      {isConnected ? 'Connected' : 'Connecting...'}
-                    </p>
-                  </div>
-                </div>
-                <div className="text-xs text-cyan-400 font-semibold uppercase">
-                  {role === 'driver' ? '🚗 Driver' : '🧑 Passenger'}
-                </div>
-              </div>
-            </div>
+            <VibezTabChrome
+              title="Ride Chat"
+              subtitle={isConnected ? 'Connected' : 'Connecting...'}
+              onClose={() => setIsOpen(false)}
+              closeTestId="ride-chat-close"
+              testId="ride-chat-chrome"
+              className="rounded-none border-cyan-500/30 bg-gradient-to-r from-cyan-500/20 to-blue-600/20"
+              trailing={
+                <span className="text-xs text-cyan-400 font-semibold uppercase">
+                  {role === 'driver' ? 'Driver' : 'Passenger'}
+                </span>
+              }
+            />
 
             {/* Messages Container */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">

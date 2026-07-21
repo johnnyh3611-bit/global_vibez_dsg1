@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Dices, X, Zap } from 'lucide-react';
+import { Dices, Zap } from 'lucide-react';
+import { VibezTabChrome } from '@/components/ui/VibezTabChrome';
 
 export interface PlayerOddRow {
   user_id: string;
@@ -78,20 +79,19 @@ export const BleacherSideBetPanel: React.FC<BleacherSideBetPanelProps> = ({
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-xl bg-gradient-to-br from-fuchsia-800 via-indigo-900 to-slate-900 rounded-2xl p-6 text-white shadow-2xl border border-fuchsia-400/30"
           >
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Zap className="w-6 h-6 text-fuchsia-300" />
-                <h3 className="text-xl font-black tracking-wide">Bleacher Side Bet</h3>
-              </div>
-              <button
-                type="button"
-                onClick={onCancel}
-                className="opacity-70 hover:opacity-100"
-                data-testid="vibe654-sidebet-cancel"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+            <VibezTabChrome
+              title={
+                <span className="inline-flex items-center gap-2">
+                  <Zap className="w-5 h-5 text-fuchsia-300" />
+                  Bleacher Side Bet
+                </span>
+              }
+              onClose={onCancel}
+              closeTestId="vibe654-sidebet-cancel"
+              testId="vibe654-sidebet-chrome"
+              className="rounded-xl mb-4 px-2 bg-black/20"
+              titleClassName="text-xl font-black tracking-wide"
+            />
 
             {/* tabs */}
             <div className="flex gap-2 mb-4">

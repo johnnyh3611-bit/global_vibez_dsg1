@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Video, StopCircle, Upload, Camera } from 'lucide-react';
+import { Video, StopCircle, Upload, Camera } from 'lucide-react';
 import { GlassCard } from '../GlassCard';
+import { VibezTabChrome } from '@/components/ui/VibezTabChrome';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 const MAX_DURATION = 300; // 5 minutes in seconds
@@ -235,24 +236,22 @@ export function VideoRecorder({ isOpen, onClose, onVideoUploaded }) {
           className="max-w-2xl w-full"
         >
           <GlassCard variant="gaming" className="p-6">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-2xl font-black text-white flex items-center gap-2">
-                  <Camera className="w-7 h-7 text-fuchsia-400" />
+            <VibezTabChrome
+              title={
+                <span className="inline-flex items-center gap-2">
+                  <Camera className="w-6 h-6 text-fuchsia-400" />
                   {recordedBlob ? 'Review & Upload' : (recording ? 'Recording...' : 'Record Video')}
-                </h2>
-                <p className="text-white/70 text-sm">
-                  {recordedBlob ? 'Add details and upload your video' : 'Max 5 minutes'}
-                </p>
-              </div>
-              <button
-                onClick={onClose}
-                className="text-white/60 hover:text-white transition-colors"
-              >
-                <X size={28} />
-              </button>
-            </div>
+                </span>
+              }
+              subtitle={
+                recordedBlob ? 'Add details and upload your video' : 'Max 5 minutes'
+              }
+              onClose={onClose}
+              closeTestId="video-recorder-close"
+              testId="video-recorder-chrome"
+              className="rounded-xl mb-6 px-2 bg-black/20"
+              titleClassName="text-2xl font-black"
+            />
 
             {/* Error Message */}
             {error && (

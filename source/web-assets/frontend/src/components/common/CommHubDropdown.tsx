@@ -27,7 +27,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { useVoiceMirror } from "@/contexts/VoiceMirrorContext";
-import { VibezCloseControl } from "@/components/ui/VibezCloseControl";
+import { VibezTabChrome } from "@/components/ui/VibezTabChrome";
 
 // Hide on pre-auth routes — there's no comms to manage there.
 const HIDDEN_ROUTES = new Set([
@@ -165,16 +165,14 @@ export const CommHubDropdown: React.FC = () => {
             data-testid="commhub-menu"
             className="absolute right-0 top-full mt-2 w-64 rounded-2xl border border-fuchsia-500/30 bg-slate-950/95 backdrop-blur-xl shadow-[0_0_32px_rgba(168,85,247,0.25)] p-2"
           >
-            <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 mb-1">
-              <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-fuchsia-300">
-                Communications
-              </span>
-              <VibezCloseControl
-                onClick={() => setOpen(false)}
-                label="Close"
-                testId="commhub-dropdown-close"
-              />
-            </div>
+            <VibezTabChrome
+              title="Communications"
+              onClose={() => setOpen(false)}
+              closeTestId="commhub-dropdown-close"
+              testId="commhub-dropdown-chrome"
+              className="rounded-none mb-1 px-3 bg-transparent"
+              titleClassName="text-[10px] font-mono uppercase tracking-[0.3em] text-fuchsia-300"
+            />
 
             <MenuItem
               testid="commhub-voice-mirror"

@@ -11,8 +11,8 @@
  */
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { VibezCloseControl } from '@/components/ui/VibezCloseControl';
+import { ChevronLeft } from 'lucide-react';
+import { VibezTabChrome } from '@/components/ui/VibezTabChrome';
 
 interface TeamRow {
   /** "us" / "them" / etc. */
@@ -78,14 +78,15 @@ export function ScoreBoardPanel({
               transition={{ type: 'spring', stiffness: 200, damping: 25 }}
               className="fixed inset-x-0 bottom-0 z-50 max-h-[70vh] bg-[#0A0A0F] border-t-2 border-[#D4AF37]/30 rounded-t-2xl px-5 pt-3 pb-6"
             >
-              <VibezCloseControl
-                onClick={() => setOpen(false)}
-                label="Close"
-                testId="scoreboard-close"
-                className="absolute top-3 right-3"
+              <div className="mx-auto w-12 h-1 bg-white/20 rounded-full mb-2" />
+              <VibezTabChrome
+                title={title}
+                onClose={() => setOpen(false)}
+                closeTestId="scoreboard-close"
+                testId="scoreboard-tray-chrome"
+                className="rounded-none mb-3 px-0 bg-transparent border-white/10"
+                titleClassName="text-lg font-black"
               />
-              <div className="mx-auto w-12 h-1 bg-white/20 rounded-full mb-3" />
-              <h3 className="text-lg font-black mb-3">{title}</h3>
               <ScoreBody rows={rows} />
             </motion.div>
           )}
@@ -106,16 +107,14 @@ export function ScoreBoardPanel({
           exit={{ x: 280, opacity: 0 }}
           className="fixed top-24 right-4 z-30 w-64 bg-[#0A0A0F]/95 backdrop-blur-md border border-white/10 rounded-xl p-4 shadow-2xl"
         >
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-black uppercase tracking-widest">{title}</h3>
-            <button
-              onClick={() => setOpen(false)}
-              data-testid="scoreboard-collapse"
-              className="text-white/50 hover:text-white p-1"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
+          <VibezTabChrome
+            title={title}
+            onClose={() => setOpen(false)}
+            closeTestId="scoreboard-collapse"
+            testId="scoreboard-rail-chrome"
+            className="rounded-none mb-3 px-0 bg-transparent"
+            titleClassName="text-sm font-black uppercase tracking-widest"
+          />
           <ScoreBody rows={rows} />
         </motion.aside>
       ) : (

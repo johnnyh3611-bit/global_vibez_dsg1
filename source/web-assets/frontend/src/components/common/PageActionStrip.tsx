@@ -21,7 +21,7 @@ import {
   MoreHorizontal, MessageSquare, Mic, RotateCcw, Globe, Utensils, Sparkles,
   Headphones, ZapOff, DollarSign,
 } from "lucide-react";
-import { VibezCloseControl } from "@/components/ui/VibezCloseControl";
+import { VibezTabChrome } from "@/components/ui/VibezTabChrome";
 
 const fire = (id: string) => () => {
   if (typeof window !== "undefined") {
@@ -163,16 +163,14 @@ const PageActionStrip: React.FC<Props> = ({ align = "end", className = "" }) => 
               align === "end" ? "right-0" : align === "center" ? "left-1/2 -translate-x-1/2" : "left-0"
             }`}
           >
-            <div className="flex items-center justify-between px-2 py-1 mb-1 border-b border-white/10">
-              <span className="text-[10px] uppercase tracking-[0.3em] text-white/50 font-bold">
-                Quick Access
-              </span>
-              <VibezCloseControl
-                onClick={() => setOpen(false)}
-                label="Close"
-                testId="page-action-strip-close"
-              />
-            </div>
+            <VibezTabChrome
+              title="Quick Access"
+              onClose={() => setOpen(false)}
+              closeTestId="page-action-strip-close"
+              testId="page-action-strip-chrome"
+              className="rounded-none mb-1 px-2 py-1 bg-transparent"
+              titleClassName="text-[10px] uppercase tracking-[0.3em] text-white/50 font-bold"
+            />
 
             {SECTIONS.map(({ title, items }, sIdx) => (
               <div key={title} className={sIdx > 0 ? "mt-2 pt-2 border-t border-white/8" : ""}>

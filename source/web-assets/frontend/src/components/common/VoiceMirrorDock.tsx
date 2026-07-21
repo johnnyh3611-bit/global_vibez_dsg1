@@ -33,7 +33,7 @@ import {
   useVoiceMirror,
   VOICE_MIRROR_LANGUAGES,
 } from "@/contexts/VoiceMirrorContext";
-import { VibezCloseControl } from "@/components/ui/VibezCloseControl";
+import { VibezTabChrome } from "@/components/ui/VibezTabChrome";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -290,28 +290,23 @@ export const VoiceMirrorDock: React.FC = () => {
             transition={{ duration: 0.18 }}
             className="pointer-events-auto mb-2 w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-fuchsia-500/30 bg-slate-950/90 backdrop-blur-xl shadow-[0_0_40px_rgba(168,85,247,0.25)] p-4"
           >
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-fuchsia-500 to-cyan-400 flex items-center justify-center">
-                  <Sparkles className="w-4 h-4 text-white" />
-                </div>
-                <div>
-                  <div className="text-white text-sm font-bold leading-tight">
-                    Voice Mirror
-                  </div>
-                  <div className="text-[10px] text-slate-400 leading-tight">
-                    {activeTarget
-                      ? `→ ${activeTarget.label}`
-                      : "No active chat yet"}
-                  </div>
-                </div>
-              </div>
-              <VibezCloseControl
-                onClick={() => setOpen(false)}
-                label="Close"
-                testId="voice-mirror-dock-close"
-              />
-            </div>
+            <VibezTabChrome
+              title={
+                <span className="inline-flex items-center gap-2">
+                  <span className="w-8 h-8 rounded-full bg-gradient-to-br from-fuchsia-500 to-cyan-400 flex items-center justify-center">
+                    <Sparkles className="w-4 h-4 text-white" />
+                  </span>
+                  Voice Mirror
+                </span>
+              }
+              subtitle={
+                activeTarget ? `→ ${activeTarget.label}` : "No active chat yet"
+              }
+              onClose={() => setOpen(false)}
+              closeTestId="voice-mirror-dock-close"
+              testId="voice-mirror-dock-chrome"
+              className="rounded-none mb-3 px-0 bg-transparent"
+            />
 
             {/* Language picker */}
             <div className="relative mb-3">
