@@ -26,6 +26,10 @@ PRIVY_JWKS_URL=https://auth.privy.io/api/v1/apps/your_privy_app_id/jwks.json
 ADMIN_EMAILS=admin@globalvibez.com,founder@globalvibez.com
 ADMIN_PASSWORD=GlobalVibez_Founder_2025!
 FOUNDER_2FA_SECRET=JBSWY3DPEHPK3PXP
+
+# Vibe Fleet ELD — HMAC signing key for tamper-evident log hash chain.
+# Rotate only with a re-sign migration; never leave the default in production.
+ELD_SIGNING_KEY=change-me-eld-signing-key-production
 ```
 
 ### Payment Integration
