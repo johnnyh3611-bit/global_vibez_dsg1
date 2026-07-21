@@ -29,6 +29,7 @@ import {
 import soundManager from "@/utils/soundManager";
 import { authFetch } from "@/utils/secureAuth";
 import { vibezTabTriggerClass } from "@/components/ui/VibezTabStyle";
+import { VibezTabChrome } from "@/components/ui/VibezTabChrome";
 
 const SPEED_KEY = "gv_game_speed";
 const VIEW_CARDS_KEY = "gv_view_cards";
@@ -283,6 +284,13 @@ export function GameRoomLayout({
             transition={{ duration: 0.18 }}
             data-testid="room-quick-settings"
           >
+            <VibezTabChrome
+              title="Quick Settings"
+              onClose={() => setSettingsOpen(false)}
+              closeTestId="room-quick-settings-close"
+              testId="room-quick-settings-chrome"
+              className="rounded-none -mx-1 mb-2 px-1"
+            />
             <label>
               <span className="inline-flex items-center gap-1.5">
                 <Volume2 className="h-3.5 w-3.5" /> Volume

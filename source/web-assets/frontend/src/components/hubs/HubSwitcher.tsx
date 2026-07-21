@@ -11,6 +11,7 @@ import {
   setPreferredHub,
   type HubId,
 } from "@/hubs/hubRegistry";
+import { VibezCloseControl } from "@/components/ui/VibezCloseControl";
 
 export default function HubSwitcher() {
   const navigate = useNavigate();
@@ -54,17 +55,25 @@ export default function HubSwitcher() {
         <>
           <button
             type="button"
-            className="fixed inset-0 z-40 cursor-default"
+            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px]"
             aria-label="Close hub menu"
             onClick={() => setOpen(false)}
+            data-testid="hub-switcher-backdrop"
           />
           <ul
             role="listbox"
             data-testid="hub-switcher-menu"
             className="absolute left-0 top-full z-50 mt-2 w-64 max-h-[70vh] overflow-y-auto rounded-2xl border border-white/15 bg-[#0b0b12]/95 p-2 shadow-2xl backdrop-blur-xl"
           >
-            <li className="px-2 py-1.5 text-[10px] uppercase tracking-widest text-white/40">
-              Switch dashboard
+            <li className="flex items-center justify-between gap-2 px-2 py-1.5">
+              <span className="text-[10px] uppercase tracking-widest text-white/40">
+                Switch dashboard
+              </span>
+              <VibezCloseControl
+                onClick={() => setOpen(false)}
+                label="Close"
+                testId="hub-switcher-close"
+              />
             </li>
             {HUBS.map((h) => (
               <li key={h.id}>

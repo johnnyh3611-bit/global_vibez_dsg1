@@ -13,7 +13,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import useCornerDockTrigger from "@/hooks/useCornerDockTrigger";
 import {
   Sparkles,
-  X,
   Swords,
   Trophy,
   Car,
@@ -24,6 +23,7 @@ import {
   Moon,
   ArrowRight,
 } from "lucide-react";
+import { VibezCloseControl } from "@/components/ui/VibezCloseControl";
 
 type Feature = {
   id: string;
@@ -142,14 +142,12 @@ const FreshDropsLauncher: React.FC = () => {
             onClick={(e) => e.stopPropagation()}
             data-testid="fresh-drops-menu"
           >
-            <button
+            <VibezCloseControl
               onClick={() => setOpen(false)}
-              className="absolute top-4 right-4 p-2 rounded-full text-neutral-400 hover:text-white hover:bg-white/5"
-              data-testid="fresh-drops-close-btn"
-              aria-label="Close"
-            >
-              <X className="w-5 h-5" />
-            </button>
+              label="Close"
+              className="absolute top-4 right-4"
+              testId="fresh-drops-close-btn"
+            />
 
             <div className="flex items-center gap-2 text-fuchsia-400 font-mono text-[10px] uppercase tracking-[0.4em] mb-2">
               <Sparkles className="w-3.5 h-3.5" /> Fresh Drops · v{CURRENT_DROP_VERSION}

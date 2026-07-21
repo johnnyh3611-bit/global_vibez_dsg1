@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, Volume2, VolumeX, Maximize, LogOut, HelpCircle, MessageCircle, X, Monitor, Smartphone } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import QuitForfeitDialog from '@/components/games/QuitForfeitDialog';
+import { VibezTabChrome } from '@/components/ui/VibezTabChrome';
 
 export default function UnifiedGameMenu({ gameId, 
   onLeave, 
@@ -81,12 +82,13 @@ export default function UnifiedGameMenu({ gameId,
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
             className="absolute top-20 right-20 w-72 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 backdrop-blur-2xl rounded-2xl border-3 border-amber-500/50 shadow-[0_0_40px_rgba(0,0,0,0.9)] overflow-hidden"
           >
-            {/* Header - CENTERED & COMPACT */}
-            <div className="bg-gradient-to-r from-amber-600 via-yellow-600 to-amber-600 p-3 border-b-2 border-amber-400">
-              <h3 className="text-white text-sm font-bold text-center drop-shadow-lg font-['Cinzel']">
-                Game Menu
-              </h3>
-            </div>
+            <VibezTabChrome
+              title="Game Menu"
+              onClose={() => setIsOpen(false)}
+              closeTestId="unified-game-menu-close"
+              testId="unified-game-menu-chrome"
+              className="rounded-none border-amber-400/40 bg-gradient-to-r from-amber-600/80 via-yellow-600/70 to-amber-600/80"
+            />
 
             {/* Menu Items - COMPACT SIZE */}
             <div className="p-2 space-y-1">{/* Messages - COMPACT */}

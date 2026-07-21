@@ -1,7 +1,8 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { HelpCircle, X, Trophy, Target, Lightbulb } from 'lucide-react';
+import { HelpCircle, Trophy, Target, Lightbulb } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
+import { VibezCloseControl } from '@/components/ui/VibezCloseControl';
 
 /**
  * How to Play Guide - Global Vibez DSG™ Games
@@ -223,14 +224,12 @@ export const HowToPlayGuide = ({ gameType, onClose }) => {
                   <p className="text-white/80 font-semibold">{guide.name}</p>
                 </div>
               </div>
-              <Button
+              <VibezCloseControl
                 onClick={onClose}
-                variant="ghost"
-                size="icon"
-                className="text-white hover:bg-white/20 h-10 w-10"
-              >
-                <X className="w-6 h-6" />
-              </Button>
+                label="Close"
+                testId="how-to-play-close"
+                className="border-white/30 bg-white/10 text-white hover:bg-white/20"
+              />
             </div>
           </div>
 

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Search, X, Loader } from 'lucide-react';
+import { Users, Search, Loader } from 'lucide-react';
 import multiplayerManager from '@/utils/multiplayerManager';
+import { VibezCloseControl } from '@/components/ui/VibezCloseControl';
 
 export function MatchmakingModal({ isOpen, onClose, gameType, gameName }) {
   const [status, setStatus] = useState('idle'); // idle, searching, found
@@ -79,12 +80,12 @@ export function MatchmakingModal({ isOpen, onClose, gameType, gameName }) {
           className="relative w-full max-w-md bg-gradient-to-br from-purple-900/90 to-black/90 backdrop-blur-xl border-2 border-purple-500 rounded-3xl p-8"
         >
           {/* Close button */}
-          <button
+          <VibezCloseControl
             onClick={handleCancel}
-            className="absolute top-4 right-4 text-white/60 hover:text-white transition-colors"
-          >
-            <X className="w-6 h-6" />
-          </button>
+            label="Close"
+            testId="matchmaking-close"
+            className="absolute top-4 right-4"
+          />
 
           {/* Content based on status */}
           {status === 'idle' && (

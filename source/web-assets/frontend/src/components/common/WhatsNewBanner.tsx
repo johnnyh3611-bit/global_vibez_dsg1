@@ -8,7 +8,8 @@
  */
 import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { X, Sparkles, ArrowRight } from "lucide-react";
+import { Sparkles, ArrowRight } from "lucide-react";
+import { VibezCloseControl } from "@/components/ui/VibezCloseControl";
 import { CURRENT_DROP_VERSION } from "./FreshDropsLauncher";
 
 const SEEN_KEY = "fresh_drops_seen_version";
@@ -113,14 +114,12 @@ const WhatsNewBanner: React.FC = () => {
         >
           Explore <ArrowRight className="w-3 h-3" />
         </button>
-        <button
+        <VibezCloseControl
           onClick={dismiss}
-          className="shrink-0 p-1 rounded-full text-white/80 hover:text-white hover:bg-black/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-1 focus-visible:ring-offset-transparent"
-          data-testid="whats-new-dismiss-btn"
-          aria-label="Dismiss"
-        >
-          <X className="w-3.5 h-3.5" />
-        </button>
+          label="Close"
+          testId="whats-new-dismiss-btn"
+          className="shrink-0 border-white/25 bg-black/25 text-white hover:bg-black/40"
+        />
       </div>
     </div>
   );

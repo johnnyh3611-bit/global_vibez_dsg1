@@ -27,6 +27,7 @@ import {
 } from '../../utils/universalGameAnimations';
 import './UniversalGameRoom.css';
 import { VibezTabStyle } from '@/components/ui/VibezTabStyle';
+import { VibezTabChrome } from '@/components/ui/VibezTabChrome';
 
 const UniversalGameRoom = () => {
   const { gameType, roomCode } = useParams();
@@ -934,8 +935,13 @@ const UniversalGameRoom = () => {
         >
           {soundEnabled ? '🔊' : '🔇'}
         </button>
-        <button onClick={() => setSidebarOpen(!sidebarOpen)} className="sidebar-toggle">
-          {sidebarOpen ? '✕' : '💬'}
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="sidebar-toggle"
+          aria-label={sidebarOpen ? 'Close sidebar' : 'Open chat and game log'}
+          data-testid="universal-sidebar-toggle"
+        >
+          {sidebarOpen ? 'Close' : 'Chat'}
         </button>
       </div>
       
@@ -973,6 +979,7 @@ const UniversalGameRoom = () => {
         chatMessages={chatMessages}
         gameLogs={gameLogs}
         onSendMessage={sendChatMessage}
+        onClose={() => setSidebarOpen(false)}
       />
       
       {/* Betting Modal - Table-Contained */}
@@ -1207,7 +1214,7 @@ const UniversalGameRoom = () => {
 
 // === SIDEBAR COMPONENT ===
 
-const Sidebar = ({ isOpen, chatMessages, gameLogs, onSendMessage }) => {
+const Sidebar = ({ isOpen, chatMessages, gameLogs, onSendMessage, onClose }) => {
   const [activeTab, setActiveTab] = useState('log');
   const [messageInput, setMessageInput] = useState('');
   
@@ -1220,6 +1227,13 @@ const Sidebar = ({ isOpen, chatMessages, gameLogs, onSendMessage }) => {
   
   return (
     <div className={`sidebar-sci-fi ${isOpen ? 'open' : 'closed'}`}>
+      <VibezTabChrome
+        title={activeTab === 'chat' ? 'Chat' : 'Game Log'}
+        onClose={onClose}
+        closeTestId="universal-sidebar-close"
+        testId="universal-sidebar-chrome"
+        className="rounded-none m-0"
+      />
       {/* Tabs */}
       <VibezTabStyle
         ariaLabel="Sidebar panel"

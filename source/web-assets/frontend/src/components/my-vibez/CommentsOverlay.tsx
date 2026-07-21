@@ -1,7 +1,8 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send } from 'lucide-react';
+import { Send } from 'lucide-react';
+import { VibezTabChrome } from '@/components/ui/VibezTabChrome';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -86,18 +87,14 @@ export function CommentsOverlay({ isOpen, onClose, videoId, onCommentAdded }) {
 
         {/* Comments Panel */}
         <div className="relative w-full max-h-[80vh] bg-gradient-to-b from-gray-900 to-black rounded-t-3xl overflow-hidden">
-          {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-white/10">
-            <h3 className="text-white font-bold text-lg">
-              {comments.length} {comments.length === 1 ? 'Comment' : 'Comments'}
-            </h3>
-            <button
-              onClick={onClose}
-              className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-all"
-            >
-              <X size={18} />
-            </button>
-          </div>
+          <VibezTabChrome
+            title={`${comments.length} ${comments.length === 1 ? 'Comment' : 'Comments'}`}
+            onClose={onClose}
+            closeTestId="comments-overlay-close"
+            testId="comments-overlay-chrome"
+            className="rounded-none px-4 py-3"
+            titleClassName="text-lg"
+          />
 
           {/* Comments List */}
           <div className="overflow-y-auto max-h-[calc(80vh-140px)] p-4 space-y-4">

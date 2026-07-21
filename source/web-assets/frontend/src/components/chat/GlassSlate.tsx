@@ -5,10 +5,11 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, Send, X, Users, Minimize2, Maximize2 } from 'lucide-react';
+import { MessageCircle, Send, Users, Minimize2, Maximize2 } from 'lucide-react';
 import { useChat } from '@/hooks/useChat';
 import { useVoiceMirrorTarget } from '@/contexts/VoiceMirrorContext';
 import TranslatedSubtitle from '@/components/common/TranslatedSubtitle';
+import { VibezCloseControl } from '@/components/ui/VibezCloseControl';
 
 export default function GlassSlate({ userId, userName, initialRoom = 'global_lobby' }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -233,12 +234,11 @@ export default function GlassSlate({ userId, userName, initialRoom = 'global_lob
                 <Minimize2 className="w-4 h-4 text-purple-300" />
               )}
             </button>
-            <button
+            <VibezCloseControl
               onClick={() => setIsOpen(false)}
-              className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-            >
-              <X className="w-4 h-4 text-purple-300" />
-            </button>
+              label="Close"
+              testId="glass-slate-close"
+            />
           </div>
         </div>
       </div>

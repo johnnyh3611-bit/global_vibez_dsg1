@@ -21,7 +21,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Copy, X, RadioTower, CheckCircle2 } from 'lucide-react';
+import { Users, Copy, RadioTower, CheckCircle2 } from 'lucide-react';
+import { VibezCloseControl } from '@/components/ui/VibezCloseControl';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -237,14 +238,12 @@ export default function CoWatchLauncher() {
               exit={{ y: 40, opacity: 0 }}
               className="relative w-full max-w-md rounded-2xl ring-1 ring-amber-300/40 bg-gradient-to-br from-[#1a1206] via-[#0f0a14] to-[#0a1410] p-6 shadow-[0_0_70px_-10px_rgba(251,191,36,0.5)]"
             >
-              <button
-                data-testid="co-watch-launcher-close"
+              <VibezCloseControl
+                testId="co-watch-launcher-close"
                 onClick={() => setOpen(false)}
-                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/5 hover:bg-white/15 flex items-center justify-center"
-                aria-label="Close"
-              >
-                <X className="w-4 h-4" />
-              </button>
+                label="Close"
+                className="absolute top-3 right-3"
+              />
 
               <div className="flex items-center gap-2 mb-2">
                 <Users className="w-5 h-5 text-amber-300" />

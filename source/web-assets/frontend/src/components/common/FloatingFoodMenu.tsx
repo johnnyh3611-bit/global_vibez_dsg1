@@ -10,8 +10,9 @@
 import React, { useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { UtensilsCrossed, X, Pizza, Coffee, IceCream } from 'lucide-react';
+import { UtensilsCrossed, Pizza, Coffee, IceCream } from 'lucide-react';
 import useCornerDockTrigger from "@/hooks/useCornerDockTrigger";
+import { VibezCloseControl } from "@/components/ui/VibezCloseControl";
 
 const HIDE_PATTERNS = [
   /^\/$/,
@@ -68,9 +69,11 @@ export default function FloatingFoodMenu() {
               <div className="text-[10px] uppercase tracking-[0.4em] font-black text-amber-300">
                 HungryVibes · No Pause
               </div>
-              <button onClick={() => setOpen(false)} className="text-white/50 hover:text-white p-1">
-                <X className="w-4 h-4" />
-              </button>
+              <VibezCloseControl
+                onClick={() => setOpen(false)}
+                label="Close"
+                testId="floating-food-menu-close"
+              />
             </div>
             <div className="space-y-2">
               {QUICK_CATS.map((c) => {
