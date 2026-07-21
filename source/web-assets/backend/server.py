@@ -41,18 +41,30 @@ app = FastAPI()
 app = setup_middleware(app)
 
 
-# ─────────────────────────── Kubernetes liveness/readiness probe
+# ─────────────────────────── Kubernetes / Railway liveness/readiness probes
 #
-# Emergent's Kubernetes ingress hits plain `/health` (NOT `/api/health`)
-# from `127.0.0.1` for liveness/readiness checks. After enough 404s the
-# pod is killed and the deploy fails. We expose a tiny no-DB endpoint at
-# the ROOT of the app so the probe always sees 200 OK as long as uvicorn
-# is alive — no MongoDB / Redis / external-service round trips, so a
-# blip in any dependency can't fail the probe and tank the rollout.
+# Railway + Emergent ingress may hit `/health`, `/`, `/healthz`, or `/ready`.
+# After enough non-200 responses the deploy is marked **Healthcheck failure**
+# and the service is killed. These endpoints are process-only (no Mongo /
+# Redis / external I/O) so a dependency blip cannot tank the rollout.
 @app.get("/health", include_in_schema=False)
+@app.get("/healthz", include_in_schema=False)
+@app.get("/ready", include_in_schema=False)
 async def _k8s_health_probe() -> Dict[str, str]:
     """Liveness/readiness probe — process-only health (no I/O)."""
     return {"status": "ok"}
+
+
+@app.get("/", include_in_schema=False)
+async def _root_health_probe() -> Dict[str, str]:
+    """
+    Root probe for Railway services whose healthcheckPath is `/`.
+
+    The API lives under `/api/*`; `/` itself is not a product page. Returning
+    200 here prevents false Healthcheck failures when the backend service
+    (or a mis-aimed frontend probe) hits the public Railway URL at `/`.
+    """
+    return {"status": "ok", "service": "global-vibez-api"}
 
 
 # ─── Security Directive D1 — Sandbox Firewall (2026-05-18) ─────────

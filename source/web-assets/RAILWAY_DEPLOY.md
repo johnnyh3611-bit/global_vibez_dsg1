@@ -240,6 +240,7 @@ Railway reports **Healthcheck failure** when the container is up but `/health` (
 | Cause | Fix |
 |---|---|
 | **Wrong Root Directory** (repo root or `source/web-assets`) | Backend → `source/web-assets/backend`; frontend → `source/web-assets/frontend` |
+| **Backend healthcheckPath = `/` on an older build** | Prefer `/health`. Current API also returns 200 on `/`, `/healthz`, and `/ready` so either path works. |
 | **Missing `MONGO_URL`** | Add MongoDB plugin (not Postgres) and set `MONGO_URL=${{MongoDB.MONGO_URL}}` |
 | **Wrong port bind** | Backend must listen on `$PORT` via `entrypoint.sh` (already in this repo) |
 | **OOM from schedulers** | Keep `DISABLE_BG_SCHEDULERS=1` |
@@ -252,4 +253,4 @@ In Deployments → failed deploy → **View Logs**, look for:
 - `FATAL: Mongo ping failed`
 - `Killed` / OOM
 
-`/health` is process-only (no DB). It should pass even when Mongo is down; API routes will still 500 until Mongo is reachable.
+`/health` (and `/`, `/healthz`, `/ready`) are process-only (no DB). They should pass even when Mongo is down; API routes will still 500 until Mongo is reachable.

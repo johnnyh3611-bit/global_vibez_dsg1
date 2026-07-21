@@ -62,6 +62,7 @@ async def integrations_health() -> Dict[str, Any]:
     }
     twilio = {
         "configured": _present("TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_PHONE_NUMBER"),
+        "optional": True,
         "purpose": "Optional PSTN / SMS (not required for in-app Vibe Phone)",
     }
     stripe = {
@@ -69,6 +70,7 @@ async def integrations_health() -> Dict[str, Any]:
             os.environ.get("STRIPE_API_KEY")
             or os.environ.get("STRIPE_SECRET_KEY")
         ),
+        "optional": True,
         "purpose": "Legacy card checkout (de-emphasized; prefer Solana / Helio)",
     }
     cloudflare_stream = {
@@ -91,16 +93,35 @@ async def integrations_health() -> Dict[str, Any]:
         "cloudflare_stream": cloudflare_stream,
         "stripe_legacy": stripe,
     }
-    ready = sum(1 for s in services.values() if s.get("configured"))
+    # Required launch rails only — optional/legacy keys must not ding ready_count.
+    required = {
+        k: v
+        for k, v in services.items()
+        if not v.get("optional")
+    }
+    ready = sum(1 for s in required.values() if s.get("configured"))
+    notes = [
+        "In-app calling uses Agora — Twilio PSTN is optional.",
+        "Coin top-up preferred order: Solana deposit → Helio card → Stripe legacy.",
+        "Stripe is optional/legacy and excluded from ready_count.",
+    ]
+    if not helio.get("configured"):
+        notes.append("Set HELIO_* on Railway to enable Helio pack checkout.")
+    if not cloudflare_stream.get("configured"):
+        notes.append(
+            "DSG TV live needs Cloudflare Stream vars — until set, "
+            "/api/streaming/cloudflare/* runs in stub mode."
+        )
+    if not openai_audio.get("configured"):
+        notes.append("Set OPENAI_API_KEY on Railway for Voice Mirror STT/TTS.")
+
     return {
-        "ok": True,
+        "ok": ready == len(required),
         "ready_count": ready,
-        "total": len(services),
+        "total": len(required),
+        "optional_count": sum(
+            1 for s in services.values() if s.get("optional")
+        ),
         "services": services,
-        "notes": [
-            "In-app calling uses Agora — Twilio PSTN is optional.",
-            "Coin top-up preferred order: Solana deposit → Helio card → Stripe legacy.",
-            "Set HELIO_* on Railway to enable Helio pack checkout.",
-            "DSG TV live needs Cloudflare Stream vars — until set, /api/streaming/cloudflare/* runs in stub mode.",
-        ],
+        "notes": notes,
     }
