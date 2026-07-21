@@ -21,7 +21,7 @@ This repo already has the correct layout:
 - `source/web-assets/backend/railway.json` — Docker + `/health`
 - `source/web-assets/frontend/railway.json` — Docker + `/` healthcheck
 
-`vercel.json` was renamed to `vercel.json.bak` so Railway/Nixpacks do not pick up Vercel-specific install/build settings if the root is ever scanned.
+Keep root `vercel.json` for www (Vercel). Railway services use Docker + Root Directory (`source/web-assets/frontend` / `backend`) and ignore root `vercel.json`. Do **not** rename it to `.bak` — that breaks production deploys for `www.globalvibezdsg.com`.
 
 ---
 

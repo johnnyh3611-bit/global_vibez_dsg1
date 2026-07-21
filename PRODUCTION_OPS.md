@@ -21,6 +21,13 @@ https://globalvibezdsg1-production.up.railway.app
 
 ---
 
+## Deploy truth (2026-07-21)
+
+- **Frontend DNS** (`www.globalvibezdsg.com`): **Vercel** project `global-vibez-dsg`. Requires root **`vercel.json`** (do not leave only `vercel.json.bak`).
+- **API**: Railway `https://globalvibezdsg1-production.up.railway.app` (auto-deploys on `main`).
+- **Beta payments**: Helio + `PAYMENT_BETA_MODE` on Railway; coin packs live via `/api/coins/packs`.
+- **Voice Mirror STT**: set `OPENAI_API_KEY` on the Railway backend after #164.
+
 ## Flawless checklist (do in order)
 
 ### 1) Stand up the FastAPI backend (Railway — recommended)
