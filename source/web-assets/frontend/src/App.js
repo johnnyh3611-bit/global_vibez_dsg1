@@ -73,6 +73,7 @@ import CoWatchLauncher from "@/components/common/CoWatchLauncher";
 import NotFound from "@/pages/NotFound";
 import CinemaRoom from "@/pages/CinemaRoom";
 import RoomInfoCube from "@/components/common/RoomInfoCube";
+import AIGuideAssistant from "@/components/common/AIGuideAssistant";
 import RoomVisitLogger from "@/components/common/RoomVisitLogger";
 import RoleSwitcher from "@/components/common/RoleSwitcher";
 import LandscapeRotateHint from "@/components/common/LandscapeRotateHint";
@@ -229,6 +230,7 @@ function AppRouter() {
       <GlobalCommsMounter />
       <RoleSwitcher />
       <RoomInfoCube />
+      <AIGuideAssistant />
       <RoomVisitLogger />
       <FreshDropsLauncher />
       <WhatsNewBanner />

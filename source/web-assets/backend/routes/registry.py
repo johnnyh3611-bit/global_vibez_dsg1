@@ -701,6 +701,7 @@ def register_all_routes(
 
     # ── Wave 5E — AI / planners / integrations / i18n ────────────────
     _soft_mount(api_router, log, "ai_coach", "routes.ai_coach")
+    _soft_mount(api_router, log, "ai_guide", "routes.ai_guide")
     _soft_mount(api_router, log, "ai_content_matching", "routes.ai_content_matching")
     _soft_mount(api_router, log, "ai_date_planner", "routes.ai_date_planner")
     _soft_mount(api_router, log, "ai_date_planner_v2", "routes.ai_date_planner_v2")
