@@ -83,8 +83,8 @@ export default function ChairVault() {
   const [qty, setQty] = useState(1);
   const [inviteCode, setInviteCode] = useState("");
   const [busy, setBusy] = useState(false);
-  /** null = unknown; false = Stripe missing (payments paused) */
-  const [stripeConfigured, setStripeConfigured] = useState<boolean | null>(null);
+  /** null = unknown; false = Helio missing (card checkout paused) */
+  const [paymentsConfigured, setPaymentsConfigured] = useState<boolean | null>(null);
 
   useEffect(() => {
     fetch(`${API}/api/chairs/phase`).then(r => r.ok && r.json()).then(setPhase);
@@ -93,8 +93,8 @@ export default function ChairVault() {
       .then(d => setLeaders(d?.leaders || []));
     if (getUserId()) {
       authFetch(`${API}/api/chairs/me`).then(r => r.ok && r.json()).then(setMe);
-      // Probe checkout (quantity 1). Stripe key is checked after auth/invite;
-      // 503 "Stripe not configured" → honest banner. Other 4xx ⇒ key present.
+      // Probe checkout (quantity 1). Helio is checked after auth/invite;
+      // 503 "Helio is not configured" → honest banner. Other 4xx ⇒ rail present.
       authFetch(`${API}/api/chairs/checkout`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -104,12 +104,17 @@ export default function ChairVault() {
           if (r.status === 503) {
             const err = await r.json().catch(() => ({}));
             const detail = String(err?.detail || "").toLowerCase();
-            setStripeConfigured(!detail.includes("stripe not configured"));
+            setPaymentsConfigured(
+              !(
+                detail.includes("helio is not configured") ||
+                detail.includes("stripe not configured")
+              )
+            );
             return;
           }
-          setStripeConfigured(true);
+          setPaymentsConfigured(true);
         })
-        .catch(() => setStripeConfigured(null));
+        .catch(() => setPaymentsConfigured(null));
     }
   }, []);
 
@@ -143,16 +148,38 @@ export default function ChairVault() {
       });
       if (r.ok) {
         const d = await r.json();
-        if (d.checkout_url) {
-          window.location.href = d.checkout_url;
+        if (d.checkout_url || d.url) {
+          // Persist payment id so /chair-vault/success can poll if Helio
+          // redirect omits query params (dashboard success URL is optional).
+          try {
+            const pid = d.payment_id || d.session_id;
+            if (pid) sessionStorage.setItem("chair_pending_payment_id", pid);
+          } catch {
+            /* ignore */
+          }
+          window.location.href = d.checkout_url || d.url;
+          return;
+        }
+        if (d.provider === "solana" && d.deposit_address) {
+          toast.success(
+            `Send $${d.total_usd} SOL/USDC to ${d.deposit_address} with memo ${d.memo}`
+          );
+          navigate(
+            `/chair-vault/success?session_id=${encodeURIComponent(d.session_id || d.payment_id)}`
+          );
           return;
         }
       }
       const err = await r.json().catch(() => ({}));
-      // Fallback: preview env without Stripe → test-buy
-      if (r.status === 503 && err.detail?.includes?.("Stripe not configured")) {
+      // Fallback: preview env without Helio → test-buy
+      const detailStr = String(err.detail || "");
+      if (
+        r.status === 503 &&
+        (detailStr.includes("Helio is not configured") ||
+          detailStr.includes("Stripe not configured"))
+      ) {
         const ok = window.confirm(
-          `Stripe isn't wired up in this preview. Park ${qty} chair${qty > 1 ? "s" : ""} in TEST MODE for ${fmtUsd((phase.price_usd ?? 0) * qty)}? (No real charge)`
+          `Card checkout isn't wired up in this preview. Park ${qty} chair${qty > 1 ? "s" : ""} in TEST MODE for ${fmtUsd((phase.price_usd ?? 0) * qty)}? (No real charge)`
         );
         if (!ok) return;
         const ref = `preview_chair_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
@@ -245,7 +272,7 @@ export default function ChairVault() {
   const canBuy =
     phase.price_usd !== null &&
     phase.remaining_in_phase! > 0 &&
-    stripeConfigured !== false;
+    paymentsConfigured !== false;
 
   return (
     <div className="min-h-screen bg-[#050507] text-cyan-100 relative overflow-hidden font-sans">
@@ -286,16 +313,16 @@ export default function ChairVault() {
             we automatically pay out every quarter from the platform's
             community reward pool, weighted by chairs parked.
           </p>
-          {stripeConfigured === false && (
+          {paymentsConfigured === false && (
             <div
-              data-testid="chair-vault-stripe-paused"
+              data-testid="chair-vault-payments-paused"
               className="mt-5 mx-auto max-w-xl rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100 flex items-start gap-2 text-left"
             >
               <AlertTriangle className="w-4 h-4 text-amber-300 mt-0.5 shrink-0" />
               <p>
-                Card checkout is paused — Stripe is not configured on this
+                Card checkout is paused — Helio is not configured on this
                 environment. You can still browse phase pricing and invite
-                friends; purchases will unlock once payments go live.
+                friends; purchases will unlock once Helio/Solana payments go live.
               </p>
             </div>
           )}
@@ -471,7 +498,7 @@ export default function ChairVault() {
             >
               {busy
                 ? "Loading…"
-                : stripeConfigured === false
+                : paymentsConfigured === false
                 ? "Checkout paused"
                 : !canBuy
                 ? "Sold out"

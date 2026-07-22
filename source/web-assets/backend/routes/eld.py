@@ -25,10 +25,28 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/eld", tags=["eld"])
 
 # In production, set a strong secret and rotate only with a re-sign migration.
-ELD_SIGNING_KEY = os.environ.get(
-    "ELD_SIGNING_KEY",
-    "dev-eld-signing-key-change-in-production",
-).encode()
+# Weak/default values are flagged at startup via services.security_secrets.
+_ELD_KEY_RAW = (os.environ.get("ELD_SIGNING_KEY") or "").strip()
+if not _ELD_KEY_RAW:
+    _ELD_KEY_RAW = "dev-eld-signing-key-change-in-production"
+    logger.warning(
+        "ELD_SIGNING_KEY unset — using insecure development default. "
+        "Set a strong secret before production (openssl rand -hex 32)."
+    )
+elif (
+    _ELD_KEY_RAW
+    in {
+        "dev-eld-signing-key-change-in-production",
+        "change-me-eld-signing-key-production",
+        "changeme",
+        "eld-signing-key",
+    }
+    or len(_ELD_KEY_RAW) < 24
+):
+    logger.warning(
+        "ELD_SIGNING_KEY looks weak/default — replace before production."
+    )
+ELD_SIGNING_KEY = _ELD_KEY_RAW.encode()
 
 DUTY_STATUSES = [
     "OFF_DUTY",

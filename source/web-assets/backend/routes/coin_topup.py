@@ -333,6 +333,58 @@ async def helio_webhook(request: Request) -> Dict[str, Any]:
         )
 
     if not pay:
+        # Chair Vault Helio path — metadata.kind / payment_id prefix chair_*
+        kind = str(meta.get("kind") or meta.get("purchase_type") or "").lower()
+        looks_like_chair = kind == "chair_park" or (
+            bool(payment_id) and str(payment_id).startswith("chair_")
+        )
+        if looks_like_chair or charge_id:
+            try:
+                from routes.chairs import activate_pending_chair_payment
+
+                chair_result = await activate_pending_chair_payment(
+                    _db,
+                    payment_id=str(payment_id) if payment_id else None,
+                    helio_charge_id=str(charge_id) if charge_id else None,
+                    external_payment_id=str(
+                        transaction_hash or charge_id or payment_id or ""
+                    )
+                    or None,
+                    activated_via="helio_webhook",
+                )
+                if chair_result.get("ok"):
+                    await record_payment_event(
+                        _db,
+                        kind="chair_park",
+                        source="helio_webhook",
+                        status="activated",
+                        metadata={
+                            "payment_id": chair_result.get("payment_id"),
+                            "quantity": chair_result.get("quantity"),
+                            "already_activated": chair_result.get(
+                                "already_activated"
+                            ),
+                            "charge_id": str(charge_id) if charge_id else None,
+                            "transaction_hash": transaction_hash,
+                        },
+                    )
+                    return {
+                        "received": True,
+                        "credited": True,
+                        "kind": "chair_park",
+                        "payment_id": chair_result.get("payment_id"),
+                        "already": bool(chair_result.get("already_activated")),
+                    }
+                if looks_like_chair:
+                    log.warning(
+                        "helio webhook: chair_park meta but no pending row "
+                        "payment_id=%s charge=%s",
+                        payment_id,
+                        charge_id,
+                    )
+            except Exception as exc:
+                log.exception("helio webhook chair_park activation failed: %s", exc)
+
         log.warning(
             "helio webhook: no matching payment meta=%s charge=%s payment_request_id=%s",
             meta,

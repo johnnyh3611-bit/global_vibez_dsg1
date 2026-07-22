@@ -35,12 +35,40 @@ PRIVY_ISSUER = "privy.io"
 _JWKS_CLIENT: Optional[PyJWKClient] = None
 
 
+def privy_configured() -> bool:
+    """True when we can verify Privy JWTs (app id + JWKS URL)."""
+    return bool(PRIVY_APP_ID and _resolved_jwks_url())
+
+
+def _resolved_jwks_url() -> str:
+    """Prefer PRIVY_JWKS_URL; otherwise derive the standard Privy JWKS path."""
+    if PRIVY_JWKS_URL:
+        return PRIVY_JWKS_URL
+    if PRIVY_APP_ID:
+        return f"https://auth.privy.io/api/v1/apps/{PRIVY_APP_ID}/jwks.json"
+    return ""
+
+
+def _require_privy_config() -> None:
+    if not PRIVY_APP_ID:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "Privy not configured. Set PRIVY_APP_ID (and optionally "
+                "PRIVY_JWKS_URL) on the backend."
+            ),
+        )
+    if not _resolved_jwks_url():
+        raise HTTPException(status_code=503, detail="Privy JWKS URL not configured")
+
+
 def _client() -> PyJWKClient:
     global _JWKS_CLIENT
+    _require_privy_config()
     if _JWKS_CLIENT is None:
-        if not PRIVY_JWKS_URL:
-            raise HTTPException(status_code=503, detail="Privy not configured")
-        _JWKS_CLIENT = PyJWKClient(PRIVY_JWKS_URL, cache_keys=True, lifespan=3600)
+        _JWKS_CLIENT = PyJWKClient(
+            _resolved_jwks_url(), cache_keys=True, lifespan=3600
+        )
     return _JWKS_CLIENT
 
 
@@ -48,6 +76,7 @@ def verify_privy_token(token: str) -> Dict[str, Any]:
     """Verifies a Privy access token and returns its claims."""
     if not token:
         raise HTTPException(status_code=401, detail="Missing token")
+    _require_privy_config()
     try:
         signing_key = _client().get_signing_key_from_jwt(token).key
         claims = jwt.decode(
@@ -60,6 +89,8 @@ def verify_privy_token(token: str) -> Dict[str, Any]:
         return claims
     except InvalidTokenError as e:
         raise HTTPException(status_code=401, detail=f"Invalid Privy token: {e}")
+    except HTTPException:
+        raise
     except Exception as e:
         logger.warning(f"[privy] verify failed: {e}")
         raise HTTPException(status_code=401, detail="Privy token verification failed")

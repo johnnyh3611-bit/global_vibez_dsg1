@@ -244,6 +244,14 @@ def register_all_routes(
     _soft_mount(api_router, log, "founders_pass", "routes.founders_pass")
     _soft_mount(api_router, log, "economic_engine", "routes.economic_engine")
     _soft_mount(api_router, log, "admin_recirculation", "routes.admin_recirculation")
+    # Landing Velocity Widget — GET /api/recirculation/public-summary
+    _soft_mount(
+        api_router,
+        log,
+        "recirculation_public",
+        "routes.admin_recirculation",
+        "public_router",
+    )
     _soft_mount(api_router, log, "vibez_rewards", "routes.vibez_rewards")
     _soft_mount(api_router, log, "profit_share", "routes.profit_share")
     _soft_mount(api_router, log, "entry_fee", "routes.entry_fee")
