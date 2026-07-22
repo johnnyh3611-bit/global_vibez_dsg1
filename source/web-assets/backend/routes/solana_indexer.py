@@ -140,6 +140,29 @@ async def _credit_deposit(
     if res.modified_count != 1:
         return False  # someone else (or a previous run) beat us to it
 
+    # Chair Vault Solana path — grant chairs instead of coin top-up.
+    if (deposit.get("purpose") or "").strip().lower() == "chair_park":
+        try:
+            from routes.chairs import activate_pending_chair_payment
+
+            result = await activate_pending_chair_payment(
+                db,
+                payment_id=deposit.get("payment_id"),
+                deposit_id=deposit.get("deposit_id"),
+                external_payment_id=signature,
+                activated_via="solana_indexer",
+            )
+            logger.info(
+                "[solana-indexer] chair_park deposit=%s result=%s sig=%s…",
+                deposit.get("deposit_id"),
+                result,
+                signature[:10],
+            )
+            return bool(result.get("ok"))
+        except Exception as e:
+            logger.warning(f"[solana-indexer] chair_park grant failed: {e}")
+            return False
+
     # 1 USD pledged → 1,000 ₵ Vibez Coins (matches COINS_PER_USD / coin packs).
     coins = int(round(float(deposit.get("amount_usd", 0)) * 1000))
     if coins > 0 and deposit.get("user_id"):

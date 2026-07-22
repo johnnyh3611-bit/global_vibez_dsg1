@@ -11,13 +11,15 @@ DB_NAME=casino_db
 
 ### Authentication & Security
 ```env
-# JWT Configuration
+# JWT Configuration — use a long random value (openssl rand -hex 32).
+# Startup logs SECURITY warnings if this is missing or a known-weak default.
 JWT_SECRET=your-super-secret-jwt-key-change-in-production
 JWT_ALGORITHM=HS256
 JWT_EXPIRATION_HOURS=24
 
 # Privy social login (Google / X) — JWT verify via JWKS
 # Frontend also needs REACT_APP_PRIVY_APP_ID (bake-time) with the same app id.
+# PRIVY_JWKS_URL is optional; when unset the backend derives it from PRIVY_APP_ID.
 # PRIVY_APP_SECRET is NOT used by this FastAPI app (JWKS-only verification).
 PRIVY_APP_ID=your_privy_app_id
 PRIVY_JWKS_URL=https://auth.privy.io/api/v1/apps/your_privy_app_id/jwks.json
@@ -29,18 +31,21 @@ FOUNDER_2FA_SECRET=JBSWY3DPEHPK3PXP
 
 # Vibe Fleet ELD — HMAC signing key for tamper-evident log hash chain.
 # Rotate only with a re-sign migration; never leave the default in production.
+# Startup warns (errors in ENVIRONMENT=production) on weak/default values.
 ELD_SIGNING_KEY=change-me-eld-signing-key-production
 ```
 
 ### Payment Integration
 ```env
-# Preferred coin top-up (no Stripe): Solana deposit
+# Preferred coin top-up + Founder Chair checkout: Solana deposit
 GLOBAL_VIBEZ_SOLANA_RECEIVE_WALLET=YourSolanaTreasuryPubkey
 
-# Helio / MoonPay Commerce — ONLY card rail for coin packs (we do NOT use Stripe)
+# Helio / MoonPay Commerce — ONLY card rail for coin packs AND chair vault
+# (we do NOT use Stripe for chairs or coin packs)
 # Dashboard: https://moonpay.hel.io → Developers → API keys + dynamic Pay Link
 # Embed Pay Link id is public; secrets stay server-side.
 # Webhook target: POST https://<api-host>/api/coins/webhook/helio
+#   (also activates kind=chair_park payments from POST /api/chairs/checkout)
 # Health: GET /api/integrations/health → services.helio.configured
 HELIO_API_KEY=your_helio_public_api_key
 HELIO_SECRET_KEY=your_helio_secret_bearer

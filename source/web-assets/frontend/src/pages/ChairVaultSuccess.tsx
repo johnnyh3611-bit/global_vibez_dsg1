@@ -1,5 +1,5 @@
 /**
- * /chair-vault/success — Stripe redirect target after parking chairs.
+ * /chair-vault/success — Helio/Solana redirect target after parking chairs.
  * Polls /api/chairs/checkout-status/{session_id}, then redirects to /chair-vault.
  */
 import { useEffect, useState } from "react";
@@ -16,7 +16,17 @@ export default function ChairVaultSuccess() {
   const [quantity, setQuantity] = useState<number>(0);
 
   useEffect(() => {
-    const sessionId = params.get("session_id");
+    let sessionId =
+      params.get("session_id") ||
+      params.get("payment_id") ||
+      "";
+    if (!sessionId) {
+      try {
+        sessionId = sessionStorage.getItem("chair_pending_payment_id") || "";
+      } catch {
+        sessionId = "";
+      }
+    }
     if (!sessionId) {
       setStatus("error");
       return;
@@ -35,6 +45,11 @@ export default function ChairVaultSuccess() {
           if (body.status === "activated") {
             setQuantity(Number(body.quantity) || 0);
             setStatus("activated");
+            try {
+              sessionStorage.removeItem("chair_pending_payment_id");
+            } catch {
+              /* ignore */
+            }
             setTimeout(() => navigate("/chair-vault"), 2500);
             return;
           }
@@ -61,7 +76,9 @@ export default function ChairVaultSuccess() {
           <>
             <Loader2 className="w-10 h-10 text-amber-300 animate-spin mx-auto" />
             <h1 className="mt-4 text-2xl font-black">Parking your chair…</h1>
-            <p className="mt-2 text-sm text-cyan-300/80">Confirming Stripe payment.</p>
+            <p className="mt-2 text-sm text-cyan-300/80">
+              Confirming Helio / Solana payment.
+            </p>
           </>
         )}
         {status === "activated" && (

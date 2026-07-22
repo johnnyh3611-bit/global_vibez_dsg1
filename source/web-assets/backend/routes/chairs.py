@@ -33,16 +33,18 @@ Costco Executive lifetime, OnlyFans Lifetime tier.
 Endpoints (all under /api):
   GET  /api/chairs/phase                  (public)  current phase + price
   GET  /api/chairs/me                     (auth)    my chair count + perks
-  POST /api/chairs/checkout               (auth)    Stripe session
+  POST /api/chairs/checkout               (auth)    Helio card / Solana deposit
   POST /api/chairs/test-buy               (auth)    preview-only bypass
   GET  /api/chairs/leaders                (public)  invite leaderboard
   GET  /api/admin/chairs/health           (admin)   Vibe Health Index
   POST /api/admin/chairs/run-quarter      (admin)   manual chair payout
+  GET  /api/chairs/checkout-status/{id}   (auth)    poll Helio/Solana payment
 """
 from __future__ import annotations
 
 import logging
 import os
+import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional, List
 
@@ -894,25 +896,121 @@ async def invite_leaders() -> Dict[str, Any]:
     return {"leaders": out}
 
 
-# ────────────────────────────────────────────── Checkout
+# ────────────────────────────────────────────── Checkout (Helio / Solana)
 
 
 class ChairCheckoutPayload(BaseModel):
     quantity: int = Field(..., ge=1, le=MAX_CHAIRS_PER_PURCHASE)
     invite_code: Optional[str] = Field(None, min_length=4, max_length=40)
+    provider: str = Field(
+        "helio",
+        description="helio (card) or solana (wallet deposit + memo)",
+    )
+    origin_url: Optional[str] = None
+
+
+async def activate_pending_chair_payment(
+    db,
+    *,
+    payment_id: Optional[str] = None,
+    session_id: Optional[str] = None,
+    helio_charge_id: Optional[str] = None,
+    deposit_id: Optional[str] = None,
+    external_payment_id: Optional[str] = None,
+    activated_via: str = "webhook",
+) -> Dict[str, Any]:
+    """Idempotent chair grant used by Helio webhook + Solana indexer + status poll."""
+    clauses: List[Dict[str, Any]] = []
+    if payment_id:
+        clauses.append({"payment_id": payment_id})
+        clauses.append({"session_id": payment_id})
+    if session_id:
+        clauses.append({"session_id": session_id})
+        clauses.append({"payment_id": session_id})
+    if helio_charge_id:
+        clauses.append({"helio_charge_id": str(helio_charge_id)})
+    if deposit_id:
+        clauses.append({"deposit_id": deposit_id})
+    if not clauses:
+        return {"ok": False, "reason": "no_id"}
+
+    pending = await db.chair_pending.find_one({"$or": clauses})
+    if not pending:
+        return {"ok": False, "reason": "not_found"}
+    if pending.get("status") == "activated":
+        return {
+            "ok": True,
+            "already_activated": True,
+            "quantity": pending.get("quantity"),
+            "payment_id": pending.get("payment_id") or pending.get("session_id"),
+        }
+
+    grant_ref = (
+        external_payment_id
+        or payment_id
+        or session_id
+        or helio_charge_id
+        or deposit_id
+        or pending.get("payment_id")
+        or pending.get("session_id")
+    )
+    await _grant_chairs(
+        db,
+        pending["user_id"],
+        quantity=int(pending["quantity"]),
+        price_per_chair_usd=float(pending["price_per_chair_usd"]),
+        payment_ref=str(grant_ref),
+        invite_code=pending.get("invite_code"),
+    )
+    await db.chair_pending.update_one(
+        {"_id": pending["_id"]},
+        {
+            "$set": {
+                "status": "activated",
+                "activated_at": datetime.now(timezone.utc).isoformat(),
+                "activated_via": activated_via,
+                "external_payment_id": str(grant_ref),
+            }
+        },
+    )
+    # Treasury allocation (best-effort; mirrors former Stripe webhook branch).
+    try:
+        from routes.treasury import record_revenue  # noqa: PLC0415
+
+        gross = float(pending.get("amount_usd") or 0)
+        if gross > 0:
+            await record_revenue(
+                db,
+                gross_usd=gross,
+                source="chair_park",
+                tx_id=str(grant_ref),
+                user_id=pending["user_id"],
+                metadata={
+                    "quantity": pending.get("quantity"),
+                    "provider": pending.get("provider") or "helio",
+                },
+            )
+    except Exception as exc:
+        logger.warning("[chairs] treasury allocation failed: %s", exc)
+
+    return {
+        "ok": True,
+        "already_activated": False,
+        "quantity": pending.get("quantity"),
+        "payment_id": pending.get("payment_id") or pending.get("session_id"),
+    }
 
 
 @router.post("/chairs/checkout")
 async def chair_checkout(payload: ChairCheckoutPayload, http_request: Request) -> Dict[str, Any]:
     """
-    Creates a Stripe checkout session for `quantity` chairs at the current
-    phase price. Requires:
+    Start Helio card checkout (or Solana USDC/SOL deposit) for `quantity`
+    chairs at the current phase price. Requires:
       • Authenticated user.
-      • Either an active invite code OR a flag on user record from a prior
-        invite redemption OR an existing chair holder (re-buying).
+      • Either an active invite code OR invite_accepted OR existing chairs.
 
-    Stripe metadata stamps `purchase_type='chair_park'` so the webhook
-    branch in server.py can call `_grant_chairs` idempotently.
+    Helio metadata stamps ``kind='chair_park'`` so ``POST /api/webhook/helio``
+    can call ``activate_pending_chair_payment`` idempotently. Stripe is not used.
     """
     user = await get_current_user(http_request)
     if not user:
@@ -943,7 +1041,6 @@ async def chair_checkout(payload: ChairCheckoutPayload, http_request: Request) -
                 "Get an invite code from an existing chair holder.",
             )
 
-    # Phase + capacity (reuse preview from invite gate when available)
     phase = phase_preview
     if phase["phase"] == "Sold Out" or phase["price_usd"] is None:
         raise HTTPException(410, "All Founder Chairs have been claimed.")
@@ -954,10 +1051,6 @@ async def chair_checkout(payload: ChairCheckoutPayload, http_request: Request) -
             f"{phase['phase']} phase. Buy {phase['remaining_in_phase']} or fewer.",
         )
 
-    # Genius Phase per-wallet cap — 100 chairs max while phase == Genius,
-    # per `GlobalVibez_GeniusPhase_Implementation.pdf`. After Genius ends
-    # the cap is lifted automatically (the check only fires while phase
-    # name == "Genius"). This protects Genius equity from whale consolidation.
     if phase["phase"] == "Genius":
         already_owned = existing_chairs["locked_chairs"]
         if already_owned + payload.quantity > GENIUS_PER_USER_CAP:
@@ -969,116 +1062,177 @@ async def chair_checkout(payload: ChairCheckoutPayload, http_request: Request) -
                 f"in Genius. The cap lifts automatically when Genius ends.",
             )
 
-    # Stripe
-    try:
-        from services.payment_hub import (
-            StripeCheckout, CheckoutSessionRequest,
-        )
-    except ImportError as e:
-        raise HTTPException(503, f"Stripe library unavailable: {e}")
-
-    stripe_key = os.environ.get("STRIPE_API_KEY")
-    if not stripe_key:
-        raise HTTPException(
-            503,
-            "Stripe not configured. Use /api/chairs/test-buy for preview, "
-            "or set STRIPE_API_KEY in backend/.env.",
-        )
-
-    origin = http_request.headers.get("origin") or http_request.headers.get("referer") or ""
-    origin = origin.rstrip("/")
-    if not origin:
-        raise HTTPException(400, "Origin header required.")
-
-    success_url = f"{origin}/chair-vault/success?session_id={{CHECKOUT_SESSION_ID}}"
-    cancel_url = f"{origin}/chair-vault"
-
-    host_url = str(http_request.base_url).rstrip("/")
-    webhook_url = f"{host_url}/api/webhook/stripe"
-    sc = StripeCheckout(api_key=stripe_key, webhook_url=webhook_url)
-
     line_total = round(payload.quantity * phase["price_usd"], 2)
-    metadata = {
-        "user_id": user.user_id,
-        "purchase_type": "chair_park",
-        "quantity": str(payload.quantity),
-        "price_per_chair_usd": str(phase["price_usd"]),
-        "invite_code": (payload.invite_code or "").upper(),
-        "email": user.email,
-    }
+    payment_id = f"chair_{uuid.uuid4().hex[:16]}"
+    invite_norm = (payload.invite_code or "").upper() or None
+    provider = (payload.provider or "helio").strip().lower()
+    now = datetime.now(timezone.utc).isoformat()
 
-    session = await sc.create_checkout_session(CheckoutSessionRequest(
-        amount=line_total,
-        currency="usd",
-        success_url=success_url,
-        cancel_url=cancel_url,
-        metadata=metadata,
-    ))
-
-    await db.chair_pending.insert_one({
-        "session_id": session.session_id,
+    pending_doc: Dict[str, Any] = {
+        "payment_id": payment_id,
+        "session_id": payment_id,  # success page historically used session_id
         "user_id": user.user_id,
         "quantity": payload.quantity,
         "price_per_chair_usd": phase["price_usd"],
         "amount_usd": line_total,
-        "invite_code": (payload.invite_code or "").upper() or None,
+        "invite_code": invite_norm,
         "phase_at_creation": phase["phase"],
+        "provider": provider,
         "status": "pending",
-        "created_at": datetime.now(timezone.utc).isoformat(),
-    })
+        "created_at": now,
+    }
 
+    if provider == "solana":
+        receive = (os.environ.get("GLOBAL_VIBEZ_SOLANA_RECEIVE_WALLET") or "").strip()
+        if not receive:
+            raise HTTPException(
+                503,
+                "Solana payments not configured. Set GLOBAL_VIBEZ_SOLANA_RECEIVE_WALLET.",
+            )
+        deposit_id = str(uuid.uuid4())
+        memo = f"GVZ-{deposit_id[:8]}"
+        pending_doc["deposit_id"] = deposit_id
+        pending_doc["memo"] = memo
+        pending_doc["deposit_address"] = receive
+        await db.chair_pending.insert_one(pending_doc)
+        await db.crypto_deposits.insert_one({
+            "deposit_id": deposit_id,
+            "user_id": user.user_id,
+            "cryptocurrency": "SOL",
+            "network": "solana",
+            "amount_usd": line_total,
+            "status": "pending",
+            "deposit_address": receive,
+            "memo": memo,
+            "purpose": "chair_park",
+            "payment_id": payment_id,
+            "quantity": payload.quantity,
+            "price_per_chair_usd": phase["price_usd"],
+            "invite_code": invite_norm,
+            "created_at": now,
+            "expires_at": datetime.now(timezone.utc).timestamp() + 3600,
+        })
+        return {
+            "provider": "solana",
+            "checkout_url": None,
+            "payment_id": payment_id,
+            "session_id": payment_id,
+            "deposit_id": deposit_id,
+            "deposit_address": receive,
+            "memo": memo,
+            "quantity": payload.quantity,
+            "price_per_chair_usd": phase["price_usd"],
+            "total_usd": line_total,
+            "phase": phase["phase"],
+            "success_hint": None,
+        }
+
+    # Default: Helio hosted card checkout (same rail as coin packs)
+    from services.helio_client import create_charge, helio_configured
+
+    if not helio_configured():
+        raise HTTPException(
+            503,
+            "Helio is not configured. Use /api/chairs/test-buy for preview, "
+            "or set HELIO_API_KEY, HELIO_SECRET_KEY, and HELIO_PAYLINK_ID.",
+        )
+
+    origin = (payload.origin_url or "").rstrip("/")
+    if not origin:
+        origin = (
+            http_request.headers.get("origin")
+            or http_request.headers.get("referer")
+            or ""
+        ).rstrip("/")
+        if origin.count("/") > 2:
+            parts = origin.split("/", 3)
+            origin = "/".join(parts[:3])
+    if not origin:
+        raise HTTPException(400, "Origin header (or origin_url) required.")
+
+    metadata = {
+        "user_id": user.user_id,
+        "kind": "chair_park",
+        "purchase_type": "chair_park",
+        "quantity": str(payload.quantity),
+        "price_per_chair_usd": str(phase["price_usd"]),
+        "invite_code": invite_norm or "",
+        "payment_id": payment_id,
+        "email": getattr(user, "email", None) or "",
+        "source": "chair_vault",
+    }
+    try:
+        charge_id, page_url = await create_charge(
+            amount_usd=line_total,
+            metadata=metadata,
+            card_only=True,
+        )
+    except RuntimeError as exc:
+        raise HTTPException(503, str(exc)) from exc
+    except Exception as exc:
+        logger.exception("helio chair charge failed")
+        raise HTTPException(502, f"Could not start Helio checkout: {exc}") from exc
+
+    pending_doc["helio_charge_id"] = charge_id
+    pending_doc["payment_request_id"] = os.environ.get("HELIO_PAYLINK_ID") or None
+    await db.chair_pending.insert_one(pending_doc)
+
+    success_hint = (
+        f"{origin}/chair-vault/success?session_id={payment_id}&payment_id={payment_id}"
+    )
     return {
-        "checkout_url": session.url,
-        "session_id": session.session_id,
+        "provider": "helio",
+        "checkout_url": page_url,
+        "url": page_url,
+        "payment_id": payment_id,
+        "session_id": payment_id,
+        "helio_charge_id": charge_id,
         "quantity": payload.quantity,
         "price_per_chair_usd": phase["price_usd"],
         "total_usd": line_total,
         "phase": phase["phase"],
+        "success_hint": success_hint,
     }
 
 
 @router.get("/chairs/checkout-status/{session_id}")
 async def chair_checkout_status(session_id: str, http_request: Request) -> Dict[str, Any]:
+    """Poll pending chair payment; Helio webhook / Solana indexer activates it."""
     user = await get_current_user(http_request)
     if not user:
         raise HTTPException(401, "Not authenticated")
     db = get_database()
     pending = await db.chair_pending.find_one(
-        {"session_id": session_id, "user_id": user.user_id}, {"_id": 0}
+        {
+            "user_id": user.user_id,
+            "$or": [
+                {"session_id": session_id},
+                {"payment_id": session_id},
+                {"helio_charge_id": session_id},
+                {"deposit_id": session_id},
+            ],
+        },
+        {"_id": 0},
     )
     if not pending:
         raise HTTPException(404, "Checkout session not found.")
     if pending.get("status") == "activated":
-        return {"status": "activated", "quantity": pending["quantity"]}
+        return {
+            "status": "activated",
+            "quantity": pending["quantity"],
+            "provider": pending.get("provider") or "helio",
+            "already_activated": True,
+        }
 
-    try:
-        from services.payment_hub import StripeCheckout
-    except ImportError as e:
-        raise HTTPException(503, f"Stripe library unavailable: {e}")
-    stripe_key = os.environ.get("STRIPE_API_KEY")
-    if not stripe_key:
-        raise HTTPException(503, "Stripe not configured.")
-
-    host_url = str(http_request.base_url).rstrip("/")
-    webhook_url = f"{host_url}/api/webhook/stripe"
-    sc = StripeCheckout(api_key=stripe_key, webhook_url=webhook_url)
-    status = await sc.get_checkout_status(session_id)
-
-    if status.payment_status == "paid":
-        await _grant_chairs(
-            db, user.user_id,
-            quantity=int(pending["quantity"]),
-            price_per_chair_usd=float(pending["price_per_chair_usd"]),
-            payment_ref=session_id,
-            invite_code=pending.get("invite_code"),
-        )
-        await db.chair_pending.update_one(
-            {"session_id": session_id},
-            {"$set": {"status": "activated",
-                       "activated_at": datetime.now(timezone.utc).isoformat()}},
-        )
-        return {"status": "activated", "quantity": pending["quantity"]}
-    return {"status": status.payment_status, "quantity": pending["quantity"]}
+    # Still waiting on Helio webhook or Solana indexer confirmation.
+    return {
+        "status": "pending",
+        "payment_status": "unpaid",
+        "quantity": pending["quantity"],
+        "provider": pending.get("provider") or "helio",
+        "payment_id": pending.get("payment_id") or session_id,
+        "session_id": pending.get("session_id") or session_id,
+    }
 
 
 # ────────────────────────────────────────────── Test / dev bypass
