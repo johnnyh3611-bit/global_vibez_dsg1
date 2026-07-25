@@ -1168,6 +1168,8 @@ async def chair_checkout(payload: ChairCheckoutPayload, http_request: Request) -
             card_only=True,
         )
     except RuntimeError as exc:
+        # create_charge already logged Helio's exact body/reason; surface it.
+        logger.error("helio chair create_charge raised: %s", exc)
         raise HTTPException(503, str(exc)) from exc
     except Exception as exc:
         logger.exception("helio chair charge failed")
