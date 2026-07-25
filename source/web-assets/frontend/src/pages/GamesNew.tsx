@@ -23,7 +23,7 @@ import { recordRecentGame } from '@/hooks/useRecommendedGames';
 import { RecommendedGames } from '@/components/games/RecommendedGames';
 import { GameCarousel, type GameCarouselItem } from '@/components/games/GameCarousel';
 import { authFetch } from '@/utils/secureAuth';
-import { useVibezSubject } from '@/contexts/VibezNavContext';
+import { FuturisticTabs } from '@/components/ui/futuristic-tabs';
 
 const CAROUSEL_DESCRIPTIONS: Record<string, string> = {
   bid_whist_premium: 'Partnership whist with AAA bidding and neon felt.',
@@ -324,16 +324,10 @@ const GAME_CATEGORIES = {
   // shipping broken UX. Practice flow + 3D mesh components removed.).
 };
 
-const GAME_CATEGORY_IDS = ['featured', 'card', 'casino', 'board', 'arcade', 'party'];
-
 export default function GamesNew() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
-  // Category filter lives in VibezSidebar Subjects (horizontal tabs removed).
-  const [selectedCategory, setSelectedCategory] = useVibezSubject(
-    'featured',
-    GAME_CATEGORY_IDS,
-  );
+  const [selectedCategory, setSelectedCategory] = useState('featured');
   const [rulesModalOpen, setRulesModalOpen] = useState(false);
   const [selectedGameForRules, setSelectedGameForRules] = useState(null);
   const [startingGame, setStartingGame] = useState(false);
@@ -649,7 +643,29 @@ export default function GamesNew() {
           />
         </div>
 
-        {/* Category Header with Game Count — filter via VibezSidebar Subjects */}
+        {/* Category tabs */}
+        {!searchQuery && (
+          <div className="mb-4 sm:mb-6" data-testid="games-category-tabs">
+            <FuturisticTabs
+              ariaLabel="Game categories"
+              variant="pills"
+              value={selectedCategory}
+              onChange={(key) => {
+                setSelectedCategory(key);
+                soundManager.buttonClick();
+                triggerHaptic('light');
+              }}
+              options={Object.entries(GAME_CATEGORIES).map(([key, category]) => ({
+                value: key,
+                label: category.name,
+                icon: category.icon,
+                testId: `games-category-tab-${key}`,
+              }))}
+            />
+          </div>
+        )}
+
+        {/* Category Header with Game Count */}
         {!searchQuery && (
           <motion.div
             initial={{ opacity: 0, x: -20 }}

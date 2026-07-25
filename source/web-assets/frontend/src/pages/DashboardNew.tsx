@@ -42,7 +42,7 @@ import { PullToRefresh } from '@/components/mobile/PullToRefresh';
 import { triggerHaptic } from '@/hooks/useGestures';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SocialProofStrip } from '@/components/common/SocialProofStrip';
-import { useVibezSubject } from '@/contexts/VibezNavContext';
+import { FuturisticTabs } from '@/components/ui/futuristic-tabs';
 import SponsoredSpotsCarousel from '@/components/venues/SponsoredSpotsCarousel';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -126,7 +126,24 @@ const ROOM_CATEGORY: Record<string, CategoryId> = {
   ambassador_care: 'earnings',
 };
 
-const DASHBOARD_CATEGORY_IDS = CATEGORIES.map((c) => c.id);
+function CategoryTabs({ active, onChange }: { active: string; onChange: (id: string) => void }) {
+  return (
+    <div data-testid="dashboard-category-tabs" className="mb-6">
+      <FuturisticTabs
+        ariaLabel="Dashboard categories"
+        variant="pills"
+        value={active}
+        onChange={onChange}
+        options={CATEGORIES.map((cat) => ({
+          value: cat.id,
+          label: cat.label,
+          icon: cat.icon,
+          testId: `dashboard-category-tab-${cat.id}`,
+        }))}
+      />
+    </div>
+  );
+}
 
 // ────────────────────────────────────────────── Live Right Now pill ──
 // Polls /api/live-pulse/categories every 20s and surfaces per-category
@@ -389,11 +406,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  // Category filter lives in VibezSidebar Subjects (horizontal tabs removed).
-  const [activeCategory, setActiveCategory] = useVibezSubject(
-    'watch',
-    DASHBOARD_CATEGORY_IDS,
-  );
+  const [activeCategory, setActiveCategory] = useState<string>('watch');
 
   const fetchUser = async (opts?: { redirectOnFail?: boolean }) => {
     const redirectOnFail = opts?.redirectOnFail !== false;
@@ -1124,10 +1137,7 @@ export default function Dashboard() {
               sectioned by category. Less mess, more focus. Active tab
               borrows the MY VIBEZ holographic treatment so the choice
               feels alive. */}
-        {/* Subject filter: VibezSidebar — data-testid kept for legacy queries */}
-        <div data-testid="dashboard-category-tabs" className="sr-only" aria-hidden>
-          {activeCategory}
-        </div>
+        <CategoryTabs active={activeCategory} onChange={setActiveCategory} />
 
         {/* Room Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">

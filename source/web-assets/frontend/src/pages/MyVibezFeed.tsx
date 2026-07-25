@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, MessageCircle, Share2, Play, Pause, Volume2, VolumeX, User, Plus, ArrowLeft } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Play, Pause, Volume2, VolumeX, User, Plus, ArrowLeft, Sparkles, TrendingUp, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import VibezComments from '@/components/VibezComments';
-import { useVibezSubject } from '@/contexts/VibezNavContext';
+import { FuturisticTabs } from '@/components/ui/futuristic-tabs';
 
 const API = process.env.REACT_APP_BACKEND_URL;
-const VIBEZ_FEED_IDS = ['trending', 'for_you', 'following'];
 
 /**
  * My Vibez Feed - Global Vibez style vertical content discovery
@@ -14,8 +13,7 @@ const VIBEZ_FEED_IDS = ['trending', 'for_you', 'following'];
  */
 export default function MyVibezFeed() {
   const navigate = useNavigate();
-  // Feed subjects live in VibezSidebar (horizontal tabs removed).
-  const [feedType, setFeedType] = useVibezSubject('trending', VIBEZ_FEED_IDS);
+  const [feedType, setFeedType] = useState('trending');
   const [content, setContent] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -105,8 +103,8 @@ export default function MyVibezFeed() {
 
   return (
     <div className="h-screen bg-black overflow-hidden relative" ref={containerRef}>
-      {/* Header — subjects via VibezSidebar */}
-      <div className="absolute top-0 left-0 right-0 z-40 p-4 flex items-center justify-between bg-gradient-to-b from-black/60 to-transparent">
+      {/* Header */}
+      <div className="absolute top-0 left-0 right-0 z-50 p-4 flex items-center justify-between bg-gradient-to-b from-black/60 to-transparent">
         <button
           onClick={() => navigate('/games')}
           className="p-2 rounded-full bg-black/30 backdrop-blur-sm text-white hover:bg-black/50 transition-all"
@@ -114,9 +112,18 @@ export default function MyVibezFeed() {
           <ArrowLeft className="w-5 h-5" />
         </button>
 
-        <span className="text-xs font-bold uppercase tracking-widest text-white/60">
-          {String(feedType).replace('_', ' ')}
-        </span>
+        <FuturisticTabs
+          ariaLabel="Feed type"
+          variant="segmented"
+          value={feedType}
+          onChange={setFeedType}
+          className="max-w-md"
+          options={[
+            { value: 'trending', label: 'Trending', icon: TrendingUp, testId: 'vibez-feed-tab-trending' },
+            { value: 'for_you', label: 'For You', icon: Sparkles, testId: 'vibez-feed-tab-for-you' },
+            { value: 'following', label: 'Following', icon: Users, testId: 'vibez-feed-tab-following' },
+          ]}
+        />
 
         <button
           onClick={() => navigate('/vibez/upload')}

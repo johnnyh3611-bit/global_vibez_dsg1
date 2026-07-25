@@ -1,18 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useVibezSubject } from '@/contexts/VibezNavContext';
+import { FuturisticTabs } from '@/components/ui/futuristic-tabs';
 import { Users, Video, Play, Radio } from 'lucide-react';
 
 const API = process.env.REACT_APP_BACKEND_URL;
-const STREAM_SUBJECT_IDS = ['all', 'gaming', 'dating', 'casual', 'music', 'art'];
 
 export default function BrowseStreamsPage() {
   const navigate = useNavigate();
   const [streams, setStreams] = useState([]);
-  // Stream category filter lives in VibezSidebar Subjects.
-  const [subjectId] = useVibezSubject('all', STREAM_SUBJECT_IDS);
-  const selectedCategory = subjectId === 'all' ? null : subjectId;
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -47,10 +44,24 @@ export default function BrowseStreamsPage() {
           <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-red-400 via-pink-400 to-purple-400 bg-clip-text text-transparent">
             🔴 Live Now
           </h1>
-          <p className="text-gray-400">
-            Watch live streams from the community
-            {selectedCategory ? ` · ${selectedCategory}` : ''}
-          </p>
+          <p className="text-gray-400">Watch live streams from the community</p>
+        </div>
+
+        <div className="mb-8">
+          <FuturisticTabs
+            ariaLabel="Stream category"
+            variant="pills"
+            value={selectedCategory ?? 'all'}
+            onChange={(v) => setSelectedCategory(v === 'all' ? null : v)}
+            options={[
+              { value: 'all', label: '🌎 All' },
+              { value: 'gaming', label: '🎮 Gaming' },
+              { value: 'dating', label: '💕 Dating' },
+              { value: 'casual', label: '💬 Casual' },
+              { value: 'music', label: '🎵 Music' },
+              { value: 'art', label: '🎨 Art' },
+            ]}
+          />
         </div>
 
         <div className="mb-8">

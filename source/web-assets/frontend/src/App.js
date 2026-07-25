@@ -188,9 +188,7 @@ function ProtectedRouteContent({ children }) {
     };
   }, [isFullscreenGame]);
 
-  // My Vibez design standard — persistent VibezSidebar on every protected
-  // route (lobbies + fullscreen rooms). Horizontal category tabs are
-  // decommissioned in favor of sidebar Subjects + Activity feed.
+  // Protected chrome: top hub strip + main content (left VibezSidebar removed).
   return (
     <VibezShell isFullscreenRoom={isFullscreenGame}>{children}</VibezShell>
   );
