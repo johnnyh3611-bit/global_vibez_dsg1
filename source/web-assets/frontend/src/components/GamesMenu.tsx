@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { MatchmakingModal } from '@/components/multiplayer/MatchmakingModal';
+import VibezTabStyle from '@/components/ui/VibezTabStyle';
 
 const GAME_CATEGORIES = {
   'Card Games': {
@@ -133,30 +134,19 @@ export function GamesMenu() {
         </div>
       </motion.div>
 
-      {/* Category Tabs */}
-      <div className="flex flex-wrap justify-center gap-4 mb-8">
-        {categories.map((category, idx) => {
-          const isActive = category === selectedCategory;
-          const categoryData = GAME_CATEGORIES[category];
-          
-          return (
-            <motion.button
-              key={category}
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: idx * 0.1 }}
-              onClick={() => setSelectedCategory(category)}
-              className={`px-6 py-3 rounded-xl font-bold text-lg transition-all ${
-                isActive
-                  ? `bg-gradient-to-r ${categoryData.color} shadow-2xl scale-110`
-                  : 'bg-black/40 backdrop-blur-xl border-2 border-white/20 hover:border-white/40'
-              }`}
-            >
-              <span className="mr-2">{categoryData.icon}</span>
-              {category}
-            </motion.button>
-          );
-        })}
+      {/* Category Tabs — My Vibez tray */}
+      <div className="mb-8 flex justify-center">
+        <VibezTabStyle
+          ariaLabel="Game categories"
+          variant="pills"
+          value={selectedCategory}
+          onChange={setSelectedCategory}
+          options={categories.map((category) => ({
+            value: category,
+            label: `${GAME_CATEGORIES[category].icon} ${category}`,
+            testId: `games-menu-tab-${category.replace(/\s+/g, '-').toLowerCase()}`,
+          }))}
+        />
       </div>
 
       {/* Games Grid */}

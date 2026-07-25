@@ -241,11 +241,11 @@ export function GameRoomLayout({
           <button
             type="button"
             onClick={() => setViewCards((v) => !v)}
-            className={`rounded-lg p-2 transition ${
-              viewCards
-                ? "bg-cyan-500/25 text-cyan-200"
-                : "text-white/70 hover:bg-white/10"
-            }`}
+            className={vibezTabTriggerClass({
+              active: viewCards,
+              variant: "pills",
+              className: "px-2.5 py-1.5",
+            })}
             title={viewCards ? "Normal card size" : "View Cards (larger)"}
             aria-pressed={viewCards}
             data-testid="room-view-cards-toggle"
@@ -259,11 +259,11 @@ export function GameRoomLayout({
           <button
             type="button"
             onClick={() => setSettingsOpen((o) => !o)}
-            className={`rounded-lg p-2 transition ${
-              settingsOpen
-                ? "bg-indigo-500/30 text-indigo-200"
-                : "text-white/70 hover:bg-white/10"
-            }`}
+            className={vibezTabTriggerClass({
+              active: settingsOpen,
+              variant: "pills",
+              className: "px-2.5 py-1.5",
+            })}
             title="Quick Settings"
             aria-expanded={settingsOpen}
             data-testid="room-quick-settings-toggle"

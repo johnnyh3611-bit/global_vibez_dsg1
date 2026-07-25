@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { TrendingUp, TrendingDown, Clock, Trophy, Target, Percent } from 'lucide-react';
 import { BigWinCelebration } from '@/components/BigWinCelebration';
+import VibezTabStyle from '@/components/ui/VibezTabStyle';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 const COINS_PER_DOLLAR = 1000;  // 1,000 coins = $1 (updated 2026-05-18)
@@ -198,23 +199,19 @@ export function MyBetsHistory() {
           </div>
         )}
 
-        {/* Filter Tabs */}
-        <div className="flex gap-2 backdrop-blur-xl bg-white/5 p-1 rounded-2xl border border-white/10 mb-6 overflow-x-auto">
-          {['all', 'pending', 'won', 'lost'].map((status) => (
-            <button
-              key={status}
-              onClick={() => setFilter(status)}
-              className={`
-                px-6 py-3 rounded-xl font-bold transition-all capitalize flex-shrink-0
-                ${filter === status
-                  ? 'bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white shadow-[0_0_20px_rgba(232,121,249,0.6)]'
-                  : 'text-white/60 hover:text-white hover:bg-white/5'
-                }
-              `}
-            >
-              {status}
-            </button>
-          ))}
+        {/* Filter Tabs — My Vibez tray */}
+        <div className="mb-6">
+          <VibezTabStyle
+            ariaLabel="Bet status filter"
+            variant="segmented"
+            value={filter}
+            onChange={setFilter}
+            options={['all', 'pending', 'won', 'lost'].map((status) => ({
+              value: status,
+              label: status.charAt(0).toUpperCase() + status.slice(1),
+              testId: `mybets-filter-${status}`,
+            }))}
+          />
         </div>
 
         {/* Bets List */}

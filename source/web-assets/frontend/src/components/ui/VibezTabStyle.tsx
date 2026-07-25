@@ -8,8 +8,10 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 
-export type VibezTabVariant = "segmented" | "pills" | "sidebar";
+export type VibezTabVariant = "segmented" | "pills" | "sidebar" | "dock";
 export type VibezTabOrientation = "horizontal" | "vertical";
+
+export type VibezTabTone = "default" | "earn";
 
 /** Shared design tokens (class fragments). */
 export const VIBEZ_TAB = {
@@ -22,6 +24,11 @@ export const VIBEZ_TAB = {
   triggerActiveSoft:
     "bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white shadow-[0_0_20px_rgba(232,121,249,0.45)]",
   triggerIdle: "text-white/60 hover:text-white hover:bg-white/5",
+  /** DESIGN_STRATEGY Phase 1 — Earn stays emerald inside the same glass tray. */
+  triggerActiveEarn:
+    "bg-gradient-to-r from-emerald-500 to-green-500 text-black shadow-[0_0_16px_rgba(16,185,129,0.45)]",
+  triggerIdleEarn:
+    "border border-emerald-400/50 bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25",
   iconActive: "text-white",
   iconIdle: "text-white/50",
   badgeActive: "bg-white/20 text-white",
@@ -43,6 +50,7 @@ export function vibezTabListClass(opts?: {
     isHorizontal ? "flex-row" : "flex-col",
     VIBEZ_TAB.tray,
     variant === "pills" && "flex-nowrap overflow-x-auto scrollbar-hide",
+    variant === "dock" && "w-full",
     opts?.className
   );
 }
@@ -50,27 +58,45 @@ export function vibezTabListClass(opts?: {
 export function vibezTabTriggerClass(opts: {
   active: boolean;
   variant?: VibezTabVariant;
+  tone?: VibezTabTone;
   className?: string;
 }): string {
   const variant = opts.variant ?? "segmented";
+  const tone = opts.tone ?? "default";
+  const activeCls =
+    tone === "earn"
+      ? VIBEZ_TAB.triggerActiveEarn
+      : variant === "sidebar"
+        ? VIBEZ_TAB.triggerActiveSoft
+        : VIBEZ_TAB.triggerActive;
+  const idleCls =
+    tone === "earn" ? VIBEZ_TAB.triggerIdleEarn : VIBEZ_TAB.triggerIdle;
   return cn(
     VIBEZ_TAB.triggerBase,
     variant === "segmented" && "flex-1 px-4 py-2.5 sm:px-6 sm:py-3 rounded-xl",
     variant === "pills" && "shrink-0 px-4 py-2 rounded-xl",
     variant === "sidebar" && "w-full justify-start px-4 py-3 rounded-xl",
-    opts.active
-      ? variant === "sidebar"
-        ? VIBEZ_TAB.triggerActiveSoft
-        : VIBEZ_TAB.triggerActive
-      : VIBEZ_TAB.triggerIdle,
+    variant === "dock" &&
+      "flex-1 flex-col gap-0.5 px-1 py-1.5 rounded-xl text-[9px] uppercase tracking-widest sm:text-[9px]",
+    opts.active ? activeCls : idleCls,
     opts.className
   );
 }
 
-export function vibezTabIconClass(active: boolean, className?: string): string {
+export function vibezTabIconClass(
+  active: boolean,
+  className?: string,
+  tone: VibezTabTone = "default"
+): string {
   return cn(
     "w-4 h-4 shrink-0",
-    active ? VIBEZ_TAB.iconActive : VIBEZ_TAB.iconIdle,
+    tone === "earn"
+      ? active
+        ? "text-black"
+        : "text-emerald-200"
+      : active
+        ? VIBEZ_TAB.iconActive
+        : VIBEZ_TAB.iconIdle,
     className
   );
 }
@@ -90,6 +116,8 @@ export interface VibezTabOption {
   badge?: number | string;
   testId?: string;
   disabled?: boolean;
+  /** Earn (and similar) keep emerald accent inside the My Vibez tray. */
+  tone?: VibezTabTone;
 }
 
 export interface VibezTabStyleProps {
@@ -130,6 +158,7 @@ export function VibezTabStyle({
       {options.map((opt) => {
         const active = value === opt.value;
         const Icon = opt.icon;
+        const dock = variant === "dock";
         return (
           <button
             key={opt.value}
@@ -139,10 +168,24 @@ export function VibezTabStyle({
             disabled={opt.disabled}
             data-testid={opt.testId}
             onClick={() => onChange(opt.value)}
-            className={vibezTabTriggerClass({ active, variant })}
+            className={vibezTabTriggerClass({
+              active,
+              variant,
+              tone: opt.tone,
+            })}
           >
-            {Icon ? <Icon className={vibezTabIconClass(active)} /> : null}
-            <span className="truncate">{opt.label}</span>
+            {Icon ? (
+              <Icon
+                className={vibezTabIconClass(
+                  active,
+                  dock ? "w-5 h-5" : undefined,
+                  opt.tone
+                )}
+              />
+            ) : null}
+            <span className={cn("truncate", dock && "leading-none")}>
+              {opt.label}
+            </span>
             {opt.badge !== undefined ? (
               <span className={vibezTabBadgeClass(active)}>{opt.badge}</span>
             ) : null}
