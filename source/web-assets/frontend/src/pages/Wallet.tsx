@@ -29,6 +29,7 @@ const Wallet = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [userBalance, setUserBalance] = useState(0);
+  const [chairCount, setChairCount] = useState(0);
   const [userId, setUserId] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -68,6 +69,20 @@ const Wallet = () => {
         setUser(data);
         setUserBalance(data.credits_balance ?? 0);
         setUserId(data.user_id);
+
+        try {
+          const chairsRes = await fetch(`${API_URL}/api/chairs/me`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (chairsRes.ok) {
+            const chairs = await chairsRes.json();
+            setChairCount(
+              Number(chairs.locked_chairs ?? chairs.lifetime_chairs ?? 0) || 0,
+            );
+          }
+        } catch {
+          /* chairs optional for wallet shell */
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Could not load wallet');
       } finally {
@@ -127,14 +142,16 @@ const Wallet = () => {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-12"
         >
-          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 rounded-full px-4 py-2 mb-4">
+          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-cyan-500/20 to-emerald-500/20 border border-cyan-500/30 rounded-full px-4 py-2 mb-4">
             <Sparkles className="w-4 h-4 text-cyan-400" />
-            <span className="text-cyan-400 text-sm font-bold">Vibez Coins Wallet</span>
+            <span className="text-cyan-400 text-sm font-bold">Wallet · Earn door</span>
           </div>
           <h1 className="text-4xl sm:text-5xl font-black text-white mb-4">
-            Your Balance
+            Vibez Coins &amp; Chairs
           </h1>
-          <p className="text-white/60 text-lg">Manage your Vibez Coins and cash out earnings</p>
+          <p className="text-white/60 text-lg">
+            Solana deposit is primary. Card pay is Beta.
+          </p>
         </motion.div>
 
         {loading && (
@@ -172,6 +189,22 @@ const Wallet = () => {
                   ≈ ${usdEquivalent} USD
                 </p>
                 <p className="text-white/60 text-sm mt-2">1 USD = ₵{COINS_PER_USD.toLocaleString()} Vibez Coins</p>
+                <div
+                  className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/25 bg-black/20 px-3 py-1.5"
+                  data-testid="wallet-chairs-chip"
+                >
+                  <span className="text-lg" aria-hidden>💺</span>
+                  <span className="text-sm font-bold text-white">
+                    Founders Chairs: {chairCount}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/chair-vault')}
+                    className="text-xs font-semibold text-amber-200 underline-offset-2 hover:underline"
+                  >
+                    Manage
+                  </button>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -181,14 +214,14 @@ const Wallet = () => {
                   className="bg-white text-purple-700 hover:bg-white/90 font-bold py-4 rounded-2xl transition flex items-center justify-center gap-2"
                 >
                   <Sparkles className="w-5 h-5" />
-                  Buy Coins (Solana)
+                  Buy Coins · Solana primary
                 </button>
                 <button
                   onClick={() => navigate('/games')}
                   className="bg-white/20 hover:bg-white/30 backdrop-blur text-white font-bold py-4 rounded-2xl transition flex items-center justify-center gap-2"
                 >
                   <TrendingUp className="w-5 h-5" />
-                  Earn More
+                  Play to Earn
                 </button>
                 <button
                   onClick={() => setShowPayoutModal(true)}
@@ -237,7 +270,7 @@ const Wallet = () => {
 
             <BetaPaymentBanner info={betaPayment} className="mb-6" />
 
-            {/* Solana deposit — primary top-up path (no Stripe). */}
+            {/* Solana deposit — primary top-up path. Card (Helio) is Beta only. */}
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
@@ -245,11 +278,19 @@ const Wallet = () => {
               className="mb-8 rounded-2xl border border-cyan-500/30 bg-black/40 backdrop-blur p-5"
               data-testid="wallet-solana-deposit"
             >
-              <div className="mb-4">
-                <p className="text-sm font-black text-cyan-300">Add coins with Solana</p>
-                <p className="text-xs text-white/60 mt-0.5">
-                  Scan the QR or send SOL with the memo below. Card checkout is optional and secondary.
-                </p>
+              <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
+                <div>
+                  <p className="text-sm font-black text-cyan-300">
+                    Primary · Add coins with Solana
+                  </p>
+                  <p className="text-xs text-white/60 mt-0.5">
+                    Scan the QR or send SOL with the memo. Open Buy Coins for packs;
+                    Card pay is labeled Beta inside that modal.
+                  </p>
+                </div>
+                <span className="rounded-full border border-amber-400/40 bg-amber-500/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-100">
+                  Card = Beta
+                </span>
               </div>
               <SolanaDepositPanel amountUsd={25} />
             </motion.div>

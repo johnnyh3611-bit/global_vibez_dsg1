@@ -1,4 +1,6 @@
 """Integrations health — Helio/Solana rails; Stripe must not appear."""
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 
@@ -12,20 +14,37 @@ async def test_integrations_health_omits_stripe(monkeypatch):
     monkeypatch.setenv("HELIO_SECRET_KEY", "s")
     monkeypatch.setenv("HELIO_PAYLINK_ID", "p")
     monkeypatch.setenv("HELIO_WEBHOOK_TOKEN", "w")
+    monkeypatch.setenv("HELIO_NETWORK", "test")
+    monkeypatch.delenv("HELIO_API_BASE", raising=False)
     monkeypatch.setenv("RESEND_API_KEY", "r")
     monkeypatch.setenv("GEMINI_API_KEY", "g")
     monkeypatch.setenv("OPENAI_API_KEY", "o")
     monkeypatch.setenv("CLOUDFLARE_ACCOUNT_ID", "c")
     monkeypatch.setenv("CLOUDFLARE_API_TOKEN", "t")
+    monkeypatch.setenv("JWT_SECRET", "unit-test-jwt-secret-key-32b")
+    monkeypatch.setenv("MONGO_URL", "mongodb://localhost:27017")
+    monkeypatch.setenv("DB_NAME", "test_db")
     monkeypatch.delenv("TWILIO_ACCOUNT_SID", raising=False)
 
-    from routes.integrations_health import integrations_health
+    mock_client = MagicMock()
+    mock_client.admin.command = AsyncMock(return_value={"ok": 1})
 
-    payload = await integrations_health()
+    with patch("utils.database.get_client", return_value=mock_client):
+        from routes.integrations_health import integrations_health
+
+        payload = await integrations_health()
+
     assert "stripe_legacy" not in payload["services"]
     assert "stripe" not in payload["services"]
     assert payload["card_provider"] == "helio"
     assert payload["services"]["twilio"]["optional"] is True
+    assert payload["runtime"]["jwt"]["configured"] is True
+    assert payload["runtime"]["mongodb"]["reachable"] is True
+    assert payload["services"]["helio"]["api_base_is_dev"] is True
+    assert payload["services"]["helio"]["test_mode_isolated"] is True
+    assert payload["services"]["helio"]["mainnet_transition"] is False
+    assert payload["ai_gateway_path"] == "/api/ai/gateway"
+    assert payload["primary_doors"] == ["play", "date", "watch", "earn"]
     assert payload["ok"] is True
     assert payload["ready_count"] == payload["total"]
     assert "Stripe is not used" in " ".join(payload["notes"])

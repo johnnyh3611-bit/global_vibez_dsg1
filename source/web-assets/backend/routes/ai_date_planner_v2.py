@@ -15,7 +15,9 @@ from motor.motor_asyncio import AsyncIOMotorClient
 load_dotenv()
 
 # api_router already prefixes "/api"
-router = APIRouter(prefix="/ai-date-planner", tags=["ai_date_planner"])
+# Prefixed /v2 so it no longer collides with ai_date_planner's /generate.
+# Prefer POST /api/ai/gateway/date-plan for new clients.
+router = APIRouter(prefix="/ai-date-planner/v2", tags=["ai_date_planner"])
 
 # MongoDB connection
 MONGO_URL = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
