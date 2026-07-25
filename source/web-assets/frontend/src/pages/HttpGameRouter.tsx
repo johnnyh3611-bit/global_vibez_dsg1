@@ -13,7 +13,6 @@ import HttpMultiplayerBlackjack from './games/HttpMultiplayerBlackjack';
 // HttpMultiplayer* files for those games remain on disk but are no longer
 // mounted — they'll be deleted in a follow-up cleanup pass.
 import HttpMultiplayerLudo from './games/HttpMultiplayerLudo';
-import HttpMultiplayerDominoes from './games/HttpMultiplayerDominoes';
 import HttpMultiplayerMancala from './games/HttpMultiplayerMancala';
 import HttpMultiplayerBackgammon from './games/HttpMultiplayerBackgammon';
 import HttpMultiplayerChineseCheckers from './games/HttpMultiplayerChineseCheckers';

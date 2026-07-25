@@ -9,6 +9,8 @@ import { ArrowLeft, Users, Coins, Crown, Timer, Video, VideoOff } from 'lucide-r
 import cardSoundManager from '@/utils/cardSoundManager';
 import ParticleEffectsOverlay, { ConfettiCelebration } from '@/components/ParticleEffectsOverlay';
 import SpatialVideoTable, { useSpatialVideo } from '@/components/SpatialVideoTable';
+import useSocketReconnect from '@/hooks/useSocketReconnect';
+import RoomReconnectModal from '@/components/games/RoomReconnectModal';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -140,9 +142,29 @@ export default function MultiplayerPoker() {
   const [error, setError] = useState('');
   const [showConfetti, setShowConfetti] = useState(false);
   const [particleTrigger, setParticleTrigger] = useState(null);
+  const [showReconnect, setShowReconnect] = useState(false);
+  const [reconnecting, setReconnecting] = useState(false);
+  const hadConnectRef = useRef(false);
+  const userId = (typeof window !== 'undefined' ? localStorage.getItem('user_id') : null) || playerName;
 
   // Spatial Video Integration
   const { videoEnabled, remoteConnected, startVideo, stopVideo } = useSpatialVideo(socketRef, roomCode);
+
+  useSocketReconnect({
+    socket,
+    roomId: roomCode,
+    userId,
+    userName: playerName,
+    joinEvent: 'join_poker_room',
+    joinPayload: { room_code: roomCode, player_name: playerName },
+    authEvent: 'authenticate',
+    enabled: Boolean(socket && roomCode),
+    onResync: () => {
+      setReconnecting(false);
+      setShowReconnect(false);
+      setConnected(true);
+    },
+  });
 
   useEffect(() => {
     // Initialize Socket.IO connection
@@ -157,6 +179,9 @@ export default function MultiplayerPoker() {
 
     newSocket.on('connect', () => {
       setConnected(true);
+      hadConnectRef.current = true;
+      setShowReconnect(false);
+      setReconnecting(false);
       setMySessionId(newSocket.id);
 
       // Join or create room
@@ -218,14 +243,20 @@ export default function MultiplayerPoker() {
 
     newSocket.on('disconnect', () => {
       setConnected(false);
+      if (hadConnectRef.current) setShowReconnect(true);
     });
-
-    setSocket(newSocket);
 
     return () => {
       newSocket.close();
     };
   }, []);
+
+  const handleReconnect = () => {
+    setReconnecting(true);
+    if (socket && !socket.connected) {
+      socket.connect();
+    }
+  };
 
   const handleStartGame = () => {
     if (socket) {
@@ -264,10 +295,21 @@ export default function MultiplayerPoker() {
   const myPlayer = getMyPlayer();
   const currentPlayer = getCurrentPlayer();
 
-  if (!connected) {
+  const reconnectUi = (
+    <RoomReconnectModal
+      open={showReconnect && !connected}
+      reconnecting={reconnecting}
+      onReconnect={handleReconnect}
+      onBackToLobby={handleLeaveTable}
+      testId="multiplayer-poker-reconnect"
+    />
+  );
+
+  if (!connected && !table) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-green-900 to-slate-900 flex items-center justify-center">
         <div className="text-white text-xl">Connecting to poker server...</div>
+        {reconnectUi}
       </div>
     );
   }
@@ -276,12 +318,14 @@ export default function MultiplayerPoker() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-green-900 to-slate-900 flex items-center justify-center">
         <div className="text-white text-xl">Loading poker table...</div>
+        {reconnectUi}
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-green-900 to-slate-900 p-4">
+      {reconnectUi}
       <div className="container mx-auto py-8">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">

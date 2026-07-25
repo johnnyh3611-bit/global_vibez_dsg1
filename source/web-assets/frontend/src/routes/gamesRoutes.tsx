@@ -68,10 +68,8 @@ const BlackjackUniversal = lazy(() => import("@/pages/games/BlackjackUniversal")
 const AiJudgeRoom = lazy(() => import("@/components/pages/AiJudgeRoom"));
 const PokerPractice = lazy(() => import("@/pages/games/PokerPractice"));
 const BaccaratPremium = lazy(() => import("@/pages/games/BaccaratPremium"));
-const CyberCasino = lazy(() => import("@/pages/games/CyberCasino"));
 const CyberCasinoRoulette = lazy(() => import("@/pages/games/CyberCasinoRoulette"));
 const CyberCasinoSlots = lazy(() => import("@/pages/games/CyberCasinoSlots"));
-const CyberCasinoBlackjack = lazy(() => import("@/pages/games/CyberCasinoBlackjack"));
 const VibeSuitesDiscovery = lazy(() => import("@/pages/VibeSuitesDiscovery"));
 const CreateVibeSuite = lazy(() => import("@/pages/CreateVibeSuite"));
 // UndergroundSpades legacy import removed May 2026.
@@ -123,7 +121,6 @@ const SpectateGame = lazy(() => import("@/pages/SpectateGame").then(m => ({ defa
 const MultiplayerPoker = lazy(() => import("@/pages/MultiplayerPoker"));
 const UniversalGameRoom = lazy(() => import("@/pages/games/UniversalGameRoom"));
 const VibesCasinoBlackjack = lazy(() => import("@/pages/VibesCasinoBlackjack"));
-const BlackjackGameAAA = lazy(() => import("@/components/practice_games/BlackjackGameAAA"));
 const BlackjackGameSimple = lazy(() => import("@/components/practice_games/BlackjackGameSimple"));
 const RouletteGameAAA = lazy(() => import("@/components/practice_games/RouletteGameAAA"));
 const CelestialSlots = lazy(() => import("@/components/practice_games/CelestialSlots"));
@@ -162,10 +159,10 @@ export const gamesRoutes = (ProtectedRoute) => (
     {/* Main Games */}
     <Route path="/games" element={<ProtectedRoute><Games /></ProtectedRoute>} />
     <Route path="/games-menu" element={<Games />} />
-    <Route path="/games/cyber-casino" element={<CyberCasino />} />
+    <Route path="/games/cyber-casino" element={<Navigate to="/cyber-casino" replace />} />
     <Route path="/games/cyber-casino/roulette" element={<CyberCasinoRoulette />} />
     <Route path="/games/cyber-casino/slots" element={<ProtectedRoute><CyberCasinoSlots /></ProtectedRoute>} />
-    <Route path="/games/cyber-casino/blackjack" element={<ProtectedRoute><CyberCasinoBlackjack /></ProtectedRoute>} />
+    <Route path="/games/cyber-casino/blackjack" element={<Navigate to="/blackjack-universal" replace />} />
     <Route path="/game-demo" element={<GameDemo />} />
     <Route path="/games/play/:gameId" element={<ProtectedRoute><GamePlay /></ProtectedRoute>} />
     <Route path="/games/would-you-rather" element={<ProtectedRoute><WouldYouRather /></ProtectedRoute>} />
@@ -413,7 +410,7 @@ export const gamesRoutes = (ProtectedRoute) => (
     <Route path="/pricing-legacy" element={<PricingTiers />} />
     
     {/* AAA Casino Games - Updated to use WebSocket-enabled components */}
-    <Route path="/practice/play/blackjack-aaa" element={<ProtectedRoute><BlackjackGameAAA /></ProtectedRoute>} />
+    <Route path="/practice/play/blackjack-aaa" element={<Navigate to="/blackjack-universal" replace />} />
     <Route path="/practice/play/blackjack" element={<ProtectedRoute><BlackjackGameSimple /></ProtectedRoute>} />
     <Route path="/practice/play/baccarat" element={<ProtectedRoute><PracticeBaccarat /></ProtectedRoute>} />
     <Route path="/practice/play/baccarat_premium" element={<ProtectedRoute><BaccaratPremium /></ProtectedRoute>} />
@@ -561,7 +558,7 @@ export const gamesRoutes = (ProtectedRoute) => (
 
     {/* Legacy URL redirects — keep bookmarked links working */}
     <Route path="/blackjack" element={<Navigate to="/practice/play/blackjack" replace />} />
-    <Route path="/blackjack-aaa" element={<Navigate to="/practice/play/blackjack-aaa" replace />} />
+    <Route path="/blackjack-aaa" element={<Navigate to="/blackjack-universal" replace />} />
     <Route path="/vibe-dice" element={<Navigate to="/dice" replace />} />
     <Route path="/vibedice" element={<Navigate to="/dice" replace />} />
     <Route path="/games/vibedice654" element={<Navigate to="/dice" replace />} />

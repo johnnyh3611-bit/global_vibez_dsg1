@@ -17,6 +17,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Loader2, Plus, Users, Wifi, X } from "lucide-react";
 import { toast } from "sonner";
 import DominoTile from "@/components/dominoes/DominoTile";
+import RoomReconnectModal from "@/components/games/RoomReconnectModal";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -46,6 +47,10 @@ export default function DominoesMP() {
   const wsRef = useRef<WebSocket | null>(null);
   const [chatInput, setChatInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [disconnected, setDisconnected] = useState(false);
+  const [reconnecting, setReconnecting] = useState(false);
+  const intentionalCloseRef = useRef(false);
+  const activeRoomRef = useRef<string | null>(null);
 
   const username = (typeof window !== "undefined" ? localStorage.getItem("user_name") : null) || "Player";
   const userId = (typeof window !== "undefined" ? localStorage.getItem("user_id") : null) || `u_${Math.random().toString(36).slice(2, 10)}`;
@@ -66,30 +71,46 @@ export default function DominoesMP() {
     }
   }, [phase, refreshRooms]);
 
-  const connect = useCallback((rid: string) => {
-    setPhase("connecting");
+  const connect = useCallback((rid: string, opts?: { isReconnect?: boolean }) => {
+    intentionalCloseRef.current = false;
+    setDisconnected(false);
+    setReconnecting(Boolean(opts?.isReconnect));
+    if (!opts?.isReconnect) setPhase("connecting");
     setRoomId(rid);
+    activeRoomRef.current = rid;
+    try {
+      wsRef.current?.close();
+    } catch {
+      /* ignore */
+    }
     const wsUrl = `${API}/api/dominoes-mp/ws/${rid}?user_id=${encodeURIComponent(userId)}&username=${encodeURIComponent(username)}`
       .replace(/^http/, "ws");
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
-    ws.onopen = () => setPhase("waiting");
+    ws.onopen = () => {
+      setReconnecting(false);
+      setDisconnected(false);
+      if (!opts?.isReconnect) setPhase("waiting");
+    };
     ws.onmessage = (ev) => {
       const data = JSON.parse(ev.data);
       switch (data.type) {
         case "state":
           setState(data.game);
           setPhase("game");
+          setDisconnected(false);
           break;
         case "round_start":
           toast.success("Round started · highest double leads");
           break;
         case "match_over":
           toast.success(`Match over · ${data.match_winner} wins`);
+          intentionalCloseRef.current = true;
           setPhase("over");
           break;
         case "opponent_left":
           toast.info("Opponent left the room");
+          intentionalCloseRef.current = true;
           setPhase("over");
           break;
         case "player_joined":
@@ -107,8 +128,15 @@ export default function DominoesMP() {
       }
     };
     ws.onclose = () => {
-      setPhase("over");
       wsRef.current = null;
+      setReconnecting(false);
+      if (intentionalCloseRef.current) return;
+      // Unexpected drop while seated → reconnect modal, not dead-end "over".
+      if (activeRoomRef.current) {
+        setDisconnected(true);
+        return;
+      }
+      setPhase("over");
     };
     ws.onerror = () => toast.error("WebSocket error");
   }, [userId, username]);
@@ -145,14 +173,41 @@ export default function DominoesMP() {
   };
 
   const leave = () => {
+    intentionalCloseRef.current = true;
+    setDisconnected(false);
+    setReconnecting(false);
+    activeRoomRef.current = null;
     wsRef.current?.close();
     wsRef.current = null;
     setPhase("lobby");
     setState(null);
+    setRoomId(null);
   };
 
+  const handleReconnect = () => {
+    const rid = activeRoomRef.current || roomId;
+    if (!rid) {
+      leave();
+      return;
+    }
+    connect(rid, { isReconnect: true });
+  };
+
+  const reconnectModal = (
+    <RoomReconnectModal
+      open={disconnected}
+      reconnecting={reconnecting}
+      onReconnect={handleReconnect}
+      onBackToLobby={leave}
+      testId="dominoes-mp-reconnect"
+    />
+  );
+
   useEffect(() => {
-    return () => wsRef.current?.close();
+    return () => {
+      intentionalCloseRef.current = true;
+      wsRef.current?.close();
+    };
   }, []);
 
   // ─── UI ──────────────────────────────────────────────────────────
@@ -217,12 +272,19 @@ export default function DominoesMP() {
       <div className="min-h-screen bg-[#050614] text-white flex flex-col items-center justify-center gap-4 px-4">
         <p className="text-2xl font-black" style={{ fontFamily: "'Cinzel', serif" }}>Match Closed</p>
         <button onClick={leave} className="px-5 py-2.5 rounded-lg bg-indigo-500 hover:bg-indigo-400 text-white font-bold" data-testid="dominoes-mp-back-to-lobby">Back to Lobby</button>
+        {reconnectModal}
       </div>
     );
   }
 
   // ─── PLAYING ─────────────────────────────────────────────────────
-  if (!state) return null;
+  if (!state) {
+    return (
+      <>
+        {reconnectModal}
+      </>
+    );
+  }
   const me = state.players_data[state.your_pos];
   const isMyTurn = state.current_turn === state.your_pos;
   const playableMap = me?.playable ?? {};
@@ -232,7 +294,8 @@ export default function DominoesMP() {
   const oppName = state.seats[oppPos] ?? "Opponent";
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0a0820] to-[#02030a] text-white px-3 py-3" data-testid="dominoes-mp-game">
+    <div className="gv-room min-h-screen bg-gradient-to-b from-[#0a0820] to-[#02030a] text-white px-3 py-3" data-testid="dominoes-mp-game">
+      {reconnectModal}
       <div className="flex items-center justify-between mb-3">
         <button onClick={leave} className="text-indigo-300/70 hover:text-white text-xs font-bold flex items-center gap-1.5"><ArrowLeft className="w-4 h-4" /> Leave</button>
         <div className="flex items-center gap-2 text-xs">

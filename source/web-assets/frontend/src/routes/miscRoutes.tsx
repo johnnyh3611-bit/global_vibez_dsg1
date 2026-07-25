@@ -15,7 +15,6 @@ import PricingPage from "@/pages/PricingPage";
 import SovereignTiers from "@/pages/SovereignTiers";
 import UndergroundLive from "@/pages/UndergroundLive";
 import ReceiptsPage from "@/pages/ReceiptsPage";
-import StripeConnectWizard from "@/pages/payouts/StripeConnectWizard";
 import EconomicEnginePage from "@/pages/EconomicEnginePage";
 import EquityMasterPage from "@/pages/EquityMasterPage";
 import AmbassadorCarePackagePage from "@/pages/AmbassadorCarePackagePage";
@@ -46,7 +45,6 @@ import Treasury from "@/pages/Treasury";
 import YellowPagesDirectory from "@/pages/yellow_pages/YellowPagesDirectory";
 import YellowPagesNewListing from "@/pages/yellow_pages/YellowPagesNewListing";
 import YellowPagesListingDetail from "@/pages/yellow_pages/YellowPagesListingDetail";
-import TopUpSuccess from "@/pages/wallet/TopUpSuccess";
 import LegacyVaultPage from "@/pages/LegacyVaultPage";
 import VibePhonePage from "@/pages/VibePhonePage";
 
@@ -96,10 +94,6 @@ export const miscRoutes = (ProtectedRoute) => (
     <Route path="/discover" element={<ProtectedRoute><DiscoverPage /></ProtectedRoute>} />
     <Route path="/live" element={<ProtectedRoute><LiveStreamingPage /></ProtectedRoute>} />
 
-    {/* Vibez Coin top-up — Stripe redirect callback (May 2026) */}
-    <Route path="/wallet/topup-success" element={<TopUpSuccess />} />
-    <Route path="/wallet/topup-cancelled" element={<TopUpSuccess />} />
-
     {/* Vibe Yellow Pages — 4th Pillar (May 2026). New listings require 18+ ID. */}
     <Route path="/yellow-pages" element={<YellowPagesDirectory />} />
     <Route path="/yellow-pages/new" element={<ProtectedRoute><IdVerificationGate surfaceName="Yellow Pages listings"><YellowPagesNewListing /></IdVerificationGate></ProtectedRoute>} />
@@ -134,7 +128,6 @@ export const miscRoutes = (ProtectedRoute) => (
     <Route path="/pricing-legacy" element={<ProtectedRoute><PricingPage /></ProtectedRoute>} />
     <Route path="/underground-live" element={<ProtectedRoute><UndergroundLive /></ProtectedRoute>} />
     <Route path="/receipts" element={<ProtectedRoute><ReceiptsPage /></ProtectedRoute>} />
-    <Route path="/payouts/setup" element={<ProtectedRoute><StripeConnectWizard /></ProtectedRoute>} />
     {/* Public DSG Economic Engine spec page — investor / user transparency. */}
     <Route path="/economic-engine" element={<EconomicEnginePage />} />
     <Route path="/equity" element={<ProtectedRoute><EquityMasterPage /></ProtectedRoute>} />

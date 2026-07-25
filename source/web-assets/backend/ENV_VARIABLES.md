@@ -142,8 +142,8 @@ REACT_APP_PRIVY_APP_ID=your_privy_app_id
 # Socket.IO
 REACT_APP_SOCKET_URL=https://your-backend-url.com
 
-# Stripe Publishable Key
-REACT_APP_STRIPE_KEY=pk_test_your_stripe_publishable_key
+# Stripe publishable key — NOT used. Coin/card rails are Helio + Solana only.
+# REACT_APP_STRIPE_KEY=  # leave unset
 
 # Environment
 REACT_APP_ENV=development

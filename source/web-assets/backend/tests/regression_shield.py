@@ -5358,19 +5358,12 @@ def test_smartstack_driver_delivery_offer_already_wired():
 
 
 def test_stripe_connect_express_scaffolded():
-    """2026-05-12 backlog #11: Stripe Connect Express onboarding +
-    payout scaffolding. Founder approved building NOW so live keys can
-    drop in later without code changes.
-
-    Lock guarantees:
-      • 4 Express endpoints exist (/onboard /status /login-link /payout)
-      • Graceful degradation: returns `configured: false` when keys
-        aren't set instead of 500-ing
-      • Per-role return URLs cover all 4 valid roles
-      • Drop-in <StripeConnectButton> mounted on driver wallet + host
-        dashboard + merchant dashboard surfaces
-    """
+    """Stripe Connect UI retired — SolanaPayoutEmptyState replaces the
+    drop-in StripeConnectButton on driver/host/merchant payout surfaces."""
+    import os
     from server import app
+
+    assert not os.path.exists("source/web-assets/backend/routes/stripe_connect.py")
     paths = {r.path for r in app.routes if hasattr(r, "path")}
     for p in [
         "/api/connect/onboard",
@@ -5378,34 +5371,26 @@ def test_stripe_connect_express_scaffolded():
         "/api/connect/login-link",
         "/api/connect/payout",
     ]:
-        assert p in paths, f"connect endpoint missing: {p}"
+        assert p not in paths, f"retired connect endpoint still mounted: {p}"
 
-    src = open("source/web-assets/backend/routes/stripe_connect.py").read()
-    # Soft-fail contract — must never 500 when keys aren't set.
-    assert "_is_configured" in src
-    assert '"configured": False' in src
-    # All 4 role return URLs.
-    for role in ["driver", "host", "merchant", "streamer"]:
-        assert f'"{role}": "/' in src, f"return-url missing for role: {role}"
-    # Audit trail for payouts so admin can reconcile.
-    assert "stripe_connect_payouts" in src
+    registry = open("source/web-assets/backend/routes/registry.py").read()
+    assert "stripe_connect" not in registry
 
-    btn = open("source/web-assets/frontend/src/components/payout/StripeConnectButton.tsx").read()
-    for tid in [
-        "connect-not-configured",
-        "connect-manage-btn",
-        "connect-onboard-btn",
-    ]:
-        assert tid in btn, f"StripeConnectButton missing testid: {tid}"
+    assert not os.path.exists("source/web-assets/frontend/src/components/payout/StripeConnectButton.tsx")
 
-    # Button mounted on all 3 role pages.
+    empty = open("source/web-assets/frontend/src/components/payout/SolanaPayoutEmptyState.tsx").read()
+    assert "solana-payout-empty-state" in empty
+    assert "Stripe Connect has been retired" in empty
+    assert "StripeConnectButton" not in empty
+
     for path in [
         "source/web-assets/frontend/src/pages/VibeRidez/DriverWalletSetup.tsx",
         "source/web-assets/frontend/src/pages/vibe-venues/VibeVenuesHostDashboard.tsx",
         "source/web-assets/frontend/src/pages/HungryVibesMerchant.tsx",
     ]:
         page = open(path).read()
-        assert "StripeConnectButton" in page, f"connect button not mounted: {path}"
+        assert "SolanaPayoutEmptyState" in page, f"solana empty state not mounted: {path}"
+        assert "StripeConnectButton" not in page, f"StripeConnectButton still present: {path}"
 
 
 def test_landing_tour_video_clips_extended_keeping_dice_first():
@@ -5717,24 +5702,19 @@ def test_vibe_venues_refund_policies_and_gallery():
 
 
 def test_stripe_connect_wizard_route_and_steps():
-    """2026-05-13 backlog: Stripe Connect onboarding wizard — 3-step guided
-    flow lifting the single-button experience into a full
-    requirements → verification → activation funnel."""
-    wizard = open("source/web-assets/frontend/src/pages/payouts/StripeConnectWizard.tsx").read()
-    for tid in [
-        "stripe-connect-wizard",
-        "connect-wizard-stepper",
-        "connect-step-1",
-        "connect-step-2",
-        "connect-step-3",
-        "connect-wizard-start-btn",
-    ]:
-        assert tid in wizard, f"StripeConnectWizard missing testid: {tid}"
-    # Stripe data collection happens on Stripe's servers — disclaimer required.
-    assert "Stripe directly" in wizard
+    """2026-05-13 backlog: Stripe Connect onboarding wizard retired in favor
+    of Solana/USDC payouts. Wizard route and component must stay removed."""
+    import os
+    assert not os.path.exists("source/web-assets/frontend/src/pages/payouts/StripeConnectWizard.tsx")
+    assert not os.path.exists("source/web-assets/frontend/src/components/payout/StripeConnectButton.tsx")
+
+    empty = open("source/web-assets/frontend/src/components/payout/SolanaPayoutEmptyState.tsx").read()
+    assert "solana-payout-empty-state" in empty
+    assert "Payouts via Solana / USDC" in empty
 
     misc = open("source/web-assets/frontend/src/routes/miscRoutes.tsx").read()
-    assert '/payouts/setup' in misc
+    assert '/payouts/setup' not in misc
+    assert "StripeConnectWizard" not in misc
 
 
 def test_offline_service_worker_versioned():
@@ -6686,44 +6666,13 @@ def test_live_now_wall_and_watch_room_wired():
 
 
 def test_stripe_payouts_webhook_wired():
-    """2026-02 sprint: Stripe Connect / Payouts webhook handler created
-    to receive account/payout/charge events from the live Stripe
-    webhook endpoint registered at globalvibezdsg.com/api/payouts/stripe-webhook.
+    """Stripe payouts webhook was retired — Helio/Solana only."""
+    from pathlib import Path
 
-    Locks:
-      - Route module exists + has correct prefix.
-      - Uses Stripe's official construct_event for signature verification
-        (no DIY HMAC — Stripe's helper handles the v0/v1 algorithm switch).
-      - Handles all 7 events we registered on Stripe's side.
-      - Per-event handlers are idempotent and async (no blocking the proxy).
-      - Registered in routes/registry.py.
-    """
-    src = open("source/web-assets/backend/routes/stripe_payouts_webhook.py").read()
-    assert 'prefix="/payouts"' in src, "Payouts webhook must use /payouts prefix"
-    assert "stripe.Webhook.construct_event" in src, "Must use Stripe's official verifier (handles v0/v1, replay tolerance)"
-    assert "STRIPE_WEBHOOK_SECRET" in src
-    assert "tolerance=300" in src, "Should set explicit 5-minute replay tolerance"
+    assert not Path("source/web-assets/backend/routes/stripe_payouts_webhook.py").exists()
 
-    # All 7 registered events have handlers.
-    for evt in (
-        "account.updated",
-        "account.external_account.created",
-        "payout.paid",
-        "payout.failed",
-        "charge.succeeded",
-        "charge.refunded",
-        "checkout.session.completed",
-    ):
-        assert f'"{evt}"' in src, f"Missing handler for: {evt}"
-
-    # Each handler is async (the proxy can't block).
-    import re
-    handler_pattern = re.compile(r"async def _handle_\w+")
-    assert len(handler_pattern.findall(src)) >= 7, "Each Stripe event handler must be async"
-
-    # Registry mounts it.
-    registry = open("source/web-assets/backend/routes/registry.py").read()
-    assert "from routes.stripe_payouts_webhook import router as stripe_payouts_router" in registry
+    registry = Path("source/web-assets/backend/routes/registry.py").read_text()
+    assert "stripe_payouts_webhook" not in registry
 
 
 def test_stripe_identity_webhook_handles_real_payload_shape():
@@ -6766,15 +6715,13 @@ def test_stripe_identity_webhook_handles_real_payload_shape():
 
 def test_featured_streamers_tier_wired():
     """2026-02 sprint: $5/30-day Featured Streamers tier — paid pin to
-    the top of the Live Now Wall. Direct revenue lever using the live
-    Stripe key + Stripe Checkout.
+    the top of the Live Now Wall. Stripe checkout retired; Helio/Solana only.
 
     Locks:
       - Backend route file present + registered + correct prefix.
       - Pricing constants spec'd: $5 / 30 days.
       - apply_feature_grant is async + idempotent + extends future windows.
-      - Stripe Checkout uses client_reference_id=feature:<streamer_id>.
-      - stripe_payouts_webhook routes `feature:` refs to apply_feature_grant.
+      - Checkout endpoint returns 410 stripe_retired (no Stripe Session.create).
       - Live Now Wall annotates is_featured + sorts featured first.
       - Studio page surfaces the upsell card with the right testids.
     """
@@ -6786,18 +6733,13 @@ def test_featured_streamers_tier_wired():
     assert "async def apply_feature_grant" in src
     # Idempotency lock: same session_id no-ops on retry.
     assert "last_grant_session_id" in src
-    # Stripe Checkout with client_reference_id.
-    assert "stripe.checkout.Session.create" in src
-    assert "client_reference_id=f\"{FEATURED_REF_PREFIX}{req.streamer_id}\"" in src
+    # Stripe checkout retired — 410 stub instead of Session.create.
+    assert "stripe_retired" in src
+    assert "stripe.checkout.Session.create" not in src
 
     # Registry mounts it.
     registry = open("source/web-assets/backend/routes/registry.py").read()
-    assert "from routes.featured_streamers import router as featured_router" in registry
-
-    # Payouts webhook routes feature: refs.
-    payouts = open("source/web-assets/backend/routes/stripe_payouts_webhook.py").read()
-    assert 'ref.startswith("feature:")' in payouts
-    assert "apply_feature_grant" in payouts
+    assert '"featured_streamers", "routes.featured_streamers"' in registry
 
     # Cloudflare live-inputs listing layers in feature metadata.
     cf = open("source/web-assets/backend/routes/cloudflare_stream.py").read()
@@ -7264,16 +7206,12 @@ def test_high_roller_routes_registered() -> None:
 
 
 def test_high_roller_webhook_handles_vip_prefix() -> None:
-    """The Stripe payouts webhook MUST route `vip:` refs to apply_vip_grant.
-    Without this, paid checkouts never flip vip_until and users pay for
-    nothing."""
+    """VIP grant helper must remain in high_roller after Stripe webhook purge."""
     from pathlib import Path
-    src = Path("source/web-assets/backend/routes/stripe_payouts_webhook.py").read_text()
-    assert 'ref.startswith("vip:")' in src, (
-        "Webhook lost the vip: branch — Stripe checkouts won't grant VIP"
-    )
-    assert "from routes.high_roller import apply_vip_grant" in src
-    assert "apply_vip_grant(" in src
+    src = Path("source/web-assets/backend/routes/high_roller.py").read_text()
+    assert "async def apply_vip_grant" in src
+    assert "HIGH_ROLLER_REF_PREFIX" in src
+    assert not Path("source/web-assets/backend/routes/stripe_payouts_webhook.py").exists()
 
 
 def test_high_roller_routes_mounted_in_registry() -> None:
@@ -8749,12 +8687,11 @@ def test_refer_a_whale_checkout_accepts_referral_code() -> None:
 
 
 def test_refer_a_whale_webhook_imports_track_referral() -> None:
-    """The Stripe payouts webhook must wire `track_referral` so a referee
-    converting flips the referrer's bonus days."""
+    """Refer-a-Whale tracking lives on the high_roller route after Stripe purge."""
     from pathlib import Path
-    src = Path("source/web-assets/backend/routes/stripe_payouts_webhook.py").read_text()
-    assert "track_referral" in src, "Webhook must import track_referral"
-    assert "referral_code" in src, "Webhook must read referral_code from metadata"
+    src = Path("source/web-assets/backend/routes/high_roller.py").read_text()
+    assert "async def track_referral" in src, "High Roller must expose track_referral"
+    assert "referral_code" in src, "High Roller must read referral_code from metadata"
 
 
 def test_refer_a_whale_frontend_card_rendered() -> None:

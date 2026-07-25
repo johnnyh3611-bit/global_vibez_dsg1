@@ -71,18 +71,6 @@ from pydantic import BaseModel, Field
 from config import get_database
 from utils.database import get_current_user
 
-# Lazy Stripe import — emergentintegrations is installed but if the env
-# is misconfigured we still want the rest of the routes to load.
-try:
-    from services.payment_hub import (
-        StripeCheckout,
-        CheckoutSessionRequest,
-    )
-    _STRIPE_AVAILABLE = True
-except ImportError:  # pragma: no cover — only hit when emergentintegrations missing
-    _STRIPE_AVAILABLE = False
-
-STRIPE_API_KEY = os.environ.get("STRIPE_API_KEY", "")
 SPONSORSHIP_PRICE_USD = 29.99
 
 router = APIRouter(prefix="/hungryvibes/merchant", tags=["hungryvibes-merchant"])
@@ -601,204 +589,34 @@ class SponsorshipVerifyIn(BaseModel):
     session_id: str
 
 
+_STRIPE_RETIRED_DETAIL = {
+    "error": "stripe_retired",
+    "message": (
+        "Stripe sponsorship checkout is retired. Use Helio or Solana deposit "
+        "for HungryVibes merchant sponsorship."
+    ),
+    "use": "/api/coins/topup/helio",
+}
+
+
 @router.post("/sponsorship/checkout")
 async def sponsorship_checkout(request: Request) -> Dict[str, Any]:
-    """Create a Stripe Checkout session for the $29.99 monthly sponsorship.
-
-    Mirrors the elite_subscription pattern (emergentintegrations Stripe
-    SDK). The frontend redirects the merchant to `checkout_url`; on
-    return Stripe appends `?session_id={CHECKOUT_SESSION_ID}` and we
-    verify it via `/sponsorship/verify`.
-    """
-    if not _STRIPE_AVAILABLE or not STRIPE_API_KEY:
-        raise HTTPException(
-            status_code=503,
-            detail="Stripe not configured (missing STRIPE_API_KEY)",
-        )
-    user = await _require_user(request)
-    db = get_database()
-    merchant = await _get_merchant_or_404(db, user.user_id)
-
-    # Use FRONTEND_URL (backend env) for the redirect URLs. Match the
-    # elite_subscription pattern: emergentintegrations does template the
-    # `{CHECKOUT_SESSION_ID}` placeholder server-side when included as a
-    # double-braced f-string.
-    frontend_url = os.environ.get(
-        "FRONTEND_URL",
-        os.environ.get("REACT_APP_BACKEND_URL", "https://social-connect-953.preview.emergentagent.com"),
-    )
-    success_url = f"{frontend_url}/hungryvibes/merchant?sponsorship_session={{CHECKOUT_SESSION_ID}}"
-    cancel_url = f"{frontend_url}/hungryvibes/merchant?sponsorship_cancelled=1"
-
-    stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY)
-    session_request = CheckoutSessionRequest(
-        amount=SPONSORSHIP_PRICE_USD,
-        currency="usd",
-        success_url=success_url,
-        cancel_url=cancel_url,
-        metadata={
-            "user_id": user.user_id,
-            "merchant_id": merchant["merchant_id"],
-            "type": "hungryvibes_sponsorship",
-            "amount": str(SPONSORSHIP_PRICE_USD),
-        },
-    )
-    session = await stripe_checkout.create_checkout_session(session_request)
-    return {
-        "success": True,
-        "checkout_url": session.url,
-        "session_id": session.session_id,
-        "amount": SPONSORSHIP_PRICE_USD,
-    }
+    """Retired — Stripe sponsorship checkout is no longer supported."""
+    raise HTTPException(status_code=410, detail=_STRIPE_RETIRED_DETAIL)
 
 
 @router.post("/sponsorship/verify")
 async def sponsorship_verify(
     payload: SponsorshipVerifyIn, request: Request
 ) -> Dict[str, Any]:
-    """Verify a completed Stripe session and flip `sponsorship_active`."""
-    if not _STRIPE_AVAILABLE or not STRIPE_API_KEY:
-        raise HTTPException(status_code=503, detail="Stripe not configured")
-    user = await _require_user(request)
-    db = get_database()
-    merchant = await _get_merchant_or_404(db, user.user_id)
-
-    stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY)
-    try:
-        status = await stripe_checkout.get_checkout_status(payload.session_id)
-    except Exception as exc:  # noqa: BLE001 — surface a clean 400 instead of 500.
-        raise HTTPException(status_code=400, detail=f"Invalid or expired session: {exc}")
-
-    if status.status != "complete":
-        raise HTTPException(status_code=400, detail="Payment not completed")
-    if status.metadata.get("user_id") != user.user_id:
-        raise HTTPException(status_code=403, detail="Session belongs to another user")
-    if status.metadata.get("type") != "hungryvibes_sponsorship":
-        raise HTTPException(status_code=400, detail="Wrong session type")
-    if status.metadata.get("merchant_id") != merchant["merchant_id"]:
-        raise HTTPException(status_code=403, detail="Wrong merchant")
-
-    renews_at = (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
-    await db.hv_merchants.update_one(
-        {"merchant_id": merchant["merchant_id"]},
-        {"$set": {"sponsorship_active": True, "sponsorship_renews_at": renews_at}},
-    )
-    await db.hv_sponsorship_payments.insert_one(
-        {
-            "payment_id": str(uuid4()),
-            "merchant_id": merchant["merchant_id"],
-            "user_id": user.user_id,
-            "session_id": payload.session_id,
-            "amount": SPONSORSHIP_PRICE_USD,
-            "verified_at": datetime.now(timezone.utc).isoformat(),
-        }
-    )
-    return {
-        "success": True,
-        "sponsorship_active": True,
-        "renews_at": renews_at,
-        "amount": SPONSORSHIP_PRICE_USD,
-    }
-
-
-# ─── Stripe webhook (renewal / cancellation) ────────────────────────────
-
-
-# These are the Stripe event types we care about for the sponsorship
-# lifecycle. emergentintegrations's `handle_webhook` validates and parses
-# the raw payload; we then act on the event_type. (Renewal events come
-# in as `invoice.paid` / cancellation as `customer.subscription.deleted`
-# in production. For one-off Checkout sessions like ours the relevant
-# type is `checkout.session.completed`.)
-RENEWAL_EVENTS = {"invoice.paid", "checkout.session.completed"}
-CANCEL_EVENTS = {"customer.subscription.deleted", "invoice.payment_failed"}
+    """Retired — Stripe sponsorship verification is no longer supported."""
+    raise HTTPException(status_code=410, detail=_STRIPE_RETIRED_DETAIL)
 
 
 @router.post("/sponsorship/webhook")
 async def sponsorship_webhook(request: Request) -> Dict[str, Any]:
-    """Stripe webhook: flip `sponsorship_active` based on event type.
-
-    Idempotent — replays of the same event_id are a no-op (we record
-    every processed event in `hv_stripe_webhook_events`). The
-    Stripe-Signature header is forwarded to emergentintegrations for
-    cryptographic verification.
-    """
-    if not _STRIPE_AVAILABLE or not STRIPE_API_KEY:
-        raise HTTPException(status_code=503, detail="Stripe not configured")
-
-    body = await request.body()
-    signature = request.headers.get("Stripe-Signature") or request.headers.get("stripe-signature")
-    stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY)
-    try:
-        event = await stripe_checkout.handle_webhook(body, signature)
-    except Exception as exc:  # noqa: BLE001 — clean 400 rather than 500.
-        raise HTTPException(status_code=400, detail=f"Webhook verification failed: {exc}")
-
-    db = get_database()
-
-    # Idempotency guard.
-    existing = await db.hv_stripe_webhook_events.find_one(
-        {"event_id": event.event_id}, {"_id": 0}
-    )
-    if existing:
-        return {"received": True, "duplicate": True}
-
-    metadata = event.metadata or {}
-    if metadata.get("type") != "hungryvibes_sponsorship":
-        # Not ours — record + ignore so we don't pollute the merchant
-        # collection with unrelated Stripe traffic.
-        await db.hv_stripe_webhook_events.insert_one({
-            "event_id": event.event_id,
-            "event_type": event.event_type,
-            "session_id": event.session_id,
-            "payment_status": event.payment_status,
-            "matched_merchant": False,
-            "received_at": datetime.now(timezone.utc).isoformat(),
-        })
-        return {"received": True, "matched": False}
-
-    merchant_id = metadata.get("merchant_id")
-    if not merchant_id:
-        raise HTTPException(status_code=400, detail="Missing merchant_id in metadata")
-
-    # Compute the new state.
-    if event.event_type in RENEWAL_EVENTS:
-        renews_at = (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
-        await db.hv_merchants.update_one(
-            {"merchant_id": merchant_id},
-            {"$set": {"sponsorship_active": True, "sponsorship_renews_at": renews_at}},
-        )
-        await db.hv_sponsorship_payments.insert_one({
-            "payment_id": str(uuid4()),
-            "merchant_id": merchant_id,
-            "user_id": metadata.get("user_id"),
-            "session_id": event.session_id,
-            "amount": SPONSORSHIP_PRICE_USD,
-            "source": "webhook",
-            "event_id": event.event_id,
-            "verified_at": datetime.now(timezone.utc).isoformat(),
-        })
-        action = "renewed"
-    elif event.event_type in CANCEL_EVENTS:
-        await db.hv_merchants.update_one(
-            {"merchant_id": merchant_id},
-            {"$set": {"sponsorship_active": False, "sponsorship_renews_at": None}},
-        )
-        action = "cancelled"
-    else:
-        action = "ignored"
-
-    await db.hv_stripe_webhook_events.insert_one({
-        "event_id": event.event_id,
-        "event_type": event.event_type,
-        "session_id": event.session_id,
-        "payment_status": event.payment_status,
-        "merchant_id": merchant_id,
-        "matched_merchant": True,
-        "action": action,
-        "received_at": datetime.now(timezone.utc).isoformat(),
-    })
-    return {"received": True, "action": action, "merchant_id": merchant_id}
+    """Retired — Stripe sponsorship webhooks are no longer processed."""
+    raise HTTPException(status_code=410, detail=_STRIPE_RETIRED_DETAIL)
 
 
 

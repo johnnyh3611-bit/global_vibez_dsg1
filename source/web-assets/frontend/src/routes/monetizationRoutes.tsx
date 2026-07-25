@@ -1,4 +1,4 @@
-import { Route } from 'react-router-dom';
+import { Route, Navigate } from 'react-router-dom';
 import EntryFeePaywall from '@/pages/EntryFeePaywall';
 import EntryFeeSuccess from '@/pages/EntryFeeSuccess';
 import EntryFeeCancel from '@/pages/EntryFeeCancel';
@@ -25,7 +25,6 @@ import BetaHub from '@/pages/BetaHub';
 import VIPRooms from '@/pages/VIPRooms';
 import SeasonalEvents from '@/pages/SeasonalEvents';
 import HighRollerCasino from '@/pages/HighRollerCasino';
-import HighRollerBlackjack from '@/pages/HighRollerBlackjack';
 import HighRollerRoulette from '@/pages/HighRollerRoulette';
 import HighRollerBaccarat from '@/pages/HighRollerBaccarat';
 import NFTMarketplace from '@/pages/NFTMarketplace';
@@ -248,11 +247,7 @@ export const monetizationRoutes = (ProtectedRoute) => (
     />
     <Route
       path="/casino/high-roller/blackjack"
-      element={
-        <ProtectedRoute>
-          <HighRollerBlackjack />
-        </ProtectedRoute>
-      }
+      element={<Navigate to="/blackjack-universal?vip=1" replace />}
     />
     <Route
       path="/casino/high-roller/roulette"

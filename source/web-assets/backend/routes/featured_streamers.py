@@ -2,27 +2,8 @@
 Featured Streamers — paid promotion tier for the Live Now Wall.
 
 $5/month grants a streamer a glowing pinned position at the top of
-`/streams/live` for 30 days. Direct revenue lever using the live Stripe
-key + Stripe Checkout for the lowest-friction purchase path (no card-on-
-file required, hosted by Stripe, PCI-compliant by definition).
-
-Payment flow:
-  1. Frontend hits POST /api/featured-streamers/checkout (this module).
-  2. We create a Stripe Checkout Session with a 30-day $5 line item +
-     `client_reference_id=<streamer_id>` and return the hosted URL.
-  3. Stripe redirects the user → they pay → Stripe webhook fires
-     `checkout.session.completed` to `/api/payouts/stripe-webhook`.
-  4. The payouts webhook's `_handle_checkout_completed` handler sees a
-     ref starting with `feature:` and calls `apply_feature_grant(...)`
-     here to extend the streamer's `featured_until` for 30 days.
-  5. The Live Now Wall (`/streams/live`) sorts by featured-then-recency
-     and applies a glowing pinned style to anyone whose `featured_until`
-     is in the future.
-
-Live-key activation: requires STRIPE_API_KEY (already configured 2026-02).
-When the key is absent or starts with `sk_test_`, the endpoint returns a
-clearly-labeled mock checkout URL so the frontend can be exercised end-
-to-end pre-payment.
+`/streams/live` for 30 days. Payments use Helio or Solana — Stripe
+checkout was retired in favor of Helio/Solana-only flows.
 """
 from __future__ import annotations
 
@@ -31,7 +12,6 @@ import os
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
 
-import stripe
 from fastapi import APIRouter, HTTPException
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
@@ -39,10 +19,6 @@ from pydantic import BaseModel
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/featured-streamers", tags=["featured-streamers"])
-
-STRIPE_API_KEY = os.environ.get("STRIPE_API_KEY", "")
-if STRIPE_API_KEY:
-    stripe.api_key = STRIPE_API_KEY
 
 _db = AsyncIOMotorClient(os.environ.get("MONGO_URL"))[
     os.environ.get("DB_NAME", "global_vibez_dsg")
@@ -72,73 +48,21 @@ class CheckoutRequest(BaseModel):
     return_url: Optional[str] = None  # where to send the user after payment
 
 
-def _is_live() -> bool:
-    return bool(STRIPE_API_KEY) and STRIPE_API_KEY.startswith("sk_live_")
-
-
 # ────────────────────────────────────────────── Endpoints ──
 @router.post("/checkout")
 async def create_checkout(req: CheckoutRequest) -> Dict[str, Any]:
-    """Create a one-shot Stripe Checkout Session for a 30-day feature
-    grant. Frontend redirects to `checkout_url`. We bake the streamer_id
-    into `client_reference_id` so the webhook can identify the grant
-    target without trusting the user's later state."""
-    if not STRIPE_API_KEY:
-        # Mock checkout for preview env without live key.
-        live = await _live_pricing()
-        return {
-            "mode": "mock",
-            "checkout_url": f"https://example.com/mock-checkout?streamer={req.streamer_id}&plan=featured",
-            "expires_at": (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat(),
-            "price_usd": live["price_usd"],
-            "duration_days": live["duration_days"],
-        }
-
-    # Where to bounce the user after Stripe collects payment. Default to
-    # the Live Now Wall so they instantly see their feature land.
-    return_url = req.return_url or "https://globalvibezdsg.com/streams/live"
-
-    live = await _live_pricing()
-    price_usd = live["price_usd"]
-    duration_days = live["duration_days"]
-    try:
-        session = stripe.checkout.Session.create(
-            mode="payment",  # one-shot purchase (we manage the duration window ourselves)
-            payment_method_types=["card"],
-            line_items=[{
-                "price_data": {
-                    "currency": "usd",
-                    "product_data": {
-                        "name": f"Featured Streamer · {duration_days} days",
-                        "description": (
-                            "Glowing pinned position at the top of the Live Now Wall "
-                            f"for {duration_days} days. Boost discovery, grow your audience."
-                        ),
-                    },
-                    "unit_amount": int(price_usd * 100),
-                },
-                "quantity": 1,
-            }],
-            success_url=f"{return_url}?featured=success",
-            cancel_url=f"{return_url}?featured=cancel",
-            client_reference_id=f"{FEATURED_REF_PREFIX}{req.streamer_id}",
-            metadata={
-                "kind": "featured_streamer",
-                "streamer_id": req.streamer_id,
-                "duration_days": str(duration_days),
-            },
-        )
-    except stripe.error.StripeError as e:
-        raise HTTPException(502, detail=f"Stripe checkout error: {e}")
-
-    return {
-        "mode": "live",
-        "checkout_url": session.url,
-        "session_id": session.id,
-        "expires_at": datetime.fromtimestamp(session.expires_at, timezone.utc).isoformat() if session.expires_at else None,
-        "price_usd": price_usd,
-        "duration_days": duration_days,
-    }
+    """Retired — Stripe featured-streamer checkout is no longer supported."""
+    raise HTTPException(
+        status_code=410,
+        detail={
+            "error": "stripe_retired",
+            "message": (
+                "Stripe checkout is retired. Use Helio or Solana deposit "
+                "for featured streamer promotion."
+            ),
+            "use": "/api/coins/topup/helio",
+        },
+    )
 
 
 @router.get("/status/{streamer_id}")
@@ -179,10 +103,9 @@ async def apply_feature_grant(
 ) -> Dict[str, Any]:
     """Idempotently extend a streamer's feature window by 30 days.
 
-    Called by `routes/stripe_payouts_webhook.py::_handle_checkout_completed`
-    when it sees a `client_reference_id` starting with `feature:`. Idempotency
-    via `last_grant_session_id` — if we've already applied a grant for the
-    same Stripe session, no-op (Stripe retries webhooks on 5xx + duplicates).
+    Called when a Helio/Solana payment completes for a featured-streamer
+    grant. Idempotency via `last_grant_session_id` — if we've already
+    applied a grant for the same payment session, no-op on retry.
     """
     existing = await _db.featured_streamers.find_one(
         {"streamer_id": streamer_id}, {"_id": 0}
