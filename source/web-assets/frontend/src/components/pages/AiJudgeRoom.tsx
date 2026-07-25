@@ -5,7 +5,7 @@
  * VibeCredit stake slider (Blackjack-style bet selector).
  *
  * Layout: inherits VibezShell from ProtectedRoute — main
- * event (Digital Bench) stays centered; sidebar provides Subjects + Activity.
+ * event (Digital Bench) stays centered.
  *
  * Route: /network/judge
  */
