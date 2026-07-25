@@ -708,10 +708,13 @@ def register_all_routes(
     )
 
     # ── Wave 5E — AI / planners / integrations / i18n ────────────────
+    # Unified gateway first — conversational AI + context packet.
+    _soft_mount(api_router, log, "ai_gateway", "routes.ai_gateway")
     _soft_mount(api_router, log, "ai_coach", "routes.ai_coach")
     _soft_mount(api_router, log, "ai_guide", "routes.ai_guide")
     _soft_mount(api_router, log, "ai_content_matching", "routes.ai_content_matching")
     _soft_mount(api_router, log, "ai_date_planner", "routes.ai_date_planner")
+    # v2 lives under /ai-date-planner/v2 (no longer collides with v1 /generate)
     _soft_mount(api_router, log, "ai_date_planner_v2", "routes.ai_date_planner_v2")
     _soft_mount(api_router, log, "agent_learning", "routes.agent_learning")
     _soft_mount(api_router, log, "metahuman_control", "routes.metahuman_control")

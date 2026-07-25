@@ -36,6 +36,7 @@ import DashboardSpinBadge from '@/components/DashboardSpinBadge';
 import Vibez654ReachabilityChip from '@/components/Vibez654ReachabilityChip';
 import SessionHubCard from '@/components/SessionHubCard';
 import { JobBoard } from '@/components/dashboard/JobBoard';
+import FourDoorHub from '@/components/dashboard/FourDoorHub';
 import { EarningsBanner } from '@/components/dashboard/EarningsBanner';
 import { authFetch, clearAuthStorage } from '@/utils/secureAuth';
 import { PullToRefresh } from '@/components/mobile/PullToRefresh';
@@ -1031,7 +1032,12 @@ export default function Dashboard() {
           <SocialProofStrip />
         </div>
 
-        {/* Four jobs: Gaming · Dating · Streaming · Earning — persona-ordered. */}
+        {/* Four doors — Play · Date · Watch · Earn (first viewport). */}
+        <div className="max-w-5xl mx-auto mb-10">
+          <FourDoorHub />
+        </div>
+
+        {/* Persona-ordered deep links under each door. */}
         <div className="max-w-5xl mx-auto mb-12">
           <JobBoard interestCategories={user?.interest_categories || []} />
         </div>
@@ -1039,15 +1045,15 @@ export default function Dashboard() {
         {/* Chair-holder vote banner — chair holders only, auto-hides if no open polls */}
         <ChairHolderVoteBanner />
 
-        {/* Secondary destinations stay available but off the first viewport. */}
+        {/* Beta Hub — lifestyle / experimental surfaces (collapsed by default). */}
         <details
-          className="max-w-5xl mx-auto mb-10 rounded-2xl border border-white/10 bg-white/[0.03] open:bg-white/[0.04]"
-          data-testid="dashboard-more-destinations"
+          className="max-w-5xl mx-auto mb-10 rounded-2xl border border-fuchsia-400/25 bg-white/[0.03] open:bg-white/[0.04]"
+          data-testid="dashboard-beta-hub-collapse"
         >
           <summary className="cursor-pointer list-none px-5 py-4 text-sm font-semibold text-white/80 marker:content-none [&::-webkit-details-marker]:hidden">
             <span className="flex items-center justify-between gap-3">
-              <span>More destinations · Beta, Galaxy view, Ride Home</span>
-              <span className="text-xs uppercase tracking-[0.2em] text-white/40">Expand</span>
+              <span>Beta Hub · Hunger, Ridez, Yellow Pages &amp; experiments</span>
+              <span className="text-xs uppercase tracking-[0.2em] text-fuchsia-300/70">Expand</span>
             </span>
           </summary>
           <div className="space-y-6 border-t border-white/10 px-4 pb-6 pt-5 sm:px-5">
@@ -1070,13 +1076,13 @@ export default function Dashboard() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[10px] uppercase tracking-[0.3em] font-black text-fuchsia-200">
-                    Beta
+                    Beta Hub
                   </p>
                   <h3 className="text-lg font-black text-white mt-0.5">
-                    Beta Features Hub
+                    Open full Beta catalog
                   </h3>
                   <p className="text-xs text-white/70 mt-0.5">
-                    Experimental surfaces with live health pings.
+                    Lifestyle, logistics, and experimental APIs — not the main four doors.
                   </p>
                 </div>
               </div>

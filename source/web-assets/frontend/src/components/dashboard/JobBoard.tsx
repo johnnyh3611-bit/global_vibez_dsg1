@@ -168,10 +168,10 @@ const CATEGORY_META: Record<
   JobCategory,
   { label: string; color: string }
 > = {
-  gaming: { label: "Gaming", color: "text-blue-400" },
-  dating: { label: "Dating", color: "text-pink-400" },
-  streaming: { label: "Streaming", color: "text-red-400" },
-  earning: { label: "Earning", color: "text-green-400" },
+  gaming: { label: "Play", color: "text-blue-400" },
+  dating: { label: "Date", color: "text-pink-400" },
+  streaming: { label: "Watch", color: "text-red-400" },
+  earning: { label: "Earn", color: "text-green-400" },
 };
 
 type Props = {

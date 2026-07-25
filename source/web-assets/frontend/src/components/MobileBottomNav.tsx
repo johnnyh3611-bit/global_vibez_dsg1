@@ -1,44 +1,17 @@
 /**
- * MobileBottomNav — Sticky bottom-tab navigator for phone-class
- * viewports. Only renders when window width < 768px (Tailwind md
- * breakpoint). Lives at the App shell layer so every protected
- * route gets it for free.
- *
- * Uses My Vibez dock tray (fuchsia→pink active). Earn stays emerald.
- * Hides on fullscreen game routes so the bottom nav never covers
- * in-game CTAs like Ante In / Roll / Bid Now.
+ * MobileBottomNav — Sticky bottom-tab navigator for phone-class viewports.
+ * Four doors: Home · Play · Date · Watch · Earn.
+ * Beta Hub is reached from the dashboard collapsible / desktop Beta tab.
  */
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import {
-  Home,
-  Dice6,
-  Sparkles,
-  DollarSign,
-  Compass,
-  User,
-} from "lucide-react";
 import useIsFullscreenGameRoute from "@/hooks/useIsFullscreenGameRoute";
 import VibezTabStyle from "@/components/ui/VibezTabStyle";
-
-const TABS = [
-  { key: "home", route: "/dashboard", label: "Home", Icon: Home },
-  { key: "dice", route: "/vibe-654-hall", label: "Dice", Icon: Dice6 },
-  { key: "music", route: "/plex", label: "Music", Icon: Sparkles },
-  {
-    key: "earn",
-    route: "/earn",
-    label: "Earn",
-    Icon: DollarSign,
-    tone: "earn" as const,
-  },
-  { key: "explore", route: "/explore", label: "Explore", Icon: Compass },
-  { key: "profile", route: "/profile/edit", label: "Me", Icon: User },
-];
+import { MOBILE_NAV, matchDoorKey } from "@/nav/primaryDoors";
 
 function useIsMobile(): boolean {
   const [is, setIs] = useState<boolean>(
-    typeof window !== "undefined" ? window.innerWidth < 768 : false
+    typeof window !== "undefined" ? window.innerWidth < 768 : false,
   );
   useEffect(() => {
     const onResize = () => setIs(window.innerWidth < 768);
@@ -73,16 +46,10 @@ export default function MobileBottomNav() {
     return () => root.classList.remove("gv-bottom-nav-visible");
   }, [shouldShow]);
 
-  const activeKey = useMemo(() => {
-    const hit = TABS.find(({ route }) => {
-      if (route === "/dashboard") return location.pathname === "/dashboard";
-      return (
-        location.pathname === route ||
-        location.pathname.startsWith(`${route}/`)
-      );
-    });
-    return hit?.key ?? "home";
-  }, [location.pathname]);
+  const activeKey = useMemo(
+    () => matchDoorKey(location.pathname, MOBILE_NAV) || "home",
+    [location.pathname],
+  );
 
   if (!shouldShow) return null;
 
@@ -99,10 +66,10 @@ export default function MobileBottomNav() {
           testId="mobile-bottom-nav-tabs"
           value={activeKey}
           onChange={(key) => {
-            const tab = TABS.find((t) => t.key === key);
+            const tab = MOBILE_NAV.find((t) => t.key === key);
             if (tab) navigate(tab.route);
           }}
-          options={TABS.map(({ key, label, Icon, tone }) => ({
+          options={MOBILE_NAV.map(({ key, label, Icon, tone }) => ({
             value: key,
             label,
             icon: Icon,

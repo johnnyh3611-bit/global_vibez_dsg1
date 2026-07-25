@@ -17,7 +17,8 @@ import { useNavigate } from 'react-router-dom';
 import {
   Rocket, ExternalLink, RadioTower, ShieldAlert, Crown, Music,
   Truck, Inbox, Search, Smartphone, Activity, CheckCircle2,
-  XCircle, Loader2, ChevronLeft, Sparkles,
+  XCircle, Loader2, ChevronLeft, Sparkles, Utensils, Car,
+  BookOpen, Compass, Dice5,
 } from 'lucide-react';
 
 const API = process.env.REACT_APP_BACKEND_URL || '';
@@ -38,6 +39,48 @@ type Feature = {
 
 const FEATURES: Feature[] = [
   {
+    key: 'hungryvibes',
+    title: 'Hunger Vibez',
+    blurb: 'Food / merchant lifestyle surface — experimental, not a primary door.',
+    route: '/hungryvibes',
+    scope: 'PUBLIC',
+    Icon: Utensils,
+    notes: 'Relocated from the main nav into Beta Hub (Play · Date · Watch · Earn stay primary).',
+  },
+  {
+    key: 'vibe-ridez',
+    title: 'Vibe Ridez',
+    blurb: 'Rides & driver lifestyle hub — experimental logistics surface.',
+    route: '/vibe-ridez',
+    scope: 'PUBLIC',
+    Icon: Car,
+  },
+  {
+    key: 'yellow-pages',
+    title: 'Yellow Pages',
+    blurb: 'Local listings directory — lifestyle / merchant experiment.',
+    route: '/yellow-pages',
+    scope: 'PUBLIC',
+    Icon: BookOpen,
+  },
+  {
+    key: 'explore',
+    title: 'Explore registry',
+    blurb: 'Full catalog of destinations. Prefer the four doors for daily use.',
+    route: '/explore',
+    scope: 'PUBLIC',
+    Icon: Compass,
+  },
+  {
+    key: 'secondary-boards',
+    title: 'Secondary board games',
+    blurb: 'Extra tables beyond the Play hub spotlight (coming-soon & niche boards).',
+    route: '/games',
+    scope: 'PUBLIC',
+    Icon: Dice5,
+    notes: 'Canonical Play door is /games; niche boards stay discoverable here.',
+  },
+  {
     key: 'cmdk',
     title: 'Cmd+K Launcher',
     blurb: 'Spotlight-style global search over every Explore entry. Try ⌘K / Ctrl+K from anywhere.',
@@ -48,10 +91,10 @@ const FEATURES: Feature[] = [
   {
     key: 'mobile-nav',
     title: 'Mobile Bottom Nav',
-    blurb: '6-tab phone nav (Home · 654 · Plex · Studio · Explore · Me). Auto-renders below 768px.',
+    blurb: 'Phone dock: Home · Play · Date · Watch · Earn. Beta Hub is this page.',
     scope: 'GLOBAL',
     Icon: Smartphone,
-    notes: 'Resize browser <768px or open on a phone to see the bottom tab bar.',
+    notes: 'Resize browser <768px or open on a phone to see the four-door bottom tab bar.',
   },
   {
     key: 'dsg-tv',
@@ -196,7 +239,7 @@ export default function BetaHub() {
             <ChevronLeft className="w-4 h-4" /> Dashboard
           </button>
           <h1 className="text-base sm:text-lg font-black tracking-widest text-fuchsia-300 flex items-center gap-2">
-            <Rocket className="w-4 h-4" /> BETA HUB · 2026-05-22 BUILD
+            <Rocket className="w-4 h-4" /> BETA HUB · Lifestyle &amp; experiments
           </h1>
           <button
             onClick={runAll}

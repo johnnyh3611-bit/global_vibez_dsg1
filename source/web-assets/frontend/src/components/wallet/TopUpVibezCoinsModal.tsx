@@ -136,7 +136,7 @@ export default function TopUpVibezCoinsModal({
   const helioReady = Boolean(helioProvider?.ready);
   const helioPaylinkId = helioProvider?.paylink_id || "";
   const helioNetwork = helioProvider?.network === "test" ? "test" : "main";
-  const cardLabel = "Card (Helio)";
+  const cardLabel = "Card · Beta";
 
   // Mount Helio embed when Card tab is active and we have a paylink.
   useEffect(() => {
@@ -347,7 +347,7 @@ export default function TopUpVibezCoinsModal({
             </div>
             <p className="text-sm text-white/60 mb-4">
               {contextMessage ||
-                "Buy ₵ with Solana — or card via Helio when you need fiat."}
+                "Primary: Solana deposit. Card pay (Helio) is Beta for Founding Members."}
             </p>
 
             <div className="mb-4">
@@ -359,7 +359,7 @@ export default function TopUpVibezCoinsModal({
                 options={[
                   {
                     value: "solana",
-                    label: "Solana",
+                    label: "Solana · Primary",
                     icon: Wallet,
                     testId: "topup-method-solana",
                   },

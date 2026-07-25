@@ -4,8 +4,8 @@
  * Source of truth: backend/routes/coin_topup.py (COIN_PACKS) +
  * app_config.COINS_PER_USD = 1,000.
  *
- * Soft-launch: show what users can actually buy via Stripe top-up,
- * not the retired Pricing Master Vault v1.0 ($1 = 2,500 ₵ / six packs).
+ * Soft-launch: packs match Wallet → Buy Coins (Solana primary, Helio card beta).
+ * Stripe is not used for coin top-up.
  */
 import { motion } from "framer-motion";
 import { Coins, Sparkles, Zap, Crown } from "lucide-react";
@@ -47,7 +47,7 @@ export default function PricingMasterVault() {
           </span>
         </div>
         <p className="text-neutral-500 text-xs mt-3">
-          Buy in Wallet → Buy Coins. Card checkout requires Stripe to be configured.
+          Buy in Wallet → Buy Coins. Solana deposit is primary; card pay (Helio) is Beta.
         </p>
       </div>
 
