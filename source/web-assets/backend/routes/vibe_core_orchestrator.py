@@ -54,50 +54,60 @@ class ProcessEventPayload(BaseModel):
 
 
 async def _ai_mediate(event_id: str, event_type: str, context: Dict[str, Any]) -> Dict[str, Any]:
-    """Best-effort AI mediation pass. Uses Claude Haiku when the
-    Emergent LLM key is funded; otherwise returns a deterministic
-    rule-based verdict so the orchestrator stays unblocked."""
-    api_key = os.environ.get("EMERGENT_LLM_KEY")
-    if not api_key:
+    """Best-effort mediation *hint* via the AI gateway.
+
+    Vibe-Core remains the cross-feature mediator for disputes, escrow,
+    and policy outcomes. The LLM only drafts a short verdict label —
+    it never executes payouts or conversational prompts for dating/games.
+    """
+    from services.ai_context import normalize_context  # noqa: PLC0415
+    from services import ai_gateway as gw  # noqa: PLC0415
+
+    if not gw.ai_configured():
         return {
             "verdict": "NO_LLM_KEY",
-            "summary": "AI mediation skipped — Emergent LLM key missing.",
+            "summary": "AI mediation skipped — GEMINI_API_KEY missing.",
             "confidence": 0.0,
         }
-    try:
-        from services.ai_engine import LlmChat, UserMessage  # noqa: PLC0415
-        chat = (
-            LlmChat(
-                api_key=api_key,
-                session_id=f"vibe-court-{event_id}",
-                system_message=(
-                    "You are NOVA, the senior AI judge for Global Vibez DSG. "
-                    "You read a single event payload (JSON) and return a "
-                    "short, formal verdict in 2-4 sentences. Be neutral. "
-                    "End the verdict with a single-line label of one of: "
-                    "REFUND_GUEST, REFUND_PARTIAL, FAVOR_HOST, NEEDS_HUMAN."
-                ),
-            )
-            .with_model("anthropic", "claude-3-5-haiku-20241022")
-            .with_params(max_tokens=512)
-        )
-        msg = UserMessage(text=f"Event {event_id} ({event_type}) context:\n{context}")
-        verdict_text = await chat.send_message(msg)
-        # The final line is the label.
-        lines = [ln.strip() for ln in verdict_text.strip().splitlines() if ln.strip()]
-        label = lines[-1] if lines else "NEEDS_HUMAN"
-        return {
-            "verdict": label,
-            "summary": verdict_text.strip(),
-            "confidence": 0.85,
+
+    ctx = normalize_context(
+        {
+            "user_id": str(context.get("user_id") or "system"),
+            "balance": float(context.get("balance") or 0),
+            "mode": "earn",
+            "room_id": str(context.get("room_id") or event_id),
+            "beta_flags": {"vibe_core": True, "event_type": event_type},
         }
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("AI mediation failed: %s", exc)
+    )
+    result = await gw.complete(
+        system=(
+            "You are NOVA, the senior AI judge for Global Vibez DSG. "
+            "You read a single event payload and return a short, formal "
+            "verdict in 2-4 sentences. Be neutral. End with a single-line "
+            "label of one of: REFUND_GUEST, REFUND_PARTIAL, FAVOR_HOST, NEEDS_HUMAN."
+        ),
+        user_text=f"Event {event_id} ({event_type}) context:\n{context}",
+        context=ctx,
+        session_id=f"vibe-court-{event_id}",
+        max_tokens=512,
+        timeout_s=15.0,
+        fallback="Unable to mediate automatically.\nNEEDS_HUMAN",
+        model_hint="flash",
+    )
+    verdict_text = result.get("text") or "NEEDS_HUMAN"
+    lines = [ln.strip() for ln in verdict_text.strip().splitlines() if ln.strip()]
+    label = lines[-1] if lines else "NEEDS_HUMAN"
+    if result.get("fallback"):
         return {
             "verdict": "NEEDS_HUMAN",
-            "summary": f"AI mediation error — escalating to founder: {str(exc)[:160]}",
+            "summary": verdict_text.strip()[:400],
             "confidence": 0.0,
         }
+    return {
+        "verdict": label,
+        "summary": verdict_text.strip(),
+        "confidence": 0.85,
+    }
 
 
 async def _execute_settlement(decision: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:

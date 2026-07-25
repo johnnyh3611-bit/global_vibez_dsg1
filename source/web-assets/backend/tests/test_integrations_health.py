@@ -14,6 +14,8 @@ async def test_integrations_health_omits_stripe(monkeypatch):
     monkeypatch.setenv("HELIO_SECRET_KEY", "s")
     monkeypatch.setenv("HELIO_PAYLINK_ID", "p")
     monkeypatch.setenv("HELIO_WEBHOOK_TOKEN", "w")
+    monkeypatch.setenv("HELIO_NETWORK", "test")
+    monkeypatch.delenv("HELIO_API_BASE", raising=False)
     monkeypatch.setenv("RESEND_API_KEY", "r")
     monkeypatch.setenv("GEMINI_API_KEY", "g")
     monkeypatch.setenv("OPENAI_API_KEY", "o")
@@ -24,6 +26,7 @@ async def test_integrations_health_omits_stripe(monkeypatch):
     monkeypatch.setenv("DB_NAME", "test_db")
     monkeypatch.delenv("TWILIO_ACCOUNT_SID", raising=False)
     monkeypatch.delenv("REDIS_URL", raising=False)
+    monkeypatch.delenv("SOCKETIO_REDIS_URL", raising=False)
 
     mock_client = MagicMock()
     mock_client.admin.command = AsyncMock(return_value={"ok": 1})
@@ -40,6 +43,11 @@ async def test_integrations_health_omits_stripe(monkeypatch):
     assert payload["services"]["socketio_redis"]["optional"] is True
     assert payload["runtime"]["jwt"]["configured"] is True
     assert payload["runtime"]["mongodb"]["reachable"] is True
+    assert "socketio" in payload["runtime"]
+    assert payload["services"]["helio"]["test_mode_isolated"] is True
+    assert payload["services"]["helio"]["mainnet_transition"] is False
+    assert payload["ai_gateway_path"] == "/api/ai/gateway"
+    assert payload["primary_doors"] == ["play", "date", "watch", "earn"]
     assert payload["ok"] is True
     assert payload["ready_count"] == payload["total"]
     assert "Stripe is not used" in " ".join(payload["notes"])

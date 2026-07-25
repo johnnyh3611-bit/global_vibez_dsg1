@@ -5,7 +5,8 @@ from utils.database import get_database, get_current_user
 from datetime import datetime, timezone
 import os
 from dotenv import load_dotenv
-from services.ai_engine import LlmChat, UserMessage
+from services import ai_gateway as gw
+from services.ai_context import normalize_context
 import json
 
 load_dotenv()
@@ -160,18 +161,22 @@ def _parse_ai_json_response(response_text: str) -> Optional[Dict[str, Any]]:
         return None
 
 
-async def _ask_llm_for_date_plan(prompt: str) -> str:
-    """Single-shot GPT-5.2 call — extracted so tests can monkeypatch easily."""
-    api_key = os.getenv("EMERGENT_LLM_KEY")
-    if not api_key:
-        raise HTTPException(status_code=500, detail="AI service not configured")
-
-    chat = LlmChat(
-        api_key=api_key,
-        session_id=f"date_plan_{datetime.now().timestamp()}",
-        system_message="You are an expert date planner. Always return valid JSON in your responses.",
-    ).with_model("openai", "gpt-5.2")
-    return await chat.send_message(UserMessage(text=prompt))
+async def _ask_llm_for_date_plan(
+    prompt: str,
+    *,
+    user_id: str = "anonymous",
+) -> Dict[str, Any]:
+    """Unified gateway call — never raises; returns parsed plan or fallback."""
+    ctx = normalize_context({"user_id": user_id, "mode": "date", "balance": 0})
+    return await gw.complete_json(
+        system="You are an expert date planner for Global Vibez DSG. Always return valid JSON.",
+        user_text=prompt,
+        context=ctx,
+        session_id=f"date_plan_{user_id}",
+        fallback=_FALLBACK_DATE_PLAN,
+        max_tokens=1500,
+        timeout_s=20.0,
+    )
 
 
 async def generate_date_plan(
@@ -179,16 +184,15 @@ async def generate_date_plan(
     user2_profile: dict,
     preferences: Optional[dict] = None,  # noqa: ARG001 — reserved for future use
 ) -> dict:
-    """Generate a personalized date plan via GPT-5.2.
+    """Generate a personalized date plan via the AI gateway.
 
-    Pipeline: build prompt → call LLM → parse JSON → fall back if unparseable.
-    Each step is its own helper so the orchestration here stays readable.
+    Pipeline: build prompt → gateway (timeout + fallback) → return plan.
+    Never surfaces a raw 500 for model failures.
     """
     prompt = _build_date_plan_prompt(user1_profile, user2_profile)
-    response = await _ask_llm_for_date_plan(prompt)
-    plan = _parse_ai_json_response(response)
-    if plan is None:
-        print(f"Failed to parse AI response: {response}")
+    uid = str(user1_profile.get("user_id") or "anonymous")
+    plan = await _ask_llm_for_date_plan(prompt, user_id=uid)
+    if not plan.get("restaurant"):
         return _FALLBACK_DATE_PLAN
     return plan
 
@@ -223,12 +227,9 @@ async def create_date_plan(request_data: DatePlanRequest, request: Request) -> D
     if not user1 or not user2:
         raise HTTPException(status_code=404, detail="User profiles not found")
     
-    # Generate date plan with AI
-    try:
-        ai_plan = await generate_date_plan(user1, user2, request_data.preferences)
-    except Exception:
-        raise HTTPException(status_code=500, detail="Failed to generate date plan. Please try again.")
-    
+    # Generate date plan via unified AI gateway (static fallback on failure)
+    ai_plan = await generate_date_plan(user1, user2, request_data.preferences)
+
     # Save date plan to database
     date_plan = {
         "plan_id": f"plan_{datetime.now().timestamp()}",
@@ -240,7 +241,8 @@ async def create_date_plan(request_data: DatePlanRequest, request: Request) -> D
         "game": ai_plan.get("game", {}),
         "itinerary": ai_plan.get("itinerary", ""),
         "created_at": datetime.now(timezone.utc).isoformat(),
-        "created_by": current_user.user_id
+        "created_by": current_user.user_id,
+        "fallback": bool(ai_plan.get("fallback")),
     }
     
     await db.date_plans.insert_one(date_plan)

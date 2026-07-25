@@ -3,7 +3,8 @@ GET /api/integrations/health — public (no secrets) readiness for third-party w
 
 Single source of truth for runtime readiness:
   JWT secret strength, MongoDB connectivity, Gemini/OpenAI keys,
-  Helio config, Socket.IO Redis adapter for multi-replica sync.
+  Helio test-mode isolation (HELIO_NETWORK=test → api.dev.hel.io),
+  Socket.IO Redis adapter for multi-replica sync, AI gateway status.
 
 Never returns secret values. Card checkout is Helio only.
 """
@@ -73,14 +74,16 @@ async def _mongo_status() -> Dict[str, Any]:
 @router.get("/integrations/health")
 async def integrations_health() -> Dict[str, Any]:
     from services.helio_client import helio_status
+    from services import ai_gateway as ai_gw
     from utils.socketio_manager import socketio_adapter_status
 
     jwt = _jwt_status()
     mongo = await _mongo_status()
+    adapter = socketio_adapter_status()
     socketio_redis = {
-        **socketio_adapter_status(),
+        **adapter,
         "optional": True,
-        "configured": socketio_adapter_status()["redis_url_present"],
+        "configured": adapter["redis_url_present"],
     }
 
     agora = {
@@ -94,8 +97,16 @@ async def integrations_health() -> Dict[str, Any]:
         ),
         "purpose": "SOL deposit top-up + memo credit (primary coin rail)",
     }
+    helio_base = helio_status()
+    network = str(helio_base.get("network") or "main")
+    api_base = str(helio_base.get("api_base") or "")
+    test_isolated = True
+    if network in ("test", "dev", "devnet", "sandbox"):
+        test_isolated = "api.dev.hel.io" in api_base
     helio = {
-        **helio_status(),
+        **helio_base,
+        "test_mode_isolated": test_isolated,
+        "mainnet_transition": False,  # never auto-promote; ops must set HELIO_NETWORK=main
         "purpose": "Fiat (card) → crypto checkout for coin packs (Helio only · Beta)",
     }
     resend = {
@@ -109,10 +120,11 @@ async def integrations_health() -> Dict[str, Any]:
             or (os.environ.get("GOOGLE_API_KEY") or "").strip()
             or (os.environ.get("EMERGENT_LLM_KEY") or "").strip()
         ),
-        "purpose": "AI date planner, coaches, content matching, practice (Gemini)",
+        "purpose": "AI gateway / date planner / coaches (Gemini)",
         "provider": "gemini",
         "set": "GEMINI_API_KEY",
         "get_key": "https://aistudio.google.com/apikey",
+        "gateway": ai_gw.gateway_status(),
     }
     openai_audio = {
         "configured": bool((os.environ.get("OPENAI_API_KEY") or "").strip()),
@@ -160,15 +172,26 @@ async def integrations_health() -> Dict[str, Any]:
     ready = sum(1 for s in required.values() if s.get("configured"))
     notes = [
         "In-app calling uses Agora — Twilio PSTN is optional.",
-        "Coin top-up: Solana deposit (primary) → Helio card. Stripe is not used.",
+        "Coin top-up: Solana deposit (primary) → Helio card (Beta). Stripe is not used.",
+        "AI conversational traffic: POST /api/ai/gateway/* with context packet.",
+        "Four doors UX: Play · Date · Watch · Earn; lifestyle lives in Beta Hub.",
         "Multi-replica Socket.IO requires REDIS_URL (python-socketio AsyncRedisManager).",
     ]
     if not jwt.get("configured"):
-        notes.append("Set a strong JWT_SECRET (16+ chars, non-default) on Railway.")
+        notes.append("Set a strong JWT_SECRET (24+ chars, non-default) on Railway.")
     if not mongo.get("configured"):
         notes.append("MongoDB unreachable — API will 500 until MONGO_URL is live.")
     if not helio.get("configured"):
         notes.append("Set HELIO_* on Railway to enable Helio pack checkout.")
+    elif network in ("test", "dev", "devnet", "sandbox") and not test_isolated:
+        notes.append(
+            "HELIO_NETWORK is test/dev but api_base is not api.dev.hel.io — "
+            "fix HELIO_API_BASE or clear a bad override."
+        )
+    if network in ("test", "dev", "devnet", "sandbox"):
+        notes.append(
+            "Helio remains in test mode (api.dev.hel.io) — no automatic mainnet transition."
+        )
     if not socketio_redis.get("redis_url_present"):
         notes.append(
             "REDIS_URL unset — Socket.IO is single-replica only; set before scaling out."
@@ -192,4 +215,6 @@ async def integrations_health() -> Dict[str, Any]:
         "services": services,
         "notes": notes,
         "card_provider": "helio",
+        "ai_gateway_path": "/api/ai/gateway",
+        "primary_doors": ["play", "date", "watch", "earn"],
     }
