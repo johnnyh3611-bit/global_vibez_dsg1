@@ -10,9 +10,7 @@ imports over and retire the duplicates in a follow-up cleanup.
 ENDPOINTS (mounted under /api):
   GET  /api/tiers/catalog    — public read of all tiers + perks
   GET  /api/tiers/me         — caller's current tier
-  POST /api/tiers/subscribe  — create a Stripe subscription checkout
-                               (returns a cs_test_… URL today; production
-                               price IDs slot in via env vars when ready)
+  POST /api/tiers/subscribe  — retired (HTTP 410); use Helio / Solana
 """
 from __future__ import annotations
 
@@ -300,128 +298,15 @@ async def my_tier(http_request: Request):
 
 @router.post("/tiers/subscribe")
 async def subscribe(payload: SubscribePayload, http_request: Request):
-    """Create a Stripe checkout session for the chosen tier.
+    """Retired — Stripe tier checkout removed. Use Helio / Solana wallet top-up."""
+    from services.stripe_retired import raise_stripe_retired
 
-    Today this returns the existing Stripe test-key placeholder checkout
-    URL using one-time payment mode (since real subscription price IDs
-    aren't wired yet). When the founder adds production price IDs into
-    `.env` (STRIPE_PRICE_INSIDER, etc.), this function uses subscription
-    mode automatically.
-    """
-    user = await get_current_user(http_request)
-    if not user:
-        raise HTTPException(401, "Not authenticated")
-    tier = next((t for t in TIERS if t["id"] == payload.tier_id), None)
-    if not tier:
-        raise HTTPException(404, "Unknown tier")
-    if tier["price_usd"] == 0:
-        raise HTTPException(400, "Guest is free — no checkout required.")
-
-    stripe_key = os.environ.get("STRIPE_API_KEY")
-    if not stripe_key:
-        raise HTTPException(503, "Stripe not configured on this environment.")
-
-    import stripe as _stripe  # noqa: PLC0415
-    _stripe.api_key = stripe_key
-
-    price_id_env = tier.get("stripe_price_env")
-    price_id = os.environ.get(price_id_env) if price_id_env else None
-
-    origin = payload.origin_url or os.environ.get("PUBLIC_APP_URL") or "https://social-connect-953.preview.emergentagent.com"
-    success_url = f"{origin}/tiers/success?session_id={{CHECKOUT_SESSION_ID}}"
-    cancel_url = f"{origin}/pricing"
-
-    try:
-        if price_id and tier.get("interval") == "month":
-            # Real subscription mode (when production price IDs are set).
-            session = _stripe.checkout.Session.create(
-                mode="subscription",
-                line_items=[{"price": price_id, "quantity": 1}],
-                success_url=success_url,
-                cancel_url=cancel_url,
-                client_reference_id=user.user_id,
-                metadata={"tier_id": tier["id"], "user_id": user.user_id},
-            )
-        else:
-            # Test-mode fallback: inline price_data. Monthly tiers run as
-            # subscription mode; one-time tiers (Genius Chair) run as
-            # payment mode. The `recurring` block is ONLY allowed inside
-            # subscription mode (Stripe rejects it on payment mode).
-            is_monthly = tier.get("interval") == "month"
-            mode = "subscription" if is_monthly else "payment"
-            product_data = {
-                "name": f"Global Vibez DSG — {tier['label']}",
-                "description": tier["tagline"],
-            }
-            price_data: Dict[str, Any] = {
-                "currency": "usd",
-                "product_data": product_data,
-                "unit_amount": tier["price_usd"] * 100,
-            }
-            if is_monthly:
-                price_data["recurring"] = {"interval": "month"}
-            session = _stripe.checkout.Session.create(
-                mode=mode,
-                line_items=[{"price_data": price_data, "quantity": 1}],
-                success_url=success_url,
-                cancel_url=cancel_url,
-                client_reference_id=user.user_id,
-                metadata={"tier_id": tier["id"], "user_id": user.user_id},
-            )
-    except Exception as exc:
-        raise HTTPException(500, f"Stripe error: {exc}")
-
-    # Record the intent so /tiers/success can finalize on poll.
-    db = get_database()
-    await db.tier_subscriptions.insert_one({
-        "subscription_id": session.id,
-        "user_id": user.user_id,
-        "tier_id": tier["id"],
-        "tier_label": tier["label"],
-        "price_usd": tier["price_usd"],
-        "status": "pending",
-        "stripe_session_id": session.id,
-        "created_at": datetime.now(timezone.utc).isoformat(),
-    })
-
-    return {
-        "tier_id": tier["id"],
-        "checkout_url": session.url,
-        "session_id": session.id,
-    }
+    raise_stripe_retired()
 
 
 @router.get("/tiers/subscribe/status/{session_id}")
 async def subscribe_status(session_id: str, http_request: Request):
-    """Poll endpoint — flips a pending subscription to active when
-    Stripe confirms payment. Mirrors the existing /coins/topup/status
-    pattern."""
-    user = await get_current_user(http_request)
-    if not user:
-        raise HTTPException(401, "Not authenticated")
-    stripe_key = os.environ.get("STRIPE_API_KEY")
-    if not stripe_key:
-        raise HTTPException(503, "Stripe not configured")
-    import stripe as _stripe  # noqa: PLC0415
-    _stripe.api_key = stripe_key
-    try:
-        session = _stripe.checkout.Session.retrieve(session_id)
-    except Exception as exc:
-        raise HTTPException(500, f"Stripe error: {exc}")
+    """Retired — Stripe tier status polling removed."""
+    from services.stripe_retired import raise_stripe_retired
 
-    db = get_database()
-    if session.payment_status == "paid":
-        await db.tier_subscriptions.update_one(
-            {"stripe_session_id": session_id},
-            {"$set": {
-                "status": "active",
-                "activated_at": datetime.now(timezone.utc).isoformat(),
-                "stripe_customer_id": session.customer,
-                "stripe_subscription_id": session.subscription,
-            }},
-        )
-    return {
-        "session_id": session_id,
-        "payment_status": session.payment_status,
-        "tier_id": session.metadata.get("tier_id") if session.metadata else None,
-    }
+    raise_stripe_retired()

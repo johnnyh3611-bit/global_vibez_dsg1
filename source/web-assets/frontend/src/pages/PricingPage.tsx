@@ -31,52 +31,21 @@ export default function PricingPage() {
     }
   };
 
-  const handleSubscribe = async (tier, period) => {
+  const handleSubscribe = async (_tier, _period) => {
     setLoading(true);
     try {
-      const response = await fetch(`${API}/api/subscriptions/subscribe`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        
-        body: JSON.stringify({
-          tier: tier,
-          billing_period: period
-        })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        window.location.href = data.checkout_url;
-      } else {
-        alert('Failed to start subscription. Please try again.');
-      }
-    } catch (err) {
-      alert('Error: ' + err.message);
+      const { handleStripeRetired } = await import("@/utils/stripeRetired");
+      handleStripeRetired();
     } finally {
       setLoading(false);
     }
   };
 
-  const handleBuyCredits = async (packageType) => {
+  const handleBuyCredits = async (_packageType) => {
     setLoading(true);
     try {
-      const response = await fetch(`${API}/api/subscriptions/purchase-credits`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        
-        body: JSON.stringify({
-          package: packageType
-        })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        window.location.href = data.checkout_url;
-      } else {
-        alert('Failed to purchase credits. Please try again.');
-      }
-    } catch (err) {
-      alert('Error: ' + err.message);
+      const { handleStripeRetired } = await import("@/utils/stripeRetired");
+      handleStripeRetired();
     } finally {
       setLoading(false);
     }

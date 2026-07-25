@@ -91,6 +91,9 @@ async def get_balance(request: Request) -> Dict[str, Any]:
 @router.post("/purchase")
 async def purchase_credits(purchase_data: PurchaseCredits, request: Request) -> Dict[str, Any]:
     """Initiate credit purchase via Stripe (Pricing Master Vault v1.0 — tier-gated)."""
+    from services.stripe_retired import raise_stripe_retired
+    raise_stripe_retired()
+
     current_user = await get_current_user(request)
     if not current_user:
         raise HTTPException(status_code=401, detail="Not authenticated")
@@ -159,6 +162,9 @@ async def purchase_credits(purchase_data: PurchaseCredits, request: Request) -> 
 @router.post("/purchase/complete")
 async def complete_credit_purchase(session_id: str, request: Request) -> Dict[str, Any]:
     """Complete credit purchase after Stripe payment"""
+    from services.stripe_retired import raise_stripe_retired
+    raise_stripe_retired()
+
     current_user = await get_current_user(request)
     if not current_user:
         raise HTTPException(status_code=401, detail="Not authenticated")

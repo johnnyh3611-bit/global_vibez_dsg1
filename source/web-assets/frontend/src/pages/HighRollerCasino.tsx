@@ -156,22 +156,9 @@ export default function HighRollerCasino() {
       // referrer when this checkout converts.
       const inboundRef = new URLSearchParams(window.location.search).get('ref') || undefined;
 
-      const res = await fetch(`${API_URL}/api/high-roller/checkout`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: uid,
-          tier,
-          return_url: `${window.location.origin}/casino/high-roller`,
-          referral_code: inboundRef,
-        }),
-      });
-      const json = await res.json();
-      if (json.checkout_url) {
-        window.location.href = json.checkout_url;
-      } else {
-        setError('Checkout link not returned');
-      }
+      const { stripeRetiredMessage, WALLET_TOPUP_PATH } = await import("@/utils/stripeRetired");
+      setError(stripeRetiredMessage());
+      window.location.href = WALLET_TOPUP_PATH;
     } catch (e: any) {
       setError(e?.message || 'Upgrade failed');
     } finally {

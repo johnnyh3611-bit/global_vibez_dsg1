@@ -32,27 +32,12 @@ const EliteSubscriptionPage = () => {
     }
   };
 
-  const handleSubscribe = async (tierId) => {
+  const handleSubscribe = async (_tierId) => {
     setPurchasing(true);
-
     try {
-      const response = await fetch(`${API_URL}/api/elite/subscribe`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        
-        body: JSON.stringify({ tier_id: tierId })
-      });
-
-      const data = await response.json();
-
-      if (data.success && data.checkout_url) {
-        window.location.href = data.checkout_url;
-      } else {
-        throw new Error('Failed to create checkout');
-      }
-    } catch (error) {
-      // console.error('Error subscribing:', error);
-      alert('Failed to subscribe. Please try again.');
+      const { handleStripeRetired } = await import("@/utils/stripeRetired");
+      handleStripeRetired();
+    } finally {
       setPurchasing(false);
     }
   };

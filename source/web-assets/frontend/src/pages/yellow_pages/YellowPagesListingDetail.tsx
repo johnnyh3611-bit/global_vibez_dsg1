@@ -165,9 +165,11 @@ export default function YellowPagesListingDetail() {
       return;
     }
 
-    // Card path returns a Stripe URL → redirect to checkout.
-    if (d.checkout_url) {
-      window.location.href = d.checkout_url;
+    // Card/Stripe path retired — open Helio/Solana top-up instead.
+    if (paymentMethod === 'card' || d.checkout_url || (typeof d.detail === 'object' && d.detail?.error === 'stripe_retired')) {
+      const { stripeRetiredMessage } = await import("@/utils/stripeRetired");
+      setPaymentBanner(stripeRetiredMessage(d));
+      setTopUpOpen(true);
       return;
     }
 

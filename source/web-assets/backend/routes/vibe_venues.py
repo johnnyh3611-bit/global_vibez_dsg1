@@ -556,6 +556,9 @@ async def artisan_checkout(artisan_id: str) -> Dict[str, Any]:
     today, so we charge $20 once per month and rely on the artisan
     re-checking-out (or - future task - wire native Stripe subscriptions).
     """
+    from services.stripe_retired import raise_stripe_retired
+    raise_stripe_retired()
+
     db = get_database()
     if _stripe_checkout is None:
         raise HTTPException(503, "Stripe not configured")
@@ -595,6 +598,9 @@ async def payment_status(session_id: str) -> Dict[str, Any]:
     Poll Stripe for status. On `complete`, mark subscription active
     and flip the artisan / restaurant membership row to active.
     """
+    from services.stripe_retired import raise_stripe_retired
+    raise_stripe_retired()
+
     db = get_database()
     if _stripe_checkout is None:
         raise HTTPException(503, "Stripe not configured")
@@ -644,6 +650,9 @@ async def restaurant_partnership_checkout(restaurant_id: str) -> Dict[str, Any]:
     $30/month Date Spot Finder + Hungry Vibez partnership: unlocks
     the Neon Purple Vibe-Ring + priority placement + commercials.
     """
+    from services.stripe_retired import raise_stripe_retired
+    raise_stripe_retired()
+
     db = get_database()
     if _stripe_checkout is None:
         raise HTTPException(503, "Stripe not configured")
@@ -690,6 +699,9 @@ async def vibe_venues_stripe_webhook(request: Request) -> Dict[str, Any]:
       Endpoint URL: {backend}/api/vibe-venues/stripe/webhook
       Events:       checkout.session.completed, payment_intent.succeeded
     """
+    from services.stripe_retired import raise_stripe_retired
+    raise_stripe_retired()
+
     db = get_database()
     if _stripe_checkout is None:
         raise HTTPException(503, "Stripe not configured")

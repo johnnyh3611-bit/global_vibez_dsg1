@@ -179,17 +179,9 @@ export default function HungryVibesMerchant() {
   const startCheckout = useCallback(async () => {
     setBusy(true);
     try {
-      const res = await authFetch(`${API}/api/hungryvibes/merchant/sponsorship/checkout`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.detail ?? "Stripe not available");
-        return;
-      }
-      window.location.assign(data.checkout_url);
+      const { stripeRetiredMessage, WALLET_TOPUP_PATH } = await import("@/utils/stripeRetired");
+      toast.error(stripeRetiredMessage());
+      window.location.assign(WALLET_TOPUP_PATH);
     } finally {
       setBusy(false);
     }

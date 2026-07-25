@@ -597,46 +597,10 @@ async def start_season_pass_checkout(
     request: StartSeasonPassRequest,
     current_user: User = Depends(get_current_user),
 ):
-    """Create a Stripe checkout session for the $25/mo JFTN Season Pass."""
-    try:
-        from services.payment_hub import (  # noqa: PLC0415
-            StripeCheckout,
-            CheckoutSessionRequest,
-        )
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Stripe integration unavailable: {exc}")
+    """Retired — Stripe season-pass checkout removed. Use Helio / Solana."""
+    from services.stripe_retired import raise_stripe_retired
 
-    stripe_key = os.environ.get("STRIPE_API_KEY")
-    if not stripe_key:
-        raise HTTPException(status_code=503, detail="Stripe key not configured")
-
-    db = get_database()
-    sc = StripeCheckout(api_key=stripe_key)
-    origin = request.origin_url.rstrip("/")
-    live = await _live_season_pass_pricing(db)
-    session_req = CheckoutSessionRequest(
-        amount=float(live["price_usd"]),
-        currency="usd",
-        success_url=f"{origin}/just-for-the-night?pass=success&session_id={{CHECKOUT_SESSION_ID}}",
-        cancel_url=f"{origin}/just-for-the-night?pass=cancelled",
-        metadata={
-            "feature": "jftn_season_pass",
-            "user_id": current_user.user_id,
-        },
-    )
-    session = await sc.create_checkout_session(session_req)
-    await db.jftn_season_pass_sessions.insert_one({
-        "session_id": session.session_id,
-        "user_id": current_user.user_id,
-        "status": "pending",
-        "created_at": datetime.now(timezone.utc).isoformat(),
-    })
-    return {
-        "checkout_url": session.url,
-        "session_id": session.session_id,
-        "price_usd": live["price_usd"],
-        "duration_days": live["duration_days"],
-    }
+    raise_stripe_retired()
 
 
 @router.post("/season-pass/verify")
@@ -644,37 +608,10 @@ async def verify_season_pass(
     session_id: str,
     current_user: User = Depends(get_current_user),
 ):
-    """Verify a Stripe checkout session paid → activate the pass."""
-    try:
-        from services.payment_hub import StripeCheckout  # noqa: PLC0415
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Stripe integration unavailable: {exc}")
-    stripe_key = os.environ.get("STRIPE_API_KEY")
-    if not stripe_key:
-        raise HTTPException(status_code=503, detail="Stripe key not configured")
-    db = get_database()
-    sc = StripeCheckout(api_key=stripe_key)
-    status = await sc.get_checkout_status(session_id)
-    if not status or status.payment_status != "paid":
-        raise HTTPException(status_code=402, detail="Payment not completed")
-    live = await _live_season_pass_pricing(db)
-    expires = (datetime.now(timezone.utc) + timedelta(days=live["duration_days"])).isoformat()
-    existing = await db.jftn_season_passes.find_one(
-        {"session_id": session_id}, {"_id": 0},
-    )
-    if not existing:
-        await db.jftn_season_passes.insert_one({
-            "session_id": session_id,
-            "user_id": current_user.user_id,
-            "active": True,
-            "issued_at_iso": datetime.now(timezone.utc).isoformat(),
-            "expires_at_iso": expires,
-            "price_usd": live["price_usd"],
-        })
-    await db.jftn_season_pass_sessions.update_one(
-        {"session_id": session_id}, {"$set": {"status": "paid"}},
-    )
-    return {"status": "active", "expires_at_iso": expires}
+    """Retired — Stripe season-pass verify removed."""
+    from services.stripe_retired import raise_stripe_retired
+
+    raise_stripe_retired()
 
 
 @router.get("/season-pass/me")

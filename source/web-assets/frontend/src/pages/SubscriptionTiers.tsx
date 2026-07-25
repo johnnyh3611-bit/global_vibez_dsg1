@@ -53,35 +53,11 @@ export default function SubscriptionTiers() {
     }
   };
 
-  const handleSubscribe = async (tierKey, billingCycle) => {
+  const handleSubscribe = async (_tierKey, _billingCycle) => {
     setSubscribing(true);
-    
     try {
-      const userRes = await fetch(`${API_URL}/api/auth/me`, { });
-      const userData = await userRes.json();
-      
-      const response = await fetch(`${API_URL}/api/subscriptions/subscribe`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: userData.user_id,
-          tier: tierKey,
-          billing_cycle: billingCycle,
-          payment_method_id: null // TODO: Integrate with Stripe
-        })
-      });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        alert(`✅ ${data.message}`);
-        fetchSubscriptionData();
-      } else {
-        throw new Error(data.detail || 'Failed to subscribe');
-      }
-    } catch (error) {
-      // console.error('Error subscribing:', error);
-      alert('Failed to subscribe: ' + error.message);
+      const { handleStripeRetired } = await import("@/utils/stripeRetired");
+      handleStripeRetired();
     } finally {
       setSubscribing(false);
     }

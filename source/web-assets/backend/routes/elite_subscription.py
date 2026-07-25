@@ -251,6 +251,9 @@ async def get_elite_tiers() -> Dict[str, Any]:
 @router.post("/subscribe")
 async def subscribe_to_elite(subscribe_data: SubscribeTier, request: Request) -> Dict[str, Any]:
     """Subscribe to Elite tier (creates Stripe checkout)"""
+    from services.stripe_retired import raise_stripe_retired
+    raise_stripe_retired()
+
     current_user = await get_current_user(request)
     if not current_user:
         raise HTTPException(status_code=401, detail="Not authenticated")
@@ -302,6 +305,9 @@ async def subscribe_to_elite(subscribe_data: SubscribeTier, request: Request) ->
 @router.post("/verify-subscription")
 async def verify_elite_subscription(session_id: str, request: Request) -> Dict[str, Any]:
     """Verify Stripe payment and activate Elite subscription"""
+    from services.stripe_retired import raise_stripe_retired
+    raise_stripe_retired()
+
     current_user = await get_current_user(request)
     if not current_user:
         raise HTTPException(status_code=401, detail="Not authenticated")

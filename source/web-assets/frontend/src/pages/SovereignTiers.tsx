@@ -5,9 +5,8 @@
  * popular_anchor → frontend amplifies it with a "MOST POPULAR" badge
  * + scale-105. Annual toggle previews the 2-months-free figure.
  *
- * Backed by /api/tiers/catalog. POST /api/tiers/subscribe returns a
- * cs_test_… Stripe checkout URL (subscription mode for monthly tiers,
- * payment mode for the Genius Chair one-time).
+ * Backed by /api/tiers/catalog. POST /api/tiers/subscribe is retired (HTTP 410)
+ * — use Helio (card) or Solana deposit from the wallet.
  */
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -84,18 +83,8 @@ export default function SovereignTiers() {
     if (tier.id === "guest") return;
     setBusy(tier.id);
     try {
-      const r = await authFetch(`${API}/api/tiers/subscribe`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tier_id: tier.id, origin_url: window.location.origin }),
-      });
-      const d = await r.json();
-      if (!r.ok) throw new Error(d?.detail || "Couldn't start checkout");
-      if (d?.checkout_url) {
-        window.location.href = d.checkout_url;
-      }
-    } catch (e: any) {
-      alert(e?.message || "Network error");
+      const { handleStripeRetired } = await import("@/utils/stripeRetired");
+      handleStripeRetired();
     } finally {
       setBusy(null);
     }

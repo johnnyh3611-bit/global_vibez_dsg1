@@ -97,36 +97,9 @@ export default function MerchantJoin() {
     }
     setBusy(true);
     try {
-      const res = await fetch(`${API}/api/merchant/onboard/checkout`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          merchant_id: merchantId.trim(),
-          business_name: businessName.trim(),
-          service,
-          activation_fee_usd: tier,
-          referred_by: referredBy || undefined,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.checkout_url) {
-        if (res.status === 401) {
-          toast.error("Please sign in to claim a merchant chair.");
-          navigate("/login?next=/merchant/join");
-          return;
-        }
-        throw new Error(data.detail || "Checkout failed");
-      }
-      // Remember the id so the dashboard can pick up after the redirect.
-      try {
-        localStorage.setItem("dsg_merchant_id", merchantId.trim());
-      } catch (_e) {
-        /* ignore */
-      }
-      window.location.href = data.checkout_url;
-    } catch (e: any) {
-      toast.error(e?.message || "Could not start checkout");
+      const { stripeRetiredMessage, WALLET_TOPUP_PATH } = await import("@/utils/stripeRetired");
+      toast.error(stripeRetiredMessage());
+      navigate(WALLET_TOPUP_PATH);
     } finally {
       setBusy(false);
     }

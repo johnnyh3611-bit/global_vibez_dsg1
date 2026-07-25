@@ -185,17 +185,9 @@ export default function MerchantDashboard() {
     if (!merchant) return;
     setBusy("chairs");
     try {
-      const r = await fetch(`${API}/api/merchant/acquire-chair/checkout`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ merchant_id: merchant.merchant_id, chairs: chairsToBuy }),
-      });
-      const data = await r.json();
-      if (!r.ok || !data.checkout_url) throw new Error(data.detail || "Checkout failed");
-      window.location.href = data.checkout_url;
-    } catch (e: any) {
-      toast.error(e?.message || "Could not start checkout");
+      const { stripeRetiredMessage, WALLET_TOPUP_PATH } = await import("@/utils/stripeRetired");
+      toast.error(stripeRetiredMessage());
+      window.location.href = WALLET_TOPUP_PATH;
     } finally {
       setBusy(null);
     }
@@ -203,20 +195,11 @@ export default function MerchantDashboard() {
 
   async function buyAddon(kind: "dsg-tv" | "push-blast") {
     if (!merchant) return;
-    const qty = kind === "dsg-tv" ? flightsToBuy : blastsToBuy;
     setBusy(kind);
     try {
-      const r = await fetch(`${API}/api/merchant/addon/${kind}/checkout`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ merchant_id: merchant.merchant_id, quantity: qty }),
-      });
-      const data = await r.json();
-      if (!r.ok || !data.checkout_url) throw new Error(data.detail || "Checkout failed");
-      window.location.href = data.checkout_url;
-    } catch (e: any) {
-      toast.error(e?.message || "Could not start checkout");
+      const { stripeRetiredMessage, WALLET_TOPUP_PATH } = await import("@/utils/stripeRetired");
+      toast.error(stripeRetiredMessage());
+      window.location.href = WALLET_TOPUP_PATH;
     } finally {
       setBusy(null);
     }

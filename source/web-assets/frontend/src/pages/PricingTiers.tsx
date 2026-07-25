@@ -62,18 +62,9 @@ export default function PricingTiers() {
     setBusy(tier.id);
     setError(null);
     try {
-      const r = await authFetch(`${API}/api/tiers/subscribe`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tier_id: tier.id, origin_url: window.location.origin }),
-      });
-      const d = await r.json();
-      if (!r.ok) throw new Error(d?.detail || "Couldn't start checkout");
-      if (d?.checkout_url) {
-        window.location.href = d.checkout_url;
-      }
-    } catch (e: any) {
-      setError(e?.message || "Network error");
+      const { handleStripeRetired, STRIPE_RETIRED_MESSAGE } = await import("@/utils/stripeRetired");
+      handleStripeRetired(undefined, { redirectToWallet: true });
+      setError(STRIPE_RETIRED_MESSAGE);
     } finally {
       setBusy(null);
     }

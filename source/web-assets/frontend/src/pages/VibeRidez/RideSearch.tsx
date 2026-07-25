@@ -112,21 +112,10 @@ export default function RideSearch() {
         return;
       }
 
-      // ─── Pay with Card (Stripe) — original flow ──────────────
-      const response = await fetch(`${API_URL}/api/vibe-ridez/payment/create-checkout?ride_id=${ride.ride_id}&seats_requested=1`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      const data = await response.json();
-
-      if (data.success && data.checkout_url) {
-        // Redirect to Stripe checkout
-        window.location.href = data.checkout_url;
-      } else {
-        alert(data.detail || 'Failed to create payment session');
-        setBookingInProgress(false);
-      }
+      // Card/Stripe ride checkout retired — use wallet coins or Helio/Solana.
+      const { handleStripeRetired } = await import("@/utils/stripeRetired");
+      handleStripeRetired();
+      setBookingInProgress(false);
     } catch (error) {
       // console.error('Payment error:', error);
       alert('Failed to initiate payment');

@@ -77,47 +77,12 @@ export default function FoundersPass() {
 
     setPurchasingTier(tier.id);
     try {
-      // Try real Stripe checkout first.
-      const r = await authFetch(`${API}/api/founders-pass/checkout`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tier_id: tier.id }),
-      });
-
-      if (r.ok) {
-        const body = await r.json();
-        if (body.checkout_url) {
-          window.location.href = body.checkout_url;
-          return;
-        }
-      }
-
-      // Stripe not available in preview → fallback to test-activate.
-      const errBody = await r.json().catch(() => ({}));
-      if (r.status === 503 && errBody.detail?.includes?.("Stripe not configured")) {
-        const ok = window.confirm(
-          `Stripe isn't wired up in this preview environment.\n\nActivate ${tier.name} in TEST MODE for ${fmtUsd(tier.price_usd)} (no real charge)?`
-        );
-        if (!ok) return;
-        const ref = `preview_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-        const tr = await authFetch(`${API}/api/founders-pass/test-activate`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tier_id: tier.id, payment_ref: ref }),
-        });
-        if (!tr.ok) {
-          const er = await tr.json().catch(() => ({}));
-          toast.error(er.detail || "Could not activate House Tier.");
-          return;
-        }
-        toast.success(`${tier.icon} ${tier.name} activated! ${tier.multiplier}× boost is live.`);
-        // Refresh state
-        const fresh = await authFetch(`${API}/api/founders-pass/me`);
-        if (fresh.ok) setMe(await fresh.json());
-        return;
-      }
-
-      toast.error(errBody.detail || "Could not start checkout.");
+      // Stripe founders-pass checkout retired — Helio/Solana wallet top-up.
+      const { stripeRetiredMessage, WALLET_TOPUP_PATH } = await import(
+        "@/utils/stripeRetired"
+      );
+      toast.error(stripeRetiredMessage());
+      navigate(WALLET_TOPUP_PATH);
     } catch (e: any) {
       toast.error(e.message || "Purchase failed.");
     } finally {

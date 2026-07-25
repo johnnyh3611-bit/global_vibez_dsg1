@@ -105,60 +105,19 @@ export default function VibeWallet() {
     }
   };
 
-  const pollPaymentStatus = async (sessionId, attempts = 0) => {
-    const maxAttempts = 5;
-    if (attempts >= maxAttempts) {
-      setPaymentStatus({ type: 'error', message: 'Payment check timed out. Please refresh.' });
-      return;
-    }
-
-    try {
-      const res = await fetch(`${API_URL}/api/wallet/topup/status/${sessionId}`);
-      const data = await res.json();
-
-      if (data.payment_status === 'paid') {
-        setPaymentStatus({ 
-          type: 'success', 
-          message: `Payment successful! $${data.credits_added} added to your wallet.` 
-        });
-        fetchBalance();
-        fetchTransactions();
-        return;
-      } else if (data.status === 'expired') {
-        setPaymentStatus({ type: 'error', message: 'Payment session expired.' });
-        return;
-      }
-
-      // Continue polling
-      setTimeout(() => pollPaymentStatus(sessionId, attempts + 1), 2000);
-    } catch (err) {
-      // console.error('Error checking payment:', err);
-      setPaymentStatus({ type: 'error', message: 'Error checking payment status.' });
-    }
+  const pollPaymentStatus = async (_sessionId, _attempts = 0) => {
+    // Stripe top-up status polling retired.
+    setPaymentStatus({
+      type: 'error',
+      message: 'Stripe checkout is retired. Top up with Helio or Solana from /wallet.',
+    });
   };
 
-  const handleTopUp = async (packageId) => {
+  const handleTopUp = async (_packageId) => {
     setLoading(true);
     try {
-      const originUrl = window.location.origin;
-      const res = await fetch(`${API_URL}/api/wallet/topup/create-session`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          package_id: packageId,
-          origin_url: originUrl
-        })
-      });
-
-      const data = await res.json();
-      if (data.success && data.checkout_url) {
-        window.location.href = data.checkout_url;
-      } else {
-        alert('Error creating checkout session');
-      }
-    } catch (err) {
-      // console.error('Error creating checkout:', err);
-      alert('Error initiating payment');
+      const { handleStripeRetired } = await import("@/utils/stripeRetired");
+      handleStripeRetired();
     } finally {
       setLoading(false);
     }
