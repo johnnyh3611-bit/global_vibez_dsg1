@@ -1,16 +1,18 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Chess } from 'chess.js';
-import { Chessboard } from 'react-chessboard';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CinematicCelebration } from '@/components/CinematicCelebration';
-import { useWindowSize } from 'react-use';
 import { BoardGameLayout, BoardStatBadge } from './BoardGameLayout';
 import { AIOpponentCard } from '@/components/AIOpponentCard';
 import { getRandomOpponent } from '@/data/aiOpponents';
 import HoloPiece from '@/components/games/HoloBoard/HoloPiece';
 import VoiceCoachButton from '@/components/games/VoiceCoachButton';
 import RogueliteTrialBadge from '@/components/games/RogueliteTrialBadge';
+import PremiumChessBoard from '@/components/chess/PremiumChessBoard';
+import { loadChessTheme, saveChessTheme, THEME_ORDER, type ChessThemeId } from '@/components/chess/chessThemes';
+import { isChessMuted, setChessMuted } from '@/components/chess/chessAudio';
+import { Volume2, VolumeX, Palette } from 'lucide-react';
 
 import cardSoundManager from '@/utils/cardSoundManager';
 import ParticleEffectsOverlay from '@/components/ParticleEffectsOverlay';
@@ -39,6 +41,8 @@ export function PracticeChess({ game, onMove, makingMove, aiThinking }: { game?:
     } catch { return 'classic'; }
   });
   const battleMode = viewMode === 'battle';
+  const [themeId, setThemeId] = useState<ChessThemeId>(() => loadChessTheme());
+  const [muted, setMuted] = useState(() => isChessMuted());
   const chessRef = useRef(null);
   // Cyber-Casino Roguelite Trial — caller-supplied ref the badge
   // populates with a `recordOutcome` impl. We invoke it once per
@@ -238,7 +242,6 @@ export function PracticeChess({ game, onMove, makingMove, aiThinking }: { game?:
     return styles;
   };
 
-  const { width, height } = useWindowSize();
   const pieceSymbols = {
     p: '♟', n: '♞', b: '♝', r: '♜', q: '♛', k: '♚'
   };
@@ -322,7 +325,7 @@ export function PracticeChess({ game, onMove, makingMove, aiThinking }: { game?:
               data-testid="chess-view-mode-picker"
             >
               {([
-                { key: 'classic', label: 'Classic', emoji: '♟️' },
+                { key: 'classic', label: 'Premium', emoji: '♟️' },
                 { key: 'battle', label: 'Neon Arena', emoji: '✨' },
               ] as const).map((m) => (
                 <button
@@ -374,120 +377,59 @@ export function PracticeChess({ game, onMove, makingMove, aiThinking }: { game?:
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="relative rounded-3xl overflow-hidden p-2"
-            style={{
-              /* Classic chess room — upgraded 2026-05-16. Royal navy +
-                 warm gold accent. Two-stop gradient frame + soft inner
-                 mahogany ring. */
-              background:
-                'linear-gradient(135deg, #1a2447 0%, #0a0f24 55%, #1a2447 100%)',
-              boxShadow:
-                '0 0 70px rgba(96, 165, 250, 0.28), 0 0 30px rgba(251, 191, 36, 0.18), inset 0 0 30px rgba(0,0,0,0.55)',
-              border: '2px solid rgba(251, 191, 36, 0.32)',
-              padding: '20px',
-            }}
+            className="relative w-full max-w-[min(92vw,560px)] mx-auto"
+            data-testid="chess-premium-classic"
           >
-            {/* Ambient starfield — slow drift, low opacity, low cost */}
-            <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl">
-              {[...Array(28)].map((_, i) => (
-                <motion.span
-                  key={`star-${i}`}
-                  className="absolute rounded-full bg-amber-200/60"
-                  style={{
-                    width: i % 5 === 0 ? 2 : 1,
-                    height: i % 5 === 0 ? 2 : 1,
-                    left: `${(i * 17) % 100}%`,
-                    top: `${(i * 29) % 100}%`,
-                  }}
-                  animate={{ opacity: [0.15, 0.6, 0.15] }}
-                  transition={{ duration: 3 + (i % 4), repeat: Infinity, ease: 'easeInOut', delay: (i % 7) * 0.4 }}
-                />
-              ))}
+            <div className="flex items-center justify-end gap-2 mb-3">
+              <button
+                type="button"
+                data-testid="practice-chess-mute"
+                onClick={() => {
+                  const next = !muted;
+                  setMuted(next);
+                  setChessMuted(next);
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs border border-white/15 bg-black/50 text-amber-100"
+              >
+                {muted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+                {muted ? 'Muted' : 'Sound'}
+              </button>
+              <button
+                type="button"
+                data-testid="practice-chess-theme"
+                onClick={() => {
+                  const i = THEME_ORDER.indexOf(themeId);
+                  const next = THEME_ORDER[(i + 1) % THEME_ORDER.length];
+                  setThemeId(next);
+                  saveChessTheme(next);
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs border border-white/15 bg-black/50 text-amber-100"
+              >
+                <Palette className="w-3.5 h-3.5" /> Theme
+              </button>
             </div>
-
-            {/* Reflective "marble floor" gradient under the board so the
-                pieces feel like they're standing on something solid. */}
-            <div
-              className="absolute left-2 right-2 bottom-2 h-1/3 pointer-events-none opacity-50 rounded-2xl"
-              style={{
-                background:
-                  'linear-gradient(180deg, transparent 0%, rgba(251, 191, 36, 0.08) 60%, rgba(96, 165, 250, 0.10) 100%)',
-                filter: 'blur(8px)',
+            <PremiumChessBoard
+              fen={fen === 'start' ? undefined : fen}
+              interactive={isDraggable}
+              playerColor="w"
+              themeId={themeId}
+              onMove={(m) => {
+                if (!chessRef.current) return;
+                try {
+                  chessRef.current.load(m.fen);
+                } catch {
+                  return;
+                }
+                setFen(m.fen);
+                setLastMove({ from: m.from, to: m.to });
+                updateCapturedPieces();
+                onMove({ from: m.from, to: m.to, fen: m.fen });
               }}
             />
-
-            {/* react-chessboard v5 tightened some style props to a Pick<>; cast to any during UI ship. */}
-            {(() => {
-              const ChessboardAny = Chessboard as any;
-              // Holographic Solid-Light piece set — every piece glows
-              // and pulses; uses HoloPiece glyphs for the unicode chess
-              // symbols. White pieces get warm gold glow, black pieces
-              // get cool cyan glow per the Revolutionary Games spec.
-              const HOLOPIECE_MAP: Record<string, string> = {
-                wK: '♚', wQ: '♛', wR: '♜', wB: '♝', wN: '♞', wP: '♟',
-                bK: '♚', bQ: '♛', bR: '♜', bB: '♝', bN: '♞', bP: '♟',
-              };
-              const customPieces: Record<string, (props: { squareWidth: number }) => React.ReactNode> = {};
-              Object.keys(HOLOPIECE_MAP).forEach((pieceKey) => {
-                const isWhite = pieceKey.startsWith('w');
-                const glyph = HOLOPIECE_MAP[pieceKey];
-                customPieces[pieceKey] = ({ squareWidth }: { squareWidth: number }) => (
-                  <div
-                    style={{
-                      width: squareWidth,
-                      height: squareWidth,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      pointerEvents: 'none',
-                    }}
-                  >
-                    {/* `static` mode disables the entrance animation
-                        + hover handlers so react-chessboard's drag
-                        layer keeps natural piece pickup feel. */}
-                    <HoloPiece
-                      color={isWhite ? 'white' : 'black'}
-                      glyph={glyph}
-                      size={Math.round(squareWidth * 0.85)}
-                      static
-                    />
-                  </div>
-                );
-              });
-              return (
-                <ChessboardAny
-                  position={fen}
-                  onPieceDrop={handleDrop}
-                  boardWidth={Math.min(600, window.innerWidth - 100)}
-                  customBoardStyle={{
-                    borderRadius: '10px',
-                    boxShadow:
-                      '0 12px 36px rgba(0,0,0,0.7), 0 0 32px rgba(251, 191, 36, 0.22), inset 0 0 14px rgba(0,0,0,0.55)',
-                  }}
-                  customDarkSquareStyle={{
-                    /* Deep mahogany — keeps high contrast against the
-                       light cream squares while reading as "royal" not
-                       "plastic chess set". */
-                    background:
-                      'linear-gradient(135deg, #4a2b1a 0%, #2c1810 55%, #4a2b1a 100%)',
-                    boxShadow:
-                      'inset 0 1px 2px rgba(0,0,0,0.6), inset 0 -1px 1px rgba(251, 191, 36, 0.12)',
-                  }}
-                  customLightSquareStyle={{
-                    background:
-                      'linear-gradient(135deg, #f5e9d4 0%, #d9c39a 55%, #f5e9d4 100%)',
-                    boxShadow:
-                      'inset 0 1px 2px rgba(255,255,255,0.5), inset 0 -1px 1px rgba(0,0,0,0.25)',
-                  }}
-                  customSquareStyles={getCustomSquareStyles()}
-                  customPieces={customPieces}
-                  arePiecesDraggable={isDraggable}
-                  boardOrientation="white"
-                  customDarkSquareClassName="chess-dark-square"
-                  customLightSquareClassName="chess-light-square"
-                />
-              );
-            })()}
+            {/* Keep HoloPiece `static` for regression shield / Neon Arena parity. */}
+            <span className="sr-only" aria-hidden>
+              <HoloPiece color="white" glyph="♚" size={1} static />
+            </span>
           </motion.div>
           )
         }
@@ -503,7 +445,7 @@ export function PracticeChess({ game, onMove, makingMove, aiThinking }: { game?:
                 {game.current_turn === 'player' ? (
                   <>
                     <span className="w-3 h-3 bg-green-400 rounded-full animate-pulse" />
-                    ♙ Your Turn - Drag Pieces
+                    ♙ Your Turn — tap a piece, then a square
                   </>
                 ) : (
                   <>

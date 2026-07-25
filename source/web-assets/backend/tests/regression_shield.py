@@ -3188,14 +3188,30 @@ def test_holopiece_static_mode_exists():
 
 
 def test_chess_rooms_use_holopiece_static_mode():
-    """Both chess rooms must pass `static` to HoloPiece — without it
-    every move re-pops the pieces and drag-drop breaks."""
+    """Neon Arena / multiplayer still use HoloPiece `static`; classic
+    practice path uses PremiumChessBoard (glide + material themes)."""
     practice = open("source/web-assets/frontend/src/components/practice_games/PracticeChess.tsx").read()
     multi = open("source/web-assets/frontend/src/pages/games/HttpMultiplayerChess.tsx").read()
+    board = open("source/web-assets/frontend/src/components/chess/PremiumChessBoard.tsx").read()
+    assert "PremiumChessBoard" in practice, \
+        "PracticeChess.tsx must mount PremiumChessBoard for classic mode"
     assert "HoloPiece" in practice and "static" in practice, \
-        "PracticeChess.tsx must use HoloPiece with `static` mode"
+        "PracticeChess.tsx must keep HoloPiece `static` for Neon Arena parity"
     assert "HoloPiece" in multi and "static" in multi, \
         "HttpMultiplayerChess.tsx must use HoloPiece with `static` mode"
+    assert "playPieceDrop" in board and "legalHalo" in board, \
+        "PremiumChessBoard must include audio drop + legal move halos"
+
+
+def test_premium_chess_themes_and_room_layout():
+    """Material themes + GameRoomLayout casual room must ship together."""
+    themes = open("source/web-assets/frontend/src/components/chess/chessThemes.ts").read()
+    room = open("source/web-assets/frontend/src/components/chess/PremiumChessRoom.tsx").read()
+    casual = open("source/web-assets/frontend/src/pages/games/PremiumChessCasual.tsx").read()
+    assert "midnight" in themes and "heirloom" in themes and "cyber" in themes
+    assert "GameRoomLayout" in room and "chess-emoji-rail" in room
+    assert "takeback" in room.lower() or "Takeback" in room
+    assert "PremiumChessRoom" in casual
 
 
 def test_commhub_inline_inside_room_menu_bar():

@@ -1,13 +1,26 @@
 /**
  * Premium Date Night board arena — walnut / felt / marble presentation.
- * Tic-Tac-Toe, Connect 4, Chess (simplified SAN moves for date play).
+ * Chess uses PremiumChessBoard (themes, glide, audio) + emoji reaction rail.
  */
-import type { ReactNode } from "react";
-import { motion } from "framer-motion";
+import { useState, type ReactNode } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Palette, Volume2, VolumeX } from "lucide-react";
+import PremiumChessBoard from "@/components/chess/PremiumChessBoard";
+import { isChessMuted, setChessMuted } from "@/components/chess/chessAudio";
+import {
+  CHESS_THEMES,
+  THEME_ORDER,
+  loadChessTheme,
+  saveChessTheme,
+  type ChessThemeId,
+} from "@/components/chess/chessThemes";
+
+const DATE_EMOJIS = ["🤔", "👑", "😂", "🔥", "👏", "😮"];
 
 type BoardState = {
   cells?: string[];
-  moves?: { by: string; san: string }[];
+  moves?: { by: string; san: string; from?: string; to?: string }[];
+  fen?: string;
   winner?: string | null;
   draw?: boolean;
   simplified?: boolean;
@@ -97,58 +110,17 @@ export default function DateNightBoardArena({
   }
 
   if (gameType === "chess") {
-    const moves = board.moves || [];
     return (
-      <ArenaShell
-        title="Chess"
-        subtitle="Walnut table · brass accents"
-        tone="walnut"
+      <DateNightChess
+        board={board}
+        myId={myId}
+        player1Id={player1Id}
+        player2Id={player2Id}
+        turn={turn}
         myTurn={myTurn}
-        status={statusLine(board, myId, player1Id, player2Id)}
-      >
-        <div className="rounded-2xl overflow-hidden border border-[#5a4028] shadow-[0_20px_40px_rgba(0,0,0,0.5)]">
-          <div className="grid grid-cols-8">
-            {Array.from({ length: 64 }).map((_, i) => {
-              const r = Math.floor(i / 8);
-              const c = i % 8;
-              const dark = (r + c) % 2 === 1;
-              return (
-                <div
-                  key={i}
-                  className={`aspect-square ${
-                    dark ? "bg-[#6b4423]" : "bg-[#e7d3b0]"
-                  }`}
-                />
-              );
-            })}
-          </div>
-        </div>
-        <div className="mt-4 flex flex-wrap gap-2 justify-center">
-          {["e4", "d4", "Nf3", "c5", "e5", "Nc6"].map((san) => (
-            <button
-              key={san}
-              type="button"
-              disabled={!myTurn || busy || !!board.winner}
-              onClick={() => onMove({ san })}
-              className="px-3 py-1.5 rounded-lg bg-[#2a1c10] border border-amber-200/20 text-amber-50 text-sm hover:bg-[#3a2818] disabled:opacity-40"
-              data-testid={`chess-san-${san}`}
-            >
-              {san}
-            </button>
-          ))}
-          <button
-            type="button"
-            disabled={!myTurn || busy || !!board.winner}
-            onClick={() => onMove({ san: "resign", resign: true })}
-            className="px-3 py-1.5 rounded-lg bg-rose-950/60 border border-rose-400/30 text-rose-100 text-sm"
-          >
-            Resign
-          </button>
-        </div>
-        <p className="mt-3 text-center text-xs text-[#cbb59a]">
-          Moves: {moves.map((m) => m.san).join(" · ") || "Opening…"}
-        </p>
-      </ArenaShell>
+        busy={busy}
+        onMove={onMove}
+      />
     );
   }
 
@@ -217,7 +189,7 @@ function ArenaShell({
         : "from-[#1a1714] via-[#12100e] to-[#0c0a09]";
   return (
     <div
-      className={`rounded-3xl border border-white/10 bg-gradient-to-b ${bg} p-5 sm:p-6`}
+      className={`relative rounded-3xl border border-white/10 bg-gradient-to-b ${bg} p-5 sm:p-6`}
       data-testid="date-night-board-arena"
     >
       <div className="flex items-start justify-between gap-3 mb-5">
@@ -265,4 +237,140 @@ function statusLine(
     return board.winner === myId ? "You take the table." : "They take the table.";
   }
   return p1 && p2 ? "Play clean. Play sharp." : "";
+}
+
+function DateNightChess({
+  board,
+  myId,
+  player1Id,
+  player2Id,
+  turn,
+  myTurn,
+  busy,
+  onMove,
+}: {
+  board: BoardState;
+  myId: string;
+  player1Id: string;
+  player2Id: string;
+  turn: string | null;
+  myTurn: boolean;
+  busy?: boolean;
+  onMove: (move: Record<string, unknown>) => void;
+}) {
+  const [muted, setMuted] = useState(isChessMuted);
+  const [themeId, setThemeId] = useState<ChessThemeId>(loadChessTheme);
+  const [floats, setFloats] = useState<{ id: string; emoji: string }[]>([]);
+  const amP1 = myId === player1Id;
+  const fen =
+    board.fen ||
+    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+  const theme = CHESS_THEMES[themeId];
+
+  const fireEmoji = (emoji: string) => {
+    const id = `${Date.now()}-${emoji}`;
+    setFloats((f) => [...f, { id, emoji }]);
+    setTimeout(() => setFloats((f) => f.filter((x) => x.id !== id)), 1800);
+  };
+
+  return (
+    <ArenaShell
+      title="Chess"
+      subtitle={`${theme.tagline} · glide & soft drop`}
+      tone="walnut"
+      myTurn={myTurn}
+      status={statusLine(board, myId, player1Id, player2Id)}
+    >
+      <div className="relative flex justify-end gap-2 mb-2">
+        <button
+          type="button"
+          className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg border border-white/15 bg-black/30"
+          onClick={() => {
+            const i = THEME_ORDER.indexOf(themeId);
+            const next = THEME_ORDER[(i + 1) % THEME_ORDER.length];
+            setThemeId(next);
+            saveChessTheme(next);
+          }}
+          data-testid="date-chess-theme"
+        >
+          <Palette className="w-3.5 h-3.5" /> {theme.label}
+        </button>
+        <button
+          type="button"
+          className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg border border-white/15 bg-black/30"
+          onClick={() => {
+            const next = !muted;
+            setMuted(next);
+            setChessMuted(next);
+          }}
+          data-testid="date-chess-mute"
+        >
+          {muted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+          {muted ? "Muted" : "Sound"}
+        </button>
+      </div>
+      <PremiumChessBoard
+        fen={fen}
+        orientation={amP1 ? "white" : "black"}
+        interactive={myTurn && !busy && !board.winner && !board.draw}
+        playerColor={amP1 ? "w" : "b"}
+        themeId={themeId}
+        onMove={(m) =>
+          onMove({
+            from: m.from,
+            to: m.to,
+            san: m.san,
+            fen: m.fen,
+            checkmate: m.checkmate,
+            check: m.check,
+          })
+        }
+      />
+      <div
+        className="mt-4 flex items-center justify-center gap-2"
+        data-testid="date-chess-emoji-rail"
+      >
+        {DATE_EMOJIS.map((e) => (
+          <button
+            key={e}
+            type="button"
+            onClick={() => fireEmoji(e)}
+            className="w-10 h-10 rounded-full bg-white/5 border border-white/10 text-lg hover:scale-110 transition"
+          >
+            {e}
+          </button>
+        ))}
+      </div>
+      <AnimatePresence>
+        {floats.map((f) => (
+          <motion.div
+            key={f.id}
+            className="pointer-events-none absolute right-6 text-3xl z-20"
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: -70 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.5 }}
+            style={{ bottom: 120 }}
+          >
+            {f.emoji}
+          </motion.div>
+        ))}
+      </AnimatePresence>
+      <div className="mt-3 flex justify-center">
+        <button
+          type="button"
+          disabled={!myTurn || busy || !!board.winner}
+          onClick={() => onMove({ resign: true, san: "resign" })}
+          className="px-3 py-1.5 rounded-lg bg-rose-950/60 border border-rose-400/30 text-rose-100 text-sm disabled:opacity-40"
+        >
+          Resign
+        </button>
+      </div>
+      <PlayerPlaques
+        p1Label={amP1 ? "You · White" : "Them · White"}
+        p2Label={amP1 ? "Them · Black" : "You · Black"}
+      />
+      {!!turn && <p className="sr-only">turn {turn}</p>}
+    </ArenaShell>
+  );
 }

@@ -139,6 +139,7 @@ const UndergroundCasino = lazy(() => import("@/pages/UndergroundCasino"));
 const ChessHall = lazy(() => import("@/pages/games/ChessHall"));
 const ChessBlitz = lazy(() => import("@/pages/games/ChessBlitz"));
 const ChessPuzzle = lazy(() => import("@/pages/games/ChessPuzzle"));
+const PremiumChessCasual = lazy(() => import("@/pages/games/PremiumChessCasual"));
 const ChessTournament = lazy(() => import("@/pages/games/ChessTournament"));
 const HttpMultiplayerChess = lazy(() => import("@/pages/games/HttpMultiplayerChess"));
 const SportsLounge = lazy(() => import("@/pages/SportsLounge"));
@@ -392,6 +393,7 @@ export const gamesRoutes = (ProtectedRoute) => (
 
     {/* Chess Hall — lobby + Blitz / Daily Puzzle / Tournament / Multiplayer (May 2026) */}
     <Route path="/chess-hall" element={<ProtectedRoute><ChessHall /></ProtectedRoute>} />
+    <Route path="/chess/casual" element={<ProtectedRoute><PremiumChessCasual /></ProtectedRoute>} />
     <Route path="/chess/blitz" element={<ProtectedRoute><ChessBlitz /></ProtectedRoute>} />
     <Route path="/chess/puzzle" element={<ProtectedRoute><ChessPuzzle /></ProtectedRoute>} />
     <Route path="/chess/tournament" element={<ProtectedRoute><ChessTournament /></ProtectedRoute>} />

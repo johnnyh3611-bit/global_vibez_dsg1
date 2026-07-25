@@ -7,7 +7,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Crown, Swords, Zap, Puzzle, Users, ArrowLeft, Loader2, Trophy,
+  Crown, Swords, Zap, Puzzle, Users, ArrowLeft, Loader2, Trophy, HeartHandshake,
 } from "lucide-react";
 import { authFetch } from "@/utils/secureAuth";
 
@@ -16,7 +16,8 @@ const API = process.env.REACT_APP_BACKEND_URL;
 type Tally = Record<string, { win: number; loss: number; draw: number }>;
 
 const MODES = [
-  { id: "classic", label: "Classic vs AI", path: "/practice/play/chess", icon: Crown, sub: "Casual · pick your opponent · no clock" },
+  { id: "classic", label: "Classic vs AI", path: "/practice/play/chess", icon: Crown, sub: "Premium board · themes · glide moves" },
+  { id: "casual", label: "Casual Table", path: "/chess/casual", icon: HeartHandshake, sub: "Takebacks · emoji rail · date-night vibes" },
   { id: "blitz", label: "5-min Blitz", path: "/chess/blitz", icon: Zap, sub: "5-minute clock · ranked" },
   { id: "puzzle", label: "Daily Puzzle", path: "/chess/puzzle", icon: Puzzle, sub: "One curated position · solve it" },
   { id: "tournament", label: "Tournament", path: "/chess/tournament", icon: Trophy, sub: "4-player bracket · winner takes pool" },
@@ -51,7 +52,7 @@ export default function ChessHall() {
         <h1 className="text-base md:text-xl tracking-[0.3em] uppercase text-amber-200 flex items-center gap-3">
           <Swords className="w-5 h-5" /> Chess Hall
         </h1>
-        <div className="text-[10px] uppercase tracking-widest text-white/40 hidden md:block">5 modes</div>
+        <div className="text-[10px] uppercase tracking-widest text-white/40 hidden md:block">6 modes</div>
       </header>
 
       <main className="max-w-3xl mx-auto px-4 py-8">
