@@ -7,6 +7,7 @@ import UnifiedNavigation from '../components/hub/UnifiedNavigation';
 import GiftCatalogPicker from '../components/GiftCatalogPicker';
 import { useStreamSocket } from '../hooks/useStreamSocket';
 import { getUserId, getUsername } from '../utils/secureAuth';
+import VibezTabStyle from '@/components/ui/VibezTabStyle';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -281,36 +282,21 @@ const LiveStreamingPage = () => {
             </motion.p>
           </div>
 
-          {/* Category Filters */}
+          {/* Category Filters — My Vibez tray */}
           <div className="mb-8">
-            <div className="flex items-center gap-3 overflow-x-auto pb-2">
-              {categoryList.map(cat => {
-                const Icon = cat.icon;
-                const isActive = filter === cat.id;
-                
-                return (
-                  <motion.button
-                    key={cat.id}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setFilter(cat.id)}
-                    className={`flex items-center gap-2 px-6 py-3 rounded-full font-bold text-sm transition-all whitespace-nowrap ${
-                      isActive
-                        ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
-                        : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    {cat.label}
-                    <span className={`px-2 py-0.5 rounded-full text-xs ${
-                      isActive ? 'bg-white/20' : 'bg-white/10'
-                    }`}>
-                      {cat.count}
-                    </span>
-                  </motion.button>
-                );
-              })}
-            </div>
+            <VibezTabStyle
+              ariaLabel="Stream categories"
+              variant="pills"
+              value={filter}
+              onChange={setFilter}
+              options={categoryList.map((cat) => ({
+                value: cat.id,
+                label: cat.label,
+                icon: cat.icon,
+                badge: cat.count,
+                testId: `live-filter-${cat.id}`,
+              }))}
+            />
           </div>
 
           {/* Live Streams Grid */}

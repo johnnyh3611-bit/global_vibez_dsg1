@@ -4,6 +4,7 @@ import BackButton from '@/components/BackButton';
 import TableStylePicker from '@/components/cosmetics/TableStylePicker';
 import SpadesRulesetPicker from '@/components/games/SpadesRulesetPicker';
 import { useSpadesRuleset } from '@/hooks/useSpadesRuleset';
+import VibezTabStyle from '@/components/ui/VibezTabStyle';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -148,30 +149,25 @@ const CosmeticsShop = () => {
           <SpadesRulesetPickerWrapper />
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-4 mb-6">
-          <button
-            onClick={() => setActiveTab('shop')}
-            className={`px-6 py-3 rounded-lg font-bold transition-all ${
-              activeTab === 'shop'
-                ? 'bg-cyan-500 text-white'
-                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-            }`}
-          >
-            <ShoppingBag className="w-5 h-5 inline mr-2" />
-            Shop
-          </button>
-          <button
-            onClick={() => setActiveTab('collection')}
-            className={`px-6 py-3 rounded-lg font-bold transition-all ${
-              activeTab === 'collection'
-                ? 'bg-purple-500 text-white'
-                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-            }`}
-          >
-            <Grid3x3 className="w-5 h-5 inline mr-2" />
-            My Collection ({ownedCosmetics.length})
-          </button>
+        {/* Tabs — My Vibez tray */}
+        <div className="mb-6">
+          <VibezTabStyle
+            ariaLabel="Cosmetics sections"
+            variant="segmented"
+            value={activeTab}
+            onChange={setActiveTab}
+            className="max-w-lg"
+            options={[
+              { value: 'shop', label: 'Shop', icon: ShoppingBag, testId: 'cosmetics-tab-shop' },
+              {
+                value: 'collection',
+                label: 'My Collection',
+                icon: Grid3x3,
+                badge: ownedCosmetics.length,
+                testId: 'cosmetics-tab-collection',
+              },
+            ]}
+          />
         </div>
 
         {/* Filters (Shop Tab Only) */}

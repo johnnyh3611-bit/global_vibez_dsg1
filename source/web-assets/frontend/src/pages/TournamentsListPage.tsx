@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Trophy, Users, Calendar, Zap, Plus, Filter } from 'lucide-react';
+import VibezTabStyle from '@/components/ui/VibezTabStyle';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -68,26 +69,18 @@ export default function TournamentsListPage() {
 
         {/* Action Bar */}
         <div className="mb-8 flex flex-col md:flex-row gap-4 items-center justify-between">
-          {/* Filters */}
-          <div className="flex gap-3 overflow-x-auto pb-2">
-            {['registration', 'in_progress', 'completed'].map((status) => (
-              <motion.button
-                key={status}
-                onClick={() => setFilter(status)}
-                className={`px-6 py-3 rounded-xl font-semibold whitespace-nowrap transition-all ${
-                  filter === status
-                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
-                    : 'bg-black/40 border border-cyan-500/50 text-gray-300 hover:border-cyan-400'
-                }`}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                {status === 'registration' && '📝 Open'}
-                {status === 'in_progress' && '⚔️ Live'}
-                {status === 'completed' && '✅ Finished'}
-              </motion.button>
-            ))}
-          </div>
+          {/* Filters — My Vibez tray */}
+          <VibezTabStyle
+            ariaLabel="Tournament status"
+            variant="pills"
+            value={filter}
+            onChange={setFilter}
+            options={[
+              { value: 'registration', label: 'Open', testId: 'tournaments-filter-registration' },
+              { value: 'in_progress', label: 'Live', testId: 'tournaments-filter-in-progress' },
+              { value: 'completed', label: 'Finished', testId: 'tournaments-filter-completed' },
+            ]}
+          />
 
           {/* Create Tournament Button */}
           <motion.button

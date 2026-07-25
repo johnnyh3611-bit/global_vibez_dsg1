@@ -15,6 +15,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import VibezTabStyle from '@/components/ui/VibezTabStyle';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -330,31 +331,37 @@ export default function FriendsPage() {
           <p className="text-xl text-gray-400">Connect, Chat, and Play Together</p>
         </motion.div>
 
-        {/* Tabs */}
-        <div className="flex justify-center gap-4 mb-8">
-          {[
-            { id: 'friends', label: 'Friends', icon: Users, count: friends.length },
-            { id: 'requests', label: 'Requests', icon: Mail, count: pendingRequests.length },
-            { id: 'search', label: 'Add Friends', icon: UserPlus }
-          ].map((tab) => (
-            <Button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-6 py-3 font-bold transition-all ${
-                activeTab === tab.id
-                  ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white'
-                  : 'bg-slate-800 text-gray-400 hover:bg-slate-700'
-              }`}
-            >
-              <tab.icon className="w-5 h-5 mr-2" />
-              {tab.label}
-              {tab.count !== undefined && tab.count > 0 && (
-                <span className="ml-2 px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">
-                  {tab.count}
-                </span>
-              )}
-            </Button>
-          ))}
+        {/* Tabs — My Vibez tray */}
+        <div className="mb-8 flex justify-center">
+          <VibezTabStyle
+            ariaLabel="Friends sections"
+            variant="segmented"
+            value={activeTab}
+            onChange={setActiveTab}
+            className="max-w-2xl w-full"
+            options={[
+              {
+                value: 'friends',
+                label: 'Friends',
+                icon: Users,
+                badge: friends.length > 0 ? friends.length : undefined,
+                testId: 'friends-tab-friends',
+              },
+              {
+                value: 'requests',
+                label: 'Requests',
+                icon: Mail,
+                badge: pendingRequests.length > 0 ? pendingRequests.length : undefined,
+                testId: 'friends-tab-requests',
+              },
+              {
+                value: 'search',
+                label: 'Add Friends',
+                icon: UserPlus,
+                testId: 'friends-tab-search',
+              },
+            ]}
+          />
         </div>
 
         {/* Content */}

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Video, Clock, Users, Calendar, Plus } from 'lucide-react';
+import VibezTabStyle from '@/components/ui/VibezTabStyle';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -91,32 +92,20 @@ export default function SpeedDating() {
         </div>
       </div>
 
-      {/* Tab Navigation */}
-      <div className="bg-white shadow-sm border-b sticky top-[73px] z-10">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="flex space-x-4">
-            <button
-              onClick={() => setActiveTab('browse')}
-              className={`py-3 px-4 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === 'browse'
-                  ? 'border-purple-500 text-purple-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Browse Events
-            </button>
-            <button
-              onClick={() => setActiveTab('create')}
-              className={`py-3 px-4 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === 'create'
-                  ? 'border-purple-500 text-purple-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <Plus className="w-4 h-4 inline mr-1" />
-              Create Event
-            </button>
-          </div>
+      {/* Tab Navigation — My Vibez tray */}
+      <div className="sticky top-[73px] z-10 border-b border-white/10 bg-slate-950/90 backdrop-blur-xl">
+        <div className="max-w-6xl mx-auto px-4 py-3">
+          <VibezTabStyle
+            ariaLabel="Speed dating sections"
+            variant="segmented"
+            value={activeTab}
+            onChange={setActiveTab}
+            className="max-w-md"
+            options={[
+              { value: 'browse', label: 'Browse Events', testId: 'speed-dating-tab-browse' },
+              { value: 'create', label: 'Create Event', icon: Plus, testId: 'speed-dating-tab-create' },
+            ]}
+          />
         </div>
       </div>
 
