@@ -1,13 +1,12 @@
 /**
  * HeartsPassModal — 3-card pass selector for the Hearts AAA prototype.
- * Reuses the SpadesAAA visual language: glassy slate panel, Cinzel headers,
- * crimson accent. Up to 3 cards can be selected; submit is gated until
- * exactly 3 are picked.
+ * Selection via shared useCardSelection (identical multi-select feel).
  */
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send } from "lucide-react";
 import type { SpadesCard as CardData } from "@/components/spades/types";
+import { HandFan, useCardSelection } from "@/components/shared/cards";
 
 interface Props {
   open: boolean;
@@ -17,27 +16,12 @@ interface Props {
   onSubmit: (cards: CardData[]) => void;
 }
 
-// Inks darkened Feb 2026 (round 2): the previous slate-100 / rose-400
-// pairing was light-on-white inside the pass modal — testers reported
-// they "couldn't see the imprints" on club/spade cards. Dropped to
-// slate-900 / rose-700 for unmistakable contrast on the white face.
-const SUIT_LABELS: Record<string, { glyph: string; color: string }> = {
-  spades:   { glyph: "♠", color: "text-slate-900" },
-  clubs:    { glyph: "♣", color: "text-slate-900" },
-  hearts:   { glyph: "♥", color: "text-rose-700" },
-  diamonds: { glyph: "♦", color: "text-rose-700" },
-};
-
 const DIRECTION_LABEL: Record<Props["passDirection"], string> = {
-  left:   "Pass 3 cards LEFT",
-  right:  "Pass 3 cards RIGHT",
+  left: "Pass 3 cards LEFT",
+  right: "Pass 3 cards RIGHT",
   across: "Pass 3 cards ACROSS",
-  none:   "No pass this hand",
+  none: "No pass this hand",
 };
-
-function cardKey(c: CardData): string {
-  return `${c.suit}-${c.rank}`;
-}
 
 export const HeartsPassModal: React.FC<Props> = ({
   open,
@@ -46,29 +30,23 @@ export const HeartsPassModal: React.FC<Props> = ({
   busy,
   onSubmit,
 }) => {
-  const [picked, setPicked] = useState<string[]>([]);
+  const selection = useCardSelection({
+    mode: "multi",
+    max: 3,
+    cards: hand,
+    enabled: open && !busy,
+  });
 
   useEffect(() => {
-    if (open) setPicked([]);
+    if (open) selection.clear();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reset only when modal opens
   }, [open]);
 
   if (passDirection === "none" || !open) return null;
 
-  const toggle = (c: CardData) => {
-    const k = cardKey(c);
-    setPicked((cur) => {
-      if (cur.includes(k)) return cur.filter((x) => x !== k);
-      if (cur.length >= 3) return cur;
-      return [...cur, k];
-    });
-  };
-
   const submit = () => {
-    if (picked.length !== 3 || busy) return;
-    const selected = picked
-      .map((k) => hand.find((c) => cardKey(c) === k))
-      .filter(Boolean) as CardData[];
-    onSubmit(selected);
+    if (selection.count !== 3 || busy) return;
+    onSubmit(selection.selected);
   };
 
   return (
@@ -104,59 +82,37 @@ export const HeartsPassModal: React.FC<Props> = ({
               </h3>
             </div>
             <div
-              className="px-3 py-1 rounded-full bg-rose-500/15 border border-rose-400/40 text-xs font-black tabular-nums"
-              data-testid="hearts-pass-counter"
+              className="px-3 py-1.5 rounded-full bg-rose-500/20 border border-rose-400/40 text-rose-100 text-sm font-black tabular-nums"
+              data-testid="hearts-pass-count"
             >
-              <span className="text-rose-200">{picked.length}</span>
-              <span className="text-rose-300/60">/3</span>
+              {selection.count}/3
             </div>
           </div>
 
-          <div className="p-4">
-            <p className="text-rose-100/70 text-xs mb-3">
-              Tap 3 cards to send. Aim to dump high spades, the queen, or risky hearts.
-            </p>
-            <div className="grid grid-cols-7 sm:grid-cols-13 gap-1.5 sm:gap-2">
-              {hand.map((c) => {
-                const k = cardKey(c);
-                const selected = picked.includes(k);
-                const meta = SUIT_LABELS[c.suit];
-                return (
-                  <button
-                    key={k}
-                    onClick={() => toggle(c)}
-                    disabled={busy}
-                    className={`relative h-20 sm:h-24 rounded-md border-2 bg-white shadow flex flex-col items-center justify-between p-1 transition transform ${
-                      selected
-                        ? "border-rose-400 ring-2 ring-rose-300 -translate-y-2 shadow-[0_0_15px_rgba(244,63,94,0.55)]"
-                        : "border-slate-300 hover:border-rose-300 hover:-translate-y-1"
-                    }`}
-                    data-testid={`hearts-pass-card-${k}`}
-                  >
-                    <span className={`text-sm font-black leading-none ${meta.color}`}>
-                      {c.rank}
-                    </span>
-                    <span className={`text-3xl font-black ${meta.color}`}>{meta.glyph}</span>
-                    <span className={`text-sm font-black leading-none rotate-180 ${meta.color}`}>
-                      {c.rank}
-                    </span>
-                    {selected ? (
-                      <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 border-2 border-white" />
-                    ) : null}
-                  </button>
-                );
-              })}
-            </div>
+          <div className="px-4 py-4">
+            <HandFan
+              hand={hand}
+              isYourTurn
+              busy={busy}
+              hideTurnIndicator
+              sortMode="suit"
+              selectionMode="multi"
+              selectedKeys={selection.selectedKeys}
+              onToggleSelect={selection.toggle}
+              testId="hearts-pass-hand"
+            />
+          </div>
 
+          <div className="px-5 pb-5 flex justify-center">
             <button
+              type="button"
               onClick={submit}
-              disabled={busy || picked.length !== 3}
-              className="mt-4 w-full py-3 rounded-xl bg-gradient-to-r from-rose-500 via-rose-600 to-rose-500 hover:from-rose-400 hover:to-rose-500 text-white font-black uppercase tracking-widest text-sm shadow-[0_0_24px_rgba(244,63,94,0.45)] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              style={{ fontFamily: "'Cinzel', serif" }}
-              data-testid="hearts-pass-submit-btn"
+              disabled={selection.count !== 3 || busy}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-rose-500 hover:bg-rose-400 text-white font-black uppercase tracking-widest text-sm disabled:opacity-40"
+              data-testid="hearts-pass-submit"
             >
               <Send className="w-4 h-4" />
-              {busy ? "Sending…" : `Send ${picked.length}/3`}
+              Pass {selection.count}/3 cards
             </button>
           </div>
         </motion.div>

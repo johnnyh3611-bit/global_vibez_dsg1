@@ -74,6 +74,8 @@ interface Props {
   size?: "sm" | "md" | "lg";
   isPlayable?: boolean;
   isDimmed?: boolean;
+  /** Selection lift (pass / kitty / discard) — shared Card Physics engine. */
+  selected?: boolean;
   onClick?: () => void;
   className?: string;
 }
@@ -242,6 +244,7 @@ export const SpadesCard: React.FC<Props> = ({
   size = "md",
   isPlayable = true,
   isDimmed = false,
+  selected = false,
   onClick,
   className = "",
 }) => {
@@ -324,7 +327,11 @@ export const SpadesCard: React.FC<Props> = ({
       style={{ width: dim.w, height: dim.h }}
       className={`relative rounded-lg bg-white overflow-hidden select-none transition-all duration-200 ${
         isPlayable && onClick ? "cursor-pointer gv-card-active" : "cursor-default"
-      } ${isDimmed ? "opacity-40 grayscale gv-card-dim" : ""} ${promotedRingClass} shadow-[0_3px_12px_rgba(0,0,0,0.5)] ${
+      } ${isDimmed ? "opacity-40 grayscale gv-card-dim" : ""} ${
+        selected
+          ? "ring-2 ring-amber-300 border-amber-400 shadow-[0_0_14px_rgba(245,158,11,0.55)] -translate-y-1"
+          : ""
+      } ${promotedRingClass} shadow-[0_3px_12px_rgba(0,0,0,0.5)] ${
         isPlayable && onClick
           ? "hover:shadow-[0_6px_24px_rgba(34,211,238,0.45)] hover:ring-2 hover:ring-cyan-400/60"
           : ""
