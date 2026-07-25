@@ -35,13 +35,53 @@ import uuid
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Any
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException, Request
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException, Request, Query
 from pydantic import BaseModel, Field
 
 from utils.database import get_database, get_current_user
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+
+async def _require_session_user(request: Request):
+    user = await get_current_user(request)
+    if not user:
+        raise HTTPException(401, "Sign in required")
+    return user
+
+
+async def _require_driver_actor(request: Request, driver_id: str):
+    """Driver mutations must be called by the owning session user.
+
+    ``driver_id`` is expected to equal ``user.user_id`` (or a registered
+    driver profile owned by that user). Admins may act on behalf of any
+    driver when ``is_admin`` / ``is_founder`` is set.
+    """
+    user = await _require_session_user(request)
+    uid = getattr(user, "user_id", None) or (user.get("user_id") if isinstance(user, dict) else None)
+    is_admin = bool(
+        getattr(user, "is_admin", False)
+        or getattr(user, "is_founder", False)
+        or (isinstance(user, dict) and (user.get("is_admin") or user.get("is_founder")))
+    )
+    if is_admin:
+        return user
+    if uid and uid == driver_id:
+        return user
+    # Allow registered driver profiles that map owner_user_id → driver_id
+    try:
+        db = get_database()
+        row = await db.vibe_ridez_drivers.find_one(
+            {"$or": [{"driver_id": driver_id}, {"user_id": driver_id}]},
+            {"_id": 0, "user_id": 1, "owner_user_id": 1, "driver_id": 1},
+        )
+        owner = (row or {}).get("owner_user_id") or (row or {}).get("user_id")
+        if owner and owner == uid:
+            return user
+    except Exception:
+        pass
+    raise HTTPException(403, "Driver role required for this action")
 
 # ───────────────────────────────────────── In-memory state ──
 
@@ -136,7 +176,33 @@ def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
 # ───────────────────────────────────────── Driver GPS WebSocket ──
 
 @router.websocket("/ws/vibe-ridez/driver/{driver_id}")
-async def driver_socket(websocket: WebSocket, driver_id: str):
+async def driver_socket(
+    websocket: WebSocket,
+    driver_id: str,
+    token: Optional[str] = Query(default=None),
+):
+    """Driver GPS stream — requires ``?token=<session_token>`` matching driver."""
+    # Auth before accept so browsers don't keep a half-open spoofed socket.
+    if not token:
+        await websocket.close(code=4401)
+        return
+    try:
+        db = get_database()
+        sess = await db.user_sessions.find_one({"session_token": token}, {"_id": 0})
+        if not sess or sess.get("user_id") != driver_id:
+            # Also allow owner_user_id mapping
+            row = await db.vibe_ridez_drivers.find_one(
+                {"driver_id": driver_id},
+                {"_id": 0, "owner_user_id": 1, "user_id": 1},
+            )
+            owner = (row or {}).get("owner_user_id") or (row or {}).get("user_id")
+            if not sess or not owner or sess.get("user_id") != owner:
+                await websocket.close(code=4403)
+                return
+    except Exception:
+        await websocket.close(code=4500)
+        return
+
     await websocket.accept()
     async with _DRIVERS_LOCK:
         rec = _DRIVERS.setdefault(driver_id, {
@@ -191,7 +257,8 @@ class StatusPayload(BaseModel):
 
 
 @router.post("/ridez/status")
-async def set_driver_status(payload: StatusPayload):
+async def set_driver_status(payload: StatusPayload, request: Request):
+    await _require_driver_actor(request, payload.driver_id)
     async with _DRIVERS_LOCK:
         rec = _DRIVERS.setdefault(payload.driver_id, {
             "driver_id": payload.driver_id,
@@ -211,7 +278,16 @@ async def set_driver_status(payload: StatusPayload):
 
 
 @router.get("/ridez/active-drivers")
-async def list_active_drivers():
+async def list_active_drivers(request: Request):
+    """Admin/debug — exact GPS. Requires authenticated session."""
+    user = await _require_session_user(request)
+    is_admin = bool(
+        getattr(user, "is_admin", False)
+        or getattr(user, "is_founder", False)
+        or (isinstance(user, dict) and (user.get("is_admin") or user.get("is_founder")))
+    )
+    if not is_admin:
+        raise HTTPException(403, "Admin role required")
     async with _DRIVERS_LOCK:
         out = []
         for d in _DRIVERS.values():
@@ -392,7 +468,8 @@ async def _offer_to_driver(driver: Dict[str, Any], payload: RideRequestPayload, 
 
 
 @router.post("/ridez/respond")
-async def driver_respond(payload: RespondPayload):
+async def driver_respond(payload: RespondPayload, request: Request):
+    await _require_driver_actor(request, payload.driver_id)
     fut = _PENDING_OFFERS.get(payload.driver_id)
     if not fut or fut.done():
         raise HTTPException(status_code=404, detail="No pending offer for this driver")
@@ -407,8 +484,12 @@ class PayoutPayload(BaseModel):
 
 
 @router.post("/ridez/payout/{driver_id}")
-async def credit_payout(driver_id: str, payload: PayoutPayload):
-    """Crediting a driver's daily + lifetime earnings (₵ Vibez Coins)."""
+async def credit_payout(driver_id: str, payload: PayoutPayload, request: Request):
+    """Crediting a driver's daily + lifetime earnings (₵ Vibez Coins).
+
+    Restricted to the owning driver session or an admin — never public.
+    """
+    await _require_driver_actor(request, driver_id)
     async with _DRIVERS_LOCK:
         rec = _DRIVERS.setdefault(driver_id, {
             "driver_id": driver_id,
@@ -426,7 +507,8 @@ async def credit_payout(driver_id: str, payload: PayoutPayload):
 
 
 @router.get("/ridez/earnings/{driver_id}")
-async def get_earnings(driver_id: str):
+async def get_earnings(driver_id: str, request: Request):
+    await _require_driver_actor(request, driver_id)
     rec = _DRIVERS.get(driver_id)
     if not rec:
         return {
@@ -450,7 +532,8 @@ class GoalPayload(BaseModel):
 
 
 @router.post("/ridez/goal/{driver_id}")
-async def set_daily_goal(driver_id: str, payload: GoalPayload):
+async def set_daily_goal(driver_id: str, payload: GoalPayload, request: Request):
+    await _require_driver_actor(request, driver_id)
     async with _DRIVERS_LOCK:
         rec = _DRIVERS.setdefault(driver_id, {
             "driver_id": driver_id,

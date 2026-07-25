@@ -38,12 +38,28 @@ _INDEX_SPECS = [
     {"coll": "users", "key": "email", "unique": True},
     {"coll": "users", "key": "referral_code"},
     {"coll": "users", "key": "membership_type"},
+    # Privy DID — sparse unique so email/demo users without DID stay valid
+    {
+        "coll": "users",
+        "key": "privy_did",
+        "unique": True,
+        "sparse": True,
+        "background": True,
+    },
     # TTL on throwaway demo users (?fresh=1 flow)
     {
         "coll": "users",
         "key": "created_at",
         "expireAfterSeconds": 24 * 60 * 60,
         "partialFilterExpression": {"is_throwaway_demo": True},
+    },
+    # Privy hybrid identity ledger
+    {"coll": "user_identities", "key": "did", "unique": True, "background": True},
+    {
+        "coll": "user_identities",
+        "key": "email",
+        "sparse": True,
+        "background": True,
     },
 
     # Swipes / matches / messages
@@ -86,9 +102,59 @@ _INDEX_SPECS = [
     {"coll": "chair_purchases",
      "key": [("user_id", 1), ("purchased_at", -1)]},
     {"coll": "chair_pending", "key": "session_id", "unique": True},
+    {"coll": "chair_pending", "key": "payment_id", "sparse": True, "background": True},
+    {"coll": "chair_pending", "key": "helio_charge_id", "sparse": True, "background": True},
+    {"coll": "chair_pending", "key": [("user_id", 1), ("status", 1)], "background": True},
     {"coll": "invites", "key": "code", "unique": True},
     {"coll": "invites", "key": [("owner_user_id", 1), ("created_at", -1)]},
     {"coll": "profit_share_chair_quarters", "key": "quarter_key", "unique": True},
+
+    # Coin top-up + Solana deposits — idempotency on payment id / tx hash
+    {"coll": "coin_topup_payments", "key": "id", "unique": True, "background": True},
+    {
+        "coll": "coin_topup_payments",
+        "key": "helio_charge_id",
+        "sparse": True,
+        "background": True,
+    },
+    {
+        "coll": "coin_topup_payments",
+        "key": "transaction_hash",
+        "unique": True,
+        "sparse": True,
+        "background": True,
+    },
+    {
+        "coll": "coin_topup_payments",
+        "key": [("user_id", 1), ("created_at", -1)],
+        "background": True,
+    },
+    {
+        "coll": "processed_payment_tx",
+        "key": "tx_key",
+        "unique": True,
+        "background": True,
+    },
+    {"coll": "crypto_deposits", "key": "deposit_id", "unique": True, "background": True},
+    {
+        "coll": "crypto_deposits",
+        "key": "confirmed_signature",
+        "unique": True,
+        "sparse": True,
+        "background": True,
+    },
+    {
+        "coll": "crypto_deposits",
+        "key": [("memo", 1), ("status", 1)],
+        "background": True,
+    },
+    # HungryVibes merchant settlement idempotency
+    {
+        "coll": "hv_vibe_ledger",
+        "key": [("merchant_id", 1), ("order_id", 1), ("kind", 1)],
+        "unique": True,
+        "background": True,
+    },
 
     # TGE + Mining
     {"coll": "vibez_mining_balance", "key": "user_id", "unique": True},

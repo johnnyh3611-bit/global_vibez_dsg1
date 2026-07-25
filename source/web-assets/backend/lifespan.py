@@ -79,12 +79,13 @@ def register_startup_tasks(app, logger: logging.Logger) -> None:
         logger.info("Creating database indexes...")
         asyncio.create_task(_create_indexes_async(logger))
 
-        # Security posture — warn (or error in production) when JWT / ELD
-        # signing secrets are missing or still on known-weak defaults.
+        # Security posture — warn always; block weak JWT/ELD defaults in prod.
         try:
-            from services.security_secrets import warn_insecure_secrets
+            from services.security_secrets import enforce_secure_secrets
 
-            warn_insecure_secrets(logger)
+            enforce_secure_secrets(logger)
+        except SystemExit:
+            raise
         except Exception as sec_err:
             logger.warning("security_secrets check failed: %s", sec_err)
 

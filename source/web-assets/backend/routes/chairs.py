@@ -919,7 +919,11 @@ async def activate_pending_chair_payment(
     external_payment_id: Optional[str] = None,
     activated_via: str = "webhook",
 ) -> Dict[str, Any]:
-    """Idempotent chair grant used by Helio webhook + Solana indexer + status poll."""
+    """Idempotent chair grant used by Helio webhook + Solana indexer + status poll.
+
+    Atomically claims ``chair_pending`` (pending → activating) before grant so
+    concurrent webhook retries cannot double-call ``_grant_chairs``.
+    """
     clauses: List[Dict[str, Any]] = []
     if payment_id:
         clauses.append({"payment_id": payment_id})
@@ -934,16 +938,46 @@ async def activate_pending_chair_payment(
     if not clauses:
         return {"ok": False, "reason": "no_id"}
 
-    pending = await db.chair_pending.find_one({"$or": clauses})
-    if not pending:
-        return {"ok": False, "reason": "not_found"}
-    if pending.get("status") == "activated":
+    already = await db.chair_pending.find_one(
+        {"$or": clauses, "status": "activated"},
+        {"_id": 0, "quantity": 1, "payment_id": 1, "session_id": 1},
+    )
+    if already:
         return {
             "ok": True,
             "already_activated": True,
-            "quantity": pending.get("quantity"),
-            "payment_id": pending.get("payment_id") or pending.get("session_id"),
+            "quantity": already.get("quantity"),
+            "payment_id": already.get("payment_id") or already.get("session_id"),
         }
+
+    # Claim the row before granting — wins the race against duplicate webhooks.
+    pending = await db.chair_pending.find_one_and_update(
+        {
+            "$or": clauses,
+            "status": {"$nin": ["activated", "activating"]},
+        },
+        {
+            "$set": {
+                "status": "activating",
+                "activating_at": datetime.now(timezone.utc).isoformat(),
+                "activating_via": activated_via,
+            }
+        },
+    )
+    if not pending:
+        # Another worker may have just finished activating.
+        again = await db.chair_pending.find_one(
+            {"$or": clauses, "status": {"$in": ["activated", "activating"]}},
+            {"_id": 0, "quantity": 1, "payment_id": 1, "session_id": 1, "status": 1},
+        )
+        if again:
+            return {
+                "ok": True,
+                "already_activated": True,
+                "quantity": again.get("quantity"),
+                "payment_id": again.get("payment_id") or again.get("session_id"),
+            }
+        return {"ok": False, "reason": "not_found"}
 
     grant_ref = (
         external_payment_id
@@ -954,14 +988,22 @@ async def activate_pending_chair_payment(
         or pending.get("payment_id")
         or pending.get("session_id")
     )
-    await _grant_chairs(
-        db,
-        pending["user_id"],
-        quantity=int(pending["quantity"]),
-        price_per_chair_usd=float(pending["price_per_chair_usd"]),
-        payment_ref=str(grant_ref),
-        invite_code=pending.get("invite_code"),
-    )
+    try:
+        await _grant_chairs(
+            db,
+            pending["user_id"],
+            quantity=int(pending["quantity"]),
+            price_per_chair_usd=float(pending["price_per_chair_usd"]),
+            payment_ref=str(grant_ref),
+            invite_code=pending.get("invite_code"),
+        )
+    except Exception:
+        # Release claim so a later retry can succeed.
+        await db.chair_pending.update_one(
+            {"_id": pending["_id"], "status": "activating"},
+            {"$set": {"status": "pending", "activate_error": "grant_failed"}},
+        )
+        raise
     await db.chair_pending.update_one(
         {"_id": pending["_id"]},
         {

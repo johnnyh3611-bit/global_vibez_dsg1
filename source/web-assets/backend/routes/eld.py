@@ -27,7 +27,18 @@ router = APIRouter(prefix="/eld", tags=["eld"])
 # In production, set a strong secret and rotate only with a re-sign migration.
 # Weak/default values are flagged at startup via services.security_secrets.
 _ELD_KEY_RAW = (os.environ.get("ELD_SIGNING_KEY") or "").strip()
+_PROD = (
+    (os.environ.get("ENVIRONMENT") or os.environ.get("ENV") or "")
+    .strip()
+    .lower()
+    in ("production", "prod", "live")
+)
 if not _ELD_KEY_RAW:
+    if _PROD:
+        raise RuntimeError(
+            "ELD_SIGNING_KEY unset in production — refusing insecure default. "
+            "Set a strong secret (openssl rand -hex 32)."
+        )
     _ELD_KEY_RAW = "dev-eld-signing-key-change-in-production"
     logger.warning(
         "ELD_SIGNING_KEY unset — using insecure development default. "
@@ -43,6 +54,10 @@ elif (
     }
     or len(_ELD_KEY_RAW) < 24
 ):
+    if _PROD:
+        raise RuntimeError(
+            "ELD_SIGNING_KEY is weak/default in production — refuse to boot."
+        )
     logger.warning(
         "ELD_SIGNING_KEY looks weak/default — replace before production."
     )

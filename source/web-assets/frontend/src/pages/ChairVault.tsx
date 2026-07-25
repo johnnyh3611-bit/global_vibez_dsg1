@@ -85,6 +85,15 @@ export default function ChairVault() {
   const [busy, setBusy] = useState(false);
   /** null = unknown; false = Helio missing (card checkout paused) */
   const [paymentsConfigured, setPaymentsConfigured] = useState<boolean | null>(null);
+  /** Pending Helio/Solana checkout confirmation before leaving the vault */
+  const [pendingCheckout, setPendingCheckout] = useState<{
+    provider: string;
+    checkoutUrl?: string;
+    paymentId?: string;
+    totalUsd?: number;
+    depositAddress?: string;
+    memo?: string;
+  } | null>(null);
 
   useEffect(() => {
     fetch(`${API}/api/chairs/phase`).then(r => r.ok && r.json()).then(setPhase);
@@ -148,25 +157,32 @@ export default function ChairVault() {
       });
       if (r.ok) {
         const d = await r.json();
-        if (d.checkout_url || d.url) {
-          // Persist payment id so /chair-vault/success can poll if Helio
-          // redirect omits query params (dashboard success URL is optional).
+        const pid = d.payment_id || d.session_id;
+        if (pid) {
           try {
-            const pid = d.payment_id || d.session_id;
-            if (pid) sessionStorage.setItem("chair_pending_payment_id", pid);
+            sessionStorage.setItem("chair_pending_payment_id", pid);
           } catch {
             /* ignore */
           }
-          window.location.href = d.checkout_url || d.url;
+        }
+        if (d.checkout_url || d.url) {
+          // Confirm before redirect so users understand pending lifecycle.
+          setPendingCheckout({
+            provider: d.provider || "helio",
+            checkoutUrl: d.checkout_url || d.url,
+            paymentId: pid,
+            totalUsd: d.total_usd ?? (phase.price_usd ?? 0) * qty,
+          });
           return;
         }
         if (d.provider === "solana" && d.deposit_address) {
-          toast.success(
-            `Send $${d.total_usd} SOL/USDC to ${d.deposit_address} with memo ${d.memo}`
-          );
-          navigate(
-            `/chair-vault/success?session_id=${encodeURIComponent(d.session_id || d.payment_id)}`
-          );
+          setPendingCheckout({
+            provider: "solana",
+            paymentId: pid,
+            totalUsd: d.total_usd,
+            depositAddress: d.deposit_address,
+            memo: d.memo,
+          });
           return;
         }
       }
@@ -595,6 +611,97 @@ export default function ChairVault() {
           </section>
         )}
       </main>
+
+      {pendingCheckout && (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
+          data-testid="chair-pending-checkout-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="chair-pending-title"
+        >
+          <div className="w-full max-w-md rounded-2xl border border-amber-400/30 bg-[#0c1220] p-6 text-white shadow-2xl">
+            <p className="text-[10px] uppercase tracking-[0.3em] text-amber-200/80 font-bold">
+              Payment pending
+            </p>
+            <h3 id="chair-pending-title" className="mt-1 text-xl font-black">
+              Confirm chair checkout
+            </h3>
+            <p className="mt-2 text-sm text-white/70">
+              {pendingCheckout.provider === "solana"
+                ? "Send the exact amount with the memo below. Chairs activate after the Solana indexer confirms the deposit — keep this tab until you see success."
+                : "You'll open Helio card checkout next. Chairs stay pending until Helio confirms payment. Do not refresh mid-checkout."}
+            </p>
+            {pendingCheckout.totalUsd != null && (
+              <p className="mt-3 text-lg font-bold text-cyan-200">
+                {fmtUsd(pendingCheckout.totalUsd)} · {qty} chair{qty > 1 ? "s" : ""}
+              </p>
+            )}
+            {pendingCheckout.paymentId && (
+              <p className="mt-1 text-[11px] font-mono text-white/45 break-all">
+                ref {pendingCheckout.paymentId}
+              </p>
+            )}
+            {pendingCheckout.provider === "solana" && pendingCheckout.depositAddress && (
+              <div className="mt-3 rounded-xl border border-cyan-500/25 bg-black/40 p-3 text-xs">
+                <p className="text-cyan-200 font-semibold">Deposit address</p>
+                <p className="mt-1 font-mono break-all text-white/80">
+                  {pendingCheckout.depositAddress}
+                </p>
+                {pendingCheckout.memo && (
+                  <>
+                    <p className="mt-2 text-cyan-200 font-semibold">Memo (required)</p>
+                    <p className="mt-1 font-mono break-all text-amber-100">
+                      {pendingCheckout.memo}
+                    </p>
+                  </>
+                )}
+              </div>
+            )}
+            <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+              <button
+                type="button"
+                data-testid="chair-pending-continue"
+                className="flex-1 rounded-xl bg-gradient-to-r from-amber-500 to-fuchsia-500 px-4 py-3 text-sm font-black text-black"
+                onClick={() => {
+                  const p = pendingCheckout;
+                  setPendingCheckout(null);
+                  if (p.provider === "solana") {
+                    toast.success("Waiting for Solana confirmation…");
+                    navigate(
+                      `/chair-vault/success?session_id=${encodeURIComponent(p.paymentId || "")}`,
+                    );
+                    return;
+                  }
+                  if (p.checkoutUrl) {
+                    window.location.href = p.checkoutUrl;
+                  }
+                }}
+              >
+                {pendingCheckout.provider === "solana"
+                  ? "I've sent / continue"
+                  : "Continue to card checkout"}
+              </button>
+              <button
+                type="button"
+                data-testid="chair-pending-cancel"
+                className="rounded-xl border border-white/20 px-4 py-3 text-sm font-semibold text-white/80"
+                onClick={() => {
+                  try {
+                    sessionStorage.removeItem("chair_pending_payment_id");
+                  } catch {
+                    /* ignore */
+                  }
+                  setPendingCheckout(null);
+                  toast.message("Checkout cancelled — no chairs parked.");
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

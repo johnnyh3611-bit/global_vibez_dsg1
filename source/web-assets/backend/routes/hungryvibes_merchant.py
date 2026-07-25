@@ -525,6 +525,25 @@ async def vibe_account_credit(
     db = get_database()
     merchant = await _get_merchant_or_404(db, user.user_id)
 
+    # Idempotent settlement — same (merchant_id, order_id) never credits twice.
+    existing = await db.hv_vibe_ledger.find_one(
+        {
+            "merchant_id": merchant["merchant_id"],
+            "order_id": payload.order_id,
+            "kind": "settlement",
+        },
+        {"_id": 0},
+    )
+    if existing:
+        return {
+            "success": True,
+            "already": True,
+            "balance": float(merchant.get("vibe_account_balance", 0.0)),
+            "credited": float(existing.get("net_credit") or 0),
+            "vibe_tax": float(existing.get("vibe_tax") or 0),
+            "ledger_id": existing.get("ledger_id"),
+        }
+
     gross = round(float(payload.order_total), 2)
     vibe_tax = round(gross * VIBE_TAX_RATE, 2)
     net = round(gross - vibe_tax, 2)
@@ -539,7 +558,27 @@ async def vibe_account_credit(
         "kind": "settlement",
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
-    await db.hv_vibe_ledger.insert_one(dict(entry))
+    try:
+        await db.hv_vibe_ledger.insert_one(dict(entry))
+    except Exception as exc:
+        # Unique index race — treat as already settled
+        if "Duplicate" in type(exc).__name__ or getattr(exc, "code", None) == 11000:
+            again = await db.hv_vibe_ledger.find_one(
+                {
+                    "merchant_id": merchant["merchant_id"],
+                    "order_id": payload.order_id,
+                    "kind": "settlement",
+                },
+                {"_id": 0},
+            )
+            return {
+                "success": True,
+                "already": True,
+                "balance": float(merchant.get("vibe_account_balance", 0.0)),
+                "credited": float((again or {}).get("net_credit") or 0),
+                "ledger_id": (again or {}).get("ledger_id"),
+            }
+        raise
     new_balance = round(
         float(merchant.get("vibe_account_balance", 0.0)) + net, 2
     )
