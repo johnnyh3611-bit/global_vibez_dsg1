@@ -1,9 +1,9 @@
 /**
- * Gin Rummy AAA — Universal prototype, gold variant, 2-player density.
- * Reuses SpadesTable + SpadesSeat (north only — south hidden by design)
- * + SpadesGameMenu + SpadesPlayerProfile + SpadesCommunityChat.
+ * Gin Rummy AAA — gold variant, 2-player density.
+ * Card Physics engine: BaseCardGameRoom + HandFan (meld sort) +
+ * useCardSelection + CardActionTray — same feel as Spades/Bid Whist.
  */
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Bot, Loader2, Sparkles, Hand } from "lucide-react";
@@ -16,6 +16,13 @@ import SpadesScoreBadge from "@/components/spades/SpadesScoreBadge";
 import SpadesGameMenu from "@/components/spades/SpadesGameMenu";
 import SpadesPlayerProfile from "@/components/spades/SpadesPlayerProfile";
 import SpadesCommunityChat from "@/components/spades/SpadesCommunityChat";
+import SpadesCard from "@/components/spades/SpadesCard";
+import {
+  BaseCardGameRoom,
+  HandFan,
+  useCardSelection,
+  type CardAction,
+} from "@/components/shared/cards";
 import type {
   SpadesCard as CardData,
   SpadesPosition,
@@ -46,31 +53,6 @@ interface GrRaw {
   hand_summary: { scorer: SpadesPosition | null; outcome: string; points: number; knocker_deadwood?: number; defender_deadwood?: number } | null;
   last_action: { player?: SpadesPosition; drew?: CardData; from?: string; discarded?: CardData; knock?: boolean } | null;
   play_sequence?: Array<{ player: SpadesPosition; drew_from?: string; discarded?: CardData; knock?: boolean; end?: boolean; gin?: boolean }>;
-}
-
-const SUIT_GLYPH: Record<string, string> = { spades: "♠", clubs: "♣", hearts: "♥", diamonds: "♦" };
-const SUIT_COLOR: Record<string, string> = { spades: "text-slate-900", clubs: "text-slate-900", hearts: "text-rose-800", diamonds: "text-rose-800" };
-
-function CardFace({ card, onClick, in_meld, selected }: { card: GrCard; onClick?: () => void; in_meld?: boolean; selected?: boolean }) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={!onClick}
-      className={`relative w-12 h-16 md:w-14 md:h-20 rounded-md bg-white border-2 shadow flex flex-col items-center justify-between p-0.5 transition transform ${
-        selected ? "border-amber-400 ring-2 ring-amber-300 -translate-y-2 shadow-[0_0_12px_rgba(245,158,11,0.55)]"
-        : in_meld ? "border-amber-400/70 hover:border-amber-300 hover:-translate-y-1"
-        : "border-slate-300 hover:border-amber-300 hover:-translate-y-1"
-      }`}
-      data-testid={`gin-card-${card.suit}-${card.rank}`}
-    >
-      <span className={`text-[10px] font-bold leading-none ${SUIT_COLOR[card.suit]}`}>{card.rank}</span>
-      <span className={`text-2xl ${SUIT_COLOR[card.suit]}`}>{SUIT_GLYPH[card.suit]}</span>
-      <span className={`text-[10px] font-bold leading-none rotate-180 ${SUIT_COLOR[card.suit]}`}>{card.rank}</span>
-      {in_meld && !selected ? (
-        <div className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-amber-400" />
-      ) : null}
-    </button>
-  );
 }
 
 function adapt(raw: GrRaw): { players: Record<SpadesPosition, SpadesPlayerView>; scores: SpadesScores } {
@@ -104,8 +86,14 @@ export default function GinRummyAAA() {
   const [statusMsg, setStatusMsg] = useState<StatusMessage | null>(null);
   const [profileOpen, setProfileOpen] = useState<SpadesPosition | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
-  const [discardSelected, setDiscardSelected] = useState<GrCard | null>(null);
-  const [showKnock, setShowKnock] = useState(false);
+
+  const handCards = raw?.your_hand ?? [];
+  const selection = useCardSelection({
+    mode: "single",
+    cards: handCards,
+    enabled: Boolean(raw && raw.phase === "discard" && raw.turn === raw.user_position),
+  });
+  const discardSelected = selection.selected[0] ?? null;
 
   const flash = useCallback((text: string, tone: StatusMessage["tone"] = "amber", ttl = 2200) => {
     setStatusMsg({ text, tone, id: Date.now() });
@@ -162,8 +150,7 @@ export default function GinRummyAAA() {
       });
       const data = await res.json();
       if (!res.ok) { flash(data.detail || "Discard rejected", "rose"); return; }
-      setDiscardSelected(null);
-      setShowKnock(false);
+      selection.clear();
       if (knock) flash("Knock!", "amber", 1800);
       // Stage bot turn one event at a time so the user sees what
       // happened: first the bot drew (top discard taken or stock face-
@@ -192,7 +179,7 @@ export default function GinRummyAAA() {
       }
       setRaw(next);
     } finally { setBusy(false); }
-  }, [raw, busy, discardSelected, flash]);
+  }, [raw, busy, discardSelected, flash, selection]);
 
   const newHand = useCallback(async () => {
     if (!raw || busy) return;
@@ -208,7 +195,12 @@ export default function GinRummyAAA() {
     } finally { setBusy(false); }
   }, [raw, busy, flash]);
 
-  const backToLobby = () => { setRaw(null); setPhase("lobby"); setDiscardSelected(null); };
+  const backToLobby = () => { setRaw(null); setPhase("lobby"); selection.clear(); };
+
+  useEffect(() => {
+    if (raw?.phase !== "discard") selection.clear();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [raw?.phase]);
 
   if (phase === "lobby") {
     return (
@@ -268,180 +260,137 @@ export default function GinRummyAAA() {
   const finished = raw.phase === "finished";
   const scoring = raw.phase === "scoring";
 
+  const phaseActions: CardAction[] = [
+    {
+      id: "discard",
+      label: "Discard",
+      onClick: () => void submitDiscard(false),
+      disabled: !discardSelected || busy,
+      variant: "primary",
+      phases: ["discard"],
+      testId: "gin-rummy-discard-btn",
+    },
+    {
+      id: "knock",
+      label: raw.is_gin ? "Gin!" : "Knock",
+      onClick: () => void submitDiscard(true),
+      disabled: !discardSelected || busy || !(raw.can_knock || raw.is_gin),
+      variant: "success",
+      phases: ["discard"],
+      testId: "gin-rummy-knock-btn",
+    },
+    {
+      id: "next-hand",
+      label: "Next Hand",
+      onClick: () => void newHand(),
+      disabled: busy,
+      variant: "primary",
+      phases: ["scoring"],
+      testId: "gin-rummy-next-hand-btn",
+    },
+    {
+      id: "replay",
+      label: "Play Again",
+      onClick: () => void startMatch(),
+      disabled: busy,
+      variant: "primary",
+      phases: ["finished"],
+      testId: "gin-rummy-aaa-replay-btn",
+    },
+    {
+      id: "lobby",
+      label: "Back to Lobby",
+      onClick: backToLobby,
+      variant: "secondary",
+      phases: ["finished"],
+      testId: "gin-rummy-aaa-lobby-btn",
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#160a02] via-[#0a0604] to-[#050302] text-white relative overflow-x-hidden" data-testid="gin-rummy-aaa">
-      <div className="relative z-10 flex flex-col min-h-screen">
-        <div className="flex flex-wrap items-start justify-between px-2 sm:px-3 md:px-5 pt-2 sm:pt-3 md:pt-4 gap-2">
-          <div className="flex flex-col items-start gap-2">
-            <button onClick={backToLobby} className="flex items-center gap-1.5 text-amber-300/70 hover:text-white transition text-xs md:text-sm font-bold" data-testid="gin-rummy-aaa-back-btn">
-              <ArrowLeft className="w-4 h-4" /> Lobby
-            </button>
-            <SpadesGameMenu onExit={backToLobby} onOpenMessages={() => setChatOpen(true)} />
+    <BaseCardGameRoom
+      testId="gin-rummy-aaa"
+      title="Gin Rummy"
+      subtitle={`Deadwood ${raw.your_deadwood}${raw.is_gin ? " · GIN" : raw.can_knock ? " · can knock" : ""}`}
+      onBack={backToLobby}
+      phase={raw.phase}
+      phaseActions={phaseActions}
+      actionsLeading={
+        <div className="flex justify-center items-center gap-3 mb-1" data-testid="gin-rummy-status">
+          <div className="px-3 py-1 rounded-full bg-slate-900/70 border border-amber-400/30 text-amber-200 text-xs font-bold">
+            Deadwood: <span className="text-amber-100" data-testid="gin-rummy-deadwood">{raw.your_deadwood}</span>
           </div>
-          <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 order-3 w-full sm:order-none sm:w-auto">
-            <div className="px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-amber-300 font-bold">Gin Rummy</div>
-            <div className="px-2 py-0.5 rounded-full bg-fuchsia-500/15 border border-fuchsia-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-fuchsia-300 font-bold">
-              <span className="inline-flex items-center gap-1"><Bot className="w-2.5 h-2.5" /> AI</span>
-            </div>
-            <div className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-600 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-amber-200 font-bold tabular-nums">
-              Stock · {raw.stock_count}
-            </div>
+        </div>
+      }
+      hudExtra={
+        <div className="flex flex-wrap items-center gap-1.5">
+          <SpadesGameMenu onExit={backToLobby} onOpenMessages={() => setChatOpen(true)} />
+          <div className="px-2 py-0.5 rounded-full bg-fuchsia-500/15 border border-fuchsia-400/40 text-[9px] uppercase tracking-[0.2em] text-fuchsia-300 font-bold">
+            <span className="inline-flex items-center gap-1"><Bot className="w-2.5 h-2.5" /> AI</span>
+          </div>
+          <div className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-600 text-[9px] uppercase tracking-[0.2em] text-amber-200 font-bold tabular-nums">
+            Stock · {raw.stock_count}
           </div>
           <SpadesScoreBadge scores={scores} players={players} phase="playing" tricksPlayed={0} />
+          <span className="sr-only" data-testid="gin-rummy-aaa-back-btn">Lobby</span>
         </div>
-
-        <SpadesStatusBanner message={statusMsg} />
-
-        <div className="flex items-center justify-center py-2 md:py-3 relative">
-          <div className="relative">
-            <SpadesTable brandSubLabel="GIN RUMMY" variant="gold" density="2p" centreGlyph="G">
-              <SpadesSeat position="north" player={players.north} isTurn={raw.turn === "north"} isYou={youPosition === "north"} onClick={() => setProfileOpen("north")} />
-            </SpadesTable>
-            {/* Stock + Discard piles centred on the felt */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[35%] z-20 flex items-center gap-3 pointer-events-auto">
-              <button
-                onClick={isYourTurn && raw.phase === "draw" ? drawStock : undefined}
-                disabled={!isYourTurn || raw.phase !== "draw" || busy}
-                className={`w-12 h-16 md:w-14 md:h-20 rounded-md bg-gradient-to-br from-amber-700 to-amber-950 border-2 border-amber-300/60 shadow-lg flex items-center justify-center transition hover:scale-105 ${
-                  isYourTurn && raw.phase === "draw" ? "cursor-pointer ring-2 ring-amber-300/70" : "cursor-default opacity-80"
-                }`}
-                data-testid="gin-rummy-stock-btn"
-              >
-                <span className="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-amber-200 -rotate-90">VIBEZ</span>
-              </button>
-              <div className="text-amber-200 text-[10px] uppercase tracking-widest font-bold">vs</div>
-              <button
-                onClick={isYourTurn && raw.phase === "draw" ? takeDiscard : undefined}
-                disabled={!isYourTurn || raw.phase !== "draw" || !raw.top_discard || busy}
-                className={`w-12 h-16 md:w-14 md:h-20 rounded-md bg-white border-2 shadow-lg flex flex-col items-center justify-between p-0.5 transition hover:scale-105 ${
-                  isYourTurn && raw.phase === "draw" ? "cursor-pointer border-amber-400 ring-2 ring-amber-300/70" : "cursor-default border-slate-300 opacity-90"
-                }`}
-                data-testid="gin-rummy-take-discard-btn"
-              >
-                {raw.top_discard ? (
-                  <>
-                    <span className={`text-[10px] font-bold leading-none ${SUIT_COLOR[raw.top_discard.suit]}`}>{raw.top_discard.rank}</span>
-                    <span className={`text-2xl ${SUIT_COLOR[raw.top_discard.suit]}`}>{SUIT_GLYPH[raw.top_discard.suit]}</span>
-                    <span className={`text-[10px] font-bold leading-none rotate-180 ${SUIT_COLOR[raw.top_discard.suit]}`}>{raw.top_discard.rank}</span>
-                  </>
-                ) : <span className="text-slate-400 text-xs">empty</span>}
-              </button>
-            </div>
+      }
+      table={
+        <div className="relative">
+          <SpadesTable brandSubLabel="GIN RUMMY" variant="gold" density="2p" centreGlyph="G">
+            <SpadesSeat position="north" player={players.north} isTurn={raw.turn === "north"} isYou={youPosition === "north"} onClick={() => setProfileOpen("north")} />
+          </SpadesTable>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[35%] z-20 flex items-center gap-3 pointer-events-auto">
+            <button
+              onClick={isYourTurn && raw.phase === "draw" ? drawStock : undefined}
+              disabled={!isYourTurn || raw.phase !== "draw" || busy}
+              className={`w-12 h-16 md:w-14 md:h-20 rounded-md bg-gradient-to-br from-amber-700 to-amber-950 border-2 border-amber-300/60 shadow-lg flex items-center justify-center transition hover:scale-105 ${
+                isYourTurn && raw.phase === "draw" ? "cursor-pointer ring-2 ring-amber-300/70" : "cursor-default opacity-80"
+              }`}
+              data-testid="gin-rummy-stock-btn"
+            >
+              <span className="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-amber-200 -rotate-90">VIBEZ</span>
+            </button>
+            <div className="text-amber-200 text-[10px] uppercase tracking-widest font-bold">vs</div>
+            <button
+              onClick={isYourTurn && raw.phase === "draw" ? takeDiscard : undefined}
+              disabled={!isYourTurn || raw.phase !== "draw" || !raw.top_discard || busy}
+              className={`rounded-md transition hover:scale-105 ${
+                isYourTurn && raw.phase === "draw" ? "cursor-pointer ring-2 ring-amber-300/70" : "cursor-default opacity-90"
+              }`}
+              data-testid="gin-rummy-take-discard-btn"
+            >
+              {raw.top_discard ? (
+                <SpadesCard card={raw.top_discard} size="sm" isPlayable={isYourTurn && raw.phase === "draw"} />
+              ) : (
+                <div className="w-12 h-16 rounded-md bg-white/10 border border-slate-500 flex items-center justify-center text-slate-400 text-xs">empty</div>
+              )}
+            </button>
           </div>
         </div>
-
-        <div className="px-3 md:px-4 pb-3 md:pb-4 relative z-30">
-          {/* Deadwood + Knock controls */}
-          <div className="flex justify-center items-center gap-3 mb-3" data-testid="gin-rummy-status">
-            <div className="px-3 py-1 rounded-full bg-slate-900/70 border border-amber-400/30 text-amber-200 text-xs font-bold">
-              Deadwood: <span className="text-amber-100" data-testid="gin-rummy-deadwood">{raw.your_deadwood}</span>
-            </div>
-            {raw.is_gin ? (
-              <div className="px-3 py-1 rounded-full bg-amber-500/30 border border-amber-300 text-amber-100 text-xs font-black uppercase tracking-widest">
-                Gin!
-              </div>
-            ) : raw.can_knock ? (
-              <div className="px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/50 text-emerald-200 text-xs font-bold">
-                You can knock
-              </div>
-            ) : null}
-          </div>
-
-          {/* Hand — grouped by meld so the player can SEE their pairs/runs.
-              Each meld_id is rendered as its own bordered group with a
-              label badge. Loose cards (meld_id = -1) trail at the end as
-              the "deadwood" column. Fix Feb 2026 (round 2): user said
-              "matches don't sink nor the different pairs" — so we now
-              auto-group cards by their best-meld-partition assignment
-              from the backend. */}
-          {(() => {
-            const groups: Record<number, GrCard[]> = {};
-            const order: number[] = [];
-            raw.your_hand.forEach((c) => {
-              const id = c.meld_id ?? -1;
-              if (!(id in groups)) { groups[id] = []; order.push(id); }
-              groups[id].push(c);
-            });
-            // Render melds first (id >= 0), deadwood last (id = -1)
-            order.sort((a, b) => (a === -1 ? 1 : b === -1 ? -1 : a - b));
-            const labelFor = (id: number): string | null => {
-              if (id === -1) return null;
-              const g = (raw.meld_groups ?? []).find((mg) => raw.your_hand.find((c) => c.meld_id === id) !== undefined);
-              return raw.meld_groups?.[id]?.label ?? null;
-            };
-            return (
-              <div className="flex flex-wrap justify-center items-end gap-3 mb-3" data-testid="gin-rummy-hand-strip">
-                {order.map((id) => (
-                  <div
-                    key={id}
-                    className={`flex flex-col items-center gap-1 ${
-                      id === -1
-                        ? "px-2 pt-1 rounded-lg border border-slate-700/50"
-                        : "px-2 pt-1 rounded-lg border border-amber-500/40 bg-amber-500/5"
-                    }`}
-                    data-testid={`gin-rummy-meld-group-${id}`}
-                  >
-                    <div className="flex flex-wrap items-end gap-1">
-                      {groups[id].map((c, idx) => (
-                        <CardFace
-                          key={`${c.suit}-${c.rank}-${id}-${idx}`}
-                          card={c}
-                          in_meld={c.in_meld}
-                          selected={!!discardSelected && discardSelected.suit === c.suit && discardSelected.rank === c.rank}
-                          onClick={raw.phase === "discard" && raw.turn === youPosition ? () => setDiscardSelected(c) : undefined}
-                        />
-                      ))}
-                    </div>
-                    <span
-                      className={`text-[8px] md:text-[9px] uppercase tracking-[0.18em] font-bold ${
-                        id === -1 ? "text-slate-500" : "text-amber-300"
-                      }`}
-                    >
-                      {id === -1 ? `Deadwood · ${groups[id].length}` : (labelFor(id) ?? `Meld ${id + 1}`)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            );
-          })()}
-
-          <div className="flex justify-center gap-3 flex-wrap">
-            {raw.phase === "discard" && raw.turn === youPosition ? (
-              <>
-                <button
-                  onClick={() => submitDiscard(false)}
-                  disabled={!discardSelected || busy}
-                  className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black uppercase tracking-widest text-sm shadow-[0_0_20px_rgba(245,158,11,0.45)] disabled:opacity-40"
-                  data-testid="gin-rummy-discard-btn"
-                >
-                  Discard
-                </button>
-                {raw.can_knock || raw.is_gin ? (
-                  <button
-                    onClick={() => submitDiscard(true)}
-                    disabled={!discardSelected || busy}
-                    className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase tracking-widest text-sm shadow-[0_0_20px_rgba(16,185,129,0.45)] disabled:opacity-40"
-                    data-testid="gin-rummy-knock-btn"
-                  >
-                    {raw.is_gin ? "Gin!" : "Knock"}
-                  </button>
-                ) : null}
-              </>
-            ) : null}
-            {scoring ? (
-              <button
-                onClick={newHand}
-                disabled={busy}
-                className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold disabled:opacity-50"
-                data-testid="gin-rummy-next-hand-btn"
-              >
-                Next Hand
-              </button>
-            ) : null}
-          </div>
-
+      }
+      hand={
+        <div data-testid="gin-rummy-hand-strip">
+          <HandFan
+            hand={raw.your_hand}
+            isYourTurn={raw.phase === "discard" && raw.turn === youPosition}
+            busy={busy}
+            sortMode="meld"
+            showMeldLabels
+            meldLabelFor={(id) => raw.meld_groups?.[id]?.label ?? null}
+            selectionMode="single"
+            selectedKeys={selection.selectedKeys}
+            onToggleSelect={selection.toggle}
+            hideTurnIndicator={raw.phase === "draw"}
+            testId="gin-rummy-hand"
+          />
+        </div>
+      }
+      overlay={
+        <>
+          <SpadesStatusBanner message={statusMsg} />
           {raw.hand_summary && scoring ? (
-            <div className="mt-4 p-4 rounded-2xl bg-white/[0.04] border border-amber-400/30 text-center" data-testid="gin-rummy-hand-summary">
+            <div className="absolute bottom-28 left-1/2 -translate-x-1/2 w-[min(92vw,28rem)] p-4 rounded-2xl bg-black/70 border border-amber-400/30 text-center z-40" data-testid="gin-rummy-hand-summary">
               <p className="text-xs uppercase tracking-[0.25em] text-amber-300 font-bold mb-1" style={{ fontFamily: "'Cinzel', serif" }}>
                 {raw.hand_summary.outcome.toUpperCase()}
               </p>
@@ -450,24 +399,18 @@ export default function GinRummyAAA() {
               </p>
             </div>
           ) : null}
-
           {finished ? (
-            <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="mt-4 p-6 rounded-2xl bg-gradient-to-br from-amber-950/40 to-[#050302] border-2 border-amber-400/40 text-center" data-testid="gin-rummy-aaa-finished-footer">
-              <Sparkles className="w-10 h-10 mx-auto mb-2 text-amber-300" />
-              <h2 className="text-2xl font-black mb-1" style={{ fontFamily: "'Cinzel', serif" }}>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="absolute inset-x-4 bottom-24 p-4 rounded-2xl bg-gradient-to-br from-amber-950/80 to-[#050302] border-2 border-amber-400/40 text-center z-40" data-testid="gin-rummy-aaa-finished-footer">
+              <Sparkles className="w-8 h-8 mx-auto mb-1 text-amber-300" />
+              <h2 className="text-xl font-black" style={{ fontFamily: "'Cinzel', serif" }}>
                 {raw.match_winner === youPosition ? "You Win!" : "Opponent wins"}
               </h2>
-              <div className="flex gap-3 justify-center mt-4">
-                <button onClick={startMatch} disabled={busy} className="px-5 py-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold disabled:opacity-50" data-testid="gin-rummy-aaa-replay-btn">Play Again</button>
-                <button onClick={backToLobby} className="px-5 py-2.5 rounded-lg border border-amber-400/40 text-amber-200 hover:bg-amber-500/10 font-bold" data-testid="gin-rummy-aaa-lobby-btn">Back to Lobby</button>
-              </div>
             </motion.div>
           ) : null}
-        </div>
-      </div>
-
-      <SpadesPlayerProfile open={profileOpen !== null} position={profileOpen} player={profileOpen ? players[profileOpen] : null} isYou={profileOpen === youPosition} onClose={() => setProfileOpen(null)} />
-      <SpadesCommunityChat open={chatOpen} gameId={`gin-rummy-${raw.user_position}`} mode="ai" onClose={() => setChatOpen(false)} />
-    </div>
+          <SpadesPlayerProfile open={profileOpen !== null} position={profileOpen} player={profileOpen ? players[profileOpen] : null} isYou={profileOpen === youPosition} onClose={() => setProfileOpen(null)} />
+          <SpadesCommunityChat open={chatOpen} gameId={`gin-rummy-${raw.user_position}`} mode="ai" onClose={() => setChatOpen(false)} />
+        </>
+      }
+    />
   );
 }

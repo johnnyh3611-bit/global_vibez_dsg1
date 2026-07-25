@@ -24,6 +24,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Bot, Heart, Loader2 } from "lucide-react";
 import { authFetch } from "@/utils/secureAuth";
+import { BaseCardGameRoom, usePlaySequence } from "@/components/shared/cards";
 
 import SpadesTable from "@/components/spades/SpadesTable";
 import SpadesStatusBanner from "@/components/spades/SpadesStatusBanner";
@@ -157,6 +158,11 @@ function buildSpadesScores(scores: Record<SpadesPosition, number>): SpadesScores
 
 export default function HeartsAAA() {
   const navigate = useNavigate();
+  const { run: runPlaySequence } = usePlaySequence({
+    stagingMs: 850,
+    trickHoldMs: 1200,
+    firstCardMs: 200,
+  });
 
   const [phase, setPhase] = useState<"lobby" | "game">("lobby");
   const [raw, setRaw] = useState<HeartsRawState | null>(null);
@@ -295,52 +301,47 @@ export default function HeartsAAA() {
         detectRoundEnd(next);
         return;
       }
-      // Stage trick-pile reveals one card at a time. We replay the
-      // sequence on top of the current frontend state so each opponent's
-      // card visibly LANDS in the trick pile before the next play, and
-      // a winning trick lingers TRICK_HOLD_MS before clearing — exactly
-      // like Spades AAA. Final authoritative state is committed at the
-      // end of the loop.
-      const CARD_STAGING_MS = 850;
-      const TRICK_HOLD_MS = 1200;
-      let stagedTrick: HeartsTrickPlay[] = [...raw.current_trick];
-      let stagedHand = raw.your_hand.filter(
+
+      const roundEndIdx = seq.findIndex((e) => e.round_complete);
+      const seqToRun = roundEndIdx >= 0 ? seq.slice(0, roundEndIdx + 1) : seq;
+      const stagedHand = raw.your_hand.filter(
         (c) => !(c.suit === card.suit && c.rank === card.rank),
       );
       const stagedPlayersData = { ...raw.players_data };
 
-      const pushFrame = () =>
-        setRaw((prev) =>
-          prev ? { ...prev, current_trick: stagedTrick, your_hand: stagedHand, players_data: stagedPlayersData } : prev,
-        );
-
-      for (let i = 0; i < seq.length; i++) {
-        const ev = seq[i];
-        const isFirst = i === 0;
-        stagedTrick = [...stagedTrick, { player: ev.player, card: ev.card }];
-        await new Promise<void>((r) => setTimeout(r, isFirst ? 200 : CARD_STAGING_MS));
-        if (ev.trick_complete && ev.trick_winner) {
-          const winner = ev.trick_winner as SpadesPosition;
-          flashStatus(`${BOT_NAMES[winner] ?? winner} took the trick`, "rose", 1300);
-          if (stagedPlayersData[winner]) {
-            stagedPlayersData[winner] = { ...stagedPlayersData[winner], tricks_won: (stagedPlayersData[winner].tricks_won ?? 0) + 1 };
+      await runPlaySequence(
+        seqToRun,
+        ({ current_trick, trickCleared, event }) => {
+          if (event.trick_complete && event.trick_winner && !trickCleared) {
+            const winner = event.trick_winner as SpadesPosition;
+            flashStatus(`${BOT_NAMES[winner] ?? winner} took the trick`, "rose", 1300);
+            if (stagedPlayersData[winner]) {
+              stagedPlayersData[winner] = {
+                ...stagedPlayersData[winner],
+                tricks_won: (stagedPlayersData[winner].tricks_won ?? 0) + 1,
+              };
+            }
           }
-          pushFrame();
-          await new Promise<void>((r) => setTimeout(r, TRICK_HOLD_MS));
-          stagedTrick = [];
-          pushFrame();
-        } else {
-          pushFrame();
-        }
-        if (ev.round_complete) break;
-      }
-      // Commit authoritative state once the staging finishes.
+          setRaw((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  current_trick: current_trick as HeartsTrickPlay[],
+                  your_hand: stagedHand,
+                  players_data: stagedPlayersData,
+                }
+              : prev,
+          );
+        },
+        [...raw.current_trick],
+      );
+
       setRaw(next);
       detectRoundEnd(next);
     } finally {
       setBusy(false);
     }
-  }, [raw, busy, flashStatus, detectRoundEnd]);
+  }, [raw, busy, flashStatus, detectRoundEnd, runPlaySequence]);
 
   const startNextHand = useCallback(async () => {
     if (!raw || busy) return;
@@ -519,91 +520,53 @@ export default function HeartsAAA() {
   const uiPhase = adaptPhase(raw.phase);
   const isFinished = raw.phase === "finished";
   const tricksPlayed = raw.tricks_played;
+  const cardPhase =
+    isFinished ? "finished" : raw.phase === "playing" ? "play" : raw.phase === "passing" ? "pass" : "score";
 
   return (
-    <div
-      className="min-h-screen bg-gradient-to-b from-[#1a050a] via-[#0a020a] to-[#050507] text-white relative overflow-x-hidden"
-      data-testid="hearts-aaa"
-    >
-      <div
-        className="absolute inset-0 pointer-events-none opacity-[0.12]"
-        style={{
-          backgroundImage:
-            "linear-gradient(#3a0a14 1px, transparent 1px), linear-gradient(90deg, #3a0a14 1px, transparent 1px)",
-          backgroundSize: "60px 60px",
-        }}
-      />
-
-      <div className="relative z-10 flex flex-col min-h-screen">
-        <div className="flex flex-wrap items-start justify-between px-2 sm:px-3 md:px-5 pt-2 sm:pt-3 md:pt-4 gap-2">
-          <div className="flex flex-col items-start gap-2">
-            <button
-              onClick={backToLobby}
-              className="flex items-center gap-1.5 text-rose-300/70 hover:text-white transition text-xs md:text-sm font-bold"
-              data-testid="hearts-aaa-back-btn"
-            >
-              <ArrowLeft className="w-4 h-4" /> Lobby
-            </button>
-            <div className="flex items-center gap-2">
-              <SpadesGameMenu
-                onExit={backToLobby}
-                onOpenMessages={() => setChatOpen(true)}
-              />
-              <CommHubButton compact />
+    <BaseCardGameRoom
+      testId="hearts-aaa"
+      title="Hearts"
+      subtitle={DIRECTION_LABEL[raw.pass_direction]}
+      onBack={backToLobby}
+      phase={cardPhase}
+      className="min-h-screen bg-gradient-to-b from-[#1a050a] via-[#0a020a] to-[#050507] text-white"
+      hudExtra={
+        <>
+          <div className="hidden sm:flex flex-wrap items-center justify-center gap-1.5 max-w-[50vw]">
+            <div className="px-2 py-0.5 rounded-full bg-rose-500/15 border border-rose-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-rose-300 font-bold">
+              Hearts
             </div>
-            <div data-testid="room-menu-bar" className="hidden" aria-hidden="true" />
-          </div>
-
-          <div className="flex flex-col items-center gap-1.5 order-3 w-full sm:order-none sm:w-auto">
-            <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
-              <div className="px-2 py-0.5 rounded-full bg-rose-500/15 border border-rose-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-rose-300 font-bold">
-                Hearts
-              </div>
-              <div className="px-2 py-0.5 rounded-full bg-fuchsia-500/15 border border-fuchsia-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-fuchsia-300 font-bold">
-                <span className="inline-flex items-center gap-1">
-                  <Bot className="w-2.5 h-2.5" /> AI
-                </span>
-              </div>
-              <div className="px-2 py-0.5 rounded-full bg-rose-500/15 border border-rose-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-rose-300 font-bold">
-                {DIRECTION_LABEL[raw.pass_direction]}
-              </div>
-              {raw.hearts_broken ? (
-                <div className="px-2 py-0.5 rounded-full bg-pink-500/15 border border-pink-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-pink-300 font-bold">
-                  Hearts Broken
-                </div>
-              ) : null}
+            <div className="px-2 py-0.5 rounded-full bg-fuchsia-500/15 border border-fuchsia-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-fuchsia-300 font-bold">
+              <span className="inline-flex items-center gap-1">
+                <Bot className="w-2.5 h-2.5" /> AI
+              </span>
             </div>
+            <div className="px-2 py-0.5 rounded-full bg-rose-500/15 border border-rose-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-rose-300 font-bold">
+              {DIRECTION_LABEL[raw.pass_direction]}
+            </div>
+            {raw.hearts_broken ? (
+              <div className="px-2 py-0.5 rounded-full bg-pink-500/15 border border-pink-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-pink-300 font-bold">
+                Hearts Broken
+              </div>
+            ) : null}
           </div>
-
           <SpadesScoreBadge
             scores={scores}
             players={players}
             phase={uiPhase}
             tricksPlayed={tricksPlayed}
           />
-        </div>
-
-        <SpadesStatusBanner message={statusMsg} />
-
-        {/* Universal turn indicator (LOCKED 2026-02-16 — every multiplayer room) */}
-        {raw.turn && !isFinished && (() => {
-          const partnerOf: Record<string, string> = { north: 'south', south: 'north', east: 'west', west: 'east' };
-          const role: TurnRole = raw.turn === youPosition
-            ? 'me'
-            : raw.turn === partnerOf[youPosition]
-              ? 'partner'  // hearts is FFA scoring but partnership in some variants
-              : 'opponent';
-          return (
-            <TurnIndicator
-              role={role}
-              name={role === 'me' ? undefined : players[raw.turn]?.name}
-              expiresAt={role === 'me' ? turnExpiresAt : null}
-              onExpire={role === 'me' ? handleShotClockExpire : undefined}
-            />
-          );
-        })()}
-
-        <div className="flex items-center justify-center py-2 md:py-3 relative">
+          <SpadesGameMenu
+            onExit={backToLobby}
+            onOpenMessages={() => setChatOpen(true)}
+          />
+          <CommHubButton compact />
+          <div data-testid="room-menu-bar" className="hidden" aria-hidden="true" />
+        </>
+      }
+      table={
+        <div className="relative flex items-center justify-center py-2 md:py-3">
           <div className="relative">
             <SpadesTable brandSubLabel="HEARTS" variant="crimson" centreGlyph="♥">
               <SpadesSeat
@@ -638,66 +601,83 @@ export default function HeartsAAA() {
             <SpadesDealingAnimation active={dealing} />
           </div>
         </div>
-
-        <div className="px-3 md:px-4 -mt-4 md:-mt-6 pb-3 md:pb-4 relative z-20">
-          {raw.phase === "playing" ? (
-            <SpadesHandFan
-              key={dealKey}
-              hand={raw.your_hand}
-              validPlays={raw.playable_cards ?? []}
-              isYourTurn={raw.turn === youPosition}
-              onPlay={playCard}
-              busy={busy}
-            />
-          ) : raw.phase === "passing" && !dealing && !passOpen ? (
-            <div className="text-center text-rose-300/60 text-xs uppercase tracking-[0.3em] font-bold">
-              Waiting for partners to pass…
-            </div>
-          ) : null}
-
-          {isFinished ? (
-            <FinishedFooter
-              winner={raw.match_winner}
-              youPosition={youPosition}
-              onLobby={backToLobby}
-              onReplay={startGame}
-              busy={busy}
-            />
-          ) : null}
-        </div>
-      </div>
-
-      <HeartsPassModal
-        open={passOpen && raw.phase === "passing" && !isFinished}
-        hand={raw.your_hand}
-        passDirection={raw.pass_direction}
-        busy={busy}
-        onSubmit={submitPass}
-      />
-
-      <SpadesRoundModal
-        open={roundModalOpen && !isFinished}
-        summary={lastRoundSummary}
-        scores={scores}
-        players={players}
-        onClose={handleRoundModalClose}
-      />
-
-      <SpadesPlayerProfile
-        open={profileOpen !== null}
-        position={profileOpen}
-        player={profileOpen ? players[profileOpen] : null}
-        isYou={profileOpen === youPosition}
-        onClose={() => setProfileOpen(null)}
-      />
-
-      <SpadesCommunityChat
-        open={chatOpen}
-        gameId={`hearts-${raw.user_position}`}
-        mode="ai"
-        onClose={() => setChatOpen(false)}
-      />
-    </div>
+      }
+      hand={
+        raw.phase === "playing" ? (
+          <SpadesHandFan
+            key={dealKey}
+            hand={raw.your_hand}
+            validPlays={raw.playable_cards ?? []}
+            isYourTurn={raw.turn === youPosition}
+            onPlay={playCard}
+            busy={busy}
+          />
+        ) : raw.phase === "passing" && !dealing && !passOpen ? (
+          <div className="text-center text-rose-300/60 text-xs uppercase tracking-[0.3em] font-bold">
+            Waiting for partners to pass…
+          </div>
+        ) : null
+      }
+      actions={
+        isFinished ? (
+          <FinishedFooter
+            winner={raw.match_winner}
+            youPosition={youPosition}
+            onLobby={backToLobby}
+            onReplay={startGame}
+            busy={busy}
+          />
+        ) : undefined
+      }
+      overlay={
+        <>
+          <SpadesStatusBanner message={statusMsg} />
+          {raw.turn && !isFinished ? (() => {
+            const partnerOf: Record<string, string> = { north: "south", south: "north", east: "west", west: "east" };
+            const role: TurnRole = raw.turn === youPosition
+              ? "me"
+              : raw.turn === partnerOf[youPosition]
+                ? "partner"
+                : "opponent";
+            return (
+              <TurnIndicator
+                role={role}
+                name={role === "me" ? undefined : players[raw.turn]?.name}
+                expiresAt={role === "me" ? turnExpiresAt : null}
+                onExpire={role === "me" ? handleShotClockExpire : undefined}
+              />
+            );
+          })() : null}
+          <HeartsPassModal
+            open={passOpen && raw.phase === "passing" && !isFinished}
+            hand={raw.your_hand}
+            passDirection={raw.pass_direction}
+            busy={busy}
+            onSubmit={submitPass}
+          />
+          <SpadesRoundModal
+            open={roundModalOpen && !isFinished}
+            summary={lastRoundSummary}
+            scores={scores}
+            players={players}
+            onClose={handleRoundModalClose}
+          />
+          <SpadesPlayerProfile
+            open={profileOpen !== null}
+            position={profileOpen}
+            player={profileOpen ? players[profileOpen] : null}
+            isYou={profileOpen === youPosition}
+            onClose={() => setProfileOpen(null)}
+          />
+          <SpadesCommunityChat
+            open={chatOpen}
+            gameId={`hearts-${raw.user_position}`}
+            mode="ai"
+            onClose={() => setChatOpen(false)}
+          />
+        </>
+      }
+    />
   );
 }
 
