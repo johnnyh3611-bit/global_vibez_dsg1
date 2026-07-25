@@ -539,6 +539,8 @@ def register_all_routes(
     _soft_mount(api_router, log, "dating", "routes.dating")
     _soft_mount(api_router, log, "enhanced_dating", "routes.enhanced_dating")
     _soft_mount(api_router, log, "dating_games", "routes.dating_games")
+    # Date Night Session endpoints share /dating-games prefix (session/*).
+    _soft_mount(api_router, log, "date_night_session", "routes.date_night_session")
     _soft_mount(api_router, log, "matching", "routes.matching")
     _soft_mount(api_router, log, "match_consensus", "routes.match_consensus")
     _soft_mount(api_router, log, "vr_dating", "routes.vr_dating", tags=["vr_dating"])

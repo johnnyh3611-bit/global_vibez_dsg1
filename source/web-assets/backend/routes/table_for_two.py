@@ -29,29 +29,42 @@ ICEBREAKER_GAMES = {
         "emoji": "🎴",
         "duration": "5-10 mins",
         "description": "Fast-paced card game - perfect icebreaker!",
-        "practice_route": "/practice/uno"
+        "practice_route": "/practice/uno",
+        # Date Night Session packs supersede practice redirects.
+        "date_night_pack": "warm_up",
     },
     "connect4": {
         "name": "Connect 4",
         "emoji": "🔴",
         "duration": "3-5 mins",
-        "description": "Classic strategy game",
-        "practice_route": "/practice/connect4"
+        "description": "Navy felt arena — glass discs, tournament tempo.",
+        "practice_route": "/practice/connect4",
+        "date_night_pack": "arena_connect4",
     },
     "tictactoe": {
         "name": "Tic-Tac-Toe",
         "emoji": "⭕",
         "duration": "1-2 mins",
-        "description": "Quick and fun",
-        "practice_route": "/practice/tictactoe"
+        "description": "Marble arena — first to three.",
+        "practice_route": "/practice/tictactoe",
+        "date_night_pack": "arena_tictactoe",
     },
     "checkers": {
         "name": "Checkers",
         "emoji": "⚫",
         "duration": "5-10 mins",
         "description": "Strategic board game",
-        "practice_route": "/practice/checkers"
-    }
+        "practice_route": "/practice/checkers",
+        "date_night_pack": "warm_up",
+    },
+    "chess": {
+        "name": "Chess",
+        "emoji": "♟️",
+        "duration": "10-20 mins",
+        "description": "Walnut & brass table — competitive date arena.",
+        "practice_route": "/practice/chess",
+        "date_night_pack": "arena_chess",
+    },
 }
 
 
@@ -240,44 +253,77 @@ async def respond_to_invite(invite_id: str, response: InviteResponse, request: R
     )
     
     if response.action == "accept":
-        # Create a dating-mode game session
-        game_session = {
-            "game_id": f"dating_{invite['game_type']}_{uuid.uuid4().hex[:8]}",
-            "game_type": invite["game_type"],
-            "mode": "dating",  # Special dating mode tag
-            "invite_id": invite_id,
-            "match_id": invite["match_id"],
-            "player_1_id": invite["from_user_id"],
-            "player_2_id": invite["to_user_id"],
-            "status": "waiting_for_players",  # waiting_for_players, in_progress, completed
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "practice_route": invite["game_info"]["practice_route"]
-        }
-        
-        await db.dating_game_sessions.insert_one(game_session)
-        
-        # Notify the inviter
+        # Prefer Date Night Session (shared room) over practice routes.
+        pack_id = (invite.get("game_info") or {}).get("date_night_pack") or "warm_up"
+        try:
+            from routes import date_night_session as dns
+
+            payload = dns._pack_payload(
+                pack_id, invite["from_user_id"], invite["to_user_id"]
+            )
+            session_id = f"dns_{uuid.uuid4().hex[:12]}"
+            now_iso = datetime.now(timezone.utc).isoformat()
+            game_session = {
+                "session_id": session_id,
+                "game_id": session_id,
+                "mode": "date_night",
+                "invite_id": invite_id,
+                "match_id": invite["match_id"],
+                "player_1_id": invite["from_user_id"],
+                "player_2_id": invite["to_user_id"],
+                "host_id": invite["from_user_id"],
+                "created_at": now_iso,
+                "updated_at": now_iso,
+                "room": f"date_night:{session_id}",
+                "redirect_to": f"/dating/date-night/{session_id}",
+                **payload,
+            }
+            await db.dating_game_sessions.insert_one(game_session)
+        except Exception:
+            # Fallback legacy practice session if Date Night import fails
+            session_id = f"dating_{invite['game_type']}_{uuid.uuid4().hex[:8]}"
+            game_session = {
+                "game_id": session_id,
+                "session_id": session_id,
+                "game_type": invite["game_type"],
+                "mode": "dating",
+                "invite_id": invite_id,
+                "match_id": invite["match_id"],
+                "player_1_id": invite["from_user_id"],
+                "player_2_id": invite["to_user_id"],
+                "status": "waiting_for_players",
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "practice_route": invite["game_info"]["practice_route"],
+                "redirect_to": invite["game_info"]["practice_route"],
+            }
+            await db.dating_game_sessions.insert_one(game_session)
+
+        redirect_to = game_session.get("redirect_to") or invite["game_info"]["practice_route"]
+
         notification = {
             "notification_id": str(uuid.uuid4()),
             "user_id": invite["from_user_id"],
             "type": "game_accepted",
-            "title": "🎉 Game Accepted!",
+            "title": "Date Night Accepted!",
             "message": f"{current_user.name} accepted your {invite['game_info']['name']} invite!",
             "data": {
-                "game_id": game_session["game_id"],
+                "game_id": game_session.get("session_id") or game_session.get("game_id"),
+                "session_id": game_session.get("session_id") or game_session.get("game_id"),
                 "game_type": invite["game_type"],
-                "practice_route": invite["game_info"]["practice_route"]
+                "redirect_to": redirect_to,
             },
             "read": False,
-            "created_at": datetime.now(timezone.utc).isoformat()
+            "created_at": datetime.now(timezone.utc).isoformat(),
         }
-        
         await db.notifications.insert_one(notification)
-        
+
         return {
-            "message": "Invite accepted! Redirecting to game...",
-            "game_id": game_session["game_id"],
-            "practice_route": invite["game_info"]["practice_route"]
+            "message": "Invite accepted! Opening Date Night room…",
+            "game_id": game_session.get("session_id") or game_session.get("game_id"),
+            "session_id": game_session.get("session_id") or game_session.get("game_id"),
+            "redirect_to": redirect_to,
+            # Keep key for older clients, but point at Date Night when available.
+            "practice_route": redirect_to,
         }
     
     else:

@@ -1423,6 +1423,7 @@ from services.room_socket_events import register_room_events
 # Import Matchmaking System events
 from services.matchmaking_socket_events import register_matchmaking_events
 from services.would_you_rather_socket_events import register_would_you_rather_events
+from services.date_night_socket_events import register_date_night_events
 
 # Register all Socket.IO events on the CRA-facing server (/api/socket.io)
 register_omega_events(sio)
@@ -1431,6 +1432,7 @@ register_underground_spades_events(sio)
 register_room_events(sio)  # Universal room system
 register_matchmaking_events(sio)  # Matchmaking queue system
 register_would_you_rather_events(sio)  # WYR immediate room init
+register_date_night_events(sio)  # Date Night Session shared rooms
 
 # Treasury live solvency broadcaster (manifesto §4)
 import services.treasury_socketio  # noqa: F401  — registers join/leave handlers
@@ -1446,5 +1448,6 @@ register_underground_spades_events(legacy_sio)
 register_room_events(legacy_sio)
 register_matchmaking_events(legacy_sio)
 register_would_you_rather_events(legacy_sio)
+register_date_night_events(legacy_sio)
 app.mount("/socket.io", socket_app)
 # Cloud config fix

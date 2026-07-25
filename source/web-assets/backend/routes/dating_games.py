@@ -20,10 +20,12 @@ router = APIRouter(prefix="/dating-games", tags=["dating_games"])
 # ==================== MODELS ====================
 
 class StartDatingGame(BaseModel):
-    game_type: str  # 'partner_quiz', 'icebreaker', 'compatibility', 'couples_trivia', 'would_you_rather'
+    game_type: str  # 'partner_quiz', 'icebreaker', 'compatibility', 'couples_trivia', 'would_you_rather', 'date_night'
     partner_id: str
     tournament_id: Optional[str] = None
     opponent_couple_ids: Optional[List[str]] = None  # [player1_id, player2_id]
+    match_id: Optional[str] = None
+    pack_id: Optional[str] = "warm_up"
 
 
 class AnswerSubmission(BaseModel):
@@ -49,11 +51,38 @@ class Reaction(BaseModel):
 
 @router.post("/start")
 async def start_dating_game(game_data: StartDatingGame, request: Request) -> Dict[str, Any]:
-    """Start a dating show-style game"""
+    """Start a dating show-style game.
+
+    When ``game_type`` is ``date_night`` (or a Date Night pack id), delegates
+    to the match-scoped Date Night Session shared room.
+    """
     current_user = await get_current_user(request)
     if not current_user:
         raise HTTPException(status_code=401, detail="Not authenticated")
-    
+
+    # ── Date Night Session consolidation ──────────────────────────────
+    from data.date_night_content import DATE_NIGHT_PACKS
+
+    pack_id = game_data.pack_id or "warm_up"
+    if game_data.game_type == "date_night" or game_data.game_type in DATE_NIGHT_PACKS:
+        if game_data.game_type in DATE_NIGHT_PACKS:
+            pack_id = game_data.game_type
+        if not game_data.match_id:
+            raise HTTPException(
+                status_code=400,
+                detail="match_id is required to start a Date Night session",
+            )
+        from routes.date_night_session import StartSessionBody, start_date_night_session
+
+        return await start_date_night_session(
+            StartSessionBody(
+                match_id=game_data.match_id,
+                partner_id=game_data.partner_id,
+                pack_id=pack_id,
+            ),
+            request,
+        )
+
     db = get_database()
     
     # Verify match/friendship exists

@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Gamepad2, MessageCircle, Shield, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { TableForTwoModal } from '@/components/TableForTwoModal';
 import { DatePlanModal } from '@/components/DatePlanModal';
+import DateGamesLobbyModal from '@/components/dating/DateGamesLobbyModal';
 import { authFetch } from '@/utils/secureAuth';
 import CallButton from '@/components/voice/CallButton';
 
@@ -25,8 +25,8 @@ export function DatingMatches() {
   const [selectedMatch, setSelectedMatch] = useState(null);
   const [showGameSelect, setShowGameSelect] = useState(false);
   const [inviteSent, setInviteSent] = useState(false);
-  const [showTableForTwo, setShowTableForTwo] = useState(false);
-  const [tableForTwoMatch, setTableForTwoMatch] = useState(null);
+  const [showDateGames, setShowDateGames] = useState(false);
+  const [dateGamesMatch, setDateGamesMatch] = useState(null);
   const [showDatePlanner, setShowDatePlanner] = useState(false);
   const [datePlannerMatch, setDatePlannerMatch] = useState(null);
 
@@ -195,13 +195,14 @@ export function DatingMatches() {
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         onClick={() => {
-                          setTableForTwoMatch(match);
-                          setShowTableForTwo(true);
+                          setDateGamesMatch(match);
+                          setShowDateGames(true);
                         }}
                         className="w-full px-4 py-3 bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg hover:shadow-fuchsia-500/50 transition-all"
+                        data-testid="match-date-games-btn"
                       >
                         <Gamepad2 className="w-5 h-5" />
-                        🎮 Play a Game
+                        Date Games
                       </motion.button>
 
                       <motion.button
@@ -261,17 +262,14 @@ export function DatingMatches() {
         )}
       </div>
 
-      {/* Table for Two Modal */}
-      <TableForTwoModal
-        isOpen={showTableForTwo}
+      {/* Unified Date Games lobby → Date Night Session shared room */}
+      <DateGamesLobbyModal
+        isOpen={showDateGames}
         onClose={() => {
-          setShowTableForTwo(false);
-          setTableForTwoMatch(null);
+          setShowDateGames(false);
+          setDateGamesMatch(null);
         }}
-        match={tableForTwoMatch}
-        onInviteSent={(data) => {
-          alert(`🎮 Game invite sent! ${tableForTwoMatch?.username || 'Your match'} has 15 minutes to accept.`);
-        }}
+        match={dateGamesMatch}
       />
 
       {/* AI Date Planner Modal */}

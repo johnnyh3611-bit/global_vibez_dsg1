@@ -14,6 +14,7 @@ import { DatingDiscovery } from "@/pages/DatingDiscovery";
 import { DatingMatches } from "@/pages/DatingMatches";
 import DatingQuiz from "@/pages/DatingQuiz";
 import PartnerQuizGame from "@/pages/PartnerQuizGame";
+import DateNightSession from "@/pages/DateNightSession";
 import ProfileSetup from "@/pages/ProfileSetup";
 import ProfileEdit from "@/pages/ProfileEdit";
 import BondsPage from "@/pages/BondsPage";
@@ -63,6 +64,7 @@ export const datingRoutes = (ProtectedRoute) => (
     <Route path="/dating/discover" element={<ProtectedRoute>{withIdGate("Dating discover", <DatingDiscovery />)}</ProtectedRoute>} />
     <Route path="/dating/matches" element={<ProtectedRoute>{withIdGate("Dating matches", <DatingMatches />)}</ProtectedRoute>} />
     <Route path="/dating-game/:gameId" element={<ProtectedRoute>{withIdGate("Dating game", <PartnerQuizGame />)}</ProtectedRoute>} />
+    <Route path="/dating/date-night/:sessionId" element={<ProtectedRoute>{withIdGate("Date Night", <DateNightSession />)}</ProtectedRoute>} />
     <Route path="/quiz/dating" element={<ProtectedRoute>{withIdGate("Dating quiz", <DatingQuiz />)}</ProtectedRoute>} />
     <Route path="/vr-dating" element={<ProtectedRoute>{withIdGate("VR dating", LazyVRDating)}</ProtectedRoute>} />
     <Route path="/vr-date/:roomId" element={<ProtectedRoute>{withIdGate("VR date", LazyVRDating)}</ProtectedRoute>} />
