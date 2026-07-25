@@ -419,50 +419,17 @@ async def acquire_chair(req: AcquireChairRequest, request: Request) -> Dict[str,
 async def _create_session(
     *, amount: float, metadata: Dict[str, str], path_back: str
 ) -> Dict[str, Any]:
-    if not _stripe_ok():
-        raise HTTPException(503, "Stripe not configured (missing STRIPE_API_KEY)")
-    frontend = _frontend_url()
-    if not frontend:
-        raise HTTPException(500, "FRONTEND_URL not configured for Stripe redirect")
+    """Retired — Stripe merchant checkout removed. Use Helio / Solana."""
+    from services.stripe_retired import raise_stripe_retired
 
-    success_url = (
-        f"{frontend}{path_back}?merchant_session={{CHECKOUT_SESSION_ID}}&kind="
-        f"{metadata.get('kind', 'merchant')}"
-    )
-    cancel_url = f"{frontend}{path_back}?merchant_cancelled=1"
-    stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY)
-    session_request = CheckoutSessionRequest(
-        amount=float(amount), currency="usd",
-        success_url=success_url, cancel_url=cancel_url,
-        metadata=metadata,
-    )
-    session = await stripe_checkout.create_checkout_session(session_request)
-    await _db().merchant_stripe_sessions.insert_one({
-        "session_id": session.session_id,
-        "merchant_id": metadata.get("merchant_id"),
-        "kind": metadata.get("kind"),
-        "amount_usd": float(amount),
-        "metadata": metadata,
-        "status": "pending",
-        "created_at": datetime.now(timezone.utc).isoformat(),
-    })
-    return {"checkout_url": session.url, "session_id": session.session_id, "amount_usd": amount}
+    raise_stripe_retired()
 
 
 async def _verify_session(session_id: str, expected_kind: str) -> Dict[str, Any]:
-    if not _stripe_ok():
-        raise HTTPException(503, "Stripe not configured")
-    stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY)
-    try:
-        status = await stripe_checkout.get_checkout_status(session_id)
-    except Exception as exc:  # noqa: BLE001
-        raise HTTPException(400, f"Invalid or expired session: {exc}")
-    if status.status != "complete":
-        raise HTTPException(400, "Payment not completed")
-    meta = status.metadata or {}
-    if meta.get("kind") != expected_kind:
-        raise HTTPException(400, f"Wrong session kind (got {meta.get('kind')})")
-    return {"status": status, "metadata": meta}
+    """Retired — Stripe merchant session verify removed."""
+    from services.stripe_retired import raise_stripe_retired
+
+    raise_stripe_retired()
 
 
 # ────────────────────────────────────────────── Stripe — Onboard ──

@@ -483,20 +483,9 @@ function FeaturedUpsell({ streamerId }: { streamerId: string }) {
     setBusy(true);
     setErr(null);
     try {
-      const r = await fetch(`${API}/api/featured-streamers/checkout`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          streamer_id: streamerId,
-          return_url: `${window.location.origin}/streams/live`,
-        }),
-      });
-      const data = await r.json();
-      if (!r.ok || !data.checkout_url) {
-        throw new Error(data?.detail || "Checkout failed");
-      }
-      // Redirect to Stripe-hosted page for the payment.
-      window.location.href = data.checkout_url;
+      const { stripeRetiredMessage, WALLET_TOPUP_PATH } = await import("@/utils/stripeRetired");
+      setErr(stripeRetiredMessage());
+      window.location.href = WALLET_TOPUP_PATH;
     } catch (e: unknown) {
       setErr((e as Error)?.message || "Checkout failed");
       setBusy(false);

@@ -40,27 +40,10 @@ const EntryFeePaywall = () => {
 
   const handlePurchase = async () => {
     setPurchasing(true);
-
     try {
-      const response = await fetch(`${API_URL}/api/entry-fee/purchase`, {
-        method: 'POST',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create checkout session');
-      }
-
-      const data = await response.json();
-
-      if (data.success && data.checkout_url) {
-        // Redirect to Stripe checkout
-        window.location.href = data.checkout_url;
-      } else {
-        throw new Error('Invalid checkout response');
-      }
-    } catch (error) {
-      // console.error('Error purchasing entry fee:', error);
-      alert('Failed to start checkout. Please try again.');
+      const { handleStripeRetired } = await import("@/utils/stripeRetired");
+      handleStripeRetired();
+    } finally {
       setPurchasing(false);
     }
   };

@@ -61,12 +61,9 @@ export default function VibeVenuesArtisan() {
     if (!done) return;
     setSubmitting(true);
     try {
-      const r = await fetch(`${API}/api/vibe-venues/artisans/${done}/checkout`, {
-        method: "POST",
-      });
-      const data = await r.json();
-      if (!r.ok || !data.checkout_url) throw new Error(data.detail || "Stripe checkout failed");
-      window.location.href = data.checkout_url;
+      const { stripeRetiredMessage, WALLET_TOPUP_PATH } = await import("@/utils/stripeRetired");
+      toast.error(stripeRetiredMessage());
+      window.location.href = WALLET_TOPUP_PATH;
     } catch (e: any) {
       toast.error(e.message);
       setSubmitting(false);

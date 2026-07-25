@@ -3,13 +3,8 @@ from pydantic import BaseModel
 from typing import Dict, Any
 from utils.database import get_database, get_current_user
 from datetime import datetime, timezone
-import os
-import stripe
 
 router = APIRouter(prefix="/subscriptions", tags=["subscriptions"])
-
-# Initialize Stripe
-stripe.api_key = os.environ.get('STRIPE_API_KEY')
 
 # ==================== MODELS ====================
 
@@ -173,101 +168,19 @@ async def get_my_subscription(request: Request) -> Dict[str, Any]:
 
 @router.post("/purchase-credits")
 async def purchase_credits(purchase: CreditPurchase, request: Request) -> Dict[str, Any]:
-    """Purchase credit package (creates Stripe checkout session)"""
-    current_user = await get_current_user(request)
-    if not current_user:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    
-    if purchase.package not in CREDIT_PACKAGES:
-        raise HTTPException(status_code=400, detail="Invalid credit package")
-    
-    package = CREDIT_PACKAGES[purchase.package]
-    
-    try:
-        # Create Stripe checkout session
-        checkout_session = stripe.checkout.Session.create(
-            payment_method_types=['card'],
-            line_items=[{
-                'price_data': {
-                    'currency': 'usd',
-                    'product_data': {
-                        'name': f'{package["credits"]} Credits',
-                        'description': 'Global Vibes Credits Package'
-                    },
-                    'unit_amount': package['price_cents'],
-                },
-                'quantity': 1,
-            }],
-            mode='payment',
-            success_url=f'{os.environ.get("FRONTEND_URL") or os.environ.get("REACT_APP_FRONTEND_URL") or "https://www.globalvibezdsg.com"}/payment/success?session_id={{CHECKOUT_SESSION_ID}}&type=credits&package={purchase.package}',
-            cancel_url=f'{os.environ.get("FRONTEND_URL") or os.environ.get("REACT_APP_FRONTEND_URL") or "https://www.globalvibezdsg.com"}/payment/cancel',
-            client_reference_id=current_user.user_id,
-            metadata={
-                'type': 'credits',
-                'package': purchase.package,
-                'credits': package['credits'],
-                'user_id': current_user.user_id
-            }
-        )
-        
-        return {
-            "checkout_url": checkout_session.url,
-            "session_id": checkout_session.id
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    """Retired — Stripe credit checkout removed. Use Helio / Solana wallet top-up."""
+    from services.stripe_retired import raise_stripe_retired
+
+    raise_stripe_retired(use="/api/coins/topup/helio")
+
 
 @router.post("/subscribe")
 async def subscribe(subscription: SubscriptionPurchase, request: Request) -> Dict[str, Any]:
-    """Subscribe to Plus or Premium tier"""
-    current_user = await get_current_user(request)
-    if not current_user:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    
-    if subscription.tier not in ["plus", "premium"]:
-        raise HTTPException(status_code=400, detail="Invalid tier")
-    
-    if subscription.billing_period not in ["monthly", "annual"]:
-        raise HTTPException(status_code=400, detail="Invalid billing period")
-    
-    tier_info = SUBSCRIPTION_TIERS[subscription.tier][subscription.billing_period]
-    
-    try:
-        # Create Stripe checkout session for subscription
-        checkout_session = stripe.checkout.Session.create(
-            payment_method_types=['card'],
-            line_items=[{
-                'price_data': {
-                    'currency': 'usd',
-                    'product_data': {
-                        'name': f'Global Vibes {subscription.tier.capitalize()}',
-                        'description': f'{subscription.billing_period.capitalize()} subscription'
-                    },
-                    'unit_amount': tier_info['price_cents'],
-                    'recurring': {
-                        'interval': 'month' if subscription.billing_period == 'monthly' else 'year'
-                    } if subscription.billing_period == 'monthly' else None
-                },
-                'quantity': 1,
-            }],
-            mode='subscription' if subscription.billing_period == 'monthly' else 'payment',
-            success_url=f'{os.environ.get("FRONTEND_URL") or os.environ.get("REACT_APP_FRONTEND_URL") or "https://www.globalvibezdsg.com"}/payment/success?session_id={{CHECKOUT_SESSION_ID}}&type=subscription&tier={subscription.tier}&period={subscription.billing_period}',
-            cancel_url=f'{os.environ.get("FRONTEND_URL") or os.environ.get("REACT_APP_FRONTEND_URL") or "https://www.globalvibezdsg.com"}/payment/cancel',
-            client_reference_id=current_user.user_id,
-            metadata={
-                'type': 'subscription',
-                'tier': subscription.tier,
-                'billing_period': subscription.billing_period,
-                'user_id': current_user.user_id
-            }
-        )
-        
-        return {
-            "checkout_url": checkout_session.url,
-            "session_id": checkout_session.id
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    """Retired — Stripe subscription checkout removed. Use Helio / Solana rails."""
+    from services.stripe_retired import raise_stripe_retired
+
+    raise_stripe_retired(use="/api/coins/topup/helio")
+
 
 @router.get("/credits/balance")
 async def get_credit_balance(request: Request) -> Dict[str, Any]:

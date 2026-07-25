@@ -383,6 +383,9 @@ async def upgrade_listing(payload: UpgradeRequest, request: Request) -> Dict[str
         }
 
     # ─── Card payment branch (Stripe checkout) ────────────────────────
+    from services.stripe_retired import raise_stripe_retired
+    raise_stripe_retired()
+
     # Lazy-import Stripe so the route still loads if the SDK is missing on a
     # legacy backend image.
     from services.payment_hub import (
@@ -429,6 +432,9 @@ async def upgrade_listing(payload: UpgradeRequest, request: Request) -> Dict[str
 @router.get("/payments/{session_id}/status")
 async def check_payment_status(session_id: str, request: Request) -> Dict[str, Any]:
     """Poll Stripe + reconcile listing tier + ambassador commission."""
+    from services.stripe_retired import raise_stripe_retired
+    raise_stripe_retired()
+
     from services.payment_hub import StripeCheckout
     from config import STRIPE_API_KEY
 
@@ -452,6 +458,9 @@ async def check_payment_status(session_id: str, request: Request) -> Dict[str, A
 
 @router.post("/webhook/stripe")
 async def stripe_webhook(request: Request) -> Dict[str, Any]:
+    from services.stripe_retired import raise_stripe_retired
+    raise_stripe_retired()
+
     from services.payment_hub import StripeCheckout
     from config import STRIPE_API_KEY
 

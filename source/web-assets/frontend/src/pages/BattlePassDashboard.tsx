@@ -41,22 +41,10 @@ const BattlePassDashboard = () => {
 
   const handlePurchasePremium = async () => {
     setPurchasing(true);
-
     try {
-      const response = await fetch(`${API_URL}/api/battle-pass/purchase`, {
-        method: 'POST',
-      });
-
-      const data = await response.json();
-
-      if (data.success && data.checkout_url) {
-        window.location.href = data.checkout_url;
-      } else {
-        throw new Error('Failed to create checkout');
-      }
-    } catch (error) {
-      // console.error('Error purchasing Battle Pass:', error);
-      alert('Failed to purchase. Please try again.');
+      const { handleStripeRetired } = await import("@/utils/stripeRetired");
+      handleStripeRetired();
+    } finally {
       setPurchasing(false);
     }
   };

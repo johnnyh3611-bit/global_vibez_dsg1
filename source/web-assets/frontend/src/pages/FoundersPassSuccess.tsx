@@ -1,19 +1,27 @@
 /**
- * /founders-pass/success — Stripe redirect target.
- * Polls the backend for activation, then redirects to /founders-pass.
+ * /founders-pass/success — legacy Stripe redirect target.
+ * Stripe checkout is retired; send users to Helio/Solana wallet top-up.
  */
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Sparkles, Check, Loader2 } from "lucide-react";
 import { authFetch } from "@/utils/secureAuth";
+import {
+  isStripeRetiredResponse,
+  stripeRetiredMessage,
+  WALLET_TOPUP_PATH,
+} from "@/utils/stripeRetired";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
 export default function FoundersPassSuccess() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const [status, setStatus] = useState<"polling" | "activated" | "error">("polling");
+  const [status, setStatus] = useState<"polling" | "activated" | "error" | "retired">(
+    "polling",
+  );
   const [tierName, setTierName] = useState<string>("");
+  const [retiredMsg, setRetiredMsg] = useState("");
 
   useEffect(() => {
     const sessionId = params.get("session_id");
@@ -27,11 +35,17 @@ export default function FoundersPassSuccess() {
       attempts += 1;
       try {
         const r = await authFetch(
-          `${API}/api/founders-pass/checkout-status/${encodeURIComponent(sessionId)}`
+          `${API}/api/founders-pass/checkout-status/${encodeURIComponent(sessionId)}`,
         );
         if (cancelled) return;
+        const body = await r.json().catch(() => ({}));
+        if (isStripeRetiredResponse(r.status, body)) {
+          setRetiredMsg(stripeRetiredMessage(body));
+          setStatus("retired");
+          setTimeout(() => navigate(WALLET_TOPUP_PATH), 2500);
+          return;
+        }
         if (r.ok) {
-          const body = await r.json();
           if (body.status === "activated") {
             setTierName(body.tier);
             setStatus("activated");
@@ -61,7 +75,7 @@ export default function FoundersPassSuccess() {
           <>
             <Loader2 className="w-10 h-10 text-amber-300 animate-spin mx-auto" />
             <h1 className="mt-4 text-2xl font-black">Locking in your House Tier…</h1>
-            <p className="mt-2 text-sm text-cyan-300/80">Confirming Stripe payment.</p>
+            <p className="mt-2 text-sm text-cyan-300/80">Confirming payment.</p>
           </>
         )}
         {status === "activated" && (
@@ -75,18 +89,28 @@ export default function FoundersPassSuccess() {
             </p>
           </>
         )}
+        {status === "retired" && (
+          <>
+            <Sparkles className="w-10 h-10 text-amber-300 mx-auto" />
+            <h1 className="mt-4 text-2xl font-black">Checkout moved</h1>
+            <p className="mt-2 text-sm text-cyan-300/80">
+              {retiredMsg || "Stripe checkout is retired. Redirecting to wallet…"}
+            </p>
+          </>
+        )}
         {status === "error" && (
           <>
             <Sparkles className="w-10 h-10 text-rose-300 mx-auto" />
-            <h1 className="mt-4 text-2xl font-black">Couldn't confirm payment</h1>
+            <h1 className="mt-4 text-2xl font-black">Could not confirm</h1>
             <p className="mt-2 text-sm text-cyan-300/80">
-              If you were charged, contact support — your House Tier will be activated manually.
+              Top up with Helio or Solana from your wallet, then try again.
             </p>
             <button
-              onClick={() => navigate("/founders-pass")}
-              className="mt-4 rounded-xl bg-amber-500 text-black px-4 py-2 text-sm font-bold"
+              type="button"
+              className="mt-6 text-amber-300 underline"
+              onClick={() => navigate(WALLET_TOPUP_PATH)}
             >
-              Back to House Tiers
+              Open wallet
             </button>
           </>
         )}

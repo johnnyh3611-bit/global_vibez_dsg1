@@ -125,6 +125,25 @@ def test_checkout_builds_fraud_controls():
     assert kwargs["line_items"][0]["price_data"]["unit_amount"] == 900
 
 
+def test_stripe_checkout_create_session_raises_410():
+    """StripeCheckout hub is hard-retired — every create path is HTTP 410."""
+    from fastapi import HTTPException
+    from services.payment_hub import CheckoutSessionRequest, StripeCheckout
+
+    sc = StripeCheckout(api_key="sk_test_x")
+    with pytest.raises(HTTPException) as exc:
+        sc.create_session(
+            CheckoutSessionRequest(
+                amount=9.0,
+                currency="usd",
+                success_url="https://example.com/ok",
+                cancel_url="https://example.com/cancel",
+            )
+        )
+    assert exc.value.status_code == 410
+    assert exc.value.detail["error"] == "stripe_retired"
+
+
 def test_coin_topup_stripe_path_retired():
     """Stripe is not the card rail — legacy checkout must 410."""
     import inspect

@@ -322,6 +322,9 @@ async def create_checkout(payload: CheckoutPayload, http_request: Request) -> Di
     The tier_id + user_id are stamped into Stripe metadata so the webhook
     can activate the pass on payment.success.
     """
+    from services.stripe_retired import raise_stripe_retired
+    raise_stripe_retired()
+
     user = await get_current_user(http_request)
     if not user:
         raise HTTPException(401, "Not authenticated")
@@ -405,6 +408,9 @@ async def create_checkout(payload: CheckoutPayload, http_request: Request) -> Di
 @router.get("/founders-pass/checkout-status/{session_id}")
 async def checkout_status(session_id: str, http_request: Request) -> Dict[str, Any]:
     """Polled by the success page. On `paid`, activates the pass once."""
+    from services.stripe_retired import raise_stripe_retired
+    raise_stripe_retired()
+
     user = await get_current_user(http_request)
     if not user:
         raise HTTPException(401, "Not authenticated")

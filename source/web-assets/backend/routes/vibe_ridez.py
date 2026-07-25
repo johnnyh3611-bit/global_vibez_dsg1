@@ -673,64 +673,10 @@ async def create_payment_checkout(
     seats_requested: int = 1,
     current_user: dict = Depends(get_current_user_from_session)
 ):
-    """
-    Create Stripe checkout session for ride payment
-    """
-    try:
-        passenger_id = current_user["user_id"]
-        
-        # Get ride details
-        ride = await db.vibe_ridez_rides.find_one(
-            {"ride_id": ride_id},
-            {"_id": 0}
-        )
-        
-        if not ride:
-            raise HTTPException(status_code=404, detail="Ride not found")
-        
-        # Calculate total
-        total_price = ride["price_per_seat"] * seats_requested
-        # emergentintegrations expects amount in dollars, not cents
-        
-        # Create checkout session
-        checkout_request = CheckoutSessionRequest(
-            amount=total_price,
-            currency="usd",
-            success_url=f"{os.environ.get('FRONTEND_URL', 'http://localhost:3000')}/vibe-ridez/payment/success?ride_id={ride_id}&session_id={{CHECKOUT_SESSION_ID}}",
-            cancel_url=f"{os.environ.get('FRONTEND_URL', 'http://localhost:3000')}/vibe-ridez/payment/cancel?ride_id={ride_id}",
-            metadata={
-                "ride_id": ride_id,
-                "passenger_id": passenger_id,
-                "seats_requested": str(seats_requested),
-                "driver_id": ride["driver_id"]
-            }
-        )
-        
-        session = await stripe_checkout.create_checkout_session(checkout_request)
-        
-        # Store payment intent
-        await db.vibe_ridez_payments.insert_one({
-            "payment_id": str(uuid4()),
-            "ride_id": ride_id,
-            "passenger_id": passenger_id,
-            "driver_id": ride["driver_id"],
-            "amount": total_price,
-            "seats": seats_requested,
-            "stripe_session_id": session.session_id,
-            "status": "pending",
-            "created_at": datetime.now(timezone.utc)
-        })
-        
-        return {
-            "success": True,
-            "session_id": session.session_id,
-            "checkout_url": session.url
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    """Retired — Stripe ride checkout removed. Use Helio / Solana wallet."""
+    from services.stripe_retired import raise_stripe_retired
+
+    raise_stripe_retired()
 
 
 @router.get("/payment/status/{session_id}")
@@ -738,63 +684,10 @@ async def check_payment_status(
     session_id: str,
     current_user: dict = Depends(get_current_user_from_session)
 ):
-    """
-    Check payment status
-    """
-    try:
-        status = await stripe_checkout.get_checkout_status(session_id)
-        
-        # Update payment record
-        if status.status == "complete":
-            payment = await db.vibe_ridez_payments.find_one(
-                {"stripe_session_id": session_id}
-            )
-            
-            if payment and payment["status"] == "pending":
-                # Update payment status
-                await db.vibe_ridez_payments.update_one(
-                    {"stripe_session_id": session_id},
-                    {"$set": {
-                        "status": "paid",
-                        "paid_at": datetime.now(timezone.utc)
-                    }}
-                )
-                
-                # Create booking (payment confirmed)
-                booking = {
-                    "booking_id": str(uuid4()),
-                    "ride_id": payment["ride_id"],
-                    "passenger_id": payment["passenger_id"],
-                    "passenger_username": current_user.get("name", "Passenger"),
-                    "seats_booked": payment["seats"],
-                    "price_paid": payment["amount"],
-                    "status": "confirmed",
-                    "payment_id": payment["payment_id"],
-                    "created_at": datetime.now(timezone.utc)
-                }
-                
-                await db.vibe_ridez_bookings.insert_one(booking)
-                
-                # Update ride availability
-                await db.vibe_ridez_rides.update_one(
-                    {"ride_id": payment["ride_id"]},
-                    {
-                        "$push": {
-                            "passenger_ids": payment["passenger_id"],
-                            "passenger_usernames": current_user.get("name", "Passenger")
-                        },
-                        "$inc": {"available_seats": -payment["seats"]}
-                    }
-                )
-        
-        return {
-            "success": True,
-            "status": status.status,
-            "payment_status": status.payment_status
-        }
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    """Retired — Stripe ride payment status removed."""
+    from services.stripe_retired import raise_stripe_retired
+
+    raise_stripe_retired()
 
 
 @router.post("/payment/payout-driver/{ride_id}")

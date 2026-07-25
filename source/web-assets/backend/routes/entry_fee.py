@@ -168,6 +168,9 @@ async def manual_start_trial(request: Request) -> Dict[str, Any]:
 @router.post("/purchase")
 async def purchase_entry_fee(request: Request) -> Dict[str, Any]:
     """Create Stripe checkout session for $50 entry fee"""
+    from services.stripe_retired import raise_stripe_retired
+    raise_stripe_retired()
+
     current_user = await get_current_user(request)
     if not current_user:
         raise HTTPException(status_code=401, detail="Not authenticated")
@@ -226,6 +229,9 @@ async def purchase_entry_fee(request: Request) -> Dict[str, Any]:
 @router.post("/verify-payment")
 async def verify_entry_fee_payment(session_id: str, request: Request) -> Dict[str, Any]:
     """Verify Stripe payment and grant platform access"""
+    from services.stripe_retired import raise_stripe_retired
+    raise_stripe_retired()
+
     current_user = await get_current_user(request)
     if not current_user:
         raise HTTPException(status_code=401, detail="Not authenticated")

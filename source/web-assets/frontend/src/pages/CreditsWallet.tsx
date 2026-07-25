@@ -51,26 +51,10 @@ export default function CreditsWallet() {
     }
   };
 
-  const purchasePackage = async (packageId) => {
-    try {
-      const response = await authFetch(`${API_URL}/api/wallet/purchase`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        
-        body: JSON.stringify({
-          package_id: packageId,
-          success_url: `${process.env.REACT_APP_FRONTEND_URL}/wallet?success=true`,
-          cancel_url: `${process.env.REACT_APP_FRONTEND_URL}/wallet`
-        })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        window.location.href = data.checkout_url;
-      }
-    } catch (error) {
-      // console.error('Error purchasing credits:', error);
-    }
+  const purchasePackage = async (_packageId) => {
+    // Stripe wallet purchase retired — Helio/Solana via /wallet.
+    const { handleStripeRetired } = await import("@/utils/stripeRetired");
+    handleStripeRetired();
   };
 
   const createGiftCard = async () => {

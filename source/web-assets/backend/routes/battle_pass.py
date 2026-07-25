@@ -283,6 +283,9 @@ async def get_battle_pass_rewards(tier: Optional[str] = None) -> Dict[str, Any]:
 @router.post("/purchase")
 async def purchase_battle_pass(request: Request) -> Dict[str, Any]:
     """Purchase premium Battle Pass for current season"""
+    from services.stripe_retired import raise_stripe_retired
+    raise_stripe_retired()
+
     current_user = await get_current_user(request)
     if not current_user:
         raise HTTPException(status_code=401, detail="Not authenticated")
@@ -329,6 +332,9 @@ async def purchase_battle_pass(request: Request) -> Dict[str, Any]:
 @router.post("/verify-purchase")
 async def verify_battle_pass_purchase(session_id: str, request: Request) -> Dict[str, Any]:
     """Verify Stripe payment and upgrade to premium tier"""
+    from services.stripe_retired import raise_stripe_retired
+    raise_stripe_retired()
+
     current_user = await get_current_user(request)
     if not current_user:
         raise HTTPException(status_code=401, detail="Not authenticated")
