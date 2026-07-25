@@ -11,13 +11,47 @@ class MultiplayerManager {
     this.localStream = null;
     this.remoteStream = null;
     this.roomId = null;
+    this.userId = null;
+    this.userName = null;
     this.isConnected = false;
+    this._hadFirstConnect = false;
     this.callbacks = {};
   }
 
   // ==================== SOCKET CONNECTION ====================
 
+  _resyncAfterReconnect() {
+    if (!this.socket) return;
+    try {
+      if (this.userId) {
+        this.socket.emit('authenticate', {
+          user_id: this.userId,
+          user_name: this.userName || this.userId,
+        });
+      }
+      if (this.roomId) {
+        this.socket.emit('join_room', {
+          room_id: this.roomId,
+          user_id: this.userId,
+        });
+        // Also emit common aliases used by various game rooms
+        this.socket.emit('rejoin_room', {
+          room_id: this.roomId,
+          user_id: this.userId,
+        });
+      }
+      this.triggerCallback('reconnected', {
+        room_id: this.roomId,
+        user_id: this.userId,
+      });
+    } catch {
+      /* never throw from socket handlers */
+    }
+  }
+
   connect(userId, userName) {
+    this.userId = userId;
+    this.userName = userName;
     if (this.socket && this.isConnected) {
       return Promise.resolve();
     }
@@ -27,8 +61,9 @@ class MultiplayerManager {
         path: '/socket.io',
         transports: ['websocket', 'polling'],
         reconnection: true,
-        reconnectionAttempts: 5,
-        reconnectionDelay: 1000
+        reconnectionAttempts: Infinity,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 8000,
       });
 
       this.socket.on('connect', () => {
@@ -40,7 +75,16 @@ class MultiplayerManager {
           user_name: userName
         });
 
+        if (this._hadFirstConnect) {
+          this._resyncAfterReconnect();
+        }
+        this._hadFirstConnect = true;
         resolve();
+      });
+
+      this.socket.io.on('reconnect', () => {
+        this.isConnected = true;
+        this._resyncAfterReconnect();
       });
 
       this.socket.on('authenticated', (data) => {
@@ -89,6 +133,11 @@ class MultiplayerManager {
     this.socket.on('match_found', (data) => {
       this.roomId = data.room_id;
       this.triggerCallback('match_found', data);
+    });
+
+    this.socket.on('room_joined', (data) => {
+      if (data?.room_id) this.roomId = data.room_id;
+      this.triggerCallback('room_joined', data);
     });
 
     // Game events

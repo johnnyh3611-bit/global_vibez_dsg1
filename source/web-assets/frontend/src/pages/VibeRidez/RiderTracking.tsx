@@ -58,22 +58,43 @@ export default function RiderTracking() {
   const [match, setMatch] = useState<DispatchResult | null>(null);
   const [statusMsg, setStatusMsg] = useState<string>("Tap “Use my location” to begin.");
 
-  // Init map once
+  // Init map once — require REACT_APP_MAPBOX_TOKEN; never throw on tile errors
   useEffect(() => {
-    if (!mapNode.current || mapRef.current || !MAPBOX_TOKEN) return;
-    mapboxgl.accessToken = MAPBOX_TOKEN;
-    const m = new mapboxgl.Map({
-      container: mapNode.current,
-      style: "mapbox://styles/mapbox/dark-v11",
-      center: [-74.006, 40.7128], // NYC default
-      zoom: 11,
-    });
-    m.addControl(new mapboxgl.NavigationControl(), "top-right");
-    mapRef.current = m;
-    return () => {
-      m.remove();
-      mapRef.current = null;
-    };
+    if (!mapNode.current || mapRef.current) return;
+    if (!MAPBOX_TOKEN) {
+      setStatusMsg(
+        "Map unavailable — set REACT_APP_MAPBOX_TOKEN to enable live Mapbox tiles.",
+      );
+      return;
+    }
+    try {
+      mapboxgl.accessToken = MAPBOX_TOKEN;
+      const m = new mapboxgl.Map({
+        container: mapNode.current,
+        style: "mapbox://styles/mapbox/dark-v11",
+        center: [-74.006, 40.7128], // NYC default
+        zoom: 11,
+      });
+      m.addControl(new mapboxgl.NavigationControl(), "top-right");
+      m.on("error", (e) => {
+        const msg =
+          (e as { error?: { message?: string } })?.error?.message ||
+          "Map tile error";
+        setStatusMsg(`Map issue: ${msg}`);
+      });
+      mapRef.current = m;
+      return () => {
+        m.remove();
+        mapRef.current = null;
+      };
+    } catch (err) {
+      setStatusMsg(
+        err instanceof Error
+          ? `Map failed to start: ${err.message}`
+          : "Map failed to start.",
+      );
+      return undefined;
+    }
   }, []);
 
   // Lock to user GPS

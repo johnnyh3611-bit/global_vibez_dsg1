@@ -217,11 +217,34 @@ async def privy_session(
     )
 
     # Resolve / create the canonical users row used by /api/auth/me.
-    user = None
-    if email:
-        user = await db.users.find_one({"email": email}, {"_id": 0})
-    if not user:
-        user = await db.users.find_one({"privy_did": did}, {"_id": 0})
+    # DID-first (unique index on privy_did) prevents duplicate Privy accounts.
+    # Email is only used to *merge* into an existing email user that has no DID.
+    user = await db.users.find_one({"privy_did": did}, {"_id": 0})
+    if not user and email:
+        # Attach this DID to an existing email account only when that account
+        # is not already bound to a different Privy DID.
+        candidate = await db.users.find_one({"email": email}, {"_id": 0})
+        if candidate and not candidate.get("privy_did"):
+            try:
+                await db.users.update_one(
+                    {"user_id": candidate["user_id"], "privy_did": {"$exists": False}},
+                    {
+                        "$set": {
+                            "privy_did": did,
+                            "auth_provider": "privy",
+                            "name": candidate.get("name") or display_name,
+                            "updated_at": now.isoformat(),
+                        }
+                    },
+                )
+                user = await db.users.find_one({"privy_did": did}, {"_id": 0})
+            except Exception as exc:
+                # Unique index race — fall through to DID lookup
+                logger.info("[privy] email merge race for %s: %s", email, type(exc).__name__)
+                user = await db.users.find_one({"privy_did": did}, {"_id": 0})
+        elif candidate and candidate.get("privy_did") == did:
+            user = candidate
+
     if not user:
         user_id = f"privy_{uuid4().hex[:12]}"
         user = {
@@ -243,21 +266,29 @@ async def privy_session(
             "created_at": now.isoformat(),
             "updated_at": now.isoformat(),
         }
-        await db.users.insert_one(user)
+        try:
+            await db.users.insert_one(user)
+        except Exception as exc:
+            # Concurrent first-login for same DID — reuse the winner.
+            logger.info("[privy] insert race for did=%s: %s", did[:24], type(exc).__name__)
+            user = await db.users.find_one({"privy_did": did}, {"_id": 0})
+            if not user:
+                raise HTTPException(500, "Could not create Privy user") from exc
+            user_id = user["user_id"]
     else:
         user_id = user["user_id"]
-        await db.users.update_one(
-            {"user_id": user_id},
-            {
-                "$set": {
-                    "privy_did": did,
-                    "auth_provider": "privy",
-                    "name": user.get("name") or display_name,
-                    "updated_at": now.isoformat(),
-                }
-            },
-        )
+        patch: Dict[str, Any] = {
+            "auth_provider": "privy",
+            "updated_at": now.isoformat(),
+        }
+        if display_name and not user.get("name"):
+            patch["name"] = display_name
+        # Never overwrite a real email with empty; only set when provided.
+        if email and not user.get("email"):
+            patch["email"] = email
+        await db.users.update_one({"user_id": user_id}, {"$set": patch})
         user = await db.users.find_one({"user_id": user_id}, {"_id": 0}) or user
+        user_id = user["user_id"]
 
     session_token = str(uuid4())
     expires_at = now + timedelta(days=30)

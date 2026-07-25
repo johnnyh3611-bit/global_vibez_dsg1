@@ -344,6 +344,25 @@ async def helio_webhook(request: Request) -> Dict[str, Any]:
             try:
                 from routes.chairs import activate_pending_chair_payment
 
+                if transaction_hash:
+                    from services.payment_idempotency import claim_tx_key  # noqa: PLC0415
+
+                    claimed = await claim_tx_key(
+                        _db,
+                        rail="helio_chair",
+                        tx_id=str(transaction_hash),
+                        payment_id=str(payment_id) if payment_id else None,
+                        meta={"charge_id": str(charge_id) if charge_id else None},
+                    )
+                    if not claimed:
+                        return {
+                            "received": True,
+                            "credited": True,
+                            "kind": "chair_park",
+                            "already": True,
+                            "reason": "tx_hash_already_processed",
+                        }
+
                 chair_result = await activate_pending_chair_payment(
                     _db,
                     payment_id=str(payment_id) if payment_id else None,
@@ -408,6 +427,27 @@ async def helio_webhook(request: Request) -> Dict[str, Any]:
 
     if pay.get("credited"):
         return {"received": True, "credited": True, "already": True}
+
+    # Cross-rail idempotency — same Helio tx hash must never credit twice.
+    if transaction_hash:
+        from services.payment_idempotency import claim_tx_key  # noqa: PLC0415
+
+        claimed = await claim_tx_key(
+            _db,
+            rail="helio",
+            tx_id=str(transaction_hash),
+            payment_id=pay.get("id"),
+            user_id=pay.get("user_id"),
+            meta={"charge_id": str(charge_id) if charge_id else None},
+        )
+        if not claimed:
+            return {
+                "received": True,
+                "credited": True,
+                "already": True,
+                "reason": "tx_hash_already_processed",
+                "payment_id": pay["id"],
+            }
 
     await PAYMENTS.update_one(
         {"id": pay["id"]},

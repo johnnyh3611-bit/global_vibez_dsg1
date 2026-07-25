@@ -25,6 +25,8 @@ async def test_integrations_health_omits_stripe(monkeypatch):
     monkeypatch.setenv("MONGO_URL", "mongodb://localhost:27017")
     monkeypatch.setenv("DB_NAME", "test_db")
     monkeypatch.delenv("TWILIO_ACCOUNT_SID", raising=False)
+    monkeypatch.delenv("REDIS_URL", raising=False)
+    monkeypatch.delenv("SOCKETIO_REDIS_URL", raising=False)
 
     mock_client = MagicMock()
     mock_client.admin.command = AsyncMock(return_value={"ok": 1})
@@ -38,9 +40,10 @@ async def test_integrations_health_omits_stripe(monkeypatch):
     assert "stripe" not in payload["services"]
     assert payload["card_provider"] == "helio"
     assert payload["services"]["twilio"]["optional"] is True
+    assert payload["services"]["socketio_redis"]["optional"] is True
     assert payload["runtime"]["jwt"]["configured"] is True
     assert payload["runtime"]["mongodb"]["reachable"] is True
-    assert payload["services"]["helio"]["api_base_is_dev"] is True
+    assert "socketio" in payload["runtime"]
     assert payload["services"]["helio"]["test_mode_isolated"] is True
     assert payload["services"]["helio"]["mainnet_transition"] is False
     assert payload["ai_gateway_path"] == "/api/ai/gateway"
@@ -55,7 +58,7 @@ async def test_root_and_health_probes_return_200(monkeypatch):
     """Railway may probe `/` or `/health` — both must be 200 without Mongo."""
     monkeypatch.setenv("MONGO_URL", "mongodb://localhost:27017")
     monkeypatch.setenv("DB_NAME", "test_db")
-    monkeypatch.setenv("JWT_SECRET", "test-secret")
+    monkeypatch.setenv("JWT_SECRET", "test-secret-long-enough-value")
     monkeypatch.setenv("DISABLE_BG_SCHEDULERS", "1")
 
     from server import app

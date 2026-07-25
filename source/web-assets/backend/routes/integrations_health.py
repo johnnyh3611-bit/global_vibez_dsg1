@@ -2,8 +2,9 @@
 GET /api/integrations/health — public (no secrets) readiness for third-party wiring.
 
 Single source of truth for runtime readiness:
-  JWT secret presence/strength, MongoDB connectivity, Gemini/OpenAI keys,
-  Helio test-mode isolation (HELIO_NETWORK=test → api.dev.hel.io).
+  JWT secret strength, MongoDB connectivity, Gemini/OpenAI keys,
+  Helio test-mode isolation (HELIO_NETWORK=test → api.dev.hel.io),
+  Socket.IO Redis adapter for multi-replica sync, AI gateway status.
 
 Never returns secret values. Card checkout is Helio only.
 """
@@ -22,6 +23,7 @@ _WEAK_JWT = {
     "secret",
     "your-super-secret-jwt-key-change-in-production",
     "jwt-secret",
+    "test-secret",
 }
 
 
@@ -32,7 +34,7 @@ def _present(*names: str) -> bool:
 def _jwt_status() -> Dict[str, Any]:
     secret = (os.environ.get("JWT_SECRET") or "").strip()
     present = bool(secret)
-    weak = (not present) or secret.lower() in _WEAK_JWT or len(secret) < 16
+    weak = (not present) or secret.lower() in _WEAK_JWT or len(secret) < 24
     return {
         "configured": present and not weak,
         "present": present,
@@ -73,9 +75,16 @@ async def _mongo_status() -> Dict[str, Any]:
 async def integrations_health() -> Dict[str, Any]:
     from services.helio_client import helio_status
     from services import ai_gateway as ai_gw
+    from utils.socketio_manager import socketio_adapter_status
 
     jwt = _jwt_status()
     mongo = await _mongo_status()
+    adapter = socketio_adapter_status()
+    socketio_redis = {
+        **adapter,
+        "optional": True,
+        "configured": adapter["redis_url_present"],
+    }
 
     agora = {
         "configured": _present("AGORA_APP_ID", "AGORA_APP_CERTIFICATE"),
@@ -145,6 +154,7 @@ async def integrations_health() -> Dict[str, Any]:
     runtime = {
         "jwt": jwt,
         "mongodb": mongo,
+        "socketio": socketio_redis,
     }
 
     services = {
@@ -156,8 +166,8 @@ async def integrations_health() -> Dict[str, Any]:
         "openai_audio": openai_audio,
         "twilio": twilio,
         "cloudflare_stream": cloudflare_stream,
+        "socketio_redis": socketio_redis,
     }
-    # Required launch rails only — optional keys must not ding ready_count.
     required = {k: v for k, v in services.items() if not v.get("optional")}
     ready = sum(1 for s in required.values() if s.get("configured"))
     notes = [
@@ -165,9 +175,10 @@ async def integrations_health() -> Dict[str, Any]:
         "Coin top-up: Solana deposit (primary) → Helio card (Beta). Stripe is not used.",
         "AI conversational traffic: POST /api/ai/gateway/* with context packet.",
         "Four doors UX: Play · Date · Watch · Earn; lifestyle lives in Beta Hub.",
+        "Multi-replica Socket.IO requires REDIS_URL (python-socketio AsyncRedisManager).",
     ]
     if not jwt.get("configured"):
-        notes.append("Set a strong JWT_SECRET (16+ chars, non-default) on Railway.")
+        notes.append("Set a strong JWT_SECRET (24+ chars, non-default) on Railway.")
     if not mongo.get("configured"):
         notes.append("MongoDB unreachable — API will 500 until MONGO_URL is live.")
     if not helio.get("configured"):
@@ -180,6 +191,10 @@ async def integrations_health() -> Dict[str, Any]:
     if network in ("test", "dev", "devnet", "sandbox"):
         notes.append(
             "Helio remains in test mode (api.dev.hel.io) — no automatic mainnet transition."
+        )
+    if not socketio_redis.get("redis_url_present"):
+        notes.append(
+            "REDIS_URL unset — Socket.IO is single-replica only; set before scaling out."
         )
     if not cloudflare_stream.get("configured"):
         notes.append(

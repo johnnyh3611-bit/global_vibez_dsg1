@@ -127,7 +127,26 @@ async def _credit_deposit(
     Atomically mark a deposit confirmed + bump the user's ₵ balance.
     Returns True if we actually credited (False if it was already confirmed).
     """
-    # Idempotent guard
+    # Global signature claim — a Solana tx can never credit two deposits.
+    if signature:
+        from services.payment_idempotency import claim_tx_key  # noqa: PLC0415
+
+        claimed = await claim_tx_key(
+            db,
+            rail="solana",
+            tx_id=str(signature),
+            payment_id=deposit.get("deposit_id"),
+            user_id=deposit.get("user_id"),
+            meta={"memo": deposit.get("memo")},
+        )
+        if not claimed:
+            logger.info(
+                "[solana-indexer] signature already processed sig=%s…",
+                signature[:10],
+            )
+            return False
+
+    # Idempotent guard on the deposit row
     res = await db.crypto_deposits.update_one(
         {"deposit_id": deposit["deposit_id"], "status": "pending"},
         {"$set": {
@@ -191,6 +210,17 @@ async def _credit_deposit(
 
 
 async def _process_tx(db, signature: str, wallet: str, client: httpx.AsyncClient) -> None:
+    # Fast skip if this chain signature already credited anything.
+    from services.payment_idempotency import tx_already_processed  # noqa: PLC0415
+
+    if await tx_already_processed(db, rail="solana", tx_id=str(signature)):
+        return
+    existing = await db.crypto_deposits.find_one(
+        {"confirmed_signature": signature}, {"_id": 1}
+    )
+    if existing:
+        return
+
     parsed = await _rpc(
         client,
         "getTransaction",
