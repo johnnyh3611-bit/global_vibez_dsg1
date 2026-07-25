@@ -256,15 +256,14 @@ class TestCloudflareLiveInputs:
 
 # ───────────── Stripe webhook prefix routing (unit) ─────────────
 class TestStripeWebhookVipPrefix:
-    def test_vip_prefix_routes_to_apply_vip_grant(self):
-        """The regression shield test exists, but verify the import path."""
-        import sys
-        sys.path.insert(0, "/home/johnnie/master-project")
-        import routes.stripe_payouts_webhook as wh  # noqa: PLC0415
-        from services.high_roller_economy import HIGH_ROLLER_REF_PREFIX  # noqa: PLC0415
-        assert HIGH_ROLLER_REF_PREFIX == "vip:"
-        # the module should reference apply_vip_grant (string check is enough)
+    def test_vip_grant_helper_still_in_high_roller(self):
+        """After Stripe payouts webhook purge, apply_vip_grant remains on high_roller."""
         import inspect
-        src = inspect.getsource(wh)
-        assert "apply_vip_grant" in src
+        from pathlib import Path
+        from services.high_roller_economy import HIGH_ROLLER_REF_PREFIX  # noqa: PLC0415
+
+        assert HIGH_ROLLER_REF_PREFIX == "vip:"
+        src = Path("/workspace/source/web-assets/backend/routes/high_roller.py").read_text()
+        assert "async def apply_vip_grant" in src
         assert "vip:" in src or "HIGH_ROLLER_REF_PREFIX" in src
+        assert not Path("/workspace/source/web-assets/backend/routes/stripe_payouts_webhook.py").exists()

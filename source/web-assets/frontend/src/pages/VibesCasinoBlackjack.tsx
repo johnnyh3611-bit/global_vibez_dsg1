@@ -12,6 +12,8 @@ import ParticleEffectsOverlay, { ConfettiCelebration } from '@/components/Partic
 import dealerVoice, { DealerCallouts } from '@/utils/dealerVoice';
 import casinoSounds from '@/utils/casinoSoundManager';
 import SpatialVideoTable, { useSpatialVideo } from '@/components/SpatialVideoTable';
+import useSocketReconnect from '@/hooks/useSocketReconnect';
+import RoomReconnectModal from '@/components/games/RoomReconnectModal';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -178,9 +180,29 @@ export default function VibesCasinoBlackjack() {
   const [previousPlayerCardCounts, setPreviousPlayerCardCounts] = useState({});
   const [showConfetti, setShowConfetti] = useState(false);
   const [particleTrigger, setParticleTrigger] = useState(null);
+  const [showReconnect, setShowReconnect] = useState(false);
+  const [reconnecting, setReconnecting] = useState(false);
+  const hadConnectRef = useRef(false);
+  const userId = (typeof window !== 'undefined' ? localStorage.getItem('user_id') : null) || playerName;
 
   // Spatial Video Integration
   const { videoEnabled, remoteConnected, startVideo, stopVideo } = useSpatialVideo(socketRef, roomCode);
+
+  useSocketReconnect({
+    socket,
+    roomId: roomCode,
+    userId,
+    userName: playerName,
+    joinEvent: 'join_blackjack_room',
+    joinPayload: { room_code: roomCode, player_name: playerName },
+    authEvent: 'authenticate',
+    enabled: Boolean(socket && roomCode),
+    onResync: () => {
+      setReconnecting(false);
+      setShowReconnect(false);
+      setConnected(true);
+    },
+  });
 
   // Start casino ambiance on mount
   useEffect(() => {
@@ -221,6 +243,9 @@ export default function VibesCasinoBlackjack() {
 
     newSocket.on('connect', () => {
       setConnected(true);
+      hadConnectRef.current = true;
+      setShowReconnect(false);
+      setReconnecting(false);
       setMySessionId(newSocket.id);
       setDealerSpeech('Place your bets, please');
 
@@ -298,6 +323,7 @@ export default function VibesCasinoBlackjack() {
 
     newSocket.on('disconnect', () => {
       setConnected(false);
+      if (hadConnectRef.current) setShowReconnect(true);
     });
 
     setSocket(newSocket);
@@ -307,6 +333,20 @@ export default function VibesCasinoBlackjack() {
       socketRef.current = null;
     };
   }, []);
+
+  const handleLeaveTable = () => {
+    if (socket) {
+      try { socket.emit('leave_blackjack_table', {}); } catch { /* ignore */ }
+    }
+    navigate('/games');
+  };
+
+  const handleReconnect = () => {
+    setReconnecting(true);
+    if (socket && !socket.connected) {
+      socket.connect();
+    }
+  };
 
   const handlePlaceBet = () => {
     if (socket && betAmount > 0) {
@@ -341,6 +381,13 @@ export default function VibesCasinoBlackjack() {
 
   return (
     <div className="fixed inset-0 bg-[#05050A] overflow-hidden">
+      <RoomReconnectModal
+        open={showReconnect && !connected}
+        reconnecting={reconnecting}
+        onReconnect={handleReconnect}
+        onBackToLobby={handleLeaveTable}
+        testId="multiplayer-blackjack-reconnect"
+      />
       {/* ENHANCED CASINO ROOM DESIGN */}
       
       {/* Background casino room atmosphere */}

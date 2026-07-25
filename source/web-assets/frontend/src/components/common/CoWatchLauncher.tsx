@@ -23,6 +23,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, Copy, RadioTower, CheckCircle2 } from 'lucide-react';
 import { VibezCloseControl } from '@/components/ui/VibezCloseControl';
+import { FULLSCREEN_GAME_ROUTES } from '@/hooks/useIsFullscreenGameRoute';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -119,7 +120,10 @@ export default function CoWatchLauncher() {
 
   const hidden = useMemo(() => {
     if (strip) return true;
-    return HIDDEN_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+    if (HIDDEN_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
+      return true;
+    }
+    return FULLSCREEN_GAME_ROUTES.some((r) => pathname === r || pathname.startsWith(`${r}/`));
   }, [pathname, strip]);
 
   const ctx = useMemo(() => detectContext(pathname), [pathname]);

@@ -291,7 +291,6 @@ def register_all_routes(
     _soft_mount(api_router, log, "merchant_onboarding", "routes.merchant_onboarding")
     _soft_mount(api_router, log, "age_verification", "routes.age_verification")
     _soft_mount(api_router, log, "unified_earnings", "routes.unified_earnings")
-    _soft_mount(api_router, log, "stripe_connect", "routes.stripe_connect")
     _soft_mount(api_router, log, "yellow_pages", "routes.yellow_pages")
 
     # ── Wave 2B — Vibez Spots + Vibe Venues (local / reservations) ───
@@ -654,7 +653,6 @@ def register_all_routes(
     _soft_mount(api_router, log, "user_interests", "routes.user_interests_routes")
     _soft_mount(api_router, log, "teleport_cosmetics", "routes.teleport_cosmetics")
     _soft_mount(api_router, log, "wallet_purchase", "routes.wallet")
-    _soft_mount(api_router, log, "stripe_payouts_webhook", "routes.stripe_payouts_webhook")
     _soft_mount(api_router, log, "crypto_payments", "routes.crypto_payments")
     _soft_mount(api_router, log, "manifesto_features", "routes.manifesto_features")
     _soft_mount(api_router, log, "v4_closeout", "routes.v4_closeout")

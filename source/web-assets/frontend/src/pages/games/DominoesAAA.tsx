@@ -28,6 +28,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, Bot, Gamepad2, Loader2 } from "lucide-react";
 import { authFetch } from "@/utils/secureAuth";
 
+import GameRoomLayout from "@/components/games/GameRoomLayout";
 import SpadesTable from "@/components/spades/SpadesTable";
 import SpadesStatusBanner from "@/components/spades/SpadesStatusBanner";
 import SpadesSeat from "@/components/spades/SpadesSeat";
@@ -372,33 +373,33 @@ export default function DominoesAAA() {
 
   // ─── GAME ────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0a0820] via-[#050614] to-[#02030a] text-white relative overflow-x-hidden" data-testid="dominoes-aaa">
-      <div className="relative z-10 flex flex-col min-h-screen">
-        {/* Header strip */}
-        <div className="flex flex-wrap items-start justify-between px-2 sm:px-3 md:px-5 pt-2 sm:pt-3 md:pt-4 gap-2">
-          <div className="flex flex-col items-start gap-2">
-            <button onClick={backToLobby} className="flex items-center gap-1.5 text-indigo-300/70 hover:text-white transition text-xs md:text-sm font-bold" data-testid="dominoes-aaa-back-btn">
-              <ArrowLeft className="w-4 h-4" /> Lobby
-            </button>
-            <SpadesGameMenu onExit={backToLobby} onOpenMessages={() => setChatOpen(true)} />
+    <GameRoomLayout
+      testId="dominoes-aaa"
+      title="Dominoes"
+      subtitle={`The Arena · Round ${raw.round_no} · → ${raw.target_score}`}
+      onBack={backToLobby}
+      nativeTable
+      hudExtra={
+        <div className="flex items-center gap-1.5">
+          <SpadesGameMenu onExit={backToLobby} onOpenMessages={() => setChatOpen(true)} />
+          <div className="px-2 py-0.5 rounded-full bg-indigo-500/15 border border-indigo-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-indigo-300 font-bold">
+            The Arena
           </div>
-          <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 order-3 w-full sm:order-none sm:w-auto">
-            <div className="px-2 py-0.5 rounded-full bg-indigo-500/15 border border-indigo-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-indigo-300 font-bold">
-              The Arena
-            </div>
-            <div className="px-2 py-0.5 rounded-full bg-fuchsia-500/15 border border-fuchsia-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-fuchsia-300 font-bold">
-              <span className="inline-flex items-center gap-1"><Bot className="w-2.5 h-2.5" /> AI</span>
-            </div>
-            <div className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-600 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-indigo-200 font-bold tabular-nums">
-              Round · {raw.round_no} · → {raw.target_score}
-            </div>
+          <div className="px-2 py-0.5 rounded-full bg-fuchsia-500/15 border border-fuchsia-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-fuchsia-300 font-bold">
+            <span className="inline-flex items-center gap-1"><Bot className="w-2.5 h-2.5" /> AI</span>
           </div>
           <SpadesScoreBadge scores={scores} players={players} phase="playing" tricksPlayed={0} />
+          <button
+            type="button"
+            onClick={backToLobby}
+            className="sr-only"
+            data-testid="dominoes-aaa-back-btn"
+          >
+            Lobby
+          </button>
         </div>
-
-        <SpadesStatusBanner message={statusMsg} />
-
-        {/* Table — onyx variant, 2-player density */}
+      }
+      table={
         <div className="flex items-center justify-center py-2 md:py-3 relative">
           <div className="relative">
             <SpadesTable brandSubLabel="DOMINOES AAA" variant="onyx" density="2p" centreGlyph="🀫">
@@ -411,60 +412,47 @@ export default function DominoesAAA() {
               />
             </SpadesTable>
 
-            {/* Centre — chain + open ends. We push the chain slightly
-                below the centre chip so the opening tile doesn't sit
-                exactly on top of the VIBEZ medallion. The boneyard
-                pill anchors below the chain. */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 pointer-events-none w-full px-4" style={{ transform: "translate(-50%, calc(-50% + 4.5rem))" }}>
               {raw.chain.length === 0 ? (
                 <div className="text-indigo-300/50 text-[11px] md:text-xs uppercase tracking-widest font-bold">
                   Place the highest double…
                 </div>
               ) : (
-                <>
-                  <div className="flex items-center gap-2 max-w-[60vw] md:max-w-[600px] overflow-x-auto px-2 py-2" data-testid="dominoes-chain">
-                    <span className="text-[9px] md:text-[10px] uppercase tracking-[0.3em] font-black text-indigo-300/80 px-1.5 py-0.5 rounded bg-indigo-500/15 border border-indigo-400/40 tabular-nums">
-                      ◀ {raw.left_end}
-                    </span>
-                    <AnimatePresence initial={false} mode="popLayout">
-                      {raw.chain.map((t) => {
-                        const isDouble = t.left === t.right;
-                        // Master Plan v2 spec: tiles start at scale 0.7 and
-                        // shrink to a minimum of 0.4 as the chain fills up
-                        // — `0.7 - chain.length * 0.01`, clamped at 0.4.
-                        const dynamicScale = Math.max(
-                          0.4,
-                          0.7 - raw.chain.length * 0.01,
-                        );
-                        return (
-                          <motion.div
-                            key={t.id}
-                            layout
-                            initial={{ scale: 0.4, opacity: 0, y: -20 }}
-                            animate={{ scale: dynamicScale, opacity: 1, y: 0 }}
-                            exit={{ scale: 0.6, opacity: 0 }}
-                            transition={{ type: "spring", stiffness: 320, damping: 22 }}
-                            className="flex-shrink-0"
-                            data-testid="dominoes-chain-tile"
-                            data-tile-scale={dynamicScale.toFixed(2)}
-                          >
-                            <DominoTile
-                              left={t.left}
-                              right={t.right}
-                              orientation={isDouble ? "v" : "h"}
-                              size="sm"
-                            />
-                          </motion.div>
-                        );
-                      })}
-                    </AnimatePresence>
-                    <span className="text-[9px] md:text-[10px] uppercase tracking-[0.3em] font-black text-indigo-300/80 px-1.5 py-0.5 rounded bg-indigo-500/15 border border-indigo-400/40 tabular-nums">
-                      {raw.right_end} ▶
-                    </span>
-                  </div>
-                </>
+                <div className="flex items-center gap-2 max-w-[60vw] md:max-w-[600px] overflow-x-auto px-2 py-2" data-testid="dominoes-chain">
+                  <span className="text-[9px] md:text-[10px] uppercase tracking-[0.3em] font-black text-indigo-300/80 px-1.5 py-0.5 rounded bg-indigo-500/15 border border-indigo-400/40 tabular-nums">
+                    ◀ {raw.left_end}
+                  </span>
+                  <AnimatePresence initial={false} mode="popLayout">
+                    {raw.chain.map((t) => {
+                      const isDouble = t.left === t.right;
+                      const dynamicScale = Math.max(0.4, 0.7 - raw.chain.length * 0.01);
+                      return (
+                        <motion.div
+                          key={t.id}
+                          layout
+                          initial={{ scale: 0.4, opacity: 0, y: -20 }}
+                          animate={{ scale: dynamicScale, opacity: 1, y: 0 }}
+                          exit={{ scale: 0.6, opacity: 0 }}
+                          transition={{ type: "spring", stiffness: 320, damping: 22 }}
+                          className="flex-shrink-0"
+                          data-testid="dominoes-chain-tile"
+                          data-tile-scale={dynamicScale.toFixed(2)}
+                        >
+                          <DominoTile
+                            left={t.left}
+                            right={t.right}
+                            orientation={isDouble ? "v" : "h"}
+                            size="sm"
+                          />
+                        </motion.div>
+                      );
+                    })}
+                  </AnimatePresence>
+                  <span className="text-[9px] md:text-[10px] uppercase tracking-[0.3em] font-black text-indigo-300/80 px-1.5 py-0.5 rounded bg-indigo-500/15 border border-indigo-400/40 tabular-nums">
+                    {raw.right_end} ▶
+                  </span>
+                </div>
               )}
-              {/* Boneyard ring pill */}
               <div className="px-3 py-1 rounded-full bg-slate-900/70 border border-indigo-400/40 text-[10px] md:text-xs text-indigo-200 font-bold flex items-center gap-1.5 pointer-events-auto" data-testid="dominoes-boneyard">
                 <span className="text-indigo-400">⬡</span>
                 Boneyard <span className="tabular-nums">{raw.boneyard_count}</span>
@@ -472,164 +460,171 @@ export default function DominoesAAA() {
             </div>
           </div>
         </div>
-
-        {/* Action row + hand fan */}
-        <div className="px-3 md:px-4 pb-3 md:pb-4 relative z-30">
-          <div className="flex justify-center gap-3 mb-3 flex-wrap">
-            {selectedTile ? (
-              <>
-                <button
-                  onClick={() => playTile(selectedTile, "left")}
-                  disabled={busy}
-                  className="px-5 py-2.5 rounded-lg bg-indigo-500 hover:bg-indigo-400 text-white font-black uppercase tracking-widest text-xs disabled:opacity-50"
-                  data-testid="dominoes-play-left-btn"
-                >
-                  ◀ Play LEFT
-                </button>
-                <button
-                  onClick={() => playTile(selectedTile, "right")}
-                  disabled={busy}
-                  className="px-5 py-2.5 rounded-lg bg-fuchsia-500 hover:bg-fuchsia-400 text-white font-black uppercase tracking-widest text-xs disabled:opacity-50"
-                  data-testid="dominoes-play-right-btn"
-                >
-                  Play RIGHT ▶
-                </button>
-                <button
-                  onClick={() => setSelectedTile(null)}
-                  className="px-4 py-2.5 rounded-lg border border-slate-500/50 text-slate-200 hover:bg-slate-700/40 font-bold text-xs"
-                  data-testid="dominoes-cancel-btn"
-                >
-                  Cancel
-                </button>
-              </>
-            ) : null}
-            {canDraw ? (
+      }
+      actions={
+        <div className="flex justify-center gap-3 flex-wrap">
+          {selectedTile ? (
+            <>
               <button
-                onClick={drawTile}
+                onClick={() => playTile(selectedTile, "left")}
                 disabled={busy}
-                className="px-5 py-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-900 font-black uppercase tracking-widest text-xs disabled:opacity-50 shadow-[0_0_18px_rgba(245,158,11,0.55)]"
-                data-testid="dominoes-draw-btn"
+                className="px-5 py-2.5 rounded-lg bg-indigo-500 hover:bg-indigo-400 text-white font-black uppercase tracking-widest text-xs disabled:opacity-50"
+                data-testid="dominoes-play-left-btn"
               >
-                Draw from Boneyard
+                ◀ Play LEFT
               </button>
-            ) : null}
-            {canPass ? (
               <button
-                onClick={passTurn}
+                onClick={() => playTile(selectedTile, "right")}
                 disabled={busy}
-                className="px-5 py-2.5 rounded-lg bg-rose-500 hover:bg-rose-400 text-white font-black uppercase tracking-widest text-xs disabled:opacity-50"
-                data-testid="dominoes-pass-btn"
+                className="px-5 py-2.5 rounded-lg bg-fuchsia-500 hover:bg-fuchsia-400 text-white font-black uppercase tracking-widest text-xs disabled:opacity-50"
+                data-testid="dominoes-play-right-btn"
               >
-                Pass
+                Play RIGHT ▶
               </button>
-            ) : null}
-          </div>
-
-          {/* Your hand */}
-          <div className="flex justify-center items-end gap-1.5 md:gap-2 flex-wrap min-h-[72px]" data-testid="dominoes-hand">
-            {myHand.length === 0 ? (
-              <div className="text-indigo-300/50 text-xs uppercase tracking-widest font-bold py-6">
-                {finished ? "Match over" : "Hand empty — DOMINO!"}
-              </div>
-            ) : (
-              myHand.map((tile) => {
-                const playable = playableMap[tile.id];
-                return (
-                  <DominoTile
-                    key={tile.id}
-                    left={tile.left}
-                    right={tile.right}
-                    size="md"
-                    playable={isYourTurn && (playable?.any ?? false)}
-                    active={selectedTile === tile.id}
-                    onClick={() => handleTileClick(tile)}
-                    testId={`dominoes-tile-${tile.id}`}
-                  />
-                );
-              })
-            )}
-          </div>
-        </div>
-
-        {/* Round-over modal */}
-        <AnimatePresence>
-          {roundOver && summary ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
-              data-testid="dominoes-round-modal"
-            >
-              <motion.div
-                initial={{ scale: 0.85, y: 20 }}
-                animate={{ scale: 1, y: 0 }}
-                exit={{ scale: 0.85, y: 20 }}
-                className="max-w-md w-full p-6 rounded-2xl bg-gradient-to-br from-indigo-950 via-slate-900 to-[#050614] border-2 border-indigo-400/40 shadow-[0_0_60px_rgba(99,102,241,0.4)] text-center"
+              <button
+                onClick={() => setSelectedTile(null)}
+                className="px-4 py-2.5 rounded-lg border border-slate-500/50 text-slate-200 hover:bg-slate-700/40 font-bold text-xs"
+                data-testid="dominoes-cancel-btn"
               >
-                <p className="text-xs font-mono uppercase tracking-[0.3em] text-indigo-300 mb-2" style={{ fontFamily: "'Cinzel', serif" }}>
-                  Round {summary.round_no} · {summary.reason === "domino" ? "Hand cleared" : summary.reason === "blocked" ? "Board blocked" : "Tied block"}
-                </p>
-                <h2 className="text-3xl font-black mb-3" style={{ fontFamily: "'Cinzel', serif" }}>
-                  {summary.winner === "south" ? "+" + summary.delta + " for You" : summary.winner === "north" ? "+" + summary.delta + " for Adversary" : "No score"}
-                </h2>
-                <div className="text-sm text-indigo-200/80 mb-4 space-y-1">
-                  <p>Pip totals — You <strong className="text-indigo-300">{summary.south_pips}</strong> · Adversary <strong className="text-rose-300">{summary.north_pips}</strong></p>
-                  <p>Match score — You <strong>{summary.scores.south}</strong> · Adversary <strong>{summary.scores.north}</strong></p>
-                </div>
-                <button
-                  onClick={nextRound}
-                  disabled={busy}
-                  className="w-full py-3 rounded-lg bg-gradient-to-r from-indigo-500 to-fuchsia-500 hover:from-indigo-400 hover:to-fuchsia-400 text-white font-black uppercase tracking-widest text-sm disabled:opacity-50"
-                  data-testid="dominoes-next-round-btn"
-                >
-                  {busy ? "Dealing…" : "Next Round"}
-                </button>
-              </motion.div>
-            </motion.div>
+                Cancel
+              </button>
+            </>
           ) : null}
-        </AnimatePresence>
-
-        {/* Match-over footer */}
-        {finished ? (
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mx-3 md:mx-4 mb-4 p-6 rounded-2xl bg-gradient-to-br from-indigo-950/60 to-[#02030a] border-2 border-indigo-400/40 text-center"
-            data-testid="dominoes-aaa-finished-footer"
-          >
-            <Gamepad2 className="w-10 h-10 mx-auto mb-2 text-indigo-300" />
-            <h2 className="text-2xl font-black mb-1" style={{ fontFamily: "'Cinzel', serif" }}>
-              {raw.match_winner === youPosition ? "Arena Conquered!" : "Adversary Wins"}
-            </h2>
-            <p className="text-indigo-200/70 mb-4 text-sm">
-              Final tally · You {raw.scores.south} · Adversary {raw.scores.north} · target {raw.target_score}
-            </p>
-            <div className="flex gap-3 justify-center">
-              <button onClick={startMatch} disabled={busy} className="px-5 py-2.5 rounded-lg bg-indigo-500 hover:bg-indigo-400 text-white font-bold disabled:opacity-50" data-testid="dominoes-aaa-replay-btn">
-                Rematch
-              </button>
-              <button onClick={backToLobby} className="px-5 py-2.5 rounded-lg border border-indigo-400/40 text-indigo-200 hover:bg-indigo-500/10 font-bold" data-testid="dominoes-aaa-lobby-btn">
-                Back to Lobby
-              </button>
+          {canDraw ? (
+            <button
+              onClick={drawTile}
+              disabled={busy}
+              className="px-5 py-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-900 font-black uppercase tracking-widest text-xs disabled:opacity-50 shadow-[0_0_18px_rgba(245,158,11,0.55)]"
+              data-testid="dominoes-draw-btn"
+            >
+              Draw from Boneyard
+            </button>
+          ) : null}
+          {canPass ? (
+            <button
+              onClick={passTurn}
+              disabled={busy}
+              className="px-5 py-2.5 rounded-lg bg-rose-500 hover:bg-rose-400 text-white font-black uppercase tracking-widest text-xs disabled:opacity-50"
+              data-testid="dominoes-pass-btn"
+            >
+              Pass
+            </button>
+          ) : null}
+        </div>
+      }
+      hand={
+        <div className="flex justify-center items-end gap-1.5 md:gap-2 flex-wrap min-h-[72px]" data-testid="dominoes-hand">
+          {myHand.length === 0 ? (
+            <div className="text-indigo-300/50 text-xs uppercase tracking-widest font-bold py-6">
+              {finished ? "Match over" : "Hand empty — DOMINO!"}
             </div>
-          </motion.div>
-        ) : null}
-      </div>
+          ) : (
+            myHand.map((tile) => {
+              const playable = playableMap[tile.id];
+              return (
+                <DominoTile
+                  key={tile.id}
+                  left={tile.left}
+                  right={tile.right}
+                  size="md"
+                  playable={isYourTurn && (playable?.any ?? false)}
+                  active={selectedTile === tile.id}
+                  onClick={() => handleTileClick(tile)}
+                  testId={`dominoes-tile-${tile.id}`}
+                />
+              );
+            })
+          )}
+        </div>
+      }
+      overlay={
+        <>
+          <div className="absolute top-14 left-0 right-0 pointer-events-none">
+            <div className="pointer-events-auto">
+              <SpadesStatusBanner message={statusMsg} />
+            </div>
+          </div>
 
-      <SpadesPlayerProfile
-        open={profileOpen !== null}
-        position={profileOpen}
-        player={profileOpen ? players[profileOpen] : null}
-        isYou={profileOpen === youPosition}
-        onClose={() => setProfileOpen(null)}
-      />
-      <SpadesCommunityChat
-        open={chatOpen}
-        gameId={`dominoes-${raw.user_position}`}
-        mode="ai"
-        onClose={() => setChatOpen(false)}
-      />
-    </div>
+          <AnimatePresence>
+            {roundOver && summary ? (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+                data-testid="dominoes-round-modal"
+              >
+                <motion.div
+                  initial={{ scale: 0.85, y: 20 }}
+                  animate={{ scale: 1, y: 0 }}
+                  exit={{ scale: 0.85, y: 20 }}
+                  className="max-w-md w-full p-6 rounded-2xl bg-gradient-to-br from-indigo-950 via-slate-900 to-[#050614] border-2 border-indigo-400/40 shadow-[0_0_60px_rgba(99,102,241,0.4)] text-center"
+                >
+                  <p className="text-xs font-mono uppercase tracking-[0.3em] text-indigo-300 mb-2" style={{ fontFamily: "'Cinzel', serif" }}>
+                    Round {summary.round_no} · {summary.reason === "domino" ? "Hand cleared" : summary.reason === "blocked" ? "Board blocked" : "Tied block"}
+                  </p>
+                  <h2 className="text-3xl font-black mb-3" style={{ fontFamily: "'Cinzel', serif" }}>
+                    {summary.winner === "south" ? "+" + summary.delta + " for You" : summary.winner === "north" ? "+" + summary.delta + " for Adversary" : "No score"}
+                  </h2>
+                  <div className="text-sm text-indigo-200/80 mb-4 space-y-1">
+                    <p>Pip totals — You <strong className="text-indigo-300">{summary.south_pips}</strong> · Adversary <strong className="text-rose-300">{summary.north_pips}</strong></p>
+                    <p>Match score — You <strong>{summary.scores.south}</strong> · Adversary <strong>{summary.scores.north}</strong></p>
+                  </div>
+                  <button
+                    onClick={nextRound}
+                    disabled={busy}
+                    className="w-full py-3 rounded-lg bg-gradient-to-r from-indigo-500 to-fuchsia-500 hover:from-indigo-400 hover:to-fuchsia-400 text-white font-black uppercase tracking-widest text-sm disabled:opacity-50"
+                    data-testid="dominoes-next-round-btn"
+                  >
+                    {busy ? "Dealing…" : "Next Round"}
+                  </button>
+                </motion.div>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
+
+          {finished ? (
+            <div className="absolute inset-0 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="max-w-md w-full p-6 rounded-2xl bg-gradient-to-br from-indigo-950/60 to-[#02030a] border-2 border-indigo-400/40 text-center"
+                data-testid="dominoes-aaa-finished-footer"
+              >
+                <Gamepad2 className="w-10 h-10 mx-auto mb-2 text-indigo-300" />
+                <h2 className="text-2xl font-black mb-1" style={{ fontFamily: "'Cinzel', serif" }}>
+                  {raw.match_winner === youPosition ? "Arena Conquered!" : "Adversary Wins"}
+                </h2>
+                <p className="text-indigo-200/70 mb-4 text-sm">
+                  Final tally · You {raw.scores.south} · Adversary {raw.scores.north} · target {raw.target_score}
+                </p>
+                <div className="flex gap-3 justify-center">
+                  <button onClick={startMatch} disabled={busy} className="px-5 py-2.5 rounded-lg bg-indigo-500 hover:bg-indigo-400 text-white font-bold disabled:opacity-50" data-testid="dominoes-aaa-replay-btn">
+                    Rematch
+                  </button>
+                  <button onClick={backToLobby} className="px-5 py-2.5 rounded-lg border border-indigo-400/40 text-indigo-200 hover:bg-indigo-500/10 font-bold" data-testid="dominoes-aaa-lobby-btn">
+                    Back to Lobby
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          ) : null}
+
+          <SpadesPlayerProfile
+            open={profileOpen !== null}
+            position={profileOpen}
+            player={profileOpen ? players[profileOpen] : null}
+            isYou={profileOpen === youPosition}
+            onClose={() => setProfileOpen(null)}
+          />
+          <SpadesCommunityChat
+            open={chatOpen}
+            gameId={`dominoes-${raw.user_position}`}
+            mode="ai"
+            onClose={() => setChatOpen(false)}
+          />
+        </>
+      }
+    />
   );
 }

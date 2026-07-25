@@ -14,10 +14,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Bot, Sparkles, TrendingUp, Trophy } from "lucide-react";
+import { Bot, Sparkles, TrendingUp, Trophy } from "lucide-react";
 import { authFetch } from "@/utils/secureAuth";
 import { useSafeTimeout } from "@/hooks/useSafeTimeout";
 
+import GameRoomLayout from "@/components/games/GameRoomLayout";
 import SpadesTable from "@/components/spades/SpadesTable";
 import SpadesCard from "@/components/spades/SpadesCard";
 import SpadesStatusBanner from "@/components/spades/SpadesStatusBanner";
@@ -292,170 +293,163 @@ export default function BaccaratPremium() {
   };
 
   return (
-    <div
-      className="min-h-screen text-white bg-gradient-to-br from-emerald-950 via-slate-950 to-[#04060e] relative overflow-x-hidden"
-      data-testid="baccarat-aaa"
-    >
-      {/* Top bar */}
-      <div className="flex items-start justify-between px-3 md:px-5 pt-3 md:pt-4 gap-2">
-        <div className="flex flex-col items-start gap-2">
-          <button
-            onClick={() => navigate("/games")}
-            className="flex items-center gap-1.5 text-emerald-200/70 hover:text-white transition text-xs md:text-sm font-bold"
-            data-testid="baccarat-leave-table"
-          >
-            <ArrowLeft className="w-4 h-4" /> Lobby
-          </button>
+    <GameRoomLayout
+      testId="baccarat-aaa"
+      title="Baccarat"
+      subtitle="Casino Pit · Punto Banco"
+      onBack={() => navigate("/games")}
+      nativeTable
+      hudExtra={
+        <div className="flex items-center gap-1.5">
           <SpadesGameMenu onExit={() => navigate("/games")} onOpenMessages={() => setChatOpen(true)} />
-        </div>
-
-        <div className="flex items-center gap-2 flex-wrap justify-center">
-          <div className="px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-amber-200 font-bold">
-            Baccarat
-          </div>
           <div className="px-2 py-0.5 rounded-full bg-fuchsia-500/15 border border-fuchsia-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-fuchsia-300 font-bold">
             <span className="inline-flex items-center gap-1"><Bot className="w-2.5 h-2.5" /> AI</span>
           </div>
           <div className="px-2 py-0.5 rounded-full bg-slate-900/80 border border-emerald-400/30 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-emerald-200 font-bold tabular-nums" data-testid="baccarat-credits">
             ₵{credits.toLocaleString()} credits
           </div>
-        </div>
-
-        <div className="px-3 py-1.5 rounded-xl bg-slate-900/70 border border-amber-400/30 text-right">
-          <div className="text-[9px] uppercase tracking-widest text-amber-200/70 font-bold">Total Bet</div>
-          <div className="text-amber-200 font-black tabular-nums" data-testid="baccarat-total-bet">₵{totalBet.toLocaleString()}</div>
-        </div>
-      </div>
-
-      <SpadesStatusBanner message={statusMsg} />
-
-      {/* Phase 3 cinematic — squeeze-reveal on the dealing→result transition.
-           Center-of-screen overlay that auto-dismisses; non-blocking pointer. */}
-      {squeezeActive && (
-        <div
-          data-testid="baccarat-card-squeeze"
-          className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center"
-        >
-          <CardSqueeze
-            active
-            faceUp={
-              <span className="text-3xl font-black tabular-nums text-amber-700">
-                {Math.max(playerScore, bankerScore)}
-              </span>
-            }
-            onComplete={() => setSqueezeActive(false)}
-          />
-        </div>
-      )}
-
-      {/* Universal turn indicator (LOCKED 2026-02-16 — Baccarat phase cues) */}
-      <TurnIndicator
-        role={phase === 'dealing' ? 'dealer' : (phase === 'result' ? 'system' : 'me')}
-        customLabel={
-          phase === 'betting' ? 'PLACE YOUR BETS' :
-          phase === 'dealing' ? 'SQUEEZE — DEAL' :
-          (winner ? `${String(winner).toUpperCase()} WINS` : 'STAND BY')
-        }
-      />
-
-      {/* Title lockup */}
-      <div className="text-center pt-2 pb-3">
-        <p className="text-[10px] uppercase tracking-[0.3em] text-emerald-300/70 font-bold" style={{ fontFamily: "'Cinzel', serif" }}>
-          Casino Pit · Punto Banco
-        </p>
-        <h1 className="text-3xl md:text-4xl font-black text-amber-200 leading-tight" style={{ fontFamily: "'Cinzel', serif" }}>
-          Baccarat AAA
-        </h1>
-      </div>
-
-      {/* Table + hands */}
-      <div className="flex items-center justify-center py-2 md:py-3 relative">
-        <div className="relative">
-          <SpadesTable brandSubLabel="BACCARAT" variant="monaco" centreGlyph="B">
-            {/* Hands centred on the felt — banker top, player bottom */}
-            <div
-              className="absolute inset-x-0 top-[18%] flex flex-col items-center gap-1 z-20"
-              data-testid="baccarat-banker-hand-zone"
-            >
-              <div className="text-[10px] uppercase tracking-[0.3em] font-bold text-rose-300" style={{ fontFamily: "'Cinzel', serif" }}>
-                Banker {bankerScore > 0 ? <span className="text-rose-200" data-testid="baccarat-banker-score">· {bankerScore}</span> : null}
-              </div>
-              <div className="flex gap-2 min-h-[110px] items-center">
-                <AnimatePresence>
-                  {bankerHand.map((c, idx) => (
-                    <motion.div
-                      key={`bnk-${idx}-${c.suit}-${c.rank}`}
-                      initial={{ y: -40, opacity: 0, rotate: -10 }}
-                      animate={{ y: 0, opacity: 1, rotate: (idx - 1) * 4 }}
-                      transition={{ duration: 0.42 }}
-                    >
-                      <SpadesCard card={c} size="md" isPlayable={false} />
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </div>
-            </div>
-
-            <div
-              className="absolute inset-x-0 bottom-[18%] flex flex-col items-center gap-1 z-20"
-              data-testid="baccarat-player-hand-zone"
-            >
-              <div className="flex gap-2 min-h-[110px] items-center">
-                <AnimatePresence>
-                  {playerHand.map((c, idx) => (
-                    <motion.div
-                      key={`pl-${idx}-${c.suit}-${c.rank}`}
-                      initial={{ y: 40, opacity: 0, rotate: 10 }}
-                      animate={{ y: 0, opacity: 1, rotate: (idx - 1) * 4 }}
-                      transition={{ duration: 0.42 }}
-                    >
-                      <SpadesCard card={c} size="md" isPlayable={false} />
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </div>
-              <div className="text-[10px] uppercase tracking-[0.3em] font-bold text-cyan-300" style={{ fontFamily: "'Cinzel', serif" }}>
-                Player {playerScore > 0 ? <span className="text-cyan-200" data-testid="baccarat-player-score">· {playerScore}</span> : null}
-              </div>
-            </div>
-          </SpadesTable>
-        </div>
-      </div>
-
-      {/* Result banner */}
-      <AnimatePresence>
-        {phase === "result" && winner ? (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.92, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.92 }}
-            className="mx-auto max-w-md mt-4 mb-2 px-6 py-3 rounded-2xl border-2 text-center backdrop-blur"
-            data-testid="baccarat-result-banner"
-            style={{
-              background: winner === "player" ? "rgba(34,211,238,0.12)" : winner === "banker" ? "rgba(244,63,94,0.12)" : "rgba(16,185,129,0.12)",
-              borderColor: winner === "player" ? "rgba(34,211,238,0.55)" : winner === "banker" ? "rgba(244,63,94,0.55)" : "rgba(16,185,129,0.55)",
-            }}
+          <div className="px-3 py-1.5 rounded-xl bg-slate-900/70 border border-amber-400/30 text-right">
+            <div className="text-[9px] uppercase tracking-widest text-amber-200/70 font-bold">Total Bet</div>
+            <div className="text-amber-200 font-black tabular-nums" data-testid="baccarat-total-bet">₵{totalBet.toLocaleString()}</div>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate("/games")}
+            className="sr-only"
+            data-testid="baccarat-leave-table"
           >
-            <p className="text-[10px] uppercase tracking-[0.3em] font-bold opacity-80" style={{ fontFamily: "'Cinzel', serif" }}>
-              {winner === "tie" ? "Stand-Off" : `${winner.toUpperCase()} Wins`}
-            </p>
-            {payout > 0 ? (
-              <p className="text-amber-200 font-black text-xl tabular-nums">+₵{payout.toLocaleString()}</p>
-            ) : null}
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
-
-      {/* Bet zones */}
-      <div className="px-3 md:px-6 mt-2 max-w-4xl mx-auto">
-        <div className="flex flex-col md:flex-row gap-3" data-testid="baccarat-bet-zones">
-          <BetZone zone="player" label="Player" payout="1 : 1" currentBet={bets.player} onBet={() => placeBet("player")} disabled={phase !== "betting" || busy} accent={ZONE_ACCENTS.player} />
-          <BetZone zone="tie"    label="Tie"    payout="8 : 1" currentBet={bets.tie}    onBet={() => placeBet("tie")}    disabled={phase !== "betting" || busy} accent={ZONE_ACCENTS.tie} />
-          <BetZone zone="banker" label="Banker" payout="0.95 : 1 (5% comm.)" currentBet={bets.banker} onBet={() => placeBet("banker")} disabled={phase !== "betting" || busy} accent={ZONE_ACCENTS.banker} />
+            Lobby
+          </button>
         </div>
+      }
+      table={
+        <>
+          <div className="flex items-center justify-center py-2 md:py-3 relative">
+            <div className="relative">
+              <SpadesTable brandSubLabel="BACCARAT" variant="monaco" centreGlyph="B">
+                <div
+                  className="absolute inset-x-0 top-[18%] flex flex-col items-center gap-1 z-20"
+                  data-testid="baccarat-banker-hand-zone"
+                >
+                  <div className="text-[10px] uppercase tracking-[0.3em] font-bold text-rose-300" style={{ fontFamily: "'Cinzel', serif" }}>
+                    Banker {bankerScore > 0 ? <span className="text-rose-200" data-testid="baccarat-banker-score">· {bankerScore}</span> : null}
+                  </div>
+                  <div className="flex gap-2 min-h-[110px] items-center">
+                    <AnimatePresence>
+                      {bankerHand.map((c, idx) => (
+                        <motion.div
+                          key={`bnk-${idx}-${c.suit}-${c.rank}`}
+                          initial={{ y: -40, opacity: 0, rotate: -10 }}
+                          animate={{ y: 0, opacity: 1, rotate: (idx - 1) * 4 }}
+                          transition={{ duration: 0.42 }}
+                        >
+                          <SpadesCard card={c} size="md" isPlayable={false} />
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                  </div>
+                </div>
 
-        {/* Chip selector */}
-        <div className="mt-4 px-4 py-3 rounded-2xl bg-slate-900/60 border border-amber-400/20 backdrop-blur" data-testid="baccarat-chip-selector">
+                <div
+                  className="absolute inset-x-0 bottom-[18%] flex flex-col items-center gap-1 z-20"
+                  data-testid="baccarat-player-hand-zone"
+                >
+                  <div className="flex gap-2 min-h-[110px] items-center">
+                    <AnimatePresence>
+                      {playerHand.map((c, idx) => (
+                        <motion.div
+                          key={`pl-${idx}-${c.suit}-${c.rank}`}
+                          initial={{ y: 40, opacity: 0, rotate: 10 }}
+                          animate={{ y: 0, opacity: 1, rotate: (idx - 1) * 4 }}
+                          transition={{ duration: 0.42 }}
+                        >
+                          <SpadesCard card={c} size="md" isPlayable={false} />
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                  </div>
+                  <div className="text-[10px] uppercase tracking-[0.3em] font-bold text-cyan-300" style={{ fontFamily: "'Cinzel', serif" }}>
+                    Player {playerScore > 0 ? <span className="text-cyan-200" data-testid="baccarat-player-score">· {playerScore}</span> : null}
+                  </div>
+                </div>
+              </SpadesTable>
+            </div>
+          </div>
+
+          <AnimatePresence>
+            {phase === "result" && winner ? (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.92, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.92 }}
+                className="mx-auto max-w-md mt-4 mb-2 px-6 py-3 rounded-2xl border-2 text-center backdrop-blur"
+                data-testid="baccarat-result-banner"
+                style={{
+                  background: winner === "player" ? "rgba(34,211,238,0.12)" : winner === "banker" ? "rgba(244,63,94,0.12)" : "rgba(16,185,129,0.12)",
+                  borderColor: winner === "player" ? "rgba(34,211,238,0.55)" : winner === "banker" ? "rgba(244,63,94,0.55)" : "rgba(16,185,129,0.55)",
+                }}
+              >
+                <p className="text-[10px] uppercase tracking-[0.3em] font-bold opacity-80" style={{ fontFamily: "'Cinzel', serif" }}>
+                  {winner === "tie" ? "Stand-Off" : `${winner.toUpperCase()} Wins`}
+                </p>
+                {payout > 0 ? (
+                  <p className="text-amber-200 font-black text-xl tabular-nums">+₵{payout.toLocaleString()}</p>
+                ) : null}
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
+
+          <div className="px-3 md:px-6 mt-2 max-w-4xl mx-auto">
+            <div className="flex flex-col md:flex-row gap-3" data-testid="baccarat-bet-zones">
+              <BetZone zone="player" label="Player" payout="1 : 1" currentBet={bets.player} onBet={() => placeBet("player")} disabled={phase !== "betting" || busy} accent={ZONE_ACCENTS.player} />
+              <BetZone zone="tie"    label="Tie"    payout="8 : 1" currentBet={bets.tie}    onBet={() => placeBet("tie")}    disabled={phase !== "betting" || busy} accent={ZONE_ACCENTS.tie} />
+              <BetZone zone="banker" label="Banker" payout="0.95 : 1 (5% comm.)" currentBet={bets.banker} onBet={() => placeBet("banker")} disabled={phase !== "betting" || busy} accent={ZONE_ACCENTS.banker} />
+            </div>
+
+            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 pb-8">
+              <div className="rounded-2xl bg-slate-900/60 border border-emerald-400/20 p-4" data-testid="baccarat-recent-games">
+                <h3 className="text-amber-200 font-black mb-2 flex items-center gap-2 text-sm uppercase tracking-[0.25em]" style={{ fontFamily: "'Cinzel', serif" }}>
+                  <TrendingUp className="w-4 h-4" /> Recent
+                </h3>
+                <div className="mb-3">
+                  <BigRoadRoadmap
+                    outcomes={history.slice().reverse().map((g) => g.winner as BaccaratOutcome)}
+                    rows={6}
+                    cols={16}
+                  />
+                </div>
+                <div className="space-y-2 text-xs">
+                  {history.length === 0 ? (
+                    <p className="text-slate-400 text-center py-3">No games yet · play your first round</p>
+                  ) : history.map((g, i) => (
+                    <div key={`game-${g.timestamp ?? i}-${g.winner}`} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-slate-800/60 border border-white/5">
+                      <span className="text-slate-200 capitalize font-bold">{g.winner}</span>
+                      <span className={`tabular-nums font-black ${g.profit > 0 ? "text-emerald-300" : "text-rose-300"}`}>
+                        {g.profit > 0 ? "+" : ""}₵{g.profit.toLocaleString()}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-2xl bg-slate-900/60 border border-emerald-400/20 p-4" data-testid="baccarat-rules-card">
+                <h3 className="text-amber-200 font-black mb-2 flex items-center gap-2 text-sm uppercase tracking-[0.25em]" style={{ fontFamily: "'Cinzel', serif" }}>
+                  <Trophy className="w-4 h-4" /> Rules
+                </h3>
+                <ul className="text-xs text-slate-300 space-y-1.5 list-none">
+                  <li>· Bet on Player, Banker, or Tie</li>
+                  <li>· Closest to 9 wins · only last digit counts</li>
+                  <li>· Natural 8 / 9 — instant settle</li>
+                  <li>· 10s + face cards count as 0 · Aces = 1</li>
+                  <li>· Banker payout includes 5% house commission</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </>
+      }
+      hand={
+        <div className="px-4 py-3 rounded-2xl bg-slate-900/60 border border-amber-400/20 backdrop-blur" data-testid="baccarat-chip-selector">
           <p className="text-[10px] uppercase tracking-[0.3em] text-amber-200/70 font-bold text-center mb-2" style={{ fontFamily: "'Cinzel', serif" }}>
             Stake per click
           </p>
@@ -465,9 +459,9 @@ export default function BaccaratPremium() {
             ))}
           </div>
         </div>
-
-        {/* Action buttons */}
-        <div className="mt-4 flex gap-3">
+      }
+      actions={
+        <div className="flex gap-3 max-w-md mx-auto w-full px-3">
           {phase !== "result" ? (
             <>
               <button
@@ -500,55 +494,41 @@ export default function BaccaratPremium() {
             </button>
           )}
         </div>
-
-        {/* Sidebar (history + how to play) */}
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 pb-8">
-          <div className="rounded-2xl bg-slate-900/60 border border-emerald-400/20 p-4" data-testid="baccarat-recent-games">
-            <h3 className="text-amber-200 font-black mb-2 flex items-center gap-2 text-sm uppercase tracking-[0.25em]" style={{ fontFamily: "'Cinzel', serif" }}>
-              <TrendingUp className="w-4 h-4" /> Recent
-            </h3>
-
-            {/* Big Road roadmap (LOCKED 2026-02-16 — Phase 3 cinematic flourish).
-                 Maps the recent winner column to the canonical 6×24 grid so
-                 streak players can spot dragons and ponds. */}
-            <div className="mb-3">
-              <BigRoadRoadmap
-                outcomes={history.slice().reverse().map((g) => g.winner as BaccaratOutcome)}
-                rows={6}
-                cols={16}
+      }
+      overlay={
+        <>
+          <div className="absolute top-14 left-0 right-0 pointer-events-none">
+            <div className="pointer-events-auto">
+              <SpadesStatusBanner message={statusMsg} />
+            </div>
+          </div>
+          {squeezeActive ? (
+            <div
+              data-testid="baccarat-card-squeeze"
+              className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center"
+            >
+              <CardSqueeze
+                active
+                faceUp={
+                  <span className="text-3xl font-black tabular-nums text-amber-700">
+                    {Math.max(playerScore, bankerScore)}
+                  </span>
+                }
+                onComplete={() => setSqueezeActive(false)}
               />
             </div>
-
-            <div className="space-y-2 text-xs">
-              {history.length === 0 ? (
-                <p className="text-slate-400 text-center py-3">No games yet · play your first round</p>
-              ) : history.map((g, i) => (
-                <div key={`game-${g.timestamp ?? i}-${g.winner}`} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-slate-800/60 border border-white/5">
-                  <span className="text-slate-200 capitalize font-bold">{g.winner}</span>
-                  <span className={`tabular-nums font-black ${g.profit > 0 ? "text-emerald-300" : "text-rose-300"}`}>
-                    {g.profit > 0 ? "+" : ""}₵{g.profit.toLocaleString()}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="rounded-2xl bg-slate-900/60 border border-emerald-400/20 p-4" data-testid="baccarat-rules-card">
-            <h3 className="text-amber-200 font-black mb-2 flex items-center gap-2 text-sm uppercase tracking-[0.25em]" style={{ fontFamily: "'Cinzel', serif" }}>
-              <Trophy className="w-4 h-4" /> Rules
-            </h3>
-            <ul className="text-xs text-slate-300 space-y-1.5 list-none">
-              <li>· Bet on Player, Banker, or Tie</li>
-              <li>· Closest to 9 wins · only last digit counts</li>
-              <li>· Natural 8 / 9 — instant settle</li>
-              <li>· 10s + face cards count as 0 · Aces = 1</li>
-              <li>· Banker payout includes 5% house commission</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      <SpadesCommunityChat open={chatOpen} gameId="baccarat-aaa" mode="ai" onClose={() => setChatOpen(false)} />
-    </div>
+          ) : null}
+          <TurnIndicator
+            role={phase === "dealing" ? "dealer" : (phase === "result" ? "system" : "me")}
+            customLabel={
+              phase === "betting" ? "PLACE YOUR BETS" :
+              phase === "dealing" ? "SQUEEZE — DEAL" :
+              (winner ? `${String(winner).toUpperCase()} WINS` : "STAND BY")
+            }
+          />
+          <SpadesCommunityChat open={chatOpen} gameId="baccarat-aaa" mode="ai" onClose={() => setChatOpen(false)} />
+        </>
+      }
+    />
   );
 }

@@ -506,90 +506,34 @@ async def create_topup_checkout(
 
 @router.get("/topup/status/{session_id}")
 async def check_topup_status(session_id: str, request: Request) -> Dict[str, Any]:
-    """Poll Stripe + reconcile coin credit on success."""
-    from services.payment_hub import StripeCheckout
-    from config import STRIPE_API_KEY
-
-    host_url = str(request.base_url).rstrip("/")
-    sc = StripeCheckout(
-        api_key=STRIPE_API_KEY,
-        webhook_url=f"{host_url}/api/coins/webhook/stripe",
+    """Retired — Stripe coin top-up status polling is no longer supported."""
+    raise HTTPException(
+        status_code=410,
+        detail={
+            "error": "stripe_retired",
+            "message": (
+                "Stripe coin checkout is retired. Pay with Helio (card) via "
+                "POST /api/coins/topup/helio, or deposit Solana from the wallet."
+            ),
+            "use": "/api/coins/topup/helio",
+        },
     )
-    status_resp = await sc.get_checkout_status(session_id)
-
-    pay = await PAYMENTS.find_one({"stripe_session_id": session_id}, {"_id": 0})
-    if not pay:
-        return {"status": status_resp.payment_status, "credited": False, "reason": "unknown_session"}
-
-    if pay.get("credited"):
-        return {"status": "paid", "credited": True, "already": True, "coins": pay["coins"]}
-
-    if status_resp.payment_status == "paid":
-        await _credit_user(pay)
-        return {"status": "paid", "credited": True, "coins": pay["coins"]}
-
-    return {"status": status_resp.payment_status, "credited": False}
 
 
 @router.post("/webhook/stripe")
 async def stripe_webhook(request: Request) -> Dict[str, Any]:
-    from services.payment_hub import StripeCheckout
-    from services.payments_audit import record_payment_event
-    from config import STRIPE_API_KEY
-
-    host_url = str(request.base_url).rstrip("/")
-    sc = StripeCheckout(
-        api_key=STRIPE_API_KEY,
-        webhook_url=f"{host_url}/api/coins/webhook/stripe",
-    )
-    body = await request.body()
-    sig = request.headers.get("Stripe-Signature", "")
-    try:
-        evt = await sc.handle_webhook(body, sig)
-    except Exception as e:
-        log.error("coin top-up stripe webhook parse failed: %s", e)
-        await record_payment_event(
-            _db,
-            kind="coin_topup",
-            source="stripe_webhook",
-            status="rejected_signature",
-            metadata={"reason": str(e)[:200]},
-        )
-        raise HTTPException(400, "invalid webhook")
-
-    await record_payment_event(
-        _db,
-        kind="coin_topup",
-        source="stripe_webhook",
-        status="webhook_received",
-        stripe_session_id=evt.session_id,
-        metadata={
-            "event_type": evt.event_type,
-            "payment_status": evt.payment_status,
-            "card_checks": evt.card_checks,
-            "livemode": evt.livemode,
+    """Retired — Stripe coin top-up webhooks are no longer processed."""
+    raise HTTPException(
+        status_code=410,
+        detail={
+            "error": "stripe_retired",
+            "message": (
+                "Stripe coin checkout is retired. Pay with Helio (card) via "
+                "POST /api/coins/topup/helio, or deposit Solana from the wallet."
+            ),
+            "use": "/api/coins/topup/helio",
         },
     )
-
-    # Reject obviously bad AVS/CVC when Stripe surfaces fail checks.
-    checks = evt.card_checks or {}
-    if checks.get("cvc_check") == "fail" or checks.get("address_postal_code_check") == "fail":
-        await record_payment_event(
-            _db,
-            kind="coin_topup",
-            source="stripe_webhook",
-            status="rejected_fraud_checks",
-            stripe_session_id=evt.session_id,
-            metadata={"card_checks": checks},
-        )
-        return {"received": True, "credited": False, "reason": "avs_cvc_fail"}
-
-    if (evt.event_type or "").endswith("checkout.session.completed") and evt.payment_status == "paid":
-        pay = await PAYMENTS.find_one({"stripe_session_id": evt.session_id}, {"_id": 0})
-        if pay and not pay.get("credited"):
-            await _credit_user(pay)
-
-    return {"received": True}
 
 
 async def _credit_user(pay: Dict[str, Any], source: str = "stripe_webhook") -> None:

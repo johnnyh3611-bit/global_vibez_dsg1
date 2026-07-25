@@ -68,7 +68,6 @@ declare module '@/components/practice_games' {
   export const PracticeMouseHunt: React.FC<any>;
   export const PracticeSaveDaBaby: React.FC<any>;
   export const BlackjackGameSimple: React.FC<any>;
-  export const BlackjackGameAAA: React.FC<any>;
   export const PracticeBattleship: React.FC<any>;
   export const PracticeYahtzee: React.FC<any>;
   export const PracticeMancala: React.FC<any>;

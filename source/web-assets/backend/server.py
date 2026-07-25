@@ -16,11 +16,10 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 import httpx
 from pydantic import BaseModel, Field, ConfigDict
-from services.payment_hub import StripeCheckout, CheckoutSessionResponse, CheckoutStatusResponse, CheckoutSessionRequest
 from services.ai_engine import LlmChat, UserMessage
 
 # Import configuration modules
-from config import db, setup_middleware, STRIPE_API_KEY, EMERGENT_LLM_KEY
+from config import db, setup_middleware, EMERGENT_LLM_KEY
 from websocket_server import sio as legacy_sio, socket_app
 # Route registry — all 130+ feature routers live in routes/registry.py.
 # server.py only keeps the imports it actually CALLS at runtime.
@@ -1156,288 +1155,50 @@ MEMBERSHIP_PACKAGES = {
 
 @api_router.post("/payment/checkout")
 async def create_checkout_session(package_data: PaymentPackage, request: Request):
-    """Create Stripe checkout session for Premium membership"""
-    current_user = await get_current_user(request)
-    if not current_user:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    
-    # Validate package
-    package_id = package_data.package_id
-    if package_id not in MEMBERSHIP_PACKAGES:
-        raise HTTPException(status_code=400, detail="Invalid package selected")
-    
-    # Get package details from server-side definition (security!)
-    package = MEMBERSHIP_PACKAGES[package_id]
-    amount = package["amount"]
-    currency = package["currency"]
-    
-    # Build success and cancel URLs from frontend origin
-    origin_url = package_data.origin_url
-    success_url = f"{origin_url}/payment/success?session_id={{{{CHECKOUT_SESSION_ID}}}}"
-    cancel_url = f"{origin_url}/payment/cancel"
-    
-    # Initialize Stripe
-    host_url = str(request.base_url).rstrip('/')
-    webhook_url = f"{host_url}/api/webhook/stripe"
-    stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
-    
-    # Create metadata
-    metadata = {
-        "user_id": current_user.user_id,
-        "package_id": package_id,
-        "email": current_user.email
-    }
-    
-    # Create checkout session
-    checkout_request = CheckoutSessionRequest(
-        amount=amount,
-        currency=currency,
-        success_url=success_url,
-        cancel_url=cancel_url,
-        metadata=metadata
+    """Retired — Stripe membership checkout is no longer supported."""
+    raise HTTPException(
+        status_code=410,
+        detail={
+            "error": "stripe_retired",
+            "message": (
+                "Stripe checkout is retired. Use Helio or Solana deposit "
+                "for payments on Global Vibez."
+            ),
+            "use": "/api/coins/topup/helio",
+        },
     )
-    
-    session: CheckoutSessionResponse = await stripe_checkout.create_checkout_session(checkout_request)
-    
-    # Create payment transaction record (MANDATORY before redirect)
-    transaction = PaymentTransaction(
-        user_id=current_user.user_id,
-        session_id=session.session_id,
-        amount=amount,
-        currency=currency,
-        payment_status="pending",
-        metadata=metadata
-    )
-    
-    transaction_dict = transaction.model_dump()
-    transaction_dict["created_at"] = transaction_dict["created_at"].isoformat()
-    transaction_dict["updated_at"] = transaction_dict["updated_at"].isoformat()
-    
-    await db.payment_transactions.insert_one(transaction_dict)
-    
-    return {"url": session.url, "session_id": session.session_id}
 
 
 @api_router.get("/payment/status/{session_id}")
 async def get_payment_status(session_id: str, request: Request):
-    """Get payment status and update user membership if paid"""
-    current_user = await get_current_user(request)
-    if not current_user:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    
-    # Check if transaction exists
-    transaction = await db.payment_transactions.find_one(
-        {"session_id": session_id, "user_id": current_user.user_id},
-        {"_id": 0}
+    """Retired — Stripe membership status polling is no longer supported."""
+    raise HTTPException(
+        status_code=410,
+        detail={
+            "error": "stripe_retired",
+            "message": (
+                "Stripe checkout is retired. Use Helio or Solana deposit "
+                "for payments on Global Vibez."
+            ),
+            "use": "/api/coins/topup/helio",
+        },
     )
-    
-    if not transaction:
-        raise HTTPException(status_code=404, detail="Transaction not found")
-    
-    # If already processed, return status
-    if transaction["payment_status"] == "paid":
-        return {
-            "status": "complete",
-            "payment_status": "paid",
-            "message": "Payment already processed"
-        }
-    
-    # Initialize Stripe and check status
-    host_url = str(request.base_url).rstrip('/')
-    webhook_url = f"{host_url}/api/webhook/stripe"
-    stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
-    
-    try:
-        checkout_status: CheckoutStatusResponse = await stripe_checkout.get_checkout_status(session_id)
-        
-        # Update transaction status
-        await db.payment_transactions.update_one(
-            {"session_id": session_id},
-            {"$set": {
-                "payment_status": checkout_status.payment_status,
-                "updated_at": datetime.now(timezone.utc).isoformat()
-            }}
-        )
-        
-        # If payment is successful, upgrade user to premium (ONLY ONCE)
-        if checkout_status.payment_status == "paid" and transaction["payment_status"] != "paid":
-            await db.users.update_one(
-                {"user_id": current_user.user_id},
-                {"$set": {
-                    "membership_type": "premium",
-                    "swipes_limit": 999999  # Unlimited for premium
-                }}
-            )
-        
-        return {
-            "status": checkout_status.status,
-            "payment_status": checkout_status.payment_status,
-            "amount_total": checkout_status.amount_total,
-            "currency": checkout_status.currency
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error checking payment status: {str(e)}")
 
 
 @api_router.post("/webhook/stripe")
 async def stripe_webhook(request: Request):
-    """Handle Stripe webhook events"""
-    try:
-        body = await request.body()
-        signature = request.headers.get("Stripe-Signature")
-        
-        # Initialize Stripe
-        host_url = str(request.base_url).rstrip('/')
-        webhook_url = f"{host_url}/api/webhook/stripe"
-        stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
-        
-        # Handle webhook
-        webhook_response = await stripe_checkout.handle_webhook(body, signature)
-        
-        # Update transaction based on webhook event
-        if webhook_response.event_type in ["checkout.session.completed", "payment_intent.succeeded"]:
-            user_id = webhook_response.metadata.get("user_id")
-            session_id = webhook_response.session_id
-            purchase_type = webhook_response.metadata.get("purchase_type")
-
-            # Branch: Founders Pass (Casino House Tiers) — auto-activate the
-            # pass instead of running the legacy membership upgrade. Idempotent
-            # via founders_passes.payment_ref unique index.
-            if purchase_type == "founders_pass" and user_id and session_id:
-                from routes.founders_pass import _activate_pass
-                tier_id = webhook_response.metadata.get("tier_id")
-                pending = await db.founders_pass_pending.find_one(
-                    {"session_id": session_id}, {"_id": 0}
-                ) or {}
-                amount_usd = float(pending.get("amount_usd", 0) or 0)
-                if tier_id:
-                    try:
-                        await _activate_pass(
-                            db, user_id, tier_id,
-                            payment_ref=session_id,
-                            amount_usd=amount_usd,
-                        )
-                        await db.founders_pass_pending.update_one(
-                            {"session_id": session_id},
-                            {"$set": {
-                                "status": "activated",
-                                "activated_at": datetime.now(timezone.utc).isoformat(),
-                                "activated_via": "webhook",
-                            }},
-                        )
-                    except Exception as e:
-                        logging.getLogger(__name__).warning(
-                            f"[stripe-webhook] founders_pass activation failed: {e}"
-                        )
-                # Treasury allocation for founders_pass purchase.
-                try:
-                    from routes.treasury import record_revenue  # noqa: PLC0415
-                    if amount_usd > 0:
-                        await record_revenue(
-                            db,
-                            gross_usd=amount_usd,
-                            source="founders_pass",
-                            tx_id=session_id,
-                            user_id=user_id,
-                            metadata={"tier_id": tier_id},
-                        )
-                except Exception as _e:
-                    logging.getLogger(__name__).warning(
-                        f"[stripe-webhook] treasury allocation (founders_pass) failed: {_e}"
-                    )
-                return {"status": "success", "type": "founders_pass"}
-
-            # Branch: Chair purchase (Founder Chairs / Master Deployment Plan).
-            # Idempotent via chair_purchases.payment_ref index.
-            if purchase_type == "chair_park" and user_id and session_id:
-                from routes.chairs import _grant_chairs
-                pending = await db.chair_pending.find_one(
-                    {"session_id": session_id}, {"_id": 0}
-                ) or {}
-                qty = int(pending.get("quantity", 0))
-                price = float(pending.get("price_per_chair_usd", 0))
-                if qty > 0 and price > 0:
-                    try:
-                        await _grant_chairs(
-                            db, user_id,
-                            quantity=qty,
-                            price_per_chair_usd=price,
-                            payment_ref=session_id,
-                            invite_code=pending.get("invite_code"),
-                        )
-                        await db.chair_pending.update_one(
-                            {"session_id": session_id},
-                            {"$set": {
-                                "status": "activated",
-                                "activated_at": datetime.now(timezone.utc).isoformat(),
-                                "activated_via": "webhook",
-                            }},
-                        )
-                    except Exception as e:
-                        logging.getLogger(__name__).warning(
-                            f"[stripe-webhook] chair_park activation failed: {e}"
-                        )
-                # Treasury allocation for chair purchase.
-                try:
-                    from routes.treasury import record_revenue  # noqa: PLC0415
-                    chair_gross_usd = qty * price
-                    if chair_gross_usd > 0:
-                        await record_revenue(
-                            db,
-                            gross_usd=chair_gross_usd,
-                            source="chair_park",
-                            tx_id=session_id,
-                            user_id=user_id,
-                            metadata={"quantity": qty,
-                                      "price_per_chair_usd": price},
-                        )
-                except Exception as _e:
-                    logging.getLogger(__name__).warning(
-                        f"[stripe-webhook] treasury allocation (chair_park) failed: {_e}"
-                    )
-                return {"status": "success", "type": "chair_park"}
-
-            if user_id and session_id:
-                # Update transaction
-                await db.payment_transactions.update_one(
-                    {"session_id": session_id},
-                    {"$set": {
-                        "payment_status": "paid",
-                        "updated_at": datetime.now(timezone.utc).isoformat()
-                    }}
-                )
-
-                # Treasury allocation — 40-30-30 split + founder cap.
-                # Idempotent on session_id, so webhook replays are safe.
-                try:
-                    from routes.treasury import record_revenue  # noqa: PLC0415
-                    amount_usd = float(webhook_response.amount_total or 0) / 100.0
-                    if amount_usd > 0:
-                        await record_revenue(
-                            db,
-                            gross_usd=amount_usd,
-                            source=purchase_type or "stripe_membership",
-                            tx_id=session_id,
-                            user_id=user_id,
-                            metadata={"event_type": webhook_response.event_type},
-                        )
-                except Exception as _e:
-                    logging.getLogger(__name__).warning(
-                        f"[stripe-webhook] treasury allocation failed: {_e}"
-                    )
-
-                # Upgrade user to premium
-                await db.users.update_one(
-                    {"user_id": user_id},
-                    {"$set": {
-                        "membership_type": "premium",
-                        "swipes_limit": 999999
-                    }}
-                )
-        
-        return {"status": "success"}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    """Retired — Stripe membership webhooks are no longer processed."""
+    raise HTTPException(
+        status_code=410,
+        detail={
+            "error": "stripe_retired",
+            "message": (
+                "Stripe checkout is retired. Use Helio or Solana deposit "
+                "for payments on Global Vibez."
+            ),
+            "use": "/api/coins/topup/helio",
+        },
+    )
 
 
 # ==================== MESSAGING ENDPOINTS ====================

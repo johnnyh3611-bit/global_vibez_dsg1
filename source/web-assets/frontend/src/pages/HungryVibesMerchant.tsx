@@ -40,7 +40,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { authFetch } from "@/utils/secureAuth";
-import StripeConnectButton from "@/components/payout/StripeConnectButton";
+import SolanaPayoutEmptyState from "@/components/payout/SolanaPayoutEmptyState";
 import VibezTabStyle from "@/components/ui/VibezTabStyle";
 
 const API = process.env.REACT_APP_BACKEND_URL;
@@ -258,9 +258,7 @@ export default function HungryVibesMerchant() {
               · Sponsorship {merchant.sponsorship_active ? "ACTIVE" : "$29.99/mo — inactive"}
             </p>
           </div>
-          {/* 2026-05-12 backlog #11: Stripe Connect Express — order proceeds
-              auto-deposit. Auto-shows "available after launch" until live keys. */}
-          <StripeConnectButton role="merchant" variant="compact" />
+          <SolanaPayoutEmptyState role="merchant" variant="compact" />
         </div>
 
         {/* Sponsorship banner — visible when inactive. Becomes a small
