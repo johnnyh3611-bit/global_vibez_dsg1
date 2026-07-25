@@ -50,7 +50,11 @@ GLOBAL_VIBEZ_SOLANA_RECEIVE_WALLET=YourSolanaTreasuryPubkey
 HELIO_API_KEY=your_helio_public_api_key
 HELIO_SECRET_KEY=your_helio_secret_bearer
 HELIO_PAYLINK_ID=your_dynamic_paylink_id
+# main → https://api.hel.io/v1  |  test|dev|devnet → https://api.dev.hel.io/v1
+# Keys from moonpay.dev.hel.io MUST use the dev host (or set HELIO_API_BASE).
 HELIO_NETWORK=test
+# Optional override (takes precedence over HELIO_NETWORK):
+# HELIO_API_BASE=https://api.dev.hel.io/v1
 HELIO_WEBHOOK_TOKEN=shared_token_from_helio_webhook_create
 
 # Founding Member payment beta (Helio card). Solana stays open for everyone.

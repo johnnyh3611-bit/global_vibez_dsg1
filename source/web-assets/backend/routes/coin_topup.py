@@ -186,6 +186,8 @@ async def create_helio_topup(
             card_only=True,
         )
     except RuntimeError as exc:
+        # create_charge already logged Helio's exact body/reason; surface it.
+        log.error("helio topup create_charge raised: %s", exc)
         raise HTTPException(502, str(exc)) from exc
 
     paylink_id = os.environ.get("HELIO_PAYLINK_ID") or ""

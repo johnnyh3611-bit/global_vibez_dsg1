@@ -6,12 +6,26 @@ Code here only calls Helio once HELIO_* env vars are on Railway.
 
 Docs: https://docs.hel.io/reference/charge/create
       https://docs.hel.io/docs/webhooks
+      https://docs.hel.io/llms.txt  (prod vs dev API hosts)
+
+Auth (OpenAPI POST /v1/charge/api-key):
+  Query:  apiKey=<HELIO_API_KEY>          (public key)
+  Header: Authorization: Bearer <HELIO_SECRET_KEY>
+  Body:   paymentRequestId (= HELIO_PAYLINK_ID), requestAmount, …
+
+Hosts:
+  Production keys → https://api.hel.io/v1   (dashboard: moonpay.hel.io)
+  Dev/test keys   → https://api.dev.hel.io/v1 (dashboard: moonpay.dev.hel.io)
+  Override either with HELIO_API_BASE. When unset, HELIO_NETWORK=test|dev|devnet
+  selects the dev host automatically.
 
 Env (all required for live charges):
-  HELIO_API_KEY       — public API key (query param)
+  HELIO_API_KEY       — public API key (query param apiKey)
   HELIO_SECRET_KEY    — secret / bearer token
   HELIO_PAYLINK_ID    — dynamic Pay Link id used as paymentRequestId
   HELIO_WEBHOOK_TOKEN — sharedToken from Helio webhook setup (optional verify)
+  HELIO_NETWORK       — main|test (selects default API host when HELIO_API_BASE unset)
+  HELIO_API_BASE      — optional full base URL override
 """
 from __future__ import annotations
 
@@ -20,33 +34,142 @@ import hmac
 import json
 import logging
 import os
+import re
 from typing import Any, Dict, Optional, Tuple
 
 import httpx
 
 log = logging.getLogger(__name__)
 
-HELIO_API_BASE = os.environ.get("HELIO_API_BASE", "https://api.hel.io/v1").rstrip("/")
+_PROD_API_BASE = "https://api.hel.io/v1"
+_DEV_API_BASE = "https://api.dev.hel.io/v1"
+_SENSITIVE_RE = re.compile(
+    r"(api[_-]?key|authorization|bearer|secret|token)\s*[:=]\s*\S+",
+    re.IGNORECASE,
+)
+
+
+def _env_strip(name: str) -> str:
+    """Read env var, strip whitespace and accidental surrounding quotes."""
+    val = (os.environ.get(name) or "").strip()
+    if len(val) >= 2 and val[0] == val[-1] and val[0] in ('"', "'"):
+        val = val[1:-1].strip()
+    return val
+
+
+def resolve_helio_api_base() -> str:
+    """Resolve Helio API base at call time (not import time).
+
+    Prefer HELIO_API_BASE when set. Otherwise map HELIO_NETWORK to the
+    correct MoonPay Commerce host so test keys are not sent to prod.
+    """
+    explicit = _env_strip("HELIO_API_BASE").rstrip("/")
+    if explicit:
+        return explicit
+    network = _env_strip("HELIO_NETWORK").lower() or "main"
+    if network in ("test", "dev", "devnet", "sandbox"):
+        return _DEV_API_BASE
+    return _PROD_API_BASE
 
 
 def helio_configured() -> bool:
     return bool(
-        os.environ.get("HELIO_API_KEY")
-        and os.environ.get("HELIO_SECRET_KEY")
-        and os.environ.get("HELIO_PAYLINK_ID")
+        _env_strip("HELIO_API_KEY")
+        and _env_strip("HELIO_SECRET_KEY")
+        and _env_strip("HELIO_PAYLINK_ID")
     )
 
 
 def helio_status() -> Dict[str, Any]:
+    network = _env_strip("HELIO_NETWORK").lower() or "main"
+    api_base = resolve_helio_api_base()
     return {
         "configured": helio_configured(),
-        "api_key_present": bool(os.environ.get("HELIO_API_KEY")),
-        "secret_present": bool(os.environ.get("HELIO_SECRET_KEY")),
-        "paylink_present": bool(os.environ.get("HELIO_PAYLINK_ID")),
-        "webhook_token_present": bool(os.environ.get("HELIO_WEBHOOK_TOKEN")),
+        "api_key_present": bool(_env_strip("HELIO_API_KEY")),
+        "secret_present": bool(_env_strip("HELIO_SECRET_KEY")),
+        "paylink_present": bool(_env_strip("HELIO_PAYLINK_ID")),
+        "webhook_token_present": bool(_env_strip("HELIO_WEBHOOK_TOKEN")),
+        "network": network,
+        "api_base": api_base,
+        "api_base_is_dev": "api.dev.hel.io" in api_base,
         "provider": "helio",
         "docs": "https://docs.hel.io/docs/for-developers",
+        "auth": {
+            "query_param": "apiKey",
+            "header": "Authorization: Bearer <HELIO_SECRET_KEY>",
+            "endpoint": "POST {api_base}/charge/api-key",
+        },
     }
+
+
+def _redact_secrets(text: str) -> str:
+    """Best-effort scrub of key-looking substrings before logging / surfacing."""
+    if not text:
+        return text
+    scrubbed = _SENSITIVE_RE.sub(r"\1=<redacted>", text)
+    for secret_name in ("HELIO_API_KEY", "HELIO_SECRET_KEY", "HELIO_WEBHOOK_TOKEN"):
+        secret = _env_strip(secret_name)
+        if secret and len(secret) >= 8 and secret in scrubbed:
+            scrubbed = scrubbed.replace(secret, "<redacted>")
+    return scrubbed
+
+
+def _fingerprint(value: str, *, keep: int = 4) -> str:
+    if not value:
+        return "missing"
+    if len(value) <= keep:
+        return f"len={len(value)}"
+    return f"len={len(value)} …{value[-keep:]}"
+
+
+def _parse_helio_error_body(resp: httpx.Response) -> Dict[str, Any]:
+    """Extract Helio's structured error fields when present."""
+    raw = (resp.text or "")[:2000]
+    out: Dict[str, Any] = {
+        "status_code": resp.status_code,
+        "raw_body": raw,
+        "message": "",
+        "error_code": "",
+        "error_type": "",
+    }
+    try:
+        data = resp.json()
+    except Exception:
+        return out
+    if not isinstance(data, dict):
+        return out
+    out["message"] = str(
+        data.get("message")
+        or data.get("error")
+        or data.get("errorMessage")
+        or data.get("detail")
+        or ""
+    )
+    out["error_code"] = str(
+        data.get("errorCode") or data.get("code") or ""
+    )
+    out["error_type"] = str(data.get("errorType") or data.get("type") or "")
+    return out
+
+
+def _format_helio_failure(resp: httpx.Response, *, api_base: str) -> str:
+    """Human-readable failure for logs and RuntimeError (no secrets)."""
+    parsed = _parse_helio_error_body(resp)
+    parts = [f"Helio charge failed ({resp.status_code})"]
+    if parsed["message"]:
+        parts.append(str(parsed["message"]))
+    extras = []
+    if parsed["error_code"]:
+        extras.append(f"errorCode={parsed['error_code']}")
+    if parsed["error_type"]:
+        extras.append(f"errorType={parsed['error_type']}")
+    extras.append(f"api_base={api_base}")
+    if extras:
+        parts.append(f"[{', '.join(extras)}]")
+    # Include truncated body when Helio returned no message field
+    if not parsed["message"] and parsed["raw_body"]:
+        parts.append(f"body={_redact_secrets(parsed['raw_body'][:400])}")
+    return " — ".join(parts[:2]) + ((" " + parts[2]) if len(parts) > 2 else "")
 
 
 async def create_charge(
@@ -59,6 +182,8 @@ async def create_charge(
     Create a one-time Helio charge. Returns (charge_id, checkout_url).
 
     Raises RuntimeError if not configured or Helio returns an error.
+    On HTTP errors (esp. 401), logs Helio's exact response body/reason and
+    includes a sanitized reason in the raised message.
     """
     if not helio_configured():
         raise RuntimeError(
@@ -66,9 +191,11 @@ async def create_charge(
             "and HELIO_PAYLINK_ID on the backend."
         )
 
-    api_key = os.environ["HELIO_API_KEY"]
-    secret = os.environ["HELIO_SECRET_KEY"]
-    paylink_id = os.environ["HELIO_PAYLINK_ID"]
+    api_key = _env_strip("HELIO_API_KEY")
+    secret = _env_strip("HELIO_SECRET_KEY")
+    paylink_id = _env_strip("HELIO_PAYLINK_ID")
+    api_base = resolve_helio_api_base()
+    network = _env_strip("HELIO_NETWORK").lower() or "main"
 
     # additionalJSON must be a string per Helio docs
     additional = json.dumps(metadata)
@@ -83,30 +210,115 @@ async def create_charge(
         },
     }
 
-    url = f"{HELIO_API_BASE}/charge/api-key"
+    # OpenAPI: POST /v1/charge/api-key?apiKey=… + Authorization: Bearer <secret>
+    url = f"{api_base}/charge/api-key"
     headers = {
         "Content-Type": "application/json",
+        "Accept": "application/json",
         "Authorization": f"Bearer {secret}",
     }
     params = {"apiKey": api_key}
 
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        resp = await client.post(url, headers=headers, params=params, json=body)
+    log.info(
+        "helio create_charge request url=%s network=%s api_key=%s secret=%s "
+        "paylink=%s amount_usd=%s auth_header=Authorization:Bearer",
+        url,
+        network,
+        _fingerprint(api_key),
+        _fingerprint(secret),
+        _fingerprint(paylink_id),
+        f"{amount_usd:.2f}",
+    )
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(url, headers=headers, params=params, json=body)
+    except httpx.TimeoutException as exc:
+        log.error(
+            "helio create_charge TIMEOUT url=%s network=%s error=%s",
+            url,
+            network,
+            exc,
+        )
+        raise RuntimeError(
+            f"Helio charge failed (timeout) contacting {api_base}"
+        ) from exc
+    except httpx.HTTPError as exc:
+        log.error(
+            "helio create_charge TRANSPORT_ERROR url=%s network=%s error=%s",
+            url,
+            network,
+            exc,
+        )
+        raise RuntimeError(
+            f"Helio charge failed (transport) contacting {api_base}: {exc}"
+        ) from exc
 
     if resp.status_code >= 400:
-        log.error("helio create_charge failed status=%s body=%s", resp.status_code, resp.text[:500])
-        raise RuntimeError(f"Helio charge failed ({resp.status_code})")
+        parsed = _parse_helio_error_body(resp)
+        # Detailed catch-style logging for ops (401 body is the usual smoking gun)
+        log.error(
+            "helio create_charge FAILED status=%s reason=%r errorCode=%s "
+            "errorType=%s api_base=%s network=%s www_authenticate=%r "
+            "content_type=%r body=%s",
+            resp.status_code,
+            parsed["message"] or None,
+            parsed["error_code"] or None,
+            parsed["error_type"] or None,
+            api_base,
+            network,
+            resp.headers.get("www-authenticate"),
+            resp.headers.get("content-type"),
+            _redact_secrets(parsed["raw_body"]),
+        )
+        if resp.status_code == 401 and network in ("test", "dev", "devnet", "sandbox"):
+            if "api.dev.hel.io" not in api_base:
+                log.error(
+                    "helio create_charge HINT: HELIO_NETWORK=%s but api_base=%s — "
+                    "dev/test keys must hit https://api.dev.hel.io/v1 "
+                    "(set HELIO_API_BASE or rely on HELIO_NETWORK fallback)",
+                    network,
+                    api_base,
+                )
+        elif resp.status_code == 401 and "api.dev.hel.io" in api_base:
+            log.error(
+                "helio create_charge HINT: calling DEV host with keys that may "
+                "belong to production (moonpay.hel.io). Rotate keys from the "
+                "matching dashboard."
+            )
+        raise RuntimeError(_format_helio_failure(resp, api_base=api_base))
 
-    data = resp.json()
+    try:
+        data = resp.json()
+    except Exception as exc:
+        log.error(
+            "helio create_charge INVALID_JSON status=%s body=%s",
+            resp.status_code,
+            _redact_secrets((resp.text or "")[:500]),
+        )
+        raise RuntimeError(
+            "Helio charge response was not valid JSON"
+        ) from exc
+
     charge_id = str(data.get("id") or "")
     page_url = str(data.get("pageUrl") or data.get("url") or "")
     if not page_url:
+        log.error(
+            "helio create_charge missing pageUrl keys=%s body=%s",
+            list(data.keys()) if isinstance(data, dict) else type(data).__name__,
+            _redact_secrets(json.dumps(data)[:500]) if isinstance(data, dict) else "",
+        )
         raise RuntimeError("Helio charge response missing pageUrl")
 
     if card_only and "cardonly=" not in page_url:
         sep = "&" if "?" in page_url else "?"
         page_url = f"{page_url}{sep}cardonly=true"
 
+    log.info(
+        "helio create_charge OK charge_id=%s page_url_host=%s",
+        charge_id or "<empty>",
+        page_url.split("/")[2] if "://" in page_url else "?",
+    )
     return charge_id, page_url
 
 
@@ -150,7 +362,7 @@ def verify_webhook_signature(raw_body: bytes, signature: Optional[str]) -> bool:
     Soft-pass only allowed in non-production when the token is unset.
     Production always requires a configured token + valid signature.
     """
-    token = os.environ.get("HELIO_WEBHOOK_TOKEN") or ""
+    token = _env_strip("HELIO_WEBHOOK_TOKEN")
     if not token:
         if _require_webhook_auth():
             log.error("HELIO_WEBHOOK_TOKEN unset — refusing webhook in production")
