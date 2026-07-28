@@ -287,42 +287,58 @@ export default function PracticeBowling({ gameState, onMove }: { gameState?: any
     >
       <div className="w-full max-w-3xl mx-auto space-y-4">
         <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1 bg-gradient-to-br from-slate-800 to-black rounded-2xl p-4 border border-white/10 flex items-center justify-center min-h-[240px] sm:min-h-[320px] relative overflow-hidden">
-            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-amber-900/30 to-transparent" />
+          <div
+            className="flex-1 gv-view-bowling-lane rounded-2xl border border-white/10 overflow-hidden"
+            data-testid="bowling-ground-view"
+          >
+            <div className="gv-view-bowling-lane__plane min-h-[280px] sm:min-h-[340px]">
+              <div className="gv-view-bowling-lane__gutters" />
 
-            <div className="relative z-10 flex flex-col items-center gap-2">
-              {Array.from({ length: PIN_ROWS }).map((_, row) => (
-                <div key={row} className="flex gap-2 justify-center">
-                  {Array.from({ length: row + 1 }).map((_, idx) => {
-                    const pinIdx = pinIndexInRow(row, idx);
-                    const up = pins[pinIdx];
-                    return (
-                      <div
-                        key={pinIdx}
-                        className={`w-6 h-6 sm:w-9 sm:h-9 rounded-full shadow-lg transition-all duration-300 ${
-                          up
-                            ? 'bg-gradient-to-br from-white to-gray-300 border-2 border-gray-400'
-                            : 'bg-transparent border-2 border-transparent'
-                        }`}
-                      />
-                    );
-                  })}
-                </div>
-              ))}
-            </div>
-
-            {rolling && (
-              <div
-                className="absolute left-1/2 -translate-x-1/2 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gradient-to-br from-cyan-400 to-blue-600 shadow-[0_0_15px_rgba(34,211,238,0.6)] z-20 transition-all"
-                style={{ top: `${ballLaneProgress}%` }}
-              />
-            )}
-
-            {celebrate && (
-              <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
-                <Trophy className="w-14 h-14 text-yellow-400 drop-shadow-lg animate-bounce" />
+              {/* Pins at the far end of the lane (ground POV looking down-lane) */}
+              <div className="gv-view-bowling-lane__pins relative z-10">
+                {Array.from({ length: PIN_ROWS }).map((_, row) => (
+                  <div key={row} className="flex gap-1.5 sm:gap-2 justify-center">
+                    {Array.from({ length: row + 1 }).map((_, idx) => {
+                      const pinIdx = pinIndexInRow(row, idx);
+                      const up = pins[pinIdx];
+                      const farScale = 0.72 + row * 0.06;
+                      return (
+                        <div
+                          key={pinIdx}
+                          className={`rounded-full shadow-lg transition-all duration-300 ${
+                            up
+                              ? 'bg-gradient-to-br from-white to-gray-300 border-2 border-gray-400'
+                              : 'bg-transparent border-2 border-transparent'
+                          }`}
+                          style={{
+                            width: `${1.35 * farScale}rem`,
+                            height: `${1.35 * farScale}rem`,
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
+                ))}
               </div>
-            )}
+
+              {/* Ball rolls from near camera (bottom) toward pins */}
+              {rolling && (
+                <div
+                  className="gv-view-bowling-lane__ball w-6 h-6 sm:w-8 sm:h-8 z-20 transition-all"
+                  style={{
+                    // Ground POV: start near bottom (~88%) and travel toward pins (~18%)
+                    bottom: `${Math.max(8, 88 - ballLaneProgress * 0.75)}%`,
+                    top: 'auto',
+                  }}
+                />
+              )}
+
+              {celebrate && (
+                <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
+                  <Trophy className="w-14 h-14 text-yellow-400 drop-shadow-lg animate-bounce" />
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
