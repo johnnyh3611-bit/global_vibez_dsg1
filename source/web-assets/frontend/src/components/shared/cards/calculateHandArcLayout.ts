@@ -7,6 +7,8 @@
 
 export type HandArcOpts = {
   viewportWidth: number;
+  /** When the short side / height is tight (landscape phone), force sm cards. */
+  viewportHeight?: number;
   handSize: number;
   maxFanWidth?: number;
   gutter?: number;
@@ -41,6 +43,7 @@ const DEFAULT_NATURAL = { sm: 18, md: 28 };
 export function calculateHandArcLayout(opts: HandArcOpts): HandArcLayout {
   const {
     viewportWidth,
+    viewportHeight,
     handSize,
     maxFanWidth = 700,
     gutter = 32,
@@ -53,8 +56,16 @@ export function calculateHandArcLayout(opts: HandArcOpts): HandArcLayout {
 
   const N = Math.max(handSize, 1);
   const isMobile = viewportWidth < 640;
+  const shortHeight =
+    typeof viewportHeight === "number" &&
+    viewportHeight > 0 &&
+    viewportHeight < 520;
   const cardSize: "sm" | "md" =
-    size === "auto" ? (isMobile && N >= 10 ? "sm" : "md") : size;
+    size === "auto"
+      ? shortHeight || (isMobile && N >= 10)
+        ? "sm"
+        : "md"
+      : size;
   const cardW = cardWidths[cardSize];
   const targetWidth = Math.min(viewportWidth - gutter, maxFanWidth);
   const natural = naturalOverlap[cardSize];

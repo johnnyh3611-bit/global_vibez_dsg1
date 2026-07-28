@@ -32,7 +32,14 @@ const RoomCommsDock: React.FC<RoomCommsDockProps> = ({
   };
 
   return (
-    <div className="fixed top-24 right-4 z-[100] flex flex-col items-end gap-2">
+    <div
+      className="fixed z-[55] flex flex-col items-end gap-1.5"
+      style={{
+        top: "max(0.4rem, env(safe-area-inset-top))",
+        right: "max(0.5rem, env(safe-area-inset-right))",
+      }}
+      data-testid="room-comms-dock"
+    >
       <AnimatePresence>
         {open && (
           <motion.div
@@ -84,12 +91,12 @@ const RoomCommsDock: React.FC<RoomCommsDockProps> = ({
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           onClick={() => setOpen(true)}
-          className="flex items-center gap-2 px-4 py-3 rounded-full bg-[#0A0A0F]/95 hover:bg-[#1a1a25] text-cyan-300 border border-cyan-400/40 text-sm font-black uppercase tracking-wider shadow-[0_0_20px_rgba(34,211,238,0.15)] backdrop-blur-md transition-all hover:scale-105 active:scale-95"
+          className="flex items-center gap-1.5 px-2.5 py-2 rounded-full bg-[#0A0A0F]/95 hover:bg-[#1a1a25] text-cyan-300 border border-cyan-400/40 text-[10px] font-black uppercase tracking-wider shadow-[0_0_20px_rgba(34,211,238,0.15)] backdrop-blur-md transition-all hover:scale-105 active:scale-95"
           title="Join room video and voice"
           aria-label="Join room video and voice"
         >
-          <Video className="w-4 h-4" />
-          <span className="hidden sm:inline">{label} Video</span>
+          <Video className="w-3.5 h-3.5" />
+          <span className="hidden lg:inline">{label} Video</span>
         </motion.button>
       )}
     </div>

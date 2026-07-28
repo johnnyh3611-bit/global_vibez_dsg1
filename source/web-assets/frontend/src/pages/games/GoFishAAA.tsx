@@ -21,6 +21,7 @@ import SpadesDealingAnimation from "@/components/spades/SpadesDealingAnimation";
 import SpadesGameMenu from "@/components/spades/SpadesGameMenu";
 import SpadesPlayerProfile from "@/components/spades/SpadesPlayerProfile";
 import SpadesCommunityChat from "@/components/spades/SpadesCommunityChat";
+import LegacyPlayShell from "@/components/games/LegacyPlayShell";
 import GoFishAskModal from "@/components/go-fish-aaa/GoFishAskModal";
 import type {
   SpadesCard as CardData,
@@ -277,47 +278,48 @@ export default function GoFishAAA() {
   const finished = raw.phase === "finished";
 
   return (
-    <div
-      className="min-h-screen bg-gradient-to-b from-[#022a2a] via-[#021515] to-[#020707] text-white relative overflow-x-hidden"
-      data-testid="go-fish-aaa"
-    >
-      <div className="relative z-10 flex flex-col min-h-screen">
-        <div className="flex flex-wrap items-start justify-between px-2 sm:px-3 md:px-5 pt-2 sm:pt-3 md:pt-4 gap-2">
-          <div className="flex flex-col items-start gap-2">
-            <button onClick={backToLobby} className="flex items-center gap-1.5 text-cyan-300/70 hover:text-white transition text-xs md:text-sm font-bold" data-testid="go-fish-aaa-back-btn">
-              <ArrowLeft className="w-4 h-4" /> Lobby
-            </button>
-            <SpadesGameMenu onExit={backToLobby} onOpenMessages={() => setChatOpen(true)} />
+    <LegacyPlayShell
+      testId="go-fish-aaa"
+      className="bg-gradient-to-b from-[#022a2a] via-[#021515] to-[#020707] text-white"
+      chrome={
+        <>
+          <div className="flex flex-wrap items-start justify-between px-2 sm:px-3 md:px-5 pt-2 sm:pt-3 md:pt-4 gap-2">
+            <div className="flex flex-col items-start gap-2">
+              <button onClick={backToLobby} className="flex items-center gap-1.5 text-cyan-300/70 hover:text-white transition text-xs md:text-sm font-bold" data-testid="go-fish-aaa-back-btn">
+                <ArrowLeft className="w-4 h-4" /> Lobby
+              </button>
+              <SpadesGameMenu onExit={backToLobby} onOpenMessages={() => setChatOpen(true)} />
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 order-3 w-full sm:order-none sm:w-auto">
+              <div className="px-2 py-0.5 rounded-full bg-cyan-500/15 border border-cyan-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-cyan-300 font-bold">
+                Go Fish
+              </div>
+              <div className="px-2 py-0.5 rounded-full bg-fuchsia-500/15 border border-fuchsia-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-fuchsia-300 font-bold">
+                <span className="inline-flex items-center gap-1">
+                  <Bot className="w-2.5 h-2.5" /> AI
+                </span>
+              </div>
+              <div className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-600 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-cyan-200 font-bold tabular-nums">
+                Pool · {raw.pool_count}
+              </div>
+            </div>
+            <SpadesScoreBadge scores={scores} players={players} phase="playing" tricksPlayed={0} />
           </div>
-          <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 order-3 w-full sm:order-none sm:w-auto">
-            <div className="px-2 py-0.5 rounded-full bg-cyan-500/15 border border-cyan-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-cyan-300 font-bold">
-              Go Fish
-            </div>
-            <div className="px-2 py-0.5 rounded-full bg-fuchsia-500/15 border border-fuchsia-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-fuchsia-300 font-bold">
-              <span className="inline-flex items-center gap-1">
-                <Bot className="w-2.5 h-2.5" /> AI
-              </span>
-            </div>
-            <div className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-600 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-cyan-200 font-bold tabular-nums">
-              Pool · {raw.pool_count}
-            </div>
-          </div>
-          <SpadesScoreBadge scores={scores} players={players} phase="playing" tricksPlayed={0} />
+
+          <SpadesStatusBanner message={statusMsg} />
+        </>
+      }
+      stage={
+        <div className="relative">
+          <SpadesTable brandSubLabel="GO FISH" variant="ocean">
+            <SpadesSeat position="north" player={players.north} isTurn={raw.turn === "north"} isYou={youPosition === "north"} onClick={() => setProfileOpen("north")} />
+            <SpadesSeat position="east"  player={players.east}  isTurn={raw.turn === "east"}  isYou={youPosition === "east"}  onClick={() => setProfileOpen("east")} />
+            <SpadesSeat position="west"  player={players.west}  isTurn={raw.turn === "west"}  isYou={youPosition === "west"}  onClick={() => setProfileOpen("west")} />
+          </SpadesTable>
+          <SpadesDealingAnimation active={dealing} />
         </div>
-
-        <SpadesStatusBanner message={statusMsg} />
-
-        <div className="flex items-center justify-center py-2 md:py-3 relative">
-          <div className="relative">
-            <SpadesTable brandSubLabel="GO FISH" variant="ocean">
-              <SpadesSeat position="north" player={players.north} isTurn={raw.turn === "north"} isYou={youPosition === "north"} onClick={() => setProfileOpen("north")} />
-              <SpadesSeat position="east"  player={players.east}  isTurn={raw.turn === "east"}  isYou={youPosition === "east"}  onClick={() => setProfileOpen("east")} />
-              <SpadesSeat position="west"  player={players.west}  isTurn={raw.turn === "west"}  isYou={youPosition === "west"}  onClick={() => setProfileOpen("west")} />
-            </SpadesTable>
-            <SpadesDealingAnimation active={dealing} />
-          </div>
-        </div>
-
+      }
+      hand={
         <div className="px-3 md:px-4 pb-3 md:pb-4 relative z-30">
           {/* Passive hand strip — Go Fish doesn't play cards by tap */}
           <div className="flex flex-wrap justify-center gap-1.5 mb-3" data-testid="go-fish-hand-strip">
@@ -379,8 +381,8 @@ export default function GoFishAAA() {
             </motion.div>
           ) : null}
         </div>
-      </div>
-
+      }
+    >
       <GoFishAskModal
         open={askOpen && isYourTurn}
         busy={busy}
@@ -399,6 +401,6 @@ export default function GoFishAAA() {
         onClose={() => setProfileOpen(null)}
       />
       <SpadesCommunityChat open={chatOpen} gameId={`go-fish-${raw.user_position}`} mode="ai" onClose={() => setChatOpen(false)} />
-    </div>
+    </LegacyPlayShell>
   );
 }

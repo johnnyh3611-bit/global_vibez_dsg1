@@ -374,6 +374,22 @@ body.gv-force-landscape {
   }
 }
 
+/* Hide floating room chrome while the rotate hint owns the screen */
+body.gv-landscape-hint-active [data-testid="room-comms-dock"],
+body.gv-landscape-hint-active [data-testid="landscape-toggle"],
+body.gv-landscape-hint-active [data-testid="co-watch-launcher-btn"] {
+  display: none !important;
+}
+
+/* When GameRoomLayout HUD is present, tuck external pills further right/top
+   so they don't cover wallet / settings controls. */
+body:has(.gv-room) [data-testid="room-comms-dock"] {
+  top: max(3.4rem, calc(env(safe-area-inset-top) + 2.9rem)) !important;
+}
+body:has(.gv-room) [data-testid="landscape-toggle"] {
+  top: max(5.6rem, calc(env(safe-area-inset-top) + 5.1rem)) !important;
+}
+
 /* ─────────────────────────────────────────────────────────────────
    CARD ROOM LAYOUT — Implementation Guide PDF §1-2 (locked spec).
    Apply via `.card-room-frame` on any multiplayer card room wrapper.

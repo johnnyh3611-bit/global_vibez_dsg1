@@ -29,6 +29,7 @@ import SpadesGameMenu from "@/components/spades/SpadesGameMenu";
 import CommHubButton from "@/components/common/CommHubButton";
 import SpadesPlayerProfile from "@/components/spades/SpadesPlayerProfile";
 import SpadesCommunityChat from "@/components/spades/SpadesCommunityChat";
+import LegacyPlayShell from "@/components/games/LegacyPlayShell";
 import type {
   SpadesCard as CardData,
   SpadesPosition,
@@ -424,53 +425,57 @@ export default function PinochleAAA() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0a1428] via-[#080a18] to-[#04060e] text-white relative overflow-x-hidden" data-testid="pinochle-aaa">
-      <div className="relative z-10 flex flex-col min-h-screen">
-        <div className="flex flex-wrap items-start justify-between px-2 sm:px-3 md:px-5 pt-2 sm:pt-3 md:pt-4 gap-2">
-          <div className="flex flex-col items-start gap-2">
-            <button onClick={backToLobby} className="flex items-center gap-1.5 text-cyan-200/70 hover:text-white transition text-xs md:text-sm font-bold" data-testid="pinochle-aaa-back-btn">
-              <ArrowLeft className="w-4 h-4" /> Lobby
-            </button>
-            <SpadesGameMenu onExit={backToLobby} onOpenMessages={() => setChatOpen(true)} />
-            <CommHubButton compact />
-            <div data-testid="room-menu-bar" className="hidden" aria-hidden="true" />
-          </div>
-          <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 order-3 w-full sm:order-none sm:w-auto">
-            <div className="px-2 py-0.5 rounded-full bg-cyan-700/20 border border-cyan-500/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-cyan-200 font-bold">Pinochle</div>
-            <div className="px-2 py-0.5 rounded-full bg-fuchsia-500/15 border border-fuchsia-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-fuchsia-300 font-bold">
-              <span className="inline-flex items-center gap-1"><Bot className="w-2.5 h-2.5" /> AI</span>
+    <LegacyPlayShell
+      testId="pinochle-aaa"
+      className="bg-gradient-to-b from-[#0a1428] via-[#080a18] to-[#04060e] text-white"
+      chrome={
+        <>
+          <div className="flex flex-wrap items-start justify-between px-2 sm:px-3 md:px-5 pt-2 sm:pt-3 md:pt-4 gap-2">
+            <div className="flex flex-col items-start gap-2">
+              <button onClick={backToLobby} className="flex items-center gap-1.5 text-cyan-200/70 hover:text-white transition text-xs md:text-sm font-bold" data-testid="pinochle-aaa-back-btn">
+                <ArrowLeft className="w-4 h-4" /> Lobby
+              </button>
+              <SpadesGameMenu onExit={backToLobby} onOpenMessages={() => setChatOpen(true)} />
+              <CommHubButton compact />
+              <div data-testid="room-menu-bar" className="hidden" aria-hidden="true" />
             </div>
-            {raw.trump ? (
-              <div className="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/50 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-emerald-200 font-bold flex items-center gap-1">
-                Trump · <span>{SUIT_GLYPH[raw.trump]}</span> {raw.trump}
+            <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 order-3 w-full sm:order-none sm:w-auto">
+              <div className="px-2 py-0.5 rounded-full bg-cyan-700/20 border border-cyan-500/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-cyan-200 font-bold">Pinochle</div>
+              <div className="px-2 py-0.5 rounded-full bg-fuchsia-500/15 border border-fuchsia-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-fuchsia-300 font-bold">
+                <span className="inline-flex items-center gap-1"><Bot className="w-2.5 h-2.5" /> AI</span>
               </div>
-            ) : null}
-            {raw.high_bid > 0 ? (
-              <div className="px-2 py-0.5 rounded-full bg-slate-800 border border-cyan-500/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-cyan-200 font-bold tabular-nums">
-                Contract · {raw.high_bid} {raw.high_bidder ? "· " + (raw.high_bidder === youPosition ? "you" : raw.high_bidder) : ""}
+              {raw.trump ? (
+                <div className="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/50 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-emerald-200 font-bold flex items-center gap-1">
+                  Trump · <span>{SUIT_GLYPH[raw.trump]}</span> {raw.trump}
+                </div>
+              ) : null}
+              {raw.high_bid > 0 ? (
+                <div className="px-2 py-0.5 rounded-full bg-slate-800 border border-cyan-500/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-cyan-200 font-bold tabular-nums">
+                  Contract · {raw.high_bid} {raw.high_bidder ? "· " + (raw.high_bidder === youPosition ? "you" : raw.high_bidder) : ""}
+                </div>
+              ) : null}
+              <div className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-600 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-cyan-100 font-bold tabular-nums">
+                → 1500
               </div>
-            ) : null}
-            <div className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-600 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-cyan-100 font-bold tabular-nums">
-              → 1500
             </div>
+            <SpadesScoreBadge scores={scores} players={players} phase="playing" tricksPlayed={raw.tricks_played} />
           </div>
-          <SpadesScoreBadge scores={scores} players={players} phase="playing" tricksPlayed={raw.tricks_played} />
+
+          <SpadesStatusBanner message={statusMsg} />
+        </>
+      }
+      stage={
+        <div className="relative">
+          <SpadesTable brandSubLabel="PINOCHLE" variant="pearl" centreGlyph="P">
+            <SpadesSeat position="north" player={players.north} isTurn={raw.turn === "north" || raw.bid_turn === "north"} isYou={youPosition === "north"} isDealer={raw.dealer === "north"} onClick={() => setProfileOpen("north")} shotClockExpiresAt={(raw.turn === "north" || raw.bid_turn === "north") ? turnExpiresAt : null} onShotClockExpire={handleShotClockExpire} />
+            <SpadesSeat position="east"  player={players.east}  isTurn={raw.turn === "east"  || raw.bid_turn === "east"}  isYou={youPosition === "east"}  isDealer={raw.dealer === "east"}  onClick={() => setProfileOpen("east")}  shotClockExpiresAt={(raw.turn === "east"  || raw.bid_turn === "east")  ? turnExpiresAt : null} onShotClockExpire={handleShotClockExpire} />
+            <SpadesSeat position="west"  player={players.west}  isTurn={raw.turn === "west"  || raw.bid_turn === "west"}  isYou={youPosition === "west"}  isDealer={raw.dealer === "west"}  onClick={() => setProfileOpen("west")}  shotClockExpiresAt={(raw.turn === "west"  || raw.bid_turn === "west")  ? turnExpiresAt : null} onShotClockExpire={handleShotClockExpire} />
+            <SpadesTrickPile trick={raw.current_trick.map((t) => ({ position: t.player, card: t.card }))} />
+          </SpadesTable>
+          <SpadesDealingAnimation active={dealing} />
         </div>
-
-        <SpadesStatusBanner message={statusMsg} />
-
-        <div className="flex items-center justify-center py-2 md:py-3 relative">
-          <div className="relative">
-            <SpadesTable brandSubLabel="PINOCHLE" variant="pearl" centreGlyph="P">
-              <SpadesSeat position="north" player={players.north} isTurn={raw.turn === "north" || raw.bid_turn === "north"} isYou={youPosition === "north"} isDealer={raw.dealer === "north"} onClick={() => setProfileOpen("north")} shotClockExpiresAt={(raw.turn === "north" || raw.bid_turn === "north") ? turnExpiresAt : null} onShotClockExpire={handleShotClockExpire} />
-              <SpadesSeat position="east"  player={players.east}  isTurn={raw.turn === "east"  || raw.bid_turn === "east"}  isYou={youPosition === "east"}  isDealer={raw.dealer === "east"}  onClick={() => setProfileOpen("east")}  shotClockExpiresAt={(raw.turn === "east"  || raw.bid_turn === "east")  ? turnExpiresAt : null} onShotClockExpire={handleShotClockExpire} />
-              <SpadesSeat position="west"  player={players.west}  isTurn={raw.turn === "west"  || raw.bid_turn === "west"}  isYou={youPosition === "west"}  isDealer={raw.dealer === "west"}  onClick={() => setProfileOpen("west")}  shotClockExpiresAt={(raw.turn === "west"  || raw.bid_turn === "west")  ? turnExpiresAt : null} onShotClockExpire={handleShotClockExpire} />
-              <SpadesTrickPile trick={raw.current_trick.map((t) => ({ position: t.player, card: t.card }))} />
-            </SpadesTable>
-            <SpadesDealingAnimation active={dealing} />
-          </div>
-        </div>
-
+      }
+      hand={
         <div className="px-3 md:px-4 -mt-4 md:-mt-6 pb-3 md:pb-4 relative z-30">
           {/* Always show the hand once dealt — bidders need to SEE their
               cards to bid intelligently. Fix Feb 2026 (round 2): user
@@ -580,10 +585,10 @@ export default function PinochleAAA() {
             </motion.div>
           ) : null}
         </div>
-      </div>
-
+      }
+    >
       <SpadesPlayerProfile open={profileOpen !== null} position={profileOpen} player={profileOpen ? players[profileOpen] : null} isYou={profileOpen === youPosition} onClose={() => setProfileOpen(null)} />
       <SpadesCommunityChat open={chatOpen} gameId={`pinochle-${raw.user_position}`} mode="ai" onClose={() => setChatOpen(false)} />
-    </div>
+    </LegacyPlayShell>
   );
 }

@@ -7,8 +7,8 @@
  *   • Fades out at 2.4s
  *   • Tone-based color (cyan / amber / rose / emerald)
  *
- * Renders absolutely positioned at the top center of the viewport so it
- * floats above the table and never moves layout.
+ * Renders in-flow (or inside a parent absolute slot) so it never
+ * double-parks over the room HUD / landscape / comms chrome.
  */
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -30,7 +30,7 @@ interface Props {
 export const SpadesStatusBanner: React.FC<Props> = ({ message }) => {
   return (
     <div
-      className="pointer-events-none fixed top-3 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-32px)] max-w-md"
+      className="pointer-events-none relative z-30 mx-auto w-[calc(100%-24px)] max-w-md min-h-0"
       data-testid="spades-status-banner-host"
     >
       <AnimatePresence mode="wait">

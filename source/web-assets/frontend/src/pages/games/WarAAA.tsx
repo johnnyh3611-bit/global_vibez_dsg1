@@ -15,6 +15,7 @@ import SpadesScoreBadge from "@/components/spades/SpadesScoreBadge";
 import SpadesGameMenu from "@/components/spades/SpadesGameMenu";
 import SpadesPlayerProfile from "@/components/spades/SpadesPlayerProfile";
 import SpadesCommunityChat from "@/components/spades/SpadesCommunityChat";
+import LegacyPlayShell from "@/components/games/LegacyPlayShell";
 import type {
   SpadesCard as CardData,
   SpadesPosition,
@@ -199,74 +200,78 @@ export default function WarAAA() {
   const lr = raw.last_round;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#1a0205] via-[#0a0203] to-[#050102] text-white relative overflow-x-hidden" data-testid="war-aaa">
-      <div className="relative z-10 flex flex-col min-h-screen">
-        <div className="flex flex-wrap items-start justify-between px-2 sm:px-3 md:px-5 pt-2 sm:pt-3 md:pt-4 gap-2">
-          <div className="flex flex-col items-start gap-2">
-            <button onClick={backToLobby} className="flex items-center gap-1.5 text-rose-300/70 hover:text-white transition text-xs md:text-sm font-bold" data-testid="war-aaa-back-btn">
-              <ArrowLeft className="w-4 h-4" /> Lobby
-            </button>
-            <SpadesGameMenu onExit={backToLobby} onOpenMessages={() => setChatOpen(true)} />
-          </div>
-          <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 order-3 w-full sm:order-none sm:w-auto">
-            <div className="px-2 py-0.5 rounded-full bg-rose-500/15 border border-rose-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-rose-300 font-bold">War</div>
-            <div className="px-2 py-0.5 rounded-full bg-fuchsia-500/15 border border-fuchsia-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-fuchsia-300 font-bold">
-              <span className="inline-flex items-center gap-1"><Bot className="w-2.5 h-2.5" /> AI</span>
+    <LegacyPlayShell
+      testId="war-aaa"
+      className="bg-gradient-to-b from-[#1a0205] via-[#0a0203] to-[#050102] text-white"
+      chrome={
+        <>
+          <div className="flex flex-wrap items-start justify-between px-2 sm:px-3 md:px-5 pt-2 sm:pt-3 md:pt-4 gap-2">
+            <div className="flex flex-col items-start gap-2">
+              <button onClick={backToLobby} className="flex items-center gap-1.5 text-rose-300/70 hover:text-white transition text-xs md:text-sm font-bold" data-testid="war-aaa-back-btn">
+                <ArrowLeft className="w-4 h-4" /> Lobby
+              </button>
+              <SpadesGameMenu onExit={backToLobby} onOpenMessages={() => setChatOpen(true)} />
             </div>
-            <div className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-600 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-rose-200 font-bold tabular-nums">
-              Round · {raw.round_no}/{raw.max_rounds}
+            <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 order-3 w-full sm:order-none sm:w-auto">
+              <div className="px-2 py-0.5 rounded-full bg-rose-500/15 border border-rose-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-rose-300 font-bold">War</div>
+              <div className="px-2 py-0.5 rounded-full bg-fuchsia-500/15 border border-fuchsia-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-fuchsia-300 font-bold">
+                <span className="inline-flex items-center gap-1"><Bot className="w-2.5 h-2.5" /> AI</span>
+              </div>
+              <div className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-600 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-rose-200 font-bold tabular-nums">
+                Round · {raw.round_no}/{raw.max_rounds}
+              </div>
             </div>
+            <SpadesScoreBadge scores={scores} players={players} phase="playing" tricksPlayed={0} />
           </div>
-          <SpadesScoreBadge scores={scores} players={players} phase="playing" tricksPlayed={0} />
+
+          <SpadesStatusBanner message={statusMsg} />
+        </>
+      }
+      stage={
+        <div className="relative">
+          <SpadesTable brandSubLabel="WAR" variant="ruby" density="2p" centreGlyph="⚔">
+            <SpadesSeat position="north" player={players.north} isTurn={raw.phase === "playing"} isYou={youPosition === "north"} onClick={() => setProfileOpen("north")} />
+          </SpadesTable>
+
+          {/* Battle pile centred on the felt */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center gap-2 pointer-events-none">
+            <AnimatePresence mode="popLayout">
+              {lr?.battle ? (
+                <motion.div
+                  key={lr.round}
+                  initial={{ scale: 0.6, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.4, opacity: 0 }}
+                  className="flex items-center gap-2"
+                  data-testid="war-battle-pile"
+                >
+                  {(() => {
+                    // Show last 2 face-up cards centred (the resolving cards)
+                    const faceUp = (lr.battle ?? []).filter(b => !b.face_down);
+                    const tail = faceUp.slice(-2);
+                    return tail.map((b, i) => (
+                      <div key={i} className="flex flex-col items-center gap-1">
+                        <span className={`text-[9px] uppercase tracking-widest font-bold ${b.player === lr.winner ? "text-emerald-300" : "text-rose-300/70"}`}>
+                          {b.player.toUpperCase()}
+                        </span>
+                        <CardFace card={b.card} big />
+                      </div>
+                    ));
+                  })()}
+                </motion.div>
+              ) : (
+                <div className="text-rose-300/40 text-xs uppercase tracking-widest">Press FLIP to start</div>
+              )}
+            </AnimatePresence>
+            {lr?.war_depth ? (
+              <div className="px-3 py-1 rounded-full bg-amber-500/30 border border-amber-300 text-amber-100 text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-1" data-testid="war-depth-badge">
+                <Zap className="w-3 h-3" /> War ×{lr.war_depth}
+              </div>
+            ) : null}
+          </div>
         </div>
-
-        <SpadesStatusBanner message={statusMsg} />
-
-        <div className="flex items-center justify-center py-2 md:py-3 relative">
-          <div className="relative">
-            <SpadesTable brandSubLabel="WAR" variant="ruby" density="2p" centreGlyph="⚔">
-              <SpadesSeat position="north" player={players.north} isTurn={raw.phase === "playing"} isYou={youPosition === "north"} onClick={() => setProfileOpen("north")} />
-            </SpadesTable>
-
-            {/* Battle pile centred on the felt */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center gap-2 pointer-events-none">
-              <AnimatePresence mode="popLayout">
-                {lr?.battle ? (
-                  <motion.div
-                    key={lr.round}
-                    initial={{ scale: 0.6, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.4, opacity: 0 }}
-                    className="flex items-center gap-2"
-                    data-testid="war-battle-pile"
-                  >
-                    {(() => {
-                      // Show last 2 face-up cards centred (the resolving cards)
-                      const faceUp = (lr.battle ?? []).filter(b => !b.face_down);
-                      const tail = faceUp.slice(-2);
-                      return tail.map((b, i) => (
-                        <div key={i} className="flex flex-col items-center gap-1">
-                          <span className={`text-[9px] uppercase tracking-widest font-bold ${b.player === lr.winner ? "text-emerald-300" : "text-rose-300/70"}`}>
-                            {b.player.toUpperCase()}
-                          </span>
-                          <CardFace card={b.card} big />
-                        </div>
-                      ));
-                    })()}
-                  </motion.div>
-                ) : (
-                  <div className="text-rose-300/40 text-xs uppercase tracking-widest">Press FLIP to start</div>
-                )}
-              </AnimatePresence>
-              {lr?.war_depth ? (
-                <div className="px-3 py-1 rounded-full bg-amber-500/30 border border-amber-300 text-amber-100 text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-1" data-testid="war-depth-badge">
-                  <Zap className="w-3 h-3" /> War ×{lr.war_depth}
-                </div>
-              ) : null}
-            </div>
-          </div>
-        </div>
-
+      }
+      hand={
         <div className="px-3 md:px-4 pb-3 md:pb-4 relative z-30">
           <div className="flex justify-center gap-3 mb-3">
             {!finished ? (
@@ -306,10 +311,10 @@ export default function WarAAA() {
             </motion.div>
           ) : null}
         </div>
-      </div>
-
+      }
+    >
       <SpadesPlayerProfile open={profileOpen !== null} position={profileOpen} player={profileOpen ? players[profileOpen] : null} isYou={profileOpen === youPosition} onClose={() => setProfileOpen(null)} />
       <SpadesCommunityChat open={chatOpen} gameId={`war-${raw.user_position}`} mode="ai" onClose={() => setChatOpen(false)} />
-    </div>
+    </LegacyPlayShell>
   );
 }

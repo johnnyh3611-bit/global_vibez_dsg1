@@ -96,6 +96,7 @@ export function GameRoomLayout({
   const [speed, setSpeed] = useState(readStoredSpeed);
   const [viewCards, setViewCards] = useState(readStoredViewCards);
   const [mobileLandscape, setMobileLandscape] = useState(false);
+  const [shortViewport, setShortViewport] = useState(false);
   const [walletLabel, setWalletLabel] = useState<string | null>(null);
 
   // Load volume from localStorage (matches SoundControls).
@@ -125,10 +126,12 @@ export function GameRoomLayout({
     const apply = (width: number, height: number) => {
       const shortSide = Math.min(width, height);
       const isMobile = shortSide < 900;
-      // Mobile portrait → landscape table chrome (wider usable felt).
+      // True device landscape on a phone/tablet — shrink HUD/hand/table
+      // so the full play surface (including cards) fits without scroll.
       // Does not mutate body.gv-force-landscape — that stays opt-in via
       // LandscapeRotateHint so we don't hijack the whole app shell.
-      setMobileLandscape(isMobile && height > width);
+      setMobileLandscape(isMobile && width > height);
+      setShortViewport(height > 0 && height < 520);
     };
 
     const ro = new ResizeObserver((entries) => {
@@ -186,6 +189,7 @@ export function GameRoomLayout({
       data-testid={testId}
       data-view-cards={viewCards ? "true" : "false"}
       data-mobile-landscape={mobileLandscape ? "true" : "false"}
+      data-short-viewport={shortViewport ? "true" : "false"}
       style={{ ["--gv-game-speed" as string]: String(speed) }}
     >
       {/* Persistent Room HUD */}

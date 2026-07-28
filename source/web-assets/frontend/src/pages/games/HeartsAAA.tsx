@@ -530,7 +530,7 @@ export default function HeartsAAA() {
       subtitle={DIRECTION_LABEL[raw.pass_direction]}
       onBack={backToLobby}
       phase={cardPhase}
-      className="min-h-screen bg-gradient-to-b from-[#1a050a] via-[#0a020a] to-[#050507] text-white"
+      className="bg-gradient-to-b from-[#1a050a] via-[#0a020a] to-[#050507] text-white"
       hudExtra={
         <>
           <div className="hidden sm:flex flex-wrap items-center justify-center gap-1.5 max-w-[50vw]">

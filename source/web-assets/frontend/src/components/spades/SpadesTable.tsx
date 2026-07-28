@@ -239,8 +239,8 @@ export const SpadesTable: React.FC<Props> = ({
   // without scrolling. We dropped the long-axis from 420 → 280 (1.5×
   // shorter) and the width from 720 → 640 (1.1× narrower).
   const sizeClass = density === "2p"
-    ? "w-[72vw] max-w-[440px] h-[36vw] max-h-[240px] md:h-[240px] rounded-[90px] md:rounded-[130px]"
-    : "w-[86vw] max-w-[640px] h-[40vw] max-h-[280px] md:h-[280px] rounded-[120px] md:rounded-[160px]";
+    ? "w-[72vw] max-w-[440px] h-[min(36vw,36dvh)] max-h-[min(240px,42dvh)] md:h-[240px] rounded-[90px] md:rounded-[130px]"
+    : "w-[86vw] max-w-[640px] h-[min(40vw,38dvh)] max-h-[min(280px,48dvh)] md:h-[280px] rounded-[120px] md:rounded-[160px]";
   const innerRadius = density === "2p"
     ? "rounded-[80px] md:rounded-[120px]"
     : "rounded-[110px] md:rounded-[150px]";
