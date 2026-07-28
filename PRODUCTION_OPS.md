@@ -127,6 +127,42 @@ Keep `www` / apex on **Vercel**. Do not point DNS at Azure until the VM is healt
 
 Optional later: `api.globalvibezdsg.com` CNAME → Railway backend, then set `REACT_APP_BACKEND_URL=https://api.globalvibezdsg.com`.
 
+### 6) Google / SEO — one listing, not two
+
+**Canonical host:** `https://www.globalvibezdsg.com`
+
+Root cause of “two www.globalvibezdsg.com” (or www + bare domain) in Google: both
+`globalvibezdsg.com` and `www.globalvibezdsg.com` used to return **200** with
+identical HTML (no 301). Search engines then index both as separate results.
+
+Repo fixes (deploy via Vercel on merge to `main`):
+
+| Fix | Where |
+|-----|--------|
+| Apex → www **301** | `vercel.json` `redirects` (host `globalvibezdsg.com`) |
+| `*.vercel.app` → www **301** | same (avoids a third indexed copy) |
+| `<link rel="canonical">` + `og:url` | `frontend/public/index.html` |
+| Real `robots.txt` + `sitemap.xml` | `frontend/public/` (were previously SPA-fallback HTML) |
+
+After deploy, verify:
+
+```bash
+curl -sI https://globalvibezdsg.com/ | head -5
+# expect: HTTP/2 308 (or 301) + Location: https://www.globalvibezdsg.com/
+curl -sI https://www.globalvibezdsg.com/robots.txt | head -5
+# expect: content-type: text/plain (NOT text/html)
+```
+
+**Google Search Console** (owner must do this — cannot automate from the repo):
+
+1. Add / verify property for `https://www.globalvibezdsg.com` (URL-prefix) **or** Domain property for `globalvibezdsg.com`.
+2. **Settings → Preferred domain** is obsolete for domain properties; the 301 + canonical are the signal.
+3. Submit sitemap: `https://www.globalvibezdsg.com/sitemap.xml`
+4. **Removals / Temporary removals** or **Inspect URL** → Request indexing for the www homepage; use **Page indexing** report to watch apex URLs drop after the 301.
+5. If a lookalike domain appears (e.g. parked `globalvibezdsg.org` “for sale”), that is **not** our site — report via Search Console if it impersonates, or buy/redirect the TLD if you want to own it.
+
+Unrelated brands that also show for “Global Vibez” (vibez.io, radio sites, LinkedIn profiles) cannot be removed from Google by us; strengthen brand signals (Business Profile, consistent NAP, branded queries to www).
+
 ---
 
 ## Workspace open (local)

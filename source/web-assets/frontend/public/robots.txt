@@ -1,0 +1,12 @@
+# Canonical host: https://www.globalvibezdsg.com
+# Apex (globalvibezdsg.com) and *.vercel.app permanently redirect to www.
+
+User-agent: *
+Allow: /
+
+# Auth / app shells — low value for organic search
+Disallow: /dashboard
+Disallow: /vibe-vault-admin
+Disallow: /api/
+
+Sitemap: https://www.globalvibezdsg.com/sitemap.xml

@@ -5,13 +5,24 @@
   "installCommand": "yarn --cwd source/web-assets/frontend install --frozen-lockfile",
   "buildCommand": "yarn --cwd source/web-assets/frontend build",
   "outputDirectory": "source/web-assets/frontend/build",
-  "routes": [
+  "redirects": [
     {
-      "handle": "filesystem"
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "globalvibezdsg.com" }],
+      "destination": "https://www.globalvibezdsg.com/:path*",
+      "permanent": true
     },
     {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "global-vibez-dsg.vercel.app" }],
+      "destination": "https://www.globalvibezdsg.com/:path*",
+      "permanent": true
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/((?!robots\\.txt|sitemap\\.xml).*)",
+      "destination": "/index.html"
     }
   ],
   "env": {

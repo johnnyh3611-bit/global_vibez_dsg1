@@ -34,7 +34,9 @@
       "purpose": "any"
     }
   ],
-  "start_url": "/",
+  "start_url": "https://www.globalvibezdsg.com/",
+  "id": "https://www.globalvibezdsg.com/",
+  "scope": "https://www.globalvibezdsg.com/",
   "display": "standalone",
   "theme_color": "#00d4ff",
   "background_color": "#000000",
