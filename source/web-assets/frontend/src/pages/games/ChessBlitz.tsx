@@ -9,9 +9,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Chess } from "chess.js";
-import { Chessboard } from "react-chessboard";
-import { ArrowLeft, Zap, Loader2 } from "lucide-react";
+import { ArrowLeft, Zap, Loader2, Volume2, VolumeX } from "lucide-react";
 import { authFetch } from "@/utils/secureAuth";
+import PremiumChessBoard from "@/components/chess/PremiumChessBoard";
+import { loadChessTheme } from "@/components/chess/chessThemes";
+import { isChessMuted, setChessMuted } from "@/components/chess/chessAudio";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 const CLOCK_MS = 5 * 60 * 1000;
@@ -19,10 +21,13 @@ const CLOCK_MS = 5 * 60 * 1000;
 function pickAiMove(chess: Chess): string | null {
   const moves = chess.moves({ verbose: true });
   if (!moves.length) return null;
-  // Prefer captures, otherwise random.
-  const captures = moves.filter((m: any) => m.captured);
+  const captures = moves.filter((m: { captured?: string }) => m.captured);
   const pool = captures.length ? captures : moves;
-  const pick = pool[Math.floor(Math.random() * pool.length)] as any;
+  const pick = pool[Math.floor(Math.random() * pool.length)] as {
+    from: string;
+    to: string;
+    promotion?: string;
+  };
   return pick.from + pick.to + (pick.promotion ?? "");
 }
 
@@ -35,8 +40,9 @@ export default function ChessBlitz() {
   const [turn, setTurn] = useState<"w" | "b">("w");
   const [status, setStatus] = useState<"playing" | "won" | "lost" | "draw">("playing");
   const [busy, setBusy] = useState(false);
+  const [muted, setMuted] = useState(isChessMuted);
+  const themeId = loadChessTheme();
 
-  // Run the 100ms clock tick.
   useEffect(() => {
     if (status !== "playing") return;
     const id = setInterval(() => {
@@ -63,7 +69,6 @@ export default function ChessBlitz() {
     return () => clearInterval(id);
   }, [turn, status]);
 
-  // AI moves whenever it's black's turn.
   useEffect(() => {
     if (status !== "playing" || turn !== "b") return;
     const timeout = setTimeout(() => {
@@ -83,7 +88,6 @@ export default function ChessBlitz() {
     return () => clearTimeout(timeout);
   }, [turn, status]);
 
-  // Persist on terminal state.
   useEffect(() => {
     if (status === "playing" || busy) return;
     setBusy(true);
@@ -93,7 +97,9 @@ export default function ChessBlitz() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ mode: "blitz", outcome, duration_s }),
-    }).catch(() => undefined).finally(() => setBusy(false));
+    })
+      .catch(() => undefined)
+      .finally(() => setBusy(false));
   }, [status]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const evaluateEndgame = () => {
@@ -102,20 +108,6 @@ export default function ChessBlitz() {
       setStatus(c.turn() === "w" ? "lost" : "won");
     } else if (c.isDraw() || c.isStalemate() || c.isThreefoldRepetition()) {
       setStatus("draw");
-    }
-  };
-
-  const onDrop = (from: string, to: string) => {
-    if (status !== "playing" || turn !== "w") return false;
-    try {
-      const move = chessRef.current.move({ from, to, promotion: "q" });
-      if (!move) return false;
-      setFen(chessRef.current.fen());
-      setTurn("b");
-      evaluateEndgame();
-      return true;
-    } catch {
-      return false;
     }
   };
 
@@ -138,42 +130,86 @@ export default function ChessBlitz() {
   return (
     <div className="min-h-screen bg-[#0a0d18] text-slate-100">
       <header className="flex items-center justify-between px-6 py-4 border-b border-white/10 backdrop-blur-md">
-        <button onClick={() => navigate(-1)} className="text-sm flex items-center gap-2 text-white/70 hover:text-white" data-testid="chess-blitz-back">
+        <button
+          onClick={() => navigate(-1)}
+          className="text-sm flex items-center gap-2 text-white/70 hover:text-white"
+          data-testid="chess-blitz-back"
+        >
           <ArrowLeft className="w-4 h-4" /> Hall
         </button>
         <h1 className="text-base md:text-xl tracking-[0.3em] uppercase text-amber-200 flex items-center gap-2">
           <Zap className="w-5 h-5" /> 5-min Blitz
         </h1>
-        <div className="text-[10px] uppercase tracking-widest text-white/40 hidden md:block">vs AI</div>
+        <button
+          type="button"
+          className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg border border-white/15 bg-black/30"
+          onClick={() => {
+            const next = !muted;
+            setMuted(next);
+            setChessMuted(next);
+          }}
+          data-testid="chess-blitz-mute"
+        >
+          {muted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+        </button>
       </header>
 
       <main className="max-w-md mx-auto px-4 py-6">
         <div className="grid grid-cols-2 gap-3 mb-5">
-          <div className={`rounded-xl px-4 py-3 text-center border ${turn === "b" ? "bg-rose-500/15 border-rose-400/40 text-rose-200" : "bg-white/5 border-white/10 text-white/60"}`} data-testid="chess-blitz-black-clock">
+          <div
+            className={`rounded-xl px-4 py-3 text-center border ${
+              turn === "b"
+                ? "bg-rose-500/15 border-rose-400/40 text-rose-200"
+                : "bg-white/5 border-white/10 text-white/60"
+            }`}
+            data-testid="chess-blitz-black-clock"
+          >
             <p className="text-[10px] uppercase tracking-widest">AI</p>
             <p className="text-2xl font-black tabular-nums">{fmt(blackMs)}</p>
           </div>
-          <div className={`rounded-xl px-4 py-3 text-center border ${turn === "w" ? "bg-emerald-500/15 border-emerald-400/40 text-emerald-200" : "bg-white/5 border-white/10 text-white/60"}`} data-testid="chess-blitz-white-clock">
+          <div
+            className={`rounded-xl px-4 py-3 text-center border ${
+              turn === "w"
+                ? "bg-emerald-500/15 border-emerald-400/40 text-emerald-200"
+                : "bg-white/5 border-white/10 text-white/60"
+            }`}
+            data-testid="chess-blitz-white-clock"
+          >
             <p className="text-[10px] uppercase tracking-widest">You</p>
             <p className="text-2xl font-black tabular-nums">{fmt(whiteMs)}</p>
           </div>
         </div>
 
-        <div className="rounded-2xl overflow-hidden border border-white/10" data-testid="chess-blitz-board">
-          <Chessboard
-            id="ChessBlitz"
-            position={fen}
-            onPieceDrop={onDrop}
-            arePiecesDraggable={status === "playing" && turn === "w"}
-            boardOrientation="white"
-            customBoardStyle={{ borderRadius: 12 }}
+        <div className="rounded-2xl overflow-visible" data-testid="chess-blitz-board">
+          <PremiumChessBoard
+            fen={fen}
+            interactive={status === "playing" && turn === "w"}
+            playerColor="w"
+            themeId={themeId}
+            onMove={(m) => {
+              try {
+                chessRef.current.load(m.fen);
+              } catch {
+                return;
+              }
+              setFen(m.fen);
+              setTurn("b");
+              evaluateEndgame();
+            }}
           />
         </div>
 
         {status !== "playing" && (
-          <div className="mt-5 text-center rounded-2xl bg-black/60 border border-amber-400/30 p-5" data-testid="chess-blitz-result">
+          <div
+            className="mt-5 text-center rounded-2xl bg-black/60 border border-amber-400/30 p-5"
+            data-testid="chess-blitz-result"
+          >
             <p className="text-2xl font-black text-white">
-              {status === "won" ? "Checkmate · You win" : status === "lost" ? "Time / Checkmate · You lose" : "Draw"}
+              {status === "won"
+                ? "Checkmate · You win"
+                : status === "lost"
+                  ? "Time / Checkmate · You lose"
+                  : "Draw"}
             </p>
             <button
               onClick={restart}

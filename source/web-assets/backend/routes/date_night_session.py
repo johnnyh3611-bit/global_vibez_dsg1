@@ -63,14 +63,12 @@ def _empty_board(game_type: str) -> Dict[str, Any]:
     if game_type == "connect4":
         return {"cells": [""] * 42, "winner": None, "draw": False}  # 6x7
     if game_type == "chess":
-        # Minimal date-night chess: each player places/captures on an 8x8
-        # using simplified kings+pawns starter — enough for interactive play.
         return {
             "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
             "moves": [],
+            "last_move": None,
             "winner": None,
             "draw": False,
-            "simplified": True,
         }
     return {}
 
@@ -151,17 +149,46 @@ def _apply_board_move(session: Dict[str, Any], user_id: str, move: Dict[str, Any
         elif all(cells):
             board["draw"] = True
     elif game_type == "chess":
-        # Simplified: append SAN-like move string; clients render from moves list.
-        san = str(move.get("san") or move.get("uci") or "").strip()
-        if not san or len(san) > 16:
-            raise HTTPException(400, "Invalid chess move")
-        moves = list(board.get("moves") or [])
-        moves.append({"by": user_id, "san": san, "at": datetime.now(timezone.utc).isoformat()})
-        board["moves"] = moves
         if move.get("resign"):
             board["winner"] = p2 if user_id == p1 else p1
-        if len(moves) >= 80:
-            board["draw"] = True
+            board["moves"] = list(board.get("moves") or []) + [
+                {
+                    "by": user_id,
+                    "san": "resign",
+                    "at": datetime.now(timezone.utc).isoformat(),
+                }
+            ]
+        else:
+            frm = str(move.get("from") or "").strip()
+            to = str(move.get("to") or "").strip()
+            san = str(move.get("san") or "").strip()
+            fen = str(move.get("fen") or "").strip()
+            if not frm or not to or not fen:
+                raise HTTPException(400, "Chess move requires from, to, fen")
+            # Trust client FEN for date-night sync (validated length / shape).
+            if len(fen) < 15 or len(fen) > 128 or " " not in fen:
+                raise HTTPException(400, "Invalid FEN")
+            moves = list(board.get("moves") or [])
+            moves.append(
+                {
+                    "by": user_id,
+                    "from": frm,
+                    "to": to,
+                    "san": san or f"{frm}{to}",
+                    "at": datetime.now(timezone.utc).isoformat(),
+                }
+            )
+            board["moves"] = moves
+            board["fen"] = fen
+            board["last_move"] = {"from": frm, "to": to, "san": san or f"{frm}{to}"}
+            if move.get("check"):
+                board["check"] = True
+            else:
+                board.pop("check", None)
+            if move.get("checkmate"):
+                board["winner"] = user_id
+            elif len(moves) >= 120:
+                board["draw"] = True
     else:
         raise HTTPException(400, "Unknown board game")
 
