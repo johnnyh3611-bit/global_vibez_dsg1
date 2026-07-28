@@ -6,6 +6,12 @@
         <meta name="theme-color" content="#000000" />
         <meta name="description" content="Global Vibez DSG — next-gen dating, social gaming, streams, and earn." />
         <!--
+          Canonical host is ALWAYS https://www.globalvibezdsg.com
+          (apex + vercel.app 301 there via root vercel.json). Without this
+          tag, Google indexes www and non-www as two separate results.
+        -->
+        <link rel="canonical" href="https://www.globalvibezdsg.com/" />
+        <!--
           Brand icons Google / browsers / PWA use. These MUST stay in sync with
           /global-vibez-logo.png (the header mark). Cache-bust (?v=) when the
           PNG set is regenerated so crawlers pick up the new mark faster.
@@ -17,6 +23,7 @@
         <link rel="manifest" href="/manifest.json?v=12" />
         <!-- Social / knowledge-panel hints (Google may still cache the old mark for days–weeks) -->
         <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://www.globalvibezdsg.com/" />
         <meta property="og:site_name" content="Global Vibez DSG" />
         <meta property="og:title" content="Global Vibez DSG | Next-Gen Dating & Social Gaming" />
         <meta property="og:description" content="Global Vibez DSG — next-gen dating, social gaming, streams, and earn." />
@@ -27,11 +34,25 @@
         <script type="application/ld+json">
           {
             "@context": "https://schema.org",
-            "@type": "Organization",
-            "name": "Global Vibez DSG",
-            "url": "https://www.globalvibezdsg.com",
-            "logo": "https://www.globalvibezdsg.com/logo512.png?v=12",
-            "image": "https://www.globalvibezdsg.com/global-vibez-logo.png?v=12"
+            "@graph": [
+              {
+                "@type": "Organization",
+                "@id": "https://www.globalvibezdsg.com/#organization",
+                "name": "Global Vibez DSG",
+                "url": "https://www.globalvibezdsg.com",
+                "logo": "https://www.globalvibezdsg.com/logo512.png?v=12",
+                "image": "https://www.globalvibezdsg.com/global-vibez-logo.png?v=12"
+              },
+              {
+                "@type": "WebSite",
+                "@id": "https://www.globalvibezdsg.com/#website",
+                "url": "https://www.globalvibezdsg.com",
+                "name": "Global Vibez DSG",
+                "description": "Global Vibez DSG — next-gen dating, social gaming, streams, and earn.",
+                "publisher": { "@id": "https://www.globalvibezdsg.com/#organization" },
+                "inLanguage": "en"
+              }
+            ]
           }
         </script>
         <link rel="preconnect" href="https://fonts.googleapis.com" />

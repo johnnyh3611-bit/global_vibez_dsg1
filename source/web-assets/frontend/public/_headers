@@ -23,6 +23,15 @@
 /manifest.json
   Cache-Control: public, max-age=3600
 
+# Crawler files — short cache so SEO edits propagate quickly
+/robots.txt
+  Cache-Control: public, max-age=3600
+  Content-Type: text/plain; charset=utf-8
+
+/sitemap.xml
+  Cache-Control: public, max-age=3600
+  Content-Type: application/xml; charset=utf-8
+
 # API calls - never cache
 /api/*
   Cache-Control: no-cache, no-store, must-revalidate
