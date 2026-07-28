@@ -29,6 +29,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Bot, Crown, Loader2, Wifi } from "lucide-react";
 import { authFetch } from "@/utils/secureAuth";
+import { useDealBidSequence } from "@/hooks/useDealBidSequence";
 
 // ALL of these come straight from the Spades prototype.
 import SpadesTable from "@/components/spades/SpadesTable";
@@ -202,8 +203,6 @@ export default function BidWhistAAA() {
   const prevScoresRef = useRef<{ team1: number; team2: number } | null>(null);
 
   // Animation triggers
-  const [dealing, setDealing] = useState(false);
-  const [bidModalOpen, setBidModalOpen] = useState(false);
   const [kittyOpen, setKittyOpen] = useState(false);
   const [dealKey, setDealKey] = useState(0);
   /**
@@ -227,11 +226,21 @@ export default function BidWhistAAA() {
   const [turnExpiresAt, setTurnExpiresAt] = useState<number | null>(null);
   const lastTurnKeyRef = useRef<string | null>(null);
 
-  // 15-second review window (matches SpadesAAA exactly)
-  const REVIEW_SECONDS = 10;
-  const [reviewActive, setReviewActive] = useState(false);
-  const [reviewRemaining, setReviewRemaining] = useState(REVIEW_SECONDS);
-  const reviewTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const {
+    dealing,
+    bidModalOpen,
+    reviewActive,
+    reviewRemaining,
+    setBidModalOpen,
+    startDealSequence: startDealSequenceBase,
+    endReviewAndShowBid,
+    resetSequence,
+  } = useDealBidSequence();
+
+  const startDealSequence = useCallback(() => {
+    setKittyOpen(false);
+    startDealSequenceBase();
+  }, [startDealSequenceBase]);
 
   const flashStatus = useCallback(
     (text: string, tone: StatusMessage["tone"] = "cyan", ttl = 2400) => {
@@ -243,50 +252,28 @@ export default function BidWhistAAA() {
     [],
   );
 
-  const endReviewAndShowBid = useCallback(() => {
-    if (reviewTimerRef.current) {
-      clearInterval(reviewTimerRef.current);
-      reviewTimerRef.current = null;
-    }
-    setReviewActive(false);
-    setBidModalOpen(true);
-  }, []);
-
-  const startDealSequence = useCallback(() => {
-    setDealing(true);
-    setBidModalOpen(false);
-    setKittyOpen(false);
-    setReviewActive(false);
-    setReviewRemaining(REVIEW_SECONDS);
-
-    window.setTimeout(() => {
-      setDealing(false);
-      setReviewActive(true);
-      setReviewRemaining(REVIEW_SECONDS);
-
-      if (reviewTimerRef.current) clearInterval(reviewTimerRef.current);
-      reviewTimerRef.current = setInterval(() => {
-        setReviewRemaining((r) => {
-          if (r <= 1) {
-            if (reviewTimerRef.current) {
-              clearInterval(reviewTimerRef.current);
-              reviewTimerRef.current = null;
-            }
-            setReviewActive(false);
-            setBidModalOpen(true);
-            return 0;
-          }
-          return r - 1;
-        });
-      }, 1000);
-    }, 3500);
-  }, []);
-
+  // Safety net: force bid modal when auction is waiting on the human.
   useEffect(() => {
-    return () => {
-      if (reviewTimerRef.current) clearInterval(reviewTimerRef.current);
-    };
-  }, []);
+    if (!raw) return;
+    if (raw.phase !== "bidding") return;
+    if (busy || dealing || reviewActive || bidModalOpen || kittyOpen || roundModalOpen) return;
+    if (pendingBoston) return;
+    if (!raw.your_hand || raw.your_hand.length === 0) return;
+    const order: SpadesPosition[] = ["north", "east", "south", "west"];
+    const next = order[raw.bids?.length ?? 0];
+    if (next !== raw.your_position) return;
+    setBidModalOpen(true);
+  }, [
+    raw,
+    busy,
+    dealing,
+    reviewActive,
+    bidModalOpen,
+    kittyOpen,
+    roundModalOpen,
+    pendingBoston,
+    setBidModalOpen,
+  ]);
 
   // ── Start AI game ──────────────────────────────────────────────────
   const startGame = useCallback(async () => {
@@ -666,16 +653,10 @@ export default function BidWhistAAA() {
   };
 
   const backToLobby = () => {
-    if (reviewTimerRef.current) {
-      clearInterval(reviewTimerRef.current);
-      reviewTimerRef.current = null;
-    }
+    resetSequence();
     setRaw(null);
     setRoundModalOpen(false);
-    setBidModalOpen(false);
     setKittyOpen(false);
-    setDealing(false);
-    setReviewActive(false);
     setLastRoundSummary(null);
     prevScoresRef.current = null;
     setPhase("lobby");
@@ -1006,9 +987,9 @@ export default function BidWhistAAA() {
         </div>
       </div>
 
-      {/* Bid modal */}
+      {/* Bid modal — only during the auction, never during kitty exchange */}
       <BidWhistBidModal
-        open={bidModalOpen && uiPhase === "bidding" && !isFinished}
+        open={bidModalOpen && raw.phase === "bidding" && !isFinished}
         currentHighBid={currentHighBid}
         onBid={placeBid}
         onPass={passBid}

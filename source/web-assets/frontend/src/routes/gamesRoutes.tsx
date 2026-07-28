@@ -220,6 +220,7 @@ export const gamesRoutes = (ProtectedRoute) => (
     <Route path="/spades/:gameId" element={<Navigate to="/spades" replace />} />
     <Route path="/spades-practice" element={<Navigate to="/spades" replace />} />
     <Route path="/spades-premium-legacy" element={<Navigate to="/spades" replace />} />
+    <Route path="/practice/play/spades" element={<Navigate to="/spades" replace />} />
     <Route path="/spades/big-wheel" element={<BigWheelLounge />} />    {/* Vibez 654 — Florida Flow dice game */}
     <Route path="/vibez-654" element={<ProtectedRoute><Vibez654Game /></ProtectedRoute>} />
     <Route path="/games/vibez-654" element={<ProtectedRoute><Vibez654Game /></ProtectedRoute>} />

@@ -523,7 +523,11 @@ class PinochleGame:
             "mode": self.mode,
             "match_target": self.match_target,
             "phase": self.phase,
-            "turn": self.turn if self.phase == "playing" else self.bid_turn,
+            "turn": (
+                self.turn if self.phase == "playing"
+                else self.high_bidder if self.phase == "naming_trump"
+                else self.bid_turn
+            ),
             "bid_turn": self.bid_turn,
             "high_bid": self.high_bid,
             "high_bidder": self.high_bidder,

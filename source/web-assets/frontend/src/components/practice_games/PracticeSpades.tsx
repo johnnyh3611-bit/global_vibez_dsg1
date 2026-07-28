@@ -69,7 +69,8 @@ export function PracticeSpades({ game, onMove, makingMove, aiThinking }: { game?
 
   const handleBid = (bid) => {
     cardSoundManager.playCardSlam(); // AAA Card Juice
-    onMove({ action: 'bid', amount: bid });
+    // Backend practice.py expects `bid` (not `amount`).
+    onMove({ action: 'bid', bid });
     setDealerPhrase('goodMove');
     setDealerMood('professional');
   };
@@ -142,19 +143,20 @@ export function PracticeSpades({ game, onMove, makingMove, aiThinking }: { game?
             </div>
           )}
 
-          {/* Bidding Phase */}
-          {game.game_state?.phase === 'bidding' && game.current_turn === 'player' && (
-            <div className="text-center">
+          {/* Bidding Phase — show whenever auction is open for the human */}
+          {game.game_state?.phase === 'bidding' && (
+            <div className="text-center" data-testid="practice-spades-bid-panel">
               <p className="text-cyan-400 text-lg mb-4">Place Your Bid (0-13):</p>
               <div className="flex justify-center gap-2 flex-wrap">
                 {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map(bid => (
                   <motion.button
                     key={bid}
                     onClick={() => handleBid(bid)}
-                    disabled={makingMove || aiThinking}
+                    disabled={makingMove || aiThinking || game.current_turn !== 'player'}
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
                     className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 disabled:opacity-50 text-white font-bold px-4 py-2 rounded-lg shadow-xl border-2 border-blue-400 min-w-[50px]"
+                    data-testid={`practice-spades-bid-${bid}`}
                   >
                     {bid}
                   </motion.button>
