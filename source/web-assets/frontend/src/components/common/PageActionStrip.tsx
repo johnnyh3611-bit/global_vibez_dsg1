@@ -75,7 +75,7 @@ const SECTIONS: { title: string; items: SubItem[] }[] = [
     title: "Tools",
     items: [
       { id: "voice_mirror",  label: "Voice Mirror",      hint: "Hold to speak in any language",  Icon: Mic,           color: "text-cyan-300",    onClick: fire("voice_mirror") },
-      { id: "orientation",   label: "Auto-Rotate Lock",  hint: "Pin landscape or portrait",      Icon: RotateCcw,     color: "text-emerald-300", onClick: fire("orientation") },
+      { id: "orientation",   label: "Rotate phone",  hint: "Force landscape or portrait — turn phone sideways for the table",      Icon: RotateCcw,     color: "text-emerald-300", onClick: fire("orientation") },
       { id: "beta_feedback", label: "Beta Feedback",     hint: "Report a bug / request feature", Icon: MessageSquare, color: "text-amber-300",   onClick: fire("beta_feedback") },
       { id: "ai_guide",      label: "AI Navigator",      hint: "Get a hint for this room",       Icon: Bot,           color: "text-fuchsia-300", onClick: fire("ai_guide") },
       { id: "no_flash",      label: "Reduce Motion",     hint: "Stop pulsing / flashing UI",     Icon: ZapOff,        color: "text-emerald-300", onClick: toggleNoFlash },

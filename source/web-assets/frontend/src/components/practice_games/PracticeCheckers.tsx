@@ -151,15 +151,19 @@ export function PracticeCheckers({ game, onMove, makingMove, aiThinking }: { gam
              glass shells with neon energy cores; squares pulse with a
              shockwave when pieces land. */
           <div
-            className="inline-block rounded-3xl overflow-hidden p-1.5"
-            style={{
-              background:
-                'linear-gradient(135deg, rgba(40, 50, 90, 0.85) 0%, rgba(15, 20, 40, 0.95) 100%)',
-              boxShadow:
-                '0 0 60px rgba(34, 211, 238, 0.25), inset 0 0 24px rgba(34, 211, 238, 0.15)',
-              border: '1px solid rgba(34, 211, 238, 0.3)',
-            }}
+            className="gv-view-topish"
+            data-testid="checkers-topish-view"
           >
+            <div
+              className="gv-view-topish__plane inline-block rounded-3xl overflow-hidden p-1.5"
+              style={{
+                background:
+                  'linear-gradient(135deg, rgba(40, 50, 90, 0.85) 0%, rgba(15, 20, 40, 0.95) 100%)',
+                boxShadow:
+                  '0 0 60px rgba(34, 211, 238, 0.25), inset 0 0 24px rgba(34, 211, 238, 0.15)',
+                border: '1px solid rgba(34, 211, 238, 0.3)',
+              }}
+            >
             <div className="grid grid-cols-8 gap-0">
               {board.map((row, rowIndex) =>
                 row.map((cell, colIndex) => {
@@ -190,6 +194,7 @@ export function PracticeCheckers({ game, onMove, makingMove, aiThinking }: { gam
                   );
                 }),
               )}
+            </div>
             </div>
           </div>
         }

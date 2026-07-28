@@ -176,11 +176,11 @@ export default function PracticePool8Ball({ onMove, gameState }: { onMove?: any;
     >
       <ParticleEffectsOverlay triggerSparkle={particleTrigger > 0 ? { x: 0, y: 0 } : null} />
 
-      <div className="w-full max-w-4xl mx-auto">
-        <div className="relative bg-gradient-to-br from-green-800 to-green-950 rounded-3xl border-[8px] sm:border-[10px] border-yellow-900/80 shadow-2xl overflow-hidden min-h-[320px] sm:min-h-[420px] flex items-center justify-center">
+      <div className="w-full max-w-4xl mx-auto gv-view-pool" data-testid="pool-closer-top-view">
+        <div className="gv-view-pool__plane relative bg-gradient-to-br from-green-800 to-green-950 rounded-3xl border-[8px] sm:border-[10px] border-yellow-900/80 shadow-2xl overflow-hidden min-h-[360px] sm:min-h-[460px] flex items-center justify-center">
           {/* Felt texture / markings */}
           <div className="absolute inset-4 border border-white/10 rounded-2xl" />
-          <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-24 h-24 rounded-full border-2 border-white/10" />
+          <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-28 h-28 rounded-full border-2 border-white/10" />
 
           {/* Pockets */}
           <div className="absolute top-2 left-2 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-black border-2 border-gray-700" />
@@ -190,19 +190,19 @@ export default function PracticePool8Ball({ onMove, gameState }: { onMove?: any;
           <div className="absolute bottom-2 right-2 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-black border-2 border-gray-700" />
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-black border-2 border-gray-700" />
 
-          {/* Rack */}
+          {/* Rack — closer to camera via parent scale + larger balls */}
           {balls.length > 0 && (
-            <div className="relative w-56 h-56 sm:w-80 sm:h-80">
+            <div className="relative w-64 h-64 sm:w-96 sm:h-96">
               {balls.map((ball, i) => {
                 const pos = ballPosition(i);
                 const isStripe = ball.type === 'stripe';
                 return (
                   <div
                     key={ball.num}
-                    className="absolute w-7 h-7 sm:w-10 sm:h-10 rounded-full shadow-lg transition-all duration-300"
+                    className="absolute w-8 h-8 sm:w-11 sm:h-11 rounded-full shadow-lg transition-all duration-300"
                     style={{
-                      left: `calc(50% + ${pos.x}px - 0.875rem)`,
-                      top: `calc(45% + ${pos.y}px - 0.875rem)`,
+                      left: `calc(50% + ${pos.x * 1.15}px - 1rem)`,
+                      top: `calc(48% + ${pos.y * 1.15}px - 1rem)`,
                       background: isStripe
                         ? `linear-gradient(to bottom, white 50%, ${ball.color} 50%)`
                         : ball.color,

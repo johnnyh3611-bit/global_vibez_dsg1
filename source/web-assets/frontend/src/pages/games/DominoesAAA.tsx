@@ -400,8 +400,8 @@ export default function DominoesAAA() {
         </div>
       }
       table={
-        <div className="flex items-center justify-center py-2 md:py-3 relative">
-          <div className="relative">
+        <div className="gv-view-sitting" data-testid="dominoes-sitting-view">
+          <div className="gv-view-sitting__plane relative">
             <SpadesTable brandSubLabel="DOMINOES AAA" variant="onyx" density="2p" centreGlyph="🀫">
               <SpadesSeat
                 position="north"
@@ -412,20 +412,20 @@ export default function DominoesAAA() {
               />
             </SpadesTable>
 
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 pointer-events-none w-full px-4" style={{ transform: "translate(-50%, calc(-50% + 4.5rem))" }}>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 pointer-events-none w-full px-4 gv-view-sitting__chain" style={{ transform: "translate(-50%, calc(-50% + 3.5rem))" }}>
               {raw.chain.length === 0 ? (
                 <div className="text-indigo-300/50 text-[11px] md:text-xs uppercase tracking-widest font-bold">
                   Place the highest double…
                 </div>
               ) : (
-                <div className="flex items-center gap-2 max-w-[60vw] md:max-w-[600px] overflow-x-auto px-2 py-2" data-testid="dominoes-chain">
+                <div className="flex items-center gap-1.5 max-w-[70vw] md:max-w-[600px] overflow-x-auto px-2 py-2 rounded-lg bg-black/25 border border-indigo-400/20" data-testid="dominoes-chain">
                   <span className="text-[9px] md:text-[10px] uppercase tracking-[0.3em] font-black text-indigo-300/80 px-1.5 py-0.5 rounded bg-indigo-500/15 border border-indigo-400/40 tabular-nums">
                     ◀ {raw.left_end}
                   </span>
                   <AnimatePresence initial={false} mode="popLayout">
                     {raw.chain.map((t) => {
                       const isDouble = t.left === t.right;
-                      const dynamicScale = Math.max(0.4, 0.7 - raw.chain.length * 0.01);
+                      const dynamicScale = Math.max(0.45, 0.78 - raw.chain.length * 0.012);
                       return (
                         <motion.div
                           key={t.id}

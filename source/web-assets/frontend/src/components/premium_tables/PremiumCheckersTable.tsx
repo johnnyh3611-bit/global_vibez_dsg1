@@ -12,7 +12,7 @@ export function PremiumCheckersTable({ game,
   makingMove, 
   aiThinking,
   theme = 'midnight', }: { game?: any, onMove?: any, makingMove?: any, aiThinking?: any, theme?: any }) {
-  const [view, setView] = useState('2d');
+  const [view, setView] = useState('3d');
   const userAvatar = useUserAvatar();
   const [aiAvatar] = useState(() => getRandomAvatar());
   const [selectedPiece, setSelectedPiece] = useState(null);

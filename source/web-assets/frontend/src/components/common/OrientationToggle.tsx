@@ -97,9 +97,15 @@ interface Props {
 }
 
 const PREF_LABEL: Record<OrientPref, string> = {
-  auto: 'AUTO',
-  landscape: 'WIDE',
-  portrait: 'TALL',
+  auto: 'Follow phone',
+  landscape: 'Force landscape',
+  portrait: 'Force portrait',
+};
+
+const PREF_HINT: Record<OrientPref, string> = {
+  auto: 'Layout follows how you hold the phone. Tap to force landscape.',
+  landscape: 'Screen is forced wide (landscape). Tap to force portrait.',
+  portrait: 'Screen is forced tall (portrait). Tap to follow the phone again.',
 };
 
 export const OrientationToggle: React.FC<Props> = ({ compact = false }) => {
@@ -138,14 +144,14 @@ export const OrientationToggle: React.FC<Props> = ({ compact = false }) => {
       onClick={cycle}
       data-testid="orientation-toggle"
       data-orient-pref={pref}
-      aria-label={`Orientation: ${PREF_LABEL[pref]} (tap to change)`}
-      title={`Orientation: ${PREF_LABEL[pref]} — tap to cycle`}
-      className={`shrink-0 inline-flex items-center gap-1.5 rounded-lg border bg-black/50 hover:bg-black/70 transition font-bold uppercase tracking-wider ${accent} ${
+      aria-label={PREF_HINT[pref]}
+      title={PREF_HINT[pref]}
+      className={`shrink-0 inline-flex items-center gap-1.5 rounded-lg border bg-black/50 hover:bg-black/70 transition font-bold tracking-wide ${accent} ${
         compact ? 'px-2 py-1.5 text-[10px]' : 'px-3 py-1.5 text-xs'
       }`}
     >
-      <Icon className="w-3.5 h-3.5" />
-      <span className="hidden sm:inline">{PREF_LABEL[pref]}</span>
+      <Icon className="w-3.5 h-3.5 shrink-0" />
+      <span className="leading-tight">{PREF_LABEL[pref]}</span>
     </button>
   );
 };
@@ -221,18 +227,15 @@ export const OrientationFAB: React.FC = () => {
       onClick={cycle}
       data-testid="orientation-fab"
       data-orient-pref={pref}
-      aria-label={`Orientation: ${PREF_LABEL[pref]} — tap to cycle`}
-      title={`Orientation: ${PREF_LABEL[pref]} — tap to cycle`}
-      // 2026-05-12 fix: moved up from bottom-4 left-4 and dropped z from
-      // 9998 → 40 because the previous slot occluded voice-mirror-dock-enable
-      // + log-design-lesson-toggle (VigilantAgent flagged 8+ click-block
-      // warnings per page mount). bottom-20 keeps it visible without
-      // stealing taps from the dev/owner dock buttons.
-      className="fixed bottom-20 left-4 z-40 hidden md:inline-flex items-center gap-1.5 rounded-full border border-cyan-400/40 bg-black/80 backdrop-blur-md px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-cyan-200 shadow-lg shadow-cyan-500/20 hover:bg-black/90 transition"
+      aria-label={PREF_HINT[pref]}
+      title={PREF_HINT[pref]}
+      // Mobile-only FAB — RoomMenuBar / LandscapeRotateHint cover game rooms.
+      // Visible on small screens (not md+). Label always explains the action.
+      className="fixed bottom-20 left-4 z-40 inline-flex md:hidden items-center gap-1.5 rounded-full border border-cyan-400/40 bg-black/80 backdrop-blur-md px-3 py-2 text-[10px] font-bold tracking-wide text-cyan-200 shadow-lg shadow-cyan-500/20 hover:bg-black/90 transition max-w-[11rem]"
       style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 0.5rem)' }}
     >
-      <Icon className="w-4 h-4" />
-      <span>{PREF_LABEL[pref]}</span>
+      <Icon className="w-4 h-4 shrink-0" />
+      <span className="leading-tight">{PREF_LABEL[pref]}</span>
     </button>
   );
 };
