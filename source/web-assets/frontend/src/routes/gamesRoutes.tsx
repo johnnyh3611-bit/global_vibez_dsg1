@@ -111,8 +111,6 @@ const PlayerStats = lazy(() => import("@/pages/PlayerStats"));
 const VRCelestialSlots = lazy(() => import("@/components/vr/VRCelestialSlots"));
 const Leaderboard = lazy(() => import("@/pages/Leaderboard"));
 const MultiplayerRoom = lazy(() => import("@/pages/MultiplayerRoom"));
-const MyVibezFeed = lazy(() => import("@/pages/MyVibezFeed"));
-const MyVibezUpload = lazy(() => import("@/pages/MyVibezUpload"));
 const MyVibez = lazy(() => import("@/pages/MyVibez").then(m => ({ default: m.MyVibez })));
 const VideoPlayer = lazy(() => import("@/pages/VideoPlayer").then(m => ({ default: m.VideoPlayer })));
 const WatchAndWager = lazy(() => import("@/pages/WatchAndWager").then(m => ({ default: m.WatchAndWager })));
@@ -175,8 +173,8 @@ export const gamesRoutes = (ProtectedRoute) => (
     <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
     <Route path="/multiplayer" element={<ProtectedRoute><HttpMultiplayerLobby /></ProtectedRoute>} />
     <Route path="/multiplayer/room/:roomCode" element={<ProtectedRoute><MultiplayerRoom /></ProtectedRoute>} />
-    <Route path="/vibez" element={<ProtectedRoute><MyVibezFeed /></ProtectedRoute>} />
-    <Route path="/vibez/upload" element={<ProtectedRoute><MyVibezUpload /></ProtectedRoute>} />
+    <Route path="/vibez" element={<Navigate to="/my-vibez" replace />} />
+    <Route path="/vibez/upload" element={<Navigate to="/my-vibez/create" replace />} />
     
     {/* Real-Time Multiplayer Poker */}
     <Route path="/multiplayer-poker" element={<ProtectedRoute><MultiplayerPoker /></ProtectedRoute>} />

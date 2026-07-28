@@ -3,7 +3,6 @@ import FriendsPage from "@/pages/FriendsPage";
 import FindFriends from "@/pages/FindFriends";
 import FriendsQuiz from "@/pages/FriendsQuiz";
 import GroupOutingPlanner from "@/pages/GroupOutingPlanner";
-import MyVibezPage from "@/pages/MyVibezPage";
 import CreateVibePage from "@/pages/CreateVibePage";
 import LiveStreamPage from "@/pages/LiveStreamPage";
 import ViewStreamPage from "@/pages/ViewStreamPage";
@@ -38,8 +37,9 @@ export const socialRoutes = (ProtectedRoute) => (
     <Route path="/quiz/friends" element={<ProtectedRoute><FriendsQuiz /></ProtectedRoute>} />
     <Route path="/group-outing-planner" element={<ProtectedRoute><GroupOutingPlanner /></ProtectedRoute>} />
     
-    {/* MY VIBEZ Content */}
-    <Route path="/my-vibez" element={<ProtectedRoute><MyVibezPage /></ProtectedRoute>} />
+    {/* MY VIBEZ — create + profile only.
+        Vertical home lives in gamesRoutes (/my-vibez) to avoid a
+        duplicate shadow mount of the old grid/snap page. */}
     <Route path="/my-vibez/create" element={<ProtectedRoute><CreateVibePage /></ProtectedRoute>} />
     <Route path="/my-vibez/profile" element={<ProtectedRoute><MyVibezProfilePage /></ProtectedRoute>} />
     <Route path="/me" element={<ProtectedRoute><MyVibezProfilePage /></ProtectedRoute>} />
