@@ -18,8 +18,6 @@ import {
   Gem,
   // Feb 2026 — Ambassador Care Package (Walking Advertisements / Founder's Circle)
   Award,
-  // May 2026 — Free TV Networks watch-party room
-  RadioTower,
 } from 'lucide-react';
 import { RoomLayout } from '@/components/RoomLayout';
 import { GlassCard } from '@/components/GlassCard';
@@ -81,7 +79,6 @@ const CATEGORIES: CategoryDef[] = [
 const ROOM_CATEGORY: Record<string, CategoryId> = {
   // Watch & Stream
   myvibez: 'watch',
-  free_tv: 'watch',
   cinema_room: 'watch',
   vibez_tv: 'watch',
   tv_totem_pole: 'watch',
@@ -553,17 +550,6 @@ export default function Dashboard() {
       image: 'https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?crop=entropy&cs=srgb&fm=jpg',
       path: '/vibe-tv',
       stats: { count: 'LIVE', label: 'Streaming' }
-    },
-    {
-      id: 'free_tv',
-      name: 'Free TV Networks',
-      description: 'Pluto · Tubi · Plex · YouTube — synced watch parties',
-      icon: RadioTower,
-      gradient: 'from-red-500 via-amber-500 to-yellow-400',
-      glow: 'rgba(251,191,36,0.55)',
-      image: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?crop=entropy&cs=srgb&fm=jpg',
-      path: '/free-tv',
-      stats: { count: '4', label: 'Networks' }
     },
     {
       id: 'cinema_room',

@@ -24,7 +24,6 @@ import AgeVerificationPage from "@/pages/AgeVerificationPage";
 import IdVerificationGate from "@/components/age_verification/IdVerificationGate";
 import ContentRightsPage from "@/pages/ContentRightsPage";
 import CinemaRoom from "@/pages/CinemaRoom";
-import FreeTVCinemaRoom from "@/pages/FreeTVCinemaRoom";
 import VibeSpotsPage from "@/pages/VibeSpotsPage";
 import VibeEventsPage from "@/pages/VibeEventsPage";
 import DashboardRouter from "@/pages/DashboardRouter";
@@ -145,10 +144,13 @@ export const miscRoutes = (ProtectedRoute) => (
     <Route path="/restricted-goods-verification" element={<ProtectedRoute><AgeVerificationPage /></ProtectedRoute>} />
     {/* Public Content Rights & IP Anti-Piracy Policy + DMCA filing form. */}
     <Route path="/content-rights" element={<ContentRightsPage />} />
-    {/* Volumetric Dashboard "Cinema Date" tile lands here. */}
+    {/* Volumetric Dashboard "Cinema Date" tile lands here.
+        Free-TV / Tubi / Pluto / Plex network catalog purged — redirects
+        keep old bookmarks landing on the authorized Cinema Room. */}
     <Route path="/cinema-room" element={<ProtectedRoute><CinemaRoom /></ProtectedRoute>} />
-    <Route path="/free-tv" element={<ProtectedRoute><FreeTVCinemaRoom /></ProtectedRoute>} />
-    <Route path="/free-tv/:roomId" element={<ProtectedRoute><FreeTVCinemaRoom /></ProtectedRoute>} />
+    <Route path="/cinema-room/:roomId" element={<ProtectedRoute><CinemaRoom /></ProtectedRoute>} />
+    <Route path="/free-tv" element={<Navigate to="/cinema-room" replace />} />
+    <Route path="/free-tv/:roomId" element={<Navigate to="/cinema-room" replace />} />
     {/* Volumetric Dashboard "Vibez Spots" tile lands here. */}
     <Route path="/vibe-spots" element={<ProtectedRoute><VibeSpotsPage /></ProtectedRoute>} />
     <Route path="/vibe-events" element={<ProtectedRoute><VibeEventsPage /></ProtectedRoute>} />

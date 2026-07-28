@@ -8,11 +8,11 @@ the "Hot Rooms" carousel directly beneath it:
   GET /api/live-pulse/hot-rooms   — top N individual rooms by audience.
 
 We aggregate whatever live-audience signals we already have today.
-Today we have two reliable sources of truth:
-  • `cinema_network_rooms.audience_count` — Free TV watch parties
-  • `cinema_rooms.audience_count`         — DSG public-domain cinema
+Today we have one reliable cinema source of truth:
+  • `cinema_rooms.audience_count` — authorized DSG Cinema Room watch parties
 
-Both roll up into the 'watch' category. Other categories return 0 until
+Free-TV / Tubi / Pluto / Plex network catalogs were purged. The 'watch'
+category also folds in live streams. Other categories return 0 until
 their respective rooms also persist a live audience count (tracked in
 ROADMAP.md). The contract stays stable — frontend never breaks.
 """
@@ -124,7 +124,6 @@ async def get_category_pulse() -> Dict[str, Any]:
     """
     counts: Dict[str, int] = {cid: 0 for cid in CATEGORY_IDS}
     try:
-        counts["watch"] += await _sum_audience("cinema_network_rooms")
         counts["watch"] += await _sum_audience("cinema_rooms")
     except Exception as e:
         logger.warning("Live pulse 'watch' aggregation failed: %s", e)
@@ -153,24 +152,8 @@ async def get_hot_rooms(limit: int = Query(default=3, ge=1, le=10)) -> Dict[str,
     """
     rooms: List[Dict[str, Any]] = []
     try:
-        # Free TV watch parties.
-        async for doc in (
-            _db().cinema_network_rooms
-            .find({"audience_count": {"$gt": 0}, "is_private": False}, {"_id": 0})
-            .sort("audience_count", -1)
-            .limit(limit)
-        ):
-            rooms.append({
-                "id": doc.get("room_id"),
-                "name": doc.get("name") or "Free TV Room",
-                "category": "watch",
-                "audience": int(doc.get("audience_count") or 0),
-                "path": f"/free-tv/{doc.get('room_id')}",
-                "network": doc.get("active_network"),
-                "preview_video_url": None,  # Cloudflare Stream future wire-up.
-            })
-
-        # DSG public-domain cinema rooms.
+        # Authorized DSG Cinema Room watch parties only (Free TV / Tubi /
+        # Pluto / Plex network catalogs purged).
         async for doc in (
             _db().cinema_rooms
             .find({"audience_count": {"$gt": 0}, "is_private": False}, {"_id": 0})
@@ -182,7 +165,7 @@ async def get_hot_rooms(limit: int = Query(default=3, ge=1, le=10)) -> Dict[str,
                 "name": doc.get("name") or "Cinema Room",
                 "category": "watch",
                 "audience": int(doc.get("audience_count") or 0),
-                "path": "/cinema-room",
+                "path": f"/cinema-room/{doc.get('room_id')}",
                 "network": "DSG_CINEMA",
                 "preview_video_url": None,  # Cloudflare Stream future wire-up.
             })

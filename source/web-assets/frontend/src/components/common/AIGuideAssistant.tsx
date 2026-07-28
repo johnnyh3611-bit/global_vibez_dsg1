@@ -41,7 +41,6 @@ function roomKeyFromPath(pathname: string): string {
     p.startsWith("/streaming") ||
     p.startsWith("/streamer") ||
     p.startsWith("/dsg-tv") ||
-    p.startsWith("/free-tv") ||
     p.startsWith("/vibe-tv") ||
     p.startsWith("/cinema")
   ) {
