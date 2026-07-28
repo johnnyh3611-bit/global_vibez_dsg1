@@ -128,6 +128,7 @@ def _client_state(game: SpadesGame, game_id: str) -> Dict[str, Any]:
         "valid_plays": game.get_valid_plays(USER_POS) if game.game_phase == "playing" else [],
         "winner": getattr(game, "winner", None),
         "hand_history": getattr(game, "hand_history", [])[-1:],
+        "bids_placed": list(getattr(game, "bids_placed", [])),
     }
 
 

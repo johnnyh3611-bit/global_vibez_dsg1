@@ -35,6 +35,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Bot, Crown, Loader2, Wifi } from "lucide-react";
 import { authFetch } from "@/utils/secureAuth";
+import { useDealBidSequence } from "@/hooks/useDealBidSequence";
 
 import SpadesTable from "@/components/spades/SpadesTable";
 import SpadesLobby from "@/components/spades/SpadesLobby";
@@ -89,9 +90,6 @@ export default function SpadesAAA() {
   } | null>(null);
   const prevScoresRef = useRef<{ team1: number; team2: number } | null>(null);
 
-  // Animation triggers
-  const [dealing, setDealing] = useState(false);
-  const [bidModalOpen, setBidModalOpen] = useState(false);
   /** Held when the player chose Nil (bid 0) — drives <SpecialStatePrompt>. */
   const [pendingNil, setPendingNil] = useState<number | null>(null);
   const [dealKey, setDealKey] = useState(0);
@@ -123,16 +121,17 @@ export default function SpadesAAA() {
   }, [game]);
   const [chatOpen, setChatOpen] = useState(false);
 
-  // Hand-review window between the deal animation and the bid modal.
-  // Per the user: "after you deal the cards, we need to have a 10-second
-  // runoff while the player can look at the cards... then you let the
-  // player Place Your Bid pop up." During review, the hand fan is
-  // visible but non-interactive, and a countdown + early-start button
-  // give the player control.
-  const REVIEW_SECONDS = 10;
-  const [reviewActive, setReviewActive] = useState(false);
-  const [reviewRemaining, setReviewRemaining] = useState(REVIEW_SECONDS);
-  const reviewTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Deal → 10s hand review → bid modal (shared hook; see useDealBidSequence).
+  const {
+    dealing,
+    bidModalOpen,
+    reviewActive,
+    reviewRemaining,
+    setBidModalOpen,
+    startDealSequence,
+    endReviewAndShowBid,
+    resetSequence,
+  } = useDealBidSequence();
 
   const flashStatus = useCallback(
     (text: string, tone: StatusMessage["tone"] = "cyan", ttl = 2400) => {
@@ -146,61 +145,31 @@ export default function SpadesAAA() {
     [],
   );
 
-  // Kick off the dealing animation → 10s hand-review → bid modal sequence.
-  // Stages (all triggered by the same startDealSequence call):
-  //   0.0s → deal animation begins (cards fly from center chip)
-  //   3.5s → deal finishes; hand fan reveals; 10s review countdown starts
-  //  13.5s → review ends; bid modal pops up automatically
-  // The player can short-circuit the 10s review via the "Place Bid Now"
-  // button rendered in the review footer.
-  const endReviewAndShowBid = useCallback(() => {
-    if (reviewTimerRef.current) {
-      clearInterval(reviewTimerRef.current);
-      reviewTimerRef.current = null;
-    }
-    setReviewActive(false);
-    setBidModalOpen(true);
-  }, []);
-
-  const startDealSequence = useCallback(() => {
-    setDealing(true);
-    setBidModalOpen(false);
-    setReviewActive(false);
-    setReviewRemaining(REVIEW_SECONDS);
-
-    // Stage 1 → let the deal animation run (~3.5s), then begin review.
-    window.setTimeout(() => {
-      setDealing(false);
-      setReviewActive(true);
-      setReviewRemaining(REVIEW_SECONDS);
-
-      // Stage 2 → 10-second countdown during which the hand is visible
-      // but the bid modal stays closed.
-      if (reviewTimerRef.current) clearInterval(reviewTimerRef.current);
-      reviewTimerRef.current = setInterval(() => {
-        setReviewRemaining((r) => {
-          if (r <= 1) {
-            // Stage 3 → fire the bid modal.
-            if (reviewTimerRef.current) {
-              clearInterval(reviewTimerRef.current);
-              reviewTimerRef.current = null;
-            }
-            setReviewActive(false);
-            setBidModalOpen(true);
-            return 0;
-          }
-          return r - 1;
-        });
-      }, 1000);
-    }, 3500);
-  }, []);
-
-  // Cancel the review timer on unmount / back-to-lobby to avoid leaks.
+  // Safety net: if we are in bidding, the hand is dealt, and no modal /
+  // review / deal animation is running, force the bid UI open. Covers
+  // next-hand paths that skip the round modal and any timer races that
+  // left bidModalOpen=false while phase stayed "bidding".
+  const userHasBid = Boolean(
+    game?.bids_placed?.includes(game.your_position ?? "south"),
+  );
   useEffect(() => {
-    return () => {
-      if (reviewTimerRef.current) clearInterval(reviewTimerRef.current);
-    };
-  }, []);
+    if (!game) return;
+    if (game.phase !== "bidding") return;
+    if (userHasBid || pendingNil !== null || busy) return;
+    if (dealing || reviewActive || bidModalOpen || roundModalOpen) return;
+    if (!game.your_hand || game.your_hand.length === 0) return;
+    setBidModalOpen(true);
+  }, [
+    game,
+    userHasBid,
+    pendingNil,
+    busy,
+    dealing,
+    reviewActive,
+    bidModalOpen,
+    roundModalOpen,
+    setBidModalOpen,
+  ]);
 
   // AI game start
   const startAiGame = useCallback(
@@ -436,13 +405,19 @@ export default function SpadesAAA() {
           if (data.phase === "bidding") {
             setDealKey((k) => k + 1);
           }
+        } else if (data.phase === "bidding") {
+          // Scores unchanged but a new hand started — still run the
+          // deal → review → bid sequence so the player isn't stuck on
+          // "Waiting for bids…" with no modal.
+          setDealKey((k) => k + 1);
+          startDealSequence();
         }
         setGame(data);
       } finally {
         setBusy(false);
       }
     },
-    [game, busy, flashStatus],
+    [game, busy, flashStatus, startDealSequence],
   );
 
   // Shot-clock auto-play (Beta Specs §6 + Universal Design Agent §2):
@@ -476,15 +451,9 @@ export default function SpadesAAA() {
   };
 
   const backToLobby = () => {
-    if (reviewTimerRef.current) {
-      clearInterval(reviewTimerRef.current);
-      reviewTimerRef.current = null;
-    }
+    resetSequence();
     setGame(null);
     setRoundModalOpen(false);
-    setBidModalOpen(false);
-    setDealing(false);
-    setReviewActive(false);
     setLastRoundSummary(null);
     prevScoresRef.current = null;
     setPhase("lobby");
@@ -588,8 +557,21 @@ export default function SpadesAAA() {
         hideTurnIndicator={true}
       />
     ) : game.phase === "bidding" && !dealing && !bidModalOpen ? (
-      <div className="text-center text-amber-300/60 text-xs uppercase tracking-[0.3em] font-bold pb-4">
-        Waiting for bids…
+      <div className="text-center pb-4 space-y-2">
+        <div className="text-amber-300/60 text-xs uppercase tracking-[0.3em] font-bold">
+          Waiting for bids…
+        </div>
+        {!userHasBid ? (
+          <button
+            type="button"
+            onClick={() => setBidModalOpen(true)}
+            className="px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 text-[#3a2500] font-black text-[10px] uppercase tracking-widest"
+            style={{ fontFamily: "'Cinzel', serif" }}
+            data-testid="spades-force-bid-btn"
+          >
+            Place Your Bid
+          </button>
+        ) : null}
       </div>
     ) : null;
 

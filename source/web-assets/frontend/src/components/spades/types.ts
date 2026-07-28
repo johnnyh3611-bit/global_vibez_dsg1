@@ -76,6 +76,8 @@ export interface SpadesPracticeState {
   valid_plays: SpadesCard[];
   winner: SpadesTeam | null;
   hand_history: Array<{ winner: SpadesPosition }>;
+  /** Positions that have already placed a bid this hand (south first). */
+  bids_placed?: SpadesPosition[];
   /** Present ONLY on /play responses. Ordered list of card plays (user +
    *  bots) that the frontend replays with timing so each card visibly
    *  lands one-by-one instead of all at once. */

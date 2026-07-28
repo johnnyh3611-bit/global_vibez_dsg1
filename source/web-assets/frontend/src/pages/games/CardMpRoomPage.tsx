@@ -24,6 +24,8 @@ interface EngineView {
   phase?: string;
   turn?: Seat;
   bid_turn?: Seat;
+  bid_round?: number;
+  high_bidder?: Seat | null;
   dealer?: Seat;
   upcard?: CardEntity | null;
   trump?: string | null;
@@ -121,7 +123,10 @@ export default function CardMpRoomPage() {
   const legalSet = new Set(
     (engine?.legal ?? []).map((c) => `${c.rank}${c.suit}${c.copy ?? ''}`),
   );
-  const myTurn = (engine?.turn === mySeat) || (engine?.bid_turn === mySeat);
+  const myTurn =
+    engine?.turn === mySeat ||
+    engine?.bid_turn === mySeat ||
+    (engine?.phase === 'naming_trump' && engine?.high_bidder === mySeat);
   const phase = engine?.phase ?? (room?.status === 'WAITING' ? 'waiting' : 'unknown');
 
   // ----- Actions ------------------------------------------------------------
@@ -290,19 +295,39 @@ export default function CardMpRoomPage() {
           </div>
         )}
 
-        {/* Bid controls */}
-        {room.status === 'PLAYING' && engine?.phase === 'bidding' && myTurn && (
-          <div className="mt-4 p-4 rounded-xl bg-black/60 border border-cyan-400/30">
-            <p className="text-xs uppercase tracking-widest text-cyan-200 mb-2">Your Bid</p>
+        {/* Bid controls — euchre auction + pinochle auction/trump naming */}
+        {room.status === 'PLAYING' && myTurn && (engine?.phase === 'bidding' || engine?.phase === 'naming_trump') && (
+          <div className="mt-4 p-4 rounded-xl bg-black/60 border border-cyan-400/30" data-testid="card-mp-bid-panel">
+            <p className="text-xs uppercase tracking-widest text-cyan-200 mb-2">
+              {engine?.phase === 'naming_trump' ? 'Name Trump' : 'Your Bid'}
+            </p>
             {gameType === 'euchre' ? (
               <div className="flex flex-wrap gap-2">
-                <button onClick={() => bid({ action: 'order_up' })} data-testid="card-mp-bid-orderup" className="px-3 py-2 rounded bg-amber-500 text-black font-bold text-sm">Order Up</button>
+                {(engine?.bid_round ?? 1) === 1 ? (
+                  <>
+                    <button onClick={() => bid({ action: 'order_up' })} data-testid="card-mp-bid-orderup" className="px-3 py-2 rounded bg-amber-500 text-black font-bold text-sm">Order Up</button>
+                    <button onClick={() => bid({ action: 'pass' })} data-testid="card-mp-bid-pass" className="px-3 py-2 rounded bg-white/10 font-bold text-sm">Pass</button>
+                  </>
+                ) : (
+                  <>
+                    {['S', 'H', 'D', 'C']
+                      .filter((s) => s !== engine?.upcard?.suit)
+                      .map((s) => (
+                        <button key={`nt-${s}`} onClick={() => bid({ action: 'name_trump', suit: s })} data-testid={`card-mp-bid-trump-${s}`} className="px-3 py-2 rounded bg-cyan-500 font-bold text-sm">
+                          Name {SUIT_GLYPH[s] ?? s}
+                        </button>
+                      ))}
+                    <button onClick={() => bid({ action: 'pass' })} data-testid="card-mp-bid-pass" className="px-3 py-2 rounded bg-white/10 font-bold text-sm">Pass</button>
+                  </>
+                )}
+              </div>
+            ) : engine?.phase === 'naming_trump' ? (
+              <div className="flex items-center gap-2 flex-wrap">
                 {['S', 'H', 'D', 'C'].map((s) => (
-                  <button key={`nt-${s}`} onClick={() => bid({ action: 'name_trump', suit: s })} data-testid={`card-mp-bid-trump-${s}`} className="px-3 py-2 rounded bg-cyan-500 font-bold text-sm">
-                    Name {SUIT_GLYPH[s]}
+                  <button key={`pnt-${s}`} onClick={() => bid({ action: 'name_trump', suit: s })} data-testid={`card-mp-name-trump-${s}`} className="px-3 py-2 rounded bg-cyan-500 font-bold text-sm">
+                    Trump {SUIT_GLYPH[s] ?? s}
                   </button>
                 ))}
-                <button onClick={() => bid({ action: 'pass' })} data-testid="card-mp-bid-pass" className="px-3 py-2 rounded bg-white/10 font-bold text-sm">Pass</button>
               </div>
             ) : (
               <div className="flex items-center gap-2 flex-wrap">
@@ -318,11 +343,6 @@ export default function CardMpRoomPage() {
                 />
                 <button onClick={() => bid({ action: 'place_bid', amount: bidAmount })} data-testid="card-mp-bid-place" className="px-3 py-2 rounded bg-amber-500 text-black font-bold text-sm">Bid {bidAmount}</button>
                 <button onClick={() => bid({ action: 'pass' })} data-testid="card-mp-bid-pinochle-pass" className="px-3 py-2 rounded bg-white/10 font-bold text-sm">Pass</button>
-                {['S', 'H', 'D', 'C'].map((s) => (
-                  <button key={`pnt-${s}`} onClick={() => bid({ action: 'name_trump', suit: s })} data-testid={`card-mp-name-trump-${s}`} className="px-2 py-1 rounded bg-cyan-500/80 font-bold text-xs">
-                    Trump {SUIT_GLYPH[s]}
-                  </button>
-                ))}
               </div>
             )}
           </div>

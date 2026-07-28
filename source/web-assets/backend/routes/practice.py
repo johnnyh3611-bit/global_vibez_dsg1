@@ -965,9 +965,15 @@ def apply_move(game_type: str, game_state: Dict, move: Dict, player: str) -> Dic
         action = move.get("action")
         
         if action == "bid":
-            # Handle bidding
-            bid = move.get("bid", 0)
+            # Handle bidding — FE historically sent `amount`; accept both.
+            bid = move.get("bid", move.get("amount", 0))
+            try:
+                bid = int(bid)
+            except (TypeError, ValueError):
+                bid = 0
+            bid = max(0, min(13, bid))
             game_state["bids"]["player"] = bid
+            game_state["player_bid"] = bid
             
             # AI bids (simple logic - count high cards)
             for ai_player in ["partner", "opp1", "opp2"]:
@@ -982,6 +988,12 @@ def apply_move(game_type: str, game_state: Dict, move: Dict, player: str) -> Dic
             
             # Move to playing phase
             game_state["phase"] = "playing"
+            game_state["player_bid"] = bid
+            game_state["ai_bid"] = game_state["bids"]["opp1"]  # display helper for legacy UI
+            game_state["player_tricks"] = 0
+            game_state["ai_tricks"] = 0
+            game_state["player_score"] = game_state["team_scores"]["team1"]
+            game_state["ai_score"] = game_state["team_scores"]["team2"]
             
         elif action == "play_card":
             # Handle card play
