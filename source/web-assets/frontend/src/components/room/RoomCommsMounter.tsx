@@ -7,8 +7,8 @@ import RoomCommsDock from './RoomCommsDock';
 const SOCIAL_ROOM_PATTERNS: RegExp[] = [
   // Social / dating
   /^\/(dating|speed-dating|vr-dating|table-for-two|private-suites|just-for-the-night)(?:\/|$)/,
-  // Streaming / co-watch
-  /^\/(free-tv|dsg-tv|vibe-tv|cinema-room|memory-bank)(?:\/|$)/,
+  // Streaming / co-watch (authorized Cinema Room + DSG TV only)
+  /^\/(dsg-tv|vibe-tv|cinema-room|memory-bank)(?:\/|$)/,
   // Matchmaking / events
   /^\/(matchmaking|beat-vault|vibe-coliseum|vibe-ridez\/live-pov)(?:\/|$)/,
   // Tournaments
@@ -33,7 +33,6 @@ const GAME_LABEL_OVERRIDES: Record<string, string> = {
   'dating': 'Dating',
   'speed-dating': 'Speed Dating',
   'vr-dating': 'VR Dating',
-  'free-tv': 'Free TV',
   'vibe-tv': 'Vibe TV',
   'dsg-tv': 'DSG TV',
   'cinema-room': 'Cinema',

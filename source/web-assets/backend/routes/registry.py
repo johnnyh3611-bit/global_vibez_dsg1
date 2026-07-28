@@ -391,13 +391,6 @@ def register_all_routes(
     _soft_mount(
         api_router,
         log,
-        "cinema_network_room",
-        "routes.cinema_network_room",
-        tags=["cinema-network-room"],
-    )
-    _soft_mount(
-        api_router,
-        log,
         "dsg_music_group",
         "routes.dsg_music_group_routes",
     )

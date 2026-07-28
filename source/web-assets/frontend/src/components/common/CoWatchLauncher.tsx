@@ -2,13 +2,15 @@
  * CoWatchLauncher — global floating "Co-watch from anywhere" mini-button.
  *
  * Mounted once at the App root. Detects whether the user is currently on
- * a watchable surface (Free TV, Cinema Room, DSG TV, MY VIBEZ video
- * watch). If so, the launcher pre-fills the watch-party room with the
- * exact network/channel they're viewing so a single tap spawns an
- * invite link.
+ * an authorized watchable surface (Cinema Room, DSG TV, MY VIBEZ video
+ * watch). If so, the launcher pre-fills the watch-party room so a single
+ * tap spawns an invite link into the internal Cinema Room.
  *
  * If they're elsewhere in the app, it falls back to a generic
- * "Start a watch party" CTA that drops them in the `/free-tv` lobby.
+ * "Start a watch party" CTA that drops them in the `/cinema-room` lobby.
+ *
+ * Free-TV / Tubi / Pluto / Plex network catalogs were removed — Co-Watch
+ * only uses authorized internal cinema infrastructure.
  *
  * Design constraints:
  *   - Hidden on auth pages (`/login`, `/signup`) and the volumetric
@@ -27,27 +29,19 @@ import { FULLSCREEN_GAME_ROUTES } from '@/hooks/useIsFullscreenGameRoute';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
-// Routes where the launcher must stay hidden (auth, fullscreen games,
-// volumetric galaxy chrome). Keep tight — anything not listed shows it.
 const HIDDEN_PREFIXES = [
   '/login', '/signup', '/forgot-password', '/reset-password',
   '/age-verification', '/onboarding',
   '/volumetric', '/galaxy',
 ];
 
-// Routes where we can pre-detect a watchable context and pass that
-// straight into the watch-party room. `match` returns the {network, channel}
-// to pre-seed if present, otherwise null → generic launcher.
 type WatchContext = {
-  network_id: 'PLUTO_TV' | 'TUBI_TV' | 'PLEX_TV' | 'YOUTUBE' | null;
   channel_id: string | null;
   label: string;
   mode: 'co-watch' | 'co-play';
 };
 
 function detectContext(pathname: string): WatchContext {
-  // Game / card-room contexts → "Invite to my table" mode. The current
-  // URL is the deep link; receivers land at the same table.
   const GAME_PREFIXES = [
     '/spades', '/bid-whist', '/hearts', '/uno', '/euchre', '/pinochle',
     '/gin-rummy', '/rummy', '/war', '/crazy-eights', '/go-fish',
@@ -61,32 +55,27 @@ function detectContext(pathname: string): WatchContext {
     const segments = pathname.split('/').filter(Boolean);
     const label = segments[segments.length - 1]?.replace(/-/g, ' ') || 'this table';
     return {
-      network_id: null,
       channel_id: null,
       label: label.replace(/\b\w/g, (c) => c.toUpperCase()),
       mode: 'co-play',
     };
   }
 
-  // Already inside a free-tv room? Use the URL roomId so we don't spawn
-  // a duplicate — instead we copy the existing room's invite link.
-  if (pathname.startsWith('/free-tv/')) {
+  // Already inside a cinema room — reuse that room id for the invite.
+  if (pathname.startsWith('/cinema-room/')) {
     const roomId = pathname.split('/')[2];
-    return { network_id: null, channel_id: roomId || null, label: 'this room', mode: 'co-watch' };
-  }
-  if (pathname.startsWith('/free-tv')) {
-    return { network_id: 'PLUTO_TV', channel_id: null, label: 'Free TV', mode: 'co-watch' };
+    return { channel_id: roomId || null, label: 'Cinema Room', mode: 'co-watch' };
   }
   if (pathname.startsWith('/cinema-room')) {
-    return { network_id: null, channel_id: null, label: 'Cinema Room', mode: 'co-watch' };
+    return { channel_id: null, label: 'Cinema Room', mode: 'co-watch' };
   }
   if (pathname.startsWith('/vibe-tv') || pathname.startsWith('/dsg-tv')) {
-    return { network_id: null, channel_id: null, label: 'DSG TV', mode: 'co-watch' };
+    return { channel_id: null, label: 'DSG TV', mode: 'co-watch' };
   }
   if (pathname.startsWith('/my-vibez')) {
-    return { network_id: null, channel_id: null, label: 'MY VIBEZ', mode: 'co-watch' };
+    return { channel_id: null, label: 'MY VIBEZ', mode: 'co-watch' };
   }
-  return { network_id: null, channel_id: null, label: 'anything', mode: 'co-watch' };
+  return { channel_id: null, label: 'Cinema Room', mode: 'co-watch' };
 }
 
 export default function CoWatchLauncher() {
@@ -98,8 +87,6 @@ export default function CoWatchLauncher() {
   const [copied, setCopied] = useState(false);
   const [strip, setStripActive] = useState(false);
 
-  // Self-hide when an inline chromebar is mounted on the page (founder
-  // directive 2026-02-09 — bottom-corner chrome must never stack).
   useEffect(() => {
     const onActive = () => setStripActive(true);
     const onIdle = () => setStripActive(false);
@@ -111,7 +98,6 @@ export default function CoWatchLauncher() {
     };
   }, []);
 
-  // Close the modal whenever the user navigates away.
   useEffect(() => {
     setOpen(false);
     setInviteUrl(null);
@@ -135,9 +121,6 @@ export default function CoWatchLauncher() {
     try {
       const ref = localStorage.getItem('user_id') || 'COWATCH';
 
-      // Co-Play mode — game/card-room contexts. The current URL IS the
-      // deep link; we just slap a `?invite=` on it so the receiver
-      // lands at the same table and we can track conversion.
       if (ctx.mode === 'co-play') {
         const u = new URL(window.location.href);
         u.searchParams.set('invite', ref);
@@ -145,30 +128,34 @@ export default function CoWatchLauncher() {
         return;
       }
 
-      // Already in a free-tv room → reuse its room_id, no new POST.
-      if (pathname.startsWith('/free-tv/') && ctx.channel_id) {
-        setInviteUrl(`${window.location.origin}/free-tv/${ctx.channel_id}?ref=${encodeURIComponent(ref)}`);
+      // Already in a cinema room → reuse its room_id, no new POST.
+      if (pathname.startsWith('/cinema-room/') && ctx.channel_id) {
+        setInviteUrl(
+          `${window.location.origin}/cinema-room/${ctx.channel_id}?ref=${encodeURIComponent(ref)}`,
+        );
         return;
       }
-      const res = await fetch(`${API}/api/cinema-network-room/rooms`, {
+
+      const res = await fetch(`${API}/api/cinema-room/rooms`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          host_user_id: ref,
-          name: `Co-Watch · ${ctx.label}`,
-          active_network: ctx.network_id || 'PLUTO_TV',
-          channel_id: ctx.channel_id || undefined,
+          host_id: ref,
+          name: `Co-Watch · ${ctx.label}`.slice(0, 60),
           is_private: false,
-          ambassador_ref: ref,
+          is_date_night: false,
         }),
       });
       if (!res.ok) throw new Error('room_create_failed');
       const room = await res.json();
-      setInviteUrl(`${window.location.origin}/free-tv/${room.room_id}?ref=${encodeURIComponent(ref)}`);
+      const roomId = room.room_id || room.id;
+      setInviteUrl(
+        `${window.location.origin}/cinema-room/${roomId}?ref=${encodeURIComponent(ref)}`,
+      );
     } catch {
       setBusy(false);
       setOpen(false);
-      navigate('/free-tv');
+      navigate('/cinema-room');
       return;
     } finally {
       setBusy(false);
@@ -208,7 +195,6 @@ export default function CoWatchLauncher() {
 
   return (
     <>
-      {/* Floating launcher button */}
       <motion.button
         data-testid="co-watch-launcher-btn"
         initial={{ scale: 0, opacity: 0 }}
@@ -262,7 +248,7 @@ export default function CoWatchLauncher() {
               <p className="text-sm text-white/65 mb-5">
                 {ctx.mode === 'co-play'
                   ? "We tagged the current table URL with your invite code. Anyone who taps it lands at this exact table — same seat numbers, same room."
-                  : 'We spawned a synced watch-party room. Share this link — anyone who taps it lands in the same channel, in sync, with chat live.'}
+                  : 'We spawned a synced Cinema Room watch party on our authorized catalog. Share this link — anyone who taps it lands in the same room, in sync, with chat live.'}
               </p>
 
               <div
@@ -296,14 +282,13 @@ export default function CoWatchLauncher() {
                   onClick={() => {
                     setOpen(false);
                     if (!inviteUrl) return;
-                    if (ctx.mode === 'co-play') return; // already at the table
-                    const u = new URL(inviteUrl);
-                    navigate(`${u.pathname}${u.search}`);
+                    if (ctx.mode === 'co-play') return;
+                    const path = inviteUrl.replace(window.location.origin, '');
+                    navigate(path);
                   }}
                   disabled={busy || !inviteUrl || ctx.mode === 'co-play'}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-white/5 hover:bg-white/10 ring-1 ring-white/15 hover:ring-amber-300/40 px-4 py-2 text-sm text-white/85 disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-white/5 hover:bg-white/10 ring-1 ring-white/15 px-4 py-2 text-sm text-white/85 disabled:opacity-50"
                 >
-                  <RadioTower className="w-4 h-4" />
                   Jump in
                 </button>
               </div>

@@ -112,7 +112,7 @@ export default function VrTvLounge() {
           <h1 className="text-3xl font-light mt-2">{channelName}</h1>
           <p className="text-sm text-white/55 mt-2 max-w-xl">{fallbackNote}</p>
           <p className="text-[11px] text-white/40 mt-1">
-            Tubi / Peacock / Netflix cannot stay inside our player (their rules). Hosted DSG TV + Agora date talk can.
+            Third-party commercial streamers cannot stay inside our player (their rules). Hosted DSG TV + Agora date talk can.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <button
