@@ -8544,11 +8544,60 @@ def test_my_vibez_optimization_module_locked_to_pdf() -> None:
 
 
 def test_my_vibez_optimization_router_registered() -> None:
-    """/api/my-vibez/* must be mounted (4 endpoints)."""
+    """My Vibez content + feed + optimization modules must be registered."""
     from pathlib import Path
     reg = Path("source/web-assets/backend/routes/registry.py").read_text()
     assert "my_vibez_optimization" in reg
-    assert "MY_VIBEZ_OPTIMIZATION" in reg
+    assert "my_vibez_feed" in reg
+    assert "my_vibez_content" in reg
+    assert "my_vibez" in reg
+
+
+def test_my_vibez_vertical_home_and_route_consolidation() -> None:
+    """Primary /my-vibez is a full-screen snap loop; legacy stacks redirect."""
+    from pathlib import Path
+
+    home = Path("source/web-assets/frontend/src/pages/MyVibez.tsx").read_text()
+    assert 'data-testid="my-vibez-vertical-home"' in home
+    assert 'data-testid="my-vibez-snap-feed"' in home
+    assert "/api/my-vibez/feed/for-you" in home
+    assert "/api/my-vibez/feed/following" in home
+    assert "VideoGrid" not in home
+    assert "VideoRecorder" in home
+
+    games = Path("source/web-assets/frontend/src/routes/gamesRoutes.tsx").read_text()
+    assert 'path="/my-vibez"' in games
+    assert 'Navigate to="/my-vibez"' in games
+    assert 'Navigate to="/my-vibez/create"' in games
+    assert "MyVibezFeed" not in games
+    assert "MyVibezUpload" not in games
+
+    social = Path("source/web-assets/frontend/src/routes/socialRoutes.tsx").read_text()
+    assert "MyVibezPage" not in social
+    assert 'path="/my-vibez/create"' in social
+    # Exact home mount must not appear (create/profile keep longer paths).
+    assert 'path="/my-vibez"' not in social.replace('path="/my-vibez/create"', "").replace(
+        'path="/my-vibez/profile"', ""
+    )
+    watch = Path("source/web-assets/frontend/src/pages/VideoPlayer.tsx").read_text()
+    assert "Navigate" in watch
+    assert "/my-vibez?v=" in watch
+
+    create = Path("source/web-assets/frontend/src/pages/CreateVibePage.tsx").read_text()
+    assert "VideoRecorder" in create
+    assert "/api/my-vibez/post/create" not in create
+
+
+def test_my_vibez_for_you_delegates_to_ranker() -> None:
+    """Content for-you endpoint must call the personalized ranker."""
+    from pathlib import Path
+    src = Path("source/web-assets/backend/routes/my_vibez_content.py").read_text()
+    assert "rank_for_you" in src
+    assert 'ranker' in src
+    # Old popularity-only sort must be gone from for-you.
+    assert '("likes_count", -1)' not in src.split("async def get_for_you_feed")[1].split(
+        "async def get_following_feed"
+    )[0]
 
 
 def test_my_vibez_themed_room_frontend_wired() -> None:

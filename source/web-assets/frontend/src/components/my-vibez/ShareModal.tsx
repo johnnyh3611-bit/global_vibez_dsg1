@@ -7,7 +7,7 @@ import { VibezTabChrome } from '@/components/ui/VibezTabChrome';
 export function ShareModal({ isOpen, onClose, videoId, videoTitle }) {
   const [copied, setCopied] = useState(false);
 
-  const shareUrl = `${window.location.origin}/my-vibez/watch/${videoId}`;
+  const shareUrl = `${window.location.origin}/my-vibez?v=${encodeURIComponent(videoId)}`;
 
   const copyToClipboard = async () => {
     try {

@@ -156,6 +156,7 @@ async def _save_streaming_upload(
         "comments_count": 0,
         "shares_count": 0,
         "created_at": datetime.now(timezone.utc).isoformat(),
+        "posted_at": datetime.now(timezone.utc).isoformat(),
         "updated_at": datetime.now(timezone.utc).isoformat(),
     }
     await db.my_vibez_videos.insert_one(video_doc)
@@ -289,6 +290,7 @@ async def upload_video(
         "comments_count": 0,
         "shares_count": 0,
         "created_at": datetime.now(timezone.utc).isoformat(),
+        "posted_at": datetime.now(timezone.utc).isoformat(),
         "updated_at": datetime.now(timezone.utc).isoformat()
     }
     
@@ -306,29 +308,34 @@ async def upload_video(
 
 @router.get("/feed/for-you")
 async def get_for_you_feed(limit: int = 20, skip: int = 0, request: Request = None) -> Dict[str, Any]:
-    """Get personalized For You feed (algorithmic)"""
+    """Personalized For You feed — delegates to the heuristic ranker."""
+    from routes.my_vibez_feed import rank_for_you
+
     current_user = await get_current_user(request) if request else None
-    db = get_database()
-    
-    # Simple algorithm: most liked + recent videos, excluding user's own
-    query = {}
-    if current_user:
-        query["creator_id"] = {"$ne": current_user.user_id}
-    
-    videos = await db.my_vibez_videos.find(
-        query,
-        {"_id": 0}
-    ).sort([
-        ("likes_count", -1),
-        ("created_at", -1)
-    ]).skip(skip).limit(limit).to_list(limit)
-    
-    return {"videos": videos, "total": len(videos)}
+    user_id = current_user.user_id if current_user else "anon"
+    exclude = current_user.user_id if current_user else None
+    # Fetch a larger window so skip still has headroom after ranking.
+    window = min(100, max(limit + skip, limit) * 2)
+    ranked = await rank_for_you(
+        user_id=user_id,
+        limit=window,
+        exclude_creator_id=exclude,
+    )
+    videos = ranked.get("videos") or ranked.get("feed") or []
+    sliced = videos[skip : skip + limit]
+    return {
+        "videos": sliced,
+        "total": len(sliced),
+        "ranker": ranked.get("ranker", "heuristic-v1"),
+        "weights": ranked.get("weights"),
+    }
 
 
 @router.get("/feed/following")
 async def get_following_feed(limit: int = 20, skip: int = 0, request: Request = None) -> Dict[str, Any]:
     """Get feed from followed creators only"""
+    from routes.my_vibez_feed import normalize_video_doc
+
     current_user = await get_current_user(request)
     if not current_user:
         raise HTTPException(status_code=401, detail="Not authenticated")
@@ -337,18 +344,22 @@ async def get_following_feed(limit: int = 20, skip: int = 0, request: Request = 
     
     # Get user's following list
     user = await db.users.find_one({"user_id": current_user.user_id}, {"_id": 0})
-    following_ids = user.get("following", [])
+    following_ids = user.get("following", []) if user else []
     
     if not following_ids:
-        return {"videos": [], "total": 0}
+        return {"videos": [], "total": 0, "ranker": "following"}
     
     # Get videos from followed creators
     videos = await db.my_vibez_videos.find(
-        {"creator_id": {"$in": following_ids}},
+        {"creator_id": {"$in": following_ids}, "hidden": {"$ne": True}},
         {"_id": 0}
     ).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
     
-    return {"videos": videos, "total": len(videos)}
+    return {
+        "videos": [normalize_video_doc(v) for v in videos],
+        "total": len(videos),
+        "ranker": "following",
+    }
 
 
 @router.get("/video/{video_id}")
