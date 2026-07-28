@@ -22,6 +22,7 @@ import SpadesGameMenu from "@/components/spades/SpadesGameMenu";
 import CommHubButton from "@/components/common/CommHubButton";
 import SpadesPlayerProfile from "@/components/spades/SpadesPlayerProfile";
 import SpadesCommunityChat from "@/components/spades/SpadesCommunityChat";
+import LegacyPlayShell from "@/components/games/LegacyPlayShell";
 import CrazyEightsWildModal from "@/components/crazy-eights-aaa/CrazyEightsWildModal";
 import CrazyEightsCenterPile from "@/components/crazy-eights-aaa/CrazyEightsCenterPile";
 import type {
@@ -397,51 +398,52 @@ export default function CrazyEightsAAA() {
   const finished = raw.phase === "finished";
 
   return (
-    <div
-      className="min-h-screen bg-gradient-to-b from-[#0a0a18] via-[#05050a] to-[#020207] text-white relative overflow-x-hidden"
-      data-testid="crazy-eights-aaa"
-    >
-      <div className="relative z-10 flex flex-col min-h-screen">
-        <div className="flex flex-wrap items-start justify-between px-2 sm:px-3 md:px-5 pt-2 sm:pt-3 md:pt-4 gap-2">
-          <div className="flex flex-col items-start gap-2">
-            <button
-              onClick={backToLobby}
-              className="flex items-center gap-1.5 text-indigo-300/70 hover:text-white transition text-xs md:text-sm font-bold"
-              data-testid="crazy-eights-aaa-back-btn"
-            >
-              <ArrowLeft className="w-4 h-4" /> Lobby
-            </button>
-            <SpadesGameMenu onExit={backToLobby} onOpenMessages={() => setChatOpen(true)} />
-            <CommHubButton compact />
-            <div data-testid="room-menu-bar" className="hidden" aria-hidden="true" />
-          </div>
-          <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 order-3 w-full sm:order-none sm:w-auto">
-            <div className="px-2 py-0.5 rounded-full bg-indigo-500/15 border border-indigo-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-indigo-300 font-bold">
-              Crazy 8s
+    <LegacyPlayShell
+      testId="crazy-eights-aaa"
+      className="bg-gradient-to-b from-[#0a0a18] via-[#05050a] to-[#020207] text-white"
+      chrome={
+        <>
+          <div className="flex flex-wrap items-start justify-between px-2 sm:px-3 md:px-5 pt-2 sm:pt-3 md:pt-4 gap-2">
+            <div className="flex flex-col items-start gap-2">
+              <button
+                onClick={backToLobby}
+                className="flex items-center gap-1.5 text-indigo-300/70 hover:text-white transition text-xs md:text-sm font-bold"
+                data-testid="crazy-eights-aaa-back-btn"
+              >
+                <ArrowLeft className="w-4 h-4" /> Lobby
+              </button>
+              <SpadesGameMenu onExit={backToLobby} onOpenMessages={() => setChatOpen(true)} />
+              <CommHubButton compact />
+              <div data-testid="room-menu-bar" className="hidden" aria-hidden="true" />
             </div>
-            <div className="px-2 py-0.5 rounded-full bg-fuchsia-500/15 border border-fuchsia-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-fuchsia-300 font-bold">
-              <span className="inline-flex items-center gap-1">
-                <Bot className="w-2.5 h-2.5" /> AI
-              </span>
+            <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 order-3 w-full sm:order-none sm:w-auto">
+              <div className="px-2 py-0.5 rounded-full bg-indigo-500/15 border border-indigo-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-indigo-300 font-bold">
+                Crazy 8s
+              </div>
+              <div className="px-2 py-0.5 rounded-full bg-fuchsia-500/15 border border-fuchsia-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-fuchsia-300 font-bold">
+                <span className="inline-flex items-center gap-1">
+                  <Bot className="w-2.5 h-2.5" /> AI
+                </span>
+              </div>
             </div>
+            <SpadesScoreBadge scores={scores} players={players} phase="playing" tricksPlayed={0} />
           </div>
-          <SpadesScoreBadge scores={scores} players={players} phase="playing" tricksPlayed={0} />
+
+          <SpadesStatusBanner message={statusMsg} />
+        </>
+      }
+      stage={
+        <div className="relative">
+          <SpadesTable brandSubLabel="CRAZY 8S" variant="onyx" centreGlyph="8">
+            <SpadesSeat position="north" player={players.north} isTurn={raw.turn === "north"} isYou={youPosition === "north"} onClick={() => setProfileOpen("north")} shotClockExpiresAt={raw.turn === "north" ? turnExpiresAt : null} onShotClockExpire={handleShotClockExpire} />
+            <SpadesSeat position="east"  player={players.east}  isTurn={raw.turn === "east"}  isYou={youPosition === "east"}  onClick={() => setProfileOpen("east")}  shotClockExpiresAt={raw.turn === "east" ? turnExpiresAt : null} onShotClockExpire={handleShotClockExpire} />
+            <SpadesSeat position="west"  player={players.west}  isTurn={raw.turn === "west"}  isYou={youPosition === "west"}  onClick={() => setProfileOpen("west")}  shotClockExpiresAt={raw.turn === "west" ? turnExpiresAt : null} onShotClockExpire={handleShotClockExpire} />
+          </SpadesTable>
+          <CrazyEightsCenterPile top={raw.top_card} declaredSuit={raw.declared_suit} drawCount={raw.draw_pile_count} />
+          <SpadesDealingAnimation active={dealing} />
         </div>
-
-        <SpadesStatusBanner message={statusMsg} />
-
-        <div className="flex items-center justify-center py-2 md:py-3 relative">
-          <div className="relative">
-            <SpadesTable brandSubLabel="CRAZY 8S" variant="onyx" centreGlyph="8">
-              <SpadesSeat position="north" player={players.north} isTurn={raw.turn === "north"} isYou={youPosition === "north"} onClick={() => setProfileOpen("north")} shotClockExpiresAt={raw.turn === "north" ? turnExpiresAt : null} onShotClockExpire={handleShotClockExpire} />
-              <SpadesSeat position="east"  player={players.east}  isTurn={raw.turn === "east"}  isYou={youPosition === "east"}  onClick={() => setProfileOpen("east")}  shotClockExpiresAt={raw.turn === "east" ? turnExpiresAt : null} onShotClockExpire={handleShotClockExpire} />
-              <SpadesSeat position="west"  player={players.west}  isTurn={raw.turn === "west"}  isYou={youPosition === "west"}  onClick={() => setProfileOpen("west")}  shotClockExpiresAt={raw.turn === "west" ? turnExpiresAt : null} onShotClockExpire={handleShotClockExpire} />
-            </SpadesTable>
-            <CrazyEightsCenterPile top={raw.top_card} declaredSuit={raw.declared_suit} drawCount={raw.draw_pile_count} />
-            <SpadesDealingAnimation active={dealing} />
-          </div>
-        </div>
-
+      }
+      hand={
         <div className="px-3 md:px-4 -mt-4 md:-mt-6 pb-3 md:pb-4 relative z-30">
           {raw.phase === "playing" ? (
             <SpadesHandFan
@@ -499,8 +501,8 @@ export default function CrazyEightsAAA() {
             </motion.div>
           ) : null}
         </div>
-      </div>
-
+      }
+    >
       <CrazyEightsWildModal open={pendingPlayCard !== null} busy={busy} onPick={finalizeWild} />
 
       <SpadesPlayerProfile
@@ -511,6 +513,6 @@ export default function CrazyEightsAAA() {
         onClose={() => setProfileOpen(null)}
       />
       <SpadesCommunityChat open={chatOpen} gameId={`crazy-eights-${raw.user_position}`} mode="ai" onClose={() => setChatOpen(false)} />
-    </div>
+    </LegacyPlayShell>
   );
 }

@@ -46,6 +46,7 @@ import SpadesPlayerProfile from "@/components/spades/SpadesPlayerProfile";
 import SpadesCommunityChat from "@/components/spades/SpadesCommunityChat";
 import TurnIndicator, { type TurnRole } from "@/components/games/TurnIndicator";
 import SpecialStatePrompt, { type SpecialStateVariant } from "@/components/games/SpecialStatePrompt";
+import LegacyPlayShell from "@/components/games/LegacyPlayShell";
 import type {
   SpadesCard as CardData,
   SpadesPosition,
@@ -794,132 +795,122 @@ export default function BidWhistAAA() {
   })();
 
   return (
-    <div
-      className="min-h-screen bg-gradient-to-b from-[#05070d] via-[#081021] to-[#050507] text-white relative overflow-x-hidden"
-      data-testid="bidwhist-aaa"
-    >
-      <div
-        className="absolute inset-0 pointer-events-none opacity-[0.12]"
-        style={{
-          backgroundImage:
-            "linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px)",
-          backgroundSize: "60px 60px",
-        }}
-      />
+    <LegacyPlayShell
+      testId="bidwhist-aaa"
+      className="bg-gradient-to-b from-[#05070d] via-[#081021] to-[#050507] text-white"
+      chrome={
+        <>
+          {/* Marker so the floating CommHubDropdown hides — its place is
+              inside this in-game menu bar (founder directive May 2026). */}
+          <div data-testid="room-menu-bar" className="hidden" aria-hidden="true" />
 
-      <div className="relative z-10 flex flex-col min-h-screen">
-        {/* Marker so the floating CommHubDropdown hides — its place is
-            inside this in-game menu bar (founder directive May 2026). */}
-        <div data-testid="room-menu-bar" className="hidden" aria-hidden="true" />
-
-        {/* Top bar — matches SpadesAAA exactly */}
-        <div className="flex flex-wrap items-start justify-between px-2 sm:px-3 md:px-5 pt-2 sm:pt-3 md:pt-4 gap-2">
-          <div className="flex flex-col items-start gap-2">
-            <button
-              onClick={backToLobby}
-              className="flex items-center gap-1.5 text-amber-300/70 hover:text-white transition text-xs md:text-sm font-bold"
-              data-testid="bidwhist-aaa-back-btn"
-            >
-              <ArrowLeft className="w-4 h-4" /> Lobby
-            </button>
-            <div className="flex items-center gap-2">
-              <SpadesGameMenu
-                onExit={backToLobby}
-                entryFee={Number((raw as { wager?: number } | null)?.wager ?? 0)}
-                midGame={Boolean(raw && raw.phase !== "finished")}
-                gameLabel="Bid Whist"
-                onOpenMessages={() => setChatOpen(true)}
-              />
-              <CommHubButton compact />
+          {/* Top bar — matches SpadesAAA exactly */}
+          <div className="flex flex-wrap items-start justify-between px-2 sm:px-3 md:px-5 pt-2 sm:pt-3 md:pt-4 gap-2">
+            <div className="flex flex-col items-start gap-2">
+              <button
+                onClick={backToLobby}
+                className="flex items-center gap-1.5 text-amber-300/70 hover:text-white transition text-xs md:text-sm font-bold"
+                data-testid="bidwhist-aaa-back-btn"
+              >
+                <ArrowLeft className="w-4 h-4" /> Lobby
+              </button>
+              <div className="flex items-center gap-2">
+                <SpadesGameMenu
+                  onExit={backToLobby}
+                  entryFee={Number((raw as { wager?: number } | null)?.wager ?? 0)}
+                  midGame={Boolean(raw && raw.phase !== "finished")}
+                  gameLabel="Bid Whist"
+                  onOpenMessages={() => setChatOpen(true)}
+                />
+                <CommHubButton compact />
+              </div>
             </div>
-          </div>
 
-          <div className="flex flex-col items-center gap-1.5 order-3 w-full sm:order-none sm:w-auto">
-            <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
-              <div className="px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-amber-300 font-bold">
-                Bid Whist
-              </div>
-              <div className="px-2 py-0.5 rounded-full bg-fuchsia-500/15 border border-fuchsia-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-fuchsia-300 font-bold">
-                <span className="inline-flex items-center gap-1">
-                  <Bot className="w-2.5 h-2.5" /> AI
-                </span>
-              </div>
-              {raw.trump_suit ? (
-                <div className="px-2 py-0.5 rounded-full bg-cyan-500/15 border border-cyan-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-cyan-300 font-bold">
-                  Trump · {raw.trump_suit}
+            <div className="flex flex-col items-center gap-1.5 order-3 w-full sm:order-none sm:w-auto">
+              <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
+                <div className="px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-amber-300 font-bold">
+                  Bid Whist
                 </div>
-              ) : null}
+                <div className="px-2 py-0.5 rounded-full bg-fuchsia-500/15 border border-fuchsia-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-fuchsia-300 font-bold">
+                  <span className="inline-flex items-center gap-1">
+                    <Bot className="w-2.5 h-2.5" /> AI
+                  </span>
+                </div>
+                {raw.trump_suit ? (
+                  <div className="px-2 py-0.5 rounded-full bg-cyan-500/15 border border-cyan-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-cyan-300 font-bold">
+                    Trump · {raw.trump_suit}
+                  </div>
+                ) : null}
+              </div>
             </div>
-          </div>
 
-          <SpadesScoreBadge
-            scores={scoreBadges}
-            players={players}
-            phase={uiPhase}
-            tricksPlayed={tricksPlayed}
-          />
-        </div>
-
-        <SpadesStatusBanner message={statusMsg} />
-
-        {/* Universal turn indicator (LOCKED 2026-02-16 — every multiplayer room) */}
-        {currentTurn && (() => {
-          const partnerOf: Record<string, string> = { north: 'south', south: 'north', east: 'west', west: 'east' };
-          const role: TurnRole = currentTurn === youPosition ? 'me'
-            : currentTurn === partnerOf[youPosition] ? 'partner' : 'opponent';
-          // Show the 10s shot-clock countdown on the user's own turn so
-          // they can see it ticking even though they have no seat badge.
-          return (
-            <TurnIndicator
-              role={role}
-              name={role === 'me' ? undefined : players[currentTurn]?.name}
-              expiresAt={role === 'me' ? turnExpiresAt : null}
-              onExpire={role === 'me' ? handleShotClockExpire : undefined}
+            <SpadesScoreBadge
+              scores={scoreBadges}
+              players={players}
+              phase={uiPhase}
+              tricksPlayed={tricksPlayed}
             />
-          );
-        })()}
-
-        {/* Arena — identical to SpadesAAA */}
-        <div className="flex items-center justify-center py-2 md:py-3 relative">
-          <div className="relative">
-            <SpadesTable brandSubLabel="BID WHIST" variant="cobalt">
-              <SpadesSeat
-                position="north"
-                player={players.north}
-                isTurn={currentTurn === "north"}
-                isYou={youPosition === "north"}
-                isDealer={raw.dealer === "north"}
-                onClick={() => setProfileOpen("north")}
-                shotClockExpiresAt={currentTurn === "north" ? turnExpiresAt : null}
-                onShotClockExpire={handleShotClockExpire}
-              />
-              <SpadesSeat
-                position="east"
-                player={players.east}
-                isTurn={currentTurn === "east"}
-                isYou={youPosition === "east"}
-                isDealer={raw.dealer === "east"}
-                onClick={() => setProfileOpen("east")}
-                shotClockExpiresAt={currentTurn === "east" ? turnExpiresAt : null}
-                onShotClockExpire={handleShotClockExpire}
-              />
-              <SpadesSeat
-                position="west"
-                player={players.west}
-                isTurn={currentTurn === "west"}
-                isYou={youPosition === "west"}
-                isDealer={raw.dealer === "west"}
-                onClick={() => setProfileOpen("west")}
-                shotClockExpiresAt={currentTurn === "west" ? turnExpiresAt : null}
-                onShotClockExpire={handleShotClockExpire}
-              />
-              <SpadesTrickPile trick={trickPile} />
-            </SpadesTable>
-            <SpadesDealingAnimation active={dealing} />
           </div>
-        </div>
 
-        {/* Hand fan / review window */}
+          <SpadesStatusBanner message={statusMsg} />
+
+          {/* Universal turn indicator (LOCKED 2026-02-16 — every multiplayer room) */}
+          {currentTurn && (() => {
+            const partnerOf: Record<string, string> = { north: 'south', south: 'north', east: 'west', west: 'east' };
+            const role: TurnRole = currentTurn === youPosition ? 'me'
+              : currentTurn === partnerOf[youPosition] ? 'partner' : 'opponent';
+            // Show the 10s shot-clock countdown on the user's own turn so
+            // they can see it ticking even though they have no seat badge.
+            return (
+              <TurnIndicator
+                role={role}
+                name={role === 'me' ? undefined : players[currentTurn]?.name}
+                expiresAt={role === 'me' ? turnExpiresAt : null}
+                onExpire={role === 'me' ? handleShotClockExpire : undefined}
+              />
+            );
+          })()}
+        </>
+      }
+      stage={
+        <div className="relative">
+          <SpadesTable brandSubLabel="BID WHIST" variant="cobalt">
+            <SpadesSeat
+              position="north"
+              player={players.north}
+              isTurn={currentTurn === "north"}
+              isYou={youPosition === "north"}
+              isDealer={raw.dealer === "north"}
+              onClick={() => setProfileOpen("north")}
+              shotClockExpiresAt={currentTurn === "north" ? turnExpiresAt : null}
+              onShotClockExpire={handleShotClockExpire}
+            />
+            <SpadesSeat
+              position="east"
+              player={players.east}
+              isTurn={currentTurn === "east"}
+              isYou={youPosition === "east"}
+              isDealer={raw.dealer === "east"}
+              onClick={() => setProfileOpen("east")}
+              shotClockExpiresAt={currentTurn === "east" ? turnExpiresAt : null}
+              onShotClockExpire={handleShotClockExpire}
+            />
+            <SpadesSeat
+              position="west"
+              player={players.west}
+              isTurn={currentTurn === "west"}
+              isYou={youPosition === "west"}
+              isDealer={raw.dealer === "west"}
+              onClick={() => setProfileOpen("west")}
+              shotClockExpiresAt={currentTurn === "west" ? turnExpiresAt : null}
+              onShotClockExpire={handleShotClockExpire}
+            />
+            <SpadesTrickPile trick={trickPile} />
+          </SpadesTable>
+          <SpadesDealingAnimation active={dealing} />
+        </div>
+      }
+      hand={
         <div className="px-3 md:px-4 -mt-4 md:-mt-6 pb-3 md:pb-4 relative z-20">
           {uiPhase === "playing" ? (
             <SpadesHandFan
@@ -985,7 +976,16 @@ export default function BidWhistAAA() {
             />
           ) : null}
         </div>
-      </div>
+      }
+    >
+      <div
+        className="absolute inset-0 pointer-events-none opacity-[0.12]"
+        style={{
+          backgroundImage:
+            "linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px)",
+          backgroundSize: "60px 60px",
+        }}
+      />
 
       {/* Bid modal — only during the auction, never during kitty exchange */}
       <BidWhistBidModal
@@ -1049,7 +1049,7 @@ export default function BidWhistAAA() {
         mode="ai"
         onClose={() => setChatOpen(false)}
       />
-    </div>
+    </LegacyPlayShell>
   );
 }
 

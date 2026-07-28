@@ -16,6 +16,7 @@ import SpadesDealingAnimation from "@/components/spades/SpadesDealingAnimation";
 import SpadesGameMenu from "@/components/spades/SpadesGameMenu";
 import SpadesPlayerProfile from "@/components/spades/SpadesPlayerProfile";
 import SpadesCommunityChat from "@/components/spades/SpadesCommunityChat";
+import LegacyPlayShell from "@/components/games/LegacyPlayShell";
 import type {
   SpadesPosition,
   SpadesPlayerView,
@@ -368,76 +369,80 @@ export default function UnoAAA() {
   const playableMap = new Set(raw.playable_cards.map((c) => `${c.color}-${c.value}`));
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0d0518] via-[#04030a] to-[#020108] text-white relative overflow-x-hidden" data-testid="uno-aaa">
-      <div className="relative z-10 flex flex-col min-h-screen">
-        <div className="flex flex-wrap items-start justify-between px-2 sm:px-3 md:px-5 pt-2 sm:pt-3 md:pt-4 gap-2">
-          <div className="flex flex-col items-start gap-2">
-            <button onClick={backToLobby} className="flex items-center gap-1.5 text-fuchsia-300/70 hover:text-white transition text-xs md:text-sm font-bold" data-testid="uno-aaa-back-btn">
-              <ArrowLeft className="w-4 h-4" /> Lobby
-            </button>
-            <SpadesGameMenu onExit={backToLobby} onOpenMessages={() => setChatOpen(true)} />
-          </div>
-          <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 order-3 w-full sm:order-none sm:w-auto">
-            <div className="px-2 py-0.5 rounded-full bg-fuchsia-500/15 border border-fuchsia-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-fuchsia-300 font-bold">UNO</div>
-            <div className="px-2 py-0.5 rounded-full bg-cyan-500/15 border border-cyan-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-cyan-300 font-bold">
-              <span className="inline-flex items-center gap-1"><Bot className="w-2.5 h-2.5" /> AI</span>
+    <LegacyPlayShell
+      testId="uno-aaa"
+      className="bg-gradient-to-b from-[#0d0518] via-[#04030a] to-[#020108] text-white"
+      chrome={
+        <>
+          <div className="flex flex-wrap items-start justify-between px-2 sm:px-3 md:px-5 pt-2 sm:pt-3 md:pt-4 gap-2">
+            <div className="flex flex-col items-start gap-2">
+              <button onClick={backToLobby} className="flex items-center gap-1.5 text-fuchsia-300/70 hover:text-white transition text-xs md:text-sm font-bold" data-testid="uno-aaa-back-btn">
+                <ArrowLeft className="w-4 h-4" /> Lobby
+              </button>
+              <SpadesGameMenu onExit={backToLobby} onOpenMessages={() => setChatOpen(true)} />
             </div>
-            <div className={`px-2 py-0.5 rounded-full border text-[9px] md:text-[10px] uppercase tracking-[0.3em] font-bold ${COLOR_CLASSES[raw.pending_color].bg} ${COLOR_CLASSES[raw.pending_color].ring} text-white`}>
-              {raw.pending_color}
-            </div>
-            <div className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-600 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-fuchsia-200 font-bold flex items-center gap-1">
-              {raw.direction === 1 ? <RotateCw className="w-3 h-3" /> : <RotateCcw className="w-3 h-3" />}
-              {raw.direction === 1 ? "CW" : "CCW"}
-            </div>
-            <div className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-600 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-fuchsia-200 font-bold tabular-nums">
-              Pile · {raw.draw_pile_count}
-            </div>
-          </div>
-          <SpadesScoreBadge scores={scores} players={players} phase="playing" tricksPlayed={0} />
-        </div>
-
-        <SpadesStatusBanner message={statusMsg} />
-
-        <div className="flex items-center justify-center py-2 md:py-3 relative">
-          <div className="relative">
-            <SpadesTable brandSubLabel="UNO" variant="neon" centreGlyph="U">
-              <SpadesSeat position="north" player={players.north} isTurn={raw.turn === "north"} isYou={youPosition === "north"} onClick={() => setProfileOpen("north")} />
-              <SpadesSeat position="east"  player={players.east}  isTurn={raw.turn === "east"}  isYou={youPosition === "east"}  onClick={() => setProfileOpen("east")} />
-              <SpadesSeat position="west"  player={players.west}  isTurn={raw.turn === "west"}  isYou={youPosition === "west"}  onClick={() => setProfileOpen("west")} />
-            </SpadesTable>
-            {/* Centre pile: draw pile stub + discard top */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 flex items-center gap-3 pointer-events-none">
-              <div className="relative">
-                <div className="w-12 h-16 md:w-14 md:h-20 rounded-md bg-gradient-to-br from-fuchsia-700 to-purple-950 border-2 border-fuchsia-300/60 shadow-lg flex items-center justify-center">
-                  <span className="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-fuchsia-200 -rotate-90">VIBEZ</span>
-                </div>
-                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-slate-900/90 border border-fuchsia-400/50 text-[9px] font-bold text-fuchsia-200 tabular-nums">
-                  ×{raw.draw_pile_count}
-                </div>
+            <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 order-3 w-full sm:order-none sm:w-auto">
+              <div className="px-2 py-0.5 rounded-full bg-fuchsia-500/15 border border-fuchsia-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-fuchsia-300 font-bold">UNO</div>
+              <div className="px-2 py-0.5 rounded-full bg-cyan-500/15 border border-cyan-400/40 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-cyan-300 font-bold">
+                <span className="inline-flex items-center gap-1"><Bot className="w-2.5 h-2.5" /> AI</span>
               </div>
-              <AnimatePresence mode="popLayout">
-                <motion.div
-                  key={`${raw.top_card.color}-${raw.top_card.value}`}
-                  initial={{ scale: 0.6, opacity: 0, rotate: -15 }}
-                  animate={{ scale: 1, opacity: 1, rotate: 0 }}
-                  exit={{ scale: 0.4, opacity: 0 }}
-                  transition={{ type: "spring", stiffness: 240, damping: 22 }}
-                  className="relative"
-                  data-testid="uno-top-card"
-                >
-                  <UnoCardFace card={raw.top_card} />
-                  {raw.top_card.kind === "wild" ? (
-                    <div className={`absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full ${COLOR_CLASSES[raw.pending_color].chip} text-white text-[8px] font-black uppercase tracking-[0.25em] shadow-lg border border-white/20`} data-testid="uno-declared-color">
-                      {raw.pending_color}
-                    </div>
-                  ) : null}
-                </motion.div>
-              </AnimatePresence>
+              <div className={`px-2 py-0.5 rounded-full border text-[9px] md:text-[10px] uppercase tracking-[0.3em] font-bold ${COLOR_CLASSES[raw.pending_color].bg} ${COLOR_CLASSES[raw.pending_color].ring} text-white`}>
+                {raw.pending_color}
+              </div>
+              <div className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-600 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-fuchsia-200 font-bold flex items-center gap-1">
+                {raw.direction === 1 ? <RotateCw className="w-3 h-3" /> : <RotateCcw className="w-3 h-3" />}
+                {raw.direction === 1 ? "CW" : "CCW"}
+              </div>
+              <div className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-600 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-fuchsia-200 font-bold tabular-nums">
+                Pile · {raw.draw_pile_count}
+              </div>
             </div>
-            <SpadesDealingAnimation active={dealing} />
+            <SpadesScoreBadge scores={scores} players={players} phase="playing" tricksPlayed={0} />
           </div>
-        </div>
 
+          <SpadesStatusBanner message={statusMsg} />
+        </>
+      }
+      stage={
+        <div className="relative">
+          <SpadesTable brandSubLabel="UNO" variant="neon" centreGlyph="U">
+            <SpadesSeat position="north" player={players.north} isTurn={raw.turn === "north"} isYou={youPosition === "north"} onClick={() => setProfileOpen("north")} />
+            <SpadesSeat position="east"  player={players.east}  isTurn={raw.turn === "east"}  isYou={youPosition === "east"}  onClick={() => setProfileOpen("east")} />
+            <SpadesSeat position="west"  player={players.west}  isTurn={raw.turn === "west"}  isYou={youPosition === "west"}  onClick={() => setProfileOpen("west")} />
+          </SpadesTable>
+          {/* Centre pile: draw pile stub + discard top */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 flex items-center gap-3 pointer-events-none">
+            <div className="relative">
+              <div className="w-12 h-16 md:w-14 md:h-20 rounded-md bg-gradient-to-br from-fuchsia-700 to-purple-950 border-2 border-fuchsia-300/60 shadow-lg flex items-center justify-center">
+                <span className="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-fuchsia-200 -rotate-90">VIBEZ</span>
+              </div>
+              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-slate-900/90 border border-fuchsia-400/50 text-[9px] font-bold text-fuchsia-200 tabular-nums">
+                ×{raw.draw_pile_count}
+              </div>
+            </div>
+            <AnimatePresence mode="popLayout">
+              <motion.div
+                key={`${raw.top_card.color}-${raw.top_card.value}`}
+                initial={{ scale: 0.6, opacity: 0, rotate: -15 }}
+                animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                exit={{ scale: 0.4, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 240, damping: 22 }}
+                className="relative"
+                data-testid="uno-top-card"
+              >
+                <UnoCardFace card={raw.top_card} />
+                {raw.top_card.kind === "wild" ? (
+                  <div className={`absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full ${COLOR_CLASSES[raw.pending_color].chip} text-white text-[8px] font-black uppercase tracking-[0.25em] shadow-lg border border-white/20`} data-testid="uno-declared-color">
+                    {raw.pending_color}
+                  </div>
+                ) : null}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+          <SpadesDealingAnimation active={dealing} />
+        </div>
+      }
+      hand={
         <div className="px-3 md:px-4 pb-3 md:pb-4 relative z-30">
           {/* Hand strip */}
           <div className="flex flex-wrap justify-center gap-1.5 mb-3" data-testid="uno-hand-strip">
@@ -494,8 +499,8 @@ export default function UnoAAA() {
             </motion.div>
           ) : null}
         </div>
-      </div>
-
+      }
+    >
       <UnoColorModal open={pendingWild !== null} busy={busy} onPick={finalizeWild} />
 
       {/* Wild Draw Four challenge modal — appears when the prior player
@@ -548,6 +553,6 @@ export default function UnoAAA() {
 
       <SpadesPlayerProfile open={profileOpen !== null} position={profileOpen} player={profileOpen ? players[profileOpen] : null} isYou={profileOpen === youPosition} onClose={() => setProfileOpen(null)} />
       <SpadesCommunityChat open={chatOpen} gameId={`uno-${raw.user_position}`} mode="ai" onClose={() => setChatOpen(false)} />
-    </div>
+    </LegacyPlayShell>
   );
 }
