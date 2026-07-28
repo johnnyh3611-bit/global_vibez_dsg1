@@ -149,7 +149,7 @@ export function TurnIndicator({
         transition={{ type: 'spring', stiffness: 220, damping: 20 }}
         data-testid="turn-indicator"
         data-role={role}
-        className={`sticky top-2 z-30 mx-auto max-w-md mb-3 ${className}`}
+        className={`relative z-20 mx-auto max-w-md mb-1 sm:mb-2 ${className}`}
       >
         <div
           className={`relative overflow-hidden rounded-full border-2 ${

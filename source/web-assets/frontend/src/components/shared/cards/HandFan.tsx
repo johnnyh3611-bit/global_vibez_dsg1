@@ -51,11 +51,25 @@ export function HandFan<T extends PlayingCard & { meld_id?: number; in_meld?: bo
   const [vw, setVw] = useState(() =>
     typeof window !== "undefined" ? window.innerWidth : 1024,
   );
+  const [vh, setVh] = useState(() =>
+    typeof window !== "undefined" ? window.innerHeight : 800,
+  );
   useEffect(() => {
-    const onResize = () => setVw(window.innerWidth);
+    const onResize = () => {
+      setVw(window.innerWidth);
+      setVh(window.innerHeight);
+    };
     window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+    window.addEventListener("orientationchange", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("orientationchange", onResize);
+    };
   }, []);
+
+  const shortViewport = vh > 0 && vh < 520;
+  const handMinHeight = shortViewport ? 72 : 130;
+  const handMtClass = shortViewport ? "relative mt-0" : "relative mt-4";
 
   const validKeys = new Set(validPlays.map(cardKey));
   const selected = new Set(selectedKeys);
@@ -129,9 +143,9 @@ export function HandFan<T extends PlayingCard & { meld_id?: number; in_meld?: bo
   if (mode === "meld" && showMeldLabels) {
     const { groups } = groupByMeld(hand);
     return (
-      <div className="relative mt-4" style={{ minHeight: 130 }} data-testid={testId}>
+      <div className={handMtClass} style={{ minHeight: handMinHeight }} data-testid={testId}>
         {hideTurnIndicator ? null : (
-          <div className="text-center mb-2">
+          <div className={`text-center ${shortViewport ? "mb-0.5" : "mb-2"}`}>
             <span
               className={`text-[10px] md:text-xs uppercase tracking-[0.3em] font-bold ${
                 isYourTurn ? "text-cyan-300" : "text-purple-300/50"
@@ -145,6 +159,7 @@ export function HandFan<T extends PlayingCard & { meld_id?: number; in_meld?: bo
           {groups.map((g) => {
             const layout = calculateHandArcLayout({
               viewportWidth: Math.min(vw, 320),
+              viewportHeight: vh,
               handSize: g.cards.length,
             });
             return (
@@ -190,13 +205,14 @@ export function HandFan<T extends PlayingCard & { meld_id?: number; in_meld?: bo
   const displayHand = sortHand(hand, mode === "meld" ? "meld" : mode);
   const layout = calculateHandArcLayout({
     viewportWidth: vw,
+    viewportHeight: vh,
     handSize: displayHand.length,
   });
 
   return (
-    <div className="relative mt-4" style={{ minHeight: 130 }} data-testid={testId}>
+    <div className={handMtClass} style={{ minHeight: handMinHeight }} data-testid={testId}>
       {hideTurnIndicator ? null : (
-        <div className="text-center mb-2">
+        <div className={`text-center ${shortViewport ? "mb-0.5" : "mb-2"}`}>
           <span
             className={`text-[10px] md:text-xs uppercase tracking-[0.3em] font-bold ${
               isYourTurn ? "text-cyan-300" : "text-purple-300/50"

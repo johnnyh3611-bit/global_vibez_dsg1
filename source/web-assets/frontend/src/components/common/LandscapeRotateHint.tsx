@@ -87,9 +87,14 @@ export default function LandscapeRotateHint() {
           data-testid="landscape-toggle"
           aria-pressed={forced}
           aria-label={forced ? "Disable forced landscape" : "Force landscape orientation"}
-          className="fixed top-14 right-3 z-[54] flex items-center gap-1 px-2 py-0.5 rounded-full
+          className="fixed z-[54] flex items-center gap-1 px-2 py-0.5 rounded-full
                      bg-black/70 hover:bg-black/90 backdrop-blur border border-amber-400/40
                      text-white text-[10px] font-black uppercase tracking-wider transition-colors"
+          style={{
+            // Park under the room-comms rail so the two never overlap HUD/table.
+            top: "max(2.75rem, calc(env(safe-area-inset-top) + 2.35rem))",
+            right: "max(0.5rem, env(safe-area-inset-right))",
+          }}
         >
           <RotateCcw className={`w-3 h-3 ${forced ? "text-amber-300" : "text-white/60"}`} />
           <span className="hidden md:inline text-[9px]">{forced ? "Forced" : orientation}</span>
