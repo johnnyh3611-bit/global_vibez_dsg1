@@ -55,10 +55,10 @@ interface ShootoutOutcome {
 
 const SUIT_SYMBOL: Record<Suit, string> = { S: "♠", H: "♥", D: "♦", C: "♣" };
 const SUIT_COLOR: Record<Suit, string> = {
-  S: "text-neutral-100",
+  S: "text-slate-900",
   H: "text-rose-400",
   D: "text-rose-400",
-  C: "text-neutral-100",
+  C: "text-slate-900",
 };
 
 function CardFace({ card, size = "lg" }: { card: CardT; size?: "sm" | "lg" }) {

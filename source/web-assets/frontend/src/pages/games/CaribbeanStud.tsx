@@ -22,7 +22,7 @@ interface ResolveResult {
 }
 
 const SUIT: Record<string, string> = { S: "♠", H: "♥", D: "♦", C: "♣" };
-const SUIT_COLOR: Record<string, string> = { S: "text-neutral-100", H: "text-rose-400", D: "text-rose-400", C: "text-neutral-100" };
+const SUIT_COLOR: Record<string, string> = { S: "text-slate-900", H: "text-rose-400", D: "text-rose-400", C: "text-slate-900" };
 
 function PlayingCard({ card, hidden }: { card: CardT; hidden?: boolean }) {
   return (

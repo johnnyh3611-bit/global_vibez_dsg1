@@ -9,7 +9,7 @@ import { ArrowLeft, Trophy, RotateCcw } from "lucide-react";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 const SUIT: Record<string, string> = { S: "♠", H: "♥", D: "♦", C: "♣" };
-const SUIT_C: Record<string, string> = { S: "text-neutral-100", H: "text-rose-400", D: "text-rose-400", C: "text-neutral-100" };
+const SUIT_C: Record<string, string> = { S: "text-slate-900", H: "text-rose-400", D: "text-rose-400", C: "text-slate-900" };
 
 interface CardT { rank: string; suit: string; }
 interface DrawResult {
