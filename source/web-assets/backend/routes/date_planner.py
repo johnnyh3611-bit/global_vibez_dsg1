@@ -7,6 +7,52 @@ import os
 
 router = APIRouter(prefix="/planner", tags=["date_planner"])
 
+
+def _fallback_date_plan(restaurant: Dict[str, Any], budget: str) -> Dict[str, Any]:
+    """Curated non-AI itinerary used when the LLM gateway is unavailable —
+    the endpoint used to 500 outright (missing SDK / missing key), which
+    broke the date-planner UI on any deployment without AI keys."""
+    city = restaurant.get("city", "your city")
+    cuisine = ", ".join(restaurant.get("cuisine_type", [])) or "local"
+    budget_costs = {"economy": "$40-50", "moderate": "$90-140", "upscale": "$180-280"}
+    return {
+        "date_title": f"An Evening Around {restaurant['name']}",
+        "total_estimated_cost": budget_costs.get(budget, "$90-140"),
+        "duration": "4-5 hours",
+        "timeline": [
+            {
+                "time": "5:00 PM",
+                "activity": "Golden-hour walk",
+                "location": f"Downtown {city}",
+                "description": "Start with a relaxed stroll and good conversation before dinner.",
+                "duration": "1 hour",
+                "cost": "Free",
+                "why": "Low-pressure way to settle in together before the main event.",
+            },
+            {
+                "time": "8:45 PM",
+                "activity": "Dessert & night views",
+                "location": f"Near {restaurant.get('address', city)}",
+                "description": "Grab dessert or a warm drink nearby and find a spot with a view.",
+                "duration": "1 hour",
+                "cost": "$10-20",
+                "why": "Ends the night on a sweet, unhurried note.",
+            },
+        ],
+        "restaurant_highlight": {
+            "time": "7:00 PM",
+            "name": restaurant["name"],
+            "why_perfect": f"A standout {cuisine} spot with the right ambiance for a date night.",
+            "recommended_dishes": ["Ask your server for the house specialty"],
+            "ambiance_note": ", ".join(restaurant.get("ambiance", [])) or "Warm and inviting",
+        },
+        "tips": [
+            "Book a table in advance for the best seating.",
+            "Put phones away — presence is the best impression.",
+            "Have one backup indoor activity in case of weather.",
+        ],
+    }
+
 @router.post("/generate-date-plan")
 async def generate_date_plan(request: Request) -> Dict[str, Any]:
     """Generate AI-powered date plan with restaurant integration"""
@@ -87,63 +133,68 @@ Generate a complete date itinerary in this JSON format:
   "tips": ["Tip 1", "Tip 2", "Tip 3"]
 }}"""
 
+    # Generate via LLM when available; otherwise degrade to a curated plan
+    # instead of failing the request.
+    date_plan = None
+    ai_generated = False
     try:
-        # Call OpenAI API
         from emergentintegrations.openai import chat_completion
-        
+
         api_key = os.environ.get("EMERGENT_LLM_KEY")
-        if not api_key:
-            raise HTTPException(status_code=500, detail="AI service not configured")
-        
-        response = chat_completion(
-            api_key=api_key,
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "You are a romantic date planning expert. Generate creative, memorable date plans with specific venues and activities."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.8,
-            response_format={"type": "json_object"}
-        )
-        
-        import json
-        date_plan = json.loads(response["choices"][0]["message"]["content"])
-        
-        # Save date plan to database
-        plan_id = f"plan_{uuid.uuid4().hex[:12]}"
-        
-        date_plan_record = {
-            "plan_id": plan_id,
-            "user_id": current_user.user_id,
-            "restaurant_id": restaurant_id,
-            "restaurant_name": restaurant['name'],
-            "location": location or restaurant['city'],
-            "budget": budget,
-            "date_plan": date_plan,
-            "status": "pending",
-            "created_at": datetime.now(timezone.utc).isoformat()
-        }
-        
-        await db.date_plans.insert_one(date_plan_record)
-        
-        return {
-            "plan_id": plan_id,
-            "restaurant": {
-                "restaurant_id": restaurant_id,
-                "name": restaurant['name'],
-                "address": restaurant['address'],
-                "city": restaurant['city'],
-                "cover_photo": restaurant.get('cover_photo'),
-                "cuisine_type": restaurant.get('cuisine_type', []),
-                "ambiance": restaurant.get('ambiance', []),
-                "price_range": restaurant.get('price_range')
-            },
-            "date_plan": date_plan
-        }
-        
+        if api_key:
+            response = chat_completion(
+                api_key=api_key,
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": "You are a romantic date planning expert. Generate creative, memorable date plans with specific venues and activities."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.8,
+                response_format={"type": "json_object"}
+            )
+
+            import json
+            date_plan = json.loads(response["choices"][0]["message"]["content"])
+            ai_generated = True
     except Exception as e:
-        print(f"Error generating date plan: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to generate date plan: {str(e)}")
+        print(f"AI date plan generation unavailable, using curated fallback: {e}")
+
+    if date_plan is None:
+        date_plan = _fallback_date_plan(restaurant, budget)
+
+    # Save date plan to database
+    plan_id = f"plan_{uuid.uuid4().hex[:12]}"
+
+    date_plan_record = {
+        "plan_id": plan_id,
+        "user_id": current_user.user_id,
+        "restaurant_id": restaurant_id,
+        "restaurant_name": restaurant['name'],
+        "location": location or restaurant['city'],
+        "budget": budget,
+        "date_plan": date_plan,
+        "ai_generated": ai_generated,
+        "status": "pending",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+
+    await db.date_plans.insert_one(date_plan_record)
+
+    return {
+        "plan_id": plan_id,
+        "restaurant": {
+            "restaurant_id": restaurant_id,
+            "name": restaurant['name'],
+            "address": restaurant['address'],
+            "city": restaurant['city'],
+            "cover_photo": restaurant.get('cover_photo'),
+            "cuisine_type": restaurant.get('cuisine_type', []),
+            "ambiance": restaurant.get('ambiance', []),
+            "price_range": restaurant.get('price_range')
+        },
+        "date_plan": date_plan,
+        "ai_generated": ai_generated
+    }
 
 
 @router.post("/accept-date-plan/{plan_id}")

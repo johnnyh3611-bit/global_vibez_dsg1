@@ -155,20 +155,22 @@ Criteria for unsafe:
 Keep the vibe check casual but firm."""
         )
         
-        # Get response
+        # Get response — send_message returns a plain string (older SDKs
+        # returned an object with .content, so accept both).
         response = await chat.send_message(user_message)
-        
+        raw = getattr(response, "content", response)
+
         # Parse JSON response
         try:
-            result = json.loads(response.content)
+            result = json.loads(raw)
             return {
                 'safe': result.get('safe', True),
                 'reason': result.get('reason', 'Clean'),
                 'filtered_text': text
             }
-        except json.JSONDecodeError:
-            # Fallback if Claude doesn't return JSON
-            if 'unsafe' in response.content.lower() or 'not safe' in response.content.lower():
+        except (json.JSONDecodeError, TypeError):
+            # Fallback if the model doesn't return JSON
+            if 'unsafe' in str(raw).lower() or 'not safe' in str(raw).lower():
                 return {
                     'safe': False,
                     'reason': "Content flagged by AI moderator",
