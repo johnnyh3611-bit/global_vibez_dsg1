@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/card';
 import { Crown, ArrowLeft } from 'lucide-react';
 import Confetti from 'react-confetti';
 import { useWindowSize } from 'react-use';
+import { getMpUserId } from '@/utils/mpIdentity';
 
 const ROWS = 19;
 const COLS = 18;
@@ -19,7 +20,7 @@ export default function HttpMultiplayerConnect4() {
   const { gameId: urlGameId } = useParams();
   const { width, height } = useWindowSize();
   
-  const [userId] = useState(() => localStorage.getItem('mp_user_id') || 'user_' + Math.random().toString(36).substr(2, 9));
+  const [userId] = useState(() => getMpUserId());
   const [userName] = useState(() => localStorage.getItem('mp_user_name') || 'Player');
 
   const {

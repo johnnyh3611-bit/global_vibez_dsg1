@@ -16,10 +16,11 @@ interface ThrowResult {
 
 export default function VibesDarts() {
   const nav = useNavigate();
-  const [stake, setStake] = useState(10);
+  const [stake, setStake] = useState(50);
   const [throwPos, setThrowPos] = useState<{ x: number; y: number } | null>(null);
   const [result, setResult] = useState<ThrowResult | null>(null);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const throwDart = useCallback(async (e: React.MouseEvent<HTMLDivElement>) => {
     if (busy) return;
@@ -34,15 +35,26 @@ export default function VibesDarts() {
     setThrowPos({ x, y });
     setBusy(true);
     setResult(null);
-    const res: ThrowResult = await fetch(`${API}/api/games/vibes-darts/throw`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ distance_from_bullseye: dist, stake }),
-    }).then(r => r.json());
-    setResult(res);
-    setBusy(false);
+    setError(null);
+    try {
+      const res: ThrowResult = await fetch(`${API}/api/games/vibes-darts/throw`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ distance_from_bullseye: dist, stake }),
+      }).then(r => r.json());
+      if ((res as any)?.detail) {
+        const d = (res as any).detail;
+        setError(typeof d === "string" ? d : "Throw rejected — check your stake.");
+      } else {
+        setResult(res);
+      }
+    } catch {
+      setError("Throw failed — please try again.");
+    } finally {
+      setBusy(false);
+    }
   }, [stake, busy]);
 
-  const reset = () => { setThrowPos(null); setResult(null); };
+  const reset = () => { setThrowPos(null); setResult(null); setError(null); };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-emerald-950/15 to-black text-white" data-testid="darts-page">
@@ -85,12 +97,18 @@ export default function VibesDarts() {
             <label className="flex flex-col text-xs">
               <span className="text-neutral-400 uppercase">Stake</span>
               <select value={stake} onChange={e => setStake(parseFloat(e.target.value))} disabled={busy} data-testid="darts-stake" className="mt-1 bg-black border border-white/20 rounded-lg px-3 py-2 font-mono">
-                {[5, 10, 25, 50, 100].map(n => <option key={n} value={n}>₵{n}</option>)}
+                {[50, 100, 250, 500].map(n => <option key={n} value={n}>₵{n}</option>)}
               </select>
             </label>
             <button onClick={reset} disabled={busy} data-testid="darts-reset-btn" className="ml-auto px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-xs font-bold uppercase tracking-widest">Reset</button>
           </div>
         </div>
+
+        {error && (
+          <div className="rounded-xl border border-rose-500/40 bg-rose-950/20 px-4 py-3 text-sm text-rose-200" data-testid="darts-error">
+            {error}
+          </div>
+        )}
 
         <AnimatePresence>
           {result && (

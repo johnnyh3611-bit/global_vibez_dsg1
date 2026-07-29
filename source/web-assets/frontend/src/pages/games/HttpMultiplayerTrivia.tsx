@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useHttpMultiplayer } from '@/hooks/useHttpMultiplayer';
@@ -10,13 +10,14 @@ import { Card } from '@/components/ui/card';
 import { Crown, ArrowLeft, Zap, Clock } from 'lucide-react';
 import Confetti from 'react-confetti';
 import { useWindowSize } from 'react-use';
+import { getMpUserId } from '@/utils/mpIdentity';
 
 export default function HttpMultiplayerTrivia() {
   const navigate = useNavigate();
   const { gameId: urlGameId } = useParams();
   const { width, height } = useWindowSize();
   
-  const [userId] = useState(() => localStorage.getItem('mp_user_id') || 'user_' + Math.random().toString(36).substr(2, 9));
+  const [userId] = useState(() => getMpUserId());
   const [userName] = useState(() => localStorage.getItem('mp_user_name') || 'Player');
 
   const {
@@ -83,14 +84,20 @@ export default function HttpMultiplayerTrivia() {
     
     const isCorrect = answer === currentQuestion.correct_answer;
     const timeTaken = 15 - timeRemaining;
-    
+
+    // Advance to the next question from the server-generated deck —
+    // nulling current_question used to stall the match after one answer.
+    const questions = gameState.game_state.questions || [];
+    const nextQuestion = questions[questionIndex + 1] ?? null;
+
     await makeMove({
       answer,
       question_index: questionIndex,
       is_correct: isCorrect,
       time_taken: timeTaken
     }, {
-      current_question: null,
+      ...gameState.game_state,
+      current_question: nextQuestion,
       question_index: questionIndex + 1,
       player_scores: {
         ...gameState.game_state.player_scores,
@@ -118,14 +125,21 @@ export default function HttpMultiplayerTrivia() {
     }
   };
 
-  const getShuffledAnswers = () => {
+  // Shuffle once per question (memoized) — re-shuffling on every render
+  // made the answer buttons jump around as the timer ticked.
+  const shuffledAnswers = useMemo(() => {
     if (!currentQuestion) return [];
     const answers = [
       currentQuestion.correct_answer,
       ...currentQuestion.incorrect_answers
     ];
-    return answers.sort(() => Math.random() - 0.5);
-  };
+    for (let i = answers.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [answers[i], answers[j]] = [answers[j], answers[i]];
+    }
+    return answers;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentQuestion?.question, questionIndex]);
 
   if (!connected || !gameId || !gameState) {
     return (
@@ -214,7 +228,7 @@ export default function HttpMultiplayerTrivia() {
             <h2 className="text-2xl font-bold mb-6 text-center">{currentQuestion.question}</h2>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {getShuffledAnswers().map((answer, index) => (
+              {shuffledAnswers.map((answer, index) => (
                 <motion.button
                   key={`item-${index}`}
                   whileHover={{ scale: 1.02 }}

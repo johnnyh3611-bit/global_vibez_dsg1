@@ -12,6 +12,7 @@ import { useWindowSize } from 'react-use';
 import GameRulesModal from '@/components/GameRulesModal';
 import { GAME_RULES } from '@/config/gameRules';
 import { useGameSounds } from '@/hooks/useGameSounds';
+import { getMpUserId } from '@/utils/mpIdentity';
 
 const ParcheesiToken = ({ color, onClick, playable }: { color: string; onClick?: () => void; playable?: boolean }) => (
   <motion.div
@@ -39,10 +40,10 @@ export default function HttpMultiplayerParcheesi() {
   const { gameId: urlGameId } = useParams();
   const { width, height } = useWindowSize();
   
-  const [userId] = useState(() => localStorage.getItem('mp_user_id') || 'user_' + Math.random().toString(36).substr(2, 9));
+  const [userId] = useState(() => getMpUserId());
   const [userName] = useState(() => localStorage.getItem('mp_user_name') || 'Player');
 
-  const { connected, gameId, gameState, isMyTurn, opponent, error, makeMove, endGame, leaveGame, clearError } = useHttpMultiplayer(userId, userName, urlGameId);
+  const { connected, gameId, gameState, isMyTurn, opponent, error, makeMove, rollDice, endGame, leaveGame, clearError } = useHttpMultiplayer(userId, userName, urlGameId);
 
   const [showConfetti, setShowConfetti] = useState(false);
   const [showRules, setShowRules] = useState(false);
@@ -74,10 +75,16 @@ export default function HttpMultiplayerParcheesi() {
     
     sounds.playDiceRoll();
     
-    const roll = Math.floor(Math.random() * 6) + 1;
+    // Server-authoritative roll — browser dice were trivially cheatable.
+    const dice = await rollDice(1);
+    if (!dice) return;
+    const roll = dice[0];
     setDiceValue(roll);
     
-    await makeMove({ action: 'roll', value: roll }, gameState.game_state);
+    await makeMove({ action: 'roll', value: roll }, {
+      ...gameState.game_state,
+      last_roll: { by: myRole, value: roll },
+    });
   };
 
   const handleMoveToken = async (tokenIndex) => {

@@ -21,23 +21,39 @@ export default function JacksOrBetter() {
   const nav = useNavigate();
   const [paytable, setPaytable] = useState<Record<string, number>>({});
   const [hand, setHand] = useState<CardT[] | null>(null);
+  const [dealId, setDealId] = useState<string | null>(null);
   const [holds, setHolds] = useState<Set<number>>(new Set());
-  const [stake, setStake] = useState(5);
+  const [stake, setStake] = useState(50);
   const [phase, setPhase] = useState<"idle" | "drawing" | "resolved">("idle");
   const [result, setResult] = useState<DrawResult | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`${API}/api/games/jacks-or-better/constants`).then(r => r.json()).then(d => setPaytable(d.paytable));
   }, []);
 
   const deal = useCallback(async () => {
-    const res = await fetch(`${API}/api/games/jacks-or-better/deal`, {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: "{}",
-    }).then(r => r.json());
-    setHand(res.hand);
-    setHolds(new Set());
-    setResult(null);
-    setPhase("drawing");
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API}/api/games/jacks-or-better/deal`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: "{}",
+      }).then(r => r.json());
+      if ((res as any)?.detail || !res.deal_id) {
+        setError("Deal failed — please try again.");
+        return;
+      }
+      setHand(res.hand);
+      setDealId(res.deal_id);
+      setHolds(new Set());
+      setResult(null);
+      setPhase("drawing");
+    } catch {
+      setError("Deal failed — please try again.");
+    } finally {
+      setBusy(false);
+    }
   }, []);
 
   const toggleHold = (i: number) => {
@@ -50,15 +66,30 @@ export default function JacksOrBetter() {
   };
 
   const draw = useCallback(async () => {
-    if (!hand) return;
-    const res: DrawResult = await fetch(`${API}/api/games/jacks-or-better/draw`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ initial: hand, hold_indices: [...holds], stake }),
-    }).then(r => r.json());
-    setResult(res);
-    setHand(res.final_hand);
-    setPhase("resolved");
-  }, [hand, holds, stake]);
+    if (!hand || !dealId) return;
+    setBusy(true);
+    setError(null);
+    try {
+      // The dealt hand is referenced by deal_id — the server keeps the
+      // authoritative cards so they can't be swapped between deal and draw.
+      const res: DrawResult = await fetch(`${API}/api/games/jacks-or-better/draw`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deal_id: dealId, hold_indices: [...holds], stake }),
+      }).then(r => r.json());
+      if ((res as any)?.detail) {
+        const d = (res as any).detail;
+        setError(typeof d === "string" ? d : "Draw failed — please deal a new hand.");
+        return;
+      }
+      setResult(res);
+      setHand(res.final_hand);
+      setPhase("resolved");
+    } catch {
+      setError("Draw failed — please try again.");
+    } finally {
+      setBusy(false);
+    }
+  }, [hand, dealId, holds, stake]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-violet-950/20 to-black text-white" data-testid="jacks-page">
@@ -103,17 +134,23 @@ export default function JacksOrBetter() {
             <label className="flex flex-col text-xs">
               <span className="text-neutral-400 uppercase">Stake</span>
               <select value={stake} onChange={e => setStake(parseFloat(e.target.value))} disabled={phase !== "idle" && phase !== "resolved"} data-testid="jacks-stake" className="mt-1 bg-black border border-white/20 rounded-lg px-3 py-2 font-mono">
-                {[1, 5, 10, 25, 50].map(n => <option key={n} value={n}>₵{n}</option>)}
+                {[50, 100, 250, 500].map(n => <option key={n} value={n}>₵{n}</option>)}
               </select>
             </label>
             {phase !== "drawing" && (
-              <button onClick={deal} data-testid="jacks-deal-btn" className="ml-auto px-5 py-2.5 rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-black tracking-wide hover:brightness-110">DEAL</button>
+              <button onClick={deal} disabled={busy} data-testid="jacks-deal-btn" className="ml-auto px-5 py-2.5 rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-black tracking-wide hover:brightness-110 disabled:opacity-50">DEAL</button>
             )}
             {phase === "drawing" && (
-              <button onClick={draw} data-testid="jacks-draw-btn" className="ml-auto px-5 py-2.5 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-black font-black tracking-wide hover:brightness-110">DRAW ({holds.size} held)</button>
+              <button onClick={draw} disabled={busy} data-testid="jacks-draw-btn" className="ml-auto px-5 py-2.5 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-black font-black tracking-wide hover:brightness-110 disabled:opacity-50">DRAW ({holds.size} held)</button>
             )}
           </div>
         </div>
+
+        {error && (
+          <div className="rounded-xl border border-rose-500/40 bg-rose-950/20 px-4 py-3 text-sm text-rose-200" data-testid="jacks-error">
+            {error}
+          </div>
+        )}
 
         {result && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
@@ -129,7 +166,7 @@ export default function JacksOrBetter() {
               <div><div className="text-[10px] text-neutral-500">TAX</div><b className="text-yellow-300">₵{result.tax.toFixed(2)}</b></div>
               <div><div className="text-[10px] text-neutral-500">NET</div><b className={result.net >= 0 ? "text-emerald-300" : "text-rose-300"}>₵{result.net.toFixed(2)}</b></div>
             </div>
-            <button onClick={() => { setHand(null); setHolds(new Set()); setResult(null); setPhase("idle"); }} data-testid="jacks-new-btn" className="mt-3 w-full py-2 rounded-full bg-white/10 hover:bg-white/20 font-bold flex items-center justify-center gap-2"><RotateCcw className="w-3 h-3" /> New Hand</button>
+            <button onClick={() => { setHand(null); setDealId(null); setHolds(new Set()); setResult(null); setPhase("idle"); }} data-testid="jacks-new-btn" className="mt-3 w-full py-2 rounded-full bg-white/10 hover:bg-white/20 font-bold flex items-center justify-center gap-2"><RotateCcw className="w-3 h-3" /> New Hand</button>
           </motion.div>
         )}
 

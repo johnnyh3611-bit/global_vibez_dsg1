@@ -10,13 +10,14 @@ import { Crown, ArrowLeft } from 'lucide-react';
 import Confetti from 'react-confetti';
 import HoloPiece from '@/components/games/HoloBoard/HoloPiece';
 import { useWindowSize } from 'react-use';
+import { getMpUserId } from '@/utils/mpIdentity';
 
 export default function HttpMultiplayerChess() {
   const navigate = useNavigate();
   const { gameId: urlGameId } = useParams();
   const { width, height } = useWindowSize();
   
-  const [userId] = useState(() => localStorage.getItem('mp_user_id') || 'user_' + Math.random().toString(36).substr(2, 9));
+  const [userId] = useState(() => getMpUserId());
   const [userName] = useState(() => localStorage.getItem('mp_user_name') || 'Player');
 
   const {

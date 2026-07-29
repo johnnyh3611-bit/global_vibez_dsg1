@@ -12,8 +12,9 @@ import cardSoundManager from "@/utils/cardSoundManager";
 const API = process.env.REACT_APP_BACKEND_URL;
 
 interface CardT { rank: string; suit: string; }
-interface DealResult { player_hand: CardT[]; dealer_hand: CardT[]; }
+interface DealResult { round_id: string; player_hand: CardT[]; dealer_upcard: CardT; }
 interface ResolveResult {
+  dealer_hand: CardT[];
   player_category: string; dealer_category: string;
   dealer_qualifies: boolean; folded: boolean;
   ante: number; play_bet: number; ante_payout: number; play_payout: number;
@@ -46,37 +47,60 @@ export default function CaribbeanStud() {
   const [payouts, setPayouts] = useState<Record<string, number>>({});
   const [dealt, setDealt] = useState<DealResult | null>(null);
   const [phase, setPhase] = useState<"idle" | "decision" | "resolved">("idle");
-  const [ante, setAnte] = useState(10.0);
+  const [ante, setAnte] = useState(50);
   const [showDealer, setShowDealer] = useState(false);
   const [resolved, setResolved] = useState<ResolveResult | null>(null);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`${API}/api/games/caribbean-stud/constants`).then(r => r.json()).then(d => setPayouts(d.payout_table));
   }, []);
 
   const newDeal = useCallback(async () => {
-    setBusy(true); setResolved(null); setShowDealer(false);
-    const res: DealResult = await fetch(`${API}/api/games/caribbean-stud/deal`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({}),
-    }).then(r => r.json());
-    setDealt(res);
-    setPhase("decision");
-    setBusy(false);
+    setBusy(true); setResolved(null); setShowDealer(false); setError(null);
+    try {
+      // The dealer's hole cards stay server-side; only the upcard is
+      // revealed until showdown (round_id references the stored hands).
+      const res: DealResult = await fetch(`${API}/api/games/caribbean-stud/deal`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      }).then(r => r.json());
+      if ((res as any)?.detail || !res.round_id) {
+        setError("Deal failed — please try again.");
+        return;
+      }
+      setDealt(res);
+      setPhase("decision");
+    } catch {
+      setError("Deal failed — please try again.");
+    } finally {
+      setBusy(false);
+    }
   }, []);
 
   const resolve = useCallback(async (raise_play: boolean) => {
     if (!dealt) return;
     setBusy(true);
-    const res: ResolveResult = await fetch(`${API}/api/games/caribbean-stud/resolve`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ player_hand: dealt.player_hand, dealer_hand: dealt.dealer_hand, ante, raise_play }),
-    }).then(r => r.json());
-    setResolved(res);
-    setShowDealer(true);
-    setPhase("resolved");
-    setBusy(false);
+    setError(null);
+    try {
+      const res: ResolveResult = await fetch(`${API}/api/games/caribbean-stud/resolve`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ round_id: dealt.round_id, ante, raise_play }),
+      }).then(r => r.json());
+      if ((res as any)?.detail) {
+        const d = (res as any).detail;
+        setError(typeof d === "string" ? d : "Resolve failed — please deal a new hand.");
+        return;
+      }
+      setResolved(res);
+      setShowDealer(true);
+      setPhase("resolved");
+    } catch {
+      setError("Resolve failed — please try again.");
+    } finally {
+      setBusy(false);
+    }
   }, [dealt, ante]);
 
   return (
@@ -112,8 +136,18 @@ export default function CaribbeanStud() {
             {phase !== "idle" && <span className="text-xs text-neutral-400">{showDealer ? (resolved ? `(${resolved.dealer_qualifies ? "Qualifies" : "Doesn't Qualify"} — ${resolved.dealer_category})` : "") : "Hidden"}</span>}
           </div>
           <div className="flex justify-center gap-2">
-            {dealt ? dealt.dealer_hand.map((c, i) => <PlayingCard key={i} card={c} hidden={!showDealer} />) :
-              [...Array(5)].map((_, i) => <div key={i} className="w-16 h-24 rounded-xl border-2 border-white/10" />)}
+            {showDealer && resolved ? (
+              resolved.dealer_hand.map((c, i) => <PlayingCard key={i} card={c} />)
+            ) : dealt ? (
+              <>
+                <PlayingCard card={dealt.dealer_upcard} />
+                {[...Array(4)].map((_, i) => (
+                  <PlayingCard key={`hole-${i}`} card={{ rank: "X", suit: "S" }} hidden />
+                ))}
+              </>
+            ) : (
+              [...Array(5)].map((_, i) => <div key={i} className="w-16 h-24 rounded-xl border-2 border-white/10" />)
+            )}
           </div>
         </div>
 
@@ -128,6 +162,12 @@ export default function CaribbeanStud() {
               [...Array(5)].map((_, i) => <div key={i} className="w-16 h-24 rounded-xl border-2 border-white/10" />)}
           </div>
         </div>
+
+        {error && (
+          <div className="rounded-xl border border-rose-500/40 bg-rose-950/20 px-4 py-3 text-sm text-rose-200" data-testid="cs-error">
+            {error}
+          </div>
+        )}
 
         {/* Controls */}
         <div className="rounded-2xl border border-white/10 bg-black/40 p-5">

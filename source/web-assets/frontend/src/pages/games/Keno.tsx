@@ -19,9 +19,10 @@ interface PlayResult {
 export default function Keno() {
   const nav = useNavigate();
   const [picks, setPicks] = useState<Set<number>>(new Set());
-  const [stake, setStake] = useState(10);
+  const [stake, setStake] = useState(50);
   const [result, setResult] = useState<PlayResult | null>(null);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const togglePick = (n: number) => {
     setResult(null);
@@ -38,12 +39,23 @@ export default function Keno() {
   const play = useCallback(async () => {
     if (picks.size === 0) return;
     setBusy(true);
-    const res: PlayResult = await fetch(`${API}/api/games/keno/play`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ picks: [...picks], stake }),
-    }).then(r => r.json());
-    setResult(res);
-    setBusy(false);
+    setError(null);
+    try {
+      const res: PlayResult = await fetch(`${API}/api/games/keno/play`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ picks: [...picks], stake }),
+      }).then(r => r.json());
+      if ((res as any)?.detail) {
+        const d = (res as any).detail;
+        setError(typeof d === "string" ? d : "Draw rejected — check your picks and stake.");
+      } else {
+        setResult(res);
+      }
+    } catch {
+      setError("Draw failed — please try again.");
+    } finally {
+      setBusy(false);
+    }
   }, [picks, stake]);
 
   return (
@@ -99,12 +111,18 @@ export default function Keno() {
           <label className="flex flex-col text-xs">
             <span className="text-neutral-400 uppercase">Stake</span>
             <select value={stake} onChange={e => setStake(parseFloat(e.target.value))} disabled={busy} data-testid="keno-stake-select" className="mt-1 bg-black border border-white/20 rounded-lg px-3 py-2 font-mono">
-              {[5, 10, 25, 50, 100].map(n => <option key={n} value={n}>₵{n}</option>)}
+              {[50, 100, 250, 500].map(n => <option key={n} value={n}>₵{n}</option>)}
             </select>
           </label>
           <button onClick={clear} disabled={busy} data-testid="keno-clear-btn" className="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-xs font-bold flex items-center gap-1"><Eraser className="w-3 h-3" /> CLEAR</button>
           <button onClick={play} disabled={busy || picks.size === 0} data-testid="keno-play-btn" className="ml-auto px-6 py-2.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 text-black font-black tracking-wide hover:brightness-110 disabled:opacity-50">{busy ? "DRAWING…" : "PLAY"}</button>
         </div>
+
+        {error && (
+          <div className="rounded-xl border border-rose-500/40 bg-rose-950/20 px-4 py-3 text-sm text-rose-200" data-testid="keno-error">
+            {error}
+          </div>
+        )}
 
         {result && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}

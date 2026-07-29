@@ -12,6 +12,7 @@ import { useWindowSize } from 'react-use';
 import GameRulesModal from '@/components/GameRulesModal';
 import { GAME_RULES } from '@/config/gameRules';
 import { useGameSounds } from '@/hooks/useGameSounds';
+import { getMpUserId } from '@/utils/mpIdentity';
 
 const Marble = ({ color, onClick, playable, selected }) => (
   <motion.div
@@ -35,7 +36,7 @@ export default function HttpMultiplayerChineseCheckers() {
   const { gameId: urlGameId } = useParams();
   const { width, height } = useWindowSize();
   
-  const [userId] = useState(() => localStorage.getItem('mp_user_id') || 'user_' + Math.random().toString(36).substr(2, 9));
+  const [userId] = useState(() => getMpUserId());
   const [userName] = useState(() => localStorage.getItem('mp_user_name') || 'Player');
 
   const { connected, gameId, gameState, isMyTurn, opponent, error, makeMove, endGame, leaveGame, clearError } = useHttpMultiplayer(userId, userName, urlGameId);

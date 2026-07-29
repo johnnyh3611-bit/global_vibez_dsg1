@@ -23,19 +23,20 @@ import cardSoundManager from "@/utils/cardSoundManager";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 const PAYOUT = 30;
-const MIN_BET = 5;
+const MIN_BET = 50; // ₵50 platform floor
 const MAX_BET = 500;
 
 interface PropResult {
   won: boolean; stake: number; payout_ratio: number;
   gross: number; tax: number; net: number;
+  dice: [number, number];
 }
 
 export default function Craps() {
   const nav = useNavigate();
   const tableCallVideo = useGameTableCallVideo();
   const [prop, setProp] = useState<"snake_eyes" | "boxcars">("snake_eyes");
-  const [stake, setStake] = useState(10);
+  const [stake, setStake] = useState(MIN_BET);
   const [dice, setDice] = useState<[number, number] | null>(null);
   const [result, setResult] = useState<PropResult | null>(null);
   const [rolling, setRolling] = useState(false);
@@ -56,19 +57,17 @@ export default function Craps() {
         setDice([faces[0], faces[1]]);
       }, 2);
 
-      const finalDice: [number, number] = [
-        Math.ceil(Math.random() * 6),
-        Math.ceil(Math.random() * 6),
-      ];
-      setDice(finalDice);
+      // The backend rolls the dice server-side — the client only animates
+      // and then settles on the authoritative roll from the response.
       const res: PropResult = await fetch(`${API}/api/games/craps/prop`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prop, dice_roll: finalDice, stake }),
+        body: JSON.stringify({ prop, stake }),
       }).then((r) => r.json());
       if ((res as any)?.detail) {
         notifyBetError(String((res as any).detail));
       } else {
+        setDice([res.dice[0], res.dice[1]]);
         setResult(res);
       }
     } catch {

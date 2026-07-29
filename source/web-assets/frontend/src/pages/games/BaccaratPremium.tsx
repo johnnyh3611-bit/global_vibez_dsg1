@@ -30,7 +30,9 @@ import { CardSqueeze, ChipToss } from "@/components/games/CasinoCinematics";
 import type { SpadesCard as CardData, StatusMessage } from "@/components/spades/types";
 
 const API = process.env.REACT_APP_BACKEND_URL;
-const CHIP_VALUES = [5, 10, 25, 50, 100, 500];
+// ₵50 platform minimum bet — chips below the floor produced guaranteed
+// "Minimum bet is ₵50" rejections from the backend.
+const CHIP_VALUES = [50, 100, 250, 500, 1000];
 
 type BetZone = "player" | "banker" | "tie";
 
@@ -142,7 +144,7 @@ export default function BaccaratPremium() {
   const navigate = useNavigate();
   const safeTimeout = useSafeTimeout();
   const [credits, setCredits] = useState<number>(0);
-  const [selectedChip, setSelectedChip] = useState<number>(25);
+  const [selectedChip, setSelectedChip] = useState<number>(50);
   const [bets, setBets] = useState<Record<BetZone, number>>({ player: 0, banker: 0, tie: 0 });
   const [phase, setPhase] = useState<"betting" | "dealing" | "result">("betting");
   const [playerHand, setPlayerHand] = useState<CardData[]>([]);
@@ -226,9 +228,18 @@ export default function BaccaratPremium() {
   // ─── deal ───────────────────────────────────────────────────────────
   const deal = async () => {
     if (totalBet === 0) { flash("Place a bet first", "rose"); return; }
-    // Determine primary bet (highest amount; player wins ties)
-    const ranked = (Object.entries(bets) as [BetZone, number][]).sort((a, b) => b[1] - a[1]);
-    const [primaryZone, primaryAmount] = ranked[0];
+    // One wager per hand — the backend settles a single bet_type, so chips
+    // spread across multiple zones would silently be dropped.
+    const activeZones = (Object.entries(bets) as [BetZone, number][]).filter(([, amt]) => amt > 0);
+    if (activeZones.length > 1) {
+      flash("One bet zone per hand — clear the extras first", "rose", 2400);
+      return;
+    }
+    const [primaryZone, primaryAmount] = activeZones[0];
+    if (primaryAmount < 50) {
+      flash("Minimum bet is ₵50", "rose");
+      return;
+    }
     setBusy(true);
     setPhase("dealing");
     flash("Dealing cards…", "amber", 1500);

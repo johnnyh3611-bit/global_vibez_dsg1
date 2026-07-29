@@ -128,6 +128,7 @@ export default function CardMpRoomPage() {
     engine?.bid_turn === mySeat ||
     (engine?.phase === 'naming_trump' && engine?.high_bidder === mySeat);
   const phase = engine?.phase ?? (room?.status === 'WAITING' ? 'waiting' : 'unknown');
+  const backRoute = gameType === 'euchre' ? '/euchre' : '/pinochle';
 
   // ----- Actions ------------------------------------------------------------
   const call = async (path: string, body: unknown = {}) => {
@@ -149,6 +150,19 @@ export default function CardMpRoomPage() {
   const bid = (payload: Record<string, unknown>) =>
     call(`/api/card-multiplayer/room/${roomId}/bid`, { user_id: userId, ...payload });
   const nextHand = () => call(`/api/card-multiplayer/room/${roomId}/next-hand`);
+  const leaveRoom = async () => {
+    // Free the seat server-side before navigating away — otherwise the
+    // room stays "full" forever and blocks other players from joining.
+    try {
+      await apiPost(`/api/card-multiplayer/room/${roomId}/leave`, {
+        user_id: userId,
+        user_name: userName,
+      });
+    } catch {
+      /* best-effort — never block navigation on the leave call */
+    }
+    navigate(backRoute);
+  };
   const copyCode = async () => {
     if (!room?.room_code) return;
     try {
@@ -177,8 +191,6 @@ export default function CardMpRoomPage() {
     );
   }
 
-  const backRoute = gameType === 'euchre' ? '/euchre' : '/pinochle';
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-950 via-black to-emerald-900 text-white" data-testid={`card-mp-room-${gameType}`}>
       {/* header */}
@@ -196,11 +208,11 @@ export default function CardMpRoomPage() {
         <div className="flex gap-2">
           <button
             type="button"
-            onClick={() => navigate(backRoute)}
+            onClick={leaveRoom}
             data-testid="card-mp-back"
             className="flex items-center gap-1 px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-sm"
           >
-            <ArrowLeft className="w-4 h-4" /> AI Practice
+            <ArrowLeft className="w-4 h-4" /> Leave Room
           </button>
         </div>
       </div>

@@ -9,13 +9,14 @@ import { Card } from '@/components/ui/card';
 import { ArrowLeft, MessageCircle, Zap } from 'lucide-react';
 import Confetti from 'react-confetti';
 import { useWindowSize } from 'react-use';
+import { getMpUserId } from '@/utils/mpIdentity';
 
 export default function HttpMultiplayerTruthOrDare() {
   const navigate = useNavigate();
   const { gameId: urlGameId } = useParams();
   const { width, height } = useWindowSize();
   
-  const [userId] = useState(() => localStorage.getItem('mp_user_id') || 'user_' + Math.random().toString(36).substr(2, 9));
+  const [userId] = useState(() => getMpUserId());
   const [userName] = useState(() => localStorage.getItem('mp_user_name') || 'Player');
 
   const { connected, gameId, gameState, isMyTurn, opponent, error, makeMove, endGame, leaveGame, clearError } = useHttpMultiplayer(userId, userName, urlGameId);

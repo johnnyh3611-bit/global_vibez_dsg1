@@ -18,24 +18,36 @@ interface SpinResult {
 
 export default function VibesWheel() {
   const nav = useNavigate();
-  const [stake, setStake] = useState(10);
+  const [stake, setStake] = useState(50);
   const [spinning, setSpinning] = useState(false);
   const [angle, setAngle] = useState(0);
   const [result, setResult] = useState<SpinResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const spin = useCallback(async () => {
-    setSpinning(true); setResult(null);
-    const res: SpinResult = await fetch(`${API}/api/games/vibes-wheel/spin`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ stake }),
-    }).then(r => r.json());
-    // 54 slots → each slot is 360/54 ≈ 6.667°. We spin 5 full rotations + final.
-    const final = -res.slot_index * (360 / 54) - 5 * 360;
-    setAngle(final);
-    setTimeout(() => {
-      setResult(res);
+    setSpinning(true); setResult(null); setError(null);
+    try {
+      const res: SpinResult = await fetch(`${API}/api/games/vibes-wheel/spin`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stake }),
+      }).then(r => r.json());
+      if ((res as any)?.detail || typeof res.slot_index !== "number") {
+        const d = (res as any)?.detail;
+        setError(typeof d === "string" ? d : "Spin rejected — try again.");
+        setSpinning(false);
+        return;
+      }
+      // 54 slots → each slot is 360/54 ≈ 6.667°. We spin 5 full rotations + final.
+      const final = -res.slot_index * (360 / 54) - 5 * 360;
+      setAngle(final);
+      setTimeout(() => {
+        setResult(res);
+        setSpinning(false);
+      }, 4500);
+    } catch {
+      setError("Spin failed — please try again.");
       setSpinning(false);
-    }, 4500);
+    }
   }, [stake]);
 
   return (
@@ -83,7 +95,7 @@ export default function VibesWheel() {
             <label className="flex flex-col text-xs">
               <span className="text-neutral-400 uppercase">Stake</span>
               <select value={stake} onChange={e => setStake(parseFloat(e.target.value))} disabled={spinning} data-testid="vw-stake-select" className="mt-1 bg-black border border-white/20 rounded-lg px-3 py-2 font-mono">
-                {[5, 10, 25, 50, 100].map(n => <option key={n} value={n}>₵{n}</option>)}
+                {[50, 100, 250, 500].map(n => <option key={n} value={n}>₵{n}</option>)}
               </select>
             </label>
             <button onClick={spin} disabled={spinning} data-testid="vw-spin-btn" className="ml-auto px-6 py-2.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-purple-500 text-white font-black tracking-wide hover:brightness-110 disabled:opacity-50">{spinning ? "SPINNING…" : "SPIN"}</button>
@@ -92,6 +104,11 @@ export default function VibesWheel() {
 
         {/* Sidebar / Result */}
         <div className="space-y-4">
+          {error && (
+            <div className="rounded-xl border border-rose-500/40 bg-rose-950/20 px-4 py-3 text-sm text-rose-200" data-testid="vw-error">
+              {error}
+            </div>
+          )}
           <div className="rounded-2xl border border-yellow-500/30 bg-yellow-950/10 p-4">
             <h2 className="text-xs uppercase tracking-widest text-yellow-200 mb-2 flex items-center gap-1"><Flame className="w-3 h-3" /> Sovereign Joker</h2>
             <p className="text-xs text-neutral-300">Hitting slot 0 or slot 27 (the two opposite Sovereign Jokers) pays <b className="text-yellow-300">40:1</b> and triggers a 10% burn event into the DSG treasury.</p>

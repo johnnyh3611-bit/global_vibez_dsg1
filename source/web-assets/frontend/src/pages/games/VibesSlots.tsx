@@ -56,7 +56,8 @@ export default function VibesSlots() {
   const nav = useNavigate();
   const [constants, setConstants] = useState<Constants | null>(null);
   const [jackpot, setJackpot] = useState<number>(0);
-  const [stake, setStake] = useState<number>(1.0);
+  // ₵50 platform minimum — the backend validates stake >= 50.
+  const [stake, setStake] = useState<number>(50);
   const [reels, setReels] = useState<SymbolKey[]>(["cherry", "bell", "diamond", "seven", "wild"]);
   const [rolling, setRolling] = useState(false);
   const [lastResult, setLastResult] = useState<SpinResult | null>(null);
@@ -104,6 +105,13 @@ export default function VibesSlots() {
       await new Promise(r => setTimeout(r, 700));
       clearInterval(rollInterval);
 
+      if ((res as any)?.detail) {
+        // Validation/API error body — don't treat it as a spin result.
+        const detail = (res as any).detail;
+        alert(typeof detail === 'string' ? detail : 'Spin rejected — check your stake.');
+        return;
+      }
+
       setReels(res.reels);
       setLastResult(res);
       setJackpot(res.current_jackpot);
@@ -113,12 +121,13 @@ export default function VibesSlots() {
         setTimeout(() => setShowRain(false), 4000);
       }
     } catch (e) {
-      clearInterval(rollInterval);
       console.error('VibesSlots spin failed', e);
       alert('Spin failed — please try again.');
+    } finally {
+      clearInterval(rollInterval);
+      setRolling(false);
+      setBusy(false);
     }
-    setRolling(false);
-    setBusy(false);
   }, [busy, constants, stake]);
 
   const winningReelIndices = (() => {
@@ -194,7 +203,7 @@ export default function VibesSlots() {
                 data-testid="vibes-slots-stake-select"
                 className="bg-black border border-white/20 rounded-lg px-3 py-2 text-white font-mono"
               >
-                {[0.5, 1, 2, 5, 10, 25].map(n => <option key={n} value={n}>₵{n.toFixed(2)}</option>)}
+                {[50, 100, 250, 500].map(n => <option key={n} value={n}>₵{n.toFixed(2)}</option>)}
               </select>
             </label>
             <button
