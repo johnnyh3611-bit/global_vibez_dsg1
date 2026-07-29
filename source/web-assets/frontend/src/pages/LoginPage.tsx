@@ -14,6 +14,17 @@ import SocialAuthButtons from '@/components/web3/SocialAuthButtons';
 const API = getBackendUrl();
 const BRAND_LOGO = '/assets/logo.png';
 
+/** Tolerate non-JSON error bodies (proxy/HTML 502 pages) instead of
+ *  surfacing a cryptic SyntaxError to the user. */
+function safeParseJson(raw) {
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
+}
+
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -63,7 +74,7 @@ export default function LoginPage() {
       });
 
       const raw = await response.text();
-      const data = raw ? JSON.parse(raw) : {};
+      const data = safeParseJson(raw);
 
       if (!response.ok) {
         throw new Error(data.detail || 'Login failed');
@@ -125,7 +136,7 @@ export default function LoginPage() {
       });
 
       const raw = await response.text();
-      const data = raw ? JSON.parse(raw) : {};
+      const data = safeParseJson(raw);
 
       if (!response.ok) {
         throw new Error(data.detail || 'Age verification failed');

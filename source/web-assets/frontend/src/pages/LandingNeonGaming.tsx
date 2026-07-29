@@ -23,12 +23,16 @@ import LandingFeatureAccordions from '../components/landing/LandingFeatureAccord
 import LandingTourVideo from '../components/landing/LandingTourVideo';
 import LandingPlanet from '../components/landing/LandingPlanet';
 import PageActionStrip from '@/components/common/PageActionStrip';
+import { getBackendUrl } from '@/config/backendUrl';
 
-const API = process.env.REACT_APP_BACKEND_URL;
+// Safe accessor — a raw REACT_APP_BACKEND_URL bakes the literal string
+// "undefined" into fetch URLs when the env var is missing at build time.
+const API = getBackendUrl();
 
 export default function LandingNeonGaming() {
   const navigate = useNavigate();
   const [demoLoading, setDemoLoading] = useState(false);
+  const [demoError, setDemoError] = useState<string | null>(null);
   // PDF §2 "Room Transitions" — when a nav link is hovered, shift the
   // page's ambient background tint to evoke the target room.
   const [hoveredRoom, setHoveredRoom] = useState<RoomKey>(null);
@@ -36,6 +40,7 @@ export default function LandingNeonGaming() {
   const runDemoLogin = async () => {
     if (demoLoading) return;
     setDemoLoading(true);
+    setDemoError(null);
     localStorage.setItem('auth_in_progress', '1');
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000);
@@ -53,14 +58,16 @@ export default function LandingNeonGaming() {
         window.location.href = consumeReturnTo(preferred);
         return;
       }
+      // API reachable but demo login rejected — tell the user instead of
+      // silently dumping them on the sign-in form.
+      setDemoError(data?.detail || 'Demo login is unavailable right now — you can still sign in below.');
     } catch {
-      // fall through to login page
+      setDemoError('Could not reach the server — check your connection and try again, or sign in below.');
     } finally {
       clearTimeout(timeoutId);
       localStorage.removeItem('auth_in_progress');
       setDemoLoading(false);
     }
-    navigate('/login');
   };
 
   const ROOM_TINT: Record<Exclude<RoomKey, null>, string> = {
@@ -73,7 +80,7 @@ export default function LandingNeonGaming() {
     <div className="min-h-screen bg-black relative overflow-x-hidden">
       {/* AAA-game-style landing nav. Founder directive 2026-02-09:
           NO STICK — header just scrolls away with the page. */}
-      <LandingHeaderEnhanced onRoomHover={setHoveredRoom} />
+      <LandingHeaderEnhanced onRoomHover={setHoveredRoom} onDemoLogin={runDemoLogin} demoLoading={demoLoading} />
 
       {/* PDF §2 — room-transition tint overlay. Non-interactive; only
           fades in when a nav link is hovered. Stays fixed because it
@@ -405,6 +412,15 @@ export default function LandingNeonGaming() {
               </button>
             </motion.div>
 
+            {demoError && (
+              <div
+                data-testid="landing-demo-error"
+                className="mb-6 rounded-lg border border-rose-500/50 bg-rose-950/40 px-4 py-3 text-sm text-rose-200"
+              >
+                {demoError}
+              </div>
+            )}
+
             {/* Core loop shortcuts — what you can do today */}
             <div
               className="grid grid-cols-2 gap-3 mt-6"
@@ -647,7 +663,7 @@ export default function LandingNeonGaming() {
                 safety protocol.
               </p>
               <div className="flex flex-wrap gap-2 text-xs">
-                {['Local Sponsors', 'Hunger Vibez', 'DSG Guard', 'Geo-Pinned'].map(t => (
+                {['Local Sponsors', 'Hungry Vibez', 'DSG Guard', 'Geo-Pinned'].map(t => (
                   <span key={t} className="px-2 py-1 rounded-full bg-[#FF8A1F]/10 text-[#FF8A1F] font-bold">{t}</span>
                 ))}
               </div>
