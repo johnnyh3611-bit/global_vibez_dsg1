@@ -195,7 +195,9 @@ class BaccaratGame:
                 return bet_amount * 2  # 1:1 (original + winnings)
             elif bet_type == 'banker':
                 winnings = bet_amount * 0.95  # 5% commission
-                return int(bet_amount + winnings)
+                # Round half-up instead of truncating so a ₵50 win pays
+                # ₵98 (50 + 47.5 → 98), not a silently-floored ₵97.
+                return int(round(bet_amount + winnings))
             elif bet_type == 'tie':
                 return bet_amount * 9  # 8:1 (original + 8x winnings)
         elif bet_type == 'tie' and self.winner != 'tie':

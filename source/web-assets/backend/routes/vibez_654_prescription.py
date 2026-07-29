@@ -438,15 +438,28 @@ async def play_vibez_654(request: PlayRequest) -> Dict[str, Any]:
         raise HTTPException(400, "Insufficient balance")
 
     # Deduct bet + insurance from whichever wallet the user actually has.
-    async def _wallet_inc(delta: float) -> None:
+    # The debit is conditional ($gte filter) so two concurrent plays can
+    # never double-spend the same balance.
+    async def _wallet_inc(delta: float) -> bool:
         if wallet_field == "wallets.balance":
-            await db.wallets.update_one({"user_id": request.user_id}, {"$inc": {"balance": delta}})
+            query: Dict[str, Any] = {"user_id": request.user_id}
+            if delta < 0:
+                query["balance"] = {"$gte": -delta}
+            res = await db.wallets.update_one(query, {"$inc": {"balance": delta}})
         elif wallet_field == "users.token_balance":
-            await db.users.update_one({"user_id": request.user_id}, {"$inc": {"credits_balance": delta}})
+            query = {"user_id": request.user_id}
+            if delta < 0:
+                query["token_balance"] = {"$gte": -delta}
+            res = await db.users.update_one(query, {"$inc": {"token_balance": delta}})
         else:
-            await db.users.update_one({"user_id": request.user_id}, {"$inc": {"credits_balance": delta}})
+            query = {"user_id": request.user_id}
+            if delta < 0:
+                query["credits_balance"] = {"$gte": -delta}
+            res = await db.users.update_one(query, {"$inc": {"credits_balance": delta}})
+        return res.modified_count > 0
 
-    await _wallet_inc(-total_bet)
+    if not await _wallet_inc(-total_bet):
+        raise HTTPException(400, "Insufficient balance")
     
     # Initialize game state for this turn
     has_6 = False
@@ -516,20 +529,45 @@ async def play_vibez_654(request: PlayRequest) -> Dict[str, Any]:
     table_pot = request.main_bet
     house_rake = 0  # No house rake on 1:1 payouts
     
-    # Calculate side bet + insurance payouts
+    # Calculate side bet + insurance payouts. Side bets settle immediately;
+    # the MAIN bet does NOT — a qualified player still chooses to reroll or
+    # stand, and the 1:1 main-bet payout is settled exactly once by /stand.
+    # (The old code paid 2× here AND left the dice_sessions insert after an
+    # unconditional return, so /stand and /reroll always 404'd — and would
+    # have paid a second time if the session had existed.)
     side_bet_payout = sum(r["payout"] + r.get("insurance_payout", 0) for r in side_bet_results)
-    
-    # If qualified, player wins 1:1 (bet $10, win $10 profit, get $20 back total)
-    if result["qualified"]:
-        winner_payout = table_pot * 2  # Return bet + equal winnings (1:1 payout)
-        await _wallet_inc(winner_payout + side_bet_payout)
-        total_won = winner_payout + side_bet_payout
-    else:
-        total_won = side_bet_payout
-        if side_bet_payout > 0:
-            await _wallet_inc(side_bet_payout)
-    
-    # Save game to database
+    if side_bet_payout > 0:
+        await _wallet_inc(side_bet_payout)
+    total_won = side_bet_payout
+    winner_payout = table_pot * 2 if result["qualified"] else 0
+
+    # Live session — /reroll-point-dice and /stand act on this document.
+    session_doc = {
+        "roll_id": roll_id,
+        "user_id": request.user_id,
+        "table_id": request.table_id,
+        "main_bet": request.main_bet,
+        "side_bets": [{"type": sb.type, "amount": sb.amount} for sb in request.side_bets],
+        "dice_roll": all_rolls[-1] if all_rolls else [],
+        "all_rolls": all_rolls,
+        "qualified": result["qualified"],
+        "point_dice": result["point_dice"],
+        "point_score": result["point_score"],
+        "locked_numbers": result["locked_numbers"],
+        "dealer_personality": request.dealer_personality,
+        "nova_message": nova_response["message"],
+        "nova_mood": nova_response["mood"],
+        "side_bet_results": side_bet_results,
+        "dealer_envy_total": dealer_envy_total,
+        "timestamp": datetime.now(timezone.utc),
+        "status": "QUALIFIED" if result["qualified"] else "COMPLETE",
+        "rolls_used": roll_number,
+        "final_score": None if result["qualified"] else result["point_score"],
+        "payout": total_won,
+    }
+    await db.dice_sessions.insert_one(session_doc)
+
+    # Round log (analytics/history)
     game_doc = {
         "roll_id": roll_id,
         "user_id": request.user_id,
@@ -549,7 +587,7 @@ async def play_vibez_654(request: PlayRequest) -> Dict[str, Any]:
         "payout": total_won,
         "dealer_personality": request.dealer_personality,
         "timestamp": datetime.now(timezone.utc),
-        "status": "COMPLETED"
+        "status": "AWAITING_ACTION" if result["qualified"] else "COMPLETED"
     }
     
     await db.vibez654_games.insert_one(game_doc)
@@ -589,71 +627,12 @@ async def play_vibez_654(request: PlayRequest) -> Dict[str, Any]:
         "pot_info": {
             "total_pot": table_pot,
             "house_rake": house_rake,
-            "winner_payout": total_won
+            # Pending 1:1 main-bet payout — settled by /stand.
+            "winner_payout": winner_payout + side_bet_payout
         },
-        "nova_reaction": nova_response
-    }
-    if result["qualified"]:
-        nova = engine.get_nova_response(
-            True, 
-            result["point_score"], 
-            2,  # Rolls remaining
-            "qualification"
-        )
-    else:
-        nova = {
-            "message": f"No qualification yet. Looking for {', '.join(map(str, [n for n in [6,5,4] if n not in result['locked_numbers']]))}.",
-            "mood": "professional"
-        }
-    
-    # Save to database
-    session_doc = {
-        "roll_id": roll_id,
-        "user_id": request.user_id,
-        "table_id": request.table_id,
-        "main_bet": request.main_bet,
-        "side_bets": [bet.dict() for bet in request.side_bets],
-        "dice_roll": all_rolls[0] if all_rolls else [],
-        "qualified": result["qualified"],
-        "point_dice": result["point_dice"],
-        "point_score": result["point_score"],
-        "locked_numbers": result["locked_numbers"],
-        "dealer_personality": request.dealer_personality,
-        "nova_message": nova["message"],
-        "nova_mood": nova["mood"],
-        "side_bet_results": side_bet_results,
-        "dealer_envy_total": dealer_envy_total,
-        "timestamp": datetime.now(timezone.utc),
-        "status": "QUALIFIED" if result["qualified"] else "IN_PROGRESS",
-        "rolls_used": 1,
-        "final_score": None
-    }
-    
-    await db.dice_sessions.insert_one(session_doc)
-    
-    # Pay out side bet winnings immediately
-    side_bet_payout = sum(bet["payout"] for bet in side_bet_results)
-    if side_bet_payout > 0:
-        await _wallet_inc(side_bet_payout)
-    
-    return {
-        "success": True,
-        "roll_id": roll_id,
-        "dice_roll": all_rolls[0] if all_rolls else [],
-        "game_result": {
-            "qualified": result["qualified"],
-            "point_dice": result["point_dice"],
-            "point_score": result["point_score"],
-            "locked_numbers": result["locked_numbers"],
-            "status": "QUALIFIED" if result["qualified"] else "IN_PROGRESS"
-        },
-        "side_bet_results": side_bet_results,
-        "side_bet_payout": side_bet_payout,
-        "dealer_envy_total": dealer_envy_total,
-        "nova_reaction": nova,
         "can_stand": result["qualified"],
-        "can_reroll": result["qualified"],
-        "rolls_left": 2
+        "can_reroll": result["qualified"] and roll_number < max_rolls,
+        "nova_reaction": nova_response
     }
 
 @router.post("/reroll-point-dice")
@@ -670,7 +649,10 @@ async def reroll_point_dice(roll_id: str, user_id: str) -> Dict[str, Any]:
     
     if not session.get("qualified"):
         raise HTTPException(400, "Must be qualified to re-roll point dice")
-    
+
+    if session.get("status") == "COMPLETE":
+        raise HTTPException(400, "Session already settled")
+
     if session.get("rolls_used", 1) >= 3:
         raise HTTPException(400, "No rolls remaining")
     
@@ -726,16 +708,21 @@ async def stand_with_score(roll_id: str, user_id: str) -> Dict[str, Any]:
     
     if not session.get("qualified"):
         raise HTTPException(400, "Must be qualified to stand")
-    
+
+    if session.get("status") == "COMPLETE":
+        raise HTTPException(400, "Session already settled")
+
     point_score = session["point_score"]
     main_bet = session["main_bet"]
     
     # Get Nova's stand response
     nova = engine.get_nova_response(True, point_score, 0, "stand")
     
-    # Mark as final
-    await db.dice_sessions.update_one(
-        {"roll_id": roll_id},
+    # Mark as final — atomic status flip. If another concurrent /stand call
+    # already settled this session, modified_count is 0 and we refuse to pay
+    # again (repeat calls previously minted main_bet*2 every time).
+    settle = await db.dice_sessions.update_one(
+        {"roll_id": roll_id, "status": {"$ne": "COMPLETE"}},
         {
             "$set": {
                 "final_score": point_score,
@@ -745,6 +732,8 @@ async def stand_with_score(roll_id: str, user_id: str) -> Dict[str, Any]:
             }
         }
     )
+    if settle.modified_count == 0:
+        raise HTTPException(400, "Session already settled")
     
     # For now, return 2x payout for qualified players (pot logic to be implemented in multiplayer phase)
     # In full multiplayer: compare against all other players at table and distribute pot
@@ -772,7 +761,7 @@ async def stand_with_score(roll_id: str, user_id: str) -> Dict[str, Any]:
         if target == "wallets":
             await db.wallets.update_one({"user_id": user_id}, {"$inc": {"balance": payout}})
         elif target == "token_balance":
-            await db.users.update_one({"user_id": user_id}, {"$inc": {"credits_balance": payout}})
+            await db.users.update_one({"user_id": user_id}, {"$inc": {"token_balance": payout}})
         else:
             await db.users.update_one({"user_id": user_id}, {"$inc": {"credits_balance": payout}})
     

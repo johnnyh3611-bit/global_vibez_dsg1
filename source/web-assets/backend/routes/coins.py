@@ -113,13 +113,39 @@ async def add_coins(user_id: str, amount: int, transaction_type: str, descriptio
 
 
 async def deduct_coins(user_id: str, amount: int, transaction_type: str, description: str, metadata: dict = None) -> Dict[str, Any]:
-    """Deduct coins from user's balance (with validation)"""
-    current_balance = await get_user_balance(user_id)
-    
-    if current_balance < amount:
+    """Deduct coins from user's balance.
+
+    The debit is a single conditional update (coins >= amount) so two
+    concurrent stakes can never both pass a read-then-write balance check
+    and drive the wallet negative (double-spend).
+    """
+    db = get_database()
+
+    # Ensure the coins field exists (initializes starting balance if needed).
+    await get_user_balance(user_id)
+
+    result = await db.users.update_one(
+        {"user_id": user_id, "coins": {"$gte": amount}},
+        {
+            "$inc": {"coins": -amount, "lifetime_coins_spent": amount},
+            "$set": {"last_coin_update": datetime.now(timezone.utc).isoformat()},
+        },
+    )
+    if result.modified_count == 0:
         raise HTTPException(status_code=400, detail="Insufficient coins")
-    
-    return await add_coins(user_id, -amount, transaction_type, description, metadata)
+
+    transaction = {
+        "transaction_id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "amount": -amount,
+        "transaction_type": transaction_type,
+        "description": description,
+        "metadata": metadata or {},
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    transaction_copy = transaction.copy()
+    await db.coin_transactions.insert_one(transaction)
+    return transaction_copy
 
 
 # ==================== ENDPOINTS ====================
