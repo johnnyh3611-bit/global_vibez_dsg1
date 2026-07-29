@@ -112,12 +112,14 @@ async def status(task_id: str):
 
 def _generate_blocking(task_id: str, req: GenerateRequest) -> None:
     """Synchronous Sora 2 generation, runs in background thread."""
-    from emergentintegrations.llm.openai.video_generation import OpenAIVideoGeneration
-
     state = _TASKS[task_id]
     state["status"] = "running"
     state["started_at"] = datetime.now(timezone.utc).isoformat()
     try:
+        # Import inside the try so a missing SDK marks the task as errored
+        # instead of leaving it stuck in "queued"/"running" forever.
+        from emergentintegrations.llm.openai.video_generation import OpenAIVideoGeneration
+
         video_gen = OpenAIVideoGeneration(api_key=EMERGENT_LLM_KEY)
         prompt = req.prompt or DEFAULT_PROMPT
         ts = int(time.time())
@@ -154,6 +156,11 @@ async def generate(req: GenerateRequest, background: BackgroundTasks):
     """
     if not EMERGENT_LLM_KEY:
         raise HTTPException(503, "Sora 2 unavailable: EMERGENT_LLM_KEY missing")
+
+    try:
+        import emergentintegrations  # noqa: F401
+    except ImportError:
+        raise HTTPException(503, "Sora 2 unavailable: emergentintegrations SDK not installed")
 
     # One-active-task throttle: refuse if anything is mid-flight.
     active = [t for t in _TASKS.values() if t["status"] in ("queued", "running")]

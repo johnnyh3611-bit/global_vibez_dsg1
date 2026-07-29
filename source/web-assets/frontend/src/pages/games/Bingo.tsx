@@ -20,7 +20,7 @@ interface EvalResult {
 export default function Bingo() {
   const nav = useNavigate();
   const [card, setCard] = useState<BingoCardData | null>(null);
-  const [stake, setStake] = useState(1.0);
+  const [stake, setStake] = useState(50);
   const [calledNumbers, setCalledNumbers] = useState<DrawResult[]>([]);
   const [evalResult, setEvalResult] = useState<EvalResult | null>(null);
   const [busy, setBusy] = useState(false);
@@ -38,37 +38,48 @@ export default function Bingo() {
   const drawNumber = useCallback(async () => {
     if (!card || busy) return;
     setBusy(true);
-    const alreadyCalled = calledNumbers.map(c => c.number);
-    if (alreadyCalled.length >= 75) { setBusy(false); return; }
-    const res: DrawResult = await fetch(`${API}/api/games/bingo/draw`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ already_called: alreadyCalled }),
-    }).then(r => r.json());
-    setCalledNumbers(prev => [...prev, res]);
-    // Auto-daub if card has the number
-    setCard(prev => {
-      if (!prev) return prev;
-      const newDaubed = [...prev.daubed];
-      for (let r = 0; r < 5; r++) {
-        for (let c = 0; c < 5; c++) {
-          if (prev.cells[r][c] === res.number) {
-            const idx = r * 5 + c;
-            if (!newDaubed.includes(idx)) newDaubed.push(idx);
+    try {
+      const alreadyCalled = calledNumbers.map(c => c.number);
+      if (alreadyCalled.length >= 75) return;
+      const res: DrawResult = await fetch(`${API}/api/games/bingo/draw`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ already_called: alreadyCalled }),
+      }).then(r => r.json());
+      if ((res as any)?.detail || typeof res.number !== "number") return;
+      setCalledNumbers(prev => [...prev, res]);
+      // Auto-daub if card has the number
+      setCard(prev => {
+        if (!prev) return prev;
+        const newDaubed = [...prev.daubed];
+        for (let r = 0; r < 5; r++) {
+          for (let c = 0; c < 5; c++) {
+            if (prev.cells[r][c] === res.number) {
+              const idx = r * 5 + c;
+              if (!newDaubed.includes(idx)) newDaubed.push(idx);
+            }
           }
         }
-      }
-      return { ...prev, daubed: newDaubed };
-    });
-    setBusy(false);
+        return { ...prev, daubed: newDaubed };
+      });
+    } catch (e) {
+      console.error("Bingo draw failed", e);
+    } finally {
+      setBusy(false);
+    }
   }, [card, busy, calledNumbers]);
 
   const evaluate = useCallback(async () => {
     if (!card) return;
-    const res: EvalResult = await fetch(`${API}/api/games/bingo/evaluate`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ cells: card.cells, daubed: card.daubed, stake }),
-    }).then(r => r.json());
-    setEvalResult(res);
+    try {
+      const res: EvalResult = await fetch(`${API}/api/games/bingo/evaluate`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cells: card.cells, daubed: card.daubed, stake }),
+      }).then(r => r.json());
+      if ((res as any)?.detail) return;
+      setEvalResult(res);
+    } catch (e) {
+      console.error("Bingo evaluate failed", e);
+    }
   }, [card, stake]);
 
   const toggleAuto = () => setAutoDrawing(prev => !prev);
@@ -130,7 +141,13 @@ export default function Bingo() {
               );
             }))}
           </div>
-          <div className="mt-4 flex flex-wrap gap-3 justify-center">
+          <div className="mt-4 flex flex-wrap gap-3 justify-center items-center">
+            <label className="flex items-center gap-2 text-xs">
+              <span className="text-neutral-400 uppercase tracking-widest">Stake</span>
+              <select value={stake} onChange={e => setStake(parseFloat(e.target.value))} disabled={busy || autoDrawing} data-testid="bingo-stake-select" className="bg-black border border-white/20 rounded-lg px-2 py-1.5 font-mono">
+                {[50, 100, 250, 500].map(n => <option key={n} value={n}>₵{n}</option>)}
+              </select>
+            </label>
             <button onClick={newCard} data-testid="bingo-new-card-btn" className="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-sm flex items-center gap-1"><RotateCcw className="w-3 h-3" /> New Card</button>
             <button onClick={drawNumber} disabled={busy || calledNumbers.length >= 75} data-testid="bingo-draw-btn" className="px-4 py-2 rounded-full bg-fuchsia-500 hover:bg-fuchsia-400 text-black font-bold text-sm disabled:opacity-50">Draw Number</button>
             <button onClick={toggleAuto} data-testid="bingo-auto-btn" className={`px-4 py-2 rounded-full text-sm font-bold ${autoDrawing ? "bg-rose-500 text-white" : "bg-cyan-500 text-black hover:bg-cyan-400"}`}>{autoDrawing ? "STOP AUTO" : "AUTO DRAW"}</button>

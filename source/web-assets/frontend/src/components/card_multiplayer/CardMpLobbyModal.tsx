@@ -22,7 +22,8 @@ interface Props {
   open: boolean;
   game: CardMpGame;
   onClose: () => void;
-  /** Route to jump to with ``?room=<id>`` query once the host seats everyone. */
+  /** Base route — the room id is appended as a path segment to match the
+   *  ``/card-mp/:gameType/:roomId`` route. */
   playRoute: string;
 }
 
@@ -76,8 +77,10 @@ export const CardMpLobbyModal: React.FC<Props> = ({ open, game, onClose, playRou
           room_name: roomName,
         },
       );
-      // Auto-jump to the room
-      navigate(`${playRoute}?room=${data.room.room_id}`);
+      // Auto-jump to the room. The room id must be a PATH segment — the
+      // router only matches /card-mp/:gameType/:roomId, so the old
+      // `?room=` query form 404'd every create/join.
+      navigate(`${playRoute}/${data.room.room_id}`);
       onClose();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Create failed');
@@ -94,7 +97,7 @@ export const CardMpLobbyModal: React.FC<Props> = ({ open, game, onClose, playRou
         user_id: userId,
         user_name: userName,
       });
-      navigate(`${playRoute}?room=${room.room_id}`);
+      navigate(`${playRoute}/${room.room_id}`);
       onClose();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Join failed');

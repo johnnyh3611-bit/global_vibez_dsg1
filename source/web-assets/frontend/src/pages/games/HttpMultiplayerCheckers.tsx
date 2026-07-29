@@ -14,6 +14,7 @@ import { useWindowSize } from 'react-use';
 import { GameEngine } from '@/game-engine';
 import { Toaster, toast } from 'react-hot-toast';
 import GlassSlate from '@/components/chat/GlassSlate';
+import { getMpUserId } from '@/utils/mpIdentity';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -123,7 +124,7 @@ export default function HttpMultiplayerCheckers() {
   const { gameId: urlGameId } = useParams();
   const { width, height } = useWindowSize();
   
-  const [userId] = useState(() => localStorage.getItem('mp_user_id') || 'user_' + Math.random().toString(36).substr(2, 9));
+  const [userId] = useState(() => getMpUserId());
   const [userName] = useState(() => localStorage.getItem('mp_user_name') || 'Player');
 
   const { connected, gameId, gameState, isMyTurn, opponent, error, makeMove, endGame, leaveGame, clearError } = useHttpMultiplayer(userId, userName, urlGameId);

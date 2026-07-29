@@ -21,6 +21,7 @@ const _DEALER_STANDS_AT = BLACKJACK_DEALER_STAND_VALUE;      // 17
 void _DEALER_HITS_SOFT_17; void _DEALER_STANDS_AT;
 import { useWindowSize } from 'react-use';
 import { useSafeTimeout } from "@/hooks/useSafeTimeout";
+import { getMpUserId } from '@/utils/mpIdentity';
 
 const PlayingCard = ({ card, hidden }: { card: any; hidden?: boolean }) => {
   if (!card) return null;
@@ -84,7 +85,7 @@ export default function HttpMultiplayerBlackjack() {
   const { gameId: urlGameId } = useParams();
   const { width, height } = useWindowSize();
   
-  const [userId] = useState(() => localStorage.getItem('mp_user_id') || 'user_' + Math.random().toString(36).substr(2, 9));
+  const [userId] = useState(() => getMpUserId());
   const [userName] = useState(() => localStorage.getItem('mp_user_name') || 'Player');
 
   const { connected, gameId, gameState, isMyTurn, opponent, error, makeMove, endGame, leaveGame, clearError } = useHttpMultiplayer(userId, userName, urlGameId);

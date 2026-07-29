@@ -26,6 +26,7 @@ from services.caribbean_stud import (
     Card as CSCard, deal_round, evaluate_hand, resolve_round,
     HAND_RANK_ORDER,
 )
+from services.round_sessions import create_round, pop_round
 from services.coming_soon_engines import (
     sic_bo_payout, craps_prop_payout, vibes_wheel_spin_outcome, keno_payout,
     VIBES_WHEEL_SLOTS, SIC_BO_SPECIFIC_TRIPLE_PAYOUT,
@@ -118,8 +119,13 @@ class CSDealIn(BaseModel):
 
 
 class CSResolveIn(BaseModel):
-    player_hand: List[Dict[str, str]]   # [{"rank": "A", "suit": "S"}, ...]
-    dealer_hand: List[Dict[str, str]]
+    # Preferred flow — resolve by server-side round id so hands can't be
+    # forged between deal and resolve.
+    round_id: Optional[str] = None
+    # Legacy flow (deprecated): client-echoed hands. Kept for older
+    # clients/tests; new UI always sends round_id.
+    player_hand: Optional[List[Dict[str, str]]] = None
+    dealer_hand: Optional[List[Dict[str, str]]] = None
     ante: float = Field(..., gt=0)
     raise_play: bool
 
@@ -141,22 +147,43 @@ def cs_constants() -> Dict:
 
 @cs_router.post("/deal")
 def cs_deal(req: CSDealIn) -> Dict:
+    """Deal a round. The dealer's hole cards stay server-side — only the
+    face-up card is returned, exactly like a live table. Resolve with the
+    returned ``round_id``."""
     p, d = deal_round(seed=req.seed)
+    round_id = create_round({
+        "game": "caribbean_stud",
+        "player": [(c.rank, c.suit) for c in p],
+        "dealer": [(c.rank, c.suit) for c in d],
+    })
     return {
+        "round_id": round_id,
         "player_hand": [{"rank": c.rank, "suit": c.suit} for c in p],
-        "dealer_hand": [{"rank": c.rank, "suit": c.suit} for c in d],
+        # Only the dealer's face-up card is revealed pre-showdown.
+        "dealer_upcard": {"rank": d[0].rank, "suit": d[0].suit},
     }
 
 
 @cs_router.post("/resolve")
 def cs_resolve(req: CSResolveIn) -> Dict:
-    try:
+    if req.round_id:
+        stored = pop_round(req.round_id)
+        if not stored or stored.get("game") != "caribbean_stud":
+            raise HTTPException(status_code=404, detail="Round not found or expired")
+        p = [CSCard(rank=r, suit=s) for r, s in stored["player"]]
+        d = [CSCard(rank=r, suit=s) for r, s in stored["dealer"]]
+    elif req.player_hand and req.dealer_hand:
+        # Deprecated client-echoed path (older clients/tests only).
         p = _cards_from_dicts(req.player_hand)
         d = _cards_from_dicts(req.dealer_hand)
+    else:
+        raise HTTPException(status_code=400, detail="round_id required")
+    try:
         out = resolve_round(p, d, ante=req.ante, raise_play=req.raise_play)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     return {
+        "dealer_hand": [{"rank": c.rank, "suit": c.suit} for c in d],
         "player_category": out.player_category,
         "dealer_category": out.dealer_category,
         "dealer_qualifies": out.dealer_qualifies,
@@ -179,7 +206,9 @@ sicbo_router = APIRouter(prefix="/games/sic-bo", tags=["sic-bo"])
 
 class SicBoIn(BaseModel):
     bet_type: str
-    dice: List[int]
+    # Deprecated: dice are now always rolled server-side; any client value
+    # is ignored so outcomes can't be forged via the API.
+    dice: Optional[List[int]] = None
     stake: float = Field(..., gt=0)
 
 
@@ -192,12 +221,18 @@ def sicbo_constants() -> Dict:
     }
 
 
+_dice_rng = random.SystemRandom()
+
+
 @sicbo_router.post("/play")
 def sicbo_play(req: SicBoIn) -> Dict:
+    dice = [_dice_rng.randint(1, 6) for _ in range(3)]
     try:
-        return sic_bo_payout(req.bet_type, req.dice, req.stake)
+        out = sic_bo_payout(req.bet_type, dice, req.stake)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    out["dice"] = dice
+    return out
 
 
 @sicbo_router.post("/roll")
@@ -214,7 +249,9 @@ craps_router = APIRouter(prefix="/games/craps", tags=["craps"])
 
 class CrapsPropIn(BaseModel):
     prop: str             # "snake_eyes" | "boxcars"
-    dice_roll: List[int]
+    # Deprecated: dice are now always rolled server-side; any client value
+    # is ignored so outcomes can't be forged via the API.
+    dice_roll: Optional[List[int]] = None
     stake: float = Field(..., gt=0)
 
 
@@ -229,12 +266,13 @@ def craps_constants() -> Dict:
 
 @craps_router.post("/prop")
 def craps_prop(req: CrapsPropIn) -> Dict:
-    if len(req.dice_roll) != 2:
-        raise HTTPException(status_code=400, detail="dice_roll must have 2 values")
+    dice = (_dice_rng.randint(1, 6), _dice_rng.randint(1, 6))
     try:
-        return craps_prop_payout(req.prop, (req.dice_roll[0], req.dice_roll[1]), req.stake)
+        out = craps_prop_payout(req.prop, dice, req.stake)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    out["dice"] = list(dice)
+    return out
 
 
 # ──────────────────────────────────────────────────────────────────────────

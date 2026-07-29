@@ -59,16 +59,18 @@ async def play_baccarat(bet_data: BaccaratBet, request: Request) -> Dict[str, An
             detail=f"Minimum bet is {format_coins(PLATFORM_MIN_BET)}",
         )
     
-    # Check user balance
-    user = await db.users.find_one({"user_id": current_user.user_id}, {"_id": 0})
-    if not user or user.get('credits_balance', 0) < bet_data.bet_amount:
-        raise HTTPException(status_code=400, detail="Insufficient credits")
-    
-    # Deduct bet from balance
-    await db.users.update_one(
-        {"user_id": current_user.user_id},
+    # Deduct bet from balance — conditional on sufficient funds so two
+    # concurrent hands can never both pass a read-then-write check and
+    # drive the balance negative (double-spend).
+    debit = await db.users.update_one(
+        {
+            "user_id": current_user.user_id,
+            "credits_balance": {"$gte": bet_data.bet_amount},
+        },
         {"$inc": {"credits_balance": -bet_data.bet_amount}}
     )
+    if debit.modified_count == 0:
+        raise HTTPException(status_code=400, detail="Insufficient credits")
     
     # Create game instance
     game = BaccaratGame()

@@ -36,26 +36,62 @@ function PCard({ card, hidden }: { card?: CardT; hidden?: boolean }) {
   );
 }
 
+interface DealResult { round_id: string; player_hand: CardT[]; }
+
 export default function ThreeCardPoker() {
   const nav = useNavigate();
-  const [ante, setAnte] = useState(10);
+  const [ante, setAnte] = useState(50);
   const [pairPlus, setPairPlus] = useState(0);
+  const [dealt, setDealt] = useState<DealResult | null>(null);
   const [result, setResult] = useState<PlayResult | null>(null);
   const [phase, setPhase] = useState<"idle" | "decision" | "resolved">("idle");
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const startRound = () => { setPhase("decision"); setResult(null); };
+  // Real table flow: deal first so the player sees their own three cards
+  // BEFORE deciding to fold or raise. The dealer hand stays server-side.
+  const startRound = useCallback(async () => {
+    setBusy(true); setResult(null); setError(null);
+    try {
+      const res: DealResult = await fetch(`${API}/api/games/three-card-poker/deal`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      }).then(r => r.json());
+      if ((res as any)?.detail || !res.round_id) {
+        setError("Deal failed — please try again.");
+        return;
+      }
+      setDealt(res);
+      setPhase("decision");
+    } catch {
+      setError("Deal failed — please try again.");
+    } finally {
+      setBusy(false);
+    }
+  }, []);
 
   const decide = useCallback(async (raise_play: boolean) => {
+    if (!dealt) return;
     setBusy(true);
-    const res: PlayResult = await fetch(`${API}/api/games/three-card-poker/play`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ante, raise_play, pair_plus: pairPlus }),
-    }).then(r => r.json());
-    setResult(res);
-    setPhase("resolved");
-    setBusy(false);
-  }, [ante, pairPlus]);
+    setError(null);
+    try {
+      const res: PlayResult = await fetch(`${API}/api/games/three-card-poker/play`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ round_id: dealt.round_id, ante, raise_play, pair_plus: pairPlus }),
+      }).then(r => r.json());
+      if ((res as any)?.detail) {
+        const d = (res as any).detail;
+        setError(typeof d === "string" ? d : "Play failed — please deal a new hand.");
+        return;
+      }
+      setResult(res);
+      setPhase("resolved");
+    } catch {
+      setError("Play failed — please try again.");
+    } finally {
+      setBusy(false);
+    }
+  }, [dealt, ante, pairPlus]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-rose-950/20 to-black text-white pb-28 md:pb-8" data-testid="three-card-poker-page">
@@ -99,9 +135,15 @@ export default function ThreeCardPoker() {
             {result && <span className="text-xs text-neutral-400">{result.player_category}</span>}
           </div>
           <div className="flex justify-center gap-2">
-            {(result?.player_hand ?? Array(3).fill(null)).map((c, i) => <PCard key={i} card={c} />)}
+            {(result?.player_hand ?? dealt?.player_hand ?? Array(3).fill(null)).map((c, i) => <PCard key={i} card={c} />)}
           </div>
         </div>
+
+        {error && (
+          <div className="rounded-xl border border-rose-500/40 bg-rose-950/20 px-4 py-3 text-sm text-rose-200" data-testid="tcp-error">
+            {error}
+          </div>
+        )}
 
         <div className="rounded-2xl border border-white/10 bg-black/40 p-5">
           {phase === "idle" && (
@@ -118,7 +160,7 @@ export default function ThreeCardPoker() {
               <label className="flex flex-col text-xs">
                 <span className="text-neutral-400 uppercase">Pair Plus</span>
                 <select value={pairPlus} onChange={e => setPairPlus(parseFloat(e.target.value))} disabled={busy} data-testid="tcp-pp-select" className="mt-1 bg-black border border-white/20 rounded-lg px-3 py-2 font-mono">
-                  {[0, 5, 10, 25, 50].map(n => <option key={n} value={n}>₵{n}</option>)}
+                  {[0, 50, 100, 250].map(n => <option key={n} value={n}>₵{n}</option>)}
                 </select>
               </label>
               <button onClick={startRound} disabled={busy} data-testid="tcp-deal-btn" className="hidden md:block sm:ml-auto px-6 py-2.5 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 text-white font-black tracking-wide hover:brightness-110">DEAL</button>
@@ -127,7 +169,7 @@ export default function ThreeCardPoker() {
           {phase === "decision" && (
             <div className="flex justify-center gap-3">
               <button onClick={() => decide(false)} disabled={busy} data-testid="tcp-fold-btn" className="px-6 py-3 rounded-full bg-rose-500 hover:bg-rose-400 text-white font-bold">FOLD (lose ante)</button>
-              <button onClick={() => decide(true)} disabled={busy} data-testid="tcp-raise-btn" className="px-6 py-3 rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 text-black font-black">RAISE (${ante})</button>
+              <button onClick={() => decide(true)} disabled={busy} data-testid="tcp-raise-btn" className="px-6 py-3 rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 text-black font-black">RAISE (₵{ante})</button>
             </div>
           )}
           {phase === "resolved" && result && (
@@ -138,7 +180,7 @@ export default function ThreeCardPoker() {
                 <div><div className="text-[10px] text-neutral-500 uppercase">Bonus / PP</div><div className="font-mono font-bold text-yellow-300">₵{(result.ante_bonus + result.pair_plus_payout).toFixed(2)}</div></div>
                 <div><div className="text-[10px] text-neutral-500 uppercase">Net</div><div className={`font-mono font-black text-lg ${result.net >= 0 ? "text-emerald-300" : "text-rose-300"}`} data-testid="tcp-net">₵{result.net.toFixed(2)}</div></div>
               </div>
-              <button onClick={() => { setPhase("idle"); setResult(null); }} data-testid="tcp-new-btn" className="w-full py-2.5 rounded-full bg-white/10 hover:bg-white/20 font-bold">New Hand</button>
+              <button onClick={() => { setPhase("idle"); setResult(null); setDealt(null); }} data-testid="tcp-new-btn" className="w-full py-2.5 rounded-full bg-white/10 hover:bg-white/20 font-bold">New Hand</button>
             </div>
           )}
         </div>
@@ -158,16 +200,16 @@ export default function ThreeCardPoker() {
       {/* Mobile-only sticky CTA — context-aware to phase. */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-black/90 backdrop-blur border-t border-white/10 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
         {phase === "idle" && (
-          <button onClick={startRound} disabled={busy} data-testid="tcp-deal-btn-mobile" className="w-full py-3 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 text-white font-black tracking-widest disabled:opacity-50">DEAL · ${ante}</button>
+          <button onClick={startRound} disabled={busy} data-testid="tcp-deal-btn-mobile" className="w-full py-3 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 text-white font-black tracking-widest disabled:opacity-50">DEAL · ₵{ante}</button>
         )}
         {phase === "decision" && (
           <div className="grid grid-cols-2 gap-2">
             <button onClick={() => decide(false)} disabled={busy} data-testid="tcp-fold-btn-mobile" className="py-3 rounded-full bg-rose-500 text-white font-black tracking-widest disabled:opacity-50">FOLD</button>
-            <button onClick={() => decide(true)} disabled={busy} data-testid="tcp-raise-btn-mobile" className="py-3 rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 text-black font-black tracking-widest disabled:opacity-50">RAISE ${ante}</button>
+            <button onClick={() => decide(true)} disabled={busy} data-testid="tcp-raise-btn-mobile" className="py-3 rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 text-black font-black tracking-widest disabled:opacity-50">RAISE ₵{ante}</button>
           </div>
         )}
         {phase === "resolved" && (
-          <button onClick={() => { setPhase("idle"); setResult(null); }} data-testid="tcp-new-btn-mobile" className="w-full py-3 rounded-full bg-white/10 text-white font-black tracking-widest">NEW HAND</button>
+          <button onClick={() => { setPhase("idle"); setResult(null); setDealt(null); }} data-testid="tcp-new-btn-mobile" className="w-full py-3 rounded-full bg-white/10 text-white font-black tracking-widest">NEW HAND</button>
         )}
       </div>
     </div>

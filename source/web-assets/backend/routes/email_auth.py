@@ -103,7 +103,7 @@ async def signup(signup_data: SignupRequest, response: Response) -> Dict[str, An
     if age < 18:
         raise HTTPException(
             status_code=403, 
-            detail="You must be at least 18 years old to use Global Vibes"
+            detail="You must be at least 18 years old to use Global Vibez"
         )
     
     # Hash password
@@ -269,7 +269,7 @@ async def update_age(request: dict, response: Response) -> Dict[str, Any]:
     if age < 18:
         raise HTTPException(
             status_code=403, 
-            detail="You must be at least 18 years old to use Global Vibes"
+            detail="You must be at least 18 years old to use Global Vibez"
         )
     
     # Update user

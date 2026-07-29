@@ -487,7 +487,13 @@ async def ai_check_message(request: AIModerateMessageRequest, req: Request) -> D
     current_user = await get_current_user(req)
     if not current_user:
         raise HTTPException(status_code=401, detail="Not authenticated")
-    
+
+    if ai_moderator is None:
+        raise HTTPException(
+            status_code=503,
+            detail="AI moderation is not configured on this deployment",
+        )
+
     db = get_database()
     
     # Get user violation history
@@ -539,7 +545,13 @@ async def ai_check_profile(request: AIModerateProfileRequest, req: Request) -> D
     current_user = await get_current_user(req)
     if not current_user:
         raise HTTPException(status_code=401, detail="Not authenticated")
-    
+
+    if ai_moderator is None:
+        raise HTTPException(
+            status_code=503,
+            detail="AI moderation is not configured on this deployment",
+        )
+
     # Run AI moderation on profile
     result = await ai_moderator.check_profile_content(
         bio=request.bio,

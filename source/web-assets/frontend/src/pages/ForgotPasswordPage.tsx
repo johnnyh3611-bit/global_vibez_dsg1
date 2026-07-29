@@ -10,8 +10,9 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Mail, ArrowLeft, Loader2, CheckCircle2 } from "lucide-react";
+import { getBackendUrl } from "@/config/backendUrl";
 
-const API = process.env.REACT_APP_BACKEND_URL;
+const API = getBackendUrl();
 
 const ForgotPasswordPage: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -25,10 +26,11 @@ const ForgotPasswordPage: React.FC = () => {
     setSubmitting(true);
     setError(null);
     try {
+      // No credentials — the auth flow is Bearer-token based, and
+      // credentialed CORS requests are rejected when the API allows "*".
       const r = await fetch(`${API}/api/auth/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({ email: email.trim().toLowerCase() }),
       });
       if (!r.ok) {

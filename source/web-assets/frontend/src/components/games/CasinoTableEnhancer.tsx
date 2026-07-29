@@ -116,7 +116,9 @@ export function ChipStakeSelector({
   onChange,
   disabled = false,
   testid,
-  options = [5, 10, 25, 50, 100],
+  // Platform rule: ₵50 minimum bet on every casino game — chips below the
+  // floor produced guaranteed 422s from the backend.
+  options = [50, 100, 250, 500],
 }: {
   stake: number;
   onChange: (n: number) => void;
@@ -126,10 +128,10 @@ export function ChipStakeSelector({
 }) {
   // Color per denom (classic casino chip palette).
   const chipColor = (n: number): string => {
-    if (n <= 5) return 'from-rose-500 to-rose-700';
-    if (n <= 10) return 'from-sky-500 to-sky-700';
-    if (n <= 25) return 'from-emerald-500 to-emerald-700';
-    if (n <= 50) return 'from-amber-500 to-amber-700';
+    if (n <= 50) return 'from-rose-500 to-rose-700';
+    if (n <= 100) return 'from-sky-500 to-sky-700';
+    if (n <= 250) return 'from-emerald-500 to-emerald-700';
+    if (n <= 500) return 'from-amber-500 to-amber-700';
     return 'from-fuchsia-500 to-violet-700';
   };
   return (
@@ -157,7 +159,7 @@ export function ChipStakeSelector({
             }
           >
             <span className="absolute inset-1 rounded-full border-2 border-dashed border-white/40" />
-            <span className="relative z-10 text-white drop-shadow">${n}</span>
+            <span className="relative z-10 text-white drop-shadow">₵{n}</span>
           </button>
         );
       })}

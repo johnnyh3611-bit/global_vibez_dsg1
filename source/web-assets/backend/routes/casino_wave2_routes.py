@@ -5,10 +5,14 @@ All routes mounted under /api/games/* with a per-game prefix.
 """
 from __future__ import annotations
 
+import secrets
+
 from typing import Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
+
+from services.round_sessions import create_round, pop_round
 
 from services.casino_wave2_engines import (
     play_three_card_poker, THREE_CARD_PAIR_PLUS_PAYOUTS,
@@ -39,6 +43,13 @@ class ThreeCardIn(BaseModel):
     raise_play: bool
     pair_plus: float = 0.0
     seed: Optional[int] = None
+    # Preferred flow: deal first via /deal, decide with the returned
+    # round_id so the fold/raise decision happens after seeing your cards.
+    round_id: Optional[str] = None
+
+
+class ThreeCardDealIn(BaseModel):
+    seed: Optional[int] = None
 
 
 @three_card_router.get("/constants")
@@ -50,12 +61,35 @@ def three_card_constants() -> Dict:
     }
 
 
+@three_card_router.post("/deal")
+def three_card_deal(req: ThreeCardDealIn) -> Dict:
+    """Deal player cards (dealer stays hidden server-side). The player can
+    then fold or raise via /play with the returned round_id — like a real
+    table, the decision comes AFTER seeing your own hand."""
+    seed = req.seed if req.seed is not None else secrets.randbits(62)
+    # The engine deals deterministically from the seed before any decision
+    # logic, so a throwaway resolve exposes the player's cards without
+    # committing money.
+    preview = play_three_card_poker(ante=50, raise_play=True, pair_plus=0.0, seed=seed)
+    round_id = create_round({"game": "three_card_poker", "seed": seed})
+    return {
+        "round_id": round_id,
+        "player_hand": [{"rank": r, "suit": s} for r, s in preview.player_hand],
+    }
+
+
 @three_card_router.post("/play")
 def three_card_play(req: ThreeCardIn) -> Dict:
+    seed = req.seed
+    if req.round_id:
+        stored = pop_round(req.round_id)
+        if not stored or stored.get("game") != "three_card_poker":
+            raise HTTPException(status_code=404, detail="Round not found or expired")
+        seed = stored["seed"]
     try:
         out = play_three_card_poker(
             ante=req.ante, raise_play=req.raise_play,
-            pair_plus=req.pair_plus, seed=req.seed,
+            pair_plus=req.pair_plus, seed=seed,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -268,7 +302,11 @@ class JacksDealIn(BaseModel):
 
 
 class JacksDrawIn(BaseModel):
-    initial: List[Dict[str, str]]
+    # Preferred flow: reference the server-stored deal so the dealt hand
+    # can't be swapped for a forged royal between deal and draw.
+    deal_id: Optional[str] = None
+    # Legacy flow (deprecated): client-echoed initial hand.
+    initial: Optional[List[Dict[str, str]]] = None
     hold_indices: List[int] = []
     stake: float = Field(..., ge=50)
     seed: Optional[int] = None
@@ -286,12 +324,25 @@ def jacks_constants() -> Dict:
 @jacks_router.post("/deal")
 def jacks_deal(req: JacksDealIn) -> Dict:
     cards = deal_jacks_or_better(seed=req.seed)
-    return {"hand": [{"rank": r, "suit": s} for r, s in cards]}
+    deal_id = create_round({"game": "jacks_or_better", "initial": list(cards)})
+    return {
+        "deal_id": deal_id,
+        "hand": [{"rank": r, "suit": s} for r, s in cards],
+    }
 
 
 @jacks_router.post("/draw")
 def jacks_draw(req: JacksDrawIn) -> Dict:
-    initial = [(c["rank"], c["suit"]) for c in req.initial]
+    if req.deal_id:
+        stored = pop_round(req.deal_id)
+        if not stored or stored.get("game") != "jacks_or_better":
+            raise HTTPException(status_code=404, detail="Deal not found or expired")
+        initial = [(r, s) for r, s in stored["initial"]]
+    elif req.initial:
+        # Deprecated client-echoed path (older clients/tests only).
+        initial = [(c["rank"], c["suit"]) for c in req.initial]
+    else:
+        raise HTTPException(status_code=400, detail="deal_id required")
     try:
         return play_jacks_or_better(initial, req.hold_indices, req.stake, req.seed)
     except ValueError as e:

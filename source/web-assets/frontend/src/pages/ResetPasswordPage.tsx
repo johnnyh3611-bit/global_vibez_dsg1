@@ -11,8 +11,9 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Lock, ArrowLeft, Loader2, AlertTriangle, CheckCircle2, Eye, EyeOff } from "lucide-react";
+import { getBackendUrl } from "@/config/backendUrl";
 
-const API = process.env.REACT_APP_BACKEND_URL;
+const API = getBackendUrl();
 
 type VerifyReason = "missing" | "invalid" | "expired" | "used" | "network";
 type VerifyState =
@@ -79,10 +80,11 @@ const ResetPasswordPage: React.FC = () => {
     setSubmitting(true);
     setError(null);
     try {
+      // No credentials — the auth flow is Bearer-token based, and
+      // credentialed CORS requests are rejected when the API allows "*".
       const r = await fetch(`${API}/api/auth/reset-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({ token, new_password: pwd }),
       });
       const data = await r.json().catch(() => ({}));

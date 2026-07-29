@@ -128,8 +128,10 @@ export default function SignupPage() {
       return;
     }
 
-    if (passwordStrength.score < 4) {
-      setError('Password is too weak. Please use a stronger password.');
+    // Mirror the server rules exactly (all five are required): the API
+    // rejects anything missing a rule even if the meter shows "Strong".
+    if (passwordStrength.score < 5) {
+      setError('Password must be 8+ characters and include an uppercase letter, a lowercase letter, a number, and a special character.');
       return;
     }
 

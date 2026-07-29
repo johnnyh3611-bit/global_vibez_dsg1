@@ -331,6 +331,33 @@ async def get_game_state(game_id: str, user_id: str) -> Dict[str, Any]:
         'last_updated': game['last_updated']
     }
 
+@router.post("/http-multiplayer/roll-dice")
+async def roll_dice(game_id: str, user_id: str, count: int = 1) -> Dict[str, Any]:
+    """Server-authoritative dice for dice-based boards (Ludo, Backgammon,
+    Parcheesi). Clients used to roll with Math.random() in the browser and
+    push the value into the shared state — trivially cheatable."""
+    if count < 1 or count > 5:
+        raise HTTPException(status_code=400, detail="count must be 1..5")
+    session_id = get_session_id(user_id)
+
+    if game_id not in active_games:
+        raise HTTPException(status_code=404, detail="Game not found")
+
+    game = active_games[game_id]
+    my_role = None
+    if game['player1']['session_id'] == session_id:
+        my_role = 'player1'
+    elif game['player2'] and game['player2']['session_id'] == session_id:
+        my_role = 'player2'
+    if my_role is None:
+        raise HTTPException(status_code=403, detail="Not a player in this game")
+    if game['current_turn'] != my_role:
+        raise HTTPException(status_code=400, detail="Not your turn")
+
+    dice = [secure_random.randint(1, 6) for _ in range(count)]
+    return {"success": True, "dice": dice, "value": dice[0]}
+
+
 @router.post("/http-multiplayer/make-move")
 async def make_move(request: MakeMoveRequest, user_id: str) -> Dict[str, Any]:
     """
@@ -1176,7 +1203,7 @@ def generate_trivia_questions(count: int) -> List[Dict]:
             'incorrect_answers': ['Venus', 'Jupiter', 'Saturn']
         },
         {
-            'question': 'What == 2 + 2?',
+            'question': 'What is 2 + 2?',
             'correct_answer': '4',
             'incorrect_answers': ['3', '5', '22']
         },

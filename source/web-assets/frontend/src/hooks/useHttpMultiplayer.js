@@ -283,8 +283,38 @@ export const useHttpMultiplayer = (userId, userName, initialGameId = null) => {
     }
   }, [gameId, userId]);
 
+  // Server-authoritative dice roll (Ludo / Backgammon / Parcheesi).
+  // Returns an array of dice values, or null on failure.
+  const rollDice = useCallback(async (count = 1) => {
+    if (!gameId) return null;
+    try {
+      const response = await fetch(
+        `${API_URL}/api/http-multiplayer/roll-dice?game_id=${gameId}&user_id=${userId}&count=${count}`,
+        { method: 'POST' },
+      );
+      const data = await response.json();
+      if (response.ok && data.success) return data.dice;
+      setError(data.detail || 'Dice roll failed');
+      return null;
+    } catch (err) {
+      setError('Dice roll failed');
+      return null;
+    }
+  }, [gameId, userId]);
+
   // Leave game
   const leaveGame = useCallback(() => {
+    // Tell the backend we're abandoning an in-progress game so the
+    // opponent gets a forfeit win instead of a permanently "playing"
+    // match. Fire-and-forget — never block the local cleanup on it.
+    if (gameId && gameState?.status === 'playing') {
+      const myRole = gameState?.my_role;
+      const opponentRole = myRole === 'player1' ? 'player2' : 'player1';
+      fetch(`${API_URL}/api/http-multiplayer/end-game?game_id=${gameId}&user_id=${userId}&winner=${opponentRole}`, {
+        method: 'POST',
+      }).catch(() => {});
+    }
+
     setGameId(null);
     setGameState(null);
     setOpponent(null);
@@ -295,7 +325,7 @@ export const useHttpMultiplayer = (userId, userName, initialGameId = null) => {
       clearInterval(pollingIntervalRef.current);
       pollingIntervalRef.current = null;
     }
-  }, []);
+  }, [gameId, gameState, userId]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -320,6 +350,7 @@ export const useHttpMultiplayer = (userId, userName, initialGameId = null) => {
     joinMatchmaking,
     leaveMatchmaking,
     makeMove,
+    rollDice,
     endGame,
     leaveGame,
     clearError: () => setError(null)

@@ -46,6 +46,10 @@ interface Props {
   /** Notified when a nav link is hovered so the page background can
    *  shift its tint to reflect the room (PDF §2 Room Transitions). */
   onRoomHover?: (room: RoomKey) => void;
+  /** One-click demo login (same flow as the hero CTA). When omitted the
+   *  Demo button falls back to the /login page. */
+  onDemoLogin?: () => void;
+  demoLoading?: boolean;
 }
 
 const ParallaxIcon: React.FC<{ Icon: React.ComponentType<React.SVGProps<SVGSVGElement>>; color: string }> = ({ Icon, color }) => {
@@ -79,7 +83,7 @@ const ParallaxIcon: React.FC<{ Icon: React.ComponentType<React.SVGProps<SVGSVGEl
   );
 };
 
-const LandingHeaderEnhanced: React.FC<Props> = ({ onRoomHover }) => {
+const LandingHeaderEnhanced: React.FC<Props> = ({ onRoomHover, onDemoLogin, demoLoading }) => {
   const navigate = useNavigate();
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
@@ -109,10 +113,11 @@ const LandingHeaderEnhanced: React.FC<Props> = ({ onRoomHover }) => {
       className="overflow-x-hidden px-4 py-4 sm:px-6"
     >
       <div className="mx-auto flex max-w-7xl min-w-0 flex-wrap items-center justify-between gap-3 md:flex-nowrap md:gap-4">
-        {/* Brand block */}
+        {/* Brand block — logo goes home. (It used to open the God-Mode
+            vault login, which stranded regular visitors on an admin page.) */}
         <div
           className="flex min-w-0 shrink items-center gap-2 cursor-pointer sm:gap-3"
-          onClick={() => navigate("/vibe-vault-admin")}
+          onClick={() => navigate("/")}
           data-testid="landing-logo"
         >
           <img
@@ -184,11 +189,12 @@ const LandingHeaderEnhanced: React.FC<Props> = ({ onRoomHover }) => {
           </button>
           <button
             type="button"
-            onClick={() => navigate("/login")}
+            onClick={() => (onDemoLogin ? onDemoLogin() : navigate("/login"))}
+            disabled={demoLoading}
             data-testid="landing-header-demo-hint"
-            className="hidden sm:inline-flex px-4 py-2 text-sm text-emerald-300 font-bold hover:text-emerald-200 transition-colors border border-emerald-500/40 rounded-lg hover:border-emerald-400"
+            className="hidden sm:inline-flex px-4 py-2 text-sm text-emerald-300 font-bold hover:text-emerald-200 transition-colors border border-emerald-500/40 rounded-lg hover:border-emerald-400 disabled:opacity-60"
           >
-            Demo
+            {demoLoading ? "Loading…" : "Demo"}
           </button>
           <button
             type="button"

@@ -66,7 +66,9 @@ export interface GenericGameProps {
 export default function GenericCasinoGame(props: GenericGameProps) {
   const nav = useNavigate();
   const tableCallVideo = useGameTableCallVideo();
-  const [stake, setStake] = useState(10);
+  // ₵50 platform minimum — the wave-2 backends validate stake >= 50, so a
+  // lower default made the first play always fail validation.
+  const [stake, setStake] = useState(50);
   const initial: Record<string, string | number> = {};
   for (const b of props.bets) initial[b.label] = b.defaultValue;
   const [values, setValues] = useState<Record<string, string | number>>(initial);
@@ -95,8 +97,8 @@ export default function GenericCasinoGame(props: GenericGameProps) {
   }, [props.bets, props.title, values]);
 
   const play = useCallback(async () => {
-    if (stake < 5) {
-      notifyBetError("Minimum bet is ₵5");
+    if (stake < 50) {
+      notifyBetError("Minimum bet is ₵50");
       return;
     }
     setBusy(true);
@@ -247,7 +249,7 @@ export default function GenericCasinoGame(props: GenericGameProps) {
         stake={stake}
         payoutRatio={1}
         selectionLabel={selectionLabel}
-        minBet={5}
+        minBet={50}
         maxBet={500}
         balance={0}
         confirming={busy}

@@ -168,12 +168,28 @@ export default function BlackjackUniversal() {
     } catch (e: any) { toast.error(e.message); }
   };
 
-  if (loading || !state) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-purple-950 text-white flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin mx-auto mb-4" /> {/* audit:allow-animate */}
           <p className="text-cyan-300">Shuffling shoe...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!state) {
+    // Start failed — show a retry path instead of an infinite spinner.
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-purple-950 text-white flex items-center justify-center" data-testid="bj-universal-error">
+        <div className="text-center space-y-4">
+          <p className="text-rose-300 font-bold">Couldn't open the table.</p>
+          <p className="text-sm text-neutral-400">Check your connection or sign in, then try again.</p>
+          <div className="flex gap-3 justify-center">
+            <button onClick={() => startGame(2)} data-testid="bj-universal-retry-btn" className="px-6 py-2.5 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 text-black font-black">Retry</button>
+            <button onClick={() => navigate(-1)} className="px-6 py-2.5 rounded-full bg-white/10 hover:bg-white/20 font-bold">Back</button>
+          </div>
         </div>
       </div>
     );

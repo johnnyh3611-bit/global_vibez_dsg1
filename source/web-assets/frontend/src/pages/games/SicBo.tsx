@@ -21,19 +21,20 @@ import { useGameTableCallVideo } from "@/components/video/GameTableCallVideo";
 import cardSoundManager from "@/utils/cardSoundManager";
 
 const API = process.env.REACT_APP_BACKEND_URL;
-const MIN_BET = 5;
+const MIN_BET = 50; // ₵50 platform floor
 const MAX_BET = 500;
 
 interface PlayResult {
   won: boolean; stake: number; payout_ratio: number;
   gross: number; tax: number; net: number;
+  dice: number[];
 }
 
 export default function SicBo() {
   const nav = useNavigate();
   const tableCallVideo = useGameTableCallVideo();
   const [betType, setBetType] = useState<string>("any_triple");
-  const [stake, setStake] = useState(10);
+  const [stake, setStake] = useState(MIN_BET);
   const [dice, setDice] = useState<number[] | null>(null);
   const [result, setResult] = useState<PlayResult | null>(null);
   const [rolling, setRolling] = useState(false);
@@ -57,21 +58,17 @@ export default function SicBo() {
     notifyBetPlaced(stake, `${selectionLabel} · ₵${stake}`);
     try {
       await runFixedDiceRoll((faces) => setDice(faces), 3);
-      const rollRes = await fetch(`${API}/api/games/sic-bo/roll`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: "{}",
-      }).then((r) => r.json());
-      const finalDice = rollRes.dice as number[];
-      setDice(finalDice);
+      // Single atomic play — the backend rolls the dice server-side and
+      // settles the bet in one request, so outcomes can't be forged.
       const playRes: PlayResult = await fetch(`${API}/api/games/sic-bo/play`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bet_type: betType, dice: finalDice, stake }),
+        body: JSON.stringify({ bet_type: betType, stake }),
       }).then((r) => r.json());
       if ((playRes as any)?.detail) {
         notifyBetError(String((playRes as any).detail));
       } else {
+        setDice(playRes.dice);
         setResult(playRes);
       }
     } catch {

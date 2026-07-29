@@ -52,6 +52,33 @@ export default function HttpMultiplayerLobby() {
   // Quick play mode (skip game selection)
   const [quickPlayMode, setQuickPlayMode] = useState(false);
 
+  // Games whose live rooms moved to the canonical AAA pages. Queueing them
+  // through HTTP matchmaking used to match two players and then redirect
+  // both into solo practice, silently discarding the matched game. Route
+  // straight to the canonical room instead.
+  const AAA_CANONICAL_ROUTES = {
+    hearts: '/hearts',
+    rummy: '/rummy',
+    gin_rummy: '/gin-rummy',
+    ginrummy: '/gin-rummy',
+    war: '/war',
+    gofish: '/go-fish',
+    crazy_eights: '/crazy-eights',
+    crazyeights: '/crazy-eights',
+    spades: '/spades',
+    dominoes: '/dominoes',
+    uno: '/multiplayer-uno',
+  };
+
+  const startGameOrQueue = (game) => {
+    const canonical = AAA_CANONICAL_ROUTES[game];
+    if (canonical) {
+      navigate(canonical);
+      return true;
+    }
+    return false;
+  };
+
   const {
     connected,
     matchmaking,
@@ -73,13 +100,17 @@ export default function HttpMultiplayerLobby() {
     }
   }, [userName, selectedGame]);
 
-  // Handle invite code
+  // Legacy invite links carried a client-generated code the backend never
+  // knew about. Treat the game type as a preselect so the friend drops
+  // straight into the same quick-match queue.
   useEffect(() => {
     if (inviteCode) {
-      // Auto-join game from invite
-      // In production, you'd validate the invite code with backend
-      alert(`Joining game with invite code: ${inviteCode}`);
+      const invitedGame = urlParams.get('game');
+      if (invitedGame) {
+        navigate(`/http-multiplayer?preselect=${invitedGame}`, { replace: true });
+      }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inviteCode]);
 
   // ✅ DEEP-LINK FIX: when navigated here with ?preselect=<gameId>, auto-fire
@@ -93,6 +124,7 @@ export default function HttpMultiplayerLobby() {
     if (!userName.trim()) return;
     if (matchmaking) return;
     setAutoMatchmakingFired(true);
+    if (startGameOrQueue(preselectedGame)) return;
     setSelectedGame(preselectedGame);
     setQuickPlayMode(true);
     joinMatchmaking(preselectedGame);
@@ -395,6 +427,7 @@ export default function HttpMultiplayerLobby() {
       alert('Please enter your name first!');
       return;
     }
+    if (startGameOrQueue(gameId)) return;
     setSelectedGame(gameId);
     setQuickPlayMode(true);
     joinMatchmaking(gameId);
@@ -409,14 +442,17 @@ export default function HttpMultiplayerLobby() {
       alert('Please select a game!');
       return;
     }
+    if (startGameOrQueue(selectedGame)) return;
     joinMatchmaking(selectedGame);
   };
 
   const generateInviteLink = (gameType) => {
-    const inviteCode = Math.random().toString(36).substr(2, 8).toUpperCase();
-    const link = `${window.location.origin}/http-multiplayer?invite=${inviteCode}&game=${gameType}`;
+    // Deep link that drops the friend into the same quick-match queue —
+    // the old client-generated "invite code" was never known to the
+    // backend, so those links could never actually pair players.
+    const link = `${window.location.origin}/http-multiplayer?preselect=${gameType}`;
     navigator.clipboard.writeText(link);
-    alert(`Invite link copied! Share with a friend:\n${link}`);
+    alert(`Invite link copied! Share with a friend — you'll both enter the ${gameType} queue:\n${link}`);
   };
 
   return (

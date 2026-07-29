@@ -13,6 +13,7 @@ import { useWindowSize } from 'react-use';
 import GameRulesModal from '@/components/GameRulesModal';
 import { GAME_RULES } from '@/config/gameRules';
 import { useGameSounds } from '@/hooks/useGameSounds';
+import { getMpUserId } from '@/utils/mpIdentity';
 
 const BackgammonChecker = ({ color, count, onClick, playable }) => (
   <motion.div
@@ -47,10 +48,10 @@ export default function HttpMultiplayerBackgammon() {
   const { gameId: urlGameId } = useParams();
   const { width, height } = useWindowSize();
   
-  const [userId] = useState(() => localStorage.getItem('mp_user_id') || 'user_' + Math.random().toString(36).substr(2, 9));
+  const [userId] = useState(() => getMpUserId());
   const [userName] = useState(() => localStorage.getItem('mp_user_name') || 'Player');
 
-  const { connected, gameId, gameState, isMyTurn, opponent, error, makeMove, endGame, leaveGame, clearError } = useHttpMultiplayer(userId, userName, urlGameId);
+  const { connected, gameId, gameState, isMyTurn, opponent, error, makeMove, rollDice, endGame, leaveGame, clearError } = useHttpMultiplayer(userId, userName, urlGameId);
 
   const [showConfetti, setShowConfetti] = useState(false);
   const [localGameStatus, setLocalGameStatus] = useState('playing');
@@ -83,11 +84,16 @@ export default function HttpMultiplayerBackgammon() {
     
     sounds.playDiceRoll();
     
-    const roll = [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1];
+    // Server-authoritative roll — browser dice were trivially cheatable.
+    const roll = await rollDice(2);
+    if (!roll) return;
     setDice(roll);
     setDiceRolled(true);
     
-    await makeMove({ action: 'roll', dice: roll }, gameState.game_state);
+    await makeMove({ action: 'roll', dice: roll }, {
+      ...gameState.game_state,
+      last_roll: { by: myRole, dice: roll },
+    });
   };
 
   const handleMove = async (fromPoint, toPoint) => {
