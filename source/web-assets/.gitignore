@@ -377,3 +377,7 @@ credentials.json
 # Allow committed CRA production defaults (no secrets)
 !.env.production
 !frontend/.env.production
+
+# Allow committed example env templates (placeholders only, no secrets)
+!.env.example
+!backend/.env.example
