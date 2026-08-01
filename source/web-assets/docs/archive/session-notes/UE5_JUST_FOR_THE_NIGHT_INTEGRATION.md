@@ -1,5 +1,10 @@
 # Just for the Night - Unreal Engine 5.5 Integration Guide
 
+> **ARCHIVED.** Historical session note — not current setup instructions. Payments are now
+> Solana deposit + Helio (Stripe retired, legacy routes return 410) and AI/LLM is Google Gemini
+> (Emergent is not used). See `source/web-assets/backend/ENV_VARIABLES.md` and
+> `source/web-assets/PAYMENT_SECURITY.md`.
+
 ## Overview
 This guide details how to implement the blur-to-reveal visual effect in Unreal Engine 5.5 for the "Just for the Night" premium room experience. When integrated with the Global Vibez DSG backend, this creates a seamless token-gated content reveal system.
 

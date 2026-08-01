@@ -75,8 +75,8 @@ Global Vibez DSG ("we", "us", "our") respects your privacy and is committed to p
 - Social media logins: Public profile information
 
 **Payment Processors:**
-- Stripe: Transaction data, payment method details
-- PayPal: Email, transaction history
+- Helio / MoonPay (card checkout): Transaction data, payment method details
+- Solana deposits: on-chain wallet address and transaction signature
 
 **Fraud Prevention:**
 - Third-party fraud detection services
@@ -151,7 +151,7 @@ We process your data under the following legal grounds:
 ### 5.1 We Share Data With:
 
 **Service Providers:**
-- Payment processors (Stripe, PayPal)
+- Payment processors (Helio / MoonPay) and the Solana network
 - Cloud hosting (AWS, Google Cloud)
 - Analytics providers (Google Analytics)
 - Customer support tools

@@ -205,7 +205,7 @@ You'll need **Firebase Admin SDK** with service account credentials:
 
 ### **Test Result:**
 ```bash
-$ curl https://social-connect-953.preview.emergentagent.com/api/notifications/status
+$ curl https://globalvibezdsg1-production.up.railway.app/api/notifications/status
 
 {
   "success": true,

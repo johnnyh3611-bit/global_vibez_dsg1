@@ -1,5 +1,11 @@
 # CHANGELOG
 
+> Historical log — entries are kept as written at the time and are **not** setup instructions.
+> Current reality: payments are Solana deposit (primary coin rail) + Helio (only card rail);
+> Stripe is retired (legacy routes return 410). AI/LLM is Google Gemini; Emergent is not used.
+> Configure from `source/web-assets/backend/ENV_VARIABLES.md` and
+> `source/web-assets/PAYMENT_SECURITY.md`.
+
 ## 2026-02-09 Late × 4 — Corner-FAB Pile-Up FIXED 🎯 (Vigilant Agent v2)
 
 **Founder ask:** *"On our landing page and home page, in the left-hand corner to the bottom is still the auto change, voice mirror, and beta feedback all bundled together... three different buttons, and I can't press all three because they all intertwine. Same on the right. Put inside a menu bar... pop down, pop out, pop up — out the way and clicked, everybody could see what they're getting they self into."*

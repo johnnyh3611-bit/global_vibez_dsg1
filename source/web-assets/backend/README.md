@@ -143,9 +143,17 @@ DB_NAME=casino_db
 ADMIN_EMAILS=admin@globalvibez.com,founder@globalvibez.com
 ADMIN_PASSWORD=GlobalVibez_Founder_2025!
 
-# Stripe (for payments)
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_PUBLISHABLE_KEY=pk_test_...
+# Payments — Solana deposit (primary coin rail) + Helio (only card rail).
+# Stripe is retired; legacy Stripe routes return 410 — do not set STRIPE_*.
+GLOBAL_VIBEZ_SOLANA_RECEIVE_WALLET=YourSolanaTreasuryPubkey
+HELIO_API_KEY=your_helio_public_api_key
+HELIO_SECRET_KEY=your_helio_secret_bearer
+HELIO_PAYLINK_ID=your_dynamic_paylink_id
+HELIO_NETWORK=test
+HELIO_WEBHOOK_TOKEN=your_helio_webhook_token
+
+# AI — Google Gemini (GOOGLE_API_KEY accepted as an alias)
+GEMINI_API_KEY=your_gemini_api_key
 
 # JWT
 JWT_SECRET=your-secret-key

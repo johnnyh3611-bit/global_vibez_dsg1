@@ -35,25 +35,31 @@ App ID: `cmof0ab0b00mj0ckzhthh8x8o`
 **Allowed URLs / Domains** must include:
 - [ ] `https://globalvibezdsg.com`
 - [ ] `https://www.globalvibezdsg.com`
-- [ ] `https://social-connect-953.emergent.host` (Emergent prod)
-- [ ] `https://social-connect-953.preview.emergentagent.com` (preview)
 - [ ] `http://localhost:3000` (dev only — keep for local)
 
 If any domain is missing, Privy's iframe gets CSP-blocked → users see a huge
 full-screen popup. The `PrivyLoginButton` will self-hide to prevent this, but
 users on unlisted domains just won't see Privy at all.
 
-### Stripe (https://dashboard.stripe.com)
+### Helio / MoonPay (https://moonpay.hel.io) — only card rail
 
-- [ ] **Webhook endpoints** all four point at prod URL:
-  - `/api/hungryvibes/merchant/sponsorship/webhook` (merchant sponsorship)
-  - `/api/subscriptions/webhook` (platform subscription tiers)
-  - `/api/vibes-slots/webhook` (if enabled)
-  - `/api/chairs/checkout/webhook` (chair purchases)
-- [ ] **API key environment** — confirm live key is in `backend/.env` as
-      `STRIPE_API_KEY` and test key is NOT.
-- [ ] **Webhook signing secret** — `STRIPE_WEBHOOK_SECRET` matches the endpoint's
-      "Signing secret" in dashboard.
+> Stripe is retired. Legacy Stripe routes return 410 — do **not** provision `STRIPE_*`.
+
+- [ ] **Webhook endpoint** points at the prod API:
+      `POST https://<api-host>/api/coins/webhook/helio`
+      (also activates `kind=chair_park` payments from `POST /api/chairs/checkout`)
+- [ ] **Keys in backend env** — `HELIO_API_KEY`, `HELIO_SECRET_KEY`, `HELIO_PAYLINK_ID`
+- [ ] **`HELIO_WEBHOOK_TOKEN`** matches the token returned by the Helio webhook create
+      call (webhooks fail closed in production without it)
+- [ ] **`HELIO_NETWORK`** — `test` for sandbox (dev-host keys), `main` when live
+- [ ] **`GET /api/integrations/health`** → `services.helio.configured` is true
+
+### Solana deposit rail (primary coin rail)
+
+- [ ] `GLOBAL_VIBEZ_SOLANA_RECEIVE_WALLET` set to the treasury pubkey in `backend/.env`
+
+Rules + runbook: `source/web-assets/PAYMENT_SECURITY.md`.
+Variable reference: `source/web-assets/backend/ENV_VARIABLES.md`.
 
 ### Resend (https://resend.com/domains)
 
@@ -69,10 +75,17 @@ users on unlisted domains just won't see Privy at all.
 - [ ] Currently: `devnet` (TEST)
 - [ ] Production: `mainnet-beta` — **LOCKED until safe phrase `"project complete"`**
 
-### Google OAuth (Emergent-managed — https://auth.emergentagent.com)
+### Google / X social login (Privy)
 
-- [ ] Emergent auth proxy should auto-register the deploy URL. If Google login
-      redirects but returns "invalid redirect_uri", reach out to Emergent support.
+- [ ] `PRIVY_APP_ID` on the backend matches `REACT_APP_PRIVY_APP_ID` baked into the
+      frontend build; deploy URL is allowlisted in the Privy dashboard.
+
+### AI — Google Gemini
+
+- [ ] `GEMINI_API_KEY` (or the `GOOGLE_API_KEY` alias) set on the backend
+      (key from https://aistudio.google.com/apikey)
+- [ ] `OPENAI_API_KEY` set only if Voice Mirror / Voice Coach audio is needed — it is
+      not used for chat
 
 ### Twilio (https://console.twilio.com) — SMS / OTP
 
@@ -100,7 +113,7 @@ app is pointing at dev values.
 
 ## 🧪 Step 4 — Post-deploy smoke
 
-After Emergent shows "deployed", hit these 5 URLs manually in incognito
+After the deploy finishes, hit these 5 URLs manually in incognito
 (fresh session, no stale cookies) on the production URL:
 
 1. `/login` → should load without console errors (yellow warnings OK)
@@ -109,7 +122,7 @@ After Emergent shows "deployed", hit these 5 URLs manually in incognito
 4. Visit `/chair-wall` → floating orb constellation renders
 5. Visit `/practice/play/yahtzee` → Coming Soon overlay renders
 
-If any fail, check the Emergent deploy logs. The app runtime is healthy if
+If any fail, check the Railway / Vercel deploy logs. The app runtime is healthy if
 `/health` returns 200 at the backend domain.
 
 ---

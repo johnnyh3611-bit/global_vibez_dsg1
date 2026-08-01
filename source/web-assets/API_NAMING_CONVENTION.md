@@ -183,10 +183,14 @@ All backend routes MUST use `/api` prefix for Kubernetes ingress routing:
 
 ## 💰 PAYMENT ROUTES
 
-### Stripe (`/routes/stripe_payments.py`)
-- `POST /api/payments/create-checkout`
-- `POST /api/payments/webhook`
-- `GET /api/payments/history`
+### Stripe — **retired**
+Legacy Stripe checkout/webhook endpoints (e.g. in `routes/coin_topup.py`,
+`routes/hungryvibes_merchant.py`, `routes/high_roller.py`) now return **HTTP 410**.
+
+### Coin rails (current)
+- Solana deposit — primary coin rail (`GLOBAL_VIBEZ_SOLANA_RECEIVE_WALLET`)
+- Helio — only card rail; webhook target `POST /api/coins/webhook/helio`
+  (also activates `kind=chair_park` from `POST /api/chairs/checkout`)
 
 ### Crypto Payments (`/routes/crypto_payments.py`)
 - `POST /api/crypto/create-payment`
@@ -253,7 +257,7 @@ All multiplayer games use Socket.IO for real-time communication:
 | Admin | ~15 | HttpOnly Cookie |
 | Social | ~12 | Authenticated |
 | Streaming | ~8 | Authenticated |
-| Payments | ~6 | Stripe Webhook |
+| Payments | ~6 | Helio webhook token |
 | Multiplayer | ~20 | Socket.IO |
 | Utility | ~5 | Public |
 
@@ -280,7 +284,7 @@ When adding new routes, ensure:
 ### Protected Routes
 - Admin routes: `Depends(verify_admin_cookie)`
 - User routes: `Depends(get_current_user)`
-- Payment webhooks: Stripe signature verification
+- Payment webhooks: Helio shared-token verification (`HELIO_WEBHOOK_TOKEN`, fails closed)
 
 ### CORS Configuration
 - Specific origins only (no wildcard for credential routes)

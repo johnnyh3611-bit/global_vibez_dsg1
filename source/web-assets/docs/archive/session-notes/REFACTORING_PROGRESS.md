@@ -1,5 +1,10 @@
 # 🏗️ Backend Refactoring Progress - Global Vibes
 
+> **ARCHIVED.** Historical session note — not current setup instructions. Payments are now
+> Solana deposit + Helio (Stripe retired, legacy routes return 410) and AI/LLM is Google Gemini
+> (Emergent is not used). See `source/web-assets/backend/ENV_VARIABLES.md` and
+> `source/web-assets/PAYMENT_SECURITY.md`.
+
 ## ✅ Completed: Models Extraction
 
 All Pydantic models have been extracted from the monolithic `server.py` into a clean, organized structure:

@@ -1,5 +1,13 @@
 # Global Vibez DSG — PRD & Handoff Memory
 
+> **Current reality (2026-08-01):** payments are **Solana deposit** (primary coin rail,
+> `GLOBAL_VIBEZ_SOLANA_RECEIVE_WALLET`) + **Helio** (only card rail); Stripe is retired and
+> legacy Stripe routes return HTTP 410. AI/LLM is **Google Gemini** (`GEMINI_API_KEY`, alias
+> `GOOGLE_API_KEY`); Emergent is not used (`OPENAI_API_KEY` is Voice Mirror / Voice Coach audio
+> only). Dated entries below are a historical log and are intentionally left as written — for
+> setup, follow `source/web-assets/backend/ENV_VARIABLES.md` and
+> `source/web-assets/PAYMENT_SECURITY.md`.
+
 
 > **2026-02-XX (cont.) — MARKETING COPY REFRESH (Recirculation story consistent app-wide) · 501/501 regression green 🎨.**
 >
@@ -1636,7 +1644,7 @@ Plus **800K Reserve Vault** + **200M DSG Founder Vault** — both release after 
 - Inactivity Reap: 12-month dormant sweep, race-safe (CAS + rebenchmark), 50% Giveaway Fund / 50% Leadership Dividends
 
 ### Monetization Streams (Future, PRD-tracked)
-- Stripe fiat on-ramp (keys live, code wired)
+- Card on-ramp via Helio + Solana deposit rail (code wired)
 - KYC'd tournament prize redemption (≥ $600 1099 compliance)
 - Streamer tips → same Sovereign Tax path
 - Chair-holder 5× mining multiplier (v12 PDF spec — Vibe-Cloud hardware leasing)
@@ -1683,8 +1691,8 @@ User operates the platform under a **Sweepstakes Gaming Model** (play for fun wi
 - **Frontend:** React 19, Tremor, TailwindCSS, craco alias `@` → `src/`
 - **Backend:** FastAPI + Motor (async MongoDB), Locust load testing, pymongo indexes
 - **Auth:** `httpOnly` cookie–based JWT (moved off `localStorage`)
-- **Payments:** Stripe (keys provided via env)
-- **LLM:** Emergent-managed universal key
+- **Payments:** Solana deposit (primary coin rail) + Helio (only card rail); Stripe retired (410)
+- **LLM:** Google Gemini (`GEMINI_API_KEY`, alias `GOOGLE_API_KEY`)
 - **Tests:** Jest + React Testing Library (v14) + jest-dom, with @tremor/react & framer-motion mocked under `src/__mocks__/`.
 
 ## ✅ Implemented (with dates)
@@ -4908,8 +4916,9 @@ User confirmed they don't have a compiled Unity WebGL build (the GitHub repo pro
 **Why this matters:** Server-authoritative architecture is the standard for multiplayer + casino games (per the gamasutra/EVE/WoW threads the user shared). The client is a renderer; the server is the single source of truth for all RNG, balance, and outcomes. Cheating via client-side tampering is structurally impossible because every spin/hand is logged with a verifiable proof.
 
 ## 3rd-Party Integrations
-- **Stripe** (Payments) — user-provided keys.
-- **Emergent Google Auth** — via Emergent LLM key.
+- **Helio / MoonPay** (card payments) + **Solana deposit** — keys via env.
+- **Privy** (Google / X social login) — JWKS verification.
+- **Google Gemini** (AI) — `GEMINI_API_KEY`.
 
 
 ---

@@ -199,7 +199,7 @@ if random.randint(1, 1000) >= threshold:
 ```cpp
 // GameInstance.cpp
 void UGlobalVibezGameInstance::ConnectToDealer(FString TableID) {
-    FString URL = TEXT("wss://social-connect-953.emergent.host/api/tournament/ws/") + TableID;
+    FString URL = TEXT("wss://globalvibezdsg1-production.up.railway.app/api/tournament/ws/") + TableID;
     
     WebSocket = FWebSocketsModule::Get().CreateWebSocket(URL);
     
@@ -221,7 +221,7 @@ void ATableManager::OnPlayerBetPlaced(float Amount) {
     if (Amount > 5000) {
         // Trigger "Big Bet" dealer reaction
         FHttpModule::Get().CreateRequest()
-            ->SetURL(FString::Printf(TEXT("https://social-connect-953.emergent.host/api/dealer/trigger/%s/POKER_BIG_BET"), *TableID))
+            ->SetURL(FString::Printf(TEXT("https://globalvibezdsg1-production.up.railway.app/api/dealer/trigger/%s/POKER_BIG_BET"), *TableID))
             ->SetVerb(TEXT("POST"))
             ->OnProcessRequestComplete().BindLambda([](FHttpRequestPtr Request, FHttpResponsePtr Response, bool Success) {
                 // MetaHuman plays MT_High_Stakes_Focus animation

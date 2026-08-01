@@ -438,7 +438,7 @@ reconnectionDelay: 1000,              // NEW
 - ✅ Get user feedback
 
 ### Phase 2: Request WebSocket Support
-- ⏳ Contact Emergent support
+- ⏳ Confirm WebSocket support on the hosting platform (Railway supports it natively)
 - ⏳ Provide ingress configuration
 - ⏳ Wait for infrastructure update
 
