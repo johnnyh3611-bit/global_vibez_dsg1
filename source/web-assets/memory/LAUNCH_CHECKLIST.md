@@ -1,3 +1,5 @@
+> ⚠️ **SUPERSEDED** — the authoritative go-live checklist is now [`GO_LIVE.md`](../../../GO_LIVE.md) at the repo root.
+
 # Global Vibez DSG — Pre-Launch Checklist
 
 > The honest, no-fluff list of everything you (the founder) need to do
