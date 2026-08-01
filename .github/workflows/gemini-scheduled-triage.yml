@@ -40,30 +40,14 @@ jobs:
     steps:
       - name: 'Get repository labels'
         id: 'get_labels'
-        uses: 'actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd' # ratchet:actions/github-script@v8.0.0
-        with:
-          # NOTE: we intentionally do not use the minted token. The default
-          # GITHUB_TOKEN provided by the action has enough permissions to read
-          # the labels.
-          script: |-
-            const labels = [];
-            for await (const response of github.paginate.iterator(github.rest.issues.listLabelsForRepo, {
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              per_page: 100, // Maximum per page to reduce API calls
-            })) {
-              labels.push(...response.data);
-            }
-
-            if (!labels || labels.length === 0) {
-              core.setFailed('There are no issue labels in this repository.')
-            }
-
-            const labelNames = labels.map(label => label.name).sort();
-            core.setOutput('available_labels', labelNames.join(','));
-            core.info(`Found ${labelNames.length} labels: ${labelNames.join(', ')}`);
-            return labelNames;
-
+        run: |
+          LABELS="$(gh label list --json name --limit 100 --repo "${{ github.repository }}" || echo '[]')"
+          LABEL_NAMES="$(echo "${LABELS}" | jq -r '.[].name' | sort | paste -sd, -)"
+          if [ -z "${LABEL_NAMES}" ]; then
+            echo "available_labels=" >> "${GITHUB_OUTPUT}"
+          else
+            echo "available_labels=${LABEL_NAMES}" >> "${GITHUB_OUTPUT}"
+          fi
       - name: 'Find untriaged issues'
         id: 'find_issues'
         env:
