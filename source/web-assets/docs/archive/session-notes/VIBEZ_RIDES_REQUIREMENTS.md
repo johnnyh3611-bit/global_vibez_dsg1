@@ -1,5 +1,10 @@
 # 🚗 VIBEZ RIDES - Safe Dating Transportation Platform
 
+> **ARCHIVED.** Historical session note — not current setup instructions. Payments are now
+> Solana deposit + Helio (Stripe retired, legacy routes return 410) and AI/LLM is Google Gemini
+> (Emergent is not used). See `source/web-assets/backend/ENV_VARIABLES.md` and
+> `source/web-assets/PAYMENT_SECURITY.md`.
+
 ## Overview
 Vibez Rides is Global Vibez DSG's integrated ride-sharing service designed specifically for safe dating transportation. Think "Uber for dates" with enhanced safety features, dual platforms (driver & rider), real-time tracking, and integrated dating app features.
 

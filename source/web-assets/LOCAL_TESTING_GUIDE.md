@@ -127,7 +127,7 @@ Frontend → localhost:8001 → Backend Socket.IO
 
 **Production Mode:**
 ```bash
-REACT_APP_BACKEND_URL=https://social-connect-953.preview.emergentagent.com
+REACT_APP_BACKEND_URL=https://globalvibezdsg1-production.up.railway.app
 ```
 
 **Local Mode:**
@@ -264,7 +264,7 @@ sudo supervisorctl restart backend frontend
 ### Issue: Authentication Fails
 
 **In local mode, ensure:**
-- Emergent Google Auth callback URLs include `localhost:3000`
+- Privy allowed origins / redirect URLs include `localhost:3000`
 - Session cookies work on localhost
 - Try using the same browser for both players (one normal, one incognito)
 
@@ -272,7 +272,7 @@ sudo supervisorctl restart backend frontend
 
 ## 🔙 Restoring Production Mode
 
-When Emergent support fixes WebSocket:
+To switch back to the hosted API:
 
 ```bash
 ./switch_websocket_mode.sh production
@@ -346,8 +346,7 @@ Once local testing is complete and everything works:
 
 1. **Document any bugs found** → Fix them
 2. **Switch back to production mode**
-3. **Contact Emergent support** with WebSocket request
-4. **Test publicly** once WebSocket is enabled
+3. **Test publicly** against the Railway API (Socket.IO works there without extra config)
 
 ---
 

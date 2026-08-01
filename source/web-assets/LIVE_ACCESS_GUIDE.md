@@ -3,10 +3,10 @@
 ## 🔗 **Your Live Links**
 
 ### **Main App (Frontend)**
-👉 **https://social-connect-953.preview.emergentagent.com**
+👉 **https://www.globalvibezdsg.com**
 
 ### **API Backend**
-👉 **https://social-connect-953.preview.emergentagent.com/api**
+👉 **https://globalvibezdsg1-production.up.railway.app/api**
 
 ---
 
@@ -25,7 +25,7 @@
 - ✅ User profiles
 - ✅ Swipe/Match system
 - ✅ Real-time messaging
-- ✅ Premium payments (Stripe test mode)
+- ✅ Premium payments (Helio card checkout, `HELIO_NETWORK=test`) + Solana deposit
 - ✅ Referral system
 - ✅ Dating categories
 
@@ -47,7 +47,7 @@
 
 ### **1. Landing Page**
 ```
-https://social-connect-953.preview.emergentagent.com
+https://www.globalvibezdsg.com
 ```
 - Click "Sign In" → Google OAuth
 - Complete profile setup
@@ -65,7 +65,7 @@ After login, you'll see:
 
 **List All Games:**
 ```bash
-GET https://social-connect-953.preview.emergentagent.com/api/games/list
+GET https://globalvibezdsg1-production.up.railway.app/api/games/list
 ```
 
 **Response:**
@@ -169,8 +169,7 @@ Games will have:
 
 5. **Premium**
    - Upgrade page
-   - Stripe checkout (test mode)
-   - Use card: 4242 4242 4242 4242
+   - Helio checkout (sandbox while `HELIO_NETWORK=test`) or Solana deposit
 
 6. **Referrals**
    - Your unique referral code
@@ -190,7 +189,7 @@ Games will have:
 
 **Base URL:**
 ```
-https://social-connect-953.preview.emergentagent.com/api
+https://globalvibezdsg1-production.up.railway.app/api
 ```
 
 **Key Endpoints:**
@@ -251,7 +250,7 @@ The app is fully responsive! Access from:
 ## 🔗 **Quick Links**
 
 **Main App:**
-👉 https://social-connect-953.preview.emergentagent.com
+👉 https://www.globalvibezdsg.com
 
 **Try Now:**
 1. Click "Sign In"

@@ -13,8 +13,10 @@ on the next `bash scripts/run_quality_gates.sh` run.
 
 - **Frontend:** React 19 (CRA + craco alias `@` → `src/`), Tailwind CSS, Framer Motion.
 - **Backend:** FastAPI + Motor (async MongoDB), APScheduler, Socket.IO.
-- **Auth:** Emergent-managed Google + `httpOnly` JWT cookies.
-- **Payments:** Stripe; chair purchases flow through `record_revenue()` → 40-30-30 split.
+- **Auth:** Privy social login (Google / X, JWKS-verified) + `httpOnly` JWT cookies.
+- **Payments:** Solana deposit (primary coin rail) + Helio (only card rail); Stripe is retired
+  (legacy routes return 410). Chair purchases flow through `record_revenue()` → 40-30-30 split.
+- **AI/LLM:** Google Gemini (`GEMINI_API_KEY`, alias `GOOGLE_API_KEY`).
 - **Blockchain:** Solana Devnet (→ Mainnet on safeword "domains"). On-chain token ticker: **$DSG** (the Solana SPL token). Company brand: **Global Vibez DSG™**. In-app currency (off-chain): **Vibez Coins / ₵ / Vibe Credits** — converts 1:1 to $DSG at TGE.
 - **Treasury:** Squads 2-of-2 multi-sig + Streamflow payroll streams + Jupiter USDC swap.
 

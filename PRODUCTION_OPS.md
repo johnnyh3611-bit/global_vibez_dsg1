@@ -49,13 +49,27 @@ ENVIRONMENT=production
 CORS_ORIGINS=https://www.globalvibezdsg.com,https://globalvibezdsg.com
 FRONTEND_URL=https://www.globalvibezdsg.com
 
-# Vibe Phone / FaceTime video (Agora) — was set on Emergent; must be
-# re-added on Railway after the migration. Without these,
-# GET /api/agora/health returns configured:false and calls ring but
-# have no live audio/video.
+# Vibe Phone / FaceTime video (Agora) — must be set on Railway. Without
+# these, GET /api/agora/health returns configured:false and calls ring
+# but have no live audio/video.
 AGORA_APP_ID=<from https://console.agora.io>
 AGORA_APP_CERTIFICATE=<from same project → App Certificate>
+
+# AI — Google Gemini (date planner, coaches, matching, translation).
+# GOOGLE_API_KEY is accepted as an alias. Emergent is no longer used.
+GEMINI_API_KEY=<from https://aistudio.google.com/apikey>
+
+# Payments — Solana deposit (primary coin rail) + Helio (only card rail).
+# Stripe is retired; legacy Stripe routes return 410.
+GLOBAL_VIBEZ_SOLANA_RECEIVE_WALLET=<Solana treasury pubkey>
+HELIO_API_KEY=<Helio public API key>
+HELIO_SECRET_KEY=<Helio secret bearer>
+HELIO_PAYLINK_ID=<dynamic Pay Link id>
+HELIO_NETWORK=test          # flip to main when live
+HELIO_WEBHOOK_TOKEN=<from the Helio webhook create call>
 ```
+
+Full variable reference: `source/web-assets/backend/ENV_VARIABLES.md`.
 
 Also confirm on the **backend service**:
 - **Settings → Root Directory** = `source/web-assets/backend`
@@ -178,7 +192,8 @@ npm run dev          # scripts/dev-up.sh — mongo + :8001 + :3000
 
 Full runbook: `source/web-assets/PAYMENT_SECURITY.md`.
 
-**Card rail = Helio.** We do not use Stripe for coin top-up.
+**Primary coin rail = Solana deposit** (`GLOBAL_VIBEZ_SOLANA_RECEIVE_WALLET`).
+**Card rail = Helio only.** Stripe is retired — legacy Stripe routes return 410; do not provision `STRIPE_*`.
 
 Checklist before opening Helio beyond Founding Members:
 

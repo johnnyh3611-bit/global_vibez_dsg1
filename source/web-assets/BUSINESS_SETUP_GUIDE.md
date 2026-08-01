@@ -178,12 +178,13 @@ api_router.include_router(kyc_router, tags=["kyc-aml"])
 
 ### **Week 3: Payment Compliance**
 
-- [ ] **Stripe Integration (Live Mode)**
-  - [ ] Create Stripe account
-  - [ ] Complete Stripe verification (business documents)
-  - [ ] Enable Connect for regulated industries
-  - [ ] Replace test keys with live keys
-  - [ ] Test deposit flow end-to-end
+- [ ] **Helio card rail (live) + Solana deposit rail**
+  - [ ] Create the Helio / MoonPay merchant account (https://moonpay.hel.io)
+  - [ ] Complete Helio verification (business documents)
+  - [ ] Set `HELIO_API_KEY` / `HELIO_SECRET_KEY` / `HELIO_PAYLINK_ID` / `HELIO_WEBHOOK_TOKEN`
+  - [ ] Flip `HELIO_NETWORK` from `test` to `main`
+  - [ ] Set `GLOBAL_VIBEZ_SOLANA_RECEIVE_WALLET` for the Solana deposit rail
+  - [ ] Test deposit flow end-to-end (card + Solana)
 
 - [ ] **Tax Compliance**
   - [ ] Implement IRS Form 1099 generation (for payouts >$600/year)
@@ -243,7 +244,7 @@ api_router.include_router(kyc_router, tags=["kyc-aml"])
 ### **Within 30 Days of Launch**
 
 4. **Payment Processing**
-   - Stripe live mode
+   - Helio on `HELIO_NETWORK=main` + Solana receive wallet set
    - Bank account for payouts
    - Accounting system
 
@@ -322,7 +323,7 @@ api_router.include_router(kyc_router, tags=["kyc-aml"])
 - [ ] Duplicate account detection
 - [ ] Bonus abuse detection
 - [ ] Collusion detection (poker/multiplayer games)
-- [ ] Credit card fraud prevention (via Stripe Radar)
+- [ ] Credit card fraud prevention (Helio / MoonPay risk tooling)
 
 **Data Security:**
 - [ ] Regular security audits
@@ -364,7 +365,7 @@ api_router.include_router(kyc_router, tags=["kyc-aml"])
 - Compliance software: $1,000 - $5,000/year
 
 ### **Operating Costs:**
-- Payment processing: 2.9% + $0.30 per transaction (Stripe)
+- Payment processing: per the Helio / MoonPay fee schedule (card); Solana network fee only (deposits)
 - Payout processing: $5 per payout (under $500)
 - Customer support: $3,000 - $10,000/month
 - Compliance team: $5,000 - $20,000/month
@@ -390,7 +391,7 @@ api_router.include_router(kyc_router, tags=["kyc-aml"])
 
 ### **Payment** (🟡 Needs Setup)
 - [x] Payment infrastructure ready
-- [ ] Stripe live mode configured
+- [ ] Helio live (`HELIO_NETWORK=main`) + Solana receive wallet configured
 - [ ] Bank account for payouts
 - [ ] Accounting system set up
 
@@ -413,10 +414,10 @@ api_router.include_router(kyc_router, tags=["kyc-aml"])
    - Review terms & privacy
    - Jurisdiction-specific advice
 
-3. **Stripe Live Mode** (This Week)
-   - Create account
+3. **Helio Live Mode** (This Week)
+   - Create the Helio / MoonPay merchant account
    - Complete verification
-   - Replace test keys
+   - Set production Helio keys + `HELIO_NETWORK=main`
 
 4. **Customer Support** (This Week)
    - Set up support email
@@ -449,8 +450,8 @@ api_router.include_router(kyc_router, tags=["kyc-aml"])
 - National Council on Problem Gambling: www.ncpgambling.org
 
 **Payment Processing:**
-- Stripe: stripe.com/connect
-- PayPal: paypal.com/business
+- Helio / MoonPay: moonpay.hel.io
+- Solana deposit rail: `GLOBAL_VIBEZ_SOLANA_RECEIVE_WALLET`
 
 **Licensing:**
 - Malta Gaming Authority: www.mga.org.mt

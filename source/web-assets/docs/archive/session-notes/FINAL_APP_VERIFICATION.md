@@ -1,4 +1,10 @@
 # 🤖 COMPREHENSIVE 10000 DUAL BOT APP CHECK - COMPLETE
+
+> **ARCHIVED.** Historical session note — not current setup instructions. Payments are now
+> Solana deposit + Helio (Stripe retired, legacy routes return 410) and AI/LLM is Google Gemini
+> (Emergent is not used). See `source/web-assets/backend/ENV_VARIABLES.md` and
+> `source/web-assets/PAYMENT_SECURITY.md`.
+
 **Global Vibez DSG - Final Platform Verification**  
 **Date**: March 29, 2026  
 **Tests Executed**: 25 Backend + 10 Frontend = **35 Total Tests**  

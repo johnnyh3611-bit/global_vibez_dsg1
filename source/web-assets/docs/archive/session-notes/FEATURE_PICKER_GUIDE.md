@@ -1,5 +1,10 @@
 # 🎮 GLOBAL VIBEZ DSG - ALL EXISTING FEATURES (PICK YOUR NEXT BUILD)
 
+> **ARCHIVED.** Historical session note — not current setup instructions. Payments are now
+> Solana deposit + Helio (Stripe retired, legacy routes return 410) and AI/LLM is Google Gemini
+> (Emergent is not used). See `source/web-assets/backend/ENV_VARIABLES.md` and
+> `source/web-assets/PAYMENT_SECURITY.md`.
+
 ## 📊 FEATURE STATUS LEGEND
 - ✅ **FULLY WORKING** - Backend + Frontend + Tested
 - ⚠️ **PARTIALLY WORKING** - Backend exists, Frontend incomplete or vice versa

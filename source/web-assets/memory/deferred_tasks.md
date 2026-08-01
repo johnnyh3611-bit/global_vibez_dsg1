@@ -15,7 +15,7 @@
    - Currently on Free. Not blocking anything.
 
 3. **Smartcar + Spotify redirect URI updates** for production domain
-   - Currently point to `social-connect-953.preview.emergentagent.com`
+   - Currently point to the old preview host
    - After custom domain goes live, update:
      - `SMARTCAR_REDIRECT_URI` in `.env`
      - `SPOTIFY_REDIRECT_URI` in `.env`
@@ -24,4 +24,4 @@
 
 4. **Generic "anything that involves leaving the site"**
    - User asked to skip anything that requires opening an external dashboard to click around
-   - Includes: Stripe dashboard, Agora signup, Solana faucet (for devnet bootstrap), any DNS work, any third-party billing portal
+   - Includes: Helio / MoonPay dashboard, Agora signup, Solana faucet (for devnet bootstrap), any DNS work, any third-party billing portal

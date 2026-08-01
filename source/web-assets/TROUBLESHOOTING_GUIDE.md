@@ -90,7 +90,7 @@ Check browser console for:
 ### For Demo Login:
 - [ ] Clear browser cache/cookies
 - [ ] Try incognito/private window
-- [ ] Check if backend is running: `curl https://social-connect-953.preview.emergentagent.com/api/auth/demo-login -X POST`
+- [ ] Check if backend is running: `curl https://globalvibezdsg1-production.up.railway.app/api/auth/demo-login -X POST`
 - [ ] Check browser console for errors
 
 ### For Baccarat AAA:
@@ -129,7 +129,7 @@ Check browser console for:
 ## Manual Testing Script:
 
 ```
-1. Open https://social-connect-953.preview.emergentagent.com
+1. Open https://www.globalvibezdsg.com
 2. Click "🎮 Demo Login (Quick Access)"
 3. Expected: Redirect to /dashboard
 4. Actual: _____________

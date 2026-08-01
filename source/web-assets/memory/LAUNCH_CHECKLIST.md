@@ -5,7 +5,10 @@
 > The honest, no-fluff list of everything you (the founder) need to do
 > before flipping the switch on real, paying users at launch.
 >
-> Last updated: 2026-05-12 (after HungryVibes merchant fulfillment loop shipped).
+> Last updated: 2026-08-01 — the 💳 Payments and 🤖 LLM sections were revised after the
+> Stripe → Helio + Solana payment migration and the Emergent → Google Gemini LLM migration.
+> Canonical env references: `source/web-assets/backend/ENV_VARIABLES.md` and
+> `source/web-assets/PAYMENT_SECURITY.md`.
 
 Tick boxes as you go. Items grouped by urgency:
 **🔴 BLOCKERS** = real users WILL hit this and break · don't launch without
@@ -17,15 +20,24 @@ Tick boxes as you go. Items grouped by urgency:
 ## 🔴 BLOCKERS (must-do before paying users)
 
 ### 💳 Payments
-- [ ] **Swap Stripe from test to LIVE keys.** Backend `.env`: change `STRIPE_API_KEY` from a test placeholder to your real live Stripe secret key. Verify a $1 test card actually charges.
-- [ ] **Add `STRIPE_WEBHOOK_SECRET`** to backend `.env`. Without this, webhook callbacks can be spoofed. Get from Stripe Dashboard → Developers → Webhooks → your endpoint → "Signing secret".
-- [ ] **Test every Stripe checkout path** in production once live keys are in:
-  - [ ] Vibez Coin top-up (₵ packs)
+
+> Stripe is retired — legacy Stripe routes return HTTP 410. The coin rails are
+> **Solana deposit** (primary) and **Helio** (only card rail). Full rules:
+> `source/web-assets/PAYMENT_SECURITY.md`; variable reference:
+> `source/web-assets/backend/ENV_VARIABLES.md`.
+
+- [ ] **Set the Solana deposit rail.** Backend env: `GLOBAL_VIBEZ_SOLANA_RECEIVE_WALLET=<treasury pubkey>`. Send one small real deposit and confirm the wallet credits.
+- [ ] **Set the Helio card rail** on the backend: `HELIO_API_KEY`, `HELIO_SECRET_KEY`, `HELIO_PAYLINK_ID` (from https://moonpay.hel.io → Developers → API keys + dynamic Pay Link).
+- [ ] **Add `HELIO_WEBHOOK_TOKEN`** (shared token from the Helio webhook create call). Without it, webhooks fail closed in production — no credits land.
+- [ ] **Flip `HELIO_NETWORK` from `test` to `main`** once a sandbox checkout has credited end-to-end. Keys from `moonpay.dev.hel.io` only work on the dev host.
+- [ ] **Confirm `GET /api/integrations/health`** shows `services.helio.configured` and the Solana wallet present.
+- [ ] **Test every coin/card path** in production once `HELIO_NETWORK=main`:
+  - [ ] Vibez Coin top-up (₵ packs) via Solana deposit
+  - [ ] Vibez Coin top-up (₵ packs) via Helio card checkout
   - [ ] Vibez Wallet top-up
-  - [ ] JFTN Season Pass subscription ($25/mo)
-  - [ ] HungryVibes merchant sponsorship ($29.99/mo)
-  - [ ] Genius Chair one-time ($20)
-  - [ ] Sovereign Tier subscriptions ($9/$19/$39/$89)
+  - [ ] Chair vault checkout (`POST /api/chairs/checkout` → Helio `kind=chair_park`)
+  - [ ] Confirm `payments_audit` entries + wallet credit for each
+- [ ] **Keep `PAYMENT_BETA_MODE=true`** with `PAYMENT_BETA_ALLOWLIST` (Founding Members) until live credits reconcile; Solana stays open to everyone.
 
 ### 📧 Email Deliverability
 - [ ] **IONOS DNS records for `globalvibez.com`** so Resend can send from your domain:
@@ -45,14 +57,14 @@ Tick boxes as you go. Items grouped by urgency:
 ### 🚖 Vibe Ridez Driver Payouts
 - [ ] Currently every driver payout drops into the admin `payout_requests` queue → **manual approval only**. For launch, decide one:
   - Option A: keep manual approval (you eyeball every payout — fine for first 50 drivers)
-  - Option B: wire **Stripe Connect** for automatic driver bank deposits
-- [ ] If Option B → wire Stripe Connect onboarding into `/driver/wallet` page
+  - Option B: wire an automatic driver payout rail (Solana payout to the driver's wallet, or a bank-transfer provider) — nothing is wired today
+- [ ] If Option B → wire the chosen payout onboarding into the `/driver/wallet` page
 - [ ] If Option A → write the operations doc: who approves, how often, expected SLA
 
 ### 🍕 HungryVibes Merchant Payouts
 - [ ] Same decision as drivers — Vibe Account balance accrues on every delivered order (net of 2% Vibe Tax) but there's no auto-withdraw to merchant bank yet. Either:
-  - Manual weekly payouts via Stripe Connect transfers (admin batch)
-  - Wire Stripe Connect for merchants too (matches driver flow)
+  - Manual weekly payouts from the admin batch queue
+  - Wire the same automatic payout rail chosen for drivers
 
 ---
 
@@ -65,9 +77,9 @@ Tick boxes as you go. Items grouped by urgency:
 - [ ] Update **Privy / Phantom / wallet redirects** if any preview URLs leak
 
 ### 🤖 LLM Budget
-- [ ] Top up **Emergent Universal LLM Key** budget (currently capped — Receipt OCR + i18n + Vibe Core AI mediation gracefully degrade but real users expect them to work)
+- [ ] Set **`GEMINI_API_KEY`** (or the `GOOGLE_API_KEY` alias) on the backend and confirm quota/billing in Google AI Studio — Receipt OCR + i18n + Vibe Core AI mediation gracefully degrade without it, but real users expect them to work
 - [ ] Run `cd /app/backend && python scripts/generate_landing_tour_i18n.py` to generate the 7 i18n tour videos (Spanish, French, Portuguese, Chinese, Hindi, Arabic, Japanese) — ~$0.20, ~3 min
-- [ ] Confirm Claude Haiku + GPT image + Gemini Nano Banana + Onyx TTS all responding
+- [ ] Confirm Gemini chat/vision responses and Onyx TTS (`OPENAI_API_KEY`, audio only) are all responding
 
 ### 🚖 Vibe Ridez Real-time Improvements
 - [x] Driver dispatch flow exists (`/api/ridez/request` → driver offer → respond → complete) ✅
@@ -85,14 +97,14 @@ Tick boxes as you go. Items grouped by urgency:
 - [ ] **Optional v2:** wire SmartStack to offer the delivery leg to Vibe Ridez drivers automatically (`smartstack_offers` collection already exists — just wire the surface UI)
 
 ### 🎰 Casino Compliance
-- [ ] Confirm you're **NOT** taking real-money bets — all stakes are in ₵ Vibez Coins (you bought via Stripe = entry fee, not gambling). Verify legal positioning is sweepstakes/promotional sweeps model OR your specific jurisdiction.
+- [ ] Confirm you're **NOT** taking real-money bets — all stakes are in ₵ Vibez Coins (bought via Solana deposit or Helio card = entry fee, not gambling). Verify legal positioning is sweepstakes/promotional sweeps model OR your specific jurisdiction.
 - [ ] Add visible "Sweepstakes / Skill Game" disclosure on all betting screens (Sports Lounge, Spectator Bets, Lottery, DSG 6)
 - [ ] State-restriction screen for WA/ID/NV/etc. if applicable (use IP geolocation)
 - [ ] **TOS + Privacy + Responsible Gaming pages** linked from footer
 
 ### 📜 Legal
 - [ ] **Terms of Service** page reviewed by a lawyer (you're handling real money + user-generated content + chat)
-- [ ] **Privacy Policy** mentions: cookies, location for VibeRidez, payment processing via Stripe, OAuth providers, retention
+- [ ] **Privacy Policy** mentions: cookies, location for VibeRidez, payment processing via Helio + Solana, OAuth providers, retention
 - [ ] **Age verification** flow tested (DOB → age 18+/21+ gate depending on feature)
 - [ ] **DMCA contact** listed for the Cinema Room + creator content
 - [ ] **California / GDPR** data-export and delete-account endpoints exist (if you have any EU/CA users)
@@ -100,7 +112,7 @@ Tick boxes as you go. Items grouped by urgency:
 ### 📊 Monitoring
 - [ ] **Backend error reporting** — wire Sentry or similar (currently errors only show in supervisor logs)
 - [ ] **Uptime monitor** — Pingdom/UptimeRobot hitting `/api/health` every minute
-- [ ] **Stripe webhook delivery monitor** — Stripe Dashboard alerts on webhook failures
+- [ ] **Helio webhook delivery monitor** — alert on failed `POST /api/coins/webhook/helio` deliveries (Helio dashboard + backend logs)
 - [ ] **Daily admin email**: weekly digest already exists; consider daily revenue snapshot too
 - [ ] **God Mode Activity Pulse card** already shows live business pulse ✅
 
@@ -117,7 +129,7 @@ Tick boxes as you go. Items grouped by urgency:
 ### UX
 - [ ] **"Remember my role" toast** when user switches role for the first time
 - [ ] **Onboarding tour** for first-time visitors (highlight Volumetric, Ride, Eat, Tiers)
-- [ ] Mobile haptic feedback on key CTAs (Stripe checkout, Ride Accept, JFTN Join)
+- [ ] Mobile haptic feedback on key CTAs (Helio checkout, Ride Accept, JFTN Join)
 - [ ] **Dark/Light mode toggle** (currently dark-only — most casino apps are dark-only so this is optional)
 
 ### Performance
@@ -163,7 +175,7 @@ These are wired and verified end-to-end as of 2026-05-12:
 
 ## 🎯 Recommended Launch Order
 
-1. **Today / this week**: Tick all 🔴 BLOCKERS. Especially Stripe live keys + email DNS.
+1. **Today / this week**: Tick all 🔴 BLOCKERS. Especially the Helio live keys (`HELIO_NETWORK=main`) + Solana receive wallet + email DNS.
 2. **Quiet beta (50 users)**: invite the beta-tester waitlist. Use this to find any 🟡 HIGH items you missed.
 3. **Public beta (500 users)**: open `/beta-tester` waitlist signup, run for 2 weeks.
 4. **Soft launch**: lift the waitlist gate. Marketing push.
@@ -173,7 +185,7 @@ These are wired and verified end-to-end as of 2026-05-12:
 
 **Honest read**: the app is **functionally complete for a soft launch with 50-500 beta users** today. The biggest risks before broader launch are:
 
-1. Stripe in TEST mode → cannot charge real cards yet
+1. Helio still on `HELIO_NETWORK=test` → cannot charge real cards yet
 2. No automatic driver/merchant bank payouts → manual approval bottleneck after first 100 transactions
 3. No real-time delivery tracking for HungryVibes customer → they see "preparing" but don't get a "your food is here" ping
 

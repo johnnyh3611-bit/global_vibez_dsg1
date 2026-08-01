@@ -1,5 +1,10 @@
 # 💬 Global Vibez Chat System - Implementation Complete
 
+> **ARCHIVED.** Historical session note — not current setup instructions. Payments are now
+> Solana deposit + Helio (Stripe retired, legacy routes return 410) and AI/LLM is Google Gemini
+> (Emergent is not used). See `source/web-assets/backend/ENV_VARIABLES.md` and
+> `source/web-assets/PAYMENT_SECURITY.md`.
+
 ## Overview
 Successfully translated UE5 "Celestial Glass Slate" architecture into a premium React/FastAPI WebSocket chat system.
 

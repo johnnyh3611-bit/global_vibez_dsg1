@@ -1,5 +1,10 @@
 # 🎯 Custom HTTP Multiplayer System - NO Socket.IO Needed!
 
+> **ARCHIVED.** Historical session note — not current setup instructions. Payments are now
+> Solana deposit + Helio (Stripe retired, legacy routes return 410) and AI/LLM is Google Gemini
+> (Emergent is not used). See `source/web-assets/backend/ENV_VARIABLES.md` and
+> `source/web-assets/PAYMENT_SECURITY.md`.
+
 ## Overview
 
 We've built a **custom real-time multiplayer system** using ONLY standard HTTP REST APIs and client-side polling. This works **perfectly within Emergent's infrastructure** without needing any special WebSocket or Socket.IO configuration!

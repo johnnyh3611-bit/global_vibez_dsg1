@@ -80,7 +80,9 @@ JWT_SECRET=<generate: openssl rand -hex 32>
 DISABLE_BG_SCHEDULERS=1
 ENVIRONMENT=production
 CORS_ORIGINS=*
-EMERGENT_LLM_KEY=<your Emergent LLM key>
+GEMINI_API_KEY=<your Google Gemini API key from https://aistudio.google.com/apikey>
+# Primary coin rail = Solana deposit
+GLOBAL_VIBEZ_SOLANA_RECEIVE_WALLET=<your Solana treasury pubkey>
 # Card rail = Helio only (do not set Stripe for coin top-up)
 HELIO_API_KEY=<Helio public API key>
 HELIO_SECRET_KEY=<Helio secret>
@@ -117,7 +119,7 @@ CI=false
 Optional (enables extra features):
 
 ```
-REACT_APP_STRIPE_KEY=<Stripe publishable key>
+# NOTE: REACT_APP_STRIPE_KEY is NOT used — coin/card rails are Helio + Solana only.
 REACT_APP_MAPBOX_TOKEN=<Mapbox token>
 REACT_APP_GIPHY_API_KEY=<Giphy key>
 REACT_APP_SOLANA_DISABLE=true

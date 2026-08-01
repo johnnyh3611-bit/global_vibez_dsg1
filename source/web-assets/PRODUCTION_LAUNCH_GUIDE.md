@@ -6,6 +6,12 @@
 
 ## 🎯 **QUICK LAUNCH SUMMARY**
 
+> **Updated 2026-08-01.** Hosting is **Railway** (FastAPI backend) + **Vercel**
+> (`www.globalvibezdsg.com` frontend) — see `PRODUCTION_OPS.md` and
+> `RAILWAY_DEPLOY.md`. Payments are **Solana deposit** (primary coin rail) +
+> **Helio** (only card rail); Stripe is retired. AI is **Google Gemini**.
+> Canonical variable list: `backend/ENV_VARIABLES.md`.
+
 Your Global Vibes dating app is **100% ready to launch!** Here's everything you need to know:
 
 ---
@@ -15,7 +21,7 @@ Your Global Vibes dating app is **100% ready to launch!** Here's everything you 
 Your app has:
 - ✅ Full dating platform (swipe, match, chat, translation)
 - ✅ 15 playable games with 3D effects
-- ✅ Stripe payments (currently in test mode)
+- ✅ Helio card checkout + Solana deposit coin rails (Helio currently on `HELIO_NETWORK=test`)
 - ✅ Premium memberships & referral system
 - ✅ Google OAuth authentication
 - ✅ MongoDB database
@@ -27,60 +33,51 @@ Your app has:
 
 ## 🚀 **HOW TO LAUNCH (3 Simple Steps)**
 
-### **Step 1: Deploy on Emergent (10-15 minutes)**
+### **Step 1: Deploy backend + frontend (10-15 minutes)**
 
-1. **In Emergent platform:**
-   - Click the **"Deploy"** button
-   - Click **"Deploy Now"**
-   - Wait 10-15 minutes
-   
-2. **What you get:**
-   - Live production URL (publicly accessible)
-   - 24/7 uptime
-   - Managed infrastructure
-   - Secure environment
-
-3. **Cost:**
-   - 50 credits per month per deployed app
-   - Can pause/stop anytime
-   - No additional charges for updates
+1. **Backend — Railway** (`source/web-assets/backend` root directory, MongoDB plugin
+   or Atlas). Full walkthrough: `RAILWAY_DEPLOY.md`.
+2. **Frontend — Vercel** project `global-vibez-dsg`, with
+   `REACT_APP_BACKEND_URL` pointed at the Railway public URL (CRA bakes it at
+   build time, so redeploy after changing it).
+3. **Verify:** `GET /health` returns JSON, `POST /api/auth/demo-login` returns a
+   token, and `GET /api/integrations/health` shows the services you configured.
 
 ### **Step 2: Add Custom Domain (Optional but Recommended)**
 
-**Why:** Makes your app professional (e.g., `globalvibes.com` instead of `*.emergentagent.com`)
+**Why:** Makes your app professional (e.g., `globalvibezdsg.com` instead of a `*.vercel.app` URL)
 
 **How:**
 1. Purchase a domain from:
    - GoDaddy, Namecheap, Google Domains, etc.
    - Cost: ~$10-15/year
 
-2. In Emergent:
-   - Click **"Link Domain"**
-   - Enter your domain name
-   - Click **"Entri"**
-   - Follow on-screen instructions
+2. In Vercel → Project → **Settings → Domains**:
+   - Add `globalvibezdsg.com` and `www.globalvibezdsg.com`
+   - Apply the DNS records Vercel shows at your registrar
+   - Keep the apex → www 301 from root `vercel.json`
 
 3. **Wait:**
    - DNS propagation: 5-15 minutes (can take up to 24 hours)
-   - If not live in 15 mins: Remove all 'A records' from DNS, then re-link
+   - If not live in 15 mins: re-check the records against Vercel's Domains tab
 
-### **Step 3: Switch Stripe to Live Mode**
+### **Step 3: Switch Helio to Live (`main`) Mode**
 
-**Why:** Accept real payments from users
+**Why:** Accept real card payments from users
 
 **How:**
-1. Go to [Stripe Dashboard](https://dashboard.stripe.com)
-2. Switch from **Test Mode** to **Live Mode** (toggle in top right)
-3. Get your **Live API Keys**:
-   - Publishable key: `pk_live_...`
-   - Secret key: `sk_live_...`
+1. Go to the [Helio / MoonPay dashboard](https://moonpay.hel.io) → **Developers**
+2. Create production API keys + a dynamic Pay Link
+3. On the Railway **backend** service, set:
+   - `HELIO_API_KEY`, `HELIO_SECRET_KEY`, `HELIO_PAYLINK_ID`
+   - `HELIO_WEBHOOK_TOKEN` (from the webhook create call — required, webhooks fail closed without it)
+   - `HELIO_NETWORK=main`
+4. Set `GLOBAL_VIBEZ_SOLANA_RECEIVE_WALLET` for the Solana deposit rail
+5. Redeploy the backend, then **test:** run one small real checkout and one small
+   Solana deposit; confirm `payments_audit` entries + wallet credit
 
-4. In Emergent:
-   - Go to **Environment Variables**
-   - Update `STRIPE_API_KEY` with your live key
-   - Redeploy (takes 10 mins)
-
-5. **Test:** Make a small real payment to verify
+Do **not** provision `STRIPE_*` — legacy Stripe routes return HTTP 410.
+PCI / TLS / webhook rules: `PAYMENT_SECURITY.md`.
 
 ---
 
@@ -89,21 +86,21 @@ Your app has:
 ### **Week 1-2: Final Testing**
 - ✅ Test all features in preview
 - ✅ Verify all 15 games work
-- ✅ Test payments with Stripe test card
+- ✅ Test payments on `HELIO_NETWORK=test` + a devnet Solana deposit
 - ✅ Get friends to test
 - ✅ Fix any bugs found
 
 ### **Week 3: Production Prep**
-- 🔐 Create Stripe live account
+- 🔐 Create Helio production keys + Solana treasury wallet
 - 🌐 Purchase custom domain (optional)
 - 📝 Write Terms of Service & Privacy Policy
 - ✅ Final security review
 - ✅ Prepare marketing materials
 
 ### **Week 4: LAUNCH!**
-- 🚀 Deploy on Emergent (Day 22)
+- 🚀 Deploy backend (Railway) + frontend (Vercel) (Day 22)
 - 🌐 Connect custom domain (Day 23)
-- 💳 Switch to live Stripe (Day 24)
+- 💳 Flip `HELIO_NETWORK=main` (Day 24)
 - 🧪 Soft launch - invite friends (Days 25-27)
 - 📣 Full public launch (Day 28)
 - 🎉 Celebrate! (Days 29-30)
@@ -115,22 +112,21 @@ Your app has:
 ## 💰 **COSTS BREAKDOWN**
 
 ### **Required:**
-- **Emergent Deployment:** 50 credits/month
-  - Includes hosting, database, 24/7 uptime
+- **Railway backend + MongoDB:** usage-based (see your Railway plan)
+- **Vercel frontend:** Hobby free tier works for the SPA
 
 ### **Optional but Recommended:**
 - **Custom Domain:** $10-15/year
   - Makes your brand professional
   - `globalvibes.com` looks better than preview URL
 
-### **Stripe Fees (Standard):**
-- 2.9% + $0.30 per transaction
-- Example: $9.99 premium membership = $9.40 to you
+### **Payment Fees:**
+- **Helio (card):** per the current Helio / MoonPay fee schedule
+- **Solana deposit:** network fee only (fractions of a cent)
 
 ### **Total Monthly Cost:**
-- Emergent: ~$20-30/month (50 credits)
+- Railway + Vercel: ~$20-30/month at launch traffic
 - Domain: ~$1/month (paid yearly)
-- **Total: ~$21-31/month to run**
 
 ---
 
@@ -140,7 +136,7 @@ Before launching, ensure:
 
 ### **Technical:**
 - ✅ All features tested in preview
-- ✅ Stripe test payments working
+- ✅ Helio sandbox (`HELIO_NETWORK=test`) checkout + Solana deposit credit the wallet
 - ✅ MongoDB production-ready
 - ✅ All APIs working
 - ✅ Mobile responsive
@@ -208,8 +204,8 @@ Track these metrics:
 
 ### **Tools to Use:**
 - Google Analytics (free)
-- Stripe Dashboard (payments)
-- Emergent logs (errors)
+- Helio dashboard (card payments) + Solana explorer (deposits)
+- Railway / Vercel deploy logs (errors)
 - MongoDB Atlas (database monitoring)
 
 ---
@@ -217,31 +213,32 @@ Track these metrics:
 ## 🆘 **TROUBLESHOOTING**
 
 ### **If Deployment Fails:**
-1. Check Emergent logs
-2. Verify all environment variables
-3. Test in preview mode first
-4. Contact Emergent support
+1. Check the Railway / Vercel deploy logs
+2. Verify all environment variables (`backend/ENV_VARIABLES.md`)
+3. Reproduce locally with `npm run dev`
+4. See the healthcheck/502 table in `RAILWAY_DEPLOY.md`
 
 ### **If Custom Domain Doesn't Work:**
 1. Wait 24 hours for DNS propagation
-2. Remove all 'A records' from DNS
-3. Re-link domain via Entri
+2. Re-check the records against Vercel → Settings → Domains
+3. Confirm the apex → www 301 in root `vercel.json`
 4. Clear browser cache
 
 ### **If Payments Fail:**
-1. Verify Stripe live keys are correct
-2. Check webhook endpoint
-3. Test with Stripe test card first
-4. Check Stripe Dashboard for errors
+1. Verify `HELIO_API_KEY` / `HELIO_SECRET_KEY` / `HELIO_PAYLINK_ID` match the
+   network in `HELIO_NETWORK` (dev-host keys only work with `test`)
+2. Check the webhook target `POST /api/coins/webhook/helio` and `HELIO_WEBHOOK_TOKEN`
+3. Hit `GET /api/integrations/health` → `services.helio.configured`
+4. For Solana, confirm `GLOBAL_VIBEZ_SOLANA_RECEIVE_WALLET` and check the explorer
 
 ---
 
 ## 🎓 **LEARNING RESOURCES**
 
-### **Stripe:**
-- [Stripe Documentation](https://stripe.com/docs)
-- [Stripe Test Cards](https://stripe.com/docs/testing)
-- [Stripe Dashboard](https://dashboard.stripe.com)
+### **Payments:**
+- [Helio / MoonPay dashboard](https://moonpay.hel.io)
+- `PAYMENT_SECURITY.md` — PCI / TLS / webhook / audit rules
+- `backend/ENV_VARIABLES.md` — every payment variable the backend reads
 
 ### **Domain Setup:**
 - [Google Domains](https://domains.google)
@@ -257,13 +254,12 @@ Track these metrics:
 
 ## 📞 **SUPPORT CONTACTS**
 
-### **For Emergent Platform:**
-- Use the support chat in Emergent
-- Email: support@emergentagent.com
+### **For Hosting:**
+- Railway: https://discord.gg/railway
+- Vercel: https://vercel.com/support
 
-### **For Stripe:**
-- [Stripe Support](https://support.stripe.com)
-- Dashboard has live chat
+### **For Payments:**
+- Helio / MoonPay support via the dashboard
 
 ### **For Domain Issues:**
 - Contact your domain registrar
@@ -289,7 +285,7 @@ Track these metrics:
 ### **Action Items:**
 1. ⏰ **Today:** Test everything in preview
 2. 📝 **This week:** Write Terms & Privacy Policy
-3. 💳 **Next week:** Set up live Stripe
+3. 💳 **Next week:** Set up Helio production keys + Solana treasury wallet
 4. 🚀 **Week 4:** Deploy & Launch!
 
 ---
@@ -297,13 +293,14 @@ Track these metrics:
 ## 🔗 **IMPORTANT LINKS**
 
 **Your App:**
-- Preview: https://social-connect-953.preview.emergentagent.com
-- Production: (Will be assigned after deployment)
+- Production frontend: https://www.globalvibezdsg.com
+- Production API: https://globalvibezdsg1-production.up.railway.app
 
 **External Services:**
-- Stripe: https://dashboard.stripe.com
-- Google Domains: https://domains.google
-- Emergent: https://emergentagent.com
+- Helio / MoonPay: https://moonpay.hel.io
+- Google AI Studio (Gemini keys): https://aistudio.google.com/apikey
+- Railway: https://railway.app
+- Vercel: https://vercel.com
 
 **Documentation:**
 - `/app/BUILD_COMPLETE.md` - Full build details
@@ -332,14 +329,14 @@ Copy this entire guide and email it to yourself for easy reference. You'll need 
    - Purchase domain (if wanted)
 
 3. **Next Week:**
-   - Set up live Stripe account
-   - Get live API keys ready
+   - Set up Helio production keys + Solana treasury wallet
+   - Set `GEMINI_API_KEY` on the backend
    - Prepare launch announcement
 
 4. **Week 4:**
-   - Click "Deploy" button
+   - Deploy backend (Railway) + frontend (Vercel)
    - Connect domain
-   - Switch to live Stripe
+   - Flip `HELIO_NETWORK=main`
    - **LAUNCH!** 🚀
 
 ---
@@ -362,6 +359,6 @@ You've built a complete dating app with:
 
 **Save this guide. You'll need it for launch day!**
 
-**Questions? Contact Emergent support or refer to this guide.**
+**Questions? Refer to `PRODUCTION_OPS.md`, `RAILWAY_DEPLOY.md`, and `backend/ENV_VARIABLES.md`.**
 
 **Good luck! 🍀**

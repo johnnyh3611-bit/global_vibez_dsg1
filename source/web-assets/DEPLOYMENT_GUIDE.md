@@ -8,16 +8,15 @@ This guide helps you deploy Global Vibez DSG to Railway or Render, where Socket.
 
 ## 🎯 Why Deploy Elsewhere?
 
-**Current Situation:**
-- Emergent preview environment blocks Socket.IO (both WebSocket and polling)
-- Requires infrastructure team to configure ingress routing
-- Blocking all multiplayer features
+**Why not a preview/sandbox host:**
+- Many preview environments block Socket.IO (both WebSocket and polling)
+- Working around that requires custom ingress routing
+- Without it, all multiplayer features are blocked
 
 **Solution:**
 - Deploy to Railway or Render
 - Socket.IO works immediately (no configuration needed)
 - Full multiplayer functionality available
-- Can still develop on Emergent, just deploy elsewhere for testing
 
 ---
 
@@ -89,11 +88,17 @@ In Railway dashboard, add these variables:
 MONGO_URL=mongodb+srv://username:password@cluster.mongodb.net/
 DB_NAME=global_vibez_prod
 
-# Emergent LLM Key
-EMERGENT_LLM_KEY=your_emergent_key_here
+# AI — Google Gemini (GOOGLE_API_KEY accepted as an alias)
+GEMINI_API_KEY=your_gemini_key_here   # https://aistudio.google.com/apikey
 
-# Stripe (optional)
-STRIPE_API_KEY=your_stripe_key_here
+# Payments — Solana deposit (primary coin rail) + Helio (only card rail).
+# Stripe is retired; legacy Stripe routes return 410 — do not set STRIPE_*.
+GLOBAL_VIBEZ_SOLANA_RECEIVE_WALLET=your_solana_treasury_pubkey
+HELIO_API_KEY=your_helio_public_api_key
+HELIO_SECRET_KEY=your_helio_secret_bearer
+HELIO_PAYLINK_ID=your_dynamic_paylink_id
+HELIO_NETWORK=test
+HELIO_WEBHOOK_TOKEN=your_helio_webhook_token
 
 # Frontend URL (Railway will provide this)
 REACT_APP_BACKEND_URL=https://your-app.up.railway.app
@@ -238,12 +243,12 @@ For production, you might want to restrict this:
 cors_allowed_origins=['https://your-frontend-url.com']
 ```
 
-### Configure Emergent Google Auth
+### Configure Privy social login
 
-Update your Emergent Google Auth redirect URLs to include your new deployment URL:
-1. Go to Emergent dashboard
-2. Update OAuth callback URLs
-3. Add your Railway/Render URL
+Allowlist your new deployment URL for Google / X login:
+1. Go to the Privy dashboard (https://dashboard.privy.io)
+2. Add the Railway/Render URL to allowed origins / redirect URLs
+3. Set `PRIVY_APP_ID` on the backend and `REACT_APP_PRIVY_APP_ID` at frontend build time
 
 ---
 
@@ -379,22 +384,21 @@ Before going live:
 
 ---
 
-## 🔙 Keeping Emergent as Primary Development
+## 🔙 Local development + hosted testing
 
-You can continue using Emergent for development and deploy to Railway/Render for testing:
+Develop locally and let Railway/Render host the testable build:
 
 **Workflow:**
-1. Develop on Emergent (AI-powered development)
+1. Develop locally (`npm run dev` — mongo + `:8001` + `:3000`)
 2. Push changes to GitHub
 3. Railway/Render auto-deploys
-4. Test multiplayer on Railway/Render URL
+4. Test multiplayer on the Railway/Render URL
 5. Iterate
 
 **Benefits:**
-- ✅ Best of both worlds
-- ✅ AI-powered development (Emergent)
-- ✅ Working multiplayer (Railway/Render)
-- ✅ Easy to switch back to Emergent once infrastructure is fixed
+- ✅ Fast local iteration
+- ✅ Working multiplayer on a real host (Railway/Render)
+- ✅ Same Docker build path as production
 
 ---
 

@@ -1,4 +1,10 @@
 # 🚀 FINAL DEPLOYMENT READINESS REPORT
+
+> **ARCHIVED.** Historical session note — not current setup instructions. Payments are now
+> Solana deposit + Helio (Stripe retired, legacy routes return 410) and AI/LLM is Google Gemini
+> (Emergent is not used). See `source/web-assets/backend/ENV_VARIABLES.md` and
+> `source/web-assets/PAYMENT_SECURITY.md`.
+
 ## Global Vibez DSG - Production Deployment Approved
 
 **Date:** April 1, 2026  

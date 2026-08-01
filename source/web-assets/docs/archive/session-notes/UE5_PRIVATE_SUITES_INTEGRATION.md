@@ -1,5 +1,10 @@
 # 🏠 UE5 Private Vibe Suites Integration Guide
 
+> **ARCHIVED.** Historical session note — not current setup instructions. Payments are now
+> Solana deposit + Helio (Stripe retired, legacy routes return 410) and AI/LLM is Google Gemini
+> (Emergent is not used). See `source/web-assets/backend/ENV_VARIABLES.md` and
+> `source/web-assets/PAYMENT_SECURITY.md`.
+
 ## Overview
 Complete guide for implementing Private Vibe Suites in Unreal Engine 5, enabling matched players to transition from the main hub to private, dynamically-loaded environments.
 
