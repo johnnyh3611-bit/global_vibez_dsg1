@@ -27,7 +27,16 @@ jobs:
 
       - name: Frontend Install
         working-directory: source/web-assets/frontend
-        run: yarn install --frozen-lockfile
+        run: |
+          for attempt in 1 2 3; do
+            if yarn install --frozen-lockfile; then
+              exit 0
+            fi
+            echo "yarn install failed (attempt $attempt/3), clearing cache and retrying..."
+            yarn cache clean
+            sleep 5
+          done
+          exit 1
 
       - name: Frontend Build (Current Gate)
         working-directory: source/web-assets/frontend
@@ -84,7 +93,16 @@ jobs:
 
       - name: Frontend Install
         working-directory: source/web-assets/frontend
-        run: yarn install --frozen-lockfile
+        run: |
+          for attempt in 1 2 3; do
+            if yarn install --frozen-lockfile; then
+              exit 0
+            fi
+            echo "yarn install failed (attempt $attempt/3), clearing cache and retrying..."
+            yarn cache clean
+            sleep 5
+          done
+          exit 1
 
       - name: Frontend Typecheck (Strict Audit)
         working-directory: source/web-assets/frontend

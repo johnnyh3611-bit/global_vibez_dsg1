@@ -59,7 +59,17 @@ jobs:
           REACT_APP_BACKEND_URL: ${{ secrets.REACT_APP_BACKEND_URL }}
           REACT_APP_FRONTEND_URL: https://www.globalvibezdsg.com
         run: |
-          yarn install --frozen-lockfile
+          for attempt in 1 2 3; do
+            if yarn install --frozen-lockfile; then
+              break
+            fi
+            echo "yarn install failed (attempt $attempt/3), clearing cache and retrying..."
+            yarn cache clean
+            sleep 5
+            if [ "$attempt" = "3" ]; then
+              exit 1
+            fi
+          done
           yarn build
 
       - name: Stage deploy package
