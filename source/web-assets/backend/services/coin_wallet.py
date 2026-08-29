@@ -88,7 +88,10 @@ async def debit_coins(
             "needed": coins,
         }
 
-    balance_after = int(updated_user.get("credits_balance", 0) or 0)
+    balance = updated_user.get("credits_balance")
+    if balance is None:
+        raise RuntimeError("wallet update returned no balance")
+    balance_after = int(balance)
 
     # Audit ledger row — keeps a paper trail for refunds/disputes.
     await db.coin_ledger.insert_one({
@@ -125,7 +128,10 @@ async def credit_coins(
     if updated_user is None:
         raise ValueError("user does not exist")
 
-    balance_after = int(updated_user.get("credits_balance", 0) or 0)
+    balance = updated_user.get("credits_balance")
+    if balance is None:
+        raise RuntimeError("wallet update returned no balance")
+    balance_after = int(balance)
     await db.coin_ledger.insert_one({
         "user_id": user_id,
         "coins": coins,
