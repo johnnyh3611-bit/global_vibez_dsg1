@@ -1,6 +1,6 @@
 export const CHIP_VALUES: number[] = [25, 50, 100, 500];
 
-export const formatCurrency = (amount: number): string => `₵${amount.toLocaleString()}`;
+export const formatCurrency = (amount: number): string => `$${amount.toLocaleString()}`;
 
 export type Suit = 'Spades' | 'Hearts' | 'Diamonds' | 'Clubs';
 

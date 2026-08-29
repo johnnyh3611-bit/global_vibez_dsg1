@@ -114,6 +114,11 @@
     "e2e:headed": "playwright test --headed",
     "e2e:report": "playwright show-report e2e-report"
   },
+  "jest": {
+    "moduleNameMapper": {
+      "^@/(.*)$": "<rootDir>/src/$1"
+    }
+  },
   "resolutions": {
     "react": "19.0.0",
     "react-dom": "19.0.0"
