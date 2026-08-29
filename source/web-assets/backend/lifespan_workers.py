@@ -99,7 +99,22 @@ def _start_jftn_demo_room_seeder() -> None:
 def _start_marketplace_demo_seeder() -> None:
     """Idempotently seed 4 demo restaurants + 2 drivers + 3 rides so
     the HungryVibez and VibeRidez customer pages aren't empty when
-    beta testers click in."""
+    beta testers click in.
+
+    Skipped entirely while ``PAYMENT_BETA_MODE`` is enabled: seeding
+    open-market restaurant/ride listings during the Founding Member
+    Beta would surface transactable demo inventory outside the locked
+    payment cohort, so we hold off until live tester reconciliation
+    is signed off and the beta gate is lifted.
+    """
+    from services.payment_beta_gate import payment_beta_mode_enabled  # noqa: PLC0415
+
+    if payment_beta_mode_enabled():
+        logging.getLogger(__name__).info(
+            "marketplace_demo_seeder skipped — PAYMENT_BETA_MODE restricts "
+            "open-market listings to Founding Members during beta."
+        )
+        return
     from services.marketplace_demo_seeder import run_seeder as run_mkt  # noqa: PLC0415
     asyncio.create_task(run_mkt())
 
