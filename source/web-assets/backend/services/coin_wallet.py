@@ -20,6 +20,7 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional
+from pymongo import ReturnDocument
 from app_config import COINS_PER_USD
 
 log = logging.getLogger(__name__)
@@ -71,12 +72,14 @@ async def debit_coins(
         raise ValueError("debit amount must be positive")
 
     # Conditional decrement — only succeeds if the user has enough.
-    result = await db.users.update_one(
+    updated_user = await db.users.find_one_and_update(
         {"user_id": user_id, "credits_balance": {"$gte": coins}},
         {"$inc": {"credits_balance": -coins}},
+        projection={"_id": 0, "credits_balance": 1},
+        return_document=ReturnDocument.AFTER,
     )
 
-    if result.modified_count == 0:
+    if updated_user is None:
         balance = await get_balance(db, user_id)
         return {
             "ok": False,
@@ -85,7 +88,10 @@ async def debit_coins(
             "needed": coins,
         }
 
-    balance_after = await get_balance(db, user_id)
+    balance = updated_user.get("credits_balance")
+    if not isinstance(balance, (int, float)):
+        raise RuntimeError("wallet update returned an invalid balance")
+    balance_after = int(balance)
 
     # Audit ledger row — keeps a paper trail for refunds/disputes.
     await db.coin_ledger.insert_one({
@@ -113,12 +119,19 @@ async def credit_coins(
     """Credit coins to a user (refund, ambassador commission, payout)."""
     if coins <= 0:
         raise ValueError("credit amount must be positive")
-    await db.users.update_one(
+    updated_user = await db.users.find_one_and_update(
         {"user_id": user_id},
         {"$inc": {"credits_balance": coins}},
-        upsert=False,
+        projection={"_id": 0, "credits_balance": 1},
+        return_document=ReturnDocument.AFTER,
     )
-    balance_after = await get_balance(db, user_id)
+    if updated_user is None:
+        raise ValueError(f"user {user_id} does not exist")
+
+    balance = updated_user.get("credits_balance")
+    if not isinstance(balance, (int, float)):
+        raise RuntimeError("wallet update returned an invalid balance")
+    balance_after = int(balance)
     await db.coin_ledger.insert_one({
         "user_id": user_id,
         "coins": coins,
