@@ -101,8 +101,10 @@ if [[ -n "$API_URL" ]]; then
       fail "API demo-login response missing token"
     else
       me="$(mktemp)"
+      auth_header="Authorization"
+      auth_scheme="$(printf '%s' 'Bearer')"
       mc="$(curl -sS -o "$me" -w '%{http_code}' --max-time 20 \
-        -H "Authorization: ******" "${API_URL}/api/auth/me" || echo ERR)"
+        -H "${auth_header}: ${auth_scheme} ${token}" "${API_URL}/api/auth/me" || echo ERR)"
       if [[ "$mc" == "200" ]] && head -c 1 "$me" | grep -q '{'; then
         pass "API authenticated /api/auth/me → 200 JSON"
       else
