@@ -45,6 +45,9 @@ yarn-error.log*
 .railway/
 **/.railway/
 
+# local API-client tool cache (Postman/Insomnia-style exports)
+.fetch-client/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

@@ -24,15 +24,15 @@ ENV DISABLE_BG_SCHEDULERS=1
 ENV DB_NAME=global_vibez
 
 # Expose port (Railway injects $PORT at runtime)
-EXPOSE 8000
+EXPOSE 8001
 
 # Boot via a real shell so ${PORT} always expands (see entrypoint.sh).
 COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
-# Health check must use Railway's $PORT — hardcoding 8000 makes the
+# Health check must use Railway's $PORT — hardcoding 8001 makes the
 # container look dead when Railway assigns e.g. 8080, causing 502s.
 HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=5 \
-    CMD sh -c 'curl -fsS "http://127.0.0.1:${PORT:-8000}/health" || exit 1'
+    CMD sh -c 'curl -fsS "http://127.0.0.1:${PORT:-8001}/health" || exit 1'
 
 CMD ["sh", "/app/entrypoint.sh"]

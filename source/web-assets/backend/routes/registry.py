@@ -8,6 +8,10 @@ Wave 4: game lobby + dating/party games.
 Wave 5: My Vibez, admin/ops, economy extras, Solana/sovereign, AI, uploads,
         and every remaining importable router.
 
+This registry soft-mounts 289 routers (see `_soft_mount` call count) out of
+291 files in `routes/`; the rest are always-on routers included directly in
+`register_all_routes` below (e.g. notifications, moderation, email auth).
+
 Each mount is try/except so one bad import never takes the whole API down.
 """
 from __future__ import annotations

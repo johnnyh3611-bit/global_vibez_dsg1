@@ -19,6 +19,12 @@ Or with Docker Compose:
 npm run dev:docker
 ```
 
+> **Note:** `npm run dev:docker` runs Mongo with auth enabled (`docker-compose.yml`
+> sets `MONGO_INITDB_ROOT_USERNAME`/`PASSWORD`), so its `MONGO_URL` is
+> `mongodb://admin:<password>@mongodb:27017/`. `npm run dev` (via
+> `scripts/dev-up.sh`) instead starts a local no-auth `mongod` and uses
+> `mongodb://127.0.0.1:27017`. Don't mix `.env` files between the two flows.
+
 Open [http://localhost:3000](http://localhost:3000). Use **Demo Login** on `/login`.
 
 ## Production (flawless www)

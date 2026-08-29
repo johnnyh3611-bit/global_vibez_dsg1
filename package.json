@@ -17,27 +17,6 @@
     "sync:verify": "git fetch origin --prune && test \"$(git rev-parse HEAD)\" = \"$(git rev-parse origin/main)\" && echo 'Workspace matches origin/main'",
     "sync:guards:install": "bash ./scripts/setup-sync-guards.sh"
   },
-  "dependencies": {
-    "@solana/wallet-adapter-base": "^0.9.27",
-    "@solana/wallet-adapter-react": "^0.15.39",
-    "@solana/wallet-adapter-react-ui": "^0.9.39",
-    "@solana/wallet-adapter-wallets": "^0.19.38",
-    "@solana/web3.js": "^1.98.4",
-    "bs58": "^6.0.0",
-    "jose": "^6.2.3",
-    "next": "16.2.7",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
-    "tweetnacl": "^1.0.3"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.2.7",
-    "tailwindcss": "^4",
-    "typescript": "^5"
-  }
+  "dependencies": {},
+  "devDependencies": {}
 }
