@@ -161,7 +161,7 @@ In Railway frontend service → **Settings** → **Custom Domain**:
 
 ## Correct deploy workflow (checklist)
 
-1. Push this branch / `main` so Railway sees updated Docker/`railway.json` and `vercel.json.bak`
+1. Push this branch / `main` so Railway sees updated Docker/`railway.json`
 2. Confirm two services with Root Directories above (not repo root)
 3. Backend health: `GET /health`
 4. Frontend: set `REACT_APP_BACKEND_URL` to the **public** backend URL, then redeploy frontend so the URL is baked into the bundle

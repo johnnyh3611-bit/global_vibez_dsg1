@@ -5,7 +5,7 @@
 # unbound and surfaces as Railway "Healthcheck failure" / edge 502.
 set -eu
 
-PORT="${PORT:-8000}"
+PORT="${PORT:-8001}"
 DB_NAME="${DB_NAME:-global_vibez}"
 export PORT DB_NAME
 export DISABLE_BG_SCHEDULERS="${DISABLE_BG_SCHEDULERS:-1}"
