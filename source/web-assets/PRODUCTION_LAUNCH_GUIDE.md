@@ -1,4 +1,10 @@
-# 🚀 GLOBAL VIBES - PRODUCTION LAUNCH GUIDE
+# 🚀 GLOBAL VIBES - Historical Production Launch Guide
+
+> **Superseded — do not use this document to approve a customer launch.**
+> The authoritative, evidence-based release gate is
+> [`GO_LIVE.md`](../../GO_LIVE.md). This historic guide contains outdated
+> assertions such as “100% ready” and must not override the current payment,
+> security, legal, or operational blockers.
 
 ## 📧 Email This to Yourself for Reference
 

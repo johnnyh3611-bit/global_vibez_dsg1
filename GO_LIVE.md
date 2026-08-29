@@ -195,3 +195,71 @@ archived session / launch notes. Treat any conflict with those as resolved here.
 | [`source/web-assets/PAYMENT_SECURITY.md`](source/web-assets/PAYMENT_SECURITY.md) | Helio PCI / TLS / webhook / audit rules, Founding Member beta, payment test protocol |
 | [`PRODUCTION_OPS.md`](PRODUCTION_OPS.md) | Railway + Vercel deploy truth, `/health` probe, schedulers, SEO / canonical host |
 | [`source/web-assets/RAILWAY_DEPLOY.md`](source/web-assets/RAILWAY_DEPLOY.md) | Railway service setup detail |
+
+---
+
+## 7. Customer-launch certification — required evidence
+
+**Do not mark an item complete based on a build, a static page, or a prior
+claim.** Record the date, operator, environment, and redacted result for each
+check below. Keep card payments in Founding-Member beta until every payment
+check is signed off.
+
+### 7.1 End-to-end and release checks
+
+- [ ] Run `npm run smoke:full` against the production www and API hosts. It
+      must cover health, demo login, authenticated `/api/auth/me`, and
+      `/api/integrations/health`.
+- [ ] Run `yarn typecheck` in `source/web-assets/frontend` and the applicable
+      self-contained backend test suites before the release.
+- [ ] Manually test the Ship Core journey in a real browser: login → dashboard
+      → Play, Date, Watch, Earn → wallet → logout.
+- [ ] Test one dedicated multiplayer room in two independent browser sessions:
+      join, state synchronization, a completed turn, reconnect, and leave.
+- [ ] Confirm public tiles either resolve to a working route or are explicitly
+      gated as Coming Soon; no customer path may lead to a 404 or stub.
+
+### 7.2 Payments and financial controls
+
+- [ ] On `HELIO_NETWORK=test`, complete a real Helio sandbox checkout, verify
+      the signed webhook, exact wallet credit, `payments_audit` entry, and
+      reconciliation record.
+- [ ] Verify cancellation produces no credit or charge; submit missing and
+      invalid webhook signatures and confirm 401 plus a
+      `rejected_signature` audit row.
+- [ ] Exercise one Solana deposit using a unique memo and reconcile it to the
+      intended account before opening the coin rail.
+- [ ] Document the current redirect-charge 502 as unsupported until a real
+      sandbox test proves it works; use the tested Helio embed path only.
+- [ ] Obtain payment-provider approval and legal/compliance sign-off before
+      enabling `HELIO_NETWORK=main` or accepting real-money customers.
+
+### 7.3 Operations, recovery, and monitoring
+
+- [ ] Verify production secrets in the host secret manager (never logs or
+      source): strong JWT/admin/ELD keys, Mongo, CORS, payment, and required
+      service credentials. Confirm `/api/integrations/health` reports the
+      expected redacted readiness state.
+- [ ] Verify HTTPS certificates, canonical frontend/API hosts, CORS from both
+      production domains, Mongo reachability, and a successful Railway deploy.
+- [ ] Configure automated Mongo backups with retention and encryption; perform
+      and record a restore to an isolated environment before launch.
+- [ ] Configure Redis and verify its connection before operating more than one
+      FastAPI/Socket.IO replica.
+- [ ] Configure frontend and backend error monitoring plus uptime alerts for
+      `/health`, API error-rate/latency, Mongo failures, and Helio webhook
+      delivery failures or 401 spikes. Assign an on-call owner and escalation
+      path, then test each alert.
+- [ ] Write and rehearse an incident procedure for payment suspension, customer
+      support, rollback, database restore, and regulator/provider notification.
+
+### 7.4 Product and legal authorization
+
+- [ ] Have qualified counsel approve Terms, Privacy, sweepstakes/skill-game
+      disclosures, age/geo restrictions, responsible-gaming controls, data
+      deletion, and required licensing for every launch jurisdiction.
+- [ ] Confirm customer support ownership, contact channels, refund/dispute
+      workflow, and response-time expectations.
+- [ ] Start with a monitored Founding-Member cohort (20–50 users); review
+      payment reconciliation, errors, fraud signals, and support outcomes
+      before expanding access.

@@ -96,9 +96,32 @@ if [[ -n "$API_URL" ]]; then
     "${API_URL}/api/auth/demo-login" || echo ERR)"
   if [[ "$dc" == "200" ]]; then
     pass "API demo-login → 200"
+    token="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("token", ""))' "$body" 2>/dev/null || true)"
+    if [[ -z "$token" ]]; then
+      fail "API demo-login response missing token"
+    else
+      me="$(mktemp)"
+      mc="$(curl -sS -o "$me" -w '%{http_code}' --max-time 20 \
+        -H "Authorization: ******" "${API_URL}/api/auth/me" || echo ERR)"
+      if [[ "$mc" == "200" ]] && head -c 1 "$me" | grep -q '{'; then
+        pass "API authenticated /api/auth/me → 200 JSON"
+      else
+        fail "API authenticated /api/auth/me → ${mc}"
+      fi
+      rm -f "$me"
+    fi
   else
     fail "API demo-login → ${dc}"
   fi
+  ih="$(mktemp)"
+  ic="$(curl -sS -o "$ih" -w '%{http_code}' --max-time 20 \
+    "${API_URL}/api/integrations/health" || echo ERR)"
+  if [[ "$ic" == "200" ]] && head -c 1 "$ih" | grep -q '{'; then
+    pass "API /api/integrations/health → 200 JSON"
+  else
+    fail "API /api/integrations/health → ${ic}"
+  fi
+  rm -f "$ih"
   rm -f "$body"
 fi
 
