@@ -30,13 +30,15 @@ jobs:
         run: |
           for attempt in 1 2 3; do
             if yarn install --frozen-lockfile; then
-              exit 0
+              break
             fi
             echo "yarn install failed (attempt $attempt/3), clearing cache and retrying..."
             yarn cache clean
             sleep 5
+            if [ "$attempt" = "3" ]; then
+              exit 1
+            fi
           done
-          exit 1
 
       - name: Frontend Build (Current Gate)
         working-directory: source/web-assets/frontend
@@ -96,13 +98,15 @@ jobs:
         run: |
           for attempt in 1 2 3; do
             if yarn install --frozen-lockfile; then
-              exit 0
+              break
             fi
             echo "yarn install failed (attempt $attempt/3), clearing cache and retrying..."
             yarn cache clean
             sleep 5
+            if [ "$attempt" = "3" ]; then
+              exit 1
+            fi
           done
-          exit 1
 
       - name: Frontend Typecheck (Strict Audit)
         working-directory: source/web-assets/frontend
