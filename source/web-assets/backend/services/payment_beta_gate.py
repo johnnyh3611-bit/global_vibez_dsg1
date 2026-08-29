@@ -98,6 +98,36 @@ def require_payment_beta_access(user: Optional[Dict[str, Any]]) -> None:
     )
 
 
+def require_open_market_beta_access(user: Optional[Dict[str, Any]]) -> None:
+    """Raise 503 if open-market P2P trading (beat auctions, marketplace,
+    chair/venue-sponsorship resale) is beta-gated and the user is outside
+    the Founding Member cohort.
+
+    Reuses the same ``PAYMENT_BETA_MODE`` flag + allowlist as
+    ``require_payment_beta_access`` — open-market trading is production
+    pre-flight-hardened the same way card rails are, just surfaced as a
+    503 (feature temporarily unavailable) instead of a 403, since these
+    are marketplace features rather than a specific checkout attempt.
+    """
+    if not payment_beta_mode_enabled():
+        return
+    if user_is_payment_beta_allowed(user):
+        return
+    raise HTTPException(
+        status_code=503,
+        detail={
+            "error": "open_market_beta_restricted",
+            "message": (
+                "Open-market P2P trading (beat auctions, marketplace listings, "
+                "chair/venue-sponsorship resale) is restricted to Founding "
+                "Members until live tester reconciliation is signed off."
+            ),
+            "support_email": payment_support_email(),
+            "support_discord": payment_support_discord(),
+        },
+    )
+
+
 def payment_beta_public_status() -> Dict[str, Any]:
     """Safe fields for GET /coins/topup/providers (no allowlist contents)."""
     return {

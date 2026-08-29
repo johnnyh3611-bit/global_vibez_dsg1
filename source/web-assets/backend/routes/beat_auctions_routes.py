@@ -3,13 +3,39 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from services.beat_auctions import (
     BeatAuction, open_auction, submit_sealed_bid, settle_auction, public_view,
     AUCTION_PRODUCER_SHARE, AUCTION_PLATFORM_SHARE, DEFAULT_AUCTION_WINDOW_HOURS,
 )
+
+
+async def _require_open_market_access(request: Request) -> None:
+    """Gate write actions (open/bid/settle) to Founding Members while
+    ``PAYMENT_BETA_MODE`` is enabled. Reuses the shared payment-beta flag
+    (services/payment_beta_gate.py) — no separate env var. No-op when the
+    beta gate is off (default outside production)."""
+    from services.payment_beta_gate import (
+        payment_beta_mode_enabled,
+        require_open_market_beta_access,
+    )
+
+    if not payment_beta_mode_enabled():
+        return
+
+    from utils.database import get_current_user
+
+    current_user = await get_current_user(request)
+    user_doc = {
+        "user_id": getattr(current_user, "user_id", None) or getattr(current_user, "id", None),
+        "email": getattr(current_user, "email", None),
+        "is_admin": getattr(current_user, "is_admin", False),
+        "is_beta_tester": getattr(current_user, "is_beta_tester", False),
+        "is_founding_member": getattr(current_user, "is_founding_member", False),
+    } if current_user else None
+    require_open_market_beta_access(user_doc)
 
 
 auctions_router = APIRouter(prefix="/auctions", tags=["beat-auctions-v7"])
@@ -25,7 +51,8 @@ class OpenAuctionRequest(BaseModel):
 
 
 @auctions_router.post("/open")
-def auction_open(req: OpenAuctionRequest) -> Dict:
+async def auction_open(req: OpenAuctionRequest, request: Request) -> Dict:
+    await _require_open_market_access(request)
     try:
         auction = open_auction(req.beat_id, req.producer_id, req.reserve_price, req.window_hours)
     except ValueError as e:
@@ -41,7 +68,8 @@ class SubmitBidRequest(BaseModel):
 
 
 @auctions_router.post("/bid")
-def auction_bid(req: SubmitBidRequest) -> Dict:
+async def auction_bid(req: SubmitBidRequest, request: Request) -> Dict:
+    await _require_open_market_access(request)
     auction = _AUCTIONS.get(req.auction_id)
     if not auction:
         raise HTTPException(status_code=404, detail="auction not found")
@@ -58,7 +86,8 @@ def auction_bid(req: SubmitBidRequest) -> Dict:
 
 
 @auctions_router.post("/settle")
-def auction_settle(auction_id: str) -> Dict:
+async def auction_settle(auction_id: str, request: Request) -> Dict:
+    await _require_open_market_access(request)
     auction = _AUCTIONS.get(auction_id)
     if not auction:
         raise HTTPException(status_code=404, detail="auction not found")

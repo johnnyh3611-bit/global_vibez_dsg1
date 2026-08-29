@@ -1171,6 +1171,15 @@ async def chair_checkout(payload: ChairCheckoutPayload, http_request: Request) -
 
     # Default: Helio hosted card checkout (same rail as coin packs)
     from services.helio_client import create_charge, helio_configured
+    from services.payment_beta_gate import require_payment_beta_access
+
+    require_payment_beta_access({
+        "user_id": getattr(user, "user_id", None) or getattr(user, "id", None),
+        "email": getattr(user, "email", None),
+        "is_admin": getattr(user, "is_admin", False),
+        "is_beta_tester": getattr(user, "is_beta_tester", False),
+        "is_founding_member": getattr(user, "is_founding_member", False),
+    })
 
     if not helio_configured():
         raise HTTPException(
