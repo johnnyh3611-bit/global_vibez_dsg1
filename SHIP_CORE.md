@@ -79,6 +79,7 @@ Anything outside this loop is **optional** until the loop is solid.
 - [x] Production API: demo-login → `/api/auth/me` + `/api/chairs/economics`; www shells for `/dashboard` `/earn` `/games`
 - [x] Lifestyle dock = four beta pillars only; WaysToEarn core-first (#108)
 - [x] `/earn` “Start here · Own a Chair” → `/chair-vault` (#108)
-- [ ] Public launch: no Emergent badge/script on www; `/terms` + footer legal links live
-- [ ] Chair vault success polls chairs checkout-status; Genius pricing copy $20/$100/$250
-- [ ] Wallet Buy Coins CTA; lobby multiplayer only on dedicated rooms
+- [x] Public launch: no Emergent badge/script on www; `/terms` + footer legal links live
+- [x] Chair vault success polls chairs checkout-status; Genius pricing copy $20/$100/$250
+- [x] Wallet Buy Coins CTA; lobby multiplayer only on dedicated rooms
+- [ ] Customer launch certification is tracked exclusively in `GO_LIVE.md`

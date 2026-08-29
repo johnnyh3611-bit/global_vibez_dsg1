@@ -6,8 +6,9 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Sparkles, Check, Loader2 } from "lucide-react";
 import { authFetch } from "@/utils/secureAuth";
+import { getBackendUrl } from "@/config/backendUrl";
 
-const API = process.env.REACT_APP_BACKEND_URL;
+const API = getBackendUrl();
 
 export default function ChairVaultSuccess() {
   const [params] = useSearchParams();
