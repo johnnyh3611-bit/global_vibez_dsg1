@@ -105,7 +105,7 @@ if [[ -n "$API_URL" ]]; then
       auth_scheme="$(printf '%s' 'Bearer')"
       mc="$(curl -sS -o "$me" -w '%{http_code}' --max-time 20 \
         -H "${auth_header}: ${auth_scheme} ${token}" "${API_URL}/api/auth/me" || echo ERR)"
-      if [[ "$mc" == "200" ]] && head -c 1 "$me" | grep -q '{'; then
+      if [[ "$mc" == "200" ]] && python3 -c 'import json,sys; json.load(open(sys.argv[1]))' "$me" >/dev/null 2>&1; then
         pass "API authenticated /api/auth/me → 200 JSON"
       else
         fail "API authenticated /api/auth/me → ${mc}"
@@ -118,7 +118,7 @@ if [[ -n "$API_URL" ]]; then
   ih="$(mktemp)"
   ic="$(curl -sS -o "$ih" -w '%{http_code}' --max-time 20 \
     "${API_URL}/api/integrations/health" || echo ERR)"
-  if [[ "$ic" == "200" ]] && head -c 1 "$ih" | grep -q '{'; then
+  if [[ "$ic" == "200" ]] && python3 -c 'import json,sys; json.load(open(sys.argv[1]))' "$ih" >/dev/null 2>&1; then
     pass "API /api/integrations/health → 200 JSON"
   else
     fail "API /api/integrations/health → ${ic}"
