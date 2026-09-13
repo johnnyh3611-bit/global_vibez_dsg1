@@ -1,6 +1,9 @@
 export const SITE_ORIGIN = "https://www.globalvibezdsg.com";
-export const DEFAULT_TITLE = "Global Vibez DSG | Gaming, Dating, Streaming & Earn";
+export const DEFAULT_TITLE = "Global Vibez DSG";
 export const DEFAULT_DESCRIPTION =
+  "Explore Global Vibez DSG across social gaming, dating, streaming, and community experiences.";
+export const HOME_TITLE = "Global Vibez DSG | Gaming, Dating, Streaming & Earn";
+export const HOME_DESCRIPTION =
   "Global Vibez DSG blends social gaming, dating, streaming, and earnings into one platform with chairs, coin packs, and live community experiences.";
 
 export type RouteSeoConfig = {
@@ -13,8 +16,8 @@ export type RouteSeoConfig = {
 const EXACT_ROUTES: Record<string, RouteSeoConfig> = {
   "/": {
     canonicalPath: "/",
-    title: DEFAULT_TITLE,
-    description: DEFAULT_DESCRIPTION,
+    title: HOME_TITLE,
+    description: HOME_DESCRIPTION,
   },
   "/vibe-stakes": {
     canonicalPath: "/vibe-stakes",

@@ -142,6 +142,10 @@
                 description: "Completing sign-in for Global Vibez DSG."
               }
             };
+            var defaultMeta = {
+              title: "Global Vibez DSG",
+              description: "Explore Global Vibez DSG across social gaming, dating, streaming, and community experiences."
+            };
             var noindexPaths = {
               "/login": true,
               "/signup": true,
@@ -174,7 +178,7 @@
             }
             var canonicalPath = canonicalizePath(path);
             var canonicalUrl = origin + (canonicalPath === "/" ? "/" : canonicalPath);
-            var meta = routeMeta[canonicalPath] || routeMeta[path] || routeMeta["/"];
+            var meta = routeMeta[canonicalPath] || routeMeta[path] || defaultMeta;
             var canonical = document.querySelector('link[rel="canonical"]');
             var ogUrl = document.querySelector('meta[property="og:url"]');
             var robots = document.querySelector('meta[name="robots"]');

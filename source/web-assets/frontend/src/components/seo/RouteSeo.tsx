@@ -4,6 +4,8 @@ import {
   SITE_ORIGIN,
   DEFAULT_TITLE,
   DEFAULT_DESCRIPTION,
+  HOME_TITLE,
+  HOME_DESCRIPTION,
   findSeoConfig,
   normalizeSeoPathname,
 } from "./routeSeoConfig";
@@ -37,8 +39,8 @@ export default function RouteSeo() {
     const config = findSeoConfig(pathname);
     const canonicalPath = config?.canonicalPath ?? pathname;
     const canonicalUrl = `${SITE_ORIGIN}${canonicalPath === "/" ? "" : canonicalPath}` || SITE_ORIGIN;
-    const title = config?.title ?? DEFAULT_TITLE;
-    const description = config?.description ?? DEFAULT_DESCRIPTION;
+    const title = config?.title ?? (pathname === "/" ? HOME_TITLE : DEFAULT_TITLE);
+    const description = config?.description ?? (pathname === "/" ? HOME_DESCRIPTION : DEFAULT_DESCRIPTION);
     const robots = config?.robots ?? "index,follow";
 
     document.title = title;
