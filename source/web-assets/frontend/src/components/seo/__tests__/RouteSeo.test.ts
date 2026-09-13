@@ -1,4 +1,4 @@
-import { findSeoConfig, normalizeSeoPathname } from "../RouteSeo";
+import { findSeoConfig, normalizeSeoPathname } from "../routeSeoConfig";
 
 describe("RouteSeo helpers", () => {
   test("normalizes trailing slashes to the canonical pathname", () => {
