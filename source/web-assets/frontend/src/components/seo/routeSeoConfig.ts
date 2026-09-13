@@ -199,13 +199,5 @@ export function findSeoConfig(pathname: string): RouteSeoConfig | null {
   if (pathname.startsWith("/yellow-pages/new/")) {
     return EXACT_ROUTES["/yellow-pages/new"];
   }
-  if (pathname.startsWith("/yellow-pages/")) {
-    return {
-      canonicalPath: pathname,
-      title: "Yellow Pages Listing | Global Vibez DSG",
-      description:
-        "View a public Yellow Pages listing inside the Global Vibez DSG directory.",
-    };
-  }
   return null;
 }
