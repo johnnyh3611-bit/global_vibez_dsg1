@@ -38,7 +38,7 @@ export default function RouteSeo() {
     const pathname = normalizeSeoPathname(location.pathname);
     const config = findSeoConfig(pathname);
     const canonicalPath = config?.canonicalPath ?? pathname;
-    const canonicalUrl = `${SITE_ORIGIN}${canonicalPath === "/" ? "" : canonicalPath}` || SITE_ORIGIN;
+    const canonicalUrl = `${SITE_ORIGIN}${canonicalPath === "/" ? "/" : canonicalPath}` || `${SITE_ORIGIN}/`;
     const title = config?.title ?? (pathname === "/" ? HOME_TITLE : DEFAULT_TITLE);
     const description = config?.description ?? (pathname === "/" ? HOME_DESCRIPTION : DEFAULT_DESCRIPTION);
     const robots = config?.robots ?? "index,follow";
