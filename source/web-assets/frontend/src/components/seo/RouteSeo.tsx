@@ -201,7 +201,12 @@ const PREFIX_ROUTES: Array<[prefix: string, config: RouteSeoConfig]> = [
   ],
 ];
 
-function findSeoConfig(pathname: string): RouteSeoConfig | null {
+export function normalizeSeoPathname(pathname: string | null | undefined) {
+  if (!pathname || pathname === "/") return "/";
+  return pathname.replace(/\/+$/, "") || "/";
+}
+
+export function findSeoConfig(pathname: string): RouteSeoConfig | null {
   if (EXACT_ROUTES[pathname]) return EXACT_ROUTES[pathname];
   const matchedPrefix = PREFIX_ROUTES.find(([prefix]) => pathname.startsWith(prefix));
   return matchedPrefix?.[1] ?? null;
@@ -232,9 +237,7 @@ export default function RouteSeo() {
   const location = useLocation();
 
   useEffect(() => {
-    const pathname = location.pathname && location.pathname !== "/"
-      ? location.pathname.replace(/\/+$/, "")
-      : "/";
+    const pathname = normalizeSeoPathname(location.pathname);
     const config = findSeoConfig(pathname);
     const canonicalPath = config?.canonicalPath ?? pathname;
     const canonicalUrl = `${SITE_ORIGIN}${canonicalPath === "/" ? "" : canonicalPath}` || SITE_ORIGIN;

@@ -35,7 +35,8 @@
         <script>
           (function () {
             var origin = "https://www.globalvibezdsg.com";
-            var path = window.location && window.location.pathname ? window.location.pathname : "/";
+            var rawPath = window.location && window.location.pathname ? window.location.pathname : "/";
+            var path = rawPath === "/" ? "/" : (rawPath.replace(/\/+$/, "") || "/");
             var canonicalMap = {
               "/profit-share": "/vibe-stakes",
               "/invest": "/vibe-stakes",
@@ -48,7 +49,8 @@
               "/signup": true,
               "/forgot-password": true,
               "/reset-password": true,
-              "/auth-callback": true
+              "/auth-callback": true,
+              "/yellow-pages/new": true
             };
             var canonicalPath = canonicalMap[path] || path;
             var canonicalUrl = origin + (canonicalPath === "/" ? "/" : canonicalPath);

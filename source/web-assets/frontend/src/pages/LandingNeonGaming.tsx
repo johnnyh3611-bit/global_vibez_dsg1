@@ -967,8 +967,8 @@ export default function LandingNeonGaming() {
             <a href="/terms" className="text-gray-400 hover:text-fuchsia-300 transition-colors">
               Terms
             </a>
-            <a href="/content-rights" className="text-gray-400 hover:text-fuchsia-300 transition-colors">
-              Content Rights
+            <a href="/age-verification" className="text-gray-400 hover:text-fuchsia-300 transition-colors">
+              18+ Age verification
             </a>
           </nav>
           <p className="text-sm text-gray-600">
