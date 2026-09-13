@@ -159,13 +159,25 @@
               if (currentPath.indexOf("/yellow-pages/new/") === 0) {
                 return "/yellow-pages/new";
               }
-              if (currentPath.indexOf("/yellow-pages/") === 0 && currentPath !== "/yellow-pages/new") {
-                return "/yellow-pages";
-              }
               return currentPath;
             }
             function isNoindexPath(currentPath) {
               return !!noindexPaths[currentPath] || currentPath.indexOf("/yellow-pages/new/") === 0;
+            }
+            function resolveMeta(currentPath, resolvedCanonicalPath) {
+              if (currentPath.indexOf("/yellow-pages/new/") === 0) {
+                return routeMeta["/yellow-pages/new"];
+              }
+              if (
+                currentPath.indexOf("/yellow-pages/") === 0 &&
+                currentPath !== "/yellow-pages/new"
+              ) {
+                return {
+                  title: "Yellow Pages Listing | Global Vibez DSG",
+                  description: "View a public Yellow Pages listing inside the Global Vibez DSG directory."
+                };
+              }
+              return routeMeta[resolvedCanonicalPath] || routeMeta[currentPath] || defaultMeta;
             }
             function ensureMeta(selector, attributeName, attributeValue) {
               var node = document.querySelector(selector);
@@ -178,7 +190,7 @@
             }
             var canonicalPath = canonicalizePath(path);
             var canonicalUrl = origin + (canonicalPath === "/" ? "/" : canonicalPath);
-            var meta = routeMeta[canonicalPath] || routeMeta[path] || defaultMeta;
+            var meta = resolveMeta(path, canonicalPath);
             var canonical = document.querySelector('link[rel="canonical"]');
             var ogUrl = document.querySelector('meta[property="og:url"]');
             var robots = document.querySelector('meta[name="robots"]');

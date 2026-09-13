@@ -189,18 +189,6 @@ const EXACT_ROUTES: Record<string, RouteSeoConfig> = {
   },
 };
 
-const PREFIX_ROUTES: Array<[prefix: string, config: RouteSeoConfig]> = [
-  [
-    "/yellow-pages/",
-    {
-      canonicalPath: "/yellow-pages",
-      title: "Yellow Pages Listing | Global Vibez DSG",
-      description:
-        "View a public Yellow Pages listing inside the Global Vibez DSG directory.",
-    },
-  ],
-];
-
 export function normalizeSeoPathname(pathname: string | null | undefined) {
   if (!pathname || pathname === "/") return "/";
   return pathname.replace(/\/+$/, "") || "/";
@@ -211,6 +199,13 @@ export function findSeoConfig(pathname: string): RouteSeoConfig | null {
   if (pathname.startsWith("/yellow-pages/new/")) {
     return EXACT_ROUTES["/yellow-pages/new"];
   }
-  const matchedPrefix = PREFIX_ROUTES.find(([prefix]) => pathname.startsWith(prefix));
-  return matchedPrefix?.[1] ?? null;
+  if (pathname.startsWith("/yellow-pages/")) {
+    return {
+      canonicalPath: pathname,
+      title: "Yellow Pages Listing | Global Vibez DSG",
+      description:
+        "View a public Yellow Pages listing inside the Global Vibez DSG directory.",
+    };
+  }
+  return null;
 }
