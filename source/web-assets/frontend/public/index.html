@@ -57,6 +57,21 @@
             var canonical = document.querySelector('link[rel="canonical"]');
             var ogUrl = document.querySelector('meta[property="og:url"]');
             var robots = document.querySelector('meta[name="robots"]');
+            if (!canonical) {
+              canonical = document.createElement("link");
+              canonical.setAttribute("rel", "canonical");
+              document.head.appendChild(canonical);
+            }
+            if (!ogUrl) {
+              ogUrl = document.createElement("meta");
+              ogUrl.setAttribute("property", "og:url");
+              document.head.appendChild(ogUrl);
+            }
+            if (!robots) {
+              robots = document.createElement("meta");
+              robots.setAttribute("name", "robots");
+              document.head.appendChild(robots);
+            }
             if (canonical) canonical.setAttribute("href", canonicalUrl);
             if (ogUrl) ogUrl.setAttribute("content", canonicalUrl);
             if (robots) robots.setAttribute("content", noindexPaths[path] ? "noindex,nofollow" : "index,follow");

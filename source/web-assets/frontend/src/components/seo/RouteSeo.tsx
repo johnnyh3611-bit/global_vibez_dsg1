@@ -39,7 +39,7 @@ export default function RouteSeo() {
     const canonicalUrl = `${SITE_ORIGIN}${canonicalPath === "/" ? "" : canonicalPath}` || SITE_ORIGIN;
     const title = config?.title ?? DEFAULT_TITLE;
     const description = config?.description ?? DEFAULT_DESCRIPTION;
-    const robots = config?.robots ?? (config ? "index,follow" : "noindex,nofollow");
+    const robots = config?.robots ?? "index,follow";
 
     document.title = title;
     ensureCanonicalLink().setAttribute("href", canonicalUrl || `${SITE_ORIGIN}/`);
