@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, Gamepad2, Video, MapPin, Sparkles, Play, ArrowRight, Zap, Users, Shield, Moon, Crown, BookOpen, Map, Cpu, Armchair, DollarSign, Pizza, Home, Tv, Music, BookMarked } from 'lucide-react';
 import UtilityRoomsDock from '../components/landing/UtilityRoomsDock';
@@ -938,18 +938,38 @@ export default function LandingNeonGaming() {
             Gaming · Dating · Streams · Earn
           </p>
           <nav
+            className="mb-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm"
+            aria-label="Explore Global Vibez DSG"
+          >
+            <Link to="/vibe-stakes" className="text-cyan-300 hover:text-cyan-200 transition-colors">
+              Vibe Stakes
+            </Link>
+            <Link to="/beta-tester" className="text-cyan-300 hover:text-cyan-200 transition-colors">
+              Beta Tester
+            </Link>
+            <Link to="/yellow-pages" className="text-cyan-300 hover:text-cyan-200 transition-colors">
+              Yellow Pages
+            </Link>
+            <Link to="/economic-engine" className="text-cyan-300 hover:text-cyan-200 transition-colors">
+              Economic Engine
+            </Link>
+            <Link to="/content-rights" className="text-cyan-300 hover:text-cyan-200 transition-colors">
+              Content Rights
+            </Link>
+          </nav>
+          <nav
             className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 mb-4 text-sm"
             aria-label="Legal"
           >
-            <a href="/privacy" className="text-gray-400 hover:text-fuchsia-300 transition-colors">
+            <Link to="/privacy" className="text-gray-400 hover:text-fuchsia-300 transition-colors">
               Privacy
-            </a>
-            <a href="/terms" className="text-gray-400 hover:text-fuchsia-300 transition-colors">
+            </Link>
+            <Link to="/terms" className="text-gray-400 hover:text-fuchsia-300 transition-colors">
               Terms
-            </a>
-            <a href="/age-verification" className="text-gray-400 hover:text-fuchsia-300 transition-colors">
+            </Link>
+            <Link to="/age-verification" className="text-gray-400 hover:text-fuchsia-300 transition-colors">
               18+ Age verification
-            </a>
+            </Link>
           </nav>
           <p className="text-sm text-gray-600">
             © 2026 Global Vibez DSG · Adults 18+ only

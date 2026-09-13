@@ -30,7 +30,198 @@
         <meta property="og:image" content="https://www.globalvibezdsg.com/global-vibez-logo.png?v=12" />
         <meta property="og:image:alt" content="Global Vibez DSG logo" />
         <meta name="twitter:card" content="summary" />
+        <meta name="robots" content="index,follow" />
         <meta name="twitter:image" content="https://www.globalvibezdsg.com/global-vibez-logo.png?v=12" />
+        <script>
+          (function () {
+            var origin = "https://www.globalvibezdsg.com";
+            var rawPath = window.location && window.location.pathname ? window.location.pathname : "/";
+            function normalizePathname(currentPath) {
+              return currentPath === "/" ? "/" : (currentPath.replace(/\/+$/, "") || "/");
+            }
+            var path = normalizePathname(rawPath);
+            var canonicalMap = {
+              "/profit-share": "/vibe-stakes",
+              "/invest": "/vibe-stakes",
+              "/beta": "/beta-tester",
+              "/privacy-policy": "/privacy",
+              "/terms-of-service": "/terms"
+            };
+            var routeMeta = {
+              "/": {
+                title: "Global Vibez DSG | Gaming, Dating, Streaming & Earn",
+                description: "Global Vibez DSG blends social gaming, dating, streaming, and earnings into one platform with chairs, coin packs, and live community experiences."
+              },
+              "/vibe-stakes": {
+                title: "Vibe Stakes | Global Vibez DSG",
+                description: "Learn how Vibe Stakes works inside Global Vibez DSG, including chairs, circulation, rewards, and the platform's earnings model."
+              },
+              "/beta-tester": {
+                title: "Beta Tester Waitlist | Global Vibez DSG",
+                description: "Join the Global Vibez DSG beta tester waitlist to preview new gaming, dating, streaming, and rewards experiences."
+              },
+              "/yellow-pages": {
+                title: "Vibe Yellow Pages | Global Vibez DSG",
+                description: "Browse the Global Vibez DSG Yellow Pages directory for creators, businesses, venues, and community listings."
+              },
+              "/yellow-pages/new": {
+                title: "Create Yellow Pages Listing | Global Vibez DSG",
+                description: "Create a Yellow Pages listing in Global Vibez DSG."
+              },
+              "/chair-vault": {
+                title: "Chair Vault | Global Vibez DSG",
+                description: "Explore the Global Vibez DSG Chair Vault and learn how chair ownership connects to platform rewards and access."
+              },
+              "/economic-engine": {
+                title: "Economic Engine | Global Vibez DSG",
+                description: "Read the public Global Vibez DSG economic engine overview covering circulation, wallets, chairs, and ecosystem value flow."
+              },
+              "/content-rights": {
+                title: "Content Rights Policy | Global Vibez DSG",
+                description: "Review the Global Vibez DSG content rights, IP protection, and anti-piracy policy."
+              },
+              "/demo": {
+                title: "Platform Demo | Global Vibez DSG",
+                description: "Preview Global Vibez DSG product concepts and demo experiences across gaming, social, and entertainment features."
+              },
+              "/treasury": {
+                title: "Treasury | Global Vibez DSG",
+                description: "Explore the public Global Vibez DSG treasury view and platform economics surfaces."
+              },
+              "/modern-games": {
+                title: "Modern Games Showcase | Global Vibez DSG",
+                description: "See the Global Vibez DSG modern games showcase featuring interactive table, card, and social gaming concepts."
+              },
+              "/engagement-preview": {
+                title: "Engagement Preview | Global Vibez DSG",
+                description: "Preview the engagement and relationship-oriented experiences inside Global Vibez DSG."
+              },
+              "/celebration-demo": {
+                title: "Celebration Demo | Global Vibez DSG",
+                description: "Watch the celebration demo for Global Vibez DSG social and interactive product moments."
+              },
+              "/tournament-demo": {
+                title: "Tournament Demo | Global Vibez DSG",
+                description: "Preview the Global Vibez DSG tournament demo and competitive multiplayer presentation."
+              },
+              "/metahuman-dealer": {
+                title: "MetaHuman Dealer Demo | Global Vibez DSG",
+                description: "Explore the Global Vibez DSG MetaHuman dealer demo for immersive live-table experiences."
+              },
+              "/private-suites": {
+                title: "Private Vibe Suites | Global Vibez DSG",
+                description: "Discover private suite concepts for premium social, dating, and entertainment sessions in Global Vibez DSG."
+              },
+              "/matchmaking": {
+                title: "Skill-Based Matchmaking | Global Vibez DSG",
+                description: "Learn about skill-based matchmaking concepts for games and social experiences in Global Vibez DSG."
+              },
+              "/privacy": {
+                title: "Privacy Policy | Global Vibez DSG",
+                description: "Read the Global Vibez DSG privacy policy and how the platform handles user data and safety."
+              },
+              "/terms": {
+                title: "Terms of Service | Global Vibez DSG",
+                description: "Read the Global Vibez DSG terms of service for platform use, eligibility, and community expectations."
+              },
+              "/login": {
+                title: "Login | Global Vibez DSG",
+                description: "Sign in to Global Vibez DSG."
+              },
+              "/signup": {
+                title: "Sign Up | Global Vibez DSG",
+                description: "Create your Global Vibez DSG account."
+              },
+              "/forgot-password": {
+                title: "Forgot Password | Global Vibez DSG",
+                description: "Reset your Global Vibez DSG password."
+              },
+              "/reset-password": {
+                title: "Reset Password | Global Vibez DSG",
+                description: "Choose a new Global Vibez DSG password."
+              },
+              "/auth-callback": {
+                title: "Signing In | Global Vibez DSG",
+                description: "Completing sign-in for Global Vibez DSG."
+              }
+            };
+            var defaultMeta = {
+              title: "Global Vibez DSG",
+              description: "Explore Global Vibez DSG across social gaming, dating, streaming, and community experiences."
+            };
+            var noindexPaths = {
+              "/login": true,
+              "/signup": true,
+              "/forgot-password": true,
+              "/reset-password": true,
+              "/auth-callback": true,
+              "/yellow-pages/new": true
+            };
+            function canonicalizePath(currentPath) {
+              currentPath = normalizePathname(currentPath);
+              if (canonicalMap[currentPath]) return canonicalMap[currentPath];
+              if (currentPath.indexOf("/yellow-pages/new/") === 0) {
+                return "/yellow-pages/new";
+              }
+              return currentPath;
+            }
+            function isNoindexPath(currentPath) {
+              currentPath = normalizePathname(currentPath);
+              return !!noindexPaths[currentPath] || currentPath.indexOf("/yellow-pages/new/") === 0;
+            }
+            function resolveMeta(currentPath, resolvedCanonicalPath) {
+              currentPath = normalizePathname(currentPath);
+              if (currentPath.indexOf("/yellow-pages/new/") === 0) {
+                return routeMeta["/yellow-pages/new"];
+              }
+              return routeMeta[resolvedCanonicalPath] || routeMeta[currentPath] || defaultMeta;
+            }
+            function ensureMeta(selector, attributeName, attributeValue) {
+              var node = document.querySelector(selector);
+              if (!node) {
+                node = document.createElement("meta");
+                node.setAttribute(attributeName, attributeValue);
+                document.head.appendChild(node);
+              }
+              return node;
+            }
+            var canonicalPath = canonicalizePath(path);
+            var canonicalUrl = origin + (canonicalPath === "/" ? "/" : canonicalPath);
+            var meta = resolveMeta(path, canonicalPath);
+            var canonical = document.querySelector('link[rel="canonical"]');
+            var ogUrl = document.querySelector('meta[property="og:url"]');
+            var robots = document.querySelector('meta[name="robots"]');
+            var description = ensureMeta('meta[name="description"]', "name", "description");
+            var ogTitle = ensureMeta('meta[property="og:title"]', "property", "og:title");
+            var ogDescription = ensureMeta('meta[property="og:description"]', "property", "og:description");
+            var twitterTitle = ensureMeta('meta[name="twitter:title"]', "name", "twitter:title");
+            var twitterDescription = ensureMeta('meta[name="twitter:description"]', "name", "twitter:description");
+            if (!canonical) {
+              canonical = document.createElement("link");
+              canonical.setAttribute("rel", "canonical");
+              document.head.appendChild(canonical);
+            }
+            if (!ogUrl) {
+              ogUrl = document.createElement("meta");
+              ogUrl.setAttribute("property", "og:url");
+              document.head.appendChild(ogUrl);
+            }
+            if (!robots) {
+              robots = document.createElement("meta");
+              robots.setAttribute("name", "robots");
+              document.head.appendChild(robots);
+            }
+            document.title = meta.title;
+            if (description) description.setAttribute("content", meta.description);
+            if (ogTitle) ogTitle.setAttribute("content", meta.title);
+            if (ogDescription) ogDescription.setAttribute("content", meta.description);
+            if (twitterTitle) twitterTitle.setAttribute("content", meta.title);
+            if (twitterDescription) twitterDescription.setAttribute("content", meta.description);
+            if (canonical) canonical.setAttribute("href", canonicalUrl);
+            if (ogUrl) ogUrl.setAttribute("content", canonicalUrl);
+            if (robots) robots.setAttribute("content", isNoindexPath(path) ? "noindex,nofollow" : "index,follow");
+          })();
+        </script>
         <script type="application/ld+json">
           {
             "@context": "https://schema.org",
@@ -104,7 +295,23 @@
         -->
     </head>
     <body>
-        <noscript>You need to enable JavaScript to run this app.</noscript>
+        <noscript>
+            <section style="padding:24px;max-width:960px;margin:0 auto;color:#fff;background:#05010d;font-family:Arial,sans-serif;">
+                <h1>Global Vibez DSG</h1>
+                <p>Global Vibez DSG brings together social gaming, dating, streaming, community discovery, and earnings experiences.</p>
+                <p>Key public pages:</p>
+                <ul>
+                    <li><a href="https://www.globalvibezdsg.com/vibe-stakes">Vibe Stakes</a></li>
+                    <li><a href="https://www.globalvibezdsg.com/beta-tester">Beta Tester Waitlist</a></li>
+                    <li><a href="https://www.globalvibezdsg.com/yellow-pages">Vibe Yellow Pages</a></li>
+                    <li><a href="https://www.globalvibezdsg.com/economic-engine">Economic Engine</a></li>
+                    <li><a href="https://www.globalvibezdsg.com/content-rights">Content Rights Policy</a></li>
+                    <li><a href="https://www.globalvibezdsg.com/privacy">Privacy Policy</a></li>
+                    <li><a href="https://www.globalvibezdsg.com/terms">Terms of Service</a></li>
+                </ul>
+                <p>Enable JavaScript for the full interactive experience.</p>
+            </section>
+        </noscript>
         <div id="root"></div>
         <!--
       This HTML file is a template.
