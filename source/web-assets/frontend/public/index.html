@@ -52,7 +52,17 @@
               "/auth-callback": true,
               "/yellow-pages/new": true
             };
-            var canonicalPath = canonicalMap[path] || path;
+            function canonicalizePath(currentPath) {
+              if (canonicalMap[currentPath]) return canonicalMap[currentPath];
+              if (currentPath.indexOf("/yellow-pages/") === 0 && currentPath !== "/yellow-pages/new") {
+                return "/yellow-pages";
+              }
+              return currentPath;
+            }
+            function isNoindexPath(currentPath) {
+              return !!noindexPaths[currentPath];
+            }
+            var canonicalPath = canonicalizePath(path);
             var canonicalUrl = origin + (canonicalPath === "/" ? "/" : canonicalPath);
             var canonical = document.querySelector('link[rel="canonical"]');
             var ogUrl = document.querySelector('meta[property="og:url"]');
@@ -74,7 +84,7 @@
             }
             if (canonical) canonical.setAttribute("href", canonicalUrl);
             if (ogUrl) ogUrl.setAttribute("content", canonicalUrl);
-            if (robots) robots.setAttribute("content", noindexPaths[path] ? "noindex,nofollow" : "index,follow");
+            if (robots) robots.setAttribute("content", isNoindexPath(path) ? "noindex,nofollow" : "index,follow");
           })();
         </script>
         <script type="application/ld+json">
