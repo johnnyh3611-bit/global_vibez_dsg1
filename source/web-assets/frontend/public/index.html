@@ -36,7 +36,10 @@
           (function () {
             var origin = "https://www.globalvibezdsg.com";
             var rawPath = window.location && window.location.pathname ? window.location.pathname : "/";
-            var path = rawPath === "/" ? "/" : (rawPath.replace(/\/+$/, "") || "/");
+            function normalizePathname(currentPath) {
+              return currentPath === "/" ? "/" : (currentPath.replace(/\/+$/, "") || "/");
+            }
+            var path = normalizePathname(rawPath);
             var canonicalMap = {
               "/profit-share": "/vibe-stakes",
               "/invest": "/vibe-stakes",
@@ -155,6 +158,7 @@
               "/yellow-pages/new": true
             };
             function canonicalizePath(currentPath) {
+              currentPath = normalizePathname(currentPath);
               if (canonicalMap[currentPath]) return canonicalMap[currentPath];
               if (currentPath.indexOf("/yellow-pages/new/") === 0) {
                 return "/yellow-pages/new";
@@ -162,9 +166,11 @@
               return currentPath;
             }
             function isNoindexPath(currentPath) {
+              currentPath = normalizePathname(currentPath);
               return !!noindexPaths[currentPath] || currentPath.indexOf("/yellow-pages/new/") === 0;
             }
             function resolveMeta(currentPath, resolvedCanonicalPath) {
+              currentPath = normalizePathname(currentPath);
               if (currentPath.indexOf("/yellow-pages/new/") === 0) {
                 return routeMeta["/yellow-pages/new"];
               }
