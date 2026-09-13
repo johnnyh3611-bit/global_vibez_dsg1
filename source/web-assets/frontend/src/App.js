@@ -79,6 +79,7 @@ import RoleSwitcher from "@/components/common/RoleSwitcher";
 import LandscapeRotateHint from "@/components/common/LandscapeRotateHint";
 import CmdKLauncher from "@/components/CmdKLauncher";
 import MobileBottomNav from "@/components/MobileBottomNav";
+import RouteSeo from "@/components/seo/RouteSeo";
 
 // Import version manager for cache busting
 import { startVersionMonitoring } from "@/utils/versionManager";
@@ -224,6 +225,7 @@ function GlobalCommsMounter() {
 function AppRouter() {
   return (
     <>
+      <RouteSeo />
       <ChromebarActiveDispatcher />
       <GlobalCommsMounter />
       <RoleSwitcher />

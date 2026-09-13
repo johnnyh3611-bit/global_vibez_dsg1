@@ -938,6 +938,26 @@ export default function LandingNeonGaming() {
             Gaming · Dating · Streams · Earn
           </p>
           <nav
+            className="mb-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm"
+            aria-label="Explore Global Vibez DSG"
+          >
+            <a href="/vibe-stakes" className="text-cyan-300 hover:text-cyan-200 transition-colors">
+              Vibe Stakes
+            </a>
+            <a href="/beta-tester" className="text-cyan-300 hover:text-cyan-200 transition-colors">
+              Beta Tester
+            </a>
+            <a href="/yellow-pages" className="text-cyan-300 hover:text-cyan-200 transition-colors">
+              Yellow Pages
+            </a>
+            <a href="/economic-engine" className="text-cyan-300 hover:text-cyan-200 transition-colors">
+              Economic Engine
+            </a>
+            <a href="/content-rights" className="text-cyan-300 hover:text-cyan-200 transition-colors">
+              Content Rights
+            </a>
+          </nav>
+          <nav
             className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 mb-4 text-sm"
             aria-label="Legal"
           >
@@ -947,8 +967,8 @@ export default function LandingNeonGaming() {
             <a href="/terms" className="text-gray-400 hover:text-fuchsia-300 transition-colors">
               Terms
             </a>
-            <a href="/age-verification" className="text-gray-400 hover:text-fuchsia-300 transition-colors">
-              18+ Age verification
+            <a href="/content-rights" className="text-gray-400 hover:text-fuchsia-300 transition-colors">
+              Content Rights
             </a>
           </nav>
           <p className="text-sm text-gray-600">

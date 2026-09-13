@@ -30,7 +30,36 @@
         <meta property="og:image" content="https://www.globalvibezdsg.com/global-vibez-logo.png?v=12" />
         <meta property="og:image:alt" content="Global Vibez DSG logo" />
         <meta name="twitter:card" content="summary" />
+        <meta name="robots" content="index,follow" />
         <meta name="twitter:image" content="https://www.globalvibezdsg.com/global-vibez-logo.png?v=12" />
+        <script>
+          (function () {
+            var origin = "https://www.globalvibezdsg.com";
+            var path = window.location && window.location.pathname ? window.location.pathname : "/";
+            var canonicalMap = {
+              "/profit-share": "/vibe-stakes",
+              "/invest": "/vibe-stakes",
+              "/beta": "/beta-tester",
+              "/privacy-policy": "/privacy",
+              "/terms-of-service": "/terms"
+            };
+            var noindexPaths = {
+              "/login": true,
+              "/signup": true,
+              "/forgot-password": true,
+              "/reset-password": true,
+              "/auth-callback": true
+            };
+            var canonicalPath = canonicalMap[path] || path;
+            var canonicalUrl = origin + (canonicalPath === "/" ? "/" : canonicalPath);
+            var canonical = document.querySelector('link[rel="canonical"]');
+            var ogUrl = document.querySelector('meta[property="og:url"]');
+            var robots = document.querySelector('meta[name="robots"]');
+            if (canonical) canonical.setAttribute("href", canonicalUrl);
+            if (ogUrl) ogUrl.setAttribute("content", canonicalUrl);
+            if (robots) robots.setAttribute("content", noindexPaths[path] ? "noindex,nofollow" : "index,follow");
+          })();
+        </script>
         <script type="application/ld+json">
           {
             "@context": "https://schema.org",
@@ -104,7 +133,23 @@
         -->
     </head>
     <body>
-        <noscript>You need to enable JavaScript to run this app.</noscript>
+        <noscript>
+            <section style="padding:24px;max-width:960px;margin:0 auto;color:#fff;background:#05010d;font-family:Arial,sans-serif;">
+                <h1>Global Vibez DSG</h1>
+                <p>Global Vibez DSG brings together social gaming, dating, streaming, community discovery, and earnings experiences.</p>
+                <p>Key public pages:</p>
+                <ul>
+                    <li><a href="https://www.globalvibezdsg.com/vibe-stakes">Vibe Stakes</a></li>
+                    <li><a href="https://www.globalvibezdsg.com/beta-tester">Beta Tester Waitlist</a></li>
+                    <li><a href="https://www.globalvibezdsg.com/yellow-pages">Vibe Yellow Pages</a></li>
+                    <li><a href="https://www.globalvibezdsg.com/economic-engine">Economic Engine</a></li>
+                    <li><a href="https://www.globalvibezdsg.com/content-rights">Content Rights Policy</a></li>
+                    <li><a href="https://www.globalvibezdsg.com/privacy">Privacy Policy</a></li>
+                    <li><a href="https://www.globalvibezdsg.com/terms">Terms of Service</a></li>
+                </ul>
+                <p>Enable JavaScript for the full interactive experience.</p>
+            </section>
+        </noscript>
         <div id="root"></div>
         <!--
       This HTML file is a template.
