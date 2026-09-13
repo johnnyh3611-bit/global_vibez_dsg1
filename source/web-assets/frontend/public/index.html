@@ -54,13 +54,16 @@
             };
             function canonicalizePath(currentPath) {
               if (canonicalMap[currentPath]) return canonicalMap[currentPath];
+              if (currentPath.indexOf("/yellow-pages/new/") === 0) {
+                return currentPath;
+              }
               if (currentPath.indexOf("/yellow-pages/") === 0 && currentPath !== "/yellow-pages/new") {
                 return "/yellow-pages";
               }
               return currentPath;
             }
             function isNoindexPath(currentPath) {
-              return !!noindexPaths[currentPath];
+              return !!noindexPaths[currentPath] || currentPath.indexOf("/yellow-pages/new/") === 0;
             }
             var canonicalPath = canonicalizePath(path);
             var canonicalUrl = origin + (canonicalPath === "/" ? "/" : canonicalPath);

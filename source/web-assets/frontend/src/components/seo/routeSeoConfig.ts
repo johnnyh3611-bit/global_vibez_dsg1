@@ -205,6 +205,9 @@ export function normalizeSeoPathname(pathname: string | null | undefined) {
 
 export function findSeoConfig(pathname: string): RouteSeoConfig | null {
   if (EXACT_ROUTES[pathname]) return EXACT_ROUTES[pathname];
+  if (pathname.startsWith("/yellow-pages/new/")) {
+    return EXACT_ROUTES["/yellow-pages/new"];
+  }
   const matchedPrefix = PREFIX_ROUTES.find(([prefix]) => pathname.startsWith(prefix));
   return matchedPrefix?.[1] ?? null;
 }

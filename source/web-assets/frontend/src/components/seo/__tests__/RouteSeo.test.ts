@@ -19,8 +19,10 @@ describe("RouteSeo helpers", () => {
   test("keeps utility routes noindexed", () => {
     const authConfig = findSeoConfig(normalizeSeoPathname("/login/"));
     const yellowPagesCreateConfig = findSeoConfig(normalizeSeoPathname("/yellow-pages/new/"));
+    const yellowPagesCreateChildConfig = findSeoConfig(normalizeSeoPathname("/yellow-pages/new/step-2/"));
 
     expect(authConfig?.robots).toBe("noindex,nofollow");
     expect(yellowPagesCreateConfig?.robots).toBe("noindex,nofollow");
+    expect(yellowPagesCreateChildConfig?.robots).toBe("noindex,nofollow");
   });
 });
