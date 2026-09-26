@@ -31,6 +31,7 @@ apex_hdr="$(mktemp)"
 www_hdr="$(mktemp)"
 robots_hdr="$(mktemp)"
 sitemap_hdr="$(mktemp)"
+trap 'rm -f "$apex_hdr" "$www_hdr" "$robots_hdr" "$sitemap_hdr"' EXIT
 
 run_head "$APEX_URL" "$apex_hdr" || { fail "Apex request failed"; exit 1; }
 run_head "$WWW_URL" "$www_hdr" || { fail "WWW request failed"; exit 1; }
@@ -70,8 +71,6 @@ echo "  1) Vercel project includes both apex and www domains."
 echo "  2) Vercel DNS records point only to Vercel (not GitHub Pages)."
 echo "  3) Search Console: submit ${WWW_URL%/}/sitemap.xml and request indexing for ${WWW_URL%/}/."
 echo "  4) Optional hard fix to hide repo from Google: set repository visibility to private."
-
-rm -f "$apex_hdr" "$www_hdr" "$robots_hdr" "$sitemap_hdr"
 
 if [[ "$FAIL" -ne 0 ]]; then
   echo "Domain routing check failed."
