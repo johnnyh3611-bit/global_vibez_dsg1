@@ -4,8 +4,13 @@ set -euo pipefail
 APEX_URL="${1:-https://globalvibezdsg.com}"
 WWW_URL="${2:-https://www.globalvibezdsg.com}"
 EXPECTED_WWW_HOST="$(printf '%s' "$WWW_URL" | sed -E 's#^https?://([^/:]+).*$#\1#')"
-APEX_PATH_AND_QUERY="$(printf '%s' "$APEX_URL" | sed -E 's#^https?://[^/]+##')"
-if [[ -z "$APEX_PATH_AND_QUERY" ]]; then
+APEX_WITHOUT_SCHEME="${APEX_URL#http://}"
+APEX_WITHOUT_SCHEME="${APEX_WITHOUT_SCHEME#https://}"
+if [[ "$APEX_WITHOUT_SCHEME" == */* ]]; then
+  APEX_PATH_AND_QUERY="/${APEX_WITHOUT_SCHEME#*/}"
+elif [[ "$APEX_WITHOUT_SCHEME" == *\?* ]]; then
+  APEX_PATH_AND_QUERY="?${APEX_WITHOUT_SCHEME#*\?}"
+else
   APEX_PATH_AND_QUERY="/"
 fi
 EXPECTED_APEX_REDIRECT="https://${EXPECTED_WWW_HOST}${APEX_PATH_AND_QUERY}"
