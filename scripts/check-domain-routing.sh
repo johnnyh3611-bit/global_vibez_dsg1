@@ -171,7 +171,7 @@ if [[ "$robots_ok" -eq 1 ]]; then
   if grep -qiE '^content-type:[[:space:]]*text/plain([[:space:]]*;[[:space:]]*.*)?$' "$robots_hdr"; then
     robots_code="$(http_code "$robots_hdr")"
     if [[ "$robots_code" == "200" ]]; then
-      if head -c 64 "$robots_body" | grep -qiE '<!doctype|<html'; then
+      if grep -qiE '<!doctype|<html' "$robots_body"; then
         fail "robots.txt body looks like HTML (possible SPA fallback)"
       elif grep -qiE '^(User-agent:|Sitemap:)' "$robots_body"; then
         pass "robots.txt is served as text/plain with HTTP 200 and expected directives"
