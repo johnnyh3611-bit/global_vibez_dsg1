@@ -158,14 +158,8 @@ if [[ "$apex_ok" -eq 1 ]]; then
   apex_code="$(http_code_first "$apex_hdr")"
   apex_loc="$(header_location "$apex_hdr")"
   apex_redirect_ok=0
-  if [[ -n "$apex_loc" ]]; then
-    if [[ "$APEX_PATH_AND_QUERY" == "/" ]]; then
-      if [[ "$apex_loc" == "https://${EXPECTED_WWW_HOST}/" || "$apex_loc" == "https://${EXPECTED_WWW_HOST}" ]]; then
-        apex_redirect_ok=1
-      fi
-    elif [[ "$apex_loc" == "$EXPECTED_APEX_REDIRECT" ]]; then
-      apex_redirect_ok=1
-    fi
+  if [[ -n "$apex_loc" ]] && urls_equivalent "$apex_loc" "$EXPECTED_APEX_REDIRECT"; then
+    apex_redirect_ok=1
   fi
   if [[ "$apex_code" =~ ^3[0-9][0-9]$ ]] && [[ "$apex_redirect_ok" -eq 1 ]]; then
     pass "Apex redirects to www (${apex_code} → ${apex_loc})"
