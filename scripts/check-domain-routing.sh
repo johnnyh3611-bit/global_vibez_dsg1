@@ -52,7 +52,7 @@ status_is_ok() {
   [[ "$code" =~ ^[23][0-9][0-9]$ ]]
 }
 
-run_head() {
+run_probe() {
   local url="$1"
   local out="$2"
   local follow_redirects="${3:-0}"
@@ -82,16 +82,16 @@ robots_body="$(mktemp)"
 sitemap_body="$(mktemp)"
 trap 'rm -f "$apex_hdr" "$www_hdr" "$robots_hdr" "$sitemap_hdr" "$robots_body" "$sitemap_body"' EXIT
 
-run_head "$APEX_URL" "$apex_hdr" 0 || { fail "Apex request failed"; exit 1; }
-run_head "$WWW_URL" "$www_hdr" 0 || { fail "WWW request failed"; exit 1; }
+run_probe "$APEX_URL" "$apex_hdr" 0 || { fail "Apex request failed"; exit 1; }
+run_probe "$WWW_URL" "$www_hdr" 0 || { fail "WWW request failed"; exit 1; }
 robots_ok=0
 sitemap_ok=0
-if run_head "${WWW_URL%/}/robots.txt" "$robots_hdr" 1; then
+if run_probe "${WWW_URL%/}/robots.txt" "$robots_hdr" 1; then
   robots_ok=1
 else
   fail "robots.txt request failed"
 fi
-if run_head "${WWW_URL%/}/sitemap.xml" "$sitemap_hdr" 1; then
+if run_probe "${WWW_URL%/}/sitemap.xml" "$sitemap_hdr" 1; then
   sitemap_ok=1
 else
   fail "sitemap.xml request failed"
