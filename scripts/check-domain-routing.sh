@@ -17,13 +17,23 @@ http_code() {
   awk 'BEGIN{c=""} /^HTTP\//{c=$2} END{print c}' "$1"
 }
 
+status_is_ok() {
+  local code="$1"
+  [[ "$code" =~ ^[23][0-9][0-9]$ ]]
+}
+
 run_head() {
   local url="$1"
   local out="$2"
   if curl -sS -I --max-time 20 "$url" > "$out"; then
-    return 0
+    local code
+    code="$(http_code "$out")"
+    status_is_ok "$code" && return 0
   fi
   curl -sS -o /dev/null -D "$out" --max-time 20 --request GET "$url" || return 1
+  local code
+  code="$(http_code "$out")"
+  status_is_ok "$code" || return 1
   return 0
 }
 
