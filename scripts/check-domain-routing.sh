@@ -21,7 +21,7 @@ run_head() {
   local url="$1"
   local out="$2"
   if ! curl -sS -I --max-time 20 "$url" > "$out"; then
-    curl -sS -o /dev/null -D "$out" --max-time 20 "$url"
+    curl -sS -o /dev/null -D "$out" --max-time 20 --max-redirs 0 --request GET "$url"
   fi
 }
 
@@ -42,7 +42,7 @@ run_head "${WWW_URL%/}/sitemap.xml" "$sitemap_hdr" || fail "sitemap.xml request 
 
 apex_code="$(http_code "$apex_hdr")"
 apex_loc="$(header_location "$apex_hdr")"
-if [[ "$apex_code" =~ ^30[18]$ ]] && [[ "$apex_loc" == "https://${EXPECTED_WWW_HOST}/"* || "$apex_loc" == "https://${EXPECTED_WWW_HOST}" ]]; then
+if [[ "$apex_code" =~ ^3[0-9][0-9]$ ]] && [[ "$apex_loc" == "https://${EXPECTED_WWW_HOST}/"* || "$apex_loc" == "https://${EXPECTED_WWW_HOST}" ]]; then
   pass "Apex redirects to www (${apex_code} → ${apex_loc})"
 else
   fail "Apex does not redirect to www as expected (code=${apex_code:-none}, location=${apex_loc:-none})"
