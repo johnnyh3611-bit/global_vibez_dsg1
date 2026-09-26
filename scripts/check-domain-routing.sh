@@ -85,8 +85,18 @@ robots_body="$(mktemp)"
 sitemap_body="$(mktemp)"
 trap 'rm -f "$apex_hdr" "$www_hdr" "$robots_hdr" "$sitemap_hdr" "$robots_body" "$sitemap_body"' EXIT
 
-run_probe "$APEX_URL" "$apex_hdr" 0 || { fail "Apex request failed"; exit 1; }
-run_probe "$WWW_URL" "$www_hdr" 0 || { fail "WWW request failed"; exit 1; }
+apex_ok=0
+www_ok=0
+if run_probe "$APEX_URL" "$apex_hdr" 0; then
+  apex_ok=1
+else
+  fail "Apex request failed"
+fi
+if run_probe "$WWW_URL" "$www_hdr" 0; then
+  www_ok=1
+else
+  fail "WWW request failed"
+fi
 robots_ok=0
 sitemap_ok=0
 robots_url="${WWW_URL%/}/robots.txt"
@@ -110,27 +120,31 @@ else
   fail "sitemap.xml request failed"
 fi
 
-apex_code="$(http_code_first "$apex_hdr")"
-apex_loc="$(header_location "$apex_hdr")"
-apex_redirect_ok=0
-if [[ "$APEX_PATH_AND_QUERY" == "/" ]]; then
-  if [[ "$apex_loc" == "https://${EXPECTED_WWW_HOST}" || "$apex_loc" == "https://${EXPECTED_WWW_HOST}/" ]]; then
+if [[ "$apex_ok" -eq 1 ]]; then
+  apex_code="$(http_code_first "$apex_hdr")"
+  apex_loc="$(header_location "$apex_hdr")"
+  apex_redirect_ok=0
+  if [[ "$APEX_PATH_AND_QUERY" == "/" ]]; then
+    if [[ "$apex_loc" == "https://${EXPECTED_WWW_HOST}" || "$apex_loc" == "https://${EXPECTED_WWW_HOST}/" ]]; then
+      apex_redirect_ok=1
+    fi
+  elif [[ "$apex_loc" == "$EXPECTED_APEX_REDIRECT" ]]; then
     apex_redirect_ok=1
   fi
-elif [[ "$apex_loc" == "$EXPECTED_APEX_REDIRECT" ]]; then
-  apex_redirect_ok=1
-fi
-if [[ "$apex_code" =~ ^3[0-9][0-9]$ ]] && [[ "$apex_redirect_ok" -eq 1 ]]; then
-  pass "Apex redirects to www (${apex_code} → ${apex_loc})"
-else
-  fail "Apex does not redirect to www as expected (code=${apex_code:-none}, location=${apex_loc:-none})"
+  if [[ "$apex_code" =~ ^3[0-9][0-9]$ ]] && [[ "$apex_redirect_ok" -eq 1 ]]; then
+    pass "Apex redirects to www (${apex_code} → ${apex_loc})"
+  else
+    fail "Apex does not redirect to www as expected (code=${apex_code:-none}, location=${apex_loc:-none})"
+  fi
 fi
 
-www_code="$(http_code "$www_hdr")"
-if [[ "$www_code" == "200" ]]; then
-  pass "WWW host returns HTTP 200"
-else
-  fail "WWW host did not return HTTP 200 (code=${www_code:-none})"
+if [[ "$www_ok" -eq 1 ]]; then
+  www_code="$(http_code "$www_hdr")"
+  if [[ "$www_code" == "200" ]]; then
+    pass "WWW host returns HTTP 200"
+  else
+    fail "WWW host did not return HTTP 200 (code=${www_code:-none})"
+  fi
 fi
 
 if [[ "$robots_ok" -eq 1 ]]; then
