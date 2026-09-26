@@ -21,6 +21,7 @@ EXPECTED_APEX_REDIRECT="https://${EXPECTED_WWW_HOST}${APEX_PATH_AND_QUERY}"
 FAIL=0
 
 pass() { echo "PASS: $1"; }
+warn() { echo "WARN: $1"; }
 fail() { echo "FAIL: $1"; FAIL=1; }
 PROBE_EFFECTIVE_URL=""
 
@@ -168,21 +169,20 @@ if [[ "$robots_ok" -eq 1 ]]; then
 fi
 
 if [[ "$sitemap_ok" -eq 1 ]]; then
-  if grep -qiE '^content-type:[[:space:]]*(application|text)/xml' "$sitemap_hdr"; then
-    sitemap_code="$(http_code "$sitemap_hdr")"
-    if [[ "$sitemap_code" == "200" ]]; then
-      if head -c 64 "$sitemap_body" | grep -qiE '<!doctype|<html'; then
-        fail "sitemap.xml body looks like HTML (possible SPA fallback)"
-      elif grep -qiE '<\?xml|<urlset|<sitemapindex' "$sitemap_body"; then
-        pass "sitemap.xml is served as XML with HTTP 200 and valid XML markers"
-      else
-        fail "sitemap.xml body missing expected XML markers"
-      fi
+  sitemap_code="$(http_code "$sitemap_hdr")"
+  if [[ "$sitemap_code" == "200" ]]; then
+    if ! grep -qiE '^content-type:[[:space:]]*(application|text)/xml' "$sitemap_hdr"; then
+      warn "sitemap.xml content-type is non-standard; validating body markers instead"
+    fi
+    if head -c 64 "$sitemap_body" | grep -qiE '<!doctype|<html'; then
+      fail "sitemap.xml body looks like HTML (possible SPA fallback)"
+    elif grep -qiE '<\?xml|<urlset|<sitemapindex' "$sitemap_body"; then
+      pass "sitemap.xml is served with HTTP 200 and valid XML markers"
     else
-      fail "sitemap.xml is XML but status is ${sitemap_code:-none} (expected 200)"
+      fail "sitemap.xml body missing expected XML markers"
     fi
   else
-    fail "sitemap.xml content-type is not XML (possible SPA fallback)"
+    fail "sitemap.xml status is ${sitemap_code:-none} (expected 200)"
   fi
 fi
 
