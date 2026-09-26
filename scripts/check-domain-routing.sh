@@ -20,9 +20,11 @@ http_code() {
 run_head() {
   local url="$1"
   local out="$2"
-  if ! curl -sS -I --max-time 20 "$url" > "$out"; then
-    curl -sS -o /dev/null -D "$out" --max-time 20 --request GET "$url"
+  if curl -sS -I --max-time 20 "$url" > "$out"; then
+    return 0
   fi
+  curl -sS -o /dev/null -D "$out" --max-time 20 --request GET "$url" || return 1
+  return 0
 }
 
 echo "Domain routing check"
@@ -37,8 +39,18 @@ trap 'rm -f "$apex_hdr" "$www_hdr" "$robots_hdr" "$sitemap_hdr"' EXIT
 
 run_head "$APEX_URL" "$apex_hdr" || { fail "Apex request failed"; exit 1; }
 run_head "$WWW_URL" "$www_hdr" || { fail "WWW request failed"; exit 1; }
-run_head "${WWW_URL%/}/robots.txt" "$robots_hdr" || fail "robots.txt request failed"
-run_head "${WWW_URL%/}/sitemap.xml" "$sitemap_hdr" || fail "sitemap.xml request failed"
+robots_ok=0
+sitemap_ok=0
+if run_head "${WWW_URL%/}/robots.txt" "$robots_hdr"; then
+  robots_ok=1
+else
+  fail "robots.txt request failed"
+fi
+if run_head "${WWW_URL%/}/sitemap.xml" "$sitemap_hdr"; then
+  sitemap_ok=1
+else
+  fail "sitemap.xml request failed"
+fi
 
 apex_code="$(http_code "$apex_hdr")"
 apex_loc="$(header_location "$apex_hdr")"
@@ -55,26 +67,30 @@ else
   fail "WWW host did not return HTTP 200 (code=${www_code:-none})"
 fi
 
-if grep -qi '^content-type: text/plain' "$robots_hdr"; then
-  robots_code="$(http_code "$robots_hdr")"
-  if [[ "$robots_code" == "200" ]]; then
-    pass "robots.txt is served as text/plain with HTTP 200"
+if [[ "$robots_ok" -eq 1 ]]; then
+  if grep -qi '^content-type: text/plain' "$robots_hdr"; then
+    robots_code="$(http_code "$robots_hdr")"
+    if [[ "$robots_code" == "200" ]]; then
+      pass "robots.txt is served as text/plain with HTTP 200"
+    else
+      fail "robots.txt is text/plain but status is ${robots_code:-none} (expected 200)"
+    fi
   else
-    fail "robots.txt is text/plain but status is ${robots_code:-none} (expected 200)"
+    fail "robots.txt content-type is not text/plain (possible SPA fallback)"
   fi
-else
-  fail "robots.txt content-type is not text/plain (possible SPA fallback)"
 fi
 
-if grep -qi '^content-type: application/xml' "$sitemap_hdr" || grep -qi '^content-type: text/xml' "$sitemap_hdr"; then
-  sitemap_code="$(http_code "$sitemap_hdr")"
-  if [[ "$sitemap_code" == "200" ]]; then
-    pass "sitemap.xml is served as XML with HTTP 200"
+if [[ "$sitemap_ok" -eq 1 ]]; then
+  if grep -qi '^content-type: application/xml' "$sitemap_hdr" || grep -qi '^content-type: text/xml' "$sitemap_hdr"; then
+    sitemap_code="$(http_code "$sitemap_hdr")"
+    if [[ "$sitemap_code" == "200" ]]; then
+      pass "sitemap.xml is served as XML with HTTP 200"
+    else
+      fail "sitemap.xml is XML but status is ${sitemap_code:-none} (expected 200)"
+    fi
   else
-    fail "sitemap.xml is XML but status is ${sitemap_code:-none} (expected 200)"
+    fail "sitemap.xml content-type is not XML (possible SPA fallback)"
   fi
-else
-  fail "sitemap.xml content-type is not XML (possible SPA fallback)"
 fi
 
 echo
