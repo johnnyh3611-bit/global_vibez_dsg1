@@ -21,7 +21,7 @@ run_head() {
   local url="$1"
   local out="$2"
   if ! curl -sS -I --max-time 20 "$url" > "$out"; then
-    curl -sS -o /dev/null -D "$out" --max-time 20 --max-redirs 0 --request GET "$url"
+    curl -sS -o /dev/null -D "$out" --max-time 20 --request GET "$url"
   fi
 }
 
