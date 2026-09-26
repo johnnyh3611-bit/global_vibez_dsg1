@@ -98,7 +98,7 @@ else
   fail "sitemap.xml request failed"
 fi
 
-apex_code="$(http_code "$apex_hdr")"
+apex_code="$(http_code_first "$apex_hdr")"
 apex_loc="$(header_location "$apex_hdr")"
 apex_redirect_ok=0
 if [[ "$APEX_PATH_AND_QUERY" == "/" ]]; then
