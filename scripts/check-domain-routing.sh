@@ -60,14 +60,6 @@ run_head() {
   if [[ "$follow_redirects" == "1" ]]; then
     follow_flag=(-L)
   fi
-  if curl -sS "${follow_flag[@]}" -I --max-time 20 "$url" > "$out"; then
-    if [[ "$follow_redirects" != "1" ]]; then
-      return 0
-    fi
-    local code
-    code="$(http_code "$out")"
-    status_is_ok "$code" && return 0
-  fi
   curl -sS "${follow_flag[@]}" -o /dev/null -D "$out" --max-time 20 --request GET "$url" || return 1
   if [[ "$follow_redirects" != "1" ]]; then
     return 0
