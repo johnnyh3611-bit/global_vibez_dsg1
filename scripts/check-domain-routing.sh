@@ -145,7 +145,7 @@ if [[ "$robots_ok" -eq 1 ]]; then
 fi
 
 if [[ "$sitemap_ok" -eq 1 ]]; then
-  if grep -qiE '^content-type:[[:space:]]*(application|text)/xml([[:space:]]*;[[:space:]]*.*)?$' "$sitemap_hdr"; then
+  if grep -qiE '^content-type:[[:space:]]*(application|text)/xml' "$sitemap_hdr"; then
     sitemap_code="$(http_code "$sitemap_hdr")"
     if [[ "$sitemap_code" == "200" ]]; then
       if curl -sS -L --max-time 20 "${WWW_URL%/}/sitemap.xml" > "$sitemap_body"; then
