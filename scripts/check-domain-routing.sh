@@ -34,6 +34,10 @@ http_code() {
   awk 'BEGIN{c=""} /^HTTP\//{c=$2} END{print c}' "$1"
 }
 
+http_code_first() {
+  awk '/^HTTP\//{print $2; exit}' "$1"
+}
+
 status_is_ok() {
   local code="$1"
   [[ "$code" =~ ^[23][0-9][0-9]$ ]]
@@ -49,12 +53,20 @@ run_head() {
   fi
   if curl -sS "${follow_flag[@]}" -I --max-time 20 "$url" > "$out"; then
     local code
-    code="$(http_code "$out")"
+    if [[ "$follow_redirects" == "1" ]]; then
+      code="$(http_code "$out")"
+    else
+      code="$(http_code_first "$out")"
+    fi
     status_is_ok "$code" && return 0
   fi
   curl -sS "${follow_flag[@]}" -o /dev/null -D "$out" --max-time 20 --request GET "$url" || return 1
   local code
-  code="$(http_code "$out")"
+  if [[ "$follow_redirects" == "1" ]]; then
+    code="$(http_code "$out")"
+  else
+    code="$(http_code_first "$out")"
+  fi
   status_is_ok "$code" || return 1
   return 0
 }
@@ -110,7 +122,7 @@ else
 fi
 
 if [[ "$robots_ok" -eq 1 ]]; then
-  if grep -qiE '^content-type:[[:space:]]*text/plain([[:space:]]*;.*)?$' "$robots_hdr"; then
+  if grep -qiE '^content-type:[[:space:]]*text/plain([[:space:]]*;[[:space:]]*.*)?$' "$robots_hdr"; then
     robots_code="$(http_code "$robots_hdr")"
     if [[ "$robots_code" == "200" ]]; then
       if curl -sS -L --max-time 20 "${WWW_URL%/}/robots.txt" > "$robots_body"; then
@@ -133,7 +145,7 @@ if [[ "$robots_ok" -eq 1 ]]; then
 fi
 
 if [[ "$sitemap_ok" -eq 1 ]]; then
-  if grep -qiE '^content-type:[[:space:]]*(application|text)/xml([[:space:]]*;.*)?$' "$sitemap_hdr"; then
+  if grep -qiE '^content-type:[[:space:]]*(application|text)/xml([[:space:]]*;[[:space:]]*.*)?$' "$sitemap_hdr"; then
     sitemap_code="$(http_code "$sitemap_hdr")"
     if [[ "$sitemap_code" == "200" ]]; then
       if curl -sS -L --max-time 20 "${WWW_URL%/}/sitemap.xml" > "$sitemap_body"; then
