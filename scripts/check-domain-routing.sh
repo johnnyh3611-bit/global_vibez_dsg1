@@ -20,7 +20,9 @@ http_code() {
 run_head() {
   local url="$1"
   local out="$2"
-  curl -sS -o /dev/null -D "$out" --max-time 20 "$url"
+  if ! curl -sS -I --max-time 20 "$url" > "$out"; then
+    curl -sS -o /dev/null -D "$out" --max-time 20 "$url"
+  fi
 }
 
 echo "Domain routing check"
@@ -54,13 +56,23 @@ else
 fi
 
 if grep -qi '^content-type: text/plain' "$robots_hdr"; then
-  pass "robots.txt is served as text/plain"
+  robots_code="$(http_code "$robots_hdr")"
+  if [[ "$robots_code" == "200" ]]; then
+    pass "robots.txt is served as text/plain with HTTP 200"
+  else
+    fail "robots.txt is text/plain but status is ${robots_code:-none} (expected 200)"
+  fi
 else
   fail "robots.txt content-type is not text/plain (possible SPA fallback)"
 fi
 
 if grep -qi '^content-type: application/xml' "$sitemap_hdr" || grep -qi '^content-type: text/xml' "$sitemap_hdr"; then
-  pass "sitemap.xml is served as XML"
+  sitemap_code="$(http_code "$sitemap_hdr")"
+  if [[ "$sitemap_code" == "200" ]]; then
+    pass "sitemap.xml is served as XML with HTTP 200"
+  else
+    fail "sitemap.xml is XML but status is ${sitemap_code:-none} (expected 200)"
+  fi
 else
   fail "sitemap.xml content-type is not XML (possible SPA fallback)"
 fi
