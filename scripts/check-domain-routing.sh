@@ -22,6 +22,7 @@ FAIL=0
 
 pass() { echo "PASS: $1"; }
 fail() { echo "FAIL: $1"; FAIL=1; }
+PROBE_EFFECTIVE_URL=""
 
 header_location() {
   awk '
@@ -60,7 +61,9 @@ run_probe() {
   if [[ "$follow_redirects" == "1" ]]; then
     follow_flag=(-L)
   fi
-  curl -sS "${follow_flag[@]}" -o /dev/null -D "$out" --max-time 20 --request GET "$url" || return 1
+  PROBE_EFFECTIVE_URL="$(
+    curl -sS "${follow_flag[@]}" -o /dev/null -D "$out" --max-time 20 --request GET --write-out '%{url_effective}' "$url"
+  )" || return 1
   if [[ "$follow_redirects" != "1" ]]; then
     return 0
   fi
@@ -86,13 +89,23 @@ run_probe "$APEX_URL" "$apex_hdr" 0 || { fail "Apex request failed"; exit 1; }
 run_probe "$WWW_URL" "$www_hdr" 0 || { fail "WWW request failed"; exit 1; }
 robots_ok=0
 sitemap_ok=0
-if run_probe "${WWW_URL%/}/robots.txt" "$robots_hdr" 1; then
+robots_url="${WWW_URL%/}/robots.txt"
+sitemap_url="${WWW_URL%/}/sitemap.xml"
+if run_probe "$robots_url" "$robots_hdr" 1; then
+  if [[ "$PROBE_EFFECTIVE_URL" != "$robots_url" ]]; then
+    fail "robots.txt redirected to unexpected URL (${PROBE_EFFECTIVE_URL})"
+  else
   robots_ok=1
+  fi
 else
   fail "robots.txt request failed"
 fi
-if run_probe "${WWW_URL%/}/sitemap.xml" "$sitemap_hdr" 1; then
+if run_probe "$sitemap_url" "$sitemap_hdr" 1; then
+  if [[ "$PROBE_EFFECTIVE_URL" != "$sitemap_url" ]]; then
+    fail "sitemap.xml redirected to unexpected URL (${PROBE_EFFECTIVE_URL})"
+  else
   sitemap_ok=1
+  fi
 else
   fail "sitemap.xml request failed"
 fi
