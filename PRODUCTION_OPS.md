@@ -165,7 +165,20 @@ curl -sI https://globalvibezdsg.com/ | head -5
 # expect: HTTP/2 308 (or 301) + Location: https://www.globalvibezdsg.com/
 curl -sI https://www.globalvibezdsg.com/robots.txt | head -5
 # expect: content-type: text/plain (NOT text/html)
+npm run domain:check
+# expect: PASS for apex->www redirect, www=200, robots+sitemap static content-types
 ```
+
+### 6.1 Five-minute DNS + indexing checklist
+
+1. Vercel project includes both `globalvibezdsg.com` and `www.globalvibezdsg.com`.
+2. Registrar DNS does **not** point to GitHub Pages (remove stale `A`/`CNAME` records).
+3. `npm run domain:check` passes from a clean shell.
+4. Google Search Console:
+   - submit `https://www.globalvibezdsg.com/sitemap.xml`
+   - request indexing for `https://www.globalvibezdsg.com/`
+   - request temporary removals for stale/duplicate URLs if needed.
+5. If you never want the GitHub repo indexed, set repo visibility to **private**.
 
 **Google Search Console** (owner must do this — cannot automate from the repo):
 
