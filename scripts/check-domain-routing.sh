@@ -3,11 +3,10 @@ set -euo pipefail
 
 APEX_URL="${1:-https://globalvibezdsg.com}"
 WWW_URL="${2:-https://www.globalvibezdsg.com}"
-EXPECTED_WWW_HOST="www.globalvibezdsg.com"
+EXPECTED_WWW_HOST="$(printf '%s' "$WWW_URL" | sed -E 's#^https?://([^/:]+).*$#\1#')"
 FAIL=0
 
 pass() { echo "PASS: $1"; }
-warn() { echo "WARN: $1"; }
 fail() { echo "FAIL: $1"; FAIL=1; }
 
 header_location() {
@@ -21,7 +20,7 @@ http_code() {
 run_head() {
   local url="$1"
   local out="$2"
-  curl -sS -I --max-time 20 "$url" > "$out"
+  curl -sS -o /dev/null -D "$out" --max-time 20 "$url"
 }
 
 echo "Domain routing check"
@@ -33,10 +32,10 @@ www_hdr="$(mktemp)"
 robots_hdr="$(mktemp)"
 sitemap_hdr="$(mktemp)"
 
-run_head "$APEX_URL" "$apex_hdr" || { fail "Apex HEAD request failed"; exit 1; }
-run_head "$WWW_URL" "$www_hdr" || { fail "WWW HEAD request failed"; exit 1; }
-run_head "${WWW_URL%/}/robots.txt" "$robots_hdr" || fail "robots.txt HEAD request failed"
-run_head "${WWW_URL%/}/sitemap.xml" "$sitemap_hdr" || fail "sitemap.xml HEAD request failed"
+run_head "$APEX_URL" "$apex_hdr" || { fail "Apex request failed"; exit 1; }
+run_head "$WWW_URL" "$www_hdr" || { fail "WWW request failed"; exit 1; }
+run_head "${WWW_URL%/}/robots.txt" "$robots_hdr" || fail "robots.txt request failed"
+run_head "${WWW_URL%/}/sitemap.xml" "$sitemap_hdr" || fail "sitemap.xml request failed"
 
 apex_code="$(http_code "$apex_hdr")"
 apex_loc="$(header_location "$apex_hdr")"
