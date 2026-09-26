@@ -15,7 +15,19 @@ pass() { echo "PASS: $1"; }
 fail() { echo "FAIL: $1"; FAIL=1; }
 
 header_location() {
-  awk 'BEGIN{IGNORECASE=1} /^location:/{sub(/\r$/, "", $0); print substr($0, 11); exit}' "$1" | sed 's/^ *//'
+  awk '
+    BEGIN{IGNORECASE=1}
+    {
+      line=$0
+      sub(/\r$/, "", line)
+      sub(/^[[:space:]]+/, "", line)
+      if (line ~ /^location:[[:space:]]*/) {
+        sub(/^location:[[:space:]]*/, "", line)
+        print line
+        exit
+      }
+    }
+  ' "$1"
 }
 
 http_code() {
@@ -71,7 +83,15 @@ fi
 
 apex_code="$(http_code "$apex_hdr")"
 apex_loc="$(header_location "$apex_hdr")"
-if [[ "$apex_code" =~ ^3[0-9][0-9]$ ]] && [[ "$apex_loc" == "$EXPECTED_APEX_REDIRECT" ]]; then
+apex_redirect_ok=0
+if [[ "$APEX_PATH_AND_QUERY" == "/" ]]; then
+  if [[ "$apex_loc" == "https://${EXPECTED_WWW_HOST}" || "$apex_loc" == "https://${EXPECTED_WWW_HOST}/" ]]; then
+    apex_redirect_ok=1
+  fi
+elif [[ "$apex_loc" == "$EXPECTED_APEX_REDIRECT" ]]; then
+  apex_redirect_ok=1
+fi
+if [[ "$apex_code" =~ ^3[0-9][0-9]$ ]] && [[ "$apex_redirect_ok" -eq 1 ]]; then
   pass "Apex redirects to www (${apex_code} → ${apex_loc})"
 else
   fail "Apex does not redirect to www as expected (code=${apex_code:-none}, location=${apex_loc:-none})"
