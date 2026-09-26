@@ -54,6 +54,28 @@ status_is_ok() {
   [[ "$code" =~ ^[23][0-9][0-9]$ ]]
 }
 
+urls_equivalent() {
+  python3 - "$1" "$2" <<'PY'
+import sys
+from urllib.parse import urlsplit, parse_qsl
+
+def normalize(url: str):
+    p = urlsplit(url)
+    scheme = p.scheme.lower()
+    host = (p.hostname or "").lower()
+    port = p.port
+    if (scheme == "http" and port == 80) or (scheme == "https" and port == 443):
+        port = None
+    path = p.path or "/"
+    query = tuple(sorted(parse_qsl(p.query, keep_blank_values=True)))
+    return scheme, host, port, path, query
+
+left = normalize(sys.argv[1])
+right = normalize(sys.argv[2])
+sys.exit(0 if left == right else 1)
+PY
+}
+
 run_probe() {
   local url="$1"
   local out="$2"
@@ -126,11 +148,7 @@ if [[ "$apex_ok" -eq 1 ]]; then
   apex_code="$(http_code_first "$apex_hdr")"
   apex_loc="$(header_location "$apex_hdr")"
   apex_redirect_ok=0
-  if [[ "$APEX_PATH_AND_QUERY" == "/" ]]; then
-    if [[ "$apex_loc" == "https://${EXPECTED_WWW_HOST}" || "$apex_loc" == "https://${EXPECTED_WWW_HOST}/" ]]; then
-      apex_redirect_ok=1
-    fi
-  elif [[ "$apex_loc" == "$EXPECTED_APEX_REDIRECT" ]]; then
+  if [[ -n "$apex_loc" ]] && urls_equivalent "$apex_loc" "$EXPECTED_APEX_REDIRECT"; then
     apex_redirect_ok=1
   fi
   if [[ "$apex_code" =~ ^3[0-9][0-9]$ ]] && [[ "$apex_redirect_ok" -eq 1 ]]; then
@@ -174,7 +192,7 @@ if [[ "$sitemap_ok" -eq 1 ]]; then
     if ! grep -qiE '^content-type:[[:space:]]*(application|text)/xml' "$sitemap_hdr"; then
       warn "sitemap.xml content-type is non-standard; validating body markers instead"
     fi
-    if head -c 64 "$sitemap_body" | grep -qiE '<!doctype|<html'; then
+    if grep -qiE '<!doctype|<html' "$sitemap_body"; then
       fail "sitemap.xml body looks like HTML (possible SPA fallback)"
     elif grep -qiE '<\?xml|<urlset|<sitemapindex' "$sitemap_body"; then
       pass "sitemap.xml is served with HTTP 200 and valid XML markers"
