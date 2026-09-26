@@ -42,12 +42,17 @@ status_is_ok() {
 run_head() {
   local url="$1"
   local out="$2"
-  if curl -sS -I --max-time 20 "$url" > "$out"; then
+  local follow_redirects="${3:-0}"
+  local follow_flag=()
+  if [[ "$follow_redirects" == "1" ]]; then
+    follow_flag=(-L)
+  fi
+  if curl -sS "${follow_flag[@]}" -I --max-time 20 "$url" > "$out"; then
     local code
     code="$(http_code "$out")"
     status_is_ok "$code" && return 0
   fi
-  curl -sS -o /dev/null -D "$out" --max-time 20 --request GET "$url" || return 1
+  curl -sS "${follow_flag[@]}" -o /dev/null -D "$out" --max-time 20 --request GET "$url" || return 1
   local code
   code="$(http_code "$out")"
   status_is_ok "$code" || return 1
@@ -66,16 +71,16 @@ robots_body="$(mktemp)"
 sitemap_body="$(mktemp)"
 trap 'rm -f "$apex_hdr" "$www_hdr" "$robots_hdr" "$sitemap_hdr" "$robots_body" "$sitemap_body"' EXIT
 
-run_head "$APEX_URL" "$apex_hdr" || { fail "Apex request failed"; exit 1; }
-run_head "$WWW_URL" "$www_hdr" || { fail "WWW request failed"; exit 1; }
+run_head "$APEX_URL" "$apex_hdr" 0 || { fail "Apex request failed"; exit 1; }
+run_head "$WWW_URL" "$www_hdr" 0 || { fail "WWW request failed"; exit 1; }
 robots_ok=0
 sitemap_ok=0
-if run_head "${WWW_URL%/}/robots.txt" "$robots_hdr"; then
+if run_head "${WWW_URL%/}/robots.txt" "$robots_hdr" 1; then
   robots_ok=1
 else
   fail "robots.txt request failed"
 fi
-if run_head "${WWW_URL%/}/sitemap.xml" "$sitemap_hdr"; then
+if run_head "${WWW_URL%/}/sitemap.xml" "$sitemap_hdr" 1; then
   sitemap_ok=1
 else
   fail "sitemap.xml request failed"
@@ -108,7 +113,7 @@ if [[ "$robots_ok" -eq 1 ]]; then
   if grep -qiE '^content-type:[[:space:]]*text/plain([[:space:]]*;.*)?$' "$robots_hdr"; then
     robots_code="$(http_code "$robots_hdr")"
     if [[ "$robots_code" == "200" ]]; then
-      if curl -sS --max-time 20 "${WWW_URL%/}/robots.txt" > "$robots_body"; then
+      if curl -sS -L --max-time 20 "${WWW_URL%/}/robots.txt" > "$robots_body"; then
         if head -c 64 "$robots_body" | grep -qiE '<!doctype|<html'; then
           fail "robots.txt body looks like HTML (possible SPA fallback)"
         elif grep -qiE '^(User-agent:|Sitemap:)' "$robots_body"; then
@@ -131,7 +136,7 @@ if [[ "$sitemap_ok" -eq 1 ]]; then
   if grep -qiE '^content-type:[[:space:]]*(application|text)/xml([[:space:]]*;.*)?$' "$sitemap_hdr"; then
     sitemap_code="$(http_code "$sitemap_hdr")"
     if [[ "$sitemap_code" == "200" ]]; then
-      if curl -sS --max-time 20 "${WWW_URL%/}/sitemap.xml" > "$sitemap_body"; then
+      if curl -sS -L --max-time 20 "${WWW_URL%/}/sitemap.xml" > "$sitemap_body"; then
         if head -c 64 "$sitemap_body" | grep -qiE '<!doctype|<html'; then
           fail "sitemap.xml body looks like HTML (possible SPA fallback)"
         elif grep -qiE '<\?xml|<urlset|<sitemapindex' "$sitemap_body"; then
