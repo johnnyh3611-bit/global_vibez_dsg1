@@ -57,12 +57,13 @@ run_probe() {
   local url="$1"
   local out="$2"
   local follow_redirects="${3:-0}"
+  local body_out="${4:-/dev/null}"
   local follow_flag=()
   if [[ "$follow_redirects" == "1" ]]; then
     follow_flag=(-L)
   fi
   PROBE_EFFECTIVE_URL="$(
-    curl -sS "${follow_flag[@]}" -o /dev/null -D "$out" --max-time 20 --request GET --write-out '%{url_effective}' "$url"
+    curl -sS "${follow_flag[@]}" -o "$body_out" -D "$out" --max-time 20 --request GET --write-out '%{url_effective}' "$url"
   )" || return 1
   if [[ "$follow_redirects" != "1" ]]; then
     return 0
@@ -101,7 +102,7 @@ robots_ok=0
 sitemap_ok=0
 robots_url="${WWW_URL%/}/robots.txt"
 sitemap_url="${WWW_URL%/}/sitemap.xml"
-if run_probe "$robots_url" "$robots_hdr" 1; then
+if run_probe "$robots_url" "$robots_hdr" 1 "$robots_body"; then
   if [[ "$PROBE_EFFECTIVE_URL" != "$robots_url" ]]; then
     fail "robots.txt redirected to unexpected URL (${PROBE_EFFECTIVE_URL})"
   else
@@ -110,7 +111,7 @@ if run_probe "$robots_url" "$robots_hdr" 1; then
 else
   fail "robots.txt request failed"
 fi
-if run_probe "$sitemap_url" "$sitemap_hdr" 1; then
+if run_probe "$sitemap_url" "$sitemap_hdr" 1 "$sitemap_body"; then
   if [[ "$PROBE_EFFECTIVE_URL" != "$sitemap_url" ]]; then
     fail "sitemap.xml redirected to unexpected URL (${PROBE_EFFECTIVE_URL})"
   else
@@ -151,16 +152,12 @@ if [[ "$robots_ok" -eq 1 ]]; then
   if grep -qiE '^content-type:[[:space:]]*text/plain([[:space:]]*;[[:space:]]*.*)?$' "$robots_hdr"; then
     robots_code="$(http_code "$robots_hdr")"
     if [[ "$robots_code" == "200" ]]; then
-      if curl -sS -L --max-time 20 "${WWW_URL%/}/robots.txt" > "$robots_body"; then
-        if head -c 64 "$robots_body" | grep -qiE '<!doctype|<html'; then
-          fail "robots.txt body looks like HTML (possible SPA fallback)"
-        elif grep -qiE '^(User-agent:|Sitemap:)' "$robots_body"; then
-          pass "robots.txt is served as text/plain with HTTP 200 and expected directives"
-        else
-          fail "robots.txt body missing expected directives"
-        fi
+      if head -c 64 "$robots_body" | grep -qiE '<!doctype|<html'; then
+        fail "robots.txt body looks like HTML (possible SPA fallback)"
+      elif grep -qiE '^(User-agent:|Sitemap:)' "$robots_body"; then
+        pass "robots.txt is served as text/plain with HTTP 200 and expected directives"
       else
-        fail "robots.txt body request failed"
+        fail "robots.txt body missing expected directives"
       fi
     else
       fail "robots.txt is text/plain but status is ${robots_code:-none} (expected 200)"
@@ -174,16 +171,12 @@ if [[ "$sitemap_ok" -eq 1 ]]; then
   if grep -qiE '^content-type:[[:space:]]*(application|text)/xml' "$sitemap_hdr"; then
     sitemap_code="$(http_code "$sitemap_hdr")"
     if [[ "$sitemap_code" == "200" ]]; then
-      if curl -sS -L --max-time 20 "${WWW_URL%/}/sitemap.xml" > "$sitemap_body"; then
-        if head -c 64 "$sitemap_body" | grep -qiE '<!doctype|<html'; then
-          fail "sitemap.xml body looks like HTML (possible SPA fallback)"
-        elif grep -qiE '<\?xml|<urlset|<sitemapindex' "$sitemap_body"; then
-          pass "sitemap.xml is served as XML with HTTP 200 and valid XML markers"
-        else
-          fail "sitemap.xml body missing expected XML markers"
-        fi
+      if head -c 64 "$sitemap_body" | grep -qiE '<!doctype|<html'; then
+        fail "sitemap.xml body looks like HTML (possible SPA fallback)"
+      elif grep -qiE '<\?xml|<urlset|<sitemapindex' "$sitemap_body"; then
+        pass "sitemap.xml is served as XML with HTTP 200 and valid XML markers"
       else
-        fail "sitemap.xml body request failed"
+        fail "sitemap.xml body missing expected XML markers"
       fi
     else
       fail "sitemap.xml is XML but status is ${sitemap_code:-none} (expected 200)"
