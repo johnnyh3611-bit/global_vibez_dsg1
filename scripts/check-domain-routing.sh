@@ -97,6 +97,16 @@ run_probe() {
   return 0
 }
 
+run_header_probe() {
+  local url="$1"
+  local out="$2"
+  if curl -sS -I --max-time 20 "$url" > "$out"; then
+    return 0
+  fi
+  curl -sS -o /dev/null -D "$out" --max-time 20 --request GET "$url" || return 1
+  return 0
+}
+
 echo "Domain routing check"
 echo "  apex: ${APEX_URL}"
 echo "  www : ${WWW_URL}"
@@ -111,12 +121,12 @@ trap 'rm -f "$apex_hdr" "$www_hdr" "$robots_hdr" "$sitemap_hdr" "$robots_body" "
 
 apex_ok=0
 www_ok=0
-if run_probe "$APEX_URL" "$apex_hdr" 0; then
+if run_header_probe "$APEX_URL" "$apex_hdr"; then
   apex_ok=1
 else
   fail "Apex request failed"
 fi
-if run_probe "$WWW_URL" "$www_hdr" 0; then
+if run_header_probe "$WWW_URL" "$www_hdr"; then
   www_ok=1
 else
   fail "WWW request failed"
