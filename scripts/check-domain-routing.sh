@@ -50,7 +50,9 @@ apex_hdr="$(mktemp)"
 www_hdr="$(mktemp)"
 robots_hdr="$(mktemp)"
 sitemap_hdr="$(mktemp)"
-trap 'rm -f "$apex_hdr" "$www_hdr" "$robots_hdr" "$sitemap_hdr"' EXIT
+robots_body="$(mktemp)"
+sitemap_body="$(mktemp)"
+trap 'rm -f "$apex_hdr" "$www_hdr" "$robots_hdr" "$sitemap_hdr" "$robots_body" "$sitemap_body"' EXIT
 
 run_head "$APEX_URL" "$apex_hdr" || { fail "Apex request failed"; exit 1; }
 run_head "$WWW_URL" "$www_hdr" || { fail "WWW request failed"; exit 1; }
@@ -86,7 +88,17 @@ if [[ "$robots_ok" -eq 1 ]]; then
   if grep -qiE '^content-type:[[:space:]]*text/plain([[:space:]]*;.*)?$' "$robots_hdr"; then
     robots_code="$(http_code "$robots_hdr")"
     if [[ "$robots_code" == "200" ]]; then
-      pass "robots.txt is served as text/plain with HTTP 200"
+      if curl -sS --max-time 20 "${WWW_URL%/}/robots.txt" > "$robots_body"; then
+        if head -c 64 "$robots_body" | grep -qiE '<!doctype|<html'; then
+          fail "robots.txt body looks like HTML (possible SPA fallback)"
+        elif grep -qiE '^(User-agent:|Sitemap:)' "$robots_body"; then
+          pass "robots.txt is served as text/plain with HTTP 200 and expected directives"
+        else
+          fail "robots.txt body missing expected directives"
+        fi
+      else
+        fail "robots.txt body request failed"
+      fi
     else
       fail "robots.txt is text/plain but status is ${robots_code:-none} (expected 200)"
     fi
@@ -99,7 +111,17 @@ if [[ "$sitemap_ok" -eq 1 ]]; then
   if grep -qiE '^content-type:[[:space:]]*(application|text)/xml([[:space:]]*;.*)?$' "$sitemap_hdr"; then
     sitemap_code="$(http_code "$sitemap_hdr")"
     if [[ "$sitemap_code" == "200" ]]; then
-      pass "sitemap.xml is served as XML with HTTP 200"
+      if curl -sS --max-time 20 "${WWW_URL%/}/sitemap.xml" > "$sitemap_body"; then
+        if head -c 64 "$sitemap_body" | grep -qiE '<!doctype|<html'; then
+          fail "sitemap.xml body looks like HTML (possible SPA fallback)"
+        elif grep -qiE '<\?xml|<urlset|<sitemapindex' "$sitemap_body"; then
+          pass "sitemap.xml is served as XML with HTTP 200 and valid XML markers"
+        else
+          fail "sitemap.xml body missing expected XML markers"
+        fi
+      else
+        fail "sitemap.xml body request failed"
+      fi
     else
       fail "sitemap.xml is XML but status is ${sitemap_code:-none} (expected 200)"
     fi
