@@ -4,6 +4,11 @@ set -euo pipefail
 APEX_URL="${1:-https://globalvibezdsg.com}"
 WWW_URL="${2:-https://www.globalvibezdsg.com}"
 EXPECTED_WWW_HOST="$(printf '%s' "$WWW_URL" | sed -E 's#^https?://([^/:]+).*$#\1#')"
+APEX_PATH_AND_QUERY="$(printf '%s' "$APEX_URL" | sed -E 's#^https?://[^/]+##')"
+if [[ -z "$APEX_PATH_AND_QUERY" ]]; then
+  APEX_PATH_AND_QUERY="/"
+fi
+EXPECTED_APEX_REDIRECT="https://${EXPECTED_WWW_HOST}${APEX_PATH_AND_QUERY}"
 FAIL=0
 
 pass() { echo "PASS: $1"; }
@@ -64,7 +69,7 @@ fi
 
 apex_code="$(http_code "$apex_hdr")"
 apex_loc="$(header_location "$apex_hdr")"
-if [[ "$apex_code" =~ ^3[0-9][0-9]$ ]] && [[ "$apex_loc" == "https://${EXPECTED_WWW_HOST}/"* || "$apex_loc" == "https://${EXPECTED_WWW_HOST}" ]]; then
+if [[ "$apex_code" =~ ^3[0-9][0-9]$ ]] && [[ "$apex_loc" == "$EXPECTED_APEX_REDIRECT" ]]; then
   pass "Apex redirects to www (${apex_code} → ${apex_loc})"
 else
   fail "Apex does not redirect to www as expected (code=${apex_code:-none}, location=${apex_loc:-none})"
@@ -78,7 +83,7 @@ else
 fi
 
 if [[ "$robots_ok" -eq 1 ]]; then
-  if grep -qi '^content-type: text/plain' "$robots_hdr"; then
+  if grep -qiE '^content-type:[[:space:]]*text/plain([[:space:]]*;.*)?$' "$robots_hdr"; then
     robots_code="$(http_code "$robots_hdr")"
     if [[ "$robots_code" == "200" ]]; then
       pass "robots.txt is served as text/plain with HTTP 200"
@@ -91,7 +96,7 @@ if [[ "$robots_ok" -eq 1 ]]; then
 fi
 
 if [[ "$sitemap_ok" -eq 1 ]]; then
-  if grep -qi '^content-type: application/xml' "$sitemap_hdr" || grep -qi '^content-type: text/xml' "$sitemap_hdr"; then
+  if grep -qiE '^content-type:[[:space:]]*(application|text)/xml([[:space:]]*;.*)?$' "$sitemap_hdr"; then
     sitemap_code="$(http_code "$sitemap_hdr")"
     if [[ "$sitemap_code" == "200" ]]; then
       pass "sitemap.xml is served as XML with HTTP 200"
