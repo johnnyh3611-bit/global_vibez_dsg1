@@ -11,6 +11,7 @@
     "backend": "cd source/web-assets/backend && . .venv/bin/activate && DISABLE_BG_SCHEDULERS=1 uvicorn server:app --host 0.0.0.0 --port 8001",
     "typecheck": "cd source/web-assets/frontend && yarn typecheck",
     "lint": "npm run typecheck",
+    "domain:check": "bash ./scripts/check-domain-routing.sh",
     "smoke": "bash ./scripts/smoke-test.sh https://www.globalvibezdsg.com",
     "smoke:full": "SMOKE_REQUIRE_API=1 bash ./scripts/smoke-test.sh https://www.globalvibezdsg.com \"${REACT_APP_BACKEND_URL:-https://globalvibezdsg1-production.up.railway.app}\"",
     "sync:workspace": "bash ./scripts/sync-workspace.sh main",
