@@ -126,7 +126,7 @@ sitemap_ok=0
 robots_url="${WWW_URL%/}/robots.txt"
 sitemap_url="${WWW_URL%/}/sitemap.xml"
 if run_probe "$robots_url" "$robots_hdr" 1 "$robots_body"; then
-  if [[ "$PROBE_EFFECTIVE_URL" != "$robots_url" ]]; then
+  if ! urls_equivalent "$PROBE_EFFECTIVE_URL" "$robots_url"; then
     fail "robots.txt redirected to unexpected URL (${PROBE_EFFECTIVE_URL})"
   else
   robots_ok=1
@@ -135,7 +135,7 @@ else
   fail "robots.txt request failed"
 fi
 if run_probe "$sitemap_url" "$sitemap_hdr" 1 "$sitemap_body"; then
-  if [[ "$PROBE_EFFECTIVE_URL" != "$sitemap_url" ]]; then
+  if ! urls_equivalent "$PROBE_EFFECTIVE_URL" "$sitemap_url"; then
     fail "sitemap.xml redirected to unexpected URL (${PROBE_EFFECTIVE_URL})"
   else
   sitemap_ok=1
