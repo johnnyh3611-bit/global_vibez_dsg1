@@ -78,7 +78,9 @@ jobs:
         run: npm ci --ignore-scripts
 
       - name: Setup Yarn
-        run: npm install -g yarn@1.22.22
+        run: |
+          corepack enable
+          corepack prepare yarn@1.22.22 --activate
 
       - name: Install frontend dependencies
         working-directory: source/web-assets/frontend
