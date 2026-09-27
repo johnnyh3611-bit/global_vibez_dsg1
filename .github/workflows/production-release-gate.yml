@@ -23,6 +23,7 @@ jobs:
       vercel_backend_url: ${{ steps.resolve.outputs.vercel_backend_url }}
       railway_backend_url: ${{ steps.resolve.outputs.railway_backend_url }}
     env:
+      RAILWAY_BACKEND_URL_VAR: ${{ vars.RAILWAY_BACKEND_URL }}
       RAILWAY_BACKEND_URL: ${{ secrets.RAILWAY_BACKEND_URL }}
     steps:
       - name: Checkout
@@ -44,10 +45,10 @@ jobs:
             exit 1
           fi
 
-          railway_backend_url="${RAILWAY_BACKEND_URL:-}"
+          railway_backend_url="${RAILWAY_BACKEND_URL_VAR:-${RAILWAY_BACKEND_URL:-}}"
           if [[ -z "$railway_backend_url" ]]; then
-            echo "RAILWAY_BACKEND_URL secret is unset; defaulting Railway checks to vercel.json backend URL."
-            railway_backend_url="$vercel_backend_url"
+            echo "RAILWAY_BACKEND_URL is required (set repository variable or secret)."
+            exit 1
           fi
 
           echo "vercel_backend_url=$vercel_backend_url" >> "$GITHUB_OUTPUT"
