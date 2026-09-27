@@ -405,6 +405,7 @@ body:has(.gv-room) [data-testid="landscape-toggle"] {
         --gv-card-host-yaw-deg      = 135
    ───────────────────────────────────────────────────────────────── */
 :root {
+  --gv-mobile-bottom-nav-height: 0px;
   --gv-card-table-fov: 105;
   --gv-card-table-scale-x: 0.55;
   --gv-card-table-scale-y: 0.75;
@@ -656,4 +657,3 @@ html, body {
     padding-bottom: max(env(safe-area-inset-bottom, 16px), 16px);
   }
 }
-
