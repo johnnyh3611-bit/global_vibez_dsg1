@@ -20,7 +20,6 @@ export default defineConfig({
   use: {
     baseURL: BASE_URL,
     headless: true,
-    viewport: { width: 1920, height: 900 },
     ignoreHTTPSErrors: true,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
@@ -28,5 +27,7 @@ export default defineConfig({
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'mobile-chrome', use: { ...devices['Pixel 5'] } },
+    { name: 'mobile-safari', use: { ...devices['iPhone 13'] } },
   ],
 });

@@ -3,7 +3,7 @@
  * Four doors: Home · Play · Date · Watch · Earn.
  * Beta Hub is reached from the dashboard collapsible / desktop Beta tab.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import useIsFullscreenGameRoute from "@/hooks/useIsFullscreenGameRoute";
 import VibezTabStyle from "@/components/ui/VibezTabStyle";
@@ -26,6 +26,7 @@ const HIDDEN_ROUTES = ["/", "/auth", "/login", "/signup"];
 export default function MobileBottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
+  const navRef = useRef<HTMLElement>(null);
   const isMobile = useIsMobile();
   const isFullscreenGame = useIsFullscreenGameRoute();
 
@@ -38,12 +39,31 @@ export default function MobileBottomNav() {
     if (typeof document === "undefined") return;
     const root = document.getElementById("root");
     if (!root) return;
-    if (shouldShow) {
+    const syncHeight = () => {
+      const height = navRef.current?.getBoundingClientRect().height ?? 0;
+      root.style.setProperty("--gv-mobile-bottom-nav-height", `${Math.ceil(height)}px`);
+    };
+    if (shouldShow && navRef.current) {
       root.classList.add("gv-bottom-nav-visible");
+      syncHeight();
+      window.addEventListener("resize", syncHeight);
+      const observer = new ResizeObserver(syncHeight);
+      observer.observe(navRef.current);
+      return () => {
+        observer.disconnect();
+        window.removeEventListener("resize", syncHeight);
+        root.classList.remove("gv-bottom-nav-visible");
+        root.style.removeProperty("--gv-mobile-bottom-nav-height");
+      };
     } else {
       root.classList.remove("gv-bottom-nav-visible");
+      root.style.removeProperty("--gv-mobile-bottom-nav-height");
     }
-    return () => root.classList.remove("gv-bottom-nav-visible");
+    return () => {
+      window.removeEventListener("resize", syncHeight);
+      root.classList.remove("gv-bottom-nav-visible");
+      root.style.removeProperty("--gv-mobile-bottom-nav-height");
+    };
   }, [shouldShow]);
 
   const activeKey = useMemo(
@@ -55,6 +75,7 @@ export default function MobileBottomNav() {
 
   return (
     <nav
+      ref={navRef}
       className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/10 bg-black/85 backdrop-blur-xl md:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       data-testid="mobile-bottom-nav"

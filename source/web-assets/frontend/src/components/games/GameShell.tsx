@@ -191,14 +191,14 @@ export const GameShell: React.FC<GameShellProps> = ({
 
       {/* Main content */}
       <main
-        className={`relative z-10 max-w-7xl mx-auto px-4 pt-4 pb-32 sm:px-6 sm:pt-6 sm:pb-40 flex flex-col ${className}`}
+        className={`relative z-10 max-w-7xl mx-auto px-4 pt-4 pb-[calc(var(--gv-mobile-bottom-nav-height,0px)+8rem)] sm:px-6 sm:pt-6 sm:pb-40 flex flex-col ${className}`}
       >
         {children}
       </main>
 
       {/* Bottom control bar */}
       {controls && (
-        <div className="fixed bottom-[72px] left-0 right-0 z-40 px-4 py-3 sm:bottom-0 sm:px-6 sm:py-4 pointer-events-none">
+        <div className="fixed bottom-[var(--gv-mobile-bottom-nav-height,0px)] left-0 right-0 z-40 px-4 py-3 sm:bottom-0 sm:px-6 sm:py-4 pointer-events-none">
           <div className="max-w-3xl mx-auto pointer-events-auto">
             <div className="bg-black/60 backdrop-blur-xl border border-cyan-400/20 rounded-2xl p-3 sm:p-4 shadow-2xl">
               {controls}

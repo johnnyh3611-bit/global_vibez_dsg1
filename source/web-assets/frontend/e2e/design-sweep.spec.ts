@@ -12,8 +12,7 @@
  *      :focus-visible ring
  *   4. Page-level runtime / console errors while the page loads
  *
- * Output: console table + JSON report at
- *   /app/test_reports/design_sweep.json
+ * Output: console table + JSON report under Playwright's test-results dir.
  *
  * Run: `cd /app/frontend && yarn e2e --grep "Design Sweep"`
  */
@@ -45,7 +44,7 @@ const ROUTES = [
   '/practice/play/trivia_rush',    // Party
 ];
 
-const REPORT_PATH = '/app/test_reports/design_sweep.json';
+const REPORT_PATH = path.join(process.cwd(), 'test-results', 'design_sweep.json');
 
 // Build-time noise we don't care about.
 const NOISE_PATTERNS = [
