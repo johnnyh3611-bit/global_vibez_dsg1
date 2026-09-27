@@ -112,7 +112,7 @@ In **Vercel → Project → Settings → General**, use:
 | Project config file | `source/web-assets/frontend/vercel.json` |
 
 `source/web-assets/frontend/vercel.json` also sets:
-- SPA fallback only for extensionless routes (static assets like `/static/js/*`, `favicon.ico`, `asset-manifest.json`, `robots.txt`, `sitemap.xml` stay file-backed)
+- SPA fallback via `handle: filesystem` first, then `/index.html` (existing static files are served directly; non-file routes fall back to SPA)
 - `DISABLE_ESLINT_PLUGIN=true`, `CI=false`, `ESLINT_NO_DEV_ERRORS=true`, `GENERATE_SOURCEMAP=false` as CRA/ESLint build workarounds used by this repo
 
 In **Vercel → Project → Settings → Environment Variables** (Production):
