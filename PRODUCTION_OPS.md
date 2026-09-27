@@ -48,7 +48,7 @@ If any one platform is red (**GitHub checks**, **Vercel runtime**, or **Railway 
 
 ### Automated release gate
 
-`production-release-gate.yml` runs on every push to `main` and enforces:
+`production-release-gate.yml` runs on pull requests to `main` and on pushes to `main`, and enforces:
 
 1. `npm run domain:check`
 2. `npm run smoke:full` (www + Railway API)

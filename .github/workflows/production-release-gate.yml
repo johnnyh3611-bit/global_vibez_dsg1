@@ -1,6 +1,9 @@
 name: Production Release Gate
 
 on:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
       - main
@@ -9,6 +12,9 @@ on:
 concurrency:
   group: production-release-gate-${{ github.ref }}
   cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   resolve-api:

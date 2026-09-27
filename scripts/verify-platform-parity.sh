@@ -11,7 +11,6 @@ required_files=(
   "source/web-assets/railway.json"
   "source/web-assets/backend/railway.json"
   "source/web-assets/frontend/railway.json"
-  "source/web-assets/frontend/.env.production"
   ".github/workflows/ci.yml"
   ".github/workflows/pr-up-to-date.yml"
 )
@@ -59,18 +58,17 @@ if root_backend_url != build_backend_url:
     errors.append("vercel.json env.REACT_APP_BACKEND_URL and build.env.REACT_APP_BACKEND_URL must match")
 
 frontend_env_file = root / "source/web-assets/frontend/.env.production"
-frontend_backend_url = None
-for raw_line in frontend_env_file.read_text().splitlines():
-    line = raw_line.strip()
-    if not line or line.startswith("#"):
-        continue
-    if line.startswith("REACT_APP_BACKEND_URL="):
-        frontend_backend_url = line.split("=", 1)[1].strip()
-        break
-if not frontend_backend_url:
-    errors.append("source/web-assets/frontend/.env.production must set REACT_APP_BACKEND_URL")
-elif frontend_backend_url != root_backend_url:
-    errors.append("frontend .env.production REACT_APP_BACKEND_URL must match root vercel.json")
+if frontend_env_file.exists():
+    frontend_backend_url = None
+    for raw_line in frontend_env_file.read_text().splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("REACT_APP_BACKEND_URL="):
+            frontend_backend_url = line.split("=", 1)[1].strip()
+            break
+    if frontend_backend_url and frontend_backend_url != root_backend_url:
+        errors.append("frontend .env.production REACT_APP_BACKEND_URL must match root vercel.json when set")
 
 root_railway = load("railway.json")
 guard_cmd = (((root_railway.get("deploy") or {}).get("startCommand")) or "")

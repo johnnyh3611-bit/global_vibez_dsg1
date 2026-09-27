@@ -78,6 +78,8 @@ Configure branch protection on `main` to require:
 - `Core Health Check`
 - `PR Up-To-Date Check`
 - `Platform Parity Check`
+- `Vercel runtime checks`
+- `Railway health checks`
 
 If any required check is red, do not merge.
 
