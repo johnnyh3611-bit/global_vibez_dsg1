@@ -97,9 +97,10 @@ module.exports = {
         tls: false,
       };
 
-      // Privy ships EVM/WalletConnect/iwer/Coinbase Smart Wallet adapters
-      // that never run when walletChainType="solana-only". Stub them so
-      // webpack stops choking on their internal module resolution.
+      // Privy ships iwer/Coinbase Smart Wallet adapters we do not use in the
+      // Solana-only app. Keep those browser-hostile packages stubbed, but let
+      // Privy's own Ethereum helpers resolve normally so named ESM exports
+      // remain available during the CRA bundle step.
       const stub = path.resolve(__dirname, "src/empty-module.js");
       // Real constructors required — empty stubs break XRDevice.installDevUI.
       const iwerDevUiStub = path.resolve(__dirname, "src/stubs/iwer-devui.js");
@@ -109,11 +110,9 @@ module.exports = {
       webpackConfig.resolve.alias = {
         ...(webpackConfig.resolve.alias || {}),
         "@": srcRoot,
-        "@walletconnect/ethereum-provider": stub,
         "@iwer/devui": iwerDevUiStub,
         "@iwer/sem": iwerSemStub,
         "@base-org/account": stub,
-        "@privy-io/ethereum": stub,
       };
 
       webpackConfig.resolve.extensions = Array.from(
