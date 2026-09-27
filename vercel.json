@@ -41,7 +41,7 @@
   },
   "git": {
     "deploymentEnabled": {
-      "main": true,
+      "main": false,
       "copilot/add-domains-in-vercel-setup": false
     }
   },
