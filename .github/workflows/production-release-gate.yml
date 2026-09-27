@@ -41,10 +41,18 @@ jobs:
             echo "REACT_APP_BACKEND_URL is empty in vercel.json"
             exit 1
           fi
+          if [[ "$vercel_backend_url" != https://* ]]; then
+            echo "vercel.json REACT_APP_BACKEND_URL must use https://"
+            exit 1
+          fi
 
           railway_backend_url="${RAILWAY_BACKEND_URL_VAR:-${RAILWAY_BACKEND_URL:-}}"
           if [[ -z "$railway_backend_url" ]]; then
             echo "RAILWAY_BACKEND_URL is required (set repository variable or secret)."
+            exit 1
+          fi
+          if [[ "$railway_backend_url" != https://* ]]; then
+            echo "RAILWAY_BACKEND_URL must use https://"
             exit 1
           fi
 
