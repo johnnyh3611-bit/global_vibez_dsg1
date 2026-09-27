@@ -38,17 +38,23 @@ test.describe('Core loop smoke', () => {
 
     await expectDashboard(page);
 
-    await page.goto('/earn', { waitUntil: 'domcontentloaded' });
+    await page.getByTestId('four-door-earn').click();
     await expectEarnHub(page);
 
-    await page.goto('/games', { waitUntil: 'domcontentloaded' });
+    await page.getByRole('link', { name: /Open wallet/i }).click();
+    await expectWalletHub(page);
+
+    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
+    await expectDashboard(page);
+
+    await page.getByTestId('four-door-play').click();
     await expectGamesHub(page);
 
-    await page.goto('/dating/discover', { waitUntil: 'domcontentloaded' });
-    await expectDatingHub(page);
+    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
+    await expectDashboard(page);
 
-    await page.goto('/wallet', { waitUntil: 'domcontentloaded' });
-    await expectWalletHub(page);
+    await page.getByTestId('four-door-date').click();
+    await expectDatingHub(page);
 
     await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
     await page.getByTestId('dashboard-logout-btn').click();
