@@ -21,7 +21,7 @@
   ],
   "rewrites": [
     {
-      "source": "/((?!static/|assets/|generators/|landing-tour/|videos/|unity-builds/|unity/|.*\\.(?:js|css|map|json|txt|xml|ico|png|jpg|jpeg|gif|svg|webp|mp3|mp4|webm|ogg|pdf|wasm|webmanifest|woff|woff2|ttf|eot)$).*)",
+      "source": "/((?!static/|assets/|generators/|landing-tour/|videos/|unity-builds/|unity/|.*\\.(?:[jJ][sS]|[cC][sS][sS]|[mM][aA][pP]|[jJ][sS][oO][nN]|[tT][xX][tT]|[xX][mM][lL]|[iI][cC][oO]|[pP][nN][gG]|[jJ][pP][gG]|[jJ][pP][eE][gG]|[gG][iI][fF]|[sS][vV][gG]|[wW][eE][bB][pP]|[mM][pP]3|[mM][pP]4|[wW][eE][bB][mM]|[oO][gG][gG]|[pP][dD][fF]|[wW][aA][sS][mM]|[wW][eE][bB][mM][aA][nN][iI][fF][eE][sS][tT]|[wW][oO][fF][fF]|[wW][oO][fF][fF]2|[tT][tT][fF]|[eE][oO][tT])$).*)",
       "destination": "/index.html"
     }
   ],
