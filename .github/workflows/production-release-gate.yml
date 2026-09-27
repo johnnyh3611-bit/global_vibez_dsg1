@@ -115,6 +115,9 @@ jobs:
     env:
       RAILWAY_BACKEND_URL: ${{ needs.resolve-api.outputs.railway_backend_url }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Check /health
         run: |
           set -euo pipefail
