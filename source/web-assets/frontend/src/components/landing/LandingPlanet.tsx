@@ -20,8 +20,9 @@ import { Billboard, Html, useTexture } from "@react-three/drei";
 import { Bloom, EffectComposer } from "@react-three/postprocessing";
 import { useNavigate } from "react-router-dom";
 import * as THREE from "three";
+import { LOGO_URL } from "../Logo";
 
-const LOGO_SRC = "/assets/logo.png";
+const LOGO_SRC = LOGO_URL;
 const LOGO_ASPECT = 1019 / 960;
 const LOGO_BASE_H = 3.45;
 const LOGO_SCALE = 1.1;
