@@ -53,6 +53,20 @@ npm run smoke
 | **Railway** | Full-stack option (backend + frontend services) | `source/web-assets/{backend,frontend}/railway.json` |
 | **Azure VM** | Optional static mirror via nginx | `.github/workflows/deploy.yml` → deploys `frontend/build` |
 
+### Vercel project settings (must match repo)
+
+- **Root Directory:** `source/web-assets/frontend`
+- **Framework Preset:** `Other`
+- **Install Command:** `yarn install --frozen-lockfile`
+- **Build Command:** `yarn build`
+- **Output Directory:** `build`
+- **Config file used by this root:** `source/web-assets/frontend/vercel.json`
+
+Before and after deploy, verify:
+- Deploy branch is `main`
+- Deployed commit SHA matches latest GitHub `main`
+- Do one **Redeploy with cache cleared** after changing root/build/env settings
+
 Set **`REACT_APP_BACKEND_URL`** in Vercel (and GitHub secret for Azure builds)
 to the live FastAPI base URL. Without that env var at **build** time, older
 bundles crashed on a blank black screen.
