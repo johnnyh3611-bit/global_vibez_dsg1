@@ -100,6 +100,17 @@ Details: `source/web-assets/RAILWAY_DEPLOY.md`
 
 ### 2) Point the Vercel frontend at that API
 
+In **Vercel → Project → Settings → General**, use:
+
+| Setting | Value |
+|---|---|
+| Root Directory | `source/web-assets/frontend` |
+| Framework Preset | `Other` |
+| Install Command | `yarn install --frozen-lockfile` |
+| Build Command | `yarn build` |
+| Output Directory | `build` |
+| Project config file | `source/web-assets/frontend/vercel.json` |
+
 In **Vercel → Project → Settings → Environment Variables** (Production):
 
 | Name | Value |
@@ -108,6 +119,11 @@ In **Vercel → Project → Settings → Environment Variables** (Production):
 | `REACT_APP_FRONTEND_URL` | `https://www.globalvibezdsg.com` |
 
 Then **Redeploy** Production (CRA bakes env at build time).
+
+Also confirm:
+- Vercel deploy branch is `main`
+- The deployed commit SHA in Vercel matches GitHub `main`
+- After changing root/build/env settings, run one **Redeploy with cache cleared**
 
 Do **not** put an empty `REACT_APP_BACKEND_URL` in `vercel.json` — that overrides the dashboard.
 
