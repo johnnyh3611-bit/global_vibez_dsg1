@@ -21,7 +21,7 @@
   ],
   "rewrites": [
     {
-      "source": "/((?!static/|assets/|generators/|landing-tour/|videos/|unity-builds/|unity/|.*\\.(?:js|css|map|json|txt|xml|ico|png|jpg|jpeg|gif|svg|webp|mp3|mp4|pdf|wasm|webmanifest)$).*)",
+      "source": "/((?!static/|assets/|generators/|landing-tour/|videos/|unity-builds/|unity/|.*\\.(?:js|css|map|json|txt|xml|ico|png|jpg|jpeg|gif|svg|webp|mp3|mp4|webm|ogg|pdf|wasm|webmanifest|woff|woff2|ttf|eot)$).*)",
       "destination": "/index.html"
     }
   ],
