@@ -7,7 +7,10 @@ import { Page, expect } from '@playwright/test';
 export async function demoLogin(page: Page): Promise<void> {
   await page.goto('/login', { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(1000);
-  const demoBtn = page.getByText(/Demo Login/i).first();
+  const primaryDemoBtn = page.getByTestId('login-demo-btn');
+  const demoBtn = (await primaryDemoBtn.count())
+    ? primaryDemoBtn
+    : page.getByText(/Continue with demo account|Demo Login/i).first();
   await expect(demoBtn).toBeVisible();
   await demoBtn.click({ force: true });
   // Wait for redirect away from /login
