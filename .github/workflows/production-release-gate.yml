@@ -46,7 +46,12 @@ jobs:
             exit 1
           fi
 
-          railway_backend_url="${RAILWAY_BACKEND_URL_VAR:-${RAILWAY_BACKEND_URL:-}}"
+          railway_backend_url=""
+          if [[ -n "${RAILWAY_BACKEND_URL_VAR:-}" ]]; then
+            railway_backend_url="${RAILWAY_BACKEND_URL_VAR}"
+          elif [[ -n "${RAILWAY_BACKEND_URL:-}" ]]; then
+            railway_backend_url="${RAILWAY_BACKEND_URL}"
+          fi
           if [[ -z "$railway_backend_url" ]]; then
             echo "RAILWAY_BACKEND_URL is required (set repository variable or secret)."
             exit 1
