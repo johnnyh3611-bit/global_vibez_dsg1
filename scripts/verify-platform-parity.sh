@@ -13,6 +13,8 @@ required_files=(
   "source/web-assets/frontend/railway.json"
   ".github/workflows/ci.yml"
   ".github/workflows/pr-up-to-date.yml"
+  ".github/workflows/platform-parity.yml"
+  ".github/workflows/production-release-gate.yml"
 )
 
 for file in "${required_files[@]}"; do

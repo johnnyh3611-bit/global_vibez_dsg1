@@ -79,7 +79,7 @@ Configure branch protection on `main` to require:
 - `PR Up-To-Date Check / up-to-date`
 - `Platform Parity Check / platform-parity`
 - `Production Release Gate / Vercel runtime checks`
-- `Production Release Gate / Railway health checks`
+- `Production Release Gate / Railway backend health checks`
 
 If any required check is red, do not merge.
 
