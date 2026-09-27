@@ -54,6 +54,8 @@ If any one platform is red (**GitHub checks**, **Vercel runtime**, or **Railway 
 2. `npm run smoke:full` (www + Railway API)
 3. Railway backend `GET /health` must return `{"status":"ok"}`
 
+Set repository secret `RAILWAY_BACKEND_URL` for the Railway check target. If unset, the workflow falls back to `vercel.json` backend URL.
+
 ## Flawless checklist (do in order)
 
 ### 1) Stand up the FastAPI backend (Railway — recommended)

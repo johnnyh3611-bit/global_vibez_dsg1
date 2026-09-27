@@ -75,11 +75,11 @@ npm run smoke
 
 Configure branch protection on `main` to require:
 
-- `Core Health Check`
-- `PR Up-To-Date Check`
-- `Platform Parity Check`
-- `Vercel runtime checks`
-- `Railway health checks`
+- `Core Health Check / health-check`
+- `PR Up-To-Date Check / up-to-date`
+- `Platform Parity Check / platform-parity`
+- `Production Release Gate / Vercel runtime checks`
+- `Production Release Gate / Railway health checks`
 
 If any required check is red, do not merge.
 

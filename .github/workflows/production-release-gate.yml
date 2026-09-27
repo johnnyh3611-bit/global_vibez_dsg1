@@ -20,34 +20,45 @@ jobs:
   resolve-api:
     runs-on: ubuntu-latest
     outputs:
-      backend_url: ${{ steps.resolve.outputs.backend_url }}
+      vercel_backend_url: ${{ steps.resolve.outputs.vercel_backend_url }}
+      railway_backend_url: ${{ steps.resolve.outputs.railway_backend_url }}
+    env:
+      RAILWAY_BACKEND_URL: ${{ secrets.RAILWAY_BACKEND_URL }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Resolve backend URL
+      - name: Resolve backend URLs
         id: resolve
         run: |
           set -euo pipefail
-          backend_url="$(python3 - <<'PY'
+          vercel_backend_url="$(python3 - <<'PY'
           import json
           from pathlib import Path
           data = json.loads(Path('vercel.json').read_text())
           print((data.get('env') or {}).get('REACT_APP_BACKEND_URL', '').strip())
           PY
           )"
-          if [[ -z "$backend_url" ]]; then
+          if [[ -z "$vercel_backend_url" ]]; then
             echo "REACT_APP_BACKEND_URL is empty in vercel.json"
             exit 1
           fi
-          echo "backend_url=$backend_url" >> "$GITHUB_OUTPUT"
+
+          railway_backend_url="${RAILWAY_BACKEND_URL:-}"
+          if [[ -z "$railway_backend_url" ]]; then
+            echo "RAILWAY_BACKEND_URL secret is unset; defaulting Railway checks to vercel.json backend URL."
+            railway_backend_url="$vercel_backend_url"
+          fi
+
+          echo "vercel_backend_url=$vercel_backend_url" >> "$GITHUB_OUTPUT"
+          echo "railway_backend_url=$railway_backend_url" >> "$GITHUB_OUTPUT"
 
   vercel-runtime-checks:
     name: Vercel runtime checks
     runs-on: ubuntu-latest
     needs: resolve-api
     env:
-      REACT_APP_BACKEND_URL: ${{ needs.resolve-api.outputs.backend_url }}
+      REACT_APP_BACKEND_URL: ${{ needs.resolve-api.outputs.vercel_backend_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -63,12 +74,12 @@ jobs:
     runs-on: ubuntu-latest
     needs: resolve-api
     env:
-      REACT_APP_BACKEND_URL: ${{ needs.resolve-api.outputs.backend_url }}
+      RAILWAY_BACKEND_URL: ${{ needs.resolve-api.outputs.railway_backend_url }}
     steps:
       - name: Check /health
         run: |
           set -euo pipefail
-          curl -fsS "${REACT_APP_BACKEND_URL%/}/health" >/tmp/railway-health.json
+          curl -fsS "${RAILWAY_BACKEND_URL%/}/health" >/tmp/railway-health.json
           python3 - <<'PY'
           import json
           import pathlib
