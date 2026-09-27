@@ -77,6 +77,24 @@ jobs:
       - name: Install npm metadata
         run: npm ci --ignore-scripts
 
+      - name: Setup Yarn
+        run: npm install -g yarn@1.22.22
+
+      - name: Install frontend dependencies
+        working-directory: source/web-assets/frontend
+        run: |
+          for attempt in 1 2 3; do
+            if yarn install --frozen-lockfile; then
+              break
+            fi
+            echo "yarn install failed (attempt $attempt/3), clearing cache and retrying..."
+            yarn cache clean
+            sleep 5
+            if [ "$attempt" = "3" ]; then
+              exit 1
+            fi
+          done
+
       - name: Domain routing check
         run: npm run domain:check
 
