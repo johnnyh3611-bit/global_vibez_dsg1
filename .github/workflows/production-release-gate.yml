@@ -1,0 +1,132 @@
+name: Production Release Gate
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: production-release-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  resolve-api:
+    runs-on: ubuntu-latest
+    outputs:
+      vercel_backend_url: ${{ steps.resolve.outputs.vercel_backend_url }}
+      railway_backend_url: ${{ steps.resolve.outputs.railway_backend_url }}
+    env:
+      RAILWAY_BACKEND_URL_VAR: ${{ vars.RAILWAY_BACKEND_URL }}
+      RAILWAY_BACKEND_URL: ${{ secrets.RAILWAY_BACKEND_URL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve backend URLs
+        id: resolve
+        run: |
+          set -euo pipefail
+          vercel_backend_url="$(python3 - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path('vercel.json').read_text())
+          print((data.get('env') or {}).get('REACT_APP_BACKEND_URL', '').strip())
+          PY
+          )"
+          if [[ -z "$vercel_backend_url" ]]; then
+            echo "REACT_APP_BACKEND_URL is empty in vercel.json"
+            exit 1
+          fi
+          if [[ "$vercel_backend_url" != https://* ]]; then
+            echo "vercel.json REACT_APP_BACKEND_URL must use https://"
+            exit 1
+          fi
+
+          railway_backend_url=""
+          if [[ -n "${RAILWAY_BACKEND_URL_VAR:-}" ]]; then
+            railway_backend_url="${RAILWAY_BACKEND_URL_VAR}"
+          elif [[ -n "${RAILWAY_BACKEND_URL:-}" ]]; then
+            railway_backend_url="${RAILWAY_BACKEND_URL}"
+          fi
+          if [[ -z "$railway_backend_url" ]]; then
+            echo "RAILWAY_BACKEND_URL is required (set repository variable or secret)."
+            exit 1
+          fi
+          if [[ "$railway_backend_url" != https://* ]]; then
+            echo "RAILWAY_BACKEND_URL must use https://"
+            exit 1
+          fi
+
+          echo "vercel_backend_url=$vercel_backend_url" >> "$GITHUB_OUTPUT"
+          echo "railway_backend_url=$railway_backend_url" >> "$GITHUB_OUTPUT"
+
+  vercel-runtime-checks:
+    name: Vercel runtime checks
+    runs-on: ubuntu-latest
+    needs: resolve-api
+    env:
+      REACT_APP_BACKEND_URL: ${{ needs.resolve-api.outputs.vercel_backend_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install npm metadata
+        run: npm ci --ignore-scripts
+
+      - name: Setup Yarn
+        run: |
+          corepack enable
+          corepack prepare yarn@1.22.22 --activate
+
+      - name: Install frontend dependencies
+        working-directory: source/web-assets/frontend
+        run: |
+          for attempt in 1 2 3; do
+            if yarn install --frozen-lockfile; then
+              break
+            fi
+            echo "yarn install failed (attempt $attempt/3), clearing cache and retrying..."
+            yarn cache clean
+            sleep 5
+            if [ "$attempt" = "3" ]; then
+              exit 1
+            fi
+          done
+
+      - name: Domain routing check
+        run: npm run domain:check
+
+      - name: Full smoke test (www + API)
+        run: npm run smoke:full
+
+  railway-backend-health-checks:
+    name: Railway backend health checks
+    runs-on: ubuntu-latest
+    needs: resolve-api
+    env:
+      RAILWAY_BACKEND_URL: ${{ needs.resolve-api.outputs.railway_backend_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check /health
+        run: |
+          set -euo pipefail
+          curl -fsS "${RAILWAY_BACKEND_URL%/}/health" >/tmp/railway-health.json
+          python3 - <<'PY'
+          import json
+          import pathlib
+          payload = json.loads(pathlib.Path('/tmp/railway-health.json').read_text())
+          if payload.get('status') != 'ok':
+            raise SystemExit(f"Unexpected health payload: {payload}")
+          print("Railway /health returned status=ok")
+          PY

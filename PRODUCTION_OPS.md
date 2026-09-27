@@ -28,6 +28,34 @@ https://globalvibezdsg1-production.up.railway.app
 - **Beta payments**: Helio + `PAYMENT_BETA_MODE` on Railway; coin packs live via `/api/coins/packs`.
 - **Voice Mirror STT**: set `OPENAI_API_KEY` on the Railway backend after #164.
 
+## Cross-platform command center (strict)
+
+Use these as the single runbook/dashboard:
+
+- **GitHub Actions**: `.github/workflows/ci.yml`, `.github/workflows/pr-up-to-date.yml`, `.github/workflows/platform-parity.yml`, `.github/workflows/production-release-gate.yml`
+- **Vercel**: production deploy status for `www.globalvibezdsg.com`
+- **Railway**: backend/frontend service deploy + health status
+
+### Rule: red means unhealthy
+
+If any one platform is red (**GitHub checks**, **Vercel runtime**, or **Railway health/deploy**), production is not considered healthy and release is blocked until green.
+
+### Failure triage ownership
+
+- GitHub checks fail → block merge to `main`
+- Vercel build/runtime fail → block release status
+- Railway health/env fail → block release status
+
+### Automated release gate
+
+`production-release-gate.yml` runs on pushes to `main`, and enforces:
+
+1. `npm run domain:check`
+2. `npm run smoke:full` (www + Railway API)
+3. Railway backend `GET /health` must return `{"status":"ok"}`
+
+Set `RAILWAY_BACKEND_URL` as a repository **variable** (preferred) or **secret** for the Railway backend check target. The gate fails if this value is missing.
+
 ## Flawless checklist (do in order)
 
 ### 1) Stand up the FastAPI backend (Railway — recommended)

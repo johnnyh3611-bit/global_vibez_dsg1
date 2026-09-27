@@ -62,6 +62,30 @@ npm run smoke
 - **Output Directory:** `build`
 - **Config file used by this root:** `source/web-assets/frontend/vercel.json`
 
+### Deployment source lock
+
+- **GitHub `main` is the only deployment source** for Vercel and Railway.
+- `vercel.json` keeps `git.deploymentEnabled.main=true`; no other branch may be enabled.
+- Railway must deploy only the service roots:
+  - `source/web-assets/backend`
+  - `source/web-assets/frontend`
+- Root guard files (`railway.json`, `source/web-assets/railway.json`) intentionally fail deploys from wrong directories.
+
+### Required merge checks (branch protection)
+
+Configure branch protection on `main` to require:
+
+- `Core Health Check / health-check`
+- `PR Up-To-Date Check / up-to-date`
+- `Platform Parity Check / platform-parity`
+
+If any required check is red, do not merge.
+
+For post-merge release status, monitor:
+
+- `Production Release Gate / Vercel runtime checks`
+- `Production Release Gate / Railway backend health checks`
+
 Before and after deploy, verify:
 - Deploy branch is `main`
 - Deployed commit SHA matches latest GitHub `main`
