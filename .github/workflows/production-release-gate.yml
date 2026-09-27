@@ -69,6 +69,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install npm metadata
+        run: npm ci --ignore-scripts
+
       - name: Domain routing check
         run: npm run domain:check
 
